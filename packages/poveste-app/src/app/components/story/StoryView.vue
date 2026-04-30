@@ -2,6 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useLayoutStore } from '../../stores/layout'
 import { useStoryStore } from '../../stores/story'
 
 import { isMobile } from '../../util/responsive'
@@ -12,6 +13,7 @@ import StorySidePanel from '../panel/StorySidePanel.vue'
 import StoryViewer from './StoryViewer.vue'
 
 const storyStore = useStoryStore()
+const layoutStore = useLayoutStore()
 
 const router = useRouter()
 const route = useRoute()
@@ -63,40 +65,44 @@ function scrollDocsToTop() {
 <template>
   <BaseEmpty
     v-if="!storyStore.currentStory"
-    class="poveste-story-view poveste-no-story"
+    class="histoire-story-view histoire-no-story"
   >
     <Icon
       icon="carbon:software-resource-resource"
-      class="ptw-w-16 ptw-h-16 ptw-opacity-50"
+      class="htw-w-16 htw-h-16 htw-opacity-50"
     />
   </BaseEmpty>
 
   <div
     v-else
-    class="poveste-story-view poveste-with-story ptw-h-full"
+    class="histoire-story-view histoire-with-story htw-h-full"
   >
     <div
       v-if="storyStore.currentStory.docsOnly"
       ref="docsOnlyScroller"
-      class="ptw-h-full ptw-overflow-auto"
+      class="htw-h-full htw-overflow-auto"
     >
       <StoryDocs
         :story="storyStore.currentStory"
         standalone
-        class="md:ptw-p-12 ptw-w-full md:ptw-max-w-[600px] lg:ptw-max-w-[800px] xl:ptw-max-w-[900px]"
+        class="md:htw-p-12 htw-w-full md:htw-max-w-[600px] lg:htw-max-w-[800px] xl:htw-max-w-[900px]"
         @scroll-top="scrollDocsToTop()"
       />
     </div>
     <template v-else-if="isMobile">
       <StoryViewer />
     </template>
+    <template v-else-if="!layoutStore.settings.storyOptionsVisible">
+      <StoryViewer />
+    </template>
     <BaseSplitPane
       v-else
-      save-id="story-main"
+      :save-id="`story-main-${layoutStore.settings.storyOptionsPlacement}`"
+      :orientation="layoutStore.settings.storyOptionsPlacement === 'bottom' ? 'portrait' : 'landscape'"
       :min="30"
       :max="95"
-      :default-split="75"
-      class="ptw-h-full"
+      :default-split="layoutStore.settings.storyOptionsPlacement === 'bottom' ? 60 : 75"
+      class="htw-h-full"
     >
       <template #first>
         <StoryViewer />

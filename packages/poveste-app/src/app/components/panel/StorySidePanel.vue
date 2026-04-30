@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLayoutStore } from '../../stores/layout'
 import { useStoryStore } from '../../stores/story'
 
 import BaseEmpty from '../base/BaseEmpty.vue'
@@ -12,6 +13,11 @@ import StoryEvents from './StoryEvents.vue'
 import StorySourceCode from './StorySourceCode.vue'
 
 const storyStore = useStoryStore()
+const layoutStore = useLayoutStore()
+
+const innerOrientation = computed(() =>
+  layoutStore.settings.storyOptionsPlacement === 'bottom' ? 'landscape' : 'portrait',
+)
 
 const route = useRoute()
 
@@ -30,27 +36,27 @@ const panelContentComponent = computed(() => {
 <template>
   <BaseEmpty
     v-if="!storyStore.currentVariant"
-    class="poveste-story-side-panel poveste-selection"
+    class="histoire-story-side-panel histoire-selection"
   >
     <span>Select a variant</span>
   </BaseEmpty>
 
   <BaseEmpty
     v-else-if="!storyStore.currentVariant.configReady || !storyStore.currentVariant.previewReady"
-    class="poveste-story-side-panel poveste-loading"
+    class="histoire-story-side-panel histoire-loading"
   >
     <span>Loading...</span>
   </BaseEmpty>
 
   <BaseSplitPane
     v-else
-    save-id="story-sidepane"
-    orientation="portrait"
-    class="poveste-story-side-panel poveste-loaded ptw-h-full"
+    :save-id="`story-sidepane-${innerOrientation}`"
+    :orientation="innerOrientation"
+    class="histoire-story-side-panel histoire-loaded htw-h-full"
     data-test-id="story-side-panel"
   >
     <template #first>
-      <div class="ptw-flex ptw-flex-col ptw-h-full">
+      <div class="htw-flex htw-flex-col htw-h-full">
         <PaneTabs
           :story="storyStore.currentStory"
           :variant="storyStore.currentVariant"
@@ -60,7 +66,7 @@ const panelContentComponent = computed(() => {
           :is="panelContentComponent"
           :story="storyStore.currentStory"
           :variant="storyStore.currentVariant"
-          class="ptw-h-full ptw-overflow-auto"
+          class="htw-h-full htw-overflow-auto"
         />
       </div>
     </template>
@@ -69,7 +75,7 @@ const panelContentComponent = computed(() => {
       <StorySourceCode
         :story="storyStore.currentStory"
         :variant="storyStore.currentVariant"
-        class="ptw-h-full"
+        class="htw-h-full"
       />
     </template>
   </BaseSplitPane>
