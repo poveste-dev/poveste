@@ -14,7 +14,7 @@ function handleNavigate() {
 
 <template>
   <a
-    class="istoire-base-list-ite ptw-flex ptw-items-center ptw-gap-2 ptw-text-gray-900 dark:ptw-text-gray-100"
+    class="poveste-base-list-item ptw-flex ptw-items-center ptw-gap-2 ptw-text-gray-900 dark:ptw-text-gray-100"
     :class="[
       $attrs.class,
       isActive
