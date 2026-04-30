@@ -2,7 +2,7 @@
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
-import { povesteConfig } from '../../util/config'
+import { histoireConfig } from '../../util/config'
 import { getContrastColor } from '../../util/preview-settings'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
 
@@ -13,30 +13,29 @@ const contrastColor = computed(() => getContrastColor(settings))
 
 <template>
   <VDropdown
-    v-if="povesteConfig.backgroundPresets.length"
+    v-if="histoireConfig.backgroundPresets.length"
     placement="bottom-end"
     :skidding="6"
-    class="poveste-toolbar-background ptw-h-full ptw-flex-none"
+    class="histoire-toolbar-background htw-flex-none"
     data-test-id="toolbar-background"
   >
     <div
       v-tooltip="'Background color'"
-      class="ptw-cursor-pointer hover:ptw-text-primary-500 ptw-flex ptw-items-center ptw-gap-1 ptw-h-full ptw-px-2 ptw-group"
+      class="htw-flex htw-items-center htw-gap-1 htw-px-2.5 htw-py-1.5 hover:htw-bg-white/50 dark:hover:htw-bg-white/10 hover:htw-text-primary-500 dark:hover:htw-text-primary-400 htw-cursor-pointer htw-text-gray-900 dark:htw-text-gray-100 htw-transition-colors htw-group"
     >
-      <div
-        class="bind-preview-bg ptw-w-4 ptw-h-4 ptw-rounded-full ptw-border ptw-border-black/50 dark:ptw-border-white/50 ptw-flex ptw-items-center ptw-justify-center ptw-text-xs"
-      >
-        <span v-if="contrastColor">a</span>
-      </div>
       <Icon
-        icon="carbon:caret-down"
-        class="ptw-w-4 ptw-h-4 ptw-opacity-50 group-hover:ptw-opacity-100"
+        icon="carbon:color-palette"
+        class="htw-w-4 htw-h-4"
+      />
+      <Icon
+        icon="carbon:chevron-down"
+        class="htw-w-3 htw-h-3 htw-opacity-40 group-hover:htw-opacity-70"
       />
     </div>
 
     <template #popper="{ hide }">
       <div
-        class="ptw-flex ptw-flex-col ptw-items-stretch"
+        class="htw-flex htw-flex-col htw-items-stretch"
         data-test-id="background-popper"
       >
         <BaseCheckbox v-model="settings.checkerboard">
@@ -44,21 +43,21 @@ const contrastColor = computed(() => getContrastColor(settings))
         </BaseCheckbox>
 
         <button
-          v-for="(option, index) in povesteConfig.backgroundPresets"
+          v-for="(option, index) in histoireConfig.backgroundPresets"
           :key="index"
-          class="ptw-px-4 ptw-py-3 ptw-cursor-pointer ptw-text-left ptw-flex ptw-items-baseline ptw-gap-4"
+          class="htw-px-4 htw-py-3 htw-cursor-pointer htw-text-left htw-flex htw-items-baseline htw-gap-4"
           :class="[
             settings.backgroundColor === option.color
-              ? 'ptw-bg-primary-500 hover:ptw-bg-primary-600 ptw-text-white dark:ptw-text-black'
-              : 'ptw-bg-transparent hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-700',
+              ? 'htw-bg-primary-500 hover:htw-bg-primary-600 htw-text-white dark:htw-text-black'
+              : 'htw-bg-transparent hover:htw-bg-primary-100 dark:hover:htw-bg-primary-700',
           ]"
           @click="settings.backgroundColor = option.color;hide()"
         >
-          <span class="ptw-mr-auto">{{ option.label }}</span>
+          <span class="htw-mr-auto">{{ option.label }}</span>
           <template v-if="option.color !== '$checkerboard'">
-            <span class="ptw-ml-auto ptw-opacity-70">{{ option.color }}</span>
+            <span class="htw-ml-auto htw-opacity-70">{{ option.color }}</span>
             <div
-              class="ptw-w-4 ptw-h-4 ptw-rounded-full ptw-border ptw-border-black/20 dark:ptw-border-white/20 ptw-flex ptw-items-center ptw-justify-center ptw-text-xs"
+              class="htw-w-4 htw-h-4 htw-rounded-full htw-border htw-border-black/20 dark:htw-border-white/20 htw-flex htw-items-center htw-justify-center htw-text-xs"
               :style="{
                 backgroundColor: option.color,
                 color: option.contrastColor,

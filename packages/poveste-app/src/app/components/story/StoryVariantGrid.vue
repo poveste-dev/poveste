@@ -2,10 +2,6 @@
 import { useResizeObserver } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStoryStore } from '../../stores/story'
-import { isMobile } from '../../util/responsive'
-import DevOnlyToolbarOpenInEditor from '../toolbar/DevOnlyToolbarOpenInEditor.vue'
-import ToolbarBackground from '../toolbar/ToolbarBackground.vue'
-import ToolbarTextDirection from '../toolbar/ToolbarTextDirection.vue'
 import StoryVariantGridItem from './StoryVariantGridItem.vue'
 
 const storyStore = useStoryStore()
@@ -119,37 +115,22 @@ const columnCount = computed(() => Math.min(storyStore.currentStory.variants.len
 </script>
 
 <template>
-  <div class="poveste-story-variant-grid ptw-flex ptw-flex-col ptw-items-stretch ptw-h-full __poveste-pane-shadow-from-right">
-    <!-- Toolbar -->
-    <div
-      v-if="!isMobile"
-      class="ptw-flex-none ptw-flex ptw-items-center ptw-justify-end ptw-h-8 ptw-mx-2 ptw-mt-1"
-    >
-      <ToolbarBackground />
-      <ToolbarTextDirection />
-
-      <DevOnlyToolbarOpenInEditor
-        v-if="__POVESTE_DEV__"
-        :file="storyStore.currentStory.file?.filePath"
-        tooltip="Edit story in editor"
-      />
-    </div>
-
+  <div class="histoire-story-variant-grid htw-flex htw-flex-col htw-items-stretch htw-h-full __histoire-pane-shadow-from-right">
     <div
       ref="el"
-      class="ptw-overflow-y-auto ptw-flex ptw-flex-1"
+      class="htw-overflow-y-auto htw-flex htw-flex-1"
       @scroll="updateMaxCount()"
     >
-      <div class="ptw-flex ptw-w-0 ptw-flex-1 ptw-mx-4">
+      <div class="htw-flex htw-w-0 htw-flex-1 htw-mx-4">
         <div
-          class="ptw-m-auto"
+          class="htw-m-auto"
           :style="{
             minHeight: `${(storyStore.currentStory.variants.length / countPerRow) * (maxItemHeight + gap) - gap}px`,
           }"
         >
           <div
             ref="gridEl"
-            class="ptw-grid ptw-gap-4 ptw-my-4"
+            class="htw-grid htw-gap-4 htw-my-4"
             :style="{
               gridTemplateColumns: `repeat(${columnCount}, ${gridColumnWidth}px)`,
             }"

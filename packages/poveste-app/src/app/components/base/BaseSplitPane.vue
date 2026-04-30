@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 
-const SAVE_PREFIX = '__poveste'
+const SAVE_PREFIX = '__histoire'
 
 const props = defineProps({
   orientation: {
@@ -44,6 +44,11 @@ const props = defineProps({
   fixed: {
     type: Boolean,
     default: false,
+  },
+
+  showDivider: {
+    type: Boolean,
+    default: true,
   },
 })
 
@@ -165,42 +170,42 @@ onUnmounted(() => {
 <template>
   <div
     ref="el"
-    class="poveste-base-split-pane ptw-flex ptw-h-full ptw-isolate ptw-overflow-auto"
+    class="histoire-base-split-pane htw-flex htw-h-full htw-isolate htw-overflow-auto"
     :class="{
-      'ptw-flex-col': orientation === 'portrait',
-      'ptw-cursor-ew-resize': dragging && orientation === 'landscape',
-      'ptw-cursor-ns-resize': dragging && orientation === 'portrait',
+      'htw-flex-col': orientation === 'portrait',
+      'htw-cursor-ew-resize': dragging && orientation === 'landscape',
+      'htw-cursor-ns-resize': dragging && orientation === 'portrait',
       [orientation]: true,
     }"
   >
     <div
-      class="ptw-relative ptw-top-0 ptw-left-0 ptw-z-20"
+      class="htw-relative htw-top-0 htw-left-0 htw-z-20"
       :class="{
-        'ptw-pointer-events-none': dragging,
-        'ptw-border-r ptw-border-gray-300/30 dark:ptw-border-gray-800': orientation === 'landscape',
-        'ptw-flex-none': fixed,
+        'htw-pointer-events-none': dragging,
+        'htw-border-r htw-border-gray-300/30 dark:htw-border-gray-800': orientation === 'landscape' && showDivider,
+        'htw-flex-none': fixed,
       }"
       :style="leftStyle"
     >
       <slot name="first" />
 
       <div
-        class="dragger ptw-absolute ptw-z-100 hover:ptw-bg-primary-500/50 ptw-transition-colors ptw-duration-150 ptw-delay-150"
+        class="dragger htw-absolute htw-z-100 hover:htw-bg-primary-500/50 htw-transition-colors htw-duration-150 htw-delay-150"
         :class="{
-          'ptw-top-0 ptw-bottom-0 ptw-cursor-ew-resize': orientation === 'landscape',
-          'ptw-left-0 ptw-right-0 ptw-cursor-ns-resize': orientation === 'portrait',
+          'htw-top-0 htw-bottom-0 htw-cursor-ew-resize': orientation === 'landscape',
+          'htw-left-0 htw-right-0 htw-cursor-ns-resize': orientation === 'portrait',
           [`dragger-offset-${draggerOffset}`]: true,
-          'ptw-bg-primary-500/25': dragging,
+          'htw-bg-primary-500/25': dragging,
         }"
         @mousedown.prevent="dragStart"
       />
     </div>
     <div
-      class="ptw-relative ptw-bottom-0 ptw-right-0"
+      class="htw-relative htw-bottom-0 htw-right-0"
       :class="{
-        'ptw-pointer-events-none': dragging,
-        'ptw-border-t ptw-border-gray-300/30 dark:ptw-border-gray-800': orientation === 'portrait',
-        'ptw-flex-1': fixed,
+        'htw-pointer-events-none': dragging,
+        'htw-border-t htw-border-gray-300/30 dark:htw-border-gray-800': orientation === 'portrait' && showDivider,
+        'htw-flex-1': fixed,
       }"
       :style="rightStyle"
     >

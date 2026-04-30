@@ -1,17 +1,19 @@
 <script lang="ts">
 export default {
-  name: 'PovesteApp',
+  name: 'HistoireApp',
 }
 </script>
 
 <script lang="ts" setup>
 import type { StoryFile, Tree } from './types'
 import { useTitle } from '@vueuse/core'
-import { onUpdate, files as rawFiles, tree as rawTree } from 'virtual:$poveste-stories'
+import { onUpdate, files as rawFiles, tree as rawTree } from 'virtual:$histoire-stories'
 import { computed, onMounted, ref, watch } from 'vue'
+import AppActions from './components/app/AppActions.vue'
 import AppHeader from './components/app/AppHeader.vue'
 import Breadcrumb from './components/app/Breadcrumb.vue'
 import InitialLoading from './components/app/InitialLoading.vue'
+import TopBar from './components/app/TopBar.vue'
 import BaseSplitPane from './components/base/BaseSplitPane.vue'
 import CommandPromptsModal from './components/command/CommandPromptsModal.vue'
 import LayoutModal from './components/layout/LayoutModal.vue'
@@ -20,9 +22,8 @@ import GenericMountStory from './components/story/GenericMountStory.vue'
 import StoryList from './components/tree/StoryList.vue'
 import { useCommandStore } from './stores/command'
 import { useLayoutStore } from './stores/layout'
-import { useLayoutStore } from './stores/layout'
 import { useStoryStore } from './stores/story'
-import { povesteConfig } from './util/config'
+import { histoireConfig } from './util/config'
 import { onKeyboardShortcut } from './util/keyboard'
 import { mapFile } from './util/mapping'
 import { isMobile } from './util/responsive'
@@ -59,9 +60,9 @@ useTitle(computed(() => {
     if (storyStore.currentVariant) {
       title += ` › ${storyStore.currentVariant.title}`
     }
-    return `${title} | ${povesteConfig.theme.title}`
+    return `${title} | ${histoireConfig.theme.title}`
   }
-  return povesteConfig.theme.title
+  return histoireConfig.theme.title
 }))
 
 // Search
@@ -93,7 +94,7 @@ const loading = ref(false)
 
 if (import.meta.hot && !rawFiles.length) {
   loading.value = true
-  import.meta.hot.on('poveste:all-stories-loaded', () => {
+  import.meta.hot.on('histoire:all-stories-loaded', () => {
     loading.value = false
   })
 }
@@ -108,10 +109,10 @@ const layoutStore = useLayoutStore()
 </script>
 
 <template>
-  <div class="poveste-app-root ptw-h-full">
+  <div class="histoire-app-root htw-h-full">
     <div
       v-if="storyStore.currentStory"
-      class="poveste-app ptw-hidden"
+      class="histoire-app htw-hidden"
     >
       <GenericMountStory
         :key="storyStore.currentStory.id"
@@ -120,7 +121,7 @@ const layoutStore = useLayoutStore()
     </div>
 
     <div
-      class="ptw-h-screen ptw-bg-white dark:ptw-bg-gray-700 dark:ptw-text-gray-100"
+      class="htw-h-screen htw-bg-gray-100 dark:htw-bg-gray-750 dark:htw-text-gray-100"
       :style="{
         // Prevent flash of content
         opacity: mounted ? 1 : 0,
@@ -128,52 +129,61 @@ const layoutStore = useLayoutStore()
     >
       <div
         v-if="isMobile"
-        class="ptw-h-full ptw-flex ptw-flex-col ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-800"
+        class="htw-h-full htw-flex htw-flex-col htw-divide-y htw-divide-gray-100 dark:htw-divide-gray-800"
       >
-        <AppHeader @search="isSearchOpen = true" />
+        <div class="htw-flex htw-items-center htw-gap-2 htw-pr-4">
+          <AppHeader class="htw-flex-1" />
+          <AppActions
+            class="htw-flex-none"
+            @layout="isLayoutOpen = true"
+            @search="isSearchOpen = true"
+          />
+        </div>
         <Breadcrumb
           :tree="tree"
           :stories="stories"
         />
-        <RouterView class="ptw-grow" />
+        <RouterView class="htw-grow" />
       </div>
 
+      <BaseSplitPane
+        v-else-if="layoutStore.settings.storyListVisible"
+        save-id="main-horiz"
+        :min="5"
+        :max="50"
+        :default-split="15"
+        class="htw-h-full"
+      >
+        <template #first>
+          <div class="htw-flex htw-flex-col htw-h-full htw-bg-gray-100 dark:htw-bg-gray-750 __histoire-pane-shadow-from-right">
+            <AppHeader class="htw-flex-none" />
+            <StoryList
+              :tree="tree"
+              :stories="stories"
+              class="htw-flex-1"
+            />
+          </div>
+        </template>
+
+        <template #last>
+          <div class="htw-flex htw-flex-col htw-h-full">
+            <TopBar
+              @layout="isLayoutOpen = true"
+              @search="isSearchOpen = true"
+            />
+            <RouterView class="htw-flex-1 htw-min-h-0" />
+          </div>
+        </template>
+      </BaseSplitPane>
       <div
         v-else
-        class="ptw-h-full ptw-flex ptw-flex-col"
+        class="htw-h-full htw-flex htw-flex-col"
       >
-        <AppHeader
-          class="ptw-flex-none"
+        <TopBar
           @layout="isLayoutOpen = true"
           @search="isSearchOpen = true"
         />
-
-        <BaseSplitPane
-          v-if="layoutStore.settings.storyListVisible"
-          save-id="main-horiz"
-          :min="5"
-          :max="50"
-          :default-split="15"
-          class="ptw-flex-1 ptw-min-h-0"
-        >
-          <template #first>
-            <div class="ptw-flex ptw-flex-col ptw-h-full ptw-bg-gray-100 dark:ptw-bg-gray-750 __poveste-pane-shadow-from-right">
-              <StoryList
-                :tree="tree"
-                :stories="stories"
-                class="ptw-flex-1"
-              />
-            </div>
-          </template>
-
-          <template #last>
-            <RouterView />
-          </template>
-        </BaseSplitPane>
-        <RouterView
-          v-else
-          class="ptw-flex-1 ptw-min-h-0"
-        />
+        <RouterView class="htw-flex-1 htw-min-h-0" />
       </div>
 
       <LayoutModal
@@ -189,13 +199,13 @@ const layoutStore = useLayoutStore()
       />
 
       <CommandPromptsModal
-        v-if="__POVESTE_DEV__"
+        v-if="__HISTOIRE_DEV__"
         :shown="commandStore.showPromptsModal"
         @close="commandStore.showPromptsModal = false"
       />
     </div>
 
-    <transition name="__poveste-fade">
+    <transition name="__histoire-fade">
       <InitialLoading
         v-if="loading"
       />
