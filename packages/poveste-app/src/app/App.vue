@@ -95,78 +95,80 @@ const commandStore = useCommandStore()
 </script>
 
 <template>
-  <div
-    v-if="storyStore.currentStory"
-    class="poveste-app ptw-hidden"
-  >
-    <GenericMountStory
-      :key="storyStore.currentStory.id"
-      :story="storyStore.currentStory"
-    />
-  </div>
-
-  <div
-    class="ptw-h-screen ptw-bg-white dark:ptw-bg-gray-700 dark:ptw-text-gray-100"
-    :style="{
-      // Prevent flash of content
-      opacity: mounted ? 1 : 0,
-    }"
-  >
+  <div class="poveste-app-root ptw-h-full">
     <div
-      v-if="isMobile"
-      class="ptw-h-full ptw-flex ptw-flex-col ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-800"
+      v-if="storyStore.currentStory"
+      class="poveste-app ptw-hidden"
     >
-      <AppHeader @search="isSearchOpen = true" />
-      <Breadcrumb
-        :tree="tree"
-        :stories="stories"
+      <GenericMountStory
+        :key="storyStore.currentStory.id"
+        :story="storyStore.currentStory"
       />
-      <RouterView class="ptw-grow" />
     </div>
 
-    <BaseSplitPane
-      v-else
-      save-id="main-horiz"
-      :min="5"
-      :max="50"
-      :default-split="15"
-      class="ptw-h-full"
+    <div
+      class="ptw-h-screen ptw-bg-white dark:ptw-bg-gray-700 dark:ptw-text-gray-100"
+      :style="{
+        // Prevent flash of content
+        opacity: mounted ? 1 : 0,
+      }"
     >
-      <template #first>
-        <div class="ptw-flex ptw-flex-col ptw-h-full ptw-bg-gray-100 dark:ptw-bg-gray-750 __poveste-pane-shadow-from-right">
-          <AppHeader
-            class="ptw-flex-none"
-            @search="isSearchOpen = true"
-          />
-          <StoryList
-            :tree="tree"
-            :stories="stories"
-            class="ptw-flex-1"
-          />
-        </div>
-      </template>
+      <div
+        v-if="isMobile"
+        class="ptw-h-full ptw-flex ptw-flex-col ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-800"
+      >
+        <AppHeader @search="isSearchOpen = true" />
+        <Breadcrumb
+          :tree="tree"
+          :stories="stories"
+        />
+        <RouterView class="ptw-grow" />
+      </div>
 
-      <template #last>
-        <RouterView />
-      </template>
-    </BaseSplitPane>
+      <BaseSplitPane
+        v-else
+        save-id="main-horiz"
+        :min="5"
+        :max="50"
+        :default-split="15"
+        class="ptw-h-full"
+      >
+        <template #first>
+          <div class="ptw-flex ptw-flex-col ptw-h-full ptw-bg-gray-100 dark:ptw-bg-gray-750 __poveste-pane-shadow-from-right">
+            <AppHeader
+              class="ptw-flex-none"
+              @search="isSearchOpen = true"
+            />
+            <StoryList
+              :tree="tree"
+              :stories="stories"
+              class="ptw-flex-1"
+            />
+          </div>
+        </template>
 
-    <SearchModal
-      v-if="loadSearch"
-      :shown="isSearchOpen"
-      @close="isSearchOpen = false"
-    />
+        <template #last>
+          <RouterView />
+        </template>
+      </BaseSplitPane>
 
-    <CommandPromptsModal
-      v-if="__POVESTE_DEV__"
-      :shown="commandStore.showPromptsModal"
-      @close="commandStore.showPromptsModal = false"
-    />
+      <SearchModal
+        v-if="loadSearch"
+        :shown="isSearchOpen"
+        @close="isSearchOpen = false"
+      />
+
+      <CommandPromptsModal
+        v-if="__POVESTE_DEV__"
+        :shown="commandStore.showPromptsModal"
+        @close="commandStore.showPromptsModal = false"
+      />
+    </div>
+
+    <transition name="__poveste-fade">
+      <InitialLoading
+        v-if="loading"
+      />
+    </transition>
   </div>
-
-  <transition name="__poveste-fade">
-    <InitialLoading
-      v-if="loading"
-    />
-  </transition>
 </template>
