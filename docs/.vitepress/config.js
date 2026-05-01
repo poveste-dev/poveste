@@ -67,6 +67,10 @@ module.exports = {
                 link: '/guide/config',
               },
               {
+                text: 'Styles & CSS',
+                link: '/guide/css',
+              },
+              {
                 text: 'Plugins',
                 link: '/guide/plugins/official',
               },
@@ -261,6 +265,10 @@ module.exports = {
             {
               text: 'Configuration',
               link: '/guide/config',
+            },
+            {
+              text: 'Styles & CSS',
+              link: '/guide/css',
             },
           ],
         },
