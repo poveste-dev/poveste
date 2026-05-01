@@ -360,6 +360,9 @@ importers:
       jsdom:
         specifier: ^27.4.0
         version: 27.4.0(supports-color@10.2.2)
+      lightningcss:
+        specifier: ^1.32.0
+        version: 1.32.0
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.0
