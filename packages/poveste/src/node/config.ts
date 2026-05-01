@@ -38,6 +38,7 @@ export function getDefaultConfig(): PovesteConfig {
       '**/dist/**',
     ],
     supportMatch: [],
+    isolateStyles: true,
     tree: {
       file: 'title',
       order: 'asc',
