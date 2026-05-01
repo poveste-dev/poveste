@@ -15,6 +15,7 @@ import {
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { notifyStoryChange } from './stories.js'
+import { globalStylesPlugin } from './style-isolation/index.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -290,6 +291,10 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   })
 
   plugins.push(createVirtualFilesPlugin(ctx, isServer))
+  plugins.push(globalStylesPlugin({
+    files: ctx.config.globalStyles ?? [],
+    rootDir: ctx.root,
+  }))
 
   // Replace dev flag
   const flags = {
