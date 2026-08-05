@@ -9,7 +9,7 @@ import type {
 import type { ResolvedConfig } from 'vite'
 import { resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
-import { mergeHistoireViteConfig } from './vite.js'
+import { mergePovesteViteConfig } from './vite.js'
 
 export interface Context {
   root: string
@@ -45,7 +45,7 @@ export async function createContext(options: CreateContextOptions): Promise<Cont
     registeredCommands: [],
   }
 
-  ctx.resolvedViteConfig = await mergeHistoireViteConfig(viteConfig as unknown, ctx)
+  ctx.resolvedViteConfig = await mergePovesteViteConfig(viteConfig as unknown, ctx)
 
   await processConfig(ctx)
 

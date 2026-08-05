@@ -18,7 +18,7 @@ import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
 
-export async function mergeHistoireViteConfig(viteConfig: InlineConfig, ctx: Context) {
+export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Context) {
   if (ctx.config.vite) {
     const command = ctx.mode === 'dev' ? 'serve' : 'build'
     const overrides = typeof ctx.config.vite === 'function'
@@ -64,7 +64,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   const userViteConfigFile = await loadViteConfigFromFile({ command: ctx.mode === 'dev' ? 'serve' : 'build', mode: ctx.mode })
   const userViteConfig = mergeViteConfig(userViteConfigFile?.config ?? {}, { server: { port: 6006 } })
 
-  const inlineConfig = await mergeHistoireViteConfig(userViteConfig, ctx)
+  const inlineConfig = await mergePovesteViteConfig(userViteConfig, ctx)
   const plugins: VitePlugin[] = []
   const supportPluginAllowPaths = ctx.supportPlugins.flatMap((plugin) => {
     const paths = [ctx.root, import.meta.url]
