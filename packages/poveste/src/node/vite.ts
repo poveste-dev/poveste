@@ -4,6 +4,7 @@ import type {
   Plugin as VitePlugin,
 } from 'vite'
 import type { Context } from './context.js'
+import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { lookup as lookupMime } from 'mrmime'
 import { dirname, join, relative } from 'pathe'
@@ -85,14 +86,41 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     return Array.from(result)
   })
 
+  // Mirror how Vite resolves `optimizeDeps.include`: walk `node_modules` up from
+  // the project root. Deliberately not `require.resolve(dep, { paths: [root] })`
+  // — Node always folds NODE_PATH into resolution even when `paths` is given, and
+  // pnpm's bin shims point NODE_PATH at the hidden `.pnpm/node_modules` store, so
+  // every package would look reachable from every root. Vite ignores NODE_PATH.
+  function isResolvableFromRoot(dep: string): boolean {
+    let dir = ctx.root
+    while (true) {
+      if (existsSync(join(dir, 'node_modules', dep, 'package.json'))) {
+        return true
+      }
+      const parent = dirname(dir)
+      if (parent === dir) {
+        return false
+      }
+      dir = parent
+    }
+  }
+
   function optimizeDeps(deps: string[]): string[] {
     const result = []
     for (const dep of deps) {
-      result.push(dep)
+      // The bare specifier is what hoisted installs (npm, yarn, pnpm with
+      // `shamefully-hoist`) need — see histoire@a1014ab. Under strict pnpm it is
+      // unreachable from the root and Vite only logs "Failed to resolve
+      // dependency", so emit it just when the root can actually resolve it.
+      if (isResolvableFromRoot(dep)) {
+        result.push(dep)
+      }
       try {
+        // Absolute path, valid regardless of layout — this is what makes the
+        // dep optimizable under strict pnpm.
         result.push(dirname(require.resolve(`${dep}/package.json`)))
       }
-      catch (e) {
+      catch {
         // Noop
       }
     }
@@ -125,9 +153,6 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           ],
           include: optimizeDeps([
             'shiki',
-            // Shiki dependencies
-            'vscode-oniguruma',
-            'vscode-textmate',
           ]),
           exclude: [
             'poveste',
