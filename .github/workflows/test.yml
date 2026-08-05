@@ -48,3 +48,6 @@ jobs:
 
       - name: Run tests
         run: pnpm run test
+
+      - name: Smoke test (pack + install + build)
+        run: pnpm run test:smoke

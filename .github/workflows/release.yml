@@ -31,6 +31,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Gate the publish: pack the tarballs, install them into a clean project
+      # with npm, and run a real `poveste build`. Catches "works in the pnpm
+      # workspace, broken for consumers" bugs before they ship.
+      - name: Smoke test (pack + install + build)
+        run: pnpm run test:smoke
+
       - name: Create GitHub release
         run: npx changelogithub
         continue-on-error: true
