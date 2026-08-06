@@ -14,7 +14,7 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
   const scopeRoot = opts.scopeRoot ?? STORY_SCOPE_ROOT
   const mainEntryName = opts.mainEntryName ?? 'bundle-main'
   return {
-    name: 'histoire:style-isolation:entry-css-merger',
+    name: 'poveste:style-isolation:entry-css-merger',
     apply: 'build',
     enforce: 'post',
     generateBundle(_options, bundle: OutputBundle) {

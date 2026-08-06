@@ -1,9 +1,9 @@
 import type { Plugin as VitePlugin } from 'vite'
-import { STORY_SCOPE_ROOT } from './selectors.js'
+import { GLOBAL_LAYER_QUERY, STORY_SCOPE_ROOT } from './selectors.js'
 import { wrapUserCss } from './transforms.js'
 
-export const USER_CSS_MARK_START = '/*__HST_USER_CSS_START__*/'
-export const USER_CSS_MARK_END = '/*__HST_USER_CSS_END__*/'
+export const USER_CSS_MARK_START = '/*__PVT_USER_CSS_START__*/'
+export const USER_CSS_MARK_END = '/*__PVT_USER_CSS_END__*/'
 
 export interface UserCssScopePluginOptions {
   enabled: boolean
@@ -18,13 +18,13 @@ export interface UserCssScopePluginOptions {
 export function userCssScopePlugin(opts: UserCssScopePluginOptions): VitePlugin {
   const mode = opts.mode ?? 'mark'
   return {
-    name: 'histoire:style-isolation:user-css',
+    name: 'poveste:style-isolation:user-css',
     transform(code, id) {
       if (!opts.enabled) return null
       const q = id.indexOf('?')
       const path = q === -1 ? id : id.slice(0, q)
       const query = q === -1 ? '' : id.slice(q + 1)
-      // Cheap substring rejection of all histoire-internal CSS first.
+      // Cheap substring rejection of all poveste-internal CSS first.
       if (isChromePath(path)) return null
       if (!isCssPath(path, query)) return null
       if (hasGlobalQuery(query)) return null
@@ -51,7 +51,12 @@ function isCssPath(path: string, query: string): boolean {
 function hasGlobalQuery(query: string): boolean {
   if (!query) return false
   const parts = query.split('&')
-  return parts.includes('global') || parts.some(p => p.startsWith('global='))
+  // `?global` is the per-import escape hatch; the `globalStyles` config marks
+  // its files with `?poveste-global-layer` and they get a cascade layer of
+  // their own in global-styles.ts.
+  return parts.includes('global')
+    || parts.some(p => p.startsWith('global='))
+    || parts.includes(GLOBAL_LAYER_QUERY)
 }
 
 export function isChromeCss(id: string): boolean {
@@ -60,11 +65,11 @@ export function isChromeCss(id: string): boolean {
 }
 
 function isChromePath(path: string): boolean {
-  return path.includes('@histoire/app/')
-    || path.includes('histoire-app/')
-    || path.includes('@histoire/controls/')
-    || path.includes('histoire-controls/')
-    || path.includes('@histoire/vendors/')
-    || path.includes('histoire-vendors/')
-    || path.includes('virtual:$histoire-')
+  return path.includes('@poveste/app/')
+    || path.includes('poveste-app/')
+    || path.includes('@poveste/controls/')
+    || path.includes('poveste-controls/')
+    || path.includes('@poveste/vendors/')
+    || path.includes('poveste-vendors/')
+    || path.includes('virtual:$poveste-')
 }

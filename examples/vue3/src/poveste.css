@@ -8,7 +8,7 @@ html.ptw-dark {
 }
 
 /*
- * Adversarial rules that would normally bleed into Histoire's chrome
+ * Adversarial rules that would normally bleed into Poveste's chrome
  * without isolation; they should be scoped to story containers only.
  */
 :root {

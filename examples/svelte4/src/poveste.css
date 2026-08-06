@@ -1,6 +1,6 @@
 /*
  * Adversarial rules to verify CSS isolation: without isolation these
- * would bleed into Histoire's chrome.
+ * would bleed into Poveste's chrome.
  */
 :root {
   --user-accent: deeppink;

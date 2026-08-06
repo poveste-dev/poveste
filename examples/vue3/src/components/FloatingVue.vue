@@ -12,7 +12,7 @@ import 'floating-vue/dist/style.css'
       <template #popper>
         <div class="user-popper">
           <p>This dropdown is owned by the user.</p>
-          <p>Background and font should follow user theme, not Histoire's.</p>
+          <p>Background and font should follow user theme, not Poveste's.</p>
         </div>
       </template>
     </Dropdown>
@@ -21,7 +21,7 @@ import 'floating-vue/dist/style.css'
 
 <style>
 /*
- * User-side floating-vue restyling. Histoire's own popovers (toolbar menus)
+ * User-side floating-vue restyling. Poveste's own popovers (toolbar menus)
  * use the same library — these rules must NOT leak into them.
  */
 .v-popper--theme-dropdown .v-popper__inner {

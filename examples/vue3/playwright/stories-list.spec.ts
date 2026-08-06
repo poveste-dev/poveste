@@ -10,7 +10,8 @@ test.describe('stories list', () => {
     await expect(page.getByTestId('story-list-item').filter({ hasText: '🐱 Meow' })).toBeVisible()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()
-    await expect(page.getByTestId('story-list-folder')).toHaveCount(2)
+    // 'Style Isolation' folder comes from the CSS isolation regression stories.
+    await expect(page.getByTestId('story-list-folder')).toHaveCount(3)
   })
 
   test('toggles folder visibility', async ({ page }) => {

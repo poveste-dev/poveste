@@ -54,27 +54,27 @@ describe('entry-css-merger', () => {
   it('wraps marked user CSS in @scope on the main entry when isolation is enabled', async () => {
     const plugin = entryCssMergerPlugin({
       isolateStyles: true,
-      scopeRoot: '.__histoire-render-story',
+      scopeRoot: '.__poveste-render-story',
       mainEntryName: 'bundle-main',
     })
     const bundle: OutputBundle = {
       'bundle-main.js': fakeChunk('bundle-main', ['user.css', 'chrome.css']),
       'user.css': fakeAsset('user.css', mark('body { color: red }')),
-      'chrome.css': fakeAsset('chrome.css', '@scope (.histoire-app-root) { .x {} }'),
+      'chrome.css': fakeAsset('chrome.css', '@scope (.poveste-app-root) { .x {} }'),
     }
     await (plugin.generateBundle as any).call({ emitFile: () => '' }, {}, bundle)
 
     const main = Object.values(bundle).find(a => a.type === 'asset' && a.fileName === 'bundle-main.css') as any
-    expect(main.source).toContain('@scope (.__histoire-render-story)')
+    expect(main.source).toContain('@scope (.__poveste-render-story)')
     expect(main.source).toContain('color: red')
-    expect(main.source).toContain('@scope (.histoire-app-root)')
+    expect(main.source).toContain('@scope (.poveste-app-root)')
     expect(main.source).not.toContain(USER_CSS_MARK_START)
   })
 
   it('strips markers without wrapping on the sandbox entry', async () => {
     const plugin = entryCssMergerPlugin({
       isolateStyles: true,
-      scopeRoot: '.__histoire-render-story',
+      scopeRoot: '.__poveste-render-story',
       mainEntryName: 'bundle-main',
     })
     const bundle: OutputBundle = {
@@ -110,7 +110,7 @@ describe('entry-css-merger', () => {
   it('strips markers without wrapping when isolation is disabled', async () => {
     const plugin = entryCssMergerPlugin({
       isolateStyles: false,
-      scopeRoot: '.__histoire-render-story',
+      scopeRoot: '.__poveste-render-story',
       mainEntryName: 'bundle-main',
     })
     const bundle: OutputBundle = {

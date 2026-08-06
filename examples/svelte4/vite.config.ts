@@ -12,6 +12,7 @@ export default defineConfig({
     plugins: [
       HstSvelte(),
     ],
+    setupFile: './poveste.setup.ts',
     tree: {
       groups: [
         {

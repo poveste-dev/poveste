@@ -44,10 +44,16 @@ test.describe('background color', () => {
     const buttons = page.getByTestId('background-popper').locator('> button')
     await expect(buttons).toHaveCount(presets.length)
 
+    // With CSS isolation on, each grid item renders in its own sandbox iframe,
+    // so the story markup lives in the frame and the item contributes its own
+    // preview background element on top of the grid-level one.
+    const gridItemBg = page.getByTestId('responsive-preview-bg').first()
+    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]').first()
+
     for (let i = 0; i < presets.length; i++) {
       await buttons.nth(i).click()
-      await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', presets[i].bg)
-      await expect(page.locator('.poveste-generic-render-story .text')).toHaveCSS('color', presets[i].contrast)
+      await expect(gridItemBg).toHaveCSS('background-color', presets[i].bg)
+      await expect(iframe.locator('.poveste-generic-render-story .text')).toHaveCSS('color', presets[i].contrast)
       await page.getByTestId('toolbar-background').click()
     }
   })

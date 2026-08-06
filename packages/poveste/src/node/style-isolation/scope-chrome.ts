@@ -9,7 +9,7 @@ export interface ChromeCssScopePluginOptions {
 
 export function chromeCssScopePlugin(opts: ChromeCssScopePluginOptions): VitePlugin {
   return {
-    name: 'histoire:style-isolation:chrome-css',
+    name: 'poveste:style-isolation:chrome-css',
     transform(code, id) {
       if (!opts.enabled) return null
       if (isMainChromeCss(id)) {
@@ -29,7 +29,7 @@ export function chromeCssScopePlugin(opts: ChromeCssScopePluginOptions): VitePlu
 function isMainChromeCss(id: string): boolean {
   if (!isChromeCss(id)) return false
   const cleaned = id.split('?')[0]
-  return /(?:histoire-app|@histoire\/app)\/(?:dist\/style\.css|dist\/bundled\/[^/]+\.css|src\/app\/style\/main\.(?:css|pcss))$/.test(cleaned)
+  return /(?:poveste-app|@poveste\/app)\/(?:dist\/style\.css|dist\/bundled\/[^/]+\.css|src\/app\/style\/main\.(?:css|pcss))$/.test(cleaned)
 }
 
 // Stylesheets loaded into the sandbox iframe — must coexist with user CSS,
@@ -37,6 +37,6 @@ function isMainChromeCss(id: string): boolean {
 function isSandboxChromeCss(id: string): boolean {
   if (!isChromeCss(id)) return false
   const cleaned = id.split('?')[0]
-  return /\/(?:histoire-app|@histoire\/app)\/(?:dist|src)\/.*\bsandbox\.css$/.test(cleaned)
-    || /\/(?:histoire-controls|@histoire\/controls)\/dist\/index\.es\.css$/.test(cleaned)
+  return /\/(?:poveste-app|@poveste\/app)\/(?:dist|src)\/.*\bsandbox\.css$/.test(cleaned)
+    || /\/(?:poveste-controls|@poveste\/controls)\/dist\/index\.es\.css$/.test(cleaned)
 }

@@ -85,21 +85,21 @@ app.mount('#app')
 
 // Tagging body itself as a story render root puts components teleported to
 // document.body (floating-vue popper, dialogs) inside the user-CSS @scope
-// boundary applied in dev. The custom-controls class opts out of histoire-app
+// boundary applied in dev. The custom-controls class opts out of poveste-app
 // source-level rules that add overflow/min-height to the render root.
-document.body.classList.add('__histoire-render-story', '__histoire-render-custom-controls')
+document.body.classList.add('__poveste-render-story', '__poveste-render-custom-controls')
 
 let pendingFrame: number | null = null
 let lastReportedHeight = -1
 function reportHeight() {
   pendingFrame = null
-  const renderRoot = document.querySelector('.__histoire-render-story')
+  const renderRoot = document.querySelector('.__poveste-render-story')
   const h = renderRoot
     ? Math.ceil(renderRoot.getBoundingClientRect().height)
     : Math.ceil(document.body.scrollHeight)
   if (h === lastReportedHeight) return
   lastReportedHeight = h
-  // Same-origin: parent and iframe are both served by the histoire dev /
+  // Same-origin: parent and iframe are both served by the poveste dev /
   // build server, so scope the target rather than broadcasting.
   window.parent?.postMessage({ type: SANDBOX_HEIGHT, h }, window.location.origin)
 }

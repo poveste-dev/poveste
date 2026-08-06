@@ -14,10 +14,12 @@ test.describe('story render', () => {
 
   test('renders all variants in the grid', async ({ page }) => {
     await page.goto('/story/src-cars-story-svelte')
-    const sandboxes = page.getByTestId('sandbox-render')
-    await expect(sandboxes.getByText('🚗')).toBeVisible()
-    await expect(sandboxes.getByText('🏎️')).toBeVisible()
-    await expect(sandboxes.getByText('🚜')).toBeVisible()
+    // With CSS isolation on, each grid item renders in its own sandbox iframe.
+    const gridFrame = (index: number) =>
+      page.frameLocator('iframe[data-test-id="preview-iframe"]').nth(index)
+    await expect(gridFrame(0).getByText('🚗')).toBeVisible()
+    await expect(gridFrame(1).getByText('🏎️')).toBeVisible()
+    await expect(gridFrame(2).getByText('🚜')).toBeVisible()
   })
 })
 

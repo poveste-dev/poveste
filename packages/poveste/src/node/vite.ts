@@ -301,7 +301,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     rootDir: ctx.root,
   }))
 
-  // Dev-mode isolation. User CSS is wrapped in `@scope (.__histoire-render-story)`
+  // Dev-mode isolation. User CSS is wrapped in `@scope (.__poveste-render-story)`
   // so it cannot leak into chrome (popovers, tooltips, dropdowns). The build
   // path emits stronger per-bundle isolation that ALSO keeps the user's
   // teleporting-component styling working inside the sandbox iframe — in dev
