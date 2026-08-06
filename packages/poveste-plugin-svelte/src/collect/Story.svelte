@@ -9,8 +9,8 @@ export let icon = null
 export let iconColor = null
 export let docsOnly = false
 
-const addStory = getContext('__hstAddStory')
-const file = getContext('__hstStoryFile')
+const addStory = getContext('__pvtAddStory')
+const file = getContext('__pvtStoryFile')
 
 const story = {
   id: id ?? file.id,
@@ -25,8 +25,8 @@ const story = {
 
 addStory(story)
 
-setContext('__hstStory', story)
-setContext('__hstAddVariant', (variant) => {
+setContext('__pvtStory', story)
+setContext('__pvtAddVariant', (variant) => {
   story.variants.push(variant)
 })
 </script>

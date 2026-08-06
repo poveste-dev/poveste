@@ -192,7 +192,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             : {},
           '__HST_COLLECT__': isServer,
         },
-        cacheDir: isServer ? 'node_modules/.hst-vite-server' : 'node_modules/.hst-vite',
+        cacheDir: isServer ? 'node_modules/.pvt-vite-server' : 'node_modules/.pvt-vite',
       }
     },
 

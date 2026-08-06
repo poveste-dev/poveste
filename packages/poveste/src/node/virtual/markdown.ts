@@ -14,7 +14,7 @@ export const relativePath = ${JSON.stringify(relativePath)}
 if (import.meta.hot) {
   import.meta.hot.accept(newModule => {
     if (newModule) {
-      window.__hst_md_hmr(newModule)
+      window.__pvt_md_hmr(newModule)
     }
   })
 }`

@@ -24,10 +24,10 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
       },
     },
     context: new Map(Object.entries({
-      __hstAddStory(data) {
+      __pvtAddStory(data) {
         storyData.push(data)
       },
-      __hstStoryFile: file,
+      __pvtStoryFile: file,
     })),
   }, 'client')
   const app = mountedApp.app

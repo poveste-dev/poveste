@@ -6,8 +6,8 @@ export let id = null
 export let icon = null
 export let iconColor = null
 
-const story = getContext('__hstStory')
-const addVariant = getContext('__hstAddVariant')
+const story = getContext('__pvtStory')
+const addVariant = getContext('__pvtAddVariant')
 
 function generateId () {
   return `${story.id}-${story.variants.length}`

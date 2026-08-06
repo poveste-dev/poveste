@@ -3,10 +3,10 @@ import { omitInheritStoryProps } from '@poveste/shared'
 import { getContext, setContext } from 'svelte'
 import MountVariant from './MountVariant.svelte'
 
-const story = getContext('__hstStory')
+const story = getContext('__pvtStory')
 let index = { value: 0 }
-setContext('__hstIndex', index)
-setContext('__hstSlots', $$slots)
+setContext('__pvtIndex', index)
+setContext('__pvtSlots', $$slots)
 
 $: inheritedFromStory = Object.keys(story).filter(key => !omitInheritStoryProps.includes(key)).reduce((acc, key) => {
   acc[key] = story[key]

@@ -7,9 +7,9 @@ export let autoPropsDisabled = false
 export let setupApp = null
 export let implicit = false
 
-const story = getContext('__hstStory')
-const index = getContext('__hstIndex')
-const storySlots = getContext('__hstSlots')
+const story = getContext('__pvtStory')
+const index = getContext('__pvtIndex')
+const storySlots = getContext('__pvtSlots')
 
 const variant = story.variants[index.value]
 index.value++

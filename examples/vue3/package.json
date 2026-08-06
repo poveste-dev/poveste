@@ -4,7 +4,7 @@
   "version": "0.1.3",
   "private": true,
   "scripts": {
-    "dev:hst": "nodemon --watch ../../packages/poveste/dist --watch ../../packages/poveste-plugin-vue/dist --exec \"rm -rf ./node_modules/.hst* && POVESTE_DEV=true poveste dev\"",
+    "dev:pvt": "nodemon --watch ../../packages/poveste/dist --watch ../../packages/poveste-plugin-vue/dist --exec \"rm -rf ./node_modules/.pvt* && POVESTE_DEV=true poveste dev\"",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4567",

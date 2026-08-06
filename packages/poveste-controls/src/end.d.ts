@@ -2,7 +2,7 @@ import type { Ref } from '@poveste/vendors/vue'
 
 global {
   interface Window {
-    __hst_controls_dark: Ref<boolean>[]
-    __hst_controls_dark_ready: () => void
+    __pvt_controls_dark: Ref<boolean>[]
+    __pvt_controls_dark_ready: () => void
   }
 }

@@ -137,7 +137,7 @@ export default {
         getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`bg-\${key}\` : \`bg-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
-        class: '__hst-shade',
+        class: '__pvt-shade',
         style: {
           backgroundColor: color.replace('<alpha-value>', 1),
         },
@@ -160,7 +160,7 @@ export default {
         getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`text-\${key}\` : \`text-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
-        class: '__hst-shade __hst-text',
+        class: '__pvt-shade __pvt-text',
         style: {
           color: color.replace('<alpha-value>', 1),
         },
@@ -183,7 +183,7 @@ export default {
         getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`border-\${key}\` : \`border-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
-        class: '__hst-shade __hst-border',
+        class: '__pvt-shade __pvt-border',
         style: {
           borderColor: color.replace('<alpha-value>', 1),
         },
@@ -204,13 +204,13 @@ export default {
         tokens: config.theme.padding,
         getName: key => \`\${config.prefix ?? ''}p-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-padding',
+        class: '__pvt-padding',
         style: {
           padding: token.value,
         },
       }, [
         h('div', {
-          class: '__hst-padding-box',
+          class: '__pvt-padding-box',
         }),
       ]))),
     },
@@ -222,10 +222,10 @@ export default {
         tokens: config.theme.margin,
         getName: key => \`\${config.prefix ?? ''}m-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-margin',
+        class: '__pvt-margin',
       }, [
         h('div', {
-          class: '__hst-margin-box',
+          class: '__pvt-margin-box',
           style: {
             margin: token.value,
           },
@@ -240,7 +240,7 @@ export default {
         tokens: config.theme.fontSize,
         getName: key => \`\${config.prefix ?? ''}text-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontSize: Array.isArray(token.value) ? token.value[0] : token.value,
           ...(Array.isArray(token.value) && typeof token.value[1] === "object" ? token.value[1] : { lineHeight: token.value[1] })
@@ -263,7 +263,7 @@ export default {
         tokens: config.theme.fontWeight,
         getName: key => \`\${config.prefix ?? ''}font-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontWeight: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -292,7 +292,7 @@ export default {
         tokens: config.theme.fontFamily,
         getName: key => \`\${config.prefix ?? ''}font-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontFamily: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -321,7 +321,7 @@ export default {
         tokens: config.theme.letterSpacing,
         getName: key => \`\${config.prefix ?? ''}tracking-\${key}\`,
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           letterSpacing: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -373,7 +373,7 @@ export default {
         getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'drop-shadow' : \`drop-shadow-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-drop-shadow',
+        class: '__pvt-drop-shadow',
         style: {
           filter: \`\${(Array.isArray(token.value) ? token.value : [token.value]).map(v => \`drop-shadow(\${v})\`).join(' ')}\`,
         },
@@ -388,7 +388,7 @@ export default {
         getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'rounded' : \`rounded-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-border-radius',
+        class: '__pvt-border-radius',
         style: {
           borderRadius: token.value,
         },
@@ -403,7 +403,7 @@ export default {
         getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'border' : \`border-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-border-width',
+        class: '__pvt-border-width',
         style: {
           borderWidth: token.value,
         },
@@ -417,10 +417,10 @@ export default {
         tokens: config.theme.width,
         getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'w' : \`w-\${key}\`),
       }, ({ token }) => h('div', {
-        class: '__hst-width',
+        class: '__pvt-width',
       }, [
         h('div', {
-          class: '__hst-width-box',
+          class: '__pvt-width-box',
           style: {
             width: token.value,
           },
@@ -435,7 +435,7 @@ export default {
         tokens: config.theme.height,
         getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'h' : \`h-\${key}\`),
       }, ({ token }) => h('div', {
-        class: '__hst-height',
+        class: '__pvt-height',
         style: {
           height: token.value,
         },
@@ -451,86 +451,86 @@ export default {
 }`
 }
 
-const css = `.__hst-shade {
+const css = `.__pvt-shade {
   height: 80px;
   border-radius: 4px;
 }
 
-.__hst-text {
+.__pvt-text {
   font-size: 4rem;
   display: flex;
   align-items: flex-end;
 }
 
-.__hst-border {
+.__pvt-border {
   border-style: solid;
   border-width: 2px;
 }
 
-.__hst-padding {
+.__pvt-padding {
   background-color: rgb(113 113 122 / 0.1);
   width: min-content;
 }
 
-.__hst-margin {
+.__pvt-margin {
   border: dashed 1px rgb(113 113 122 / 0.5);
   width: min-content;
 }
 
-.__hst-padding-box,
-.__hst-margin-box {
+.__pvt-padding-box,
+.__pvt-margin-box {
   width: 5rem;
   height: 5rem;
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-padding,
-.__hst-padding-box,
-.__hst-margin,
-.__hst-margin-box,
-.__hst-drop-shadow {
+.__pvt-padding,
+.__pvt-padding-box,
+.__pvt-margin,
+.__pvt-margin-box,
+.__pvt-drop-shadow {
   border-radius: 4px;
 }
 
-.__hst-truncate {
+.__pvt-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.__hst-drop-shadow {
+.__pvt-drop-shadow {
   width: 8rem;
   height: 8rem;
   background: white;
   margin-bottom: 0.5rem;
 }
 
-.__hst-drop-shadow {
+.__pvt-drop-shadow {
   background: #4e4e57;
 }
 
-.__hst-border-radius {
+.__pvt-border-radius {
   width: 8rem;
   height: 8rem;
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-border-width {
+.__pvt-border-width {
   width: 8rem;
   height: 8rem;
   border-color: rgb(113 113 122 / 0.5);
   background-color: rgb(113 113 122 / 0.1);
 }
 
-.__hst-width {
+.__pvt-width {
   background-color: rgb(113 113 122 / 0.1);
 }
 
-.__hst-width-box,
-.__hst-height {
+.__pvt-width-box,
+.__pvt-height {
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-width-box {
+.__pvt-width-box {
   height: 5rem;
 }`

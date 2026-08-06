@@ -11,7 +11,7 @@ export const isDark = useDark({
 export const toggleDark = useToggle(isDark)
 
 function applyDarkToControls() {
-  window.__hst_controls_dark?.forEach((ref) => {
+  window.__pvt_controls_dark?.forEach((ref) => {
     ref.value = isDark.value
   })
 }
@@ -22,6 +22,6 @@ watch(isDark, () => {
   immediate: true,
 })
 
-window.__hst_controls_dark_ready = () => {
+window.__pvt_controls_dark_ready = () => {
   applyDarkToControls()
 }

@@ -54,7 +54,7 @@ export default _defineComponent({
           },
         },
         context: new Map(Object.entries({
-          __hstStory: props.story,
+          __pvtStory: props.story,
         })),
       }, 'client')
       app = mountedApp.app

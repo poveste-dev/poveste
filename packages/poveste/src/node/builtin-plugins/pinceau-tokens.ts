@@ -165,7 +165,7 @@ export default {
         getName: key => '@mq.' + key,
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-drop-shadow',
+        class: '__pvt-drop-shadow',
       }))),
     },
     {
@@ -178,7 +178,7 @@ export default {
         getName: shade => '{colors.' + key + '.' + shade + '}',
         search: search.value,
       }, ({ color}) => h('div', {
-        class: '__hst-shade',
+        class: '__pvt-shade',
         style: {
           backgroundColor: color,
         },
@@ -200,13 +200,13 @@ export default {
         tokens: flattenTokens(config.space),
         getName: key => '{space.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-spaces',
+        class: '__pvt-spaces',
         style: {
           padding: token.value,
         },
       }, [
         h('div', {
-          class: '__hst-spaces-box',
+          class: '__pvt-spaces-box',
         }),
       ]))),
     },
@@ -219,10 +219,10 @@ export default {
         tokens: flattenTokens(config.size),
         getName: key => '{size.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-width',
+        class: '__pvt-width',
       }, [
         h('div', {
-          class: '__hst-width-box',
+          class: '__pvt-width-box',
           style: {
             width: token.value,
           },
@@ -238,7 +238,7 @@ export default {
         tokens: flattenTokens(config.fontSizes),
         getName: key => '{fontSizes.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontSize: token.value,
         },
@@ -261,7 +261,7 @@ export default {
         tokens: flattenTokens(config.fontWeights),
         getName: key => '{fontWeights.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontWeight: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -291,7 +291,7 @@ export default {
         tokens: flattenTokens(config.fonts),
         getName: key => '{fonts.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           fontFamily: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -321,7 +321,7 @@ export default {
         tokens: flattenTokens(config.letterSpacings),
         getName: key => '{letterSpacings.' + key + '}',
       }, ({ token }) => h('div', {
-        class: '__hst-truncate',
+        class: '__pvt-truncate',
         style: {
           letterSpacing: token.value,
           fontSize: \`\${fontSize.value}px\`,
@@ -375,7 +375,7 @@ export default {
         getName: key => '{shadows.' + key + '}',
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-drop-shadow',
+        class: '__pvt-drop-shadow',
         style: 'box-shadow:' + token.value,
       }))),
     },
@@ -389,7 +389,7 @@ export default {
         getName: key => '{opacity.' + key + '}',
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-drop-shadow',
+        class: '__pvt-drop-shadow',
         style: 'opacity:' + token.value,
       }))),
     },
@@ -403,7 +403,7 @@ export default {
         getName: key => '{radii.' + key + '}',
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-border-radius',
+        class: '__pvt-border-radius',
         style: {
           borderRadius: token.value,
         },
@@ -419,7 +419,7 @@ export default {
         getName: key => '{borderWidths.' + key + '}',
         colSize: 180,
       }, ({ token }) => h('div', {
-        class: '__hst-border-width',
+        class: '__pvt-border-width',
         style: {
           borderWidth: token.value,
         },
@@ -436,86 +436,86 @@ export default {
 }`
 }
 
-const css = `.__hst-shade {
+const css = `.__pvt-shade {
   height: 80px;
   border-radius: 4px;
 }
 
-.__hst-text {
+.__pvt-text {
   font-size: 4rem;
   display: flex;
   align-items: flex-end;
 }
 
-.__hst-border {
+.__pvt-border {
   border-style: solid;
   border-width: 2px;
 }
 
-.__hst-spaces {
+.__pvt-spaces {
   background-color: rgb(113 113 122 / 0.1);
   width: min-content;
 }
 
-.__hst-margin {
+.__pvt-margin {
   border: dashed 1px rgb(113 113 122 / 0.5);
   width: min-content;
 }
 
-.__hst-spaces-box,
-.__hst-margin-box {
+.__pvt-spaces-box,
+.__pvt-margin-box {
   width: 5rem;
   height: 5rem;
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-spaces,
-.__hst-spaces-box,
-.__hst-margin,
-.__hst-margin-box,
-.__hst-drop-shadow {
+.__pvt-spaces,
+.__pvt-spaces-box,
+.__pvt-margin,
+.__pvt-margin-box,
+.__pvt-drop-shadow {
   border-radius: 4px;
 }
 
-.__hst-truncate {
+.__pvt-truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.__hst-drop-shadow {
+.__pvt-drop-shadow {
   width: 8rem;
   height: 8rem;
   background: white;
   margin-bottom: 0.5rem;
 }
 
-.__hst-drop-shadow {
+.__pvt-drop-shadow {
   background: #4e4e57;
 }
 
-.__hst-border-radius {
+.__pvt-border-radius {
   width: 8rem;
   height: 8rem;
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-border-width {
+.__pvt-border-width {
   width: 8rem;
   height: 8rem;
   border-color: rgb(113 113 122 / 0.5);
   background-color: rgb(113 113 122 / 0.1);
 }
 
-.__hst-width {
+.__pvt-width {
   background-color: rgb(113 113 122 / 0.1);
 }
 
-.__hst-width-box,
-.__hst-height {
+.__pvt-width-box,
+.__pvt-height {
   background-color: rgb(113 113 122 / 0.5);
 }
 
-.__hst-width-box {
+.__pvt-width-box {
   height: 5rem;
 }`

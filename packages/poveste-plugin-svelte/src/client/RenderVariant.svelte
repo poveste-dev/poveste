@@ -1,10 +1,10 @@
 <script>
 import { getContext } from 'svelte'
 
-const story = getContext('__hstStory')
-const currentVariant = getContext('__hstVariant')
-const slotName = getContext('__hstSlot')
-const index = getContext('__hstIndex')
+const story = getContext('__pvtStory')
+const currentVariant = getContext('__pvtVariant')
+const slotName = getContext('__pvtSlot')
+const index = getContext('__pvtIndex')
 
 const variant = story.variants[index.value]
 index.value++

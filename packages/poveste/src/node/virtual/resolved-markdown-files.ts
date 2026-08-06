@@ -6,8 +6,8 @@ export function resolvedMarkdownFiles(ctx: Context) {
   return `import { reactive } from ${process.env.POVESTE_DEV ? `'vue'` : getInjectedImport('@poveste/vendors/vue')}
 export const markdownFiles = reactive({${filesJs}})
 if (import.meta.hot) {
-  if (!window.__hst_md_hmr) {
-    window.__hst_md_hmr = (newModule) => {
+  if (!window.__pvt_md_hmr) {
+    window.__pvt_md_hmr = (newModule) => {
       markdownFiles[newModule.relativePath] = () => newModule
     }
   }
