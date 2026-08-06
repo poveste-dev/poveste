@@ -87,7 +87,7 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       }
 
       if (id === VirtualFiles.NOOP_ID) {
-        return VirtualFiles.noop()
+        return VirtualFiles.noop(ctx)
       }
 
       if (id === VirtualFiles.RESOLVED_CONFIG_ID) {

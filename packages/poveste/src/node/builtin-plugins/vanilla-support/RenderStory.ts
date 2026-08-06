@@ -1,6 +1,7 @@
 import type { Story, Variant } from '@poveste/shared'
 import type { PropType as _PropType } from '@poveste/vendors/vue'
-import type { App, MountApi, VanillaApi } from './types'
+import type { VanillaStorySetupHandler as _VanillaStorySetupHandler, App, MountApi, VanillaApi } from './types'
+import { getSetupHook as _getSetupHook } from '@poveste/shared'
 import {
   defineComponent as _defineComponent,
   h as _h,
@@ -68,16 +69,18 @@ export default _defineComponent({
         el: document.createElement('div'),
       }
 
-      if (typeof generatedSetup?.setupVanilla === 'function') {
-        await generatedSetup.setupVanilla({
+      const generatedSetupVanilla = _getSetupHook<_VanillaStorySetupHandler>(generatedSetup, 'setupVanilla')
+      if (generatedSetupVanilla) {
+        await generatedSetupVanilla({
           app,
           story: props.story,
           variant: props.variant,
         })
       }
 
-      if (typeof setup?.setupVanilla === 'function') {
-        await setup.setupVanilla({
+      const setupVanilla = _getSetupHook<_VanillaStorySetupHandler>(setup, 'setupVanilla')
+      if (setupVanilla) {
+        await setupVanilla({
           app,
           story: props.story,
           variant: props.variant,

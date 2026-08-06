@@ -1,6 +1,7 @@
 import type { Story, Variant } from '@poveste/shared'
 import type { App, Component, PropType, VNode } from 'vue'
 import type { Vue3StorySetupApi, Vue3StorySetupHandler } from '../../helpers.js'
+import { getSetupHook } from '@poveste/shared'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
@@ -122,18 +123,18 @@ export function createPreviewHost(options: PreviewHostOptions) {
 }
 
 async function runSetupHooks(setupApi: Vue3StorySetupApi) {
-  if (typeof generatedSetup?.setupVue3 === 'function') {
-    const setupFn = generatedSetup.setupVue3 as Vue3StorySetupHandler
-    await setupFn(setupApi)
+  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, 'setupVue3')
+  if (generatedSetupFn) {
+    await generatedSetupFn(setupApi)
   }
 
-  if (typeof setup?.setupVue3 === 'function') {
-    const setupFn = setup.setupVue3 as Vue3StorySetupHandler
+  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, 'setupVue3')
+  if (setupFn) {
     await setupFn(setupApi)
   }
 
   if (typeof setupApi.variant?.setupApp === 'function') {
-    const setupFn = setupApi.variant.setupApp as Vue3StorySetupHandler
-    await setupFn(setupApi)
+    const variantSetupFn = setupApi.variant.setupApp as Vue3StorySetupHandler
+    await variantSetupFn(setupApi)
   }
 }

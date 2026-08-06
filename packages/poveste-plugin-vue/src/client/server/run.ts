@@ -1,5 +1,6 @@
 import type { ServerRunPayload } from '@poveste/shared'
 import type { Vue3StorySetupApi, Vue3StorySetupHandler } from '../../helpers.js'
+import { getSetupHook } from '@poveste/shared'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
@@ -38,13 +39,13 @@ export async function run({ file, storyData, el }: ServerRunPayload) {
     addWrapper: () => { /* noop */ },
   }
 
-  if (typeof generatedSetup?.setupVue3 === 'function') {
-    const setupFn = generatedSetup.setupVue3 as Vue3StorySetupHandler
-    await setupFn(setupApi)
+  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, 'setupVue3')
+  if (generatedSetupFn) {
+    await generatedSetupFn(setupApi)
   }
 
-  if (typeof setup?.setupVue3 === 'function') {
-    const setupFn = setup.setupVue3 as Vue3StorySetupHandler
+  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, 'setupVue3')
+  if (setupFn) {
     await setupFn(setupApi)
   }
 

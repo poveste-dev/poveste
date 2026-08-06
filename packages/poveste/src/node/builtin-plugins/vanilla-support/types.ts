@@ -19,8 +19,10 @@ export interface VanillaApi {
   onMountControls?: (api: MountApi) => Awaitable<void>
 }
 
+export type VanillaStorySetupHandler = (payload: { app: App, story: Story, variant: Variant }) => unknown
+
 interface CommonProps {
-  setupApp?: (payload: { app: App, story: Story, variant: Variant }) => unknown
+  setupApp?: VanillaStorySetupHandler
 }
 
 export type StoryOptions = Omit<StoryProps, 'setupApp'> & CommonProps & ((VanillaApi & {

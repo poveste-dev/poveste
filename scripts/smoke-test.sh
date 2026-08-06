@@ -105,10 +105,19 @@ echo "▸ Installing tarballs with npm (clean, no workspace)"
 )
 
 echo "▸ Running poveste build"
-( cd "$APP" && npm run build )
+BUILD_LOG="$WORK/build.log"
+( cd "$APP" && npm run build ) 2>&1 | tee "$BUILD_LOG"
 
 OUT="$APP/.histoire/dist/index.html"
 [ -f "$APP/.poveste/dist/index.html" ] && OUT="$APP/.poveste/dist/index.html"
+
+# Rollup falls back to a runtime lookup for unresolved named imports, so the
+# build still succeeds — but the warnings are consumer-facing noise.
+if grep -q -a 'is not exported by' "$BUILD_LOG"; then
+  echo "❌ Smoke test FAILED — build emitted missing-export warnings:"
+  grep -B1 -a 'is not exported by' "$BUILD_LOG"
+  exit 1
+fi
 
 if [ -f "$OUT" ]; then
   echo "✅ Smoke test passed — built $OUT"
