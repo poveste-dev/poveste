@@ -8,12 +8,12 @@ defineProps<{
 </script>
 
 <template>
-  <div class="poveste-toolbar-title htw-flex htw-items-center htw-gap-1 htw-text-gray-500 htw-flex-1 htw-truncate htw-min-w-0">
+  <div class="poveste-toolbar-title ptw-flex ptw-items-center ptw-gap-1 ptw-text-gray-500 ptw-flex-1 ptw-truncate ptw-min-w-0">
     <Icon
       :icon="variant.icon ?? 'carbon:cube'"
-      class="htw-w-4 htw-h-4 htw-opacity-50"
+      class="ptw-w-4 ptw-h-4 ptw-opacity-50"
       :class="[
-        variant.iconColor ? 'bind-icon-color' : 'htw-text-gray-500',
+        variant.iconColor ? 'bind-icon-color' : 'ptw-text-gray-500',
       ]"
     />
     <span>{{ variant.title }}</span>

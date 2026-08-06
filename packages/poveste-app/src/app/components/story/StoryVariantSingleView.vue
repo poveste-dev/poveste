@@ -18,13 +18,13 @@ defineProps<{
 
 <template>
   <div
-    class="poveste-story-variant-single-view htw-h-full htw-flex htw-flex-col"
+    class="poveste-story-variant-single-view ptw-h-full ptw-flex ptw-flex-col"
     data-test-id="story-variant-single-view"
   >
     <!-- Toolbar -->
     <div
       v-if="!isMobile"
-      class="htw-flex-none htw-flex htw-items-center htw-h-8 -htw-mt-1"
+      class="ptw-flex-none ptw-flex ptw-items-center ptw-h-8 -ptw-mt-1"
     >
       <ToolbarTitle
         :variant="variant"

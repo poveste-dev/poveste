@@ -26,7 +26,7 @@ const tokens = {
       >
         <template #default="{ token }">
           <div
-            class="htw-w-32 htw-h-32 htw-bg-white dark:htw-bg-black htw-rounded htw-mb-2"
+            class="ptw-w-32 ptw-h-32 ptw-bg-white dark:ptw-bg-black ptw-rounded ptw-mb-2"
             :style="token.value"
           />
         </template>

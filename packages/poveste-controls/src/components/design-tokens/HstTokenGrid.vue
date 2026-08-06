@@ -38,7 +38,7 @@ const hover = ref<string>(null)
 
 <template>
   <div
-    class="poveste-token-grid htw-bind-col-size htw-grid htw-gap-4 htw-m-4"
+    class="poveste-token-grid ptw-bind-col-size ptw-grid ptw-gap-4 ptw-m-4"
     :style="{
       '--poveste-col-size': colSizePx,
     }"
@@ -46,7 +46,7 @@ const hover = ref<string>(null)
     <div
       v-for="token of processedTokens"
       :key="token.key"
-      class="htw-flex htw-flex-col htw-gap-2"
+      class="ptw-flex ptw-flex-col ptw-gap-2"
       @mouseenter="hover = token.key"
       @mouseleave="hover = null"
     >
@@ -54,26 +54,26 @@ const hover = ref<string>(null)
         :token="token"
       />
       <div>
-        <div class="htw-flex htw-gap-1">
+        <div class="ptw-flex ptw-gap-1">
           <pre
             v-tooltip="token.name.length > colSize / 8 ? token.name : ''"
-            class="htw-my-0 htw-truncate htw-shrink"
+            class="ptw-my-0 ptw-truncate ptw-shrink"
           >{{ token.name }}</pre>
           <HstCopyIcon
             v-if="hover === token.key"
             :content="token.name"
-            class="htw-flex-none"
+            class="ptw-flex-none"
           />
         </div>
-        <div class="htw-flex htw-gap-1">
+        <div class="ptw-flex ptw-gap-1">
           <pre
             v-tooltip="token.value.length > colSize / 8 ? token.value : ''"
-            class="htw-my-0 htw-opacity-50 htw-truncate htw-shrink"
+            class="ptw-my-0 ptw-opacity-50 ptw-truncate ptw-shrink"
           >{{ token.value }}</pre>
           <HstCopyIcon
             v-if="hover === token.key"
             :content="typeof token.value === 'string' ? token.value : JSON.stringify(token.value)"
-            class="htw-flex-none"
+            class="ptw-flex-none"
           />
         </div>
       </div>
@@ -82,7 +82,7 @@ const hover = ref<string>(null)
 </template>
 
 <style>
-.htw-bind-col-size {
+.ptw-bind-col-size {
   grid-template-columns: repeat(auto-fill, minmax(var(--poveste-col-size), 1fr));
 }
 </style>

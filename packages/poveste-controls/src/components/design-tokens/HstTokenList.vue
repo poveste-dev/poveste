@@ -33,28 +33,28 @@ const hover = ref<string>(null)
   <div
     v-for="token of processedTokens"
     :key="token.key"
-    class="poveste-token-list htw-flex htw-flex-col htw-gap-2 htw-my-8"
+    class="poveste-token-list ptw-flex ptw-flex-col ptw-gap-2 ptw-my-8"
     @mouseenter="hover = token.key"
     @mouseleave="hover = null"
   >
     <slot
       :token="token"
     />
-    <div class="htw-mx-4">
-      <div class="htw-flex htw-gap-1">
-        <pre class="htw-my-0 htw-truncate htw-shrink">{{ token.name }}</pre>
+    <div class="ptw-mx-4">
+      <div class="ptw-flex ptw-gap-1">
+        <pre class="ptw-my-0 ptw-truncate ptw-shrink">{{ token.name }}</pre>
         <HstCopyIcon
           v-if="hover === token.key"
           :content="token.name"
-          class="htw-flex-none"
+          class="ptw-flex-none"
         />
       </div>
-      <div class="htw-flex htw-gap-1">
-        <pre class="htw-my-0 htw-opacity-50 htw-truncate htw-shrink">{{ token.value }}</pre>
+      <div class="ptw-flex ptw-gap-1">
+        <pre class="ptw-my-0 ptw-opacity-50 ptw-truncate ptw-shrink">{{ token.value }}</pre>
         <HstCopyIcon
           v-if="hover === token.key"
           :content="typeof token.value === 'string' ? token.value : JSON.stringify(token.value)"
-          class="htw-flex-none"
+          class="ptw-flex-none"
         />
       </div>
     </div>

@@ -19,7 +19,7 @@ withDefaults(defineProps<{
 <template>
   <component
     :is="tag"
-    class="poveste-wrapper histoire-wrapper htw-p-2 hover:htw-bg-primary-100 dark:hover:htw-bg-primary-800 htw-flex htw-gap-2 htw-flex-wrap"
+    class="poveste-wrapper histoire-wrapper ptw-p-2 hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-800 ptw-flex ptw-gap-2 ptw-flex-wrap"
   >
     <span
       v-tooltip="{
@@ -27,12 +27,12 @@ withDefaults(defineProps<{
         placement: 'left',
         distance: 12,
       }"
-      class="htw-w-28 htw-whitespace-nowrap htw-text-ellipsis htw-overflow-hidden htw-shrink-0"
+      class="ptw-w-28 ptw-whitespace-nowrap ptw-text-ellipsis ptw-overflow-hidden ptw-shrink-0"
     >
       {{ title }}
     </span>
-    <span class="htw-grow htw-max-w-full htw-flex htw-items-center htw-gap-1">
-      <span class="htw-block htw-grow htw-max-w-full">
+    <span class="ptw-grow ptw-max-w-full ptw-flex ptw-items-center ptw-gap-1">
+      <span class="ptw-block ptw-grow ptw-max-w-full">
         <slot />
       </span>
       <slot name="actions" />

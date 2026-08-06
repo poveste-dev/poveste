@@ -1,5 +1,5 @@
 <template>
-  <span class="poveste-base-tag htw-text-center htw-text-xs htw-mx-1 htw-px-0.5 htw-h-4 htw-uppercase htw-min-w-4 htw-rounded-full htw-bg-primary-500 htw-text-white dark:htw-text-black">
+  <span class="poveste-base-tag ptw-text-center ptw-text-xs ptw-mx-1 ptw-px-0.5 ptw-h-4 ptw-uppercase ptw-min-w-4 ptw-rounded-full ptw-bg-primary-500 ptw-text-white dark:ptw-text-black">
     <slot />
   </span>
 </template>

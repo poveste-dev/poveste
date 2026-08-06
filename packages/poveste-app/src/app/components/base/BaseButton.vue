@@ -22,10 +22,10 @@ const comp = computed(() => {
 <template>
   <component
     :is="comp"
-    class="poveste-base-button htw-rounded htw-cursor-pointer"
+    class="poveste-base-button ptw-rounded ptw-cursor-pointer"
     :class="{
-      'htw-bg-primary-200 dark:htw-bg-primary-800 hover:htw-bg-primary-300 dark:hover:htw-bg-primary-700': color === 'primary' || !color,
-      'htw-bg-grey-100 dark:htw-bg-grey-900 hover:htw-bg-grey-200 dark:hover:htw-bg-grey-800': color === 'grey',
+      'ptw-bg-primary-200 dark:ptw-bg-primary-800 hover:ptw-bg-primary-300 dark:hover:ptw-bg-primary-700': color === 'primary' || !color,
+      'ptw-bg-grey-100 dark:ptw-bg-grey-900 hover:ptw-bg-grey-200 dark:hover:ptw-bg-grey-800': color === 'grey',
     }"
   >
     <slot />

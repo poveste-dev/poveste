@@ -1,15 +1,15 @@
 <template>
-  <div class="poveste-base-empty htw-base-empty htw-flex htw-flex-col htw-items-center htw-justify-center htw-space-y-4 htw-py-12 htw-h-full htw-text-center htw-text-gray-400  htw-text-lg">
+  <div class="poveste-base-empty ptw-base-empty ptw-flex ptw-flex-col ptw-items-center ptw-justify-center ptw-space-y-4 ptw-py-12 ptw-h-full ptw-text-center ptw-text-gray-400  ptw-text-lg">
     <slot />
   </div>
 </template>
 
 <style scoped>
-.htw-base-empty:not(.no-animation) {
-  animation: htw-base-empty .15s .2s both;
+.ptw-base-empty:not(.no-animation) {
+  animation: ptw-base-empty .15s .2s both;
 }
 
-@keyframes htw-base-empty {
+@keyframes ptw-base-empty {
   0% {
     opacity: 0;
   }

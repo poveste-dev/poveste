@@ -13,17 +13,17 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   <transition name="__poveste-fade-bottom">
     <div
       v-if="opened"
-      class="poveste-mobile-overlay htw-absolute htw-z-10 htw-bg-white dark:htw-bg-gray-700 htw-w-screen htw-h-screen htw-inset-0 htw-overflow-hidden htw-flex htw-flex-col"
+      class="poveste-mobile-overlay ptw-absolute ptw-z-10 ptw-bg-white dark:ptw-bg-gray-700 ptw-w-screen ptw-h-screen ptw-inset-0 ptw-overflow-hidden ptw-flex ptw-flex-col"
     >
-      <div class="htw-p-4 htw-h-16 htw-flex htw-border-b htw-border-gray-100 dark:htw-border-gray-800 htw-items-center htw-place-content-between">
-        <span class="htw-text-gray-500">{{ title }}</span>
+      <div class="ptw-p-4 ptw-h-16 ptw-flex ptw-border-b ptw-border-gray-100 dark:ptw-border-gray-800 ptw-items-center ptw-place-content-between">
+        <span class="ptw-text-gray-500">{{ title }}</span>
         <a
-          class="htw-p-1 hover:htw-text-primary-500 dark:hover:htw-text-primary-400 htw-cursor-pointer"
+          class="ptw-p-1 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-cursor-pointer"
           @click="emit('close')"
         >
           <Icon
             icon="carbon:close"
-            class="htw-w-8 htw-h-8 htw-shrink-0"
+            class="ptw-w-8 ptw-h-8 ptw-shrink-0"
           />
         </a>
       </div>

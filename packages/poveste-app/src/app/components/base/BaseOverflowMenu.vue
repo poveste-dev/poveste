@@ -86,7 +86,7 @@ function ChildrenSlice(props, { slots }) {
 <template>
   <div
     ref="el"
-    class="poveste-base-overflow-menu htw-flex htw-overflow-hidden htw-relative"
+    class="poveste-base-overflow-menu ptw-flex ptw-overflow-hidden ptw-relative"
   >
     <ChildrenRender>
       <slot />
@@ -97,16 +97,16 @@ function ChildrenSlice(props, { slots }) {
     >
       <div
         role="button"
-        class="htw-cursor-pointer hover:htw-bg-primary-50 dark:hover:htw-bg-primary-900 htw-w-8 htw-h-full htw-flex htw-items-center htw-justify-center htw-absolute htw-top-0 htw-right-0"
+        class="ptw-cursor-pointer hover:ptw-bg-primary-50 dark:hover:ptw-bg-primary-900 ptw-w-8 ptw-h-full ptw-flex ptw-items-center ptw-justify-center ptw-absolute ptw-top-0 ptw-right-0"
       >
         <Icon
           icon="carbon:caret-down"
-          class="htw-w-4 htw-h-4 htw-opacity-50 group-hover:htw-opacity-100"
+          class="ptw-w-4 ptw-h-4 ptw-opacity-50 group-hover:ptw-opacity-100"
         />
       </div>
 
       <template #popper>
-        <div class="htw-flex htw-flex-col htw-items-stretch">
+        <div class="ptw-flex ptw-flex-col ptw-items-stretch">
           <ChildrenSlice
             :start="visibleChildrenCount"
           >

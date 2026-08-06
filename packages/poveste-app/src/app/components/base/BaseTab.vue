@@ -28,9 +28,9 @@ export default defineComponent({
     <a
       v-bind="$attrs"
       :href="href"
-      class="htw-px-4 htw-h-full htw-inline-flex htw-items-center hover:htw-bg-primary-50 dark:hover:htw-bg-primary-900 htw-relative htw-text-gray-900 dark:htw-text-gray-100"
+      class="ptw-px-4 ptw-h-full ptw-inline-flex ptw-items-center hover:ptw-bg-primary-50 dark:hover:ptw-bg-primary-900 ptw-relative ptw-text-gray-900 dark:ptw-text-gray-100"
       :class="{
-        'htw-text-primary-500 dark:htw-text-primary-400': matched != null ? matched : (exact && isExactActive) || (!exact && isActive),
+        'ptw-text-primary-500 dark:ptw-text-primary-400': matched != null ? matched : (exact && isExactActive) || (!exact && isActive),
       }"
       @click="navigate"
     >
@@ -39,7 +39,7 @@ export default defineComponent({
       <transition name="__poveste-scale-x">
         <div
           v-if="matched != null ? matched : (exact && isExactActive) || (!exact && isActive)"
-          class="htw-absolute htw-bottom-0 htw-left-0 htw-w-full htw-h-[2px] htw-bg-primary-500 dark:htw-bg-primary-400"
+          class="ptw-absolute ptw-bottom-0 ptw-left-0 ptw-w-full ptw-h-[2px] ptw-bg-primary-500 dark:ptw-bg-primary-400"
         />
       </transition>
     </a>

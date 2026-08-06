@@ -17,11 +17,11 @@ if (import.meta.hot) {
 </script>
 
 <template>
-  <div class="poveste-initial-loading htw-fixed htw-inset-0 htw-bg-white dark:htw-bg-gray-700 htw-flex htw-flex-col htw-gap-6 htw-items-center htw-justify-center">
+  <div class="poveste-initial-loading ptw-fixed ptw-inset-0 ptw-bg-white dark:ptw-bg-gray-700 ptw-flex ptw-flex-col ptw-gap-6 ptw-items-center ptw-justify-center">
     <transition name="__poveste-fade">
       <div
         v-if="progress.total > 0"
-        class="htw-grid htw-gap-2"
+        class="ptw-grid ptw-gap-2"
         :style="{
           gridTemplateColumns: `repeat(${Math.min(Math.ceil(Math.sqrt(progress.total)), maxCols)}, minmax(0, 1fr))`,
         }"
@@ -29,12 +29,12 @@ if (import.meta.hot) {
         <div
           v-for="n in progress.total"
           :key="n"
-          class="htw-bg-primary-500/10 htw-rounded-full"
+          class="ptw-bg-primary-500/10 ptw-rounded-full"
         >
           <div
-            class="htw-w-3 htw-h-3 htw-bg-primary-500 htw-rounded-full htw-duration-150 htw-ease-out"
+            class="ptw-w-3 ptw-h-3 ptw-bg-primary-500 ptw-rounded-full ptw-duration-150 ptw-ease-out"
             :class="{
-              'htw-transition-transform htw-scale-0': n >= progress.loaded,
+              'ptw-transition-transform ptw-scale-0': n >= progress.loaded,
             }"
           />
         </div>

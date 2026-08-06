@@ -34,13 +34,13 @@ const stats = computed(() => {
 </script>
 
 <template>
-  <div class="poveste-home-view htw-flex md:htw-flex-col htw-gap-12 htw-items-center htw-justify-center htw-h-full">
+  <div class="poveste-home-view ptw-flex md:ptw-flex-col ptw-gap-12 ptw-items-center ptw-justify-center ptw-h-full">
     <img
       :src="logoUrl"
       alt="Logo"
-      class="htw-w-64 htw-h-64 htw-opacity-25 htw-mb-8 htw-hidden md:htw-block"
+      class="ptw-w-64 ptw-h-64 ptw-opacity-25 ptw-mb-8 ptw-hidden md:ptw-block"
     >
-    <div class="htw-flex !md:htw-flex-col htw-flex-wrap htw-justify-evenly htw-gap-2 htw-px-4 htw-py-2 htw-bg-gray-100 dark:htw-bg-gray-750 htw-rounded htw-border htw-border-gray-500/30">
+    <div class="ptw-flex !md:ptw-flex-col ptw-flex-wrap ptw-justify-evenly ptw-gap-2 ptw-px-4 ptw-py-2 ptw-bg-gray-100 dark:ptw-bg-gray-750 ptw-rounded ptw-border ptw-border-gray-500/30">
       <HomeCounter
         title="Stories"
         icon="carbon:cube"

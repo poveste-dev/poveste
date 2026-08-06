@@ -73,32 +73,32 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
 <template>
   <div
     ref="el"
-    class="poveste-story-variant-grid-item htw-cursor-default htw-flex htw-flex-col htw-gap-y-1 htw-group"
+    class="poveste-story-variant-grid-item ptw-cursor-default ptw-flex ptw-flex-col ptw-gap-y-1 ptw-group"
   >
     <!-- Header -->
-    <div class="htw-flex-none htw-flex htw-items-center">
+    <div class="ptw-flex-none ptw-flex ptw-items-center">
       <RouterLink
         v-tooltip="variant.title"
         :to="targetRoute"
-        class="htw-rounded htw-w-max htw-px-2 htw-py-0.5 htw-min-w-16 htw-cursor-pointer htw-flex htw-items-center htw-gap-1 htw-flex-shrink"
+        class="ptw-rounded ptw-w-max ptw-px-2 ptw-py-0.5 ptw-min-w-16 ptw-cursor-pointer ptw-flex ptw-items-center ptw-gap-1 ptw-flex-shrink"
         :class="{
-          'hover:htw-bg-gray-200 htw-text-gray-500 dark:hover:htw-bg-gray-800': !isActive,
-          'htw-bg-primary-200 hover:htw-bg-primary-300 htw-text-primary-800 dark:htw-bg-primary-700 dark:hover:htw-bg-primary-800 dark:htw-text-primary-200': isActive,
+          'hover:ptw-bg-gray-200 ptw-text-gray-500 dark:hover:ptw-bg-gray-800': !isActive,
+          'ptw-bg-primary-200 hover:ptw-bg-primary-300 ptw-text-primary-800 dark:ptw-bg-primary-700 dark:hover:ptw-bg-primary-800 dark:ptw-text-primary-200': isActive,
         }"
       >
         <Icon
           :icon="variant.icon ?? 'carbon:cube'"
-          class="htw-w-4 htw-h-4 htw-opacity-50"
+          class="ptw-w-4 ptw-h-4 ptw-opacity-50"
           :class="{
-            'htw-text-gray-500': !isActive && !variant.iconColor,
+            'ptw-text-gray-500': !isActive && !variant.iconColor,
             'bind-icon-color': !isActive && variant.iconColor,
           }"
         />
-        <span class="htw-truncate htw-flex-1">{{ variant.title }}</span>
+        <span class="ptw-truncate ptw-flex-1">{{ variant.title }}</span>
       </RouterLink>
 
       <!-- Toolbar -->
-      <div class="htw-flex-none htw-ml-auto htw-hidden group-hover:htw-flex htw-items-center">
+      <div class="ptw-flex-none ptw-ml-auto ptw-hidden group-hover:ptw-flex ptw-items-center">
         <HstCopyIcon
           :content="() => getSourceCode(story, variant)"
         />
@@ -111,27 +111,27 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
 
     <!-- Body -->
     <div
-      class="htw-border htw-bg-white dark:htw-bg-gray-700 htw-rounded htw-flex-1 htw-p-4 htw-relative"
+      class="ptw-border ptw-bg-white dark:ptw-bg-gray-700 ptw-rounded ptw-flex-1 ptw-p-4 ptw-relative"
       :class="{
-        'htw-border-gray-100 dark:htw-border-gray-800': !isActive,
-        'htw-border-primary-200 dark:htw-border-primary-900': isActive,
+        'ptw-border-gray-100 dark:ptw-border-gray-800': !isActive,
+        'ptw-border-primary-200 dark:ptw-border-primary-900': isActive,
       }"
       data-test-id="sandbox-render"
       @click.stop="selectVariant()"
       @keyup="selectVariant()"
     >
       <div
-        class="htw-absolute htw-inset-0 htw-rounded bind-preview-bg"
+        class="ptw-absolute ptw-inset-0 ptw-rounded bind-preview-bg"
         data-test-id="responsive-preview-bg"
       />
 
       <CheckerboardPattern
         v-if="settings.checkerboard"
-        class="htw-absolute htw-inset-0 htw-w-full htw-h-full htw-text-gray-500/20"
+        class="ptw-absolute ptw-inset-0 ptw-w-full ptw-h-full ptw-text-gray-500/20"
       />
 
       <div
-        class="htw-relative htw-h-full"
+        class="ptw-relative ptw-h-full"
         :style="{
           '--poveste-contrast-color': contrastColor,
           // Deprecated alias — keep so stories referencing `var(--histoire-contrast-color)` still work.

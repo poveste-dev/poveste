@@ -37,23 +37,23 @@ useScrollOnActive(isActive, el)
           storyId: story.id,
         },
       }"
-      class="htw-pl-0.5 htw-pr-2 htw-py-2 md:htw-py-1.5 htw-mx-1 htw-rounded-sm"
+      class="ptw-pl-0.5 ptw-pr-2 ptw-py-2 md:ptw-py-1.5 ptw-mx-1 ptw-rounded-sm"
     >
-      <span class="bind-tree-margin htw-flex htw-items-center htw-gap-2 htw-pl-4 htw-min-w-0">
+      <span class="bind-tree-margin ptw-flex ptw-items-center ptw-gap-2 ptw-pl-4 ptw-min-w-0">
         <Icon
           :icon="story.icon ?? 'carbon:cube'"
-          class="htw-w-5 htw-h-5 sm:htw-w-4 sm:htw-h-4 htw-flex-none"
+          class="ptw-w-5 ptw-h-5 sm:ptw-w-4 sm:ptw-h-4 ptw-flex-none"
           :class="{
-            'htw-text-primary-500': !active && !story.iconColor,
+            'ptw-text-primary-500': !active && !story.iconColor,
             'bind-icon-color': !active && story.iconColor,
           }"
         />
-        <span class="htw-truncate">{{ story.title }}</span>
+        <span class="ptw-truncate">{{ story.title }}</span>
       </span>
 
       <span
         v-if="!story.docsOnly"
-        class="htw-opacity-40 htw-text-sm"
+        class="ptw-opacity-40 ptw-text-sm"
       >
         {{ story.variants.length }}
       </span>

@@ -32,7 +32,7 @@ test.describe('shortcuts from the preview iframe', () => {
   test('toggles dark mode with ctrl+shift+d while the preview has focus', async ({ page }) => {
     await openDemoAndFocusPreview(page)
 
-    const isDark = async () => page.locator('html').evaluate(el => el.classList.contains('htw-dark'))
+    const isDark = async () => page.locator('html').evaluate(el => el.classList.contains('ptw-dark'))
     const wasDark = await isDark()
 
     await page.keyboard.press('Control+Shift+D')

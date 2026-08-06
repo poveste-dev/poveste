@@ -118,10 +118,10 @@ onClickOutside(select, stopEditing)
 </script>
 
 <template>
-  <div class="poveste-state-presets htw-flex htw-gap-2 htw-w-full htw-items-center">
+  <div class="poveste-state-presets ptw-flex ptw-gap-2 ptw-w-full ptw-items-center">
     <div
       ref="select"
-      class="htw-flex-1 htw-min-w-0"
+      class="ptw-flex-1 ptw-min-w-0"
     >
       <BaseSelect
         v-model="selectedOption"
@@ -137,37 +137,37 @@ onClickOutside(select, stopEditing)
             ref="input"
             v-model="presetStates.get(selectedOption).label"
             type="text"
-            class="htw-text-inherit htw-bg-transparent htw-w-full htw-h-full htw-outline-none"
+            class="ptw-text-inherit ptw-bg-transparent ptw-w-full ptw-h-full ptw-outline-none"
             @click.stop.prevent
           >
 
           <div
             v-else
-            class="htw-flex htw-items-center htw-gap-2"
+            class="ptw-flex ptw-items-center ptw-gap-2"
           >
-            <span class="htw-flex-1 htw-truncate">
+            <span class="ptw-flex-1 ptw-truncate">
               {{ label }}
             </span>
             <Icon
               v-if="canEdit"
               v-tooltip="'Rename this preset'"
               icon="carbon:edit"
-              class="htw-flex-none htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 htw-opacity-50 hover:htw-opacity-100 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+              class="ptw-flex-none ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
               @click.stop="startEditing()"
             />
           </div>
         </template>
 
         <template #option="{ label, value }">
-          <div class="htw-flex htw-gap-2 htw-items-center">
+          <div class="ptw-flex ptw-gap-2 ptw-items-center">
             <span
-              class="htw-flex-1 htw-truncate"
+              class="ptw-flex-1 ptw-truncate"
             >{{ label }}</span>
             <Icon
               v-if="value !== DEFAULT_ID"
               v-tooltip="'Delete this preset'"
               icon="carbon:trash-can"
-              class="htw-flex-none htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 htw-opacity-50 hover:htw-opacity-100 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+              class="ptw-flex-none ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
               @click.stop="deletePreset(value)"
             />
           </div>
@@ -177,22 +177,22 @@ onClickOutside(select, stopEditing)
     <Icon
       v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
       :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
-      class="htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
       :class="[
-        canEdit ? 'htw-opacity-50 hover:htw-opacity-100' : 'htw-opacity-25 htw-pointer-events-none',
+        canEdit ? 'ptw-opacity-50 hover:ptw-opacity-100' : 'ptw-opacity-25 ptw-pointer-events-none',
       ]"
       @click="savePreset()"
     />
     <Icon
       v-tooltip="'Create new preset'"
       icon="carbon:add-alt"
-      class="htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 htw-opacity-50 hover:htw-opacity-100 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
       @click="createPreset()"
     />
     <Icon
       v-tooltip="'Reset to initial state'"
       icon="carbon:reset"
-      class="htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 htw-opacity-50 hover:htw-opacity-100 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
       @click="resetState()"
     />
   </div>

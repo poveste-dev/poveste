@@ -62,9 +62,9 @@ const canReset = computed(() => props.variant.state?._hPropState?.[props.compone
       <Icon
         v-tooltip="'Remove override'"
         icon="carbon:erase"
-        class="htw-cursor-pointer htw-w-4 htw-h-4 hover:htw-text-primary-500 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+        class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
         :class="[
-          canReset ? 'htw-opacity-50 hover:htw-opacity-100' : 'htw-opacity-25 htw-pointer-events-none',
+          canReset ? 'ptw-opacity-50 hover:ptw-opacity-100' : 'ptw-opacity-25 ptw-pointer-events-none',
         ]"
         @click.stop="reset()"
       />

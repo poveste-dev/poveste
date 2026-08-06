@@ -34,35 +34,35 @@ watch(path, () => {
   <div
     role="checkbox"
     tabindex="0"
-    class="poveste-base-checkbox htw-flex htw-items-center htw-gap-2 htw-select-none htw-px-4 htw-py-3 htw-cursor-pointer hover:htw-bg-primary-100 dark:hover:htw-bg-primary-700"
+    class="poveste-base-checkbox ptw-flex ptw-items-center ptw-gap-2 ptw-select-none ptw-px-4 ptw-py-3 ptw-cursor-pointer hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-700"
     @click="toggle()"
     @keydown.enter.prevent="toggle()"
     @keydown.space.prevent="toggle()"
   >
-    <div class="htw-text-white htw-w-[16px] htw-h-[16px] htw-relative">
+    <div class="ptw-text-white ptw-w-[16px] ptw-h-[16px] ptw-relative">
       <div
-        class="htw-border group-active:htw-bg-gray-500/20 htw-rounded-sm htw-box-border htw-absolute htw-inset-0 htw-transition-border htw-duration-150 htw-ease-out"
+        class="ptw-border group-active:ptw-bg-gray-500/20 ptw-rounded-sm ptw-box-border ptw-absolute ptw-inset-0 ptw-transition-border ptw-duration-150 ptw-ease-out"
         :class="[
           modelValue
-            ? 'htw-border-primary-500 htw-border-8'
-            : 'htw-border-black/25 dark:htw-border-white/25 htw-delay-150',
+            ? 'ptw-border-primary-500 ptw-border-8'
+            : 'ptw-border-black/25 dark:ptw-border-white/25 ptw-delay-150',
         ]"
       />
       <svg
         width="16"
         height="16"
         viewBox="0 0 24 24"
-        class="htw-relative htw-z-10"
+        class="ptw-relative ptw-z-10"
       >
         <path
           ref="path"
           d="m 4 12 l 5 5 l 10 -10"
           fill="none"
-          class="htw-stroke-white htw-stroke-2 htw-duration-200 htw-ease-in-out"
+          class="ptw-stroke-white ptw-stroke-2 ptw-duration-200 ptw-ease-in-out"
           :class="[
-            animationEnabled ? 'htw-transition-all' : 'htw-transition-none',
+            animationEnabled ? 'ptw-transition-all' : 'ptw-transition-none',
             {
-              'htw-delay-150': modelValue,
+              'ptw-delay-150': modelValue,
             },
           ]"
           :stroke-dasharray="dasharray"

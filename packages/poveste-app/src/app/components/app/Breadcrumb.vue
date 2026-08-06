@@ -37,7 +37,7 @@ watch(story, () => {
 <template>
   <div class="poveste-breadcrumb">
     <a
-      class="htw-px-6 htw-h-12 hover:htw-text-primary-500 dark:hover:htw-text-primary-400 htw-cursor-pointer htw-flex htw-gap-2 htw-flex-wrap htw-w-full htw-items-center"
+      class="ptw-px-6 ptw-h-12 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-cursor-pointer ptw-flex ptw-gap-2 ptw-flex-wrap ptw-w-full ptw-items-center"
       @click="openMenu"
     >
       <template v-if="story">
@@ -48,21 +48,21 @@ watch(story, () => {
           <span>
             {{ file }}
           </span>
-          <span class="htw-opacity-40">
+          <span class="ptw-opacity-40">
             /
           </span>
         </template>
-        <span class="htw-flex htw-items-center htw-gap-2">
+        <span class="ptw-flex ptw-items-center ptw-gap-2">
           <Icon
             :icon="story.icon ?? 'carbon:cube'"
-            class="htw-w-5 htw-h-5 htw-flex-none"
+            class="ptw-w-5 ptw-h-5 ptw-flex-none"
             :class="{
-              'htw-text-primary-500': !story.iconColor,
+              'ptw-text-primary-500': !story.iconColor,
               'bind-icon-color': story.iconColor,
             }"
           />
           {{ story.title }}
-          <span class="htw-opacity-40 htw-text-sm">
+          <span class="ptw-opacity-40 ptw-text-sm">
             {{ story.variants.length }}
           </span>
         </span>
@@ -73,7 +73,7 @@ watch(story, () => {
 
       <Icon
         icon="carbon:chevron-sort"
-        class="htw-w-5 htw-h-5 htw-shrink-0 htw-ml-auto"
+        class="ptw-w-5 ptw-h-5 ptw-shrink-0 ptw-ml-auto"
       />
     </a>
   </div>
@@ -86,7 +86,7 @@ watch(story, () => {
     <StoryList
       :tree="tree"
       :stories="stories"
-      class="htw-flex-1 htw-overflow-y-scroll"
+      class="ptw-flex-1 ptw-overflow-y-scroll"
     />
   </MobileOverlay>
 </template>

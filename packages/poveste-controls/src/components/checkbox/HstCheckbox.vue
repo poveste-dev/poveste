@@ -42,7 +42,7 @@ const isTrue = computed(() => {
   <HstWrapper
     role="checkbox"
     tabindex="0"
-    class="poveste-checkbox htw-cursor-pointer htw-items-center"
+    class="poveste-checkbox ptw-cursor-pointer ptw-items-center"
     :title="title"
     @click="toggle()"
     @keydown.enter.prevent="toggle()"

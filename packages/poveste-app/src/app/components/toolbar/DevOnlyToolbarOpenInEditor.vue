@@ -12,12 +12,12 @@ defineProps<{
   <a
     v-tooltip="tooltip"
     target="_blank"
-    class="poveste-toolbar-open-in-editor htw-flex htw-items-center htw-gap-1 htw-h-full htw-px-2 hover:htw-text-primary-500 htw-opacity-50 hover:htw-opacity-100 dark:hover:htw-text-primary-400 htw-text-gray-900 dark:htw-text-gray-100"
+    class="poveste-toolbar-open-in-editor ptw-flex ptw-items-center ptw-gap-1 ptw-h-full ptw-px-2 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
     @click="openInEditor(file)"
   >
     <Icon
       icon="carbon:script-reference"
-      class="htw-w-4 htw-h-4"
+      class="ptw-w-4 ptw-h-4"
     />
   </a>
 </template>

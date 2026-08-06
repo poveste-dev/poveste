@@ -122,39 +122,39 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
 </script>
 
 <template>
-  <div class="poveste-story-responsive-preview htw-w-full htw-h-full htw-flex-1 htw-rounded-lg htw-relative htw-overflow-hidden">
+  <div class="poveste-story-responsive-preview ptw-w-full ptw-h-full ptw-flex-1 ptw-rounded-lg ptw-relative ptw-overflow-hidden">
     <div
       v-if="isResponsiveEnabled"
-      class="htw-absolute htw-inset-0 htw-w-full htw-h-full htw-bg-gray-100 dark:htw-bg-gray-750 htw-rounded-r-lg htw-border-l-2 htw-border-gray-500/10 dark:htw-border-gray-700/30 htw-overflow-hidden"
+      class="ptw-absolute ptw-inset-0 ptw-w-full ptw-h-full ptw-bg-gray-100 dark:ptw-bg-gray-750 ptw-rounded-r-lg ptw-border-l-2 ptw-border-gray-500/10 dark:ptw-border-gray-700/30 ptw-overflow-hidden"
     >
       <HatchedPattern
-        class="htw-w-full htw-h-full htw-text-black/[1%] dark:htw-text-white/[1%]"
+        class="ptw-w-full ptw-h-full ptw-text-black/[1%] dark:ptw-text-white/[1%]"
       />
     </div>
 
     <div
       ref="previewWrapper"
-      class="htw-h-full htw-overflow-auto htw-relative"
+      class="ptw-h-full ptw-overflow-auto ptw-relative"
     >
       <div
-        class="htw-overflow-hidden htw-bg-white dark:htw-bg-gray-700 htw-rounded-lg htw-relative"
+        class="ptw-overflow-hidden ptw-bg-white dark:ptw-bg-gray-700 ptw-rounded-lg ptw-relative"
         :class="isResponsiveEnabled ? {
-          'htw-w-fit': !!finalWidth,
-          'htw-h-fit': !!finalHeight,
-          'htw-h-full': !finalHeight,
-        } : 'htw-h-full'"
+          'ptw-w-fit': !!finalWidth,
+          'ptw-h-fit': !!finalHeight,
+          'ptw-h-full': !finalHeight,
+        } : 'ptw-h-full'"
       >
         <div
-          class="bind-preview-bg htw-rounded-lg htw-h-full"
+          class="bind-preview-bg ptw-rounded-lg ptw-h-full"
           data-test-id="responsive-preview-bg"
         >
           <CheckerboardPattern
             v-if="settings.checkerboard"
-            class="htw-absolute htw-inset-0 htw-w-full htw-h-full htw-text-gray-500/20"
+            class="ptw-absolute ptw-inset-0 ptw-w-full ptw-h-full ptw-text-gray-500/20"
           />
-          <div class="htw-p-8 htw-h-full htw-relative">
-            <div class="htw-w-full htw-h-full htw-relative">
-              <div class="htw-absolute htw-inset-0" />
+          <div class="ptw-p-8 ptw-h-full ptw-relative">
+            <div class="ptw-w-full ptw-h-full ptw-relative">
+              <div class="ptw-absolute ptw-inset-0" />
 
               <slot
                 :is-responsive-enabled="isResponsiveEnabled"
@@ -165,14 +165,14 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
             </div>
 
             <!-- Markers -->
-            <div class="htw-absolute htw-top-5 htw-left-8 htw-h-2 htw-w-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-top-5 htw-right-8 htw-h-2 htw-w-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-bottom-5 htw-left-8 htw-h-2 htw-w-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-bottom-5 htw-right-8 htw-h-2 htw-w-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-left-5 htw-top-8 htw-w-2 htw-h-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-left-5 htw-bottom-8 htw-w-2 htw-h-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-right-5 htw-top-8 htw-w-2 htw-h-px htw-bg-gray-400/25" />
-            <div class="htw-absolute htw-right-5 htw-bottom-8 htw-w-2 htw-h-px htw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-top-5 ptw-left-8 ptw-h-2 ptw-w-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-top-5 ptw-right-8 ptw-h-2 ptw-w-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-bottom-5 ptw-left-8 ptw-h-2 ptw-w-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-bottom-5 ptw-right-8 ptw-h-2 ptw-w-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-left-5 ptw-top-8 ptw-w-2 ptw-h-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-left-5 ptw-bottom-8 ptw-w-2 ptw-h-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-right-5 ptw-top-8 ptw-w-2 ptw-h-px ptw-bg-gray-400/25" />
+            <div class="ptw-absolute ptw-right-5 ptw-bottom-8 ptw-w-2 ptw-h-px ptw-bg-gray-400/25" />
           </div>
 
           <!-- Resize Dragger -->
@@ -180,27 +180,27 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
             <div
               ref="horizontalDragger"
               v-tooltip.right="sizeTooltip"
-              class="htw-absolute htw-w-4 htw-top-0 htw-bottom-4 htw-right-0 hover:htw-bg-primary-500/30 htw-flex htw-items-center htw-justify-center htw-cursor-ew-resize htw-group hover:htw-text-primary-500"
+              class="ptw-absolute ptw-w-4 ptw-top-0 ptw-bottom-4 ptw-right-0 hover:ptw-bg-primary-500/30 ptw-flex ptw-items-center ptw-justify-center ptw-cursor-ew-resize ptw-group hover:ptw-text-primary-500"
             >
               <Icon
                 icon="mdi:drag-vertical-variant"
-                class="htw-w-4 htw-h-4 htw-opacity-20 group-hover:htw-opacity-90"
+                class="ptw-w-4 ptw-h-4 ptw-opacity-20 group-hover:ptw-opacity-90"
               />
             </div>
             <div
               ref="verticalDragger"
               v-tooltip.bottom="sizeTooltip"
-              class="htw-absolute htw-h-4 htw-left-0 htw-right-4 htw-bottom-0 hover:htw-bg-primary-500/30 htw-flex htw-items-center htw-justify-center htw-cursor-ns-resize htw-group hover:htw-text-primary-500"
+              class="ptw-absolute ptw-h-4 ptw-left-0 ptw-right-4 ptw-bottom-0 hover:ptw-bg-primary-500/30 ptw-flex ptw-items-center ptw-justify-center ptw-cursor-ns-resize ptw-group hover:ptw-text-primary-500"
             >
               <Icon
                 icon="mdi:drag-horizontal-variant"
-                class="htw-w-4 htw-h-4 htw-opacity-20 group-hover:htw-opacity-90"
+                class="ptw-w-4 ptw-h-4 ptw-opacity-20 group-hover:ptw-opacity-90"
               />
             </div>
             <div
               ref="cornerDragger"
               v-tooltip.bottom="sizeTooltip"
-              class="htw-absolute htw-w-4 htw-h-4 htw-right-0 htw-bottom-0 hover:htw-bg-primary-500/30 htw-flex htw-items-center htw-justify-center htw-cursor-nwse-resize htw-group hover:htw-text-primary-500"
+              class="ptw-absolute ptw-w-4 ptw-h-4 ptw-right-0 ptw-bottom-0 hover:ptw-bg-primary-500/30 ptw-flex ptw-items-center ptw-justify-center ptw-cursor-nwse-resize ptw-group hover:ptw-text-primary-500"
             />
           </template>
         </div>

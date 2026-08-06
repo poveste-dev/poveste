@@ -13,46 +13,46 @@ const settings = usePreviewSettingsStore().currentSettings
     placement="bottom-end"
     :skidding="6"
     :disabled="!povesteConfig.responsivePresets?.length"
-    class="poveste-toolbar-responsive-size htw-h-full htw-flex-none"
+    class="poveste-toolbar-responsive-size ptw-h-full ptw-flex-none"
   >
     <div
       v-tooltip="'Responsive sizes'"
-      class="htw-flex htw-items-center htw-gap-1 htw-h-full htw-px-2 htw-group"
+      class="ptw-flex ptw-items-center ptw-gap-1 ptw-h-full ptw-px-2 ptw-group"
       :class="{
-        'htw-cursor-pointer hover:htw-text-primary-500': povesteConfig.responsivePresets?.length,
+        'ptw-cursor-pointer hover:ptw-text-primary-500': povesteConfig.responsivePresets?.length,
       }"
     >
       <Icon
         icon="carbon:devices"
-        class="htw-w-4 htw-h-4 htw-opacity-50 group-hover:htw-opacity-100"
+        class="ptw-w-4 ptw-h-4 ptw-opacity-50 group-hover:ptw-opacity-100"
       />
       <Icon
         icon="carbon:caret-down"
-        class="htw-w-4 htw-h-4 htw-opacity-50 group-hover:htw-opacity-100"
+        class="ptw-w-4 ptw-h-4 ptw-opacity-50 group-hover:ptw-opacity-100"
       />
     </div>
 
     <template #popper="{ hide }">
-      <div class="htw-flex htw-flex-col htw-items-stretch">
+      <div class="ptw-flex ptw-flex-col ptw-items-stretch">
         <BaseCheckbox v-model="settings.rotate">
           Rotate
         </BaseCheckbox>
 
-        <div class="htw-flex htw-items-center htw-gap-2 htw-px-4 htw-py-3">
+        <div class="ptw-flex ptw-items-center ptw-gap-2 ptw-px-4 ptw-py-3">
           <input
             v-model.number="settings.responsiveWidth"
             v-tooltip="'Responsive width (px)'"
             type="number"
-            class="htw-bg-transparent htw-border htw-border-gray-200 dark:htw-border-gray-850 htw-rounded htw-w-20 htw-opacity-50 focus:htw-opacity-100 htw-flex-1 htw-min-w-0"
+            class="ptw-bg-transparent ptw-border ptw-border-gray-200 dark:ptw-border-gray-850 ptw-rounded ptw-w-20 ptw-opacity-50 focus:ptw-opacity-100 ptw-flex-1 ptw-min-w-0"
             step="16"
             placeholder="Auto"
           >
-          <span class="htw-opacity-50">×</span>
+          <span class="ptw-opacity-50">×</span>
           <input
             v-model.number="settings.responsiveHeight"
             v-tooltip="'Responsive height (px)'"
             type="number"
-            class="htw-bg-transparent htw-border htw-border-gray-200 dark:htw-border-gray-850 htw-rounded htw-w-20 htw-opacity-50 focus:htw-opacity-100 htw-flex-1 htw-min-w-0"
+            class="ptw-bg-transparent ptw-border ptw-border-gray-200 dark:ptw-border-gray-850 ptw-rounded ptw-w-20 ptw-opacity-50 focus:ptw-opacity-100 ptw-flex-1 ptw-min-w-0"
             step="16"
             placeholder="Auto"
           >
@@ -61,16 +61,16 @@ const settings = usePreviewSettingsStore().currentSettings
         <button
           v-for="(preset, index) in povesteConfig.responsivePresets"
           :key="index"
-          class="htw-px-4 htw-py-3 htw-cursor-pointer htw-text-left htw-flex htw-gap-4"
+          class="ptw-px-4 ptw-py-3 ptw-cursor-pointer ptw-text-left ptw-flex ptw-gap-4"
           :class="[
             settings.responsiveWidth === preset.width && settings.responsiveHeight === preset.height
-              ? 'htw-bg-primary-500 hover:htw-bg-primary-600 htw-text-white dark:htw-text-black'
-              : 'htw-bg-transparent hover:htw-bg-primary-100 dark:hover:htw-bg-primary-700',
+              ? 'ptw-bg-primary-500 hover:ptw-bg-primary-600 ptw-text-white dark:ptw-text-black'
+              : 'ptw-bg-transparent hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-700',
           ]"
           @click="settings.responsiveWidth = preset.width;settings.responsiveHeight = preset.height;hide()"
         >
           {{ preset.label }}
-          <span class="htw-ml-auto htw-opacity-70 htw-flex htw-gap-1">
+          <span class="ptw-ml-auto ptw-opacity-70 ptw-flex ptw-gap-1">
             <span v-if="preset.width">{{ preset.width }}<span v-if="!preset.height">px</span></span>
             <span v-if="preset.width && preset.height">x</span>
             <span v-if="preset.height">{{ preset.height }}<span v-if="!preset.width">px</span></span>

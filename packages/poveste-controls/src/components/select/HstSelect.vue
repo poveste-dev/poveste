@@ -23,7 +23,7 @@ const emit = defineEmits<{
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-select htw-cursor-text htw-items-center"
+    class="poveste-select ptw-cursor-text ptw-items-center"
     :class="$attrs.class"
     :style="$attrs.style"
   >
