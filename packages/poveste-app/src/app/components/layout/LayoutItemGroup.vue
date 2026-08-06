@@ -9,7 +9,7 @@ defineProps<{
     <div
       role="heading"
       aria-level="3"
-      class="htw-px-6 htw-pt-3 htw-pb-1 htw-text-xs htw-uppercase htw-tracking-wide htw-opacity-50"
+      class="ptw-px-6 ptw-pt-3 ptw-pb-1 ptw-text-xs ptw-uppercase ptw-tracking-wide ptw-opacity-50"
     >
       {{ title }}
     </div>

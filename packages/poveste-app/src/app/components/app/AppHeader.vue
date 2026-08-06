@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { histoireConfig } from '../../util/config'
+import { povesteConfig } from '../../util/config'
 import AppLogo from './AppLogo.vue'
 </script>
 
 <template>
   <div
-    class="histoire-app-header htw-px-4 htw-h-14 htw-flex htw-items-center htw-gap-2"
+    class="poveste-app-header ptw-px-4 ptw-h-14 ptw-flex ptw-items-center ptw-gap-2"
   >
-    <div class="htw-py-3 sm:htw-py-4 htw-flex-1 htw-h-full htw-flex htw-items-center htw-pr-2">
+    <div class="ptw-py-3 sm:ptw-py-4 ptw-flex-1 ptw-h-full ptw-flex ptw-items-center ptw-pr-2">
       <a
-        :href="histoireConfig.theme?.logoHref"
+        :href="povesteConfig.theme?.logoHref"
         target="_blank"
-        class="htw-w-full htw-h-full htw-flex htw-items-center"
+        class="ptw-w-full ptw-h-full ptw-flex ptw-items-center"
       >
         <AppLogo
-          class="htw-max-w-full htw-max-h-full"
+          class="ptw-max-w-full ptw-max-h-full"
         />
       </a>
     </div>

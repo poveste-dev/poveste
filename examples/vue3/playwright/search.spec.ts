@@ -11,13 +11,13 @@ test.describe('search', () => {
     await expect.poll(async () => page.getByTestId('search-item').count()).toBeGreaterThan(3)
 
     await page.getByTestId('search-item').filter({ hasText: 'untitled' }).first().click()
-    await expect(page.getByTestId('story-variant-single-view')).toContainText('untitled')
+    await expect(page.locator('.poveste-toolbar-title')).toContainText('untitled')
 
     await page.getByTestId('search-btn').click()
     await page.getByTestId('search-modal').locator('input').fill('variant 2')
     await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('Variant 2')
     await page.getByTestId('search-modal').locator('input').press('Enter')
-    await expect(page.getByTestId('story-variant-single-view')).toContainText('Variant 2')
+    await expect(page.locator('.poveste-toolbar-title')).toContainText('Variant 2')
   })
 
   test('navigates results with the keyboard', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('search', () => {
     await input.press('ArrowDown')
     await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('Variant 2')
     await input.press('Enter')
-    await expect(page.getByTestId('story-variant-single-view')).toContainText('Variant 2')
+    await expect(page.locator('.poveste-toolbar-title')).toContainText('Variant 2')
   })
 
   test('closes via backdrop click and Escape', async ({ page }) => {

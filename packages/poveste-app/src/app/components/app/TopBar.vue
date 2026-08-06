@@ -18,16 +18,16 @@ const storyStore = useStoryStore()
 </script>
 
 <template>
-  <div class="histoire-top-bar htw-flex-none htw-grid htw-grid-cols-[1fr_auto_1fr] htw-items-center htw-h-14 htw-px-4 htw-gap-3">
+  <div class="poveste-top-bar ptw-flex-none ptw-grid ptw-grid-cols-[1fr_auto_1fr] ptw-items-center ptw-h-14 ptw-px-4 ptw-gap-3">
     <AppActions
-      class="htw-justify-self-start"
+      class="ptw-justify-self-start"
       @layout="$emit('layout')"
       @search="$emit('search')"
     />
 
     <TopBarChip
       v-if="storyStore.currentStory || storyStore.currentVariant"
-      class="htw-px-6 htw-py-1.5 htw-max-w-full"
+      class="ptw-px-6 ptw-py-1.5 ptw-max-w-full"
     >
       <ToolbarTitle
         :variant="storyStore.currentVariant ?? undefined"
@@ -38,7 +38,7 @@ const storyStore = useStoryStore()
 
     <TopBarChip
       v-if="storyStore.currentStory && !storyStore.currentStory.docsOnly"
-      class="htw-justify-self-end"
+      class="ptw-justify-self-end"
     >
       <ToolbarResponsiveSize
         v-if="storyStore.currentVariant && !storyStore.currentVariant.responsiveDisabled"
@@ -51,7 +51,7 @@ const storyStore = useStoryStore()
         :story="storyStore.currentStory"
       />
       <DevOnlyToolbarOpenInEditor
-        v-if="__HISTOIRE_DEV__"
+        v-if="__POVESTE_DEV__"
         :file="storyStore.currentStory.file?.filePath"
         tooltip="Edit story in editor"
       />

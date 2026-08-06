@@ -9,12 +9,12 @@ const settings = usePreviewSettingsStore().currentSettings
 <template>
   <TopBarChipItem
     v-tooltip="`Switch to text direction ${settings.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right'}`"
-    class="histoire-toolbar-text-direction"
+    class="poveste-toolbar-text-direction"
     @click="settings.textDirection = settings.textDirection === 'ltr' ? 'rtl' : 'ltr'"
   >
     <Icon
       :icon="settings.textDirection === 'ltr' ? 'fluent:text-paragraph-direction-right-16-regular' : 'fluent:text-paragraph-direction-left-16-regular'"
-      class="htw-w-4 htw-h-4"
+      class="ptw-w-4 ptw-h-4"
     />
   </TopBarChipItem>
 </template>

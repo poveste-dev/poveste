@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <div
-    class="histoire-story-variant-single-view htw-h-full htw-flex htw-flex-col"
+    class="poveste-story-variant-single-view ptw-h-full ptw-flex ptw-flex-col"
     data-test-id="story-variant-single-view"
   >
     <StoryVariantSinglePreviewNative

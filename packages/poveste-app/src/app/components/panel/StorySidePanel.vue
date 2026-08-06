@@ -34,18 +34,18 @@ const panelContentComponent = computed(() => {
 </script>
 
 <template>
-  <div class="htw-h-full htw-w-full htw-p-2">
-    <div class="htw-h-full htw-w-full htw-rounded-lg htw-border htw-border-gray-200 dark:htw-border-gray-700 htw-overflow-hidden htw-bg-white dark:htw-bg-gray-700">
+  <div class="ptw-h-full ptw-w-full ptw-p-2">
+    <div class="ptw-h-full ptw-w-full ptw-rounded-lg ptw-border ptw-border-gray-200 dark:ptw-border-gray-700 ptw-overflow-hidden ptw-bg-white dark:ptw-bg-gray-700">
       <BaseEmpty
         v-if="!storyStore.currentVariant"
-        class="histoire-story-side-panel histoire-selection"
+        class="poveste-story-side-panel poveste-selection"
       >
         <span>Select a variant</span>
       </BaseEmpty>
 
       <BaseEmpty
         v-else-if="!storyStore.currentVariant.configReady || !storyStore.currentVariant.previewReady"
-        class="histoire-story-side-panel histoire-loading"
+        class="poveste-story-side-panel poveste-loading"
       >
         <span>Loading...</span>
       </BaseEmpty>
@@ -54,11 +54,11 @@ const panelContentComponent = computed(() => {
         v-else
         :save-id="`story-sidepane-${innerOrientation}`"
         :orientation="innerOrientation"
-        class="histoire-story-side-panel histoire-loaded htw-h-full"
+        class="poveste-story-side-panel poveste-loaded ptw-h-full"
         data-test-id="story-side-panel"
       >
         <template #first>
-          <div class="htw-flex htw-flex-col htw-h-full">
+          <div class="ptw-flex ptw-flex-col ptw-h-full">
             <PaneTabs
               :story="storyStore.currentStory"
               :variant="storyStore.currentVariant"
@@ -68,7 +68,7 @@ const panelContentComponent = computed(() => {
               :is="panelContentComponent"
               :story="storyStore.currentStory"
               :variant="storyStore.currentVariant"
-              class="htw-h-full htw-overflow-auto"
+              class="ptw-h-full ptw-overflow-auto"
             />
           </div>
         </template>
@@ -77,7 +77,7 @@ const panelContentComponent = computed(() => {
           <StorySourceCode
             :story="storyStore.currentStory"
             :variant="storyStore.currentVariant"
-            class="htw-h-full"
+            class="ptw-h-full"
           />
         </template>
       </BaseSplitPane>

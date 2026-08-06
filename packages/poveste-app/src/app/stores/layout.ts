@@ -10,7 +10,7 @@ export interface LayoutSettings {
 }
 
 export const useLayoutStore = defineStore('layout', () => {
-  const settings = useStorage<LayoutSettings>('_histoire-layout-v1', {
+  const settings = useStorage<LayoutSettings>('_poveste-layout-v1', {
     storyListVisible: true,
     storyOptionsVisible: true,
     storyOptionsPlacement: 'right',

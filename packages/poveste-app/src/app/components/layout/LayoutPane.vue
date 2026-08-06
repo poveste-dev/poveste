@@ -7,7 +7,7 @@ const settings = useLayoutStore().settings
 </script>
 
 <template>
-  <div class="htw-py-2">
+  <div class="ptw-py-2">
     <LayoutItemGroup title="Visibility">
       <LayoutItem
         title="Story List"

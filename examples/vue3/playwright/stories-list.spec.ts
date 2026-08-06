@@ -6,7 +6,7 @@ test.describe('stories list', () => {
     await page.evaluate(() => localStorage.clear())
     await page.reload()
 
-    await expect(page.getByTestId('story-list-item')).toHaveCount(35)
+    await expect(page.getByTestId('story-list-item')).toHaveCount(36)
     await expect(page.getByTestId('story-list-item').filter({ hasText: '🐱 Meow' })).toBeVisible()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()

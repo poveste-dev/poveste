@@ -13,12 +13,12 @@ defineProps<{
   <TopBarChipItem
     v-tooltip="tooltip"
     target="_blank"
-    class="histoire-toolbar-open-in-editor"
+    class="poveste-toolbar-open-in-editor"
     @click="openInEditor(file)"
   >
     <Icon
       icon="carbon:script-reference"
-      class="htw-w-4 htw-h-4"
+      class="ptw-w-4 ptw-h-4"
     />
   </TopBarChipItem>
 </template>

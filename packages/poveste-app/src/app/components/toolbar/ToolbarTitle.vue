@@ -20,19 +20,19 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <div class="histoire-toolbar-title htw-flex htw-items-center htw-gap-2 htw-min-w-0">
+  <div class="poveste-toolbar-title ptw-flex ptw-items-center ptw-gap-2 ptw-min-w-0">
     <Icon
       :icon="icon"
-      class="htw-w-4 htw-h-4 htw-flex-none"
+      class="ptw-w-4 ptw-h-4 ptw-flex-none"
       :class="[
-        iconColor ? 'bind-icon-color' : 'htw-text-gray-500 dark:htw-text-gray-400',
+        iconColor ? 'bind-icon-color' : 'ptw-text-gray-500 dark:ptw-text-gray-400',
       ]"
     />
-    <div class="htw-flex htw-flex-col htw-justify-center htw-min-w-0 htw-leading-tight htw-text-center htw-h-[2.25rem]">
-      <span class="htw-truncate htw-text-sm htw-font-medium htw-text-gray-900 dark:htw-text-gray-100">{{ title }}</span>
+    <div class="ptw-flex ptw-flex-col ptw-justify-center ptw-min-w-0 ptw-leading-tight ptw-text-center ptw-h-[2.25rem]">
+      <span class="ptw-truncate ptw-text-sm ptw-font-medium ptw-text-gray-900 dark:ptw-text-gray-100">{{ title }}</span>
       <span
         v-if="subtitle"
-        class="htw-truncate htw-text-xs htw-text-gray-500 dark:htw-text-gray-400"
+        class="ptw-truncate ptw-text-xs ptw-text-gray-500 dark:ptw-text-gray-400"
       >{{ subtitle }}</span>
     </div>
   </div>

@@ -20,11 +20,11 @@ const sandboxUrl = computed(() => {
     v-tooltip="'Open variant in new tab'"
     :href="sandboxUrl"
     target="_blank"
-    class="histoire-toolbar-new-tab"
+    class="poveste-toolbar-new-tab"
   >
     <Icon
       icon="carbon:launch"
-      class="htw-w-4 htw-h-4"
+      class="ptw-w-4 ptw-h-4"
     />
   </TopBarChipItem>
 </template>

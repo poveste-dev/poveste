@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
-import { histoireConfig } from '../../util/config'
+import { povesteConfig } from '../../util/config'
 import { isDark, toggleDark } from '../../util/dark'
 import { isMobile } from '../../util/responsive'
 import { makeTooltip } from '../../util/tooltip'
@@ -29,7 +29,7 @@ const themeIcon = computed(() => {
     >
       <Icon
         icon="carbon:panel-expansion"
-        class="htw-w-4 htw-h-4"
+        class="ptw-w-4 ptw-h-4"
       />
     </TopBarChipItem>
 
@@ -40,18 +40,18 @@ const themeIcon = computed(() => {
     >
       <Icon
         icon="carbon:search"
-        class="htw-w-4 htw-h-4"
+        class="ptw-w-4 ptw-h-4"
       />
     </TopBarChipItem>
 
     <TopBarChipItem
-      v-if="!histoireConfig.theme.hideColorSchemeSwitch"
+      v-if="!povesteConfig.theme.hideColorSchemeSwitch"
       v-tooltip="makeTooltip('Toggle dark mode', ({ isMac }) => isMac ? 'meta+shift+d' : 'ctrl+shift+d')"
       @click="toggleDark()"
     >
       <Icon
         :icon="themeIcon"
-        class="htw-w-4 htw-h-4"
+        class="ptw-w-4 ptw-h-4"
       />
     </TopBarChipItem>
   </TopBarChip>
