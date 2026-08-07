@@ -1,11 +1,8 @@
-// Tailwind only runs in poveste-dev mode, where the example renders the
-// unbuilt app source. v4 is CSS-first, so there is no config file to point at.
-module.exports = process.env.POVESTE_DEV
-  ? {
-      plugins: [
-        require('@tailwindcss/postcss'),
-      ],
-    }
-  : {
-      plugins: [],
-    }
+// This example doubles as the consumer-side Tailwind v4 fixture: the story
+// stylesheet imports Tailwind (preflight included) to prove it stays scoped to
+// story containers and never restyles poveste's own chrome.
+module.exports = {
+  plugins: [
+    require('@tailwindcss/postcss'),
+  ],
+}

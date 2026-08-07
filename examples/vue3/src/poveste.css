@@ -1,3 +1,11 @@
+/*
+ * Consumer-side Tailwind v4, preflight included. This is the adversarial case
+ * behind histoire#779 / #791 / #811: v4 emits everything in cascade layers and
+ * preflight resets `*`, `a`, `button` and headings globally. It must stay
+ * scoped to story containers and never restyle poveste's own chrome.
+ */
+@import 'tailwindcss';
+
 .demo {
   color: #10B981;
 }
