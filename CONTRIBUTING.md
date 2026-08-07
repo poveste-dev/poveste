@@ -128,6 +128,26 @@ pnpm run story:dev
 pnpm run test:dev
 ```
 
+## Releasing
+
+Releases are cut from `main` with [bumpp](https://github.com/antfu-collective/bumpp), which bumps every workspace `package.json` in lockstep, commits, tags `v<version>` and pushes. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
+
+```sh
+# Root of the mono-repo
+pnpm run release patch   # or: minor, major
+```
+
+The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
+
+`release` runs `release:check` first, which gates the release on lint, build, unit tests and the smoke test:
+
+```sh
+# Root of the mono-repo — the same gate, without bumping anything
+pnpm run release:check
+```
+
+The smoke test (`pnpm run test:smoke`) packs the publishable tarballs, installs them into a throwaway project with npm (no workspace symlinks) and runs a real `poveste build`. It is deliberately not part of `pnpm run test`, because it needs a completed build — but it is the check that catches "works in the pnpm workspace, broken for consumers" bugs, so the release must not skip it.
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.
