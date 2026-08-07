@@ -101,7 +101,7 @@ echo "▸ Installing tarballs with npm (clean, no workspace)"
   cd "$APP"
   npm install --no-audit --no-fund --loglevel=error \
     "${TGZ[@]}" \
-    vue@^3.5.26 vite@^7.3.0 @vitejs/plugin-vue@^6.0.0
+    vue@^3.5.26 vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 )
 
 echo "▸ Running poveste build"

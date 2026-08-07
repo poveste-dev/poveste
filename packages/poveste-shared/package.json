@@ -29,7 +29,7 @@
     "watch": "tsc -w --sourceMap"
   },
   "peerDependencies": {
-    "vite": "^7.0.0 || ^8.0.0"
+    "vite": "^8.0.0"
   },
   "dependencies": {
     "@poveste/vendors": "workspace:^",

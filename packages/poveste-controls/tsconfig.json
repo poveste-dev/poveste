@@ -10,7 +10,7 @@
     "baseUrl": ".",
     "rootDir": "src",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     // Alias
     "paths": {
       "floating-vue": ["./node_modules/@poveste/vendors/floating-vue"],
