@@ -399,6 +399,9 @@ importers:
       sirv:
         specifier: ^3.0.0
         version: 3.0.2
+      unhead:
+        specifier: ^3.1.0
+        version: 3.3.1(esbuild@0.27.2)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0))
       vite-node:
         specifier: 3.2.4
         version: 3.2.4(@types/node@22.19.3)(lightningcss@1.32.0)(sass@1.97.2)(supports-color@5.5.0)(terser@5.44.1)
@@ -804,6 +807,9 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      unhead:
+        specifier: ^3.1.0
+        version: 3.3.1(esbuild@0.27.2)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0))
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -4910,6 +4916,9 @@ packages:
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
 
+  hookable@6.1.1:
+    resolution: {integrity: sha512-U9LYDy1CwhMCnprUfeAZWZGByVbhd54hwepegYTK7Pi5NvqEj63ifz5z+xukznehT7i6NIZRu89Ay1AZmRsLEQ==}
+
   hosted-git-info@2.8.9:
     resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
 
@@ -7272,6 +7281,14 @@ packages:
   unhead@2.1.1:
     resolution: {integrity: sha512-NOt8n2KybAOxSLfNXegAVai4SGU8bPKqWnqCzNAvnRH2i8mW+0bbFjN/L75LBgCSTiOjJSpANe5w2V34Grr7Cw==}
 
+  unhead@3.3.1:
+    resolution: {integrity: sha512-eqHlbLyuvIXw898WopQmosTml4PdYW5ZhXDom/sf7ysAqQB9uvYrw2/dNvbrmkJTufSkmNmgGCjoQcvoT2mS/A==}
+    peerDependencies:
+      vite: '>=6.4.2'
+    peerDependenciesMeta:
+      vite:
+        optional: true
+
   unicorn-magic@0.3.0:
     resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
     engines: {node: '>=18'}
@@ -7324,6 +7341,39 @@ packages:
   unplugin@2.3.11:
     resolution: {integrity: sha512-5uKD0nqiYVzlmCRs01Fhs2BdkEgBS3SAVP6ndrBsuK42iC2+JHyxM05Rm9G8+5mkmRtzMZGY8Ct5+mliZxU/Ww==}
     engines: {node: '>=18.12.0'}
+
+  unplugin@3.3.0:
+    resolution: {integrity: sha512-qa66K+crbfyE6JK10GjvbJeRrOsuC/JpbnHctfyp/i4oBTxWOzJfRZyDiOk1PtErMFRu8JhsU/wPvOdBNWe5Rg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@farmfe/core': '*'
+      '@rspack/core': '*'
+      bun-types-no-globals: '*'
+      esbuild: '*'
+      rolldown: '*'
+      rollup: '*'
+      unloader: '*'
+      vite: '*'
+      webpack: '*'
+    peerDependenciesMeta:
+      '@farmfe/core':
+        optional: true
+      '@rspack/core':
+        optional: true
+      bun-types-no-globals:
+        optional: true
+      esbuild:
+        optional: true
+      rolldown:
+        optional: true
+      rollup:
+        optional: true
+      unloader:
+        optional: true
+      vite:
+        optional: true
+      webpack:
+        optional: true
 
   unrs-resolver@1.11.1:
     resolution: {integrity: sha512-bSjt9pjaEBnNiGgc9rUiHGKv5l4/TGzDmYw3RhnkJGtLhbnnA/5qJj7x3dNDCRx/PJxu774LlH8lCOlB4hEfKg==}
@@ -12265,6 +12315,8 @@ snapshots:
 
   hookable@5.5.3: {}
 
+  hookable@6.1.1: {}
+
   hosted-git-info@2.8.9: {}
 
   html-encoding-sniffer@6.0.0:
@@ -15111,6 +15163,22 @@ snapshots:
     dependencies:
       hookable: 5.5.3
 
+  unhead@3.3.1(esbuild@0.27.2)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0)):
+    dependencies:
+      hookable: 6.1.1
+      unplugin: 3.3.0(esbuild@0.27.2)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0))
+    optionalDependencies:
+      vite: 7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - '@farmfe/core'
+      - '@rspack/core'
+      - bun-types-no-globals
+      - esbuild
+      - rolldown
+      - rollup
+      - unloader
+      - webpack
+
   unicorn-magic@0.3.0: {}
 
   unimport@5.6.0:
@@ -15198,6 +15266,16 @@ snapshots:
       acorn: 8.15.0
       picomatch: 4.0.4
       webpack-virtual-modules: 0.6.2
+
+  unplugin@3.3.0(esbuild@0.27.2)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0)):
+    dependencies:
+      '@jridgewell/remapping': 2.3.5
+      picomatch: 4.0.4
+      webpack-virtual-modules: 0.6.2
+    optionalDependencies:
+      esbuild: 0.27.2
+      rollup: 4.55.1
+      vite: 7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0)
 
   unrs-resolver@1.11.1:
     dependencies:

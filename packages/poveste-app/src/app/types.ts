@@ -50,6 +50,11 @@ export interface PreviewSettings {
   responsiveHeight: number
   rotate: boolean
   backgroundColor: string
+  /**
+   * Whether `backgroundColor` came from an explicit toolbar pick rather than
+   * from the `defaultBackgroundColor` config option.
+   */
+  backgroundColorPicked: boolean
   checkerboard: boolean
   textDirection: 'ltr' | 'rtl'
 }

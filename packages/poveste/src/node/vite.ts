@@ -20,6 +20,7 @@ import {
   globalStylesPlugin,
   userCssScopePlugin,
 } from './style-isolation/index.js'
+import { applyHeadTransform } from './util/head.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -249,6 +250,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   <script type="module" src="/@fs/${APP_PATH}/bundle-sandbox${process.env.POVESTE_DEV ? '-dev' : ''}.js"></script>
 </body>
 </html>`
+          html = await applyHeadTransform(html, ctx.config.head)
           // Apply Vite HTML transforms. This injects the Vite HMR client, and
           // also applies HTML transforms from Vite plugins
           html = await server.transformIndexHtml(req.url, html)
@@ -282,6 +284,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     <script type="module" src="/@fs/${APP_PATH}/bundle-main${process.env.POVESTE_DEV ? '-dev' : ''}.js"></script>
   </body>
 </html>`
+            html = await applyHeadTransform(html, ctx.config.head)
             // Apply Vite HTML transforms. This injects the Vite HMR client, and
             // also applies HTML transforms from Vite plugins
             html = await server.transformIndexHtml(req.url, html)

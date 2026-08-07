@@ -32,6 +32,7 @@ import {
   entryCssMergerPlugin,
   userCssScopePlugin,
 } from './style-isolation/index.js'
+import { applyHeadTransform } from './util/head.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
 const PRELOAD_MODULES = [
@@ -217,14 +218,16 @@ export async function build(ctx: Context) {
 
   // Index
   const indexOutput = result.output.find(o => o.name === 'bundle-main' && o.type === 'chunk')
-  const indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
+  let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
     HEAD: `${preloadHtml}${prefetchHtml}`,
   }, ctx)
+  indexHtml = await applyHeadTransform(indexHtml, ctx.config.head)
   await writeFile('index.html', indexHtml, ctx)
 
   // Sandbox
   const sandboxOutput = result.output.find(o => o.name === 'bundle-sandbox' && o.type === 'chunk')
-  const sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
+  let sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
+  sandboxHtml = await applyHeadTransform(sandboxHtml, ctx.config.head)
   await writeFile('__sandbox.html', sandboxHtml, ctx)
 
   await writeFile('poveste.json', JSON.stringify(getSerializedStoryData(ctx), null, 2), ctx)

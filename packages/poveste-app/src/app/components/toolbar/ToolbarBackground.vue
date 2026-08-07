@@ -4,7 +4,8 @@ import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
 
-const settings = usePreviewSettingsStore().currentSettings
+const previewSettings = usePreviewSettingsStore()
+const settings = previewSettings.currentSettings
 </script>
 
 <template>
@@ -47,7 +48,7 @@ const settings = usePreviewSettingsStore().currentSettings
               ? 'ptw-bg-primary-500 hover:ptw-bg-primary-600 ptw-text-white dark:ptw-text-black'
               : 'ptw-bg-transparent hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-700',
           ]"
-          @click="settings.backgroundColor = option.color;hide()"
+          @click="previewSettings.setBackgroundColor(option.color);hide()"
         >
           <span class="ptw-mr-auto">{{ option.label }}</span>
           <template v-if="option.color !== '$checkerboard'">

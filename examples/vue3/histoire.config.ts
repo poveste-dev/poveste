@@ -14,8 +14,14 @@ export default defineConfig({
       contrastColor: '#005142',
     },
   ],
+  defaultBackgroundColor: '#fff',
   // autoApplyContrastColor: true,
   // routerMode: 'hash',
+  head: {
+    meta: [
+      { name: 'theme-color', content: '#10b981' },
+    ],
+  },
   theme: {
     darkClass: 'my-dark',
   },
