@@ -1,6 +1,5 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-
-const STORY_URL = '/story/src-components-styleisolation-story-vue?variantId=src-components-styleisolation-story-vue-0'
 
 /*
  * Isolation between poveste's chrome and consumer stories, with the consumer
@@ -13,44 +12,59 @@ const STORY_URL = '/story/src-components-styleisolation-story-vue?variantId=src-
  * Every test here has been verified to fail with `isolateStyles: false`, so they
  * genuinely exercise the isolation rather than passing incidentally.
  */
-test.describe('style isolation (consumer on Tailwind v4)', () => {
-  test('consumer Tailwind utilities apply inside the story', async ({ page }) => {
-    await page.goto(STORY_URL)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
-    const box = iframe.locator('[data-test-id="consumer-tailwind"]')
 
-    await expect(box).toBeVisible()
-    // v4 ships its palette in oklch; this is `bg-red-500`.
-    await expect(box).toHaveCSS('background-color', 'oklch(0.637 0.237 25.331)')
+const STORY_URL = '/story/src-components-styleisolation-story-vue?variantId=src-components-styleisolation-story-vue-0'
+
+// Computed colours, named so the assertions read as intent rather than digits.
+const CONSUMER_RED_500 = 'oklch(0.637 0.237 25.331)' // the consumer's `bg-red-500`
+const CONSUMER_TOMATO = 'rgb(255, 99, 71)' // the consumer's `--user-primary`
+const STORY_LAYER_BLUE = 'rgb(0, 0, 255)' // `.my-button` in the story's `@layer components`
+const TRANSPARENT = 'rgba(0, 0, 0, 0)'
+
+/** Opens the isolation story and returns its preview frame. */
+async function openStory(page: Page) {
+  await page.goto(STORY_URL)
+  return page.frameLocator('iframe[data-test-id="preview-iframe"]')
+}
+
+test.describe('style isolation (consumer on Tailwind v4)', () => {
+  test('applies the consumer\'s own Tailwind utilities inside the story', async ({ page }) => {
+    const story = await openStory(page)
+
+    const box = story.locator('[data-test-id="consumer-tailwind"]')
+
+    await expect(box).toHaveCSS('background-color', CONSUMER_RED_500)
     await expect(box).toHaveCSS('padding', '16px')
   })
 
-  test('poveste\'s chrome utilities do not leak into the story', async ({ page }) => {
-    await page.goto(STORY_URL)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
-    const box = iframe.locator('[data-test-id="chrome-utility-leak"]')
+  test('leaves chrome-only utilities inert inside the story', async ({ page }) => {
+    const story = await openStory(page)
 
-    await expect(box).toBeVisible()
-    // `bg-primary-500` styles poveste's own UI; inside a story it must be inert.
-    await expect(box).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+    // `bg-primary-500` styles poveste's own UI; it must do nothing in here.
+    const box = story.locator('[data-test-id="chrome-utility-leak"]')
+
+    await expect(box).toHaveCSS('background-color', TRANSPARENT)
   })
 
-  test('consumer styles do not leak into poveste\'s chrome', async ({ page }) => {
-    await page.goto(STORY_URL)
-    await expect(page.getByTestId('story-list-item').first()).toBeVisible()
+  test('keeps the consumer\'s body rule from repainting the chrome', async ({ page }) => {
+    await openStory(page)
 
-    // The consumer sets `body { background: tomato }` and `* { box-sizing:
-    // content-box }`; neither may reach the surrounding UI.
-    await expect(page.locator('body')).not.toHaveCSS('background-color', 'rgb(255, 99, 71)')
+    // The consumer sets `body { background: var(--user-primary) }`.
+    await expect(page.locator('body')).not.toHaveCSS('background-color', CONSUMER_TOMATO)
+  })
+
+  test('keeps the consumer\'s universal selector from resetting the chrome', async ({ page }) => {
+    await openStory(page)
+
+    // The consumer sets `* { box-sizing: content-box }`.
     await expect(page.getByTestId('story-list-item').first()).toHaveCSS('box-sizing', 'border-box')
   })
 
-  test('cascade layers from a scoped story stylesheet still apply', async ({ page }) => {
-    await page.goto(STORY_URL)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+  test('preserves cascade layers declared in the story\'s own stylesheet', async ({ page }) => {
+    const story = await openStory(page)
 
-    // `.my-button` is declared inside `@layer components` in the story's own
-    // scoped <style>; layered rules must survive the isolation wrapper.
-    await expect(iframe.locator('.my-button')).toHaveCSS('border-color', 'rgb(0, 0, 255)')
+    // `.my-button` lives in `@layer components`; layered rules must survive the
+    // isolation wrapper, which is the histoire#811 failure mode.
+    await expect(story.locator('.my-button')).toHaveCSS('border-color', STORY_LAYER_BLUE)
   })
 })
