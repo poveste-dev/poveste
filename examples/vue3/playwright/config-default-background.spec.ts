@@ -1,9 +1,12 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-// The example config sets `defaultBackgroundColor: '#fff'`, which matches the
-// built-in "White" preset (the second entry in the dropdown).
+// The example config sets `defaultBackgroundColor: 'transparent'`, which matches
+// the built-in "Transparent" preset (the first entry in the dropdown).
+const TRANSPARENT_PRESET_INDEX = 0
+// The "White" preset, used to assert that a non-default entry stays unhighlighted.
 const WHITE_PRESET_INDEX = 1
+const TRANSPARENT_CSS = 'rgba(0, 0, 0, 0)'
 
 function seedSettings(page: Page, settings: Record<string, unknown>) {
   return page.addInitScript((value) => {
@@ -21,15 +24,15 @@ function seedSettings(page: Page, settings: Record<string, unknown>) {
 test.describe('defaultBackgroundColor', () => {
   test('applies the configured color before any preset is picked', async ({ page }) => {
     await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
-    await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+    await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', TRANSPARENT_CSS)
   })
 
   test('highlights the matching preset in the dropdown', async ({ page }) => {
     await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
     await page.getByTestId('toolbar-background').click()
     const buttons = page.getByTestId('background-popper').locator('> button')
-    await expect(buttons.nth(WHITE_PRESET_INDEX)).toHaveClass(/ptw-bg-primary-500/)
-    await expect(buttons.nth(0)).not.toHaveClass(/ptw-bg-primary-500/)
+    await expect(buttons.nth(TRANSPARENT_PRESET_INDEX)).toHaveClass(/ptw-bg-primary-500/)
+    await expect(buttons.nth(WHITE_PRESET_INDEX)).not.toHaveClass(/ptw-bg-primary-500/)
   })
 
   test('keeps a manual pick over the configured default', async ({ page }) => {
@@ -45,7 +48,7 @@ test.describe('defaultBackgroundColor', () => {
   test('reaches users whose settings predate the option', async ({ page }) => {
     await seedSettings(page, { backgroundColor: '#000' })
     await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
-    await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+    await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', TRANSPARENT_CSS)
   })
 
   test('never overrides an already picked color', async ({ page }) => {

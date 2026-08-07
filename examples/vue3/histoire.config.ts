@@ -14,7 +14,7 @@ export default defineConfig({
       contrastColor: '#005142',
     },
   ],
-  defaultBackgroundColor: '#fff',
+  defaultBackgroundColor: 'transparent',
   // autoApplyContrastColor: true,
   // routerMode: 'hash',
   head: {
