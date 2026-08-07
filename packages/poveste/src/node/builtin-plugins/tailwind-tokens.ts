@@ -19,6 +19,11 @@ const CSS_ENTRY_CANDIDATES = [
   'src/app.css',
   'src/assets/main.css',
   'src/assets/style.css',
+  'src/assets/css/main.css',
+  // Nuxt conventions
+  'app/assets/css/main.css',
+  'assets/css/main.css',
+  // Next.js conventions
   'styles/globals.css',
   'app/globals.css',
   'style.css',
@@ -97,9 +102,28 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
  * project's CSS entrypoint and reshape its variables into the grouped structure
  * the story template renders.
  */
+/**
+ * Resolve a stylesheet referenced from CSS. A bare package specifier resolves
+ * to the JS entry, so its `style` field is used instead — that is how
+ * `@import 'tailwindcss'` reaches `tailwindcss/index.css`.
+ */
+async function resolveStylesheet(api: PluginApiBase, id: string, importBase: string) {
+  const { createRequire } = await import('node:module')
+  const require = createRequire(`${importBase}/`)
+
+  if (id.startsWith('.')) {
+    return api.path.resolve(importBase, id)
+  }
+  if (id.endsWith('.css')) {
+    return require.resolve(id)
+  }
+  const packageJsonPath = require.resolve(`${id}/package.json`)
+  const packageJson = JSON.parse(await api.fs.readFile(packageJsonPath, 'utf8'))
+  return api.path.resolve(api.path.dirname(packageJsonPath), packageJson.style ?? 'index.css')
+}
+
 async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
   const { __unstable__loadDesignSystem } = await import('tailwindcss')
-  const { createRequire } = await import('node:module')
 
   const base = api.path.dirname(cssFile)
   const designSystem = await __unstable__loadDesignSystem(
@@ -107,9 +131,7 @@ async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
     {
       base,
       loadStylesheet: async (id: string, importBase: string) => {
-        const resolved = id.startsWith('.')
-          ? api.path.resolve(importBase, id)
-          : createRequire(`${importBase}/`).resolve(id)
+        const resolved = await resolveStylesheet(api, id, importBase)
         return {
           path: resolved,
           base: api.path.dirname(resolved),

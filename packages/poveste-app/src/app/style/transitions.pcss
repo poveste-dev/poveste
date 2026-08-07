@@ -1,51 +1,50 @@
-.__poveste-scale-x {
-  &-enter-active,
-  &-leave-active {
-    transition: transform .15s, opacity .15s;
-  }
+/*
+ * Vue transition classes. Written out in full rather than with SCSS-style
+ * `&-enter-active` concatenation: Tailwind v4 uses native CSS nesting, where
+ * `&` is a real selector reference (`:is(…)`) and cannot be string-joined
+ * with a suffix. v3 resolved that through postcss-nested.
+ */
 
-  &-enter-from,
-  &-leave-to {
-    transform: scaleX(0);
-    opacity: 0;
-  }
+.__poveste-scale-x-enter-active,
+.__poveste-scale-x-leave-active {
+  transition: transform .15s, opacity .15s;
 }
 
-.__poveste-scale-y {
-  &-enter-active,
-  &-leave-active {
-    transition: transform .15s, opacity .15s;
-  }
-
-  &-enter-from,
-  &-leave-to {
-    transform: scaleY(0);
-    opacity: 0;
-  }
+.__poveste-scale-x-enter-from,
+.__poveste-scale-x-leave-to {
+  transform: scaleX(0);
+  opacity: 0;
 }
 
-.__poveste-fade {
-  &-enter-active,
-  &-leave-active {
-    transition: opacity .15s;
-  }
-
-  &-enter-from,
-  &-leave-to {
-    opacity: 0;
-  }
+.__poveste-scale-y-enter-active,
+.__poveste-scale-y-leave-active {
+  transition: transform .15s, opacity .15s;
 }
 
-.__poveste-fade-bottom {
-  &-enter-active,
-  &-leave-active {
-    transition: transform .15s, opacity .15s;
-    transform: translateY(0px);
-  }
+.__poveste-scale-y-enter-from,
+.__poveste-scale-y-leave-to {
+  transform: scaleY(0);
+  opacity: 0;
+}
 
-  &-enter-from,
-  &-leave-to {
-    transform: translateY(32px);
-    opacity: 0;
-  }
+.__poveste-fade-enter-active,
+.__poveste-fade-leave-active {
+  transition: opacity .15s;
+}
+
+.__poveste-fade-enter-from,
+.__poveste-fade-leave-to {
+  opacity: 0;
+}
+
+.__poveste-fade-bottom-enter-active,
+.__poveste-fade-bottom-leave-active {
+  transition: transform .15s, opacity .15s;
+  transform: translateY(0px);
+}
+
+.__poveste-fade-bottom-enter-from,
+.__poveste-fade-bottom-leave-to {
+  transform: translateY(32px);
+  opacity: 0;
 }
