@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "catalog:",
     "@types/node": "^22.10.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/runtime-dom": "^3.5.26",
@@ -62,7 +62,7 @@
     "floating-vue": "5.2.2",
     "jsdom": "^27.4.0",
     "postcss": "catalog:",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "4.0.16",

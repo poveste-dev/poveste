@@ -3,20 +3,30 @@ import { findUp } from '../util/find-up.js'
 import { getInjectedImport } from '../util/vendors.js'
 
 export interface TailwindTokensOptions {
-  configFile?: string
+  /**
+   * Path to the CSS entrypoint that imports Tailwind and declares `@theme`.
+   * Tailwind v4 is CSS-first, so the design tokens are read from CSS rather
+   * than from a JS config. Auto-detected when omitted.
+   */
+  cssFile?: string
 }
 
+const CSS_ENTRY_CANDIDATES = [
+  'src/style.css',
+  'src/styles.css',
+  'src/main.css',
+  'src/index.css',
+  'src/app.css',
+  'src/assets/main.css',
+  'src/assets/style.css',
+  'styles/globals.css',
+  'app/globals.css',
+  'style.css',
+  'styles.css',
+]
+
 export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
-  const tailwindConfigFile = options.configFile ?? findUp(process.cwd(), [
-    'tailwind.config.js',
-    'tailwind.config.cjs',
-    'tailwind.config.mjs',
-    'tailwind.config.ts',
-    'tailwind-config.js',
-    'tailwind-config.cjs',
-    'tailwind-config.mjs',
-    'tailwind-config.ts',
-  ])
+  const tailwindCssFile = options.cssFile ?? findUp(process.cwd(), CSS_ENTRY_CANDIDATES)
 
   async function generate(api: PluginApiBase) {
     try {
@@ -24,11 +34,9 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
       await api.fs.emptyDir(api.pluginTempDir)
       api.moduleLoader.clearCache()
       await api.fs.writeFile(api.path.resolve(api.pluginTempDir, 'style.css'), css)
-      const tailwindConfig = await api.moduleLoader.loadModule(tailwindConfigFile)
-      const { default: resolveConfig } = await import('tailwindcss/resolveConfig.js')
-      const resolvedTailwindConfig = resolveConfig(tailwindConfig.default ?? tailwindConfig)
+      const theme = await loadTailwindTheme(api, tailwindCssFile)
       const storyFile = api.path.resolve(api.pluginTempDir, 'Tailwind.story.js')
-      await api.fs.writeFile(storyFile, storyTemplate(resolvedTailwindConfig))
+      await api.fs.writeFile(storyFile, storyTemplate({ theme }))
       api.addStoryFile(storyFile)
     }
     catch (e) {
@@ -40,7 +48,7 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
     name: 'builtin:tailwind-tokens',
 
     config(config) {
-      if (tailwindConfigFile) {
+      if (tailwindCssFile) {
         // Add 'design-system' group
         if (!config.tree) {
           config.tree = {}
@@ -65,8 +73,8 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
     },
 
     onDev(api, onCleanup) {
-      if (tailwindConfigFile) {
-        const watcher = api.watcher.watch(tailwindConfigFile)
+      if (tailwindCssFile) {
+        const watcher = api.watcher.watch(tailwindCssFile)
           .on('change', () => generate(api))
           .on('add', () => generate(api))
         onCleanup(() => {
@@ -76,10 +84,105 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
     },
 
     async onBuild(api) {
-      if (tailwindConfigFile) {
+      if (tailwindCssFile) {
         await generate(api)
       }
     },
+  }
+}
+
+/**
+ * Tailwind v4 keeps its theme as flat CSS custom properties rather than a
+ * resolved JS config (`resolveConfig` is gone). Load the design system from the
+ * project's CSS entrypoint and reshape its variables into the grouped structure
+ * the story template renders.
+ */
+async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
+  const { __unstable__loadDesignSystem } = await import('tailwindcss')
+  const { createRequire } = await import('node:module')
+
+  const base = api.path.dirname(cssFile)
+  const designSystem = await __unstable__loadDesignSystem(
+    await api.fs.readFile(cssFile, 'utf8'),
+    {
+      base,
+      loadStylesheet: async (id: string, importBase: string) => {
+        const resolved = id.startsWith('.')
+          ? api.path.resolve(importBase, id)
+          : createRequire(`${importBase}/`).resolve(id)
+        return {
+          path: resolved,
+          base: api.path.dirname(resolved),
+          content: await api.fs.readFile(resolved, 'utf8'),
+        }
+      },
+    },
+  )
+
+  const vars = new Map<string, string>(
+    [...designSystem.theme.entries()].map(([key, entry]: [string, any]) => [key, entry.value]),
+  )
+
+  /** All values in a `--namespace-*` group, keyed by their remainder. */
+  function group(namespace: string, exclude?: RegExp) {
+    const out: Record<string, string> = {}
+    const prefix = `${namespace}-`
+    for (const [key, value] of vars) {
+      if (!key.startsWith(prefix)) continue
+      if (exclude?.test(key)) continue
+      out[key.slice(prefix.length)] = value
+    }
+    return out
+  }
+
+  /** Colours are rendered as shade sets: `red-500` -> `{ red: { 500: … } }`. */
+  function colors() {
+    const out: Record<string, any> = {}
+    for (const [key, value] of Object.entries(group('--color'))) {
+      const match = key.match(/^(.*)-(\d+)$/)
+      if (match) {
+        out[match[1]] ??= {}
+        out[match[1]][match[2]] = value
+      }
+      else {
+        out[key] = value
+      }
+    }
+    return out
+  }
+
+  // v4 generates the spacing scale on demand from a single `--spacing` base,
+  // so the conventional steps are reconstructed here for display.
+  const SPACING_STEPS = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96]
+  function spacing() {
+    const unit = vars.get('--spacing') ?? '0.25rem'
+    const out: Record<string, string> = {}
+    for (const step of SPACING_STEPS) {
+      out[String(step)] = step === 0 ? '0px' : `calc(${unit} * ${step})`
+    }
+    return out
+  }
+
+  const palette = colors()
+  const scale = spacing()
+
+  return {
+    backgroundColor: palette,
+    textColor: palette,
+    borderColor: palette,
+    padding: scale,
+    margin: scale,
+    width: scale,
+    height: scale,
+    fontSize: group('--text', /--line-height$|--letter-spacing$|--font-weight$/),
+    fontWeight: group('--font-weight'),
+    fontFamily: group('--font', /^--font-weight-/),
+    letterSpacing: group('--tracking'),
+    lineHeight: group('--leading'),
+    dropShadow: group('--drop-shadow'),
+    borderRadius: group('--radius'),
+    // v4 has no border-width namespace; these are the built-in static utilities.
+    borderWidth: { DEFAULT: '1px', 0: '0px', 2: '2px', 4: '4px', 8: '8px' },
   }
 }
 
@@ -134,7 +237,7 @@ export default {
       onMount: (api) => mountApp(api, () => Object.entries(config.theme.backgroundColor).map(([key, shades]) => h(HstColorShades, {
         key,
         shades: typeof shades === 'object' ? shades : { DEFAULT: shades },
-        getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`bg-\${key}\` : \`bg-\${key}-\${shade}\`),
+        getName: shade => '' + (shade === 'DEFAULT' ? \`bg-\${key}\` : \`bg-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
         class: '__pvt-shade',
@@ -157,7 +260,7 @@ export default {
       onMount: (api) => mountApp(api, () => Object.entries(config.theme.textColor).map(([key, shades]) => h(HstColorShades, {
         key,
         shades: typeof shades === 'object' ? shades : { DEFAULT: shades },
-        getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`text-\${key}\` : \`text-\${key}-\${shade}\`),
+        getName: shade => '' + (shade === 'DEFAULT' ? \`text-\${key}\` : \`text-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
         class: '__pvt-shade __pvt-text',
@@ -180,7 +283,7 @@ export default {
       onMount: (api) => mountApp(api, () => Object.entries(config.theme.borderColor).map(([key, shades]) => h(HstColorShades, {
         key,
         shades: typeof shades === 'object' ? shades : { DEFAULT: shades },
-        getName: shade => (config.prefix ?? '') + (shade === 'DEFAULT' ? \`border-\${key}\` : \`border-\${key}-\${shade}\`),
+        getName: shade => '' + (shade === 'DEFAULT' ? \`border-\${key}\` : \`border-\${key}-\${shade}\`),
         search: search.value,
       }, ({ color}) => h('div', {
         class: '__pvt-shade __pvt-border',
@@ -202,7 +305,7 @@ export default {
       icon: 'carbon:area',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.padding,
-        getName: key => \`\${config.prefix ?? ''}p-\${key}\`,
+        getName: key => \`\p-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-padding',
         style: {
@@ -220,7 +323,7 @@ export default {
       icon: 'carbon:area',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.margin,
-        getName: key => \`\${config.prefix ?? ''}m-\${key}\`,
+        getName: key => \`\m-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-margin',
       }, [
@@ -238,7 +341,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontSize,
-        getName: key => \`\${config.prefix ?? ''}text-\${key}\`,
+        getName: key => \`\text-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -261,7 +364,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontWeight,
-        getName: key => \`\${config.prefix ?? ''}font-\${key}\`,
+        getName: key => \`\font-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -290,7 +393,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontFamily,
-        getName: key => \`\${config.prefix ?? ''}font-\${key}\`,
+        getName: key => \`\font-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -319,7 +422,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.letterSpacing,
-        getName: key => \`\${config.prefix ?? ''}tracking-\${key}\`,
+        getName: key => \`\tracking-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -348,7 +451,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.lineHeight,
-        getName: key => \`\${config.prefix ?? ''}leading-\${key}\`,
+        getName: key => \`\leading-\${key}\`,
       }, ({ token }) => h('div', {
         style: {
           lineHeight: token.value,
@@ -370,7 +473,7 @@ export default {
       icon: 'carbon:shape-except',
       onMount: (api) => mountApp(api, () => h(HstTokenGrid, {
         tokens: config.theme.dropShadow,
-        getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'drop-shadow' : \`drop-shadow-\${key}\`),
+        getName: key => '' + (key === 'DEFAULT' ? 'drop-shadow' : \`drop-shadow-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
         class: '__pvt-drop-shadow',
@@ -385,7 +488,7 @@ export default {
       icon: 'carbon:condition-wait-point',
       onMount: (api) => mountApp(api, () => h(HstTokenGrid, {
         tokens: config.theme.borderRadius,
-        getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'rounded' : \`rounded-\${key}\`),
+        getName: key => '' + (key === 'DEFAULT' ? 'rounded' : \`rounded-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
         class: '__pvt-border-radius',
@@ -400,7 +503,7 @@ export default {
       icon: 'carbon:checkbox',
       onMount: (api) => mountApp(api, () => h(HstTokenGrid, {
         tokens: config.theme.borderWidth,
-        getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'border' : \`border-\${key}\`),
+        getName: key => '' + (key === 'DEFAULT' ? 'border' : \`border-\${key}\`),
         colSize: 180,
       }, ({ token }) => h('div', {
         class: '__pvt-border-width',
@@ -415,7 +518,7 @@ export default {
       icon: 'carbon:pan-horizontal',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.width,
-        getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'w' : \`w-\${key}\`),
+        getName: key => '' + (key === 'DEFAULT' ? 'w' : \`w-\${key}\`),
       }, ({ token }) => h('div', {
         class: '__pvt-width',
       }, [
@@ -433,7 +536,7 @@ export default {
       icon: 'carbon:pan-vertical',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.height,
-        getName: key => (config.prefix ?? '') + (key === 'DEFAULT' ? 'h' : \`h-\${key}\`),
+        getName: key => '' + (key === 'DEFAULT' ? 'h' : \`h-\${key}\`),
       }, ({ token }) => h('div', {
         class: '__pvt-height',
         style: {

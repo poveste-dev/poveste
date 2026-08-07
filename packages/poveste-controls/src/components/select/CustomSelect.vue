@@ -92,7 +92,7 @@ function selectValue(value: any, hide: () => void) {
 }
 
 .v-popper--theme-dropdown {
-  .dark & {
+  .ptw-dark & {
     .v-popper__inner {
       @apply bg-gray-700 border-gray-850 text-gray-100;
     }

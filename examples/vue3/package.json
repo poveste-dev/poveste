@@ -23,6 +23,7 @@
     "@poveste/app": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@poveste/vendors": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
     "@vitejs/plugin-vue": "^5.2.1",
     "nodemon": "^3.1.7",
     "poveste": "workspace:*",

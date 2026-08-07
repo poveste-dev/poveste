@@ -9,8 +9,10 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
-/* Dark mode is driven by a `.dark` class (was `darkMode: 'class'` in v3). */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Chrome dark mode. Deliberately a distinct class from the story-side
+   `theme.darkClass` default (`dark`) so chrome and story themes stay independent —
+   in v3 the `ptw-` prefix applied to the dark class and kept them separate. */
+@custom-variant dark (&:where(.ptw-dark, .ptw-dark *));
 
 @theme {
   /* primary = emerald (ported from the root v3 config) */

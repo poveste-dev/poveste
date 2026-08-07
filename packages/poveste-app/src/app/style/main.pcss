@@ -21,8 +21,10 @@
 /* TODO(#36): port the v3 typography theme() customization to v4 CSS. */
 @plugin '@tailwindcss/typography';
 
-/* Dark mode is driven by a `.dark` class (was `darkMode: 'class'` in v3). */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Chrome dark mode. Deliberately a distinct class from the story-side
+   `theme.darkClass` default (`dark`) so chrome and story themes stay independent —
+   in v3 the `ptw-` prefix applied to the dark class and kept them separate. */
+@custom-variant dark (&:where(.ptw-dark, .ptw-dark *));
 
 @theme {
   /*
@@ -150,7 +152,7 @@ button {
     background-repeat: no-repeat;
     background-position: right;
 
-    .dark & {
+    .ptw-dark & {
       background-image: linear-gradient(to left, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
     }
   }
@@ -216,6 +218,6 @@ button {
   }
 }
 
-.dark .prose blockquote {
+.ptw-dark .prose blockquote {
   background-color: var(--color-gray-750);
 }
