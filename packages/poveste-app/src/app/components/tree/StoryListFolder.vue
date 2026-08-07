@@ -37,22 +37,22 @@ const folderPadding = computed(() => {
     <div
       role="button"
       tabindex="0"
-      class="poveste-story-list-folder-button ptw-px-0.5 ptw-py-2 md:ptw-py-1.5 ptw-mx-1 ptw-rounded-sm hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-900 ptw-cursor-pointer ptw-select-none ptw-flex"
+      class="poveste-story-list-folder-button px-0.5 py-2 md:py-1.5 mx-1 rounded-sm hover:bg-primary-100 dark:hover:bg-primary-900 cursor-pointer select-none flex"
       @click="toggleOpen"
       @keyup.enter="toggleOpen"
       @keyup.space="toggleOpen"
     >
-      <span class="bind-tree-padding ptw-flex ptw-items-center ptw-gap-2 ptw-min-w-0">
-        <span class="ptw-flex ptw-flex-none ptw-items-center ptw-opacity-30 [.poveste-story-list-folder-button:hover_&]:ptw-opacity-100 ptw-ml-4 ptw-w-4 ptw-h-4 ptw-rounded-sm ptw-border ptw-border-gray-500/40">
+      <span class="bind-tree-padding flex items-center gap-2 min-w-0">
+        <span class="flex flex-none items-center opacity-30 [.poveste-story-list-folder-button:hover_&]:opacity-100 ml-4 w-4 h-4 rounded-sm border border-gray-500/40">
           <Icon
             icon="carbon:caret-right"
-            class="ptw-w-full ptw-h-full ptw-transition-transform ptw-duration-150"
+            class="w-full h-full transition-transform duration-150"
             :class="{
-              'ptw-rotate-90': isFolderOpen,
+              'rotate-90': isFolderOpen,
             }"
           />
         </span>
-        <span class="ptw-truncate">{{ folder.title }}</span>
+        <span class="truncate">{{ folder.title }}</span>
       </span>
     </div>
 

@@ -5,16 +5,16 @@ import AppLogo from './AppLogo.vue'
 
 <template>
   <div
-    class="poveste-app-header ptw-px-4 ptw-h-14 ptw-flex ptw-items-center ptw-gap-2"
+    class="poveste-app-header px-4 h-14 flex items-center gap-2"
   >
-    <div class="ptw-py-3 sm:ptw-py-4 ptw-flex-1 ptw-h-full ptw-flex ptw-items-center ptw-pr-2">
+    <div class="py-3 sm:py-4 flex-1 h-full flex items-center pr-2">
       <a
         :href="povesteConfig.theme?.logoHref"
         target="_blank"
-        class="ptw-w-full ptw-h-full ptw-flex ptw-items-center"
+        class="w-full h-full flex items-center"
       >
         <AppLogo
-          class="ptw-max-w-full ptw-max-h-full"
+          class="max-w-full max-h-full"
         />
       </a>
     </div>

@@ -11,7 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="poveste-story-list ptw-overflow-y-auto">
+  <div class="poveste-story-list overflow-y-auto">
     <template
       v-for="element of tree"
       :key="element.title"

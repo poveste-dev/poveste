@@ -93,7 +93,7 @@ const app = createApp({
 
   render() {
     return [
-      h('div', { class: 'ptw-sandbox-hidden' }, [
+      h('div', { class: 'sandbox-hidden' }, [
         h(GenericMountStory, {
           key: file.value.story.id,
           story: file.value.story,

@@ -278,19 +278,19 @@ const {
 
 <template>
   <div
-    class="poveste-search-pane ptw-flex ptw-items-center ptw-gap-4 ptw-pl-6 ptw-border ptw-border-transparent focus-visible:ptw-border-primary-500"
+    class="poveste-search-pane flex items-center gap-4 pl-6 border border-transparent focus-visible:border-primary-500"
     @click="focused = true"
   >
     <Icon
       icon="carbon:search"
-      class="flex-none ptw-w-4 ptw-h-4"
+      class="flex-none w-4 h-4"
     />
 
     <input
       ref="input"
       v-model="searchInputText"
       placeholder="Search for stories, variants..."
-      class="ptw-bg-transparent ptw-w-full ptw-flex-1 ptw-pl-0 ptw-pr-6 ptw-py-4 ptw-outline-none"
+      class="bg-transparent w-full flex-1 pl-0 pr-6 py-4 outline-none"
       @keydown.down.prevent="selectNext()"
       @keydown.up.prevent="selectPrevious()"
       @keydown.escape="close()"
@@ -306,7 +306,7 @@ const {
 
   <div
     v-else-if="results.length"
-    class="ptw-max-h-[400px] ptw-overflow-y-auto ptw-rounded-b-lg"
+    class="max-h-[400px] overflow-y-auto rounded-b-lg"
   >
     <SearchItem
       v-for="(result, index) of results"

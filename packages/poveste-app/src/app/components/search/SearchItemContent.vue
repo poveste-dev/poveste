@@ -23,14 +23,14 @@ const kindLabels = {
 <template>
   <BaseIcon
     :icon="result.icon ?? defaultIcons[result.kind]"
-    class="ptw-w-4 ptw-h-4"
+    class="w-4 h-4"
     :class="[
       !selected ? [
         result.iconColor
           ? 'bind-icon-color'
           : {
-            'ptw-text-primary-500': result.kind === 'story',
-            'ptw-text-gray-500': result.kind === 'variant',
+            'text-primary-500': result.kind === 'story',
+            'text-gray-500': result.kind === 'variant',
           },
       ] : [],
       {
@@ -38,27 +38,27 @@ const kindLabels = {
       },
     ]"
   />
-  <div class="ptw-flex-1">
-    <div class="ptw-flex">
+  <div class="flex-1">
+    <div class="flex">
       {{ result.title }}
-      <span class="ptw-ml-auto ptw-opacity-40">
+      <span class="ml-auto opacity-40">
         {{ kindLabels[result.kind] }}
       </span>
     </div>
 
     <div
       v-if="result.path?.length"
-      class="ptw-flex ptw-items-center ptw-gap-0.5 ptw-opacity-60"
+      class="flex items-center gap-0.5 opacity-60"
     >
       <div
         v-for="(p, index) of result.path"
         :key="index"
-        class="ptw-flex ptw-items-center ptw-gap-0.5"
+        class="flex items-center gap-0.5"
       >
         <Icon
           v-if="index > 0"
           icon="carbon:chevron-right"
-          class="ptw-w-4 ptw-h-4 ptw-mt-0.5 ptw-opacity-50"
+          class="w-4 h-4 mt-0.5 opacity-50"
         />
         <span>{{ p }}</span>
       </div>

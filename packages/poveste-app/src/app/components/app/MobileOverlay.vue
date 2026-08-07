@@ -13,17 +13,17 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   <transition name="__poveste-fade-bottom">
     <div
       v-if="opened"
-      class="poveste-mobile-overlay ptw-absolute ptw-z-10 ptw-bg-white dark:ptw-bg-gray-700 ptw-w-screen ptw-h-screen ptw-inset-0 ptw-overflow-hidden ptw-flex ptw-flex-col"
+      class="poveste-mobile-overlay absolute z-10 bg-white dark:bg-gray-700 w-screen h-screen inset-0 overflow-hidden flex flex-col"
     >
-      <div class="ptw-p-4 ptw-h-16 ptw-flex ptw-border-b ptw-border-gray-100 dark:ptw-border-gray-800 ptw-items-center ptw-place-content-between">
-        <span class="ptw-text-gray-500">{{ title }}</span>
+      <div class="p-4 h-16 flex border-b border-gray-100 dark:border-gray-800 items-center place-content-between">
+        <span class="text-gray-500">{{ title }}</span>
         <a
-          class="ptw-p-1 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-cursor-pointer"
+          class="p-1 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer"
           @click="emit('close')"
         >
           <Icon
             icon="carbon:close"
-            class="ptw-w-8 ptw-h-8 ptw-shrink-0"
+            class="w-8 h-8 shrink-0"
           />
         </a>
       </div>

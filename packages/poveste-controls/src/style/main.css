@@ -1,13 +1,61 @@
 @import 'floating-vue/dist/style.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/*
+ * Tailwind v4. Preflight is intentionally omitted (was `corePlugins.preflight:
+ * false` in v3) by importing the theme + utilities layers individually. The
+ * `ptw-` utility prefix is gone — chrome/story isolation is handled by @scope (#27).
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
 
+/* Chrome dark mode. Deliberately a distinct class from the story-side
+   `theme.darkClass` default (`dark`) so chrome and story themes stay independent —
+   in v3 the `ptw-` prefix applied to the dark class and kept them separate. */
+@custom-variant dark (&:where(.ptw-dark, .ptw-dark *));
+
+@theme {
+  /* primary = emerald (ported from the root v3 config) */
+  --color-primary-50: var(--color-emerald-50);
+  --color-primary-100: var(--color-emerald-100);
+  --color-primary-200: var(--color-emerald-200);
+  --color-primary-300: var(--color-emerald-300);
+  --color-primary-400: var(--color-emerald-400);
+  --color-primary-500: var(--color-emerald-500);
+  --color-primary-600: var(--color-emerald-600);
+  --color-primary-700: var(--color-emerald-700);
+  --color-primary-800: var(--color-emerald-800);
+  --color-primary-900: var(--color-emerald-900);
+  --color-primary-950: var(--color-emerald-950);
+
+  /* gray = zinc, plus the custom 750/850/950 shades from the root v3 config */
+  --color-gray-50: var(--color-zinc-50);
+  --color-gray-100: var(--color-zinc-100);
+  --color-gray-200: var(--color-zinc-200);
+  --color-gray-300: var(--color-zinc-300);
+  --color-gray-400: var(--color-zinc-400);
+  --color-gray-500: var(--color-zinc-500);
+  --color-gray-600: var(--color-zinc-600);
+  --color-gray-700: var(--color-zinc-700);
+  --color-gray-750: #323238;
+  --color-gray-800: var(--color-zinc-800);
+  --color-gray-850: #1f1f21;
+  --color-gray-900: var(--color-zinc-900);
+  --color-gray-950: #101012;
+
+  /* border radius (ported from the root v3 config) */
+  --radius-sm: 0.25rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
 
 body {
   font-size: 1.125rem;
-  @apply dark:ptw-text-gray-100;
+  @apply dark:text-gray-100;
 }
 
 @media (min-width: 640px) {

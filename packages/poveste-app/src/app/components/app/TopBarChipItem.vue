@@ -1,6 +1,6 @@
 <template>
   <a
-    class="poveste-top-bar-chip-item ptw-flex ptw-items-center ptw-gap-1 ptw-px-2.5 ptw-py-1.5 hover:ptw-bg-white/50 active:ptw-bg-white/70 dark:hover:ptw-bg-white/10 dark:active:ptw-bg-white/15 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-cursor-pointer ptw-text-gray-900 dark:ptw-text-gray-100 ptw-transition-colors"
+    class="poveste-top-bar-chip-item flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 active:bg-white/70 dark:hover:bg-white/10 dark:active:bg-white/15 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors"
   >
     <slot />
   </a>

@@ -2,9 +2,72 @@
 @import 'floating-vue/dist/style.css';
 @import '@poveste/controls/dist/index.es.css';
 
-@import 'floating.pcss';
-@import 'transitions.pcss';
+@import './floating.pcss';
+@import './transitions.pcss';
 
+/*
+ * Tailwind v4. Preflight is intentionally omitted (was `corePlugins.preflight:
+ * false` in v3) — the manual reset below replaces it. The `ptw-` utility prefix
+ * is gone; chrome/story isolation is handled by @scope (postcss-scope-wrapper, #27).
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* v4 auto-detection only scans this package; the app renders controls, so their
+   utility classes must be generated here too (was a content glob in v3). */
+@source "../../../../poveste-controls/src";
+
+/* TODO(#36): port the v3 typography theme() customization to v4 CSS. */
+@plugin '@tailwindcss/typography';
+
+/* Chrome dark mode. Deliberately a distinct class from the story-side
+   `theme.darkClass` default (`dark`) so chrome and story themes stay independent —
+   in v3 the `ptw-` prefix applied to the dark class and kept them separate. */
+@custom-variant dark (&:where(.ptw-dark, .ptw-dark *));
+
+@theme {
+  /*
+   * primary + gray are themable at runtime: resolved-theme.ts injects
+   * --_poveste-color-<name>-<key> as space-separated RGB channels, and v4's
+   * native color-mix handles opacity (replacing the v3 withOpacityValue shim).
+   */
+  --color-primary-50: rgb(var(--_poveste-color-primary-50));
+  --color-primary-100: rgb(var(--_poveste-color-primary-100));
+  --color-primary-200: rgb(var(--_poveste-color-primary-200));
+  --color-primary-300: rgb(var(--_poveste-color-primary-300));
+  --color-primary-400: rgb(var(--_poveste-color-primary-400));
+  --color-primary-500: rgb(var(--_poveste-color-primary-500));
+  --color-primary-600: rgb(var(--_poveste-color-primary-600));
+  --color-primary-700: rgb(var(--_poveste-color-primary-700));
+  --color-primary-800: rgb(var(--_poveste-color-primary-800));
+  --color-primary-900: rgb(var(--_poveste-color-primary-900));
+
+  --color-gray-50: rgb(var(--_poveste-color-gray-50));
+  --color-gray-100: rgb(var(--_poveste-color-gray-100));
+  --color-gray-200: rgb(var(--_poveste-color-gray-200));
+  --color-gray-300: rgb(var(--_poveste-color-gray-300));
+  --color-gray-400: rgb(var(--_poveste-color-gray-400));
+  --color-gray-500: rgb(var(--_poveste-color-gray-500));
+  --color-gray-600: rgb(var(--_poveste-color-gray-600));
+  --color-gray-700: rgb(var(--_poveste-color-gray-700));
+  --color-gray-750: rgb(var(--_poveste-color-gray-750));
+  --color-gray-800: rgb(var(--_poveste-color-gray-800));
+  --color-gray-850: rgb(var(--_poveste-color-gray-850));
+  --color-gray-900: rgb(var(--_poveste-color-gray-900));
+  --color-gray-950: rgb(var(--_poveste-color-gray-950));
+
+  /* border radius (ported from the root v3 config) */
+  --radius-sm: 0.25rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+/* Manual reset — replaces Preflight, which is intentionally disabled. */
 *,
 ::before,
 ::after {
@@ -32,10 +95,6 @@ a,
 button {
   user-select: none;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   body,
@@ -73,7 +132,7 @@ button {
     background: transparent !important;
   }
 
-  .ptw-prose {
+  .prose {
     h1, h2, h3, h4 {
       &:not(:hover) {
         .header-anchor[aria-hidden="true"] {
@@ -97,4 +156,68 @@ button {
       background-image: linear-gradient(to left, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
     }
   }
+}
+
+/*
+ * Typography (@tailwindcss/typography) customization — ported from the v3
+ * `theme.extend.typography` JS config to CSS. Unlayered so it overrides the
+ * plugin's layered defaults. Needs a visual pass on the docs/markdown pages.
+ */
+.prose {
+  --tw-prose-invert-quote-borders: var(--color-gray-800);
+  --tw-prose-invert-hr: var(--color-gray-800);
+  --tw-prose-invert-bullets: var(--color-gray-500);
+
+  a {
+    color: var(--color-primary-500);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  h1, h2, h3, h4, th {
+    margin-bottom: 0.75rem;
+
+    &:not(:first-child) {
+      margin-top: 1.25rem;
+    }
+  }
+
+  blockquote {
+    margin-left: 0;
+    margin-right: 0;
+    background-color: var(--color-gray-100);
+    padding: 0.25rem 0.375rem;
+
+    & p:first-child {
+      margin-top: 0;
+    }
+
+    & p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  li {
+    margin-top: 0.1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  code {
+    background-color: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
+    font-weight: normal;
+    padding: 0.05rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+
+    &::before, &::after {
+      display: none;
+    }
+  }
+}
+
+.ptw-dark .prose blockquote {
+  background-color: var(--color-gray-750);
 }

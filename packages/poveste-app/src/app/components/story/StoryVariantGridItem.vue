@@ -84,32 +84,32 @@ const useIframe = computed(() => {
 <template>
   <div
     ref="el"
-    class="poveste-story-variant-grid-item ptw-cursor-default ptw-flex ptw-flex-col ptw-gap-y-1 ptw-group"
+    class="poveste-story-variant-grid-item cursor-default flex flex-col gap-y-1 group"
   >
     <!-- Header -->
-    <div class="ptw-flex-none ptw-flex ptw-items-center">
+    <div class="flex-none flex items-center">
       <RouterLink
         v-tooltip="variant.title"
         :to="targetRoute"
-        class="ptw-rounded ptw-w-max ptw-px-2 ptw-py-0.5 ptw-min-w-16 ptw-cursor-pointer ptw-flex ptw-items-center ptw-gap-1 ptw-flex-shrink"
+        class="rounded w-max px-2 py-0.5 min-w-16 cursor-pointer flex items-center gap-1 flex-shrink"
         :class="{
-          'hover:ptw-bg-gray-200 ptw-text-gray-500 dark:hover:ptw-bg-gray-800': !isActive,
-          'ptw-bg-primary-200 hover:ptw-bg-primary-300 ptw-text-primary-800 dark:ptw-bg-primary-700 dark:hover:ptw-bg-primary-800 dark:ptw-text-primary-200': isActive,
+          'hover:bg-gray-200 text-gray-500 dark:hover:bg-gray-800': !isActive,
+          'bg-primary-200 hover:bg-primary-300 text-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800 dark:text-primary-200': isActive,
         }"
       >
         <Icon
           :icon="variant.icon ?? 'carbon:cube'"
-          class="ptw-w-4 ptw-h-4 ptw-opacity-50"
+          class="w-4 h-4 opacity-50"
           :class="{
-            'ptw-text-gray-500': !isActive && !variant.iconColor,
+            'text-gray-500': !isActive && !variant.iconColor,
             'bind-icon-color': !isActive && variant.iconColor,
           }"
         />
-        <span class="ptw-truncate ptw-flex-1">{{ variant.title }}</span>
+        <span class="truncate flex-1">{{ variant.title }}</span>
       </RouterLink>
 
       <!-- Toolbar -->
-      <div class="ptw-flex-none ptw-ml-auto ptw-hidden group-hover:ptw-flex ptw-items-center">
+      <div class="flex-none ml-auto hidden group-hover:flex items-center">
         <HstCopyIcon
           :content="() => getSourceCode(story, variant)"
         />
@@ -122,27 +122,27 @@ const useIframe = computed(() => {
 
     <!-- Body -->
     <div
-      class="ptw-border ptw-bg-white dark:ptw-bg-gray-700 ptw-rounded ptw-flex-1 ptw-p-4 ptw-relative"
+      class="border bg-white dark:bg-gray-700 rounded flex-1 p-4 relative"
       :class="{
-        'ptw-border-gray-100 dark:ptw-border-gray-800': !isActive,
-        'ptw-border-primary-200 dark:ptw-border-primary-900': isActive,
+        'border-gray-100 dark:border-gray-800': !isActive,
+        'border-primary-200 dark:border-primary-900': isActive,
       }"
       data-test-id="sandbox-render"
       @click.stop="selectVariant()"
       @keyup="selectVariant()"
     >
       <div
-        class="ptw-absolute ptw-inset-0 ptw-rounded bind-preview-bg"
+        class="absolute inset-0 rounded bind-preview-bg"
         data-test-id="responsive-preview-bg"
       />
 
       <CheckerboardPattern
         v-if="settings.checkerboard"
-        class="ptw-absolute ptw-inset-0 ptw-w-full ptw-h-full ptw-text-gray-500/20"
+        class="absolute inset-0 w-full h-full text-gray-500/20"
       />
 
       <div
-        class="ptw-relative ptw-h-full"
+        class="relative h-full"
         :style="{
           '--poveste-contrast-color': contrastColor,
           // Deprecated alias — keep so stories referencing `var(--histoire-contrast-color)` still work.

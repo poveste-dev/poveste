@@ -115,22 +115,22 @@ const columnCount = computed(() => Math.min(storyStore.currentStory.variants.len
 </script>
 
 <template>
-  <div class="poveste-story-variant-grid ptw-flex ptw-flex-col ptw-items-stretch ptw-h-full __poveste-pane-shadow-from-right">
+  <div class="poveste-story-variant-grid flex flex-col items-stretch h-full __poveste-pane-shadow-from-right">
     <div
       ref="el"
-      class="ptw-overflow-y-auto ptw-flex ptw-flex-1"
+      class="overflow-y-auto flex flex-1"
       @scroll="updateMaxCount()"
     >
-      <div class="ptw-flex ptw-w-0 ptw-flex-1 ptw-mx-4">
+      <div class="flex w-0 flex-1 mx-4">
         <div
-          class="ptw-m-auto"
+          class="m-auto"
           :style="{
             minHeight: `${(storyStore.currentStory.variants.length / countPerRow) * (maxItemHeight + gap) - gap}px`,
           }"
         >
           <div
             ref="gridEl"
-            class="ptw-grid ptw-gap-4 ptw-my-4"
+            class="grid gap-4 my-4"
             :style="{
               gridTemplateColumns: `repeat(${columnCount}, ${gridColumnWidth}px)`,
             }"

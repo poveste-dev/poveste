@@ -22,7 +22,7 @@ const hasEvents = computed(() => eventsStore.events.length)
 </script>
 
 <template>
-  <BaseOverflowMenu class="poveste-pane-tabs ptw-h-10 ptw-flex-none ptw-border-b ptw-border-gray-100 dark:ptw-border-gray-750">
+  <BaseOverflowMenu class="poveste-pane-tabs h-10 flex-none border-b border-gray-100 dark:border-gray-750">
     <BaseTab
       :to="{ ...$route, query: { ...$route.query, tab: '' } }"
       :matched="!$route.query.tab"
@@ -33,7 +33,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       :to="{ ...$route, query: { ...$route.query, tab: 'docs' } }"
       :matched="$route.query.tab === 'docs'"
       :class="{
-        'ptw-opacity-50': !renderedDoc,
+        'opacity-50': !renderedDoc,
       }"
     >
       Docs
@@ -42,7 +42,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
       :matched="$route.query.tab === 'events'"
       :class="{
-        'ptw-opacity-50': !hasEvents,
+        'opacity-50': !hasEvents,
       }"
     >
       Events
@@ -71,7 +71,7 @@ const hasEvents = computed(() => eventsStore.events.length)
         :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
         :matched="$route.query.tab === 'events'"
         :class="{
-          'ptw-opacity-50': !hasEvents,
+          'opacity-50': !hasEvents,
         }"
       >
         Events

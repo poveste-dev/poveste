@@ -170,9 +170,9 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
   >
     <div
       v-if="__POVESTE_DEV__ && renderedDoc && filePath"
-      class="ptw-flex ptw-items-center ptw-gap-2 ptw-p-2"
+      class="flex items-center gap-2 p-2"
       :class="{
-        'ptw-pt-4': !standalone,
+        'pt-4': !standalone,
       }"
     >
       <DevOnlyToolbarOpenInEditor
@@ -187,14 +187,14 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
     >
       <Icon
         icon="carbon:document-unknown"
-        class="ptw-w-8 ptw-h-8 ptw-opacity-50 ptw-mb-6"
+        class="w-8 h-8 opacity-50 mb-6"
       />
       No documentation available
     </BaseEmpty>
     <div
       v-else
       ref="renderedEl"
-      class="ptw-prose dark:ptw-prose-invert ptw-p-4 ptw-max-w-none"
+      class="prose dark:prose-invert p-4 max-w-none"
       data-test-id="story-docs"
       v-html="renderedDoc"
     />

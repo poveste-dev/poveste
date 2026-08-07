@@ -18,16 +18,16 @@ const storyStore = useStoryStore()
 </script>
 
 <template>
-  <div class="poveste-top-bar ptw-flex-none ptw-grid ptw-grid-cols-[1fr_auto_1fr] ptw-items-center ptw-h-14 ptw-px-4 ptw-gap-3">
+  <div class="poveste-top-bar flex-none grid grid-cols-[1fr_auto_1fr] items-center h-14 px-4 gap-3">
     <AppActions
-      class="ptw-justify-self-start"
+      class="justify-self-start"
       @layout="$emit('layout')"
       @search="$emit('search')"
     />
 
     <TopBarChip
       v-if="storyStore.currentStory || storyStore.currentVariant"
-      class="ptw-px-6 ptw-py-1.5 ptw-max-w-full"
+      class="px-6 py-1.5 max-w-full"
     >
       <ToolbarTitle
         :variant="storyStore.currentVariant ?? undefined"
@@ -38,7 +38,7 @@ const storyStore = useStoryStore()
 
     <TopBarChip
       v-if="storyStore.currentStory && !storyStore.currentStory.docsOnly"
-      class="ptw-justify-self-end"
+      class="justify-self-end"
     >
       <ToolbarResponsiveSize
         v-if="storyStore.currentVariant && !storyStore.currentVariant.responsiveDisabled"

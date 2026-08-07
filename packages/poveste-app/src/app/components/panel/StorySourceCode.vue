@@ -133,32 +133,32 @@ watch(sourceHtml, async () => {
 
 <template>
   <div
-    class="poveste-story-source-code ptw-bg-gray-50 dark:ptw-bg-gray-750 ptw-h-full ptw-overflow-hidden ptw-flex ptw-flex-col"
+    class="poveste-story-source-code bg-gray-50 dark:bg-gray-750 h-full overflow-hidden flex flex-col"
   >
     <!-- Toolbar -->
     <div
       v-if="!error"
-      class="ptw-h-10 ptw-flex-none ptw-border-b ptw-border-solid ptw-border-gray-500/5 ptw-px-4 ptw-flex ptw-items-center ptw-gap-2"
+      class="h-10 flex-none border-b border-solid border-gray-500/5 px-4 flex items-center gap-2"
     >
-      <div class="ptw-text-gray-900 dark:ptw-text-gray-100">
+      <div class="text-gray-900 dark:text-gray-100">
         Source
       </div>
-      <div class="ptw-flex-1" />
+      <div class="flex-1" />
 
       <!-- Display source modes -->
-      <div class="ptw-flex ptw-flex-none ptw-gap-px ptw-h-full ptw-py-2">
+      <div class="flex flex-none gap-px h-full py-2">
         <button
           v-tooltip="!dynamicSourceCode ? 'Dynamic source code is not available' : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
-          class="ptw-flex ptw-items-center ptw-gap-1 ptw-h-full ptw-px-1 ptw-bg-gray-500/10 ptw-rounded-l ptw-transition-all ptw-ease-[cubic-bezier(0,1,.6,1)] ptw-duration-300 ptw-overflow-hidden"
+          class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
-            displayedSource !== 'dynamic' ? 'ptw-max-w-6 ptw-opacity-70' : 'ptw-max-w-[82px] ptw-text-primary-600 dark:ptw-text-primary-400',
-            dynamicSourceCode ? 'ptw-cursor-pointer hover:ptw-bg-gray-500/30 active:ptw-bg-gray-600/50' : 'ptw-opacity-50',
+            displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-600 dark:text-primary-400',
+            dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
           ]"
           @click="dynamicSourceCode && (displayedSource = 'dynamic')"
         >
           <Icon
             icon="carbon:flash"
-            class="ptw-w-4 ptw-h-4 ptw-flex-none"
+            class="w-4 h-4 flex-none"
           />
           <span
             class="transition-opacity duration-300"
@@ -171,16 +171,16 @@ watch(sourceHtml, async () => {
         </button>
         <button
           v-tooltip="!staticSourceCode ? 'Static source code is not available' : displayedSource !== 'static' ? 'Switch to static source' : null"
-          class="ptw-flex ptw-items-center ptw-gap-1 ptw-h-full ptw-px-1 ptw-bg-gray-500/10 ptw-rounded-r ptw-transition-all ptw-ease-[cubic-bezier(0,1,.6,1)] ptw-duration-300 ptw-overflow-hidden"
+          class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-r transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
-            displayedSource !== 'static' ? 'ptw-max-w-6 ptw-opacity-70' : 'ptw-max-w-[63px] ptw-text-primary-600 dark:ptw-text-primary-400',
-            staticSourceCode ? 'ptw-cursor-pointer hover:ptw-bg-gray-500/30 active:ptw-bg-gray-600/50' : 'ptw-opacity-50',
+            displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-600 dark:text-primary-400',
+            staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
           ]"
           @click="staticSourceCode && (displayedSource = 'static')"
         >
           <Icon
             icon="carbon:document"
-            class="ptw-w-4 ptw-h-4 ptw-flex-none"
+            class="w-4 h-4 flex-none"
           />
           <span
             class="transition-opacity duration-300"
@@ -195,13 +195,13 @@ watch(sourceHtml, async () => {
 
       <HstCopyIcon
         :content="displayedSourceCode"
-        class="ptw-flex-none"
+        class="flex-none"
       />
     </div>
 
     <div
       v-if="error"
-      class="ptw-text-red-500 ptw-h-full ptw-p-2 ptw-overflow-auto ptw-font-mono ptw-text-sm"
+      class="text-red-500 h-full p-2 overflow-auto font-mono text-sm"
     >
       Error: {{ error }}
     </div>
@@ -209,7 +209,7 @@ watch(sourceHtml, async () => {
     <BaseEmpty v-else-if="!displayedSourceCode">
       <Icon
         icon="carbon:code-hide"
-        class="ptw-w-8 ptw-h-8 ptw-opacity-50 ptw-mb-6"
+        class="w-8 h-8 opacity-50 mb-6"
       />
       <span>Not available</span>
     </BaseEmpty>
@@ -217,7 +217,7 @@ watch(sourceHtml, async () => {
     <textarea
       v-else-if="!sourceHtml"
       ref="scroller"
-      class="__poveste-code-placeholder ptw-w-full ptw-h-full ptw-p-4 ptw-outline-none ptw-bg-transparent ptw-resize-none ptw-m-0"
+      class="__poveste-code-placeholder w-full h-full p-4 outline-none bg-transparent resize-none m-0"
       :value="displayedSourceCode"
       readonly
       data-test-id="story-source-code"
@@ -227,12 +227,12 @@ watch(sourceHtml, async () => {
     <div
       v-else
       ref="scroller"
-      class="ptw-w-full ptw-h-full ptw-overflow-auto"
+      class="w-full h-full overflow-auto"
       data-test-id="story-source-code"
       @scroll="onScroll"
     >
       <div
-        class="__poveste-code __histoire-code ptw-p-4 ptw-w-fit"
+        class="__poveste-code __histoire-code p-4 w-fit"
         v-html="sourceHtml"
       />
     </div>

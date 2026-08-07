@@ -45,33 +45,33 @@ watch(path, () => {
 
 <template>
   <div
-    class="poveste-simple-checkbox ptw-group ptw-text-white ptw-w-[16px] ptw-h-[16px] ptw-relative"
-    :class="{ 'ptw-cursor-pointer': withToggle }"
+    class="poveste-simple-checkbox group text-white w-[16px] h-[16px] relative"
+    :class="{ 'cursor-pointer': withToggle }"
     @click="toggle"
   >
     <div
-      class="ptw-border ptw-border-solid group-active:ptw-bg-gray-500/20 ptw-rounded-sm ptw-box-border ptw-absolute ptw-inset-0 ptw-transition-border ptw-duration-150 ptw-ease-out group-hover:ptw-border-primary-500 group-hover:dark:ptw-border-primary-500"
+      class="border border-solid group-active:bg-gray-500/20 rounded-sm box-border absolute inset-0 transition-border duration-150 ease-out group-hover:border-primary-500 group-hover:dark:border-primary-500"
       :class="[
         modelValue
-          ? 'ptw-border-primary-500 ptw-border-8'
-          : 'ptw-border-black/25 dark:ptw-border-white/25 ptw-delay-150',
+          ? 'border-primary-500 border-8'
+          : 'border-black/25 dark:border-white/25 delay-150',
       ]"
     />
     <svg
       width="16"
       height="16"
       viewBox="0 0 24 24"
-      class="ptw-relative ptw-z-10"
+      class="relative z-10"
     >
       <path
         ref="path"
         d="m 4 12 l 5 5 l 10 -10"
         fill="none"
-        class="ptw-stroke-white ptw-stroke-2 ptw-duration-200 ptw-ease-in-out"
+        class="stroke-white stroke-2 duration-200 ease-in-out"
         :class="[
-          animationEnabled ? 'ptw-transition-all' : 'ptw-transition-none',
+          animationEnabled ? 'transition-all' : 'transition-none',
           {
-            'ptw-delay-150': modelValue,
+            'delay-150': modelValue,
           },
         ]"
         :stroke-dasharray="dasharray"

@@ -14,7 +14,7 @@ defineProps({
 <template>
   <button
     :style="{ background: bgcolorselect, color: txtcolorselect }"
-    class="ptw-px-2 ptw-py-1 ptw-rounded-sm btn"
+    class="px-2 py-1 rounded-sm btn"
   >
     <slot />
   </button>

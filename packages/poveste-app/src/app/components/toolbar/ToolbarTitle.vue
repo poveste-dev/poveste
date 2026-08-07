@@ -20,19 +20,19 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-  <div class="poveste-toolbar-title ptw-flex ptw-items-center ptw-gap-2 ptw-min-w-0">
+  <div class="poveste-toolbar-title flex items-center gap-2 min-w-0">
     <Icon
       :icon="icon"
-      class="ptw-w-4 ptw-h-4 ptw-flex-none"
+      class="w-4 h-4 flex-none"
       :class="[
-        iconColor ? 'bind-icon-color' : 'ptw-text-gray-500 dark:ptw-text-gray-400',
+        iconColor ? 'bind-icon-color' : 'text-gray-500 dark:text-gray-400',
       ]"
     />
-    <div class="ptw-flex ptw-flex-col ptw-justify-center ptw-min-w-0 ptw-leading-tight ptw-text-center ptw-h-[2.25rem]">
-      <span class="ptw-truncate ptw-text-sm ptw-font-medium ptw-text-gray-900 dark:ptw-text-gray-100">{{ title }}</span>
+    <div class="flex flex-col justify-center min-w-0 leading-tight text-center h-[2.25rem]">
+      <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{{ title }}</span>
       <span
         v-if="subtitle"
-        class="ptw-truncate ptw-text-xs ptw-text-gray-500 dark:ptw-text-gray-400"
+        class="truncate text-xs text-gray-500 dark:text-gray-400"
       >{{ subtitle }}</span>
     </div>
   </div>

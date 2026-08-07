@@ -21,7 +21,7 @@ const variant = computed(() => storyStore.currentVariant)
 <template>
   <div
     v-if="hasSingleVariant && variant"
-    class="poveste-story-variant-single ptw-p-2 ptw-h-full __poveste-pane-shadow-from-right"
+    class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
   >
     <StoryVariantSingleView
       :variant="variant"
@@ -31,18 +31,18 @@ const variant = computed(() => storyStore.currentVariant)
   <template v-else>
     <div
       v-if="isMobile"
-      class="ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-800 ptw-h-full ptw-flex ptw-flex-col"
+      class="divide-y divide-gray-100 dark:divide-gray-800 h-full flex flex-col"
     >
       <a
-        class="ptw-px-6 ptw-h-12 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-cursor-pointer ptw-flex ptw-gap-2 ptw-flex-wrap ptw-w-full ptw-items-center ptw-flex-none"
+        class="px-6 h-12 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer flex gap-2 flex-wrap w-full items-center flex-none"
         @click="$emit('openVariantMenu')"
       >
         <template v-if="variant">
           <Icon
             :icon="variant.icon ?? 'carbon:cube'"
-            class="ptw-w-5 ptw-h-5 ptw-flex-none"
+            class="w-5 h-5 flex-none"
             :class="{
-              'ptw-text-gray-500': !variant.iconColor,
+              'text-gray-500': !variant.iconColor,
               'bind-icon-color': variant.iconColor,
             }"
           />
@@ -54,12 +54,12 @@ const variant = computed(() => storyStore.currentVariant)
 
         <Icon
           icon="carbon:chevron-sort"
-          class="ptw-w-5 ptw-h-5 ptw-shrink-0 ptw-ml-auto"
+          class="w-5 h-5 shrink-0 ml-auto"
         />
       </a>
       <div
         v-if="storyStore.currentVariant"
-        class="ptw-p-2 ptw-h-full"
+        class="p-2 h-full"
       >
         <StoryVariantSingleView
           :variant="storyStore.currentVariant"
@@ -75,7 +75,7 @@ const variant = computed(() => storyStore.currentVariant)
       :default-split="17"
     >
       <template #first>
-        <div class="ptw-h-full ptw-overflow-y-auto">
+        <div class="h-full overflow-y-auto">
           <StoryVariantListItem
             v-for="(v, index) of storyStore.currentStory.variants"
             :key="index"
@@ -86,7 +86,7 @@ const variant = computed(() => storyStore.currentVariant)
       <template #last>
         <div
           v-if="storyStore.currentVariant"
-          class="ptw-p-2 ptw-h-full __poveste-pane-shadow-from-right"
+          class="p-2 h-full __poveste-pane-shadow-from-right"
         >
           <StoryVariantSingleView
             :variant="storyStore.currentVariant"

@@ -20,6 +20,23 @@
       The wider page background should NOT be tomato — that rule
       is scoped to story containers only.
     </p>
+
+    <!-- Consumer-side Tailwind v4 utilities: these must work inside the story. -->
+    <div
+      data-test-id="consumer-tailwind"
+      class="mt-4 bg-red-500 p-4 text-white"
+    >
+      Consumer Tailwind utilities should apply here.
+    </div>
+
+    <!-- A chrome-only utility. poveste styles its own UI with this class, and
+         it must NOT leak in here, so this box stays unstyled. -->
+    <div
+      data-test-id="chrome-utility-leak"
+      class="bg-primary-500"
+    >
+      This must NOT pick up poveste's chrome styling.
+    </div>
   </div>
 </template>
 

@@ -34,8 +34,8 @@ const panelContentComponent = computed(() => {
 </script>
 
 <template>
-  <div class="ptw-h-full ptw-w-full ptw-p-2">
-    <div class="ptw-h-full ptw-w-full ptw-rounded-lg ptw-border ptw-border-gray-200 dark:ptw-border-gray-700 ptw-overflow-hidden ptw-bg-white dark:ptw-bg-gray-700">
+  <div class="h-full w-full p-2">
+    <div class="h-full w-full rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-700">
       <BaseEmpty
         v-if="!storyStore.currentVariant"
         class="poveste-story-side-panel poveste-selection"
@@ -54,11 +54,11 @@ const panelContentComponent = computed(() => {
         v-else
         :save-id="`story-sidepane-${innerOrientation}`"
         :orientation="innerOrientation"
-        class="poveste-story-side-panel poveste-loaded ptw-h-full"
+        class="poveste-story-side-panel poveste-loaded h-full"
         data-test-id="story-side-panel"
       >
         <template #first>
-          <div class="ptw-flex ptw-flex-col ptw-h-full">
+          <div class="flex flex-col h-full">
             <PaneTabs
               :story="storyStore.currentStory"
               :variant="storyStore.currentVariant"
@@ -68,7 +68,7 @@ const panelContentComponent = computed(() => {
               :is="panelContentComponent"
               :story="storyStore.currentStory"
               :variant="storyStore.currentVariant"
-              class="ptw-h-full ptw-overflow-auto"
+              class="h-full overflow-auto"
             />
           </div>
         </template>
@@ -77,7 +77,7 @@ const panelContentComponent = computed(() => {
           <StorySourceCode
             :story="storyStore.currentStory"
             :variant="storyStore.currentVariant"
-            class="ptw-h-full"
+            class="h-full"
           />
         </template>
       </BaseSplitPane>

@@ -170,42 +170,42 @@ onUnmounted(() => {
 <template>
   <div
     ref="el"
-    class="poveste-base-split-pane ptw-flex ptw-h-full ptw-isolate ptw-overflow-auto"
+    class="poveste-base-split-pane flex h-full isolate overflow-auto"
     :class="{
-      'ptw-flex-col': orientation === 'portrait',
-      'ptw-cursor-ew-resize': dragging && orientation === 'landscape',
-      'ptw-cursor-ns-resize': dragging && orientation === 'portrait',
+      'flex-col': orientation === 'portrait',
+      'cursor-ew-resize': dragging && orientation === 'landscape',
+      'cursor-ns-resize': dragging && orientation === 'portrait',
       [orientation]: true,
     }"
   >
     <div
-      class="ptw-relative ptw-top-0 ptw-left-0 ptw-z-20"
+      class="relative top-0 left-0 z-20"
       :class="{
-        'ptw-pointer-events-none': dragging,
-        'ptw-border-r ptw-border-gray-300/30 dark:ptw-border-gray-800': orientation === 'landscape' && showDivider,
-        'ptw-flex-none': fixed,
+        'pointer-events-none': dragging,
+        'border-r border-gray-300/30 dark:border-gray-800': orientation === 'landscape' && showDivider,
+        'flex-none': fixed,
       }"
       :style="leftStyle"
     >
       <slot name="first" />
 
       <div
-        class="dragger ptw-absolute ptw-z-100 hover:ptw-bg-primary-500/50 ptw-transition-colors ptw-duration-150 ptw-delay-150"
+        class="dragger absolute z-100 hover:bg-primary-500/50 transition-colors duration-150 delay-150"
         :class="{
-          'ptw-top-0 ptw-bottom-0 ptw-cursor-ew-resize': orientation === 'landscape',
-          'ptw-left-0 ptw-right-0 ptw-cursor-ns-resize': orientation === 'portrait',
+          'top-0 bottom-0 cursor-ew-resize': orientation === 'landscape',
+          'left-0 right-0 cursor-ns-resize': orientation === 'portrait',
           [`dragger-offset-${draggerOffset}`]: true,
-          'ptw-bg-primary-500/25': dragging,
+          'bg-primary-500/25': dragging,
         }"
         @mousedown.prevent="dragStart"
       />
     </div>
     <div
-      class="ptw-relative ptw-bottom-0 ptw-right-0"
+      class="relative bottom-0 right-0"
       :class="{
-        'ptw-pointer-events-none': dragging,
-        'ptw-border-t ptw-border-gray-300/30 dark:ptw-border-gray-800': orientation === 'portrait' && showDivider,
-        'ptw-flex-1': fixed,
+        'pointer-events-none': dragging,
+        'border-t border-gray-300/30 dark:border-gray-800': orientation === 'portrait' && showDivider,
+        'flex-1': fixed,
       }"
       :style="rightStyle"
     >

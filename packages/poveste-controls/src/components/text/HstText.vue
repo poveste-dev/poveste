@@ -23,7 +23,7 @@ const input = ref<HTMLInputElement>()
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-text ptw-cursor-text ptw-items-center"
+    class="poveste-text cursor-text items-center"
     :class="$attrs.class"
     :style="$attrs.style"
     @click="input.focus()"
@@ -33,7 +33,7 @@ const input = ref<HTMLInputElement>()
       v-bind="{ ...$attrs, class: null, style: null }"
       type="text"
       :value="modelValue"
-      class="ptw-text-inherit ptw-bg-transparent ptw-w-full ptw-outline-none ptw-px-2 ptw-py-1 -ptw-my-1 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 focus:ptw-border-primary-500 dark:focus:ptw-border-primary-500 ptw-rounded-sm"
+      class="text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     >
 

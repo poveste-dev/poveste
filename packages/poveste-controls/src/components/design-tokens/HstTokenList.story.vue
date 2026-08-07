@@ -66,9 +66,9 @@ const tokens = {
         :get-name="key => `w-${key}`"
       >
         <template #default="{ token }">
-          <div class="ptw-bg-gray-500/10">
+          <div class="bg-gray-500/10">
             <div
-              class="ptw-h-20 ptw-bg-gray-500/50"
+              class="h-20 bg-gray-500/50"
               :style="{
                 width: token.value as string,
               } as CSSProperties"

@@ -14,11 +14,11 @@ const stateKeys = computed(() => Object.keys(props.variant.state || {})
 
 <template>
   <div class="poveste-controls-component-init-state">
-    <div class="ptw-p-2 ptw-flex ptw-items-center ptw-gap-1">
+    <div class="p-2 flex items-center gap-1">
       <Icon
         v-tooltip="'Auto-detected state'"
         icon="carbon:data-vis-1"
-        class="ptw-w-4 ptw-h-4 ptw-text-primary-500 ptw-flex-none"
+        class="w-4 h-4 text-primary-500 flex-none"
       />
       <div>
         State

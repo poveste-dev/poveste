@@ -31,8 +31,8 @@ test.describe('defaultBackgroundColor', () => {
     await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
     await page.getByTestId('toolbar-background').click()
     const buttons = page.getByTestId('background-popper').locator('> button')
-    await expect(buttons.nth(TRANSPARENT_PRESET_INDEX)).toHaveClass(/ptw-bg-primary-500/)
-    await expect(buttons.nth(WHITE_PRESET_INDEX)).not.toHaveClass(/ptw-bg-primary-500/)
+    await expect(buttons.nth(TRANSPARENT_PRESET_INDEX)).toHaveClass(/bg-primary-500/)
+    await expect(buttons.nth(WHITE_PRESET_INDEX)).not.toHaveClass(/bg-primary-500/)
   })
 
   test('keeps a manual pick over the configured default', async ({ page }) => {

@@ -111,7 +111,7 @@ test.describe('sandbox color scheme', () => {
     await page.reload()
     await expect(sandboxHtml(page)).toHaveClass(DARK_CLASS)
     await page.getByTestId('toolbar-background').click()
-    await expect(page.getByTestId('sandbox-color-scheme-dark')).toHaveClass(/ptw-bg-primary-500/)
+    await expect(page.getByTestId('sandbox-color-scheme-dark')).toHaveClass(/bg-primary-500/)
   })
 
   test('reaches users whose settings predate the option', async ({ page }) => {
@@ -122,6 +122,6 @@ test.describe('sandbox color scheme', () => {
 
     await expect(sandboxHtml(page)).toHaveClass(DARK_CLASS)
     await page.getByTestId('toolbar-background').click()
-    await expect(page.getByTestId('sandbox-color-scheme-auto')).toHaveClass(/ptw-bg-primary-500/)
+    await expect(page.getByTestId('sandbox-color-scheme-auto')).toHaveClass(/bg-primary-500/)
   })
 })

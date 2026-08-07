@@ -50,14 +50,14 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
           'color': autoApplyContrastColor ? contrastColor : undefined,
         },
       ]"
-      class="ptw-relative"
+      class="relative"
       data-test-id="sandbox-render"
     >
       <GenericRenderStory
         :key="`${story.id}-${variant.id}`"
         :variant="variant"
         :story="story"
-        class="ptw-h-full"
+        class="h-full"
         :class="{
           [povesteConfig.sandboxDarkClass]: previewDark, // @TODO remove
           [povesteConfig.theme.darkClass]: previewDark,

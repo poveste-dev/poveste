@@ -1,8 +1,8 @@
 {
+  // Tailwind v4 is CSS-first: point the IntelliSense at the CSS entrypoints.
   "tailwindCSS.experimental.configFile": {
-    "tailwind.config.cjs": "docs/**",
-    "packages/poveste-app/tailwind.config.cjs": "packages/poveste-app/**",
-    "packages/poveste-controls/tailwind.config.cjs": "packages/poveste-controls/**"
+    "packages/poveste-app/src/app/style/main.pcss": "packages/poveste-app/**",
+    "packages/poveste-controls/src/style/main.css": "packages/poveste-controls/**"
   },
 
   // Enable the ESlint flat config support

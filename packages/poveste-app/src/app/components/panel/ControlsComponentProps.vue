@@ -12,14 +12,14 @@ defineProps<{
 
 <template>
   <div class="poveste-controls-component-props">
-    <div class="ptw-font-mono ptw-p-2 ptw-flex ptw-items-center ptw-gap-1">
+    <div class="font-mono p-2 flex items-center gap-1">
       <Icon
         v-tooltip="'Auto-detected props'"
         icon="carbon:flash"
-        class="ptw-w-4 ptw-h-4 ptw-text-primary-500 ptw-flex-none"
+        class="w-4 h-4 text-primary-500 flex-none"
       />
       <div>
-        <span class="ptw-opacity-30">&lt;</span>{{ definition.name }}<span class="ptw-opacity-30">&gt;</span>
+        <span class="opacity-30">&lt;</span>{{ definition.name }}<span class="opacity-30">&gt;</span>
       </div>
     </div>
 
