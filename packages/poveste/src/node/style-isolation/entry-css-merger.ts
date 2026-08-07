@@ -1,4 +1,3 @@
-import type { OutputBundle } from 'rollup'
 import type { Plugin as VitePlugin } from 'vite'
 import { STORY_SCOPE_ROOT } from './selectors.js'
 import { wrapUserCss } from './transforms.js'
@@ -17,7 +16,7 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
     name: 'poveste:style-isolation:entry-css-merger',
     apply: 'build',
     enforce: 'post',
-    generateBundle(_options, bundle: OutputBundle) {
+    generateBundle(_options, bundle) {
       function collectChunkCss(entryFileName: string, entryName: string, acc: Map<string, string[]>) {
         const seen = new Set<string>()
         const queue = [entryFileName]
@@ -48,6 +47,7 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
       }
 
       const mergedByEntry = new Map<string, string[]>()
+      const mergedCssAssets: string[] = []
       for (const [cssName, entries] of cssAssetUsedBy) {
         const asset = bundle[cssName]
         if (!asset || asset.type !== 'asset') continue
@@ -59,6 +59,13 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
           list.push(source)
           mergedByEntry.set(entryName, list)
         }
+        mergedCssAssets.push(cssName)
+      }
+
+      // Rolldown ignores assignment to `bundle` in generateBundle, so the merged
+      // files are added with this.emitFile. The now-merged per-chunk CSS assets
+      // are dropped so they don't ship as unscoped, orphaned duplicates.
+      for (const cssName of mergedCssAssets) {
         delete bundle[cssName]
       }
 
@@ -68,13 +75,7 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
         const finalSource = entryName === mainEntryName && opts.isolateStyles
           ? wrapMarkedUserCss(merged, scopeRoot)
           : stripMarkers(merged)
-        bundle[fileName] = {
-          type: 'asset',
-          fileName,
-          name: fileName,
-          source: finalSource,
-          needsCodeReference: false,
-        } as any
+        this.emitFile({ type: 'asset', fileName, source: finalSource })
       }
 
       // Re-point CSS metadata: entries claim their own merged file; non-entry

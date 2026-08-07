@@ -3,8 +3,8 @@ import type {
   ChangeViteConfigCallback,
   PreviewStoryCallback,
 } from '@poveste/shared'
-import type { RollupOutput } from 'rollup'
 import type {
+  Rolldown,
   InlineConfig as ViteInlineConfig,
   Plugin as VitePlugin,
 } from 'vite'
@@ -197,7 +197,7 @@ export async function build(ctx: Context) {
   }
 
   const results = await viteBuild(buildViteConfig)
-  const result = Array.isArray(results) ? results[0] : results as RollupOutput
+  const result = Array.isArray(results) ? results[0] : results as Rolldown.RolldownOutput
 
   function findEntryCss(entryName: string) {
     return result.output.find(
