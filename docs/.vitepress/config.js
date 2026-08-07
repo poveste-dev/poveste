@@ -59,7 +59,7 @@ module.exports = {
                 link: '/guide/getting-started',
               },
               {
-                text: 'Migrating from Poveste',
+                text: 'Migrating from Histoire',
                 link: '/guide/migration-from-histoire',
               },
               {
