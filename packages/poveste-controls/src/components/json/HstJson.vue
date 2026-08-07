@@ -120,13 +120,13 @@ watch(() => internalValue.value, () => {
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-json ptw-cursor-text"
+    class="poveste-json cursor-text"
     :class="$attrs.class"
     :style="$attrs.style"
   >
     <div
       ref="editorElement"
-      class="__poveste-json-code ptw-w-full ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 focus-within:ptw-border-primary-500 dark:focus-within:ptw-border-primary-500 ptw-rounded-sm ptw-box-border ptw-overflow-auto ptw-resize-y ptw-min-h-32 ptw-h-48 ptw-relative"
+      class="__poveste-json-code w-full border border-solid border-black/25 dark:border-white/25 focus-within:border-primary-500 dark:focus-within:border-primary-500 rounded-sm box-border overflow-auto resize-y min-h-32 h-48 relative"
       v-bind="{ ...$attrs, class: null, style: null }"
     />
 
@@ -135,7 +135,7 @@ watch(() => internalValue.value, () => {
         v-if="invalidValue"
         v-tooltip="'JSON error'"
         icon="carbon:warning-alt"
-        class="ptw-text-orange-500"
+        class="text-orange-500"
       />
 
       <slot name="actions" />

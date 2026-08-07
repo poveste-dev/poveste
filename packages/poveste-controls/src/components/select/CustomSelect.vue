@@ -50,27 +50,27 @@ function selectValue(value: any, hide: () => void) {
     auto-boundary-max-size
   >
     <div
-      class="ptw-cursor-pointer ptw-w-full ptw-outline-none ptw-px-2 ptw-h-[27px] -ptw-my-1 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 hover:ptw-border-primary-500 dark:hover:ptw-border-primary-500 ptw-rounded-sm ptw-flex ptw-gap-2 ptw-items-center ptw-leading-normal"
+      class="cursor-pointer w-full outline-none px-2 h-[27px] -my-1 border border-solid border-black/25 dark:border-white/25 hover:border-primary-500 dark:hover:border-primary-500 rounded-sm flex gap-2 items-center leading-normal"
     >
-      <div class="ptw-flex-1 ptw-truncate">
+      <div class="flex-1 truncate">
         <slot :label="selectedLabel">
           {{ selectedLabel }}
         </slot>
       </div>
       <Icon
         icon="carbon:chevron-sort"
-        class="ptw-w-4 ptw-h-4 ptw-flex-none ptw-ml-auto"
+        class="w-4 h-4 flex-none ml-auto"
       />
     </div>
     <template #popper="{ hide }">
-      <div class="ptw-flex ptw-flex-col ptw-bg-gray-50 dark:ptw-bg-gray-700">
+      <div class="flex flex-col bg-gray-50 dark:bg-gray-700">
         <div
           v-for="[value, label] of formattedOptions"
           v-bind="{ ...$attrs, class: null, style: null }"
           :key="label"
-          class="ptw-px-2 ptw-py-1 ptw-cursor-pointer hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-700"
+          class="px-2 py-1 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-700"
           :class="{
-            'ptw-bg-primary-200 dark:ptw-bg-primary-800': props.modelValue === value,
+            'bg-primary-200 dark:bg-primary-800': props.modelValue === value,
           }"
           @click="selectValue(value, hide)"
         >
@@ -82,6 +82,9 @@ function selectValue(value: any, hide: () => void) {
 </template>
 
 <style lang="postcss">
+/* v4: @apply in a component <style> needs the theme referenced explicitly. */
+@reference "../../style/main.css";
+
 /* @TODO custom themes */
 
 .v-popper {
@@ -89,17 +92,17 @@ function selectValue(value: any, hide: () => void) {
 }
 
 .v-popper--theme-dropdown {
-  .ptw-dark & {
+  .dark & {
     .v-popper__inner {
-      @apply ptw-bg-gray-700 ptw-border-gray-850 ptw-text-gray-100;
+      @apply bg-gray-700 border-gray-850 text-gray-100;
     }
 
     .v-popper__arrow-inner {
-      @apply ptw-border-gray-700;
+      @apply border-gray-700;
     }
 
     .v-popper__arrow-outer {
-      @apply ptw-border-gray-850;
+      @apply border-gray-850;
     }
   }
 

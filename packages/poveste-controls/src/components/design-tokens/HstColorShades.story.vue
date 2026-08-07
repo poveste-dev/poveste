@@ -309,7 +309,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="ptw-rounded ptw-h-[100px]"
+            class="rounded h-[100px]"
             :style="{
               backgroundColor: color,
             } as CSSProperties"
@@ -327,7 +327,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="ptw-rounded ptw-h-[100px] ptw-text-5xl ptw-flex ptw-items-end"
+            class="rounded h-[100px] text-5xl flex items-end"
             :style="{
               color,
             } as CSSProperties"
@@ -347,7 +347,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="ptw-rounded ptw-h-[100px] ptw-border-solid ptw-border-2"
+            class="rounded h-[100px] border-solid border-2"
             :style="{
               borderColor: color,
             } as CSSProperties"

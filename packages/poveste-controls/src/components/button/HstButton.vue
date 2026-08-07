@@ -6,9 +6,9 @@ export default {
 
 <script setup lang="ts">
 const colors = {
-  default: 'ptw-bg-gray-200 dark:ptw-bg-gray-750 ptw-text-gray-900 dark:ptw-text-gray-100 hover:ptw-bg-primary-200 dark:hover:ptw-bg-primary-900',
-  primary: 'ptw-bg-primary-500 hover:ptw-bg-primary-600 ptw-text-white dark:ptw-text-black',
-  flat: 'ptw-bg-transparent hover:ptw-bg-gray-500/20 ptw-text-gray-900 dark:ptw-text-gray-100',
+  default: 'bg-gray-200 dark:bg-gray-750 text-gray-900 dark:text-gray-100 hover:bg-primary-200 dark:hover:bg-primary-900',
+  primary: 'bg-primary-500 hover:bg-primary-600 text-white dark:text-black',
+  flat: 'bg-transparent hover:bg-gray-500/20 text-gray-900 dark:text-gray-100',
 }
 
 defineProps<{
@@ -18,7 +18,7 @@ defineProps<{
 
 <template>
   <button
-    class="poveste-button ptw-cursor-pointer ptw-rounded-sm ptw-border-none"
+    class="poveste-button cursor-pointer rounded-sm border-none"
     :class="colors[color ?? 'default']"
   >
     <slot />

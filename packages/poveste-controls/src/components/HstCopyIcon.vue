@@ -32,7 +32,7 @@ async function action() {
       delay: 0,
     }"
     icon="carbon:copy-file"
-    class="ptw-w-4 ptw-h-4 ptw-opacity-50 hover:ptw-opacity-100 hover:ptw-text-primary-500 ptw-cursor-pointer"
+    class="w-4 h-4 opacity-50 hover:opacity-100 hover:text-primary-500 cursor-pointer"
     @click="action()"
   />
 </template>

@@ -67,11 +67,11 @@ onUnmounted(() => {
 
 <template>
   <HstWrapper
-    class="poveste-number ptw-cursor-ew-resize ptw-items-center"
+    class="poveste-number cursor-ew-resize items-center"
     :title="title"
     :class="[
       $attrs.class,
-      { 'ptw-select-none': isDragging },
+      { 'select-none': isDragging },
     ]"
     :style="$attrs.style"
     @click="focusAndSelect"
@@ -83,9 +83,9 @@ onUnmounted(() => {
       v-model.number="numberModel"
       type="number"
       :class="{
-        'ptw-select-none': isDragging,
+        'select-none': isDragging,
       }"
-      class="ptw-text-inherit ptw-bg-transparent ptw-w-full ptw-outline-none ptw-pl-2 ptw-py-1 -ptw-my-1 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 focus:ptw-border-primary-500 dark:focus:ptw-border-primary-500 ptw-rounded-sm ptw-cursor-ew-resize ptw-box-border"
+      class="text-inherit bg-transparent w-full outline-none pl-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm cursor-ew-resize box-border"
     >
 
     <template #actions>

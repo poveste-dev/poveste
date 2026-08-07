@@ -50,19 +50,19 @@ const tooltipStyle = computed<CSSProperties>(() => {
 
 <template>
   <HstWrapper
-    class="poveste-slider ptw-items-center"
+    class="poveste-slider items-center"
     :title="title"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <div class="ptw-relative ptw-w-full ptw-flex ptw-items-center">
-      <div class="ptw-absolute ptw-inset-0 ptw-flex ptw-items-center">
-        <div class="ptw-border ptw-border-black/25 dark:ptw-border-white/25 ptw-h-1 ptw-w-full ptw-rounded-full" />
+    <div class="relative w-full flex items-center">
+      <div class="absolute inset-0 flex items-center">
+        <div class="border border-black/25 dark:border-white/25 h-1 w-full rounded-full" />
       </div>
       <input
         ref="input"
         v-model.number="numberModel"
-        class="ptw-range-input ptw-appearance-none ptw-border-0 ptw-bg-transparent ptw-cursor-pointer ptw-relative ptw-w-full ptw-m-0 ptw-text-gray-700"
+        class="range-input appearance-none border-0 bg-transparent cursor-pointer relative w-full m-0 text-gray-700"
         type="range"
         v-bind="{ ...$attrs, class: null, style: null, min, max }"
         @mouseover="showTooltip = true"
@@ -71,7 +71,7 @@ const tooltipStyle = computed<CSSProperties>(() => {
       <div
         v-if="showTooltip"
         v-tooltip="{ content: modelValue.toString(), shown: true, distance: 16, delay: 0 }"
-        class="ptw-absolute"
+        class="absolute"
         :style="tooltipStyle"
       />
     </div>
@@ -79,25 +79,28 @@ const tooltipStyle = computed<CSSProperties>(() => {
 </template>
 
 <style lang="pcss">
-.ptw-range-input {
+/* v4: @apply in a component <style> needs the theme referenced explicitly. */
+@reference "../../style/main.css";
+
+.range-input {
   &::-webkit-slider-thumb {
-    @apply ptw-appearance-none ptw-h-3 ptw-w-3 ptw-bg-white dark:ptw-bg-gray-700 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 ptw-rounded-full;
+    @apply appearance-none h-3 w-3 bg-white dark:bg-gray-700 border border-solid border-black/25 dark:border-white/25 rounded-full;
   }
 
   &:hover::-webkit-slider-thumb {
-    @apply !ptw-bg-primary-500  !ptw-border-primary-500;
+    @apply bg-primary-500!  border-primary-500!;
   }
 }
 
 /* Separate rules for -moz-range-thumb to prevent a bug with Safari that causes it to ignore custom style */
 
-.ptw-range-input {
+.range-input {
   &::-moz-range-thumb {
-    @apply ptw-appearance-none ptw-h-3 ptw-w-3 ptw-bg-white dark:ptw-bg-gray-700 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 ptw-rounded-full;
+    @apply appearance-none h-3 w-3 bg-white dark:bg-gray-700 border border-solid border-black/25 dark:border-white/25 rounded-full;
   }
 
   &:hover::-moz-range-thumb {
-    @apply !ptw-bg-primary-500  !ptw-border-primary-500;
+    @apply bg-primary-500!  border-primary-500!;
   }
 }
 </style>

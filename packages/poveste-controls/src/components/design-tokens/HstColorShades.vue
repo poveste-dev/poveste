@@ -53,12 +53,12 @@ const hover = ref<string>(null)
 <template>
   <div
     v-if="displayedShades.length"
-    class="poveste-color-shades ptw-grid ptw-gap-4 ptw-grid-cols-[repeat(auto-fill,minmax(200px,1fr))] ptw-m-4"
+    class="poveste-color-shades grid gap-4 grid-cols-[repeat(auto-fill,minmax(200px,1fr))] m-4"
   >
     <div
       v-for="shade of displayedShades"
       :key="shade.key"
-      class="ptw-flex ptw-flex-col ptw-gap-2"
+      class="flex flex-col gap-2"
       @mouseenter="hover = shade.key"
       @mouseleave="hover = null"
     >
@@ -66,33 +66,33 @@ const hover = ref<string>(null)
         :color="shade.color"
       >
         <div
-          class="ptw-rounded-full ptw-w-16 ptw-h-16"
+          class="rounded-full w-16 h-16"
           :style="{
             backgroundColor: shade.color,
           } as CSSProperties"
         />
       </slot>
       <div>
-        <div class="ptw-flex ptw-gap-1">
+        <div class="flex gap-1">
           <pre
             v-tooltip="shade.name.length > 23 ? shade.name : ''"
-            class="ptw-my-0 ptw-truncate ptw-shrink"
+            class="my-0 truncate shrink"
           >{{ shade.name }}</pre>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.name"
-            class="ptw-flex-none"
+            class="flex-none"
           />
         </div>
-        <div class="ptw-flex ptw-gap-1">
+        <div class="flex gap-1">
           <pre
             v-tooltip="shade.color.length > 23 ? shade.color : ''"
-            class="ptw-my-0 ptw-opacity-50 ptw-truncate ptw-shrink"
+            class="my-0 opacity-50 truncate shrink"
           >{{ shade.color }}</pre>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.color"
-            class="ptw-flex-none"
+            class="flex-none"
           />
         </div>
       </div>

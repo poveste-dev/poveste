@@ -50,13 +50,13 @@ function selectOption(value: string) {
     tag="div"
     role="group"
     :title="title"
-    class="poveste-button-group ptw-flex-nowrap ptw-items-center"
+    class="poveste-button-group flex-nowrap items-center"
   >
-    <div class="ptw-flex ptw-gap-px ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 ptw-rounded-sm ptw-p-px">
+    <div class="flex gap-px border border-solid border-black/25 dark:border-white/25 rounded-sm p-px">
       <HstButton
         v-for="{ label, value } of formattedOptions"
         :key="value"
-        class="ptw-px-1 ptw-h-[22px] ptw-flex-1 !ptw-rounded-[3px]"
+        class="px-1 h-[22px] flex-1 rounded-[3px]!"
         :color="value === modelValue ? 'primary' : 'flat'"
         :rounded="false"
         @click="selectOption(value)"

@@ -64,16 +64,16 @@ function processChange(inp) {
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-select ptw-cursor-text ptw-items-center"
+    class="poveste-select cursor-text items-center"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <div class="ptw-flex ptw-flex-row ptw-gap-1">
+    <div class="flex flex-row gap-1">
       <input
         v-bind="{ ...$attrs, class: null, style: null }"
         v-model="stringModel"
         type="text"
-        class="ptw-text-inherit ptw-bg-transparent ptw-w-full ptw-outline-none ptw-px-2 ptw-py-1 -ptw-my-1 ptw-border ptw-border-solid ptw-border-black/25 dark:ptw-border-white/25 focus:ptw-border-primary-500 dark:focus:ptw-border-primary-500 ptw-rounded-sm"
+        class="text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm"
       >
       <input
         type="color"

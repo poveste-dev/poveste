@@ -47,11 +47,11 @@ const animationEnabled = ref(false)
   <HstWrapper
     role="group"
     :title="title"
-    class="poveste-radio ptw-cursor-text"
+    class="poveste-radio cursor-text"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <div class="-ptw-my-1">
+    <div class="-my-1">
       <template
         v-for="(label, value) in formattedOptions"
         :key="value"
@@ -62,13 +62,13 @@ const animationEnabled = ref(false)
           :name="`${value}-radio_${title}`"
           :value="value"
           :checked="value === modelValue"
-          class="!ptw-hidden"
+          class="hidden!"
           @change="selectOption(value)"
         >
         <label
           tabindex="0"
           :for="`${value}-radio_${title}`"
-          class="ptw-cursor-pointer ptw-flex ptw-items-center ptw-relative ptw-py-1 ptw-group"
+          class="cursor-pointer flex items-center relative py-1 group"
           @keydown.enter.prevent="selectOption(value)"
           @keydown.space.prevent="selectOption(value)"
         >
@@ -76,24 +76,24 @@ const animationEnabled = ref(false)
             width="16"
             height="16"
             viewBox="-12 -12 24 24"
-            class="ptw-relative ptw-z-10 ptw-border ptw-border-solid  ptw-text-inherit ptw-rounded-full ptw-box-border ptw-inset-0 ptw-transition-border ptw-duration-150 ptw-ease-out ptw-mr-2 group-hover:ptw-border-primary-500"
+            class="relative z-10 border border-solid  text-inherit rounded-full box-border inset-0 transition-border duration-150 ease-out mr-2 group-hover:border-primary-500"
             :class="[
               modelValue === value
-                ? 'ptw-border-primary-500'
-                : 'ptw-border-black/25 dark:ptw-border-white/25',
+                ? 'border-primary-500'
+                : 'border-black/25 dark:border-white/25',
             ]"
           >
             <circle
               r="7"
-              class="ptw-will-change-transform"
+              class="will-change-transform"
               :class="[
-                animationEnabled ? 'ptw-transition-all' : 'ptw-transition-none',
+                animationEnabled ? 'transition-all' : 'transition-none',
                 {
-                  'ptw-delay-150': modelValue === value,
+                  'delay-150': modelValue === value,
                 },
                 modelValue === value
-                  ? 'ptw-fill-primary-500'
-                  : 'ptw-fill-transparent ptw-scale-0',
+                  ? 'fill-primary-500'
+                  : 'fill-transparent scale-0',
               ]"
             />
           </svg>
