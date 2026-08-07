@@ -1,10 +1,12 @@
 import type { PreviewSettings } from '../types'
 import { useStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
+import { defaultPreviewColorScheme } from '../util/color-scheme'
 import { povesteConfig } from '../util/config'
+import { PREVIEW_SETTINGS_STORAGE_KEY } from '../util/preview-settings'
 
 export const usePreviewSettingsStore = defineStore('preview-settings', () => {
-  const currentSettings = useStorage<PreviewSettings>('_poveste-sandbox-settings-v3', {
+  const currentSettings = useStorage<PreviewSettings>(PREVIEW_SETTINGS_STORAGE_KEY, {
     responsiveWidth: 720,
     responsiveHeight: null,
     rotate: false,
@@ -12,6 +14,7 @@ export const usePreviewSettingsStore = defineStore('preview-settings', () => {
     backgroundColorPicked: false,
     checkerboard: false,
     textDirection: 'ltr',
+    colorScheme: defaultPreviewColorScheme,
   })
 
   // useStorage honors its default only on first run, so already-stored settings
@@ -22,6 +25,10 @@ export const usePreviewSettingsStore = defineStore('preview-settings', () => {
   if (configBg && !currentSettings.value.backgroundColorPicked) {
     currentSettings.value.backgroundColor = configBg
   }
+
+  // Same reason: settings stored before `colorScheme` existed would leave it
+  // undefined, so the toolbar would show no active option.
+  currentSettings.value.colorScheme ??= defaultPreviewColorScheme
 
   function setBackgroundColor(color: string) {
     currentSettings.value.backgroundColor = color

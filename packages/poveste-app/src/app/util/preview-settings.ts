@@ -2,7 +2,23 @@ import type { PreviewSettings } from '../types'
 import { reactive } from 'vue'
 import { povesteConfig } from './config'
 
+export const PREVIEW_SETTINGS_STORAGE_KEY = '_poveste-sandbox-settings-v3'
+
 export const receivedSettings = reactive<PreviewSettings>({} as PreviewSettings)
+
+/**
+ * Read the settings the app persists, for sandboxes that can't wait for (or
+ * will never get) a `PREVIEW_SETTINGS_SYNC` message.
+ */
+export function loadStoredPreviewSettings(): PreviewSettings | null {
+  try {
+    const raw = localStorage.getItem(PREVIEW_SETTINGS_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  }
+  catch {
+    return null
+  }
+}
 
 export function applyPreviewSettings(settings: PreviewSettings) {
   Object.assign(receivedSettings, settings)

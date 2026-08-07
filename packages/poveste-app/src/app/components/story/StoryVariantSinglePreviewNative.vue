@@ -2,8 +2,8 @@
 import type { Story, Variant } from '../../types'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
-import { isDark } from '../../util/dark'
 import { getContrastColor } from '../../util/preview-settings'
 import GenericRenderStory from './GenericRenderStory.vue'
 import StoryResponsivePreview from './StoryResponsivePreview.vue'
@@ -24,6 +24,8 @@ function onReady() {
 }
 
 const settings = usePreviewSettingsStore().currentSettings
+
+const previewDark = usePreviewDark(settings)
 
 const contrastColor = computed(() => getContrastColor(settings))
 const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastColor)
@@ -57,8 +59,8 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
         :story="story"
         class="ptw-h-full"
         :class="{
-          [povesteConfig.sandboxDarkClass]: isDark, // @TODO remove
-          [povesteConfig.theme.darkClass]: isDark,
+          [povesteConfig.sandboxDarkClass]: previewDark, // @TODO remove
+          [povesteConfig.theme.darkClass]: previewDark,
         }"
         :dir="settings.textDirection"
         @ready="onReady"

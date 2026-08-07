@@ -1,5 +1,6 @@
 import type { StoryFile } from './types'
 import { applyState } from '@poveste/shared'
+import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
 import { files } from 'virtual:$poveste-stories'
 import { computed, createApp, h, onMounted, ref, watch } from 'vue'
@@ -7,15 +8,43 @@ import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { setupPluginApi } from './plugin.js'
+import { resolvePreviewDark } from './util/color-scheme.js'
 import { povesteConfig } from './util/config.js'
 import { PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
-import { applyPreviewSettings } from './util/preview-settings.js'
+import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
 import { toRawDeep } from './util/state.js'
 
 const query = parseQuery(window.location.search)
 const file = ref<StoryFile>(mapFile(files.find(f => f.id === query.storyId)))
+
+// Sandboxes opened on their own (the "open in a new tab" toolbar button) never
+// receive a PREVIEW_SETTINGS_SYNC, and inside the app the first one only lands
+// after the iframe is already visible. Both read the same storage the app
+// writes to, so seed from it and let the sync take over from there.
+const storedSettings = loadStoredPreviewSettings()
+if (storedSettings) {
+  applyPreviewSettings(storedSettings)
+}
+
+// The story preview has its own color scheme, independent from the app chrome.
+// The fallback covers settings stored before the option existed.
+const prefersDark = usePreferredDark()
+const previewDark = computed(() => resolvePreviewDark(receivedSettings.colorScheme, prefersDark.value, isDark.value))
+
+watch(previewDark, (value) => {
+  if (value) {
+    document.documentElement.classList.add(povesteConfig.sandboxDarkClass) // @TODO remove
+    document.documentElement.classList.add(povesteConfig.theme.darkClass)
+  }
+  else {
+    document.documentElement.classList.remove(povesteConfig.sandboxDarkClass) // @TODO remove
+    document.documentElement.classList.remove(povesteConfig.theme.darkClass)
+  }
+}, {
+  immediate: true,
+})
 
 const app = createApp({
   name: 'SandboxApp',
@@ -110,19 +139,6 @@ function scheduleReport() {
 const ro = new ResizeObserver(scheduleReport)
 ro.observe(document.body)
 requestAnimationFrame(scheduleReport)
-
-watch(isDark, (value) => {
-  if (value) {
-    document.documentElement.classList.add(povesteConfig.sandboxDarkClass) // @TODO remove
-    document.documentElement.classList.add(povesteConfig.theme.darkClass)
-  }
-  else {
-    document.documentElement.classList.remove(povesteConfig.sandboxDarkClass) // @TODO remove
-    document.documentElement.classList.remove(povesteConfig.theme.darkClass)
-  }
-}, {
-  immediate: true,
-})
 
 if (import.meta.hot) {
   /* #__PURE__ */ setupPluginApi()

@@ -7,8 +7,8 @@ import { useResizeObserver } from '@vueuse/core'
 import { computed, ref, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
-import { isDark } from '../../util/dark'
 import { getSourceCode } from '../../util/docs'
 import { getContrastColor } from '../../util/preview-settings'
 import { useScrollOnActive } from '../../util/scroll'
@@ -66,6 +66,8 @@ useResizeObserver(el, () => {
 })
 
 const settings = usePreviewSettingsStore().currentSettings
+
+const previewDark = usePreviewDark(settings)
 
 const contrastColor = computed(() => getContrastColor(settings))
 const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastColor)
@@ -162,7 +164,7 @@ const useIframe = computed(() => {
           :story="story"
           :dir="settings.textDirection"
           :class="{
-            [povesteConfig.theme.darkClass]: isDark,
+            [povesteConfig.theme.darkClass]: previewDark,
           }"
           @ready="onReady"
         />

@@ -94,6 +94,7 @@ Add documentation to your stories with (extendable) Markdown with code snippets 
 ### :moon: Dark theme
 
 Rest your eyes with the alternative darker theme for your book.
+Switch the story preview between System, Light and Dark on its own, without touching the theme of the book around it.
 Change the story background (with an optional checkerboard) to test your design in different situations.
 
 ### :iphone: Responsive testing

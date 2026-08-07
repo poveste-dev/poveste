@@ -45,18 +45,62 @@ export type SearchResult = SearchResultBase & ({
   onActivate: () => unknown
 })
 
+export type SandboxColorScheme = 'auto' | 'light' | 'dark'
+
 export interface PreviewSettings {
+  /**
+   * Width of the responsive preview, in pixels. `null` sizes it to the
+   * available space.
+   *
+   * @default 720
+   */
   responsiveWidth: number
+  /**
+   * Height of the responsive preview, in pixels. `null` sizes it to the
+   * available space.
+   *
+   * @default null
+   */
   responsiveHeight: number
+  /**
+   * Swap `responsiveWidth` and `responsiveHeight`, to preview a size in
+   * landscape without editing both values.
+   *
+   * @default false
+   */
   rotate: boolean
+  /**
+   * Background color of the story preview. Any CSS color, not only the ones
+   * from `backgroundPresets`.
+   *
+   * @default 'transparent'
+   */
   backgroundColor: string
   /**
    * Whether `backgroundColor` came from an explicit toolbar pick rather than
    * from the `defaultBackgroundColor` config option.
+   *
+   * @default false
    */
   backgroundColorPicked: boolean
+  /**
+   * Show a checkerboard pattern behind the story, to spot transparency.
+   *
+   * @default false
+   */
   checkerboard: boolean
+  /**
+   * `dir` attribute set on the story preview.
+   *
+   * @default 'ltr'
+   */
   textDirection: 'ltr' | 'rtl'
+  /**
+   * Color scheme of the story preview, independent from the app chrome.
+   *
+   * @default 'auto'
+   */
+  colorScheme: SandboxColorScheme
 }
 
 declare module 'vue' {

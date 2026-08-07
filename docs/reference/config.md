@@ -112,9 +112,9 @@ Properties:
 - `favicon: string`: Href to the favicon file (**not** processed by Vite). Put the file in the `public` directory.
 - `colors: Object`: Customize the colors. Each color should be an object with shades as keys.
 - `logoHref: string`: Add a link to the main logo
-- `darkClass: string`: Class added to the story preview when dark mode is enabled (default is `'dark'`).
-- `defaultColorScheme: 'light' | 'dark' | 'auto'`: Default color scheme for the app. `'auto'` will use the system preference.
-- `hideColorSchemeSwitch: boolean`: Hides the dark mode button in the toolbar.
+- `darkClass: string`: Class added to the story preview when dark mode is enabled (default is `'dark'`). The story preview has its own color scheme, picked from the preview appearance dropdown in the toolbar (System / Light / Dark) and independent from the color scheme of the app around it.
+- `defaultColorScheme: 'light' | 'dark' | 'auto'`: Default color scheme for the app and for the story preview. `'auto'` will use the system preference.
+- `hideColorSchemeSwitch: boolean`: Hides the dark mode button in the toolbar, and the color scheme buttons in the preview appearance dropdown — the story preview then stays on `defaultColorScheme`.
 - `storeColorScheme: boolean`: Enable persistence of the color scheme in the browser's local storage.
 
 ```ts
