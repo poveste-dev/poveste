@@ -25,7 +25,6 @@ peerDependencyRules:
     - react
     - react-dom
     - vue
-    - vue-template-compiler
     - webpack
   allowedVersions:
     eslint: '*'
