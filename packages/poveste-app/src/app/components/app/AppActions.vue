@@ -29,7 +29,7 @@ const themeIcon = computed(() => {
     >
       <Icon
         icon="carbon:panel-expansion"
-        class="ptw-w-4 ptw-h-4"
+        class="w-4 h-4"
       />
     </TopBarChipItem>
 
@@ -40,7 +40,7 @@ const themeIcon = computed(() => {
     >
       <Icon
         icon="carbon:search"
-        class="ptw-w-4 ptw-h-4"
+        class="w-4 h-4"
       />
     </TopBarChipItem>
 
@@ -51,7 +51,7 @@ const themeIcon = computed(() => {
     >
       <Icon
         :icon="themeIcon"
-        class="ptw-w-4 ptw-h-4"
+        class="w-4 h-4"
       />
     </TopBarChipItem>
   </TopBarChip>

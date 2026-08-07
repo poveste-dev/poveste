@@ -27,23 +27,23 @@ function toggleOpen() {
 <template>
   <div
     data-test-id="story-group"
-    class="poveste-story-group ptw-my-2 first:ptw-mt-0 last:ptw-mb-0 ptw-group"
+    class="poveste-story-group my-2 first:mt-0 last:mb-0 group"
   >
     <template v-if="group.title">
-      <div class="ptw-h-[1px] ptw-bg-gray-500/10 ptw-mx-6 ptw-mb-2 group-first:ptw-hidden" />
+      <div class="h-[1px] bg-gray-500/10 mx-6 mb-2 group-first:hidden" />
       <div
         role="button"
         tabindex="0"
-        class="ptw-px-0.5 ptw-py-2 md:ptw-py-1.5 ptw-mx-1 ptw-rounded-sm hover:ptw-bg-primary-100 dark:hover:ptw-bg-primary-900 ptw-cursor-pointer ptw-select-none ptw-flex ptw-items-center ptw-gap-2 ptw-min-w-0 ptw-opacity-50 hover:ptw-opacity-100"
+        class="px-0.5 py-2 md:py-1.5 mx-1 rounded-sm hover:bg-primary-100 dark:hover:bg-primary-900 cursor-pointer select-none flex items-center gap-2 min-w-0 opacity-50 hover:opacity-100"
         @click="toggleOpen"
         @keyup.enter="toggleOpen"
         @keyup.space="toggleOpen"
       >
         <Icon
           :icon="isFolderOpen ? 'ri:subtract-line' : 'ri:add-line'"
-          class="ptw-w-4 ptw-h-4 ptw-ml-4 ptw-rounded-sm ptw-border ptw-border-gray-500/40"
+          class="w-4 h-4 ml-4 rounded-sm border border-gray-500/40"
         />
-        <span class="ptw-truncate">{{ group.title }}</span>
+        <span class="truncate">{{ group.title }}</span>
       </div>
     </template>
 

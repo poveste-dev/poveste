@@ -17,18 +17,18 @@ defineEmits<{
 <template>
   <BaseListItem
     :is-active="isActive"
-    class="ptw-px-6 ptw-py-4 ptw-gap-4"
+    class="px-6 py-4 gap-4"
     @navigate="$emit('click')"
   >
     <Icon
-      class="ptw-w-4 ptw-h-4 ptw-flex-none"
+      class="w-4 h-4 flex-none"
       :icon="icon"
       aria-hidden="true"
     />
-    <span class="ptw-flex-1">{{ title }}</span>
+    <span class="flex-1">{{ title }}</span>
     <Icon
       v-if="stateIcon"
-      class="ptw-w-4 ptw-h-4 ptw-flex-none ptw-opacity-70"
+      class="w-4 h-4 flex-none opacity-70"
       :icon="stateIcon"
       aria-hidden="true"
     />

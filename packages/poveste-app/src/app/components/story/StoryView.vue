@@ -77,23 +77,23 @@ function scrollDocsToTop() {
   >
     <Icon
       icon="carbon:software-resource-resource"
-      class="ptw-w-16 ptw-h-16 ptw-opacity-50"
+      class="w-16 h-16 opacity-50"
     />
   </BaseEmpty>
 
   <div
     v-else
-    class="poveste-story-view poveste-with-story ptw-h-full"
+    class="poveste-story-view poveste-with-story h-full"
   >
     <div
       v-if="storyStore.currentStory.docsOnly"
       ref="docsOnlyScroller"
-      class="ptw-h-full ptw-overflow-auto"
+      class="h-full overflow-auto"
     >
       <StoryDocs
         :story="storyStore.currentStory"
         standalone
-        class="md:ptw-p-12 ptw-w-full md:ptw-max-w-[600px] lg:ptw-max-w-[800px] xl:ptw-max-w-[900px]"
+        class="md:p-12 w-full md:max-w-[600px] lg:max-w-[800px] xl:max-w-[900px]"
         @scroll-top="scrollDocsToTop()"
       />
     </div>
@@ -111,7 +111,7 @@ function scrollDocsToTop() {
       :max="95"
       :default-split="splitDefaultSplit"
       :show-divider="false"
-      class="ptw-h-full"
+      class="h-full"
     >
       <template #first>
         <StoryViewer />

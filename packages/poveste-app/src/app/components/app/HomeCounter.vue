@@ -18,19 +18,19 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="ptw-p-2 ptw-flex ptw-items-center ptw-gap-x-2">
+  <div class="p-2 flex items-center gap-x-2">
     <Icon
       :icon="props.icon"
-      class="ptw-text-2xl ptw-text-gray-700 dark:ptw-text-gray-300 ptw-flex-none"
+      class="text-2xl text-gray-700 dark:text-gray-300 flex-none"
     />
-    <div class="ptw-flex ptw-flex-col ptw-leading-none">
+    <div class="flex flex-col leading-none">
       <span
-        class="ptw-text-primary-500 ptw-min-w-[80px] ptw-font-bold"
+        class="text-primary-500 min-w-[80px] font-bold"
       >
         {{ count }}
       </span>
       <span
-        class="ptw-text-sm ptw-text-gray-900 dark:ptw-text-gray-100"
+        class="text-sm text-gray-900 dark:text-gray-100"
       >
         {{ title }}
       </span>

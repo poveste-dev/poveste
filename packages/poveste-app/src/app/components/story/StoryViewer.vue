@@ -22,7 +22,7 @@ watch(variant, () => {
 </script>
 
 <template>
-  <div class="poveste-story-viewer ptw-bg-gray-50 ptw-h-full dark:ptw-bg-gray-750">
+  <div class="poveste-story-viewer bg-gray-50 h-full dark:bg-gray-750">
     <StoryVariantGrid
       v-if="storyStore.currentStory.layout.type === 'grid'"
     />

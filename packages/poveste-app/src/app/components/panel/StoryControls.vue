@@ -39,11 +39,11 @@ const hasInitState = computed(() => Object
 <template>
   <div
     data-test-id="story-controls"
-    class="poveste-story-controls ptw-flex ptw-flex-col ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-750"
+    class="poveste-story-controls flex flex-col divide-y divide-gray-100 dark:divide-gray-750"
   >
     <!-- Toolbar -->
     <div
-      class="ptw-h-9 ptw-flex-none ptw-px-2 ptw-flex ptw-items-center"
+      class="h-9 flex-none px-2 flex items-center"
     >
       <StatePresets
         v-if="ready || !hasCustomControls"
@@ -59,7 +59,7 @@ const hasInitState = computed(() => Object
       slot-name="controls"
       :variant="variant"
       :story="story"
-      class="__poveste-render-custom-controls __histoire-render-custom-controls ptw-flex-none"
+      class="__poveste-render-custom-controls __histoire-render-custom-controls flex-none"
       @ready="ready = true"
     />
 
@@ -68,7 +68,7 @@ const hasInitState = computed(() => Object
       v-else-if="hasInitState"
     >
       <ControlsComponentState
-        class="ptw-flex-none ptw-my-2"
+        class="flex-none my-2"
         :variant="variant"
       />
     </div>
@@ -76,7 +76,7 @@ const hasInitState = computed(() => Object
     <BaseEmpty v-else-if="!variant.state?._hPropDefs?.length">
       <Icon
         icon="carbon:audio-console"
-        class="ptw-w-8 ptw-h-8 ptw-opacity-50 ptw-mb-6"
+        class="w-8 h-8 opacity-50 mb-6"
       />
       <span>No controls available for this story</span>
     </BaseEmpty>
@@ -90,7 +90,7 @@ const hasInitState = computed(() => Object
         :key="index"
         :variant="variant"
         :definition="def"
-        class="ptw-flex-none ptw-my-2"
+        class="flex-none my-2"
       />
     </div>
   </div>

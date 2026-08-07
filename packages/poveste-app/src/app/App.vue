@@ -110,10 +110,10 @@ const layoutStore = useLayoutStore()
 </script>
 
 <template>
-  <div class="poveste-app-root ptw-h-full">
+  <div class="poveste-app-root h-full">
     <div
       v-if="storyStore.currentStory"
-      class="poveste-app ptw-hidden"
+      class="poveste-app hidden"
     >
       <GenericMountStory
         :key="storyStore.currentStory.id"
@@ -122,7 +122,7 @@ const layoutStore = useLayoutStore()
     </div>
 
     <div
-      class="ptw-h-screen ptw-bg-gray-100 dark:ptw-bg-gray-750 dark:ptw-text-gray-100"
+      class="h-screen bg-gray-100 dark:bg-gray-750 dark:text-gray-100"
       :style="{
         // Prevent flash of content
         opacity: mounted ? 1 : 0,
@@ -130,12 +130,12 @@ const layoutStore = useLayoutStore()
     >
       <div
         v-if="isMobile"
-        class="ptw-h-full ptw-flex ptw-flex-col ptw-divide-y ptw-divide-gray-100 dark:ptw-divide-gray-800"
+        class="h-full flex flex-col divide-y divide-gray-100 dark:divide-gray-800"
       >
-        <div class="ptw-flex ptw-items-center ptw-gap-2 ptw-pr-4">
-          <AppHeader class="ptw-flex-1" />
+        <div class="flex items-center gap-2 pr-4">
+          <AppHeader class="flex-1" />
           <AppActions
-            class="ptw-flex-none"
+            class="flex-none"
             @layout="isLayoutOpen = true"
             @search="isSearchOpen = true"
           />
@@ -144,7 +144,7 @@ const layoutStore = useLayoutStore()
           :tree="tree"
           :stories="stories"
         />
-        <RouterView class="ptw-grow" />
+        <RouterView class="grow" />
       </div>
 
       <BaseSplitPane
@@ -153,38 +153,38 @@ const layoutStore = useLayoutStore()
         :min="5"
         :max="50"
         :default-split="15"
-        class="ptw-h-full"
+        class="h-full"
       >
         <template #first>
-          <div class="ptw-flex ptw-flex-col ptw-h-full ptw-bg-gray-100 dark:ptw-bg-gray-750 __poveste-pane-shadow-from-right">
-            <AppHeader class="ptw-flex-none" />
+          <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
+            <AppHeader class="flex-none" />
             <StoryList
               :tree="tree"
               :stories="stories"
-              class="ptw-flex-1"
+              class="flex-1"
             />
           </div>
         </template>
 
         <template #last>
-          <div class="ptw-flex ptw-flex-col ptw-h-full">
+          <div class="flex flex-col h-full">
             <TopBar
               @layout="isLayoutOpen = true"
               @search="isSearchOpen = true"
             />
-            <RouterView class="ptw-flex-1 ptw-min-h-0" />
+            <RouterView class="flex-1 min-h-0" />
           </div>
         </template>
       </BaseSplitPane>
       <div
         v-else
-        class="ptw-h-full ptw-flex ptw-flex-col"
+        class="h-full flex flex-col"
       >
         <TopBar
           @layout="isLayoutOpen = true"
           @search="isSearchOpen = true"
         />
-        <RouterView class="ptw-flex-1 ptw-min-h-0" />
+        <RouterView class="flex-1 min-h-0" />
       </div>
 
       <LayoutModal

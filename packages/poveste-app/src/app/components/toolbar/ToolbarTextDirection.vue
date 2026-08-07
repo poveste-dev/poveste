@@ -14,7 +14,7 @@ const settings = usePreviewSettingsStore().currentSettings
   >
     <Icon
       :icon="settings.textDirection === 'ltr' ? 'fluent:text-paragraph-direction-right-16-regular' : 'fluent:text-paragraph-direction-left-16-regular'"
-      class="ptw-w-4 ptw-h-4"
+      class="w-4 h-4"
     />
   </TopBarChipItem>
 </template>

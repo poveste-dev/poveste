@@ -59,11 +59,11 @@ onMounted(() => {
 
 <template>
   <form
-    class="poveste-command-prompts ptw-flex ptw-flex-col"
+    class="poveste-command-prompts flex flex-col"
     @submit.prevent="submit()"
     @keyup.escape="$emit('close')"
   >
-    <div class="ptw-p-4 ptw-opacity-70">
+    <div class="p-4 opacity-70">
       {{ command.label }}
     </div>
 
@@ -76,14 +76,14 @@ onMounted(() => {
       :prompt="prompt"
       :answers="answers"
       :index="index"
-      class="hover:ptw-bg-gray-500/10 focus-within:ptw-bg-gray-500/5"
+      class="hover:bg-gray-500/10 focus-within:bg-gray-500/5"
       @next="focusPrompt(index + 1)"
     />
 
-    <div class="ptw-flex ptw-justify-end ptw-gap-2 ptw-p-2">
+    <div class="flex justify-end gap-2 p-2">
       <BaseButton
         type="submit"
-        class="ptw-px-4 ptw-py-2 ptw-flex ptw-items-start ptw-gap-2"
+        class="px-4 py-2 flex items-start gap-2"
       >
         <BaseKeyboardShortcut
           shortcut="Enter"

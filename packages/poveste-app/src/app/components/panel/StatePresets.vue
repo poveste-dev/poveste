@@ -118,10 +118,10 @@ onClickOutside(select, stopEditing)
 </script>
 
 <template>
-  <div class="poveste-state-presets ptw-flex ptw-gap-2 ptw-w-full ptw-items-center">
+  <div class="poveste-state-presets flex gap-2 w-full items-center">
     <div
       ref="select"
-      class="ptw-flex-1 ptw-min-w-0"
+      class="flex-1 min-w-0"
     >
       <BaseSelect
         v-model="selectedOption"
@@ -137,37 +137,37 @@ onClickOutside(select, stopEditing)
             ref="input"
             v-model="presetStates.get(selectedOption).label"
             type="text"
-            class="ptw-text-inherit ptw-bg-transparent ptw-w-full ptw-h-full ptw-outline-none"
+            class="text-inherit bg-transparent w-full h-full outline-none"
             @click.stop.prevent
           >
 
           <div
             v-else
-            class="ptw-flex ptw-items-center ptw-gap-2"
+            class="flex items-center gap-2"
           >
-            <span class="ptw-flex-1 ptw-truncate">
+            <span class="flex-1 truncate">
               {{ label }}
             </span>
             <Icon
               v-if="canEdit"
               v-tooltip="'Rename this preset'"
               icon="carbon:edit"
-              class="ptw-flex-none ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
+              class="flex-none cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
               @click.stop="startEditing()"
             />
           </div>
         </template>
 
         <template #option="{ label, value }">
-          <div class="ptw-flex ptw-gap-2 ptw-items-center">
+          <div class="flex gap-2 items-center">
             <span
-              class="ptw-flex-1 ptw-truncate"
+              class="flex-1 truncate"
             >{{ label }}</span>
             <Icon
               v-if="value !== DEFAULT_ID"
               v-tooltip="'Delete this preset'"
               icon="carbon:trash-can"
-              class="ptw-flex-none ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
+              class="flex-none cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
               @click.stop="deletePreset(value)"
             />
           </div>
@@ -177,22 +177,22 @@ onClickOutside(select, stopEditing)
     <Icon
       v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
       :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
-      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
+      class="cursor-pointer w-4 h-4 hover:text-primary-500 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
       :class="[
-        canEdit ? 'ptw-opacity-50 hover:ptw-opacity-100' : 'ptw-opacity-25 ptw-pointer-events-none',
+        canEdit ? 'opacity-50 hover:opacity-100' : 'opacity-25 pointer-events-none',
       ]"
       @click="savePreset()"
     />
     <Icon
       v-tooltip="'Create new preset'"
       icon="carbon:add-alt"
-      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
+      class="cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
       @click="createPreset()"
     />
     <Icon
       v-tooltip="'Reset to initial state'"
       icon="carbon:reset"
-      class="ptw-cursor-pointer ptw-w-4 ptw-h-4 hover:ptw-text-primary-500 ptw-opacity-50 hover:ptw-opacity-100 dark:hover:ptw-text-primary-400 ptw-text-gray-900 dark:ptw-text-gray-100"
+      class="cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
       @click="resetState()"
     />
   </div>

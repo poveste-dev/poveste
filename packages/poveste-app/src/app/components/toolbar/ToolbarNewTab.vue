@@ -24,7 +24,7 @@ const sandboxUrl = computed(() => {
   >
     <Icon
       icon="carbon:launch"
-      class="ptw-w-4 ptw-h-4"
+      class="w-4 h-4"
     />
   </TopBarChipItem>
 </template>

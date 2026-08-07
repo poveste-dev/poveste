@@ -18,7 +18,7 @@ defineProps<{
   >
     <Icon
       icon="carbon:script-reference"
-      class="ptw-w-4 ptw-h-4"
+      class="w-4 h-4"
     />
   </TopBarChipItem>
 </template>

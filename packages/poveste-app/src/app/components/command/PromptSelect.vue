@@ -84,36 +84,36 @@ function selectIndex(index: number) {
 </script>
 
 <template>
-  <div class="poveste-prompt-select ptw-relative ptw-group">
+  <div class="poveste-prompt-select relative group">
     <input
       v-model="model"
       :required="prompt.required"
       tabindex="-1"
-      class="ptw-absolute ptw-inset-0 ptw-opacity-0 ptw-pointer-events-none"
+      class="absolute inset-0 opacity-0 pointer-events-none"
     >
-    <label class="ptw-flex ptw-flex-col ptw-gap-2 ptw-p-2">
-      <span class="ptw-px-2 ptw-flex">
+    <label class="flex flex-col gap-2 p-2">
+      <span class="px-2 flex">
         <span>{{ prompt.label }}</span>
         <span
           v-if="prompt.required"
-          class="ptw-opacity-70"
+          class="opacity-70"
         >*</span>
 
-        <span class="ptw-opacity-40 ptw-text-sm ptw-ml-auto ptw-invisible group-focus-within:ptw-visible">
+        <span class="opacity-40 text-sm ml-auto invisible group-focus-within:visible">
           Press <BaseKeyboardShortcut shortcut="Space" /> to select
         </span>
       </span>
       <input
         ref="input"
         v-model="search"
-        class="ptw-bg-transparent ptw-w-full ptw-p-2 ptw-border ptw-border-gray-500/50 focus:ptw-border-primary-500/50 ptw-rounded ptw-outline-none"
+        class="bg-transparent w-full p-2 border border-gray-500/50 focus:border-primary-500/50 rounded outline-none"
         @keydown.down.prevent="selectNext()"
         @keydown.up.prevent="selectPrevious()"
         @keydown.space.prevent="selectIndex(selectedIndex)"
       >
     </label>
 
-    <div class="ptw-overflow-auto max-h-[300px] ptw-mb-2">
+    <div class="overflow-auto max-h-[300px] mb-2">
       <button
         v-for="(option, index) of formattedOptions"
         :key="option.value"
@@ -121,20 +121,20 @@ function selectIndex(index: number) {
         tabindex="-1"
         :class="[
           model === option.value
-            ? 'ptw-bg-primary-500/20'
+            ? 'bg-primary-500/20'
             : index === selectedIndex
-              ? 'ptw-bg-primary-500/10'
-              : 'ptw-bg-transparent',
+              ? 'bg-primary-500/10'
+              : 'bg-transparent',
         ]"
-        class="ptw-w-full ptw-text-left ptw-px-4 ptw-py-2 hover:ptw-bg-primary-500/10 ptw-flex ptw-items-center"
+        class="w-full text-left px-4 py-2 hover:bg-primary-500/10 flex items-center"
         @click="model = option.value"
       >
-        <span class="ptw-flex-1">{{ option.label }}</span>
+        <span class="flex-1">{{ option.label }}</span>
 
         <Icon
           v-if="model === option.value"
           icon="carbon:checkmark"
-          class="ptw-w-4 ptw-h-4 ptw-text-primary-500"
+          class="w-4 h-4 text-primary-500"
         />
       </button>
     </div>

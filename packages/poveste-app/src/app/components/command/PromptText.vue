@@ -46,18 +46,18 @@ watch(defaultValue, (value) => {
 
 <template>
   <div class="poveste-prompt-text">
-    <label class="ptw-flex ptw-flex-col ptw-gap-2 ptw-p-2">
-      <span class="ptw-px-2">
+    <label class="flex flex-col gap-2 p-2">
+      <span class="px-2">
         <span>{{ prompt.label }}</span>
         <span
           v-if="prompt.required"
-          class="ptw-opacity-70"
+          class="opacity-70"
         >*</span>
       </span>
       <input
         ref="input"
         v-model="model"
-        class="ptw-bg-transparent ptw-w-full ptw-p-2 ptw-border ptw-border-gray-500/50 focus:ptw-border-primary-500/50 ptw-rounded ptw-outline-none"
+        class="bg-transparent w-full p-2 border border-gray-500/50 focus:border-primary-500/50 rounded outline-none"
         :required="prompt.required"
       >
     </label>

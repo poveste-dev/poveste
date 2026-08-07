@@ -20,34 +20,34 @@ const formattedArgument = computed(() => {
 
 <template>
   <VDropdown
-    class="poveste-story-event ptw-group"
+    class="poveste-story-event group"
     placement="right"
     data-test-id="event-item"
   >
     <template #default="{ shown }">
       <div
-        class="group-hover:ptw-bg-primary-100 dark:group-hover:ptw-bg-primary-700 ptw-cursor-pointer ptw-py-2 ptw-px-4 ptw-flex ptw-items-baseline ptw-gap-1 ptw-leading-normal"
+        class="group-hover:bg-primary-100 dark:group-hover:bg-primary-700 cursor-pointer py-2 px-4 flex items-baseline gap-1 leading-normal"
         :class="[
-          shown ? 'ptw-bg-primary-50 dark:ptw-bg-primary-600' : 'group-odd:ptw-bg-gray-100/50 dark:group-odd:ptw-bg-gray-750/40',
+          shown ? 'bg-primary-50 dark:bg-primary-600' : 'group-odd:bg-gray-100/50 dark:group-odd:bg-gray-750/40',
         ]"
       >
         <span
           :class="{
-            'ptw-text-primary-500': shown,
+            'text-primary-500': shown,
           }"
         >
           {{ event.name }}
         </span>
         <span
           v-if="event.argument"
-          class="ptw-text-xs ptw-opacity-50 ptw-truncate"
+          class="text-xs opacity-50 truncate"
         >{{ formattedArgument }}</span>
       </div>
     </template>
 
     <template #popper>
-      <div class="ptw-overflow-auto ptw-max-w-[400px] ptw-max-h-[400px]">
-        <pre class="ptw-p-4">{{ event.argument }}</pre>
+      <div class="overflow-auto max-w-[400px] max-h-[400px]">
+        <pre class="p-4">{{ event.argument }}</pre>
       </div>
     </template>
   </VDropdown>
