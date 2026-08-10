@@ -109,7 +109,13 @@ export function applyState(target: any, state: any, override = false) {
     // Those spurious triggers were load-bearing, which is the whole of #95 — the
     // syncs counted on them to keep their flags alternating. Skipping them is
     // both the efficiency win and the thing that makes `wrote` mean something.
-    if (isEquivalent(current, state[key])) {
+    //
+    // The key has to exist first. `undefined` is equivalent to `undefined`, so a
+    // key the target does not have yet and whose incoming value is `undefined`
+    // would otherwise never be created — and a story that declares its shape
+    // upfront (`initState: () => ({ pending: undefined })`) would get no control
+    // for it, because the panel lists the keys the state actually has.
+    if (Object.hasOwn(target, key) && isEquivalent(current, state[key])) {
       continue
     }
 

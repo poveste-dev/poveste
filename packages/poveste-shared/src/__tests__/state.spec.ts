@@ -101,6 +101,23 @@ describe('applyState', () => {
     expect(target.nested).toBe(nested)
   })
 
+  it('creates a key the target does not have, even when the value is undefined', () => {
+    // `undefined` is equivalent to `undefined`, so the skip has to check that
+    // the key exists before it trusts that. A story is allowed to declare its
+    // shape upfront — `initState: () => ({ text: 'hi', pending: undefined })` —
+    // and the controls panel lists the keys the state actually has.
+    const target: any = {}
+    applyState(target, { text: 'hi', pending: undefined })
+
+    expect(Object.keys(target)).toEqual(['text', 'pending'])
+    expect('pending' in target).toBe(true)
+  })
+
+  it('still skips an existing key whose value is already undefined', () => {
+    const target: any = { pending: undefined }
+    expect(applyState(target, { pending: undefined })).toBe(false)
+  })
+
   it('still writes when only part of an equivalent-looking value differs', () => {
     const target: any = { nested: { a: 1, b: 2 } }
     applyState(target, { nested: { a: 1, b: 3 } })
