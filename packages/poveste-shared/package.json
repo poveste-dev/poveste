@@ -26,7 +26,9 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "watch": "tsc -w --sourceMap"
+    "watch": "tsc -w --sourceMap",
+    "test": "vitest run",
+    "test:dev": "vitest"
   },
   "peerDependencies": {
     "vite": "^8.0.0"
@@ -42,6 +44,7 @@
   },
   "devDependencies": {
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

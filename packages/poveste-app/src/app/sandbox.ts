@@ -53,6 +53,11 @@ const app = createApp({
     const story = computed(() => file.value.story)
     const variant = computed(() => story.value?.variants.find(v => v.id === query.variantId))
 
+    // `synced` is the sandbox end of the same flag the host holds, with the same
+    // #95 caveat: only set it when the apply will actually provoke the watcher
+    // below, which is what `applyState`'s return value reports. Set it
+    // unconditionally and an apply that changes nothing leaves it stuck, so the
+    // next edit the story makes never reaches the host.
     let synced = false
     let mounted = false
 
@@ -60,8 +65,7 @@ const app = createApp({
       // console.log('[sandbox] received message', event.data)
       if (event.data?.type === STATE_SYNC) {
         if (!mounted) return
-        synced = true
-        applyState(variant.value.state, event.data.state)
+        synced = applyState(variant.value.state, event.data.state)
       }
       else if (event.data?.type === PREVIEW_SETTINGS_SYNC) {
         applyPreviewSettings(event.data.settings)

@@ -34,6 +34,11 @@ function syncState() {
   }
 }
 
+// The host end of the bridge, and the same flag as `plugin-vue`'s state sync
+// with the same #95 caveat: `synced` may only be set when the write below will
+// actually provoke the watcher. `applyState` reports that now. Setting it
+// unconditionally means an apply that changes nothing leaves it set, and the
+// next real edit is skipped instead — a control that does nothing.
 let synced = false
 
 watch(() => props.variant.state, () => {
@@ -77,8 +82,7 @@ useEventListener(window, 'message', (event) => {
 })
 
 function updateVariantState(state: any) {
-  synced = true
-  applyState(props.variant.state, state)
+  synced = applyState(props.variant.state, state)
 }
 
 function logEvent(event: HstEvent) {
