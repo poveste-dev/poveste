@@ -178,11 +178,42 @@ async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
   const SPACING_STEPS = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96]
   function spacing() {
     const unit = vars.get('--spacing') ?? '0.25rem'
+    // Multiply out rather than emitting `calc(0.25rem * 4)`, so the story shows
+    // the resolved length the way the v3 resolved config did.
+    const [, rawAmount, cssUnit] = unit.trim().match(/^([\d.]+)([a-z%]*)$/i) ?? []
+    const amount = Number(rawAmount)
     const out: Record<string, string> = {}
     for (const step of SPACING_STEPS) {
-      out[String(step)] = step === 0 ? '0px' : `calc(${unit} * ${step})`
+      if (step === 0) {
+        out['0'] = '0px'
+      }
+      else {
+        out[String(step)] = Number.isFinite(amount)
+          ? `${Number((amount * step).toFixed(4))}${cssUnit}`
+          : `calc(${unit} * ${step})`
+      }
     }
     return out
+  }
+
+  // Fractions and keywords have no theme variables in v4 — they are static
+  // utilities — but they belong in the sizing scales the story lists.
+  const SIZING_EXTRAS: Record<string, string> = {
+    'auto': 'auto',
+    'full': '100%',
+    'min': 'min-content',
+    'max': 'max-content',
+    'fit': 'fit-content',
+    'px': '1px',
+    '1/2': '50%',
+    '1/3': '33.333333%',
+    '2/3': '66.666667%',
+    '1/4': '25%',
+    '3/4': '75%',
+    '1/5': '20%',
+    '2/5': '40%',
+    '3/5': '60%',
+    '4/5': '80%',
   }
 
   const palette = colors()
@@ -194,8 +225,8 @@ async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
     borderColor: palette,
     padding: scale,
     margin: scale,
-    width: scale,
-    height: scale,
+    width: { ...scale, ...SIZING_EXTRAS, screen: '100vw' },
+    height: { ...scale, ...SIZING_EXTRAS, screen: '100vh' },
     fontSize: group('--text', /--line-height$|--letter-spacing$|--font-weight$/),
     fontWeight: group('--font-weight'),
     fontFamily: group('--font', /^--font-weight-/),
@@ -327,7 +358,7 @@ export default {
       icon: 'carbon:area',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.padding,
-        getName: key => \`\p-\${key}\`,
+        getName: key => \`p-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-padding',
         style: {
@@ -345,7 +376,7 @@ export default {
       icon: 'carbon:area',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.margin,
-        getName: key => \`\m-\${key}\`,
+        getName: key => \`m-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-margin',
       }, [
@@ -363,7 +394,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontSize,
-        getName: key => \`\text-\${key}\`,
+        getName: key => \`text-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -386,7 +417,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontWeight,
-        getName: key => \`\font-\${key}\`,
+        getName: key => \`font-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -415,7 +446,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.fontFamily,
-        getName: key => \`\font-\${key}\`,
+        getName: key => \`font-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -444,7 +475,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.letterSpacing,
-        getName: key => \`\tracking-\${key}\`,
+        getName: key => \`tracking-\${key}\`,
       }, ({ token }) => h('div', {
         class: '__pvt-truncate',
         style: {
@@ -473,7 +504,7 @@ export default {
       icon: 'carbon:text-font',
       onMount: (api) => mountApp(api, () => h(HstTokenList, {
         tokens: config.theme.lineHeight,
-        getName: key => \`\leading-\${key}\`,
+        getName: key => \`leading-\${key}\`,
       }, ({ token }) => h('div', {
         style: {
           lineHeight: token.value,

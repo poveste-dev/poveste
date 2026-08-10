@@ -11,13 +11,9 @@
 /* Dark mode is driven by a `.dark` class (was `darkMode: 'class'` in v3). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Max-width counterparts of the default breakpoints (were the `!key` screens
-   in the v3 config, used as `!md:` — now `!md:` maps to these variants). */
-@custom-variant \!sm (@media (width < 40rem));
-@custom-variant \!md (@media (width < 48rem));
-@custom-variant \!lg (@media (width < 64rem));
-@custom-variant \!xl (@media (width < 80rem));
-@custom-variant \!2xl (@media (width < 96rem));
+/* The v3 config declared `!key` max-width screens, used as `!md:`. v4 ships
+   these as the built-in `max-*` breakpoint variants, so `!md:` becomes `max-md:`
+   and no custom variants are needed. */
 
 @theme {
   /* primary = emerald, gray = zinc + custom shades (ported from the v3 config) */
@@ -133,9 +129,9 @@ em {
 }
 
 .demo-links-box {
-  @apply flex \!md:flex-col \!md:items-center gap-4 md:gap-6 p-4 md:p-6 rounded border border-solid my-6;
+  @apply flex max-md:flex-col max-md:items-center gap-4 md:gap-6 p-4 md:p-6 rounded border border-solid my-6;
 
   .demo-links {
-    @apply md:flex-1 \!md:w-full;
+    @apply md:flex-1 max-md:w-full;
   }
 }

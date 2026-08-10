@@ -14,7 +14,9 @@ html {
   font-family: 'Noto Sans Display', system-ui, sans-serif;
 }
 
-.sandbox-hidden {
+/* Namespaced: sandbox.css is not @scope-wrapped, so this rule shares the
+   document with user story markup. */
+.__poveste-sandbox-hidden {
   display: none;
 }
 

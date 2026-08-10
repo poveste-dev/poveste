@@ -56,6 +56,9 @@ features:
 </div>
 
 <style lang="postcss" scoped>
+/* v4: @apply in a scoped <style> needs the theme referenced explicitly. */
+@reference "./.vitepress/theme/style/index.pcss";
+
 h2 {
   @apply text-center text-2xl md:text-3xl;
 }
