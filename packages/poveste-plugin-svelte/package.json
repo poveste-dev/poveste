@@ -2,7 +2,7 @@
   "name": "@poveste/plugin-svelte",
   "type": "module",
   "version": "0.2.1",
-  "description": "Poveste plugin for Svelte 4/5 and SvelteKit support",
+  "description": "Poveste plugin for Svelte 5 and SvelteKit support",
   "author": {
     "name": "Sorin Gitlan"
   },
@@ -31,7 +31,7 @@
   },
   "peerDependencies": {
     "poveste": "workspace:^",
-    "svelte": "^4.0.0 || ^5.0.0"
+    "svelte": "^5.0.0"
   },
   "dependencies": {
     "@poveste/controls": "workspace:^",
