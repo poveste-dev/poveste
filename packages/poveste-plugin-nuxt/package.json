@@ -28,7 +28,7 @@
   },
   "peerDependencies": {
     "@poveste/plugin-vue": "workspace:^",
-    "nuxt": "^4.0.0",
+    "nuxt": "^4.5.0",
     "poveste": "workspace:^"
   },
   "dependencies": {

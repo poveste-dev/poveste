@@ -18,16 +18,6 @@ catalog:
   typescript: 5.6.3
   vite: ^8.2.0
 
-overrides:
-  # Vite 8 takes esbuild as an *optional peer* (^0.27.0 || ^0.28.0). Nuxt 4.5's
-  # nitropack hard-depends on ^0.28.0 while Vitest's Vite 7 hard-depends on
-  # ^0.27.0, so two esbuild copies exist and vite@8 resolves into two distinct
-  # peer permutations. TypeScript then sees two unrelated `vite` type identities
-  # and fails to build. Lift the 0.27 line to 0.28 so there is exactly one
-  # esbuild — and therefore exactly one vite@8. Vite 5 (VitePress) pins
-  # esbuild ^0.21.3 and is deliberately left alone by this range-scoped key.
-  esbuild@^0.27.0: ^0.28.2
-
 peerDependencyRules:
   ignoreMissing:
     - '@algolia/client-search'
