@@ -61,6 +61,20 @@ export default defineComponent({
     let lastPropsTypesSnapshot: string
     let renderVariant: Variant
     let renderStateSync: ReturnType<typeof syncStateBundledAndExternal>
+    let mountStateSync: ReturnType<typeof syncStateBundledAndExternal>
+
+    // Registered before the first `await` below, and deliberately so. This is
+    // an async setup(), and Vue drops any lifecycle hook registered after an
+    // await has actually suspended — it warns, then the hook is bound to no
+    // instance and never runs. That is how both state syncs below used to
+    // survive unmount: a story with `initState` suspends here, so the teardown
+    // that used to sit at the bottom of setup() was silently discarded, and
+    // every leaked pair kept deep-watching the variant state it was created
+    // for. See #77.
+    onBeforeUnmount(() => {
+      renderStateSync?.stop()
+      mountStateSync?.stop()
+    })
 
     const mountVariant = computed(() => attrs.variant)
 
@@ -70,7 +84,7 @@ export default defineComponent({
     }
 
     if (renderContext?.mode !== 'render' && mountVariant.value && implicitState) {
-      syncStateBundledAndExternal(mountVariant.value.state, implicitState())
+      mountStateSync = syncStateBundledAndExternal(mountVariant.value.state, implicitState())
     }
 
     function updateVariant(variant: Variant) {
@@ -159,10 +173,6 @@ export default defineComponent({
     if (mountVariant.value) {
       updateVariant(mountVariant.value)
     }
-
-    onBeforeUnmount(() => {
-      renderStateSync?.stop()
-    })
 
     return {
       renderContext,
