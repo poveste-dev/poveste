@@ -12,13 +12,17 @@
     "sk:check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
-    "story:preview": "poveste preview --port 4567"
+    "story:preview": "poveste preview --port 4567",
+    "test": "playwright test",
+    "test:dev": "playwright test --ui",
+    "test:examples": "pnpm run story:build && pnpm run test"
   },
   "dependencies": {
     "@fontsource/fira-mono": "^5.1.0",
     "cookie": "^1.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@poveste/plugin-svelte": "workspace:*",
     "@sveltejs/adapter-auto": "^7.0.1",
     "@sveltejs/kit": "^2.55.0",

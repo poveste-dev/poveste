@@ -13,44 +13,15 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     name: Build and test
-
-    env:
-      dir: ./examples/sveltekit
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install node
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/test-example
         with:
-          node-version: 26
+          dir: ./examples/sveltekit
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: |
-          echo "pnpm_cache_dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm modules
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-          key: pnpm-v1-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-v1-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm run build
-
+      # svelte-check on the Kit app itself, which is a separate concern from the
+      # poveste e2e above. It runs after the action rather than before because
+      # it needs the install the action already did.
       - name: Check example
-        working-directory: ${{env.dir}}
+        working-directory: ./examples/sveltekit
         run: pnpm run sk:check
-
-      - name: Build book
-        working-directory: ${{env.dir}}
-        run: pnpm run story:build

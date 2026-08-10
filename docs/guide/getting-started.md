@@ -41,7 +41,7 @@ is wider than the CI job behind it, the range is the bug.
 | [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue3` — build + Playwright (`Vue 3 tests`) |
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `examples/nuxt4` — build + Playwright (`Nuxt 4 tests`) |
 | [Svelte](https://svelte.dev) | `^5.0.0` | `examples/svelte5` — build + Playwright (`Svelte 5 tests`) |
-| [SvelteKit](https://svelte.dev/docs/kit) | `^2.55.0` | `examples/sveltekit` — build + `svelte-check` (`SvelteKit tests`) |
+| [SvelteKit](https://svelte.dev/docs/kit) | `^2.55.0` | `examples/sveltekit` — build + Playwright + `svelte-check` (`SvelteKit tests`) |
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's
