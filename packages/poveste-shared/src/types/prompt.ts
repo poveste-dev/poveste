@@ -18,5 +18,8 @@ export interface SelectPrompt extends PromptBase<string> {
   options: SelectPromptOption[] | ((search: string, answers: Record<string, any>) => Awaitable<SelectPromptOption[]>)
 }
 
-export type Prompt<TValue = any> = TextPrompt
+// No type parameter: both members fix their value type to `string` via
+// `PromptBase<string>`, so the `<TValue = any>` this used to carry never
+// reached anything and no caller ever passed one.
+export type Prompt = TextPrompt
   | SelectPrompt

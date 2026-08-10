@@ -16,6 +16,10 @@ const props = defineProps<{
   options: HstControlOption[]
 }>()
 
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
 const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   if (Array.isArray(props.options)) {
     return Object.fromEntries(props.options.map((value: string | HstControlOption) => {
@@ -29,10 +33,6 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   }
   return props.options
 })
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-}>()
 
 function selectOption(value: string) {
   emit('update:modelValue', value)

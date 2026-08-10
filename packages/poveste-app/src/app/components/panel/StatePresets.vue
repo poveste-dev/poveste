@@ -7,12 +7,12 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { toRawDeep } from '../../util/state'
 import BaseSelect from '../base/BaseSelect.vue'
 
-const DEFAULT_ID = 'default'
-
 const props = defineProps<{
   story: Story
   variant: Variant
 }>()
+
+const DEFAULT_ID = 'default'
 
 const saveId = computed(() => `${props.story.id}:${props.variant.id}`)
 

@@ -35,7 +35,7 @@ export function useStoryDoc(story: Ref<Story>) {
         try {
           comp = await comp()
         }
-        catch (e) {
+        catch {
           // Noop
           // Could be a class that requires `new com()`
         }

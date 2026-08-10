@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 
-const SAVE_PREFIX = '__poveste'
-
 const props = defineProps({
   orientation: {
     type: String,
@@ -55,6 +53,8 @@ const props = defineProps({
 const emit = defineEmits({
   'update:split': (_value: number) => true,
 })
+
+const SAVE_PREFIX = '__poveste'
 
 const currentSplit = ref(props.defaultSplit)
 

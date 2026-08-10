@@ -34,7 +34,7 @@ export function applyState(target: any, state: any, override = false) {
       try {
         target[key] = state[key]
       }
-      catch (e) {
+      catch {
         // noop
       }
     }

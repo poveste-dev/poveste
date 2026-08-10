@@ -303,7 +303,3 @@ async function writeFile(fileName: string, content: string, ctx: Context) {
 function generateScriptLinks(prefetchScripts: string[], rel: string, ctx: Context) {
   return prefetchScripts.map(s => `<link rel="${rel}" href="${ctx.resolvedViteConfig.base}${s}" as="script" crossOrigin="anonymous">`).join('')
 }
-
-function generateStyleLinks(styleFiles: string[], rel: string, ctx: Context) {
-  return styleFiles.map(s => `<link rel="${rel}" href="${ctx.resolvedViteConfig.base}${s}" as="style">`).join('')
-}

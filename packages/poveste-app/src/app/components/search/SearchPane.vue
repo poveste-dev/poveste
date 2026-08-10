@@ -15,8 +15,6 @@ import BaseEmpty from '../base/BaseEmpty.vue'
 import { onUpdate, searchData } from './search-title-data'
 import SearchItem from './SearchItem.vue'
 
-const DocSearchData = () => import('./search-docs-data')
-
 const props = defineProps({
   shown: {
     type: Boolean,
@@ -27,6 +25,8 @@ const props = defineProps({
 const emit = defineEmits({
   close: () => true,
 })
+
+const DocSearchData = () => import('./search-docs-data')
 
 function close() {
   emit('close')
