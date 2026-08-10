@@ -1,22 +1,22 @@
 <script>
-import { getContext, setContext } from 'svelte'
+  import { getContext, setContext } from 'svelte'
 
-const story = getContext('__pvtStory')
-const currentVariant = getContext('__pvtVariant')
-const slotName = getContext('__pvtSlot')
+  const story = getContext('__pvtStory')
+  const currentVariant = getContext('__pvtVariant')
+  const slotName = getContext('__pvtSlot')
 
-let index = { value: 0 }
-setContext('__pvtIndex', index)
+  const index = { value: 0 }
+  setContext('__pvtIndex', index)
 
-export let source = null
+  export let source = null
 
-$: {
-  if (source != null) {
-    Object.assign(currentVariant, {
-      source,
-    })
+  $: {
+    if (source != null) {
+      Object.assign(currentVariant, {
+        source,
+      })
+    }
   }
-}
 </script>
 
 {#if slotName === 'controls'}

@@ -1,32 +1,32 @@
 <script lang="ts">
-  import { logEvent } from 'poveste/client'
   import type { Hst } from '@poveste/plugin-svelte'
+  import { logEvent } from 'poveste/client'
   import ColorButton from './ColorButton.svelte'
 
   export let Hst: Hst
 
   let disabled = false
   let size = 'medium'
-  let colorselect = "#000000"
+  let colorselect = '#000000'
 
-  let source;
+  let source
 
   $: {
-    source = `<ColorButton`;
+    source = `<ColorButton`
     if (disabled) {
-      source += ` disabled`;
+      source += ` disabled`
     }
-    source += `>Click me !</ColorButton>`;
+    source += `>Click me !</ColorButton>`
   }
 </script>
-  
+
 <Hst.Story title="ColorButton" {source}>
   <ColorButton {disabled} {colorselect} on:click={event => logEvent('click', event)}>
     Click me!
   </ColorButton>
   <div style="margin-top: 6px;">
     <label>
-      <input type="checkbox" bind:checked={disabled} >
+      <input type="checkbox" bind:checked={disabled}>
       Disabled
     </label>
   </div>

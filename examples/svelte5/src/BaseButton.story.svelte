@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { logEvent } from 'poveste/client'
   import type { Hst } from '@poveste/plugin-svelte'
+  import { logEvent } from 'poveste/client'
   import BaseButton from './BaseButton.svelte'
 
   export let Hst: Hst
@@ -8,24 +8,24 @@
   let disabled = false
   let size = 'medium'
 
-  let source;
+  let source
 
   $: {
-    source = `<BaseButton`;
+    source = `<BaseButton`
     if (disabled) {
-      source += ` disabled`;
+      source += ` disabled`
     }
-    source += `>Click me !</BaseButton>`;
+    source += `>Click me !</BaseButton>`
   }
 </script>
-  
+
 <Hst.Story title="BaseButton" {source}>
   <BaseButton {disabled} {size} on:click={event => logEvent('click', event)}>
     Click me!
   </BaseButton>
   <div style="margin-top: 6px;">
     <label>
-      <input type="checkbox" bind:checked={disabled} >
+      <input type="checkbox" bind:checked={disabled}>
       Disabled
     </label>
   </div>

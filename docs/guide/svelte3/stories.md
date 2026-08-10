@@ -51,6 +51,7 @@ To get typings for the `Hst` prop, you can import the `Hst` type from `@poveste/
 ```svelte
 <script lang="ts">
   import type { Hst } from '@poveste/plugin-svelte'
+
   export let Hst: Hst
 </script>
 

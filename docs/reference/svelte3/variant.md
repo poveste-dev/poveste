@@ -116,10 +116,13 @@ Content of the variant.
 ```svelte
 <Hst.Story>
   <Hst.Variant>
-    <pre>{{ state }}</pre>
+    <MyComponent {disabled} />
   </Hst.Variant>
 </Hst.Story>
 ```
+
+Unlike the Vue plugin, the Svelte slot receives no slot props — bind your own
+component state in the story's `<script>` and pass it down.
 
 ## Slot: `controls`
 

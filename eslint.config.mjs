@@ -12,6 +12,10 @@ export default antfu({
   // packages; putting every dependency in it is a different policy, and one
   // worth adopting on purpose rather than inheriting from a lint default.
   pnpm: false,
+  // Until this was switched on, every `.svelte` file in the repo — including
+  // the eight shipped sources in `@poveste/plugin-svelte` — was reported as
+  // "File ignored because no matching configuration was supplied".
+  svelte: true,
   ignores: [
     '**/poveste-dist/',
     '**/generated/',
@@ -56,6 +60,46 @@ export default antfu({
   files: ['examples/**'],
   rules: {
     'no-console': 'off',
+  },
+}, {
+  // Two base rules that cannot see through Svelte's prop syntax. The docs
+  // pages carry svelte code fences, so they need the same treatment.
+  //
+  // `import/no-mutable-exports`: `export let` is how a Svelte 4 component
+  // declares a prop, so it fired on every single one — 39 hits, none real.
+  //
+  // `no-import-assign`: our documented way to type the story prop is
+  // `import type { Hst } from '@poveste/plugin-svelte'` followed by
+  // `export let Hst: Hst`. The import is type-only, so there is no runtime
+  // binding being reassigned — the rule just sees the shared name.
+  files: [
+    '**/*.svelte',
+    '**/*.md/**',
+  ],
+  rules: {
+    'import/no-mutable-exports': 'off',
+    'no-import-assign': 'off',
+  },
+}, {
+  // The example links with plain `href='/about'`. The rule wants SvelteKit's
+  // `resolve()`, which matters when an app is served under a base path — this
+  // one is not, and it exists to demo poveste rather than Kit routing style.
+  files: ['examples/sveltekit/**'],
+  rules: {
+    'svelte/no-navigation-without-resolve': 'off',
+  },
+}, {
+  // antfu overrides this to single quotes; the rule's own default is double,
+  // and double is what every markup attribute in this repo already used —
+  // Svelte and Vue alike — plus what the SvelteKit template generates. Left
+  // alone it rewrote 157 attributes, including the snippets in docs/.
+  //
+  // `.svelte` only: on a markdown code fence the rule throws outright
+  // ("Cannot destructure property 'svelteParseContext'"), because the virtual
+  // file never goes through svelte-eslint-parser.
+  files: ['**/*.svelte'],
+  rules: {
+    'svelte/html-quotes': ['error', { prefer: 'double' }],
   },
 }, {
   // The preview components report readiness by writing `previewReady` onto the

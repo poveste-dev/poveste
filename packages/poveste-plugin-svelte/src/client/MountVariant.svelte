@@ -1,47 +1,47 @@
 <script>
-import { afterUpdate, getContext } from 'svelte'
+  import { afterUpdate, getContext } from 'svelte'
 
-export let source = null
-export let responsiveDisabled = false
-export let autoPropsDisabled = false
-export let setupApp = null
-export let implicit = false
+  export let source = null
+  export let responsiveDisabled = false
+  export let autoPropsDisabled = false
+  export let setupApp = null
+  export let implicit = false
 
-const story = getContext('__pvtStory')
-const index = getContext('__pvtIndex')
-const storySlots = getContext('__pvtSlots')
+  const story = getContext('__pvtStory')
+  const index = getContext('__pvtIndex')
+  const storySlots = getContext('__pvtSlots')
 
-const variant = story.variants[index.value]
-index.value++
+  const variant = story.variants[index.value]
+  index.value++
 
-function updateVariant () {
-  Object.assign(variant, {
-    slots: () => ({
-      default: true,
-      controls: $$slots.controls ?? storySlots.controls,
-    }),
-    source,
-    responsiveDisabled,
-    autoPropsDisabled,
-    setupApp,
-    configReady: true,
-  })
-
-  if (!implicit && !story.meta?.hasVariantChildComponents) {
-    story.meta = story.meta || {}
-    Object.assign(story.meta, {
-      hasVariantChildComponents: true,
+  function updateVariant() {
+    Object.assign(variant, {
+      slots: () => ({
+        default: true,
+        controls: $$slots.controls ?? storySlots.controls,
+      }),
+      source,
+      responsiveDisabled,
+      autoPropsDisabled,
+      setupApp,
+      configReady: true,
     })
-  }
-}
-updateVariant()
 
-afterUpdate(() => {
+    if (!implicit && !story.meta?.hasVariantChildComponents) {
+      story.meta = story.meta || {}
+      Object.assign(story.meta, {
+        hasVariantChildComponents: true,
+      })
+    }
+  }
   updateVariant()
-})
+
+  afterUpdate(() => {
+    updateVariant()
+  })
 </script>
 
 {#if false}
-<slot />
-<slot name="controls" />
+  <slot />
+  <slot name="controls" />
 {/if}

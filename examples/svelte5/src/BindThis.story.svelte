@@ -1,10 +1,10 @@
 <script>
   export let Hst
 
-  let disabled = false;
-  let button = undefined;
+  let disabled = false
+  let button
 </script>
-  
+
 <Hst.Story title="BindThisVsControls">
   <button bind:this={button} {disabled}>
     Hello Poveste

@@ -36,9 +36,11 @@
     "@vueuse/core": "catalog:",
     "bumpp": "^12.1.1",
     "eslint": "^10.8.1",
+    "eslint-plugin-svelte": "^3.22.0",
     "floating-vue": "5.2.2",
     "postcss": "catalog:",
     "rimraf": "^6.0.1",
+    "svelte-eslint-parser": "^1.8.0",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitepress": "1.6.4"
