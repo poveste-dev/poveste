@@ -3,7 +3,7 @@ import type { ClientCommand } from '@poveste/shared'
 import type { SearchResult, SearchResultType, Story, Variant } from '../../types'
 import type { SearchData } from './types'
 import { Icon } from '@iconify/vue'
-import { useDebounce, useFocus } from '@vueuse/core'
+import { refDebounced, useFocus } from '@vueuse/core'
 import Fuse from 'fuse.js'
 import { registeredCommands } from 'virtual:$poveste-commands'
 import { computed, ref, watch } from 'vue'
@@ -51,7 +51,7 @@ watch(() => props.shown, (value) => {
 // Index
 
 const searchInputText = ref('')
-const rateLimitedSearch = useDebounce(searchInputText, 50)
+const rateLimitedSearch = refDebounced(searchInputText, 50)
 
 const storyStore = useStoryStore()
 
