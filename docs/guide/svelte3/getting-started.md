@@ -45,6 +45,38 @@ export default defineConfig({
 })
 ```
 
+::: info Supported versions
+**Svelte 5 is the supported floor** (`svelte@^5.0.0`). Svelte 4 is not in the peer range:
+its last compatible `@sveltejs/vite-plugin-svelte` is v3, which caps at Vite 5, and Poveste
+requires Vite 8. No release pairs the two.
+:::
+
+## TypeScript stories
+
+If you write stories with `<script lang="ts">`, your `tsconfig.json` **must** set
+`verbatimModuleSyntax`:
+
+```json
+{
+  "compilerOptions": {
+    "verbatimModuleSyntax": true
+  }
+}
+```
+
+Without it, `svelte-preprocess` strips imports it cannot see used — and a component
+referenced only from the markup looks exactly like an unused import. The story then fails
+to collect:
+
+```
+Error while collecting story src/BaseButton.story.svelte:
+ReferenceError: BaseButton is not defined
+```
+
+`svelte-preprocess` warns about this at startup (`The TypeScript option
+verbatimModuleSyntax is now required when using Svelte files with lang="ts"`), but the
+warning is easy to miss in the middle of a collection run.
+
 ## Command Line Interface
 
 Poveste provides the following commands:

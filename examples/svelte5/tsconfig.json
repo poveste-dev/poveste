@@ -10,7 +10,7 @@
     "baseUrl": ".",
     "rootDir": "src",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "types": [
       "node"
@@ -27,6 +27,11 @@
     "sourceMap": false,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    // Required by svelte-preprocess 6: without it the TypeScript transform
+    // drops imports it cannot see used, and a component referenced only from
+    // the markup is exactly that — the story then fails to collect with
+    // `ReferenceError: <Component> is not defined`.
+    "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "preserveWatchOutput": true
   },

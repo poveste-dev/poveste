@@ -24,7 +24,7 @@ This mono-repo contains the following packages:
 | [@poveste/controls-stories](./packages/poveste-controls-stories) | Stories for builtin controls |
 | [@poveste/plugin-vue](./packages/poveste-plugin-vue) | Vue 3 integration |
 | [@poveste/plugin-nuxt](./packages/poveste-plugin-nuxt) | Nuxt 4 integration |
-| [@poveste/plugin-svelte](./packages/poveste-plugin-svelte) | Svelte 4/5 and SvelteKit integration |
+| [@poveste/plugin-svelte](./packages/poveste-plugin-svelte) | Svelte 5 and SvelteKit integration |
 | [@poveste/plugin-percy](./packages/poveste-plugin-percy) | Visual regression testing with Percy |
 | [@poveste/plugin-screenshot](./packages/poveste-plugin-screenshot) | Visual regression testing with simple screenshots |
 | [@poveste/shared](./packages/poveste-shared) | Shared utilities |

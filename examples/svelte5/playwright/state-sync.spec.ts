@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('state sync', () => {
-  // Same upstream bug as the controls-render fixmes:
-  // `Hst.Checkbox` doesn't mount the Vue control under Svelte 5 compat,
-  // so the controls panel never wires up. Cypress fails identically.
+  // The Vue control now mounts and renders on Svelte 5 (see render-story.spec.ts),
+  // but writing back does not: `Wrap.svelte` assigns `value = args[0]` from
+  // inside the Vue render closure, and that assignment no longer reaches the
+  // story's `bind:value`. Story -> control works; control -> story does not.
+  // Tracked in #81.
   test.fixme('syncs disabled state between iframe story and controls', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
     const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
