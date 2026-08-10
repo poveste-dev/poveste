@@ -13,6 +13,13 @@ is the build output directory (`.histoire/dist` → `.poveste/dist`) — update 
 only if you deploy or ignore that path (see step 5).
 :::
 
+::: warning Check your versions first
+Poveste's floors are higher than histoire's — it requires Vite 8, and with it Nuxt 4.5+
+and Svelte 5+. If your project is below any of them, that upgrade comes first and is the
+real work; the dependency swap below is the easy part. See
+[supported versions](./getting-started.md#supported-versions).
+:::
+
 ## 1. Swap the dependencies
 
 Rename the packages in your `package.json`:
