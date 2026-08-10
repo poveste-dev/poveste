@@ -156,6 +156,19 @@ CSS keeps working:
 If your theme targets other app-chrome classes directly (e.g. `.histoire-app-header`),
 update them to the `poveste-` prefix.
 
+## Fixed by the move
+
+Some long-standing histoire annoyances go away on their own once you migrate.
+
+### `The CJS build of Vite's Node API is deprecated`
+
+Gone. Poveste is ESM-only and requires Vite 8, and Vite dropped the CJS Node API build
+entirely in Vite 7 — `vite`'s package `exports` no longer has a `require` condition, so
+there is no CJS entry point left to warn about. Nothing in your project needs to change;
+the warning simply has no code path to come from.
+
+Reported upstream as [histoire#675](https://github.com/histoire-dev/histoire/issues/675).
+
 ## Something broke?
 
 If you hit a migration issue that isn't covered here, please
