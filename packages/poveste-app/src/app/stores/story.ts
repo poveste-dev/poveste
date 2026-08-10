@@ -36,6 +36,22 @@ export const useStoryStore = defineStore('story', () => {
     return maps.value.variants.get(idWithStoryId)
   }
 
+  /**
+   * Whether a variant's preview has finished mounting. The preview components
+   * report it and `StorySidePanel` waits on it, so it has to be reachable from
+   * both — and it stays a field on the variant rather than a map in here
+   * because it pairs with `configReady`, which the framework plugins write from
+   * inside the sandbox. The side panel reads the two together; splitting them
+   * across two owners would make that condition harder to follow, not easier.
+   *
+   * What does belong here is the write. This store owns the variant objects,
+   * so a component reaching into one of its own props to flip the flag was the
+   * part that needed to go.
+   */
+  function setPreviewReady(variant: Variant, value: boolean) {
+    variant.previewReady = value
+  }
+
   return {
     stories,
     setStories,
@@ -43,5 +59,6 @@ export const useStoryStore = defineStore('story', () => {
     currentVariant,
     getStoryById,
     getVariantById,
+    setPreviewReady,
   }
 })

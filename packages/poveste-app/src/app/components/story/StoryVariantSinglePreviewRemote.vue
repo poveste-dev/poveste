@@ -6,6 +6,7 @@ import { useEventListener } from '@vueuse/core'
 import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
 import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { useStoryStore } from '../../stores/story'
 import { EVENT_SEND, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from '../../util/const'
 import { trackWindow } from '../../util/keyboard'
 import { getSandboxUrl } from '../../util/sandbox'
@@ -46,9 +47,9 @@ watch(() => props.variant.state, () => {
   immediate: true,
 })
 
-Object.assign(props.variant, {
-  previewReady: false,
-})
+const storyStore = useStoryStore()
+
+storyStore.setPreviewReady(props.variant, false)
 
 const reportedHeight = ref<number | null>(null)
 
@@ -86,9 +87,7 @@ function logEvent(event: HstEvent) {
 }
 
 function setPreviewReady() {
-  Object.assign(props.variant, {
-    previewReady: true,
-  })
+  storyStore.setPreviewReady(props.variant, true)
 }
 
 const sandboxUrl = computed(() => {
@@ -102,9 +101,7 @@ let unmounted = false
 
 watch(sandboxUrl, () => {
   isIframeLoaded.value = false
-  Object.assign(props.variant, {
-    previewReady: false,
-  })
+  storyStore.setPreviewReady(props.variant, false)
   stopTrackKeyboard?.()
   stopTrackKeyboard = undefined
 })

@@ -101,15 +101,4 @@ export default antfu({
   rules: {
     'svelte/html-quotes': ['error', { prefer: 'double' }],
   },
-}, {
-  // The preview components report readiness by writing `previewReady` onto the
-  // variant object they were handed. That object is app-wide state — the store
-  // owns it and the grid, the side panel and the events pane all read the flag
-  // back off it — so the mutation is the mechanism, not an accident. Moving it
-  // into the store is a real refactor; scoped off here rather than repo-wide so
-  // an accidental prop mutation elsewhere still fails the build.
-  files: ['packages/poveste-app/src/app/components/story/StoryVariant*.vue'],
-  rules: {
-    'vue/no-mutating-props': 'off',
-  },
 })

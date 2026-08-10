@@ -2,6 +2,7 @@
 import type { Story, Variant } from '../../types'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { useStoryStore } from '../../stores/story'
 import { usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getContrastColor } from '../../util/preview-settings'
@@ -13,14 +14,12 @@ const props = defineProps<{
   variant: Variant
 }>()
 
-Object.assign(props.variant, {
-  previewReady: false,
-})
+const storyStore = useStoryStore()
+
+storyStore.setPreviewReady(props.variant, false)
 
 function onReady() {
-  Object.assign(props.variant, {
-    previewReady: true,
-  })
+  storyStore.setPreviewReady(props.variant, true)
 }
 
 const settings = usePreviewSettingsStore().currentSettings

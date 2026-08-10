@@ -7,6 +7,7 @@ import { useResizeObserver } from '@vueuse/core'
 import { computed, ref, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { useStoryStore } from '../../stores/story'
 import { usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getSourceCode } from '../../util/docs'
@@ -37,13 +38,12 @@ const emit = defineEmits({
 const { variant } = toRefs(props)
 const { isActive, targetRoute } = useCurrentVariantRoute(variant)
 
-Object.assign(props.variant, {
-  previewReady: false,
-})
+const storyStore = useStoryStore()
+
+storyStore.setPreviewReady(props.variant, false)
+
 function onReady() {
-  Object.assign(props.variant, {
-    previewReady: true,
-  })
+  storyStore.setPreviewReady(props.variant, true)
 }
 
 const router = useRouter()
