@@ -99,9 +99,9 @@ onMounted(async () => {
 
 const sourceHtml = computed(() => displayedSourceCode.value
   ? highlighter.value?.codeToHtml(displayedSourceCode.value, {
-    lang: 'html',
-    theme: isDark.value ? 'github-dark' : 'github-light',
-  })
+      lang: 'html',
+      theme: isDark.value ? 'github-dark' : 'github-light',
+    })
   : '')
 
 // Scrolling

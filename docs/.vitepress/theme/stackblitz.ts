@@ -1,4 +1,5 @@
-import sdk, { type OpenFileOption, type Project, type ProjectFiles } from '@stackblitz/sdk'
+import type { OpenFileOption, Project, ProjectFiles } from '@stackblitz/sdk'
+import sdk from '@stackblitz/sdk'
 
 // "Try it live" launches a minimal Poveste book in StackBlitz, built entirely
 // in-memory (no pre-created projects or starter repos to maintain — same

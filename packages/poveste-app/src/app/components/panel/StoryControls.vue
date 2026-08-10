@@ -32,8 +32,7 @@ const hasCustomControls = computed(() => props.variant.slots().controls || props
 
 const hasInitState = computed(() => Object
   .entries(props.variant.state || {})
-  .filter(([key]) => !key.startsWith('_h'))
-  .length > 0)
+  .some(([key]) => !key.startsWith('_h')))
 </script>
 
 <template>

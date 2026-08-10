@@ -64,7 +64,7 @@ const canEdit = computed(() => selectedOption.value !== DEFAULT_ID)
 const isEditing = ref(false)
 
 async function createPreset() {
-  const id = (new Date()).getTime().toString()
+  const id = Date.now().toString()
 
   presetStates.value.set(id, { state: clone(omit(toRawDeep(props.variant.state), omitKeys)), label: 'New preset' })
   selectedOption.value = id

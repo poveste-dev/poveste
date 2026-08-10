@@ -28,20 +28,19 @@
     "update": "pnpm --recursive update --latest"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^3.11.2",
+    "@antfu/eslint-config": "^9.3.0",
     "@iconify/vue": "^4.1.2",
     "@poveste/vendors": "workspace:*",
     "@stackblitz/sdk": "^1.11.1",
     "@tailwindcss/postcss": "catalog:",
     "@vueuse/core": "catalog:",
     "bumpp": "^12.1.1",
-    "eslint": "^9.16.0",
+    "eslint": "^10.8.1",
     "floating-vue": "5.2.2",
     "postcss": "catalog:",
     "rimraf": "^6.0.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vitepress": "1.6.4",
-    "vue-eslint-parser": "^9.4.3"
+    "vitepress": "1.6.4"
   }
 }

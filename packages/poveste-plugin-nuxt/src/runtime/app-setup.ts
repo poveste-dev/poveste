@@ -30,12 +30,12 @@ export async function setupNuxtApp(publicConfig: PublicRuntimeConfig) {
   win.document.body.appendChild(app)
 
   win.IntersectionObserver
-      = win.IntersectionObserver
-        || class IntersectionObserver {
-          observe() {
+    = win.IntersectionObserver
+      || class IntersectionObserver {
+        observe() {
           // noop
-          }
         }
+      }
 
   const h3App = createApp()
 

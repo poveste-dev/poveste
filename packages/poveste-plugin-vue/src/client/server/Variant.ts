@@ -1,5 +1,6 @@
 import type { ServerStory, ServerVariant } from '@poveste/shared'
-import { defineComponent, inject, type PropType } from 'vue'
+import type { PropType } from 'vue'
+import { defineComponent, inject } from 'vue'
 
 export default defineComponent({
   name: 'PovesteVariant',

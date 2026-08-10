@@ -127,9 +127,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       // Default props
       if (ctx.config.defaultStoryProps) {
         for (const key in ctx.config.defaultStoryProps) {
-          if (finalData[key] == null) {
-            finalData[key] = ctx.config.defaultStoryProps[key]
-          }
+          finalData[key] ??= ctx.config.defaultStoryProps[key]
         }
       }
 

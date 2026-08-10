@@ -76,7 +76,7 @@ export async function watchStories(newContext: Context) {
   watcher
     .on('add', (file) => {
       const storyFile = addStory(file)
-      setTimeout(() => notifyStoryChange(storyFile), 100) // Delay in case file renaming fired Add event before Unlink event
+      setTimeout(notifyStoryChange, 100, storyFile) // Delay in case file renaming fired Add event before Unlink event
     })
     .on('unlink', (file) => {
       removeStory(file)

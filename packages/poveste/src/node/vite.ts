@@ -30,9 +30,9 @@ export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Cont
     const command = ctx.mode === 'dev' ? 'serve' : 'build'
     const overrides = typeof ctx.config.vite === 'function'
       ? await ctx.config.vite(viteConfig as ViteConfig, {
-        mode: ctx.mode,
-        command,
-      })
+          mode: ctx.mode,
+          command,
+        })
       : ctx.config.vite
     if (overrides) {
       viteConfig = mergeViteConfig(viteConfig, overrides)
@@ -324,7 +324,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     name: 'poveste:flags',
     enforce: 'pre',
     transform(code, id) {
-      if (id.match(/\.(vue|js)($|\?)/)) {
+      if (/\.(?:vue|js)(?:$|\?)/.test(id)) {
         const original = code
         for (const flag in flags) {
           code = code.replace(new RegExp(flag, 'g'), flags[flag])

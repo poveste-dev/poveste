@@ -1,6 +1,7 @@
 import type { Story, Variant } from '@poveste/shared'
 import type { App, Component, PropType, VNode } from 'vue'
 import type { Vue3StorySetupApi, Vue3StorySetupHandler } from '../../helpers.js'
+import type { PreviewRenderContext } from './render-context.js'
 import { getSetupHook } from '@poveste/shared'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
@@ -13,7 +14,7 @@ import {
   Suspense,
 } from 'vue'
 import { registerGlobalComponents } from './global-components.js'
-import { type PreviewRenderContext, provideRenderContext } from './render-context.js'
+import { provideRenderContext } from './render-context.js'
 import { RouterLinkStub } from './RouterLinkStub'
 
 interface PreviewHostOptions {

@@ -38,9 +38,9 @@ export interface PagePayload {
   variant: { id: string, title: string }
 }
 
-type ContructorOption<T extends object | number> =
-  | T
-  | ((payload: PagePayload) => T)
+type ContructorOption<T extends object | number>
+  = | T
+    | ((payload: PagePayload) => T)
 
 export interface PercyPluginOptions {
   /**
@@ -75,7 +75,7 @@ export interface PercyPluginOptions {
    */
   beforeSnapshot?: (
     page: Page,
-    payload: PagePayload
+    payload: PagePayload,
   ) => Promise<void | boolean>
 }
 
