@@ -105,7 +105,14 @@ Example:
 
 <DemoLinks framework="nuxt3" />
 
-Poveste supports Nuxt 3 with the `@poveste/plugin-nuxt` package.
+Poveste supports Nuxt with the `@poveste/plugin-nuxt` package.
+
+::: info Supported versions
+**Nuxt 4 is the supported floor** (`nuxt@^4.0.0`). Nuxt 3 is no longer in the peer range —
+it was advertised but never covered by an example or a CI job, and the 3.16/3.17 `jiti`
+breakage in `loadNuxt` was never something we could reproduce or fix.
+`examples/nuxt4` is what CI actually proves.
+:::
 
 ```bash
 pnpm add -D @poveste/plugin-nuxt

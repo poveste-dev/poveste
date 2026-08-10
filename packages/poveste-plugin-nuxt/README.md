@@ -1,10 +1,12 @@
-# Poveste + Nuxt 3
+# Poveste + Nuxt 4
+
+Requires `nuxt@^4.0.0`.
 
 ```bash
 pnpm add -D @poveste/plugin-nuxt
 ```
 
-Add the plugin in histoire config:
+Add the plugin in poveste config:
 
 ```js
 import { HstNuxt } from '@poveste/plugin-nuxt'

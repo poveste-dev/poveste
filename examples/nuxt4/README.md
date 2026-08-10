@@ -1,6 +1,6 @@
-# Nuxt 3 Minimal Starter
+# Nuxt 4 Minimal Starter
 
-Look at the [nuxt 3 documentation](https://v3.nuxtjs.org) to learn more.
+Look at the [Nuxt documentation](https://nuxt.com/docs) to learn more.
 
 ## Setup
 

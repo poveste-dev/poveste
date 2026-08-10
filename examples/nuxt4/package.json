@@ -16,7 +16,7 @@
     "@poveste/plugin-nuxt": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "nuxt": "^4.2.2",
+    "nuxt": "^4.5.2",
     "poveste": "workspace:*",
     "vue": "^3.5.26"
   }
