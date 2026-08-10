@@ -8,12 +8,16 @@ import { populateGlobal } from './util.js'
 const JSDOM_ERROR_CSS_PARSING = 'css-parsing'
 const JSDOM_ERROR_UNHANDLED_EXCEPTION = 'unhandled-exception'
 
-// Directives JSDOM's CSS parser doesn't know — Tailwind v4's `@theme` is the
-// common one — make it emit a jsdomError per stylesheet, so collecting stories
-// from a Tailwind app prints "Could not parse CSS stylesheet" over and over.
-// The parser recovers on its own and keeps the valid rules, so the message is
-// pure noise: drop css-parsing errors, mirror jsdom's default forwardTo for
-// the rest.
+// CSS jsdom's parser can't make sense of makes it emit a jsdomError per
+// stylesheet, so collecting stories from an app with such a stylesheet prints
+// "Could not parse CSS stylesheet" over and over. The parser recovers on its
+// own and keeps the valid rules, so the message is pure noise: drop
+// css-parsing errors, mirror jsdom's default forwardTo for the rest.
+//
+// jsdom 28 moved to css-tree, which recovers browser-style and stays quiet for
+// most of what jsdom 27 complained about — Tailwind v4's `@theme`, unknown
+// at-rules, unterminated strings. It still reports some inputs (an
+// unparseable selector, for one), so this stays.
 function createVirtualConsole(): VirtualConsole | undefined {
   if (!console || !globalThis.console) return undefined
   const virtualConsole = new VirtualConsole().forwardTo(globalThis.console, { jsdomErrors: 'none' })

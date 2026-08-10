@@ -60,7 +60,7 @@
     "@vueuse/core": "catalog:",
     "concurrently": "^9.1.0",
     "floating-vue": "5.2.2",
-    "jsdom": "^27.4.0",
+    "jsdom": "^30.0.1",
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

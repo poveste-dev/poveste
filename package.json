@@ -41,7 +41,7 @@
     "rimraf": "^6.0.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vitepress": "1.5.0",
+    "vitepress": "1.6.4",
     "vue-eslint-parser": "^9.4.3"
   }
 }
