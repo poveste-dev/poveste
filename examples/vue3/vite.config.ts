@@ -8,7 +8,7 @@ export default defineConfig({
   // Example build config for a component library
   build: {
     lib: {
-      entry: path.resolve(__dirname, './src/main.ts'),
+      entry: path.resolve(import.meta.dirname, './src/main.ts'),
       name: 'poveste-kit',
       fileName: format => `poveste-kit.${format}.js`,
     },

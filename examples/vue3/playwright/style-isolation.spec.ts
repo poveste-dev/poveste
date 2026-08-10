@@ -20,6 +20,7 @@ const CONSUMER_RED_500 = 'oklch(0.637 0.237 25.331)' // the consumer's `bg-red-5
 const CONSUMER_TOMATO = 'rgb(255, 99, 71)' // the consumer's `--user-primary`
 const STORY_LAYER_BLUE = 'rgb(0, 0, 255)' // `.my-button` in the story's `@layer components`
 const TRANSPARENT = 'rgba(0, 0, 0, 0)'
+const CHROME_FONT = '"Noto Sans Display", system-ui, sans-serif'
 
 /** Opens the isolation story and returns its preview frame. */
 async function openStory(page: Page) {
@@ -66,5 +67,17 @@ test.describe('style isolation (consumer on Tailwind v4)', () => {
     // `.my-button` lives in `@layer components`; layered rules must survive the
     // isolation wrapper, which is the histoire#811 failure mode.
     await expect(story.locator('.my-button')).toHaveCSS('border-color', STORY_LAYER_BLUE)
+  })
+
+  test('styles the chrome root itself, not just its descendants', async ({ page }) => {
+    await page.goto('/')
+
+    // The chrome's own `html { font-family }` has to survive being wrapped in
+    // `@scope`, which means being rewritten to `:scope`. Tailwind v4 keeps
+    // `@layer base` as a real cascade layer, so that rule is nested rather than
+    // top-level; a wrapper that only rewrites top-level rules leaves it inert
+    // and the entire UI silently falls back to the browser's default serif.
+    await expect(page.locator('.poveste-app-root')).toHaveCSS('font-family', CHROME_FONT)
+    await expect(page.getByTestId('story-list-item').first()).toHaveCSS('font-family', CHROME_FONT)
   })
 })
