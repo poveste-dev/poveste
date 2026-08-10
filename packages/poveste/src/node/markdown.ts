@@ -1,4 +1,5 @@
 import type { ServerMarkdownFile } from '@poveste/shared'
+import type { Highlighter } from 'shiki'
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
 import { kebabCase } from 'change-case'
@@ -28,11 +29,25 @@ function notifyMarkdownListChange() {
   }
 }
 
-export async function createMarkdownRenderer(ctx: Context) {
-  const highlighter = await createHighlighter({
+/**
+ * Shared between the markdown Vite plugin and the markdown file watcher, which
+ * both build a renderer — a `poveste build` reaches this three times. The
+ * themes and langs are constant, and each instance eagerly loads every bundled
+ * grammar, so the duplicates are pure waste.
+ */
+let highlighterPromise: Promise<Highlighter> | undefined
+
+function getHighlighter() {
+  highlighterPromise ??= createHighlighter({
     themes: ['github-dark'],
     langs: Object.keys(bundledLanguages), // not ideal but markdown-it does not provide async highlight
   })
+
+  return highlighterPromise
+}
+
+export async function createMarkdownRenderer(ctx: Context) {
+  const highlighter = await getHighlighter()
 
   const md = new MarkdownIt({
     highlight: (code, lang) => `<div class="ptw-relative ptw-not-prose __poveste-code __histoire-code"><div class="ptw-absolute ptw-top-0 ptw-right-0 ptw-text-xs ptw-text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang })}</div>`,

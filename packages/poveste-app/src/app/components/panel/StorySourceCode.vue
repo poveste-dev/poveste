@@ -4,10 +4,10 @@ import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon } from '@poveste/controls'
 import { unindent } from '@poveste/shared'
-import { createHighlighter } from 'shiki'
 import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { isDark } from '../../util/dark'
+import { getHighlighter } from '../../util/highlighter'
 import BaseEmpty from '../base/BaseEmpty.vue'
 
 const props = defineProps<{
@@ -87,16 +87,14 @@ const displayedSourceCode = computed(() => {
 // HTML render
 
 onMounted(async () => {
-  highlighter.value = await createHighlighter({
-    langs: [
-      'html',
-      'jsx',
-    ],
-    themes: [
-      'github-light',
-      'github-dark',
-    ],
-  })
+  try {
+    highlighter.value = await getHighlighter()
+  }
+  catch (e) {
+    // Leave `highlighter` unset so the pane falls back to the plain textarea
+    // rendering instead of showing nothing at all.
+    console.error(e)
+  }
 })
 
 const sourceHtml = computed(() => displayedSourceCode.value
