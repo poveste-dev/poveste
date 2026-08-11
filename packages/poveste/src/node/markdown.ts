@@ -50,7 +50,14 @@ export async function createMarkdownRenderer(ctx: Context) {
   const highlighter = await getHighlighter()
 
   const md = new MarkdownIt({
-    highlight: (code, lang) => `<div class="ptw-relative ptw-not-prose __poveste-code __histoire-code"><div class="ptw-absolute ptw-top-0 ptw-right-0 ptw-text-xs ptw-text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang })}</div>`,
+    /*
+     * Unprefixed utilities: the `ptw-` prefix went away with Tailwind v4, and
+     * `not-prose` in particular is matched by the typography plugin's own
+     * `[class~="not-prose"]` selector, so a prefixed spelling silently opts the
+     * block back *into* prose. These classes are generated because main.pcss
+     * `@source`s this file — v4 auto-detection only scans the app package.
+     */
+    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang })}</div>`,
     linkify: true,
     html: true,
     breaks: false,

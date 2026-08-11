@@ -18,6 +18,10 @@
    utility classes must be generated here too (was a content glob in v3). */
 @source "../../../../poveste-controls/src";
 
+/* The markdown renderer builds the docs code-block chrome as an HTML string, so
+   its utility classes live in a package v4 never scans. */
+@source "../../../../poveste/src/node/markdown.ts";
+
 /* TODO(#36): port the v3 typography theme() customization to v4 CSS. */
 @plugin '@tailwindcss/typography';
 
@@ -181,56 +185,76 @@
   --tw-prose-invert-hr: var(--color-gray-800);
   --tw-prose-invert-bullets: var(--color-gray-500);
 
-  a {
-    color: var(--color-primary-500);
-    text-decoration: none;
+  /*
+   * The guard repeats what the plugin puts on every rule it generates, so
+   * `not-prose` opts out of ours too. In v3 these lived in
+   * `theme.extend.typography` and the plugin added it for us; hand-written CSS
+   * gets nothing.
+   *
+   * `:where()` keeps the guard at zero specificity, so every selector below
+   * weighs exactly what its unguarded form did.
+   */
+  & :not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+    &:is(a) {
+      color: var(--color-primary-500);
+      text-decoration: none;
 
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  h1, h2, h3, h4, th {
-    margin-bottom: 0.75rem;
-
-    &:not(:first-child) {
-      margin-top: 1.25rem;
-    }
-  }
-
-  blockquote {
-    margin-left: 0;
-    margin-right: 0;
-    background-color: var(--color-gray-100);
-    padding: 0.25rem 0.375rem;
-
-    & p:first-child {
-      margin-top: 0;
+      &:hover {
+        text-decoration: underline;
+      }
     }
 
-    & p:last-child {
-      margin-bottom: 0;
+    &:is(h1, h2, h3, h4, th) {
+      margin-bottom: 0.75rem;
+
+      &:not(:first-child) {
+        margin-top: 1.25rem;
+      }
+    }
+
+    &:is(blockquote) {
+      margin-left: 0;
+      margin-right: 0;
+      background-color: var(--color-gray-100);
+      padding: 0.25rem 0.375rem;
+
+      &:where(.ptw-dark, .ptw-dark *) {
+        background-color: var(--color-gray-750);
+      }
+
+      & p:first-child {
+        margin-top: 0;
+      }
+
+      & p:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    &:is(li) {
+      margin-top: 0.1rem;
+      margin-bottom: 0.1rem;
+    }
+
+    /*
+     * Inline code only. markdown-it wraps the highlighted output in
+     * `<pre><code class="language-x">`, and that `code` is the parent of the
+     * `not-prose` island rather than part of it, so the guard above misses it —
+     * as does the island itself for shiki's own `code`, which sits in a `pre`
+     * too. The plugin's `pre code` reset would have handled both, but it lives
+     * in a cascade layer and this rule is unlayered: unlayered wins outright,
+     * the same inversion as #104.
+     */
+    &:is(code):not(:where(pre *)) {
+      background-color: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
+      font-weight: normal;
+      padding: 0.05rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.8rem;
+
+      &::before, &::after {
+        display: none;
+      }
     }
   }
-
-  li {
-    margin-top: 0.1rem;
-    margin-bottom: 0.1rem;
-  }
-
-  code {
-    background-color: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
-    font-weight: normal;
-    padding: 0.05rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.8rem;
-
-    &::before, &::after {
-      display: none;
-    }
-  }
-}
-
-.prose blockquote:where(.ptw-dark, .ptw-dark *) {
-  background-color: var(--color-gray-750);
 }
