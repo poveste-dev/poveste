@@ -28,6 +28,26 @@ The rewrite reads the selector, not the text, so a class that merely contains th
 `:is(html, body) { … }` and `:where(:root) { … }` stay as written, and stay inert. Spell the root selector at the top level of the rule, or target `:scope` yourself.
 :::
 
+### Dark mode in your stories
+
+The story preview has its own color scheme, set from the preview appearance dropdown in the toolbar and independent of the app around it. When it is dark, Poveste adds [`theme.darkClass`](/reference/config#theme) to the story root — `dark` unless you change it.
+
+Nothing needs configuring to use this. Write the class you already use:
+
+```css
+/* poveste.setup.ts → your CSS */
+html.dark {
+  background: #27272a;
+  color: #e9e9ed;
+}
+```
+
+That becomes `:scope.dark`, which is the story root, so it paints the story and nothing else.
+
+::: danger Don't target the app's own dark class
+Poveste's chrome marks itself dark with a different class, on the document root. That element is outside your scope, so a rule keyed to it never matches — silently. Use `theme.darkClass` and let the story root carry it.
+:::
+
 ## Grid iframes
 
 Grid items render inside iframes by default. This gives the variant grid the same isolation as the single-variant view, and each iframe sizes to its content.
