@@ -40,7 +40,17 @@ const stats = computed(() => {
       alt="Logo"
       class="w-64 h-64 opacity-25 mb-8 hidden md:block"
     >
-    <div class="flex !md:flex-col flex-wrap justify-evenly gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-750 rounded border border-gray-500/30">
+    <!--
+      Names the set, so the counters are not three unlabelled numbers to anyone
+      browsing by group. Deliberately not a live region: the counts move
+      repeatedly while stories are collected, and announcing each step would be
+      noise rather than information.
+    -->
+    <div
+      role="group"
+      aria-label="Book contents"
+      class="flex !md:flex-col flex-wrap justify-evenly gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-750 rounded border border-gray-500/30"
+    >
       <HomeCounter
         title="Stories"
         icon="carbon:cube"
