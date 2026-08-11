@@ -113,3 +113,16 @@ Additional `layout` properties:
   </Story>
 </template>
 ```
+
+<!--
+  Fixture for docs.spec.ts: `not-prose` is Tailwind typography's documented
+  escape hatch, and poveste's own typography overrides have to honour it the
+  way the plugin honours it for its own rules. The pair of links differ only in
+  whether they sit inside the island.
+-->
+
+A [prose link](#how-to-write-stories){#prose-link} for comparison.
+
+<div class="not-prose" id="not-prose-island">
+  <a href="#how-to-write-stories">Escape hatch link</a>
+</div>

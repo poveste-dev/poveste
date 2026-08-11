@@ -38,4 +38,26 @@ test.describe('story docs', () => {
     await expect(inline).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
     await expect(inline).not.toHaveCSS('padding', '0px')
   })
+
+  /*
+   * `not-prose` is typography's documented escape hatch, and it has to opt out
+   * of poveste's overrides too — the plugin guards every rule it generates, and
+   * these were plugin-generated until the v4 port made them hand-written CSS.
+   * Separate from the code-block test above: a code block is a `not-prose`
+   * island, but everything inside one also sits in a `pre`, so that test passes
+   * with the guard removed entirely.
+   */
+  test('honours not-prose in markdown', async ({ page }) => {
+    await page.goto('/story/src-longfile1-story-js')
+
+    const linkColor = async (locator: ReturnType<typeof page.locator>) =>
+      locator.evaluate(el => getComputedStyle(el).color)
+
+    const proseLink = page.locator('#prose-link')
+    const escaped = page.locator('#not-prose-island a')
+
+    await expect(proseLink).toBeVisible()
+    await expect(escaped).toBeVisible()
+    expect(await linkColor(escaped)).not.toBe(await linkColor(proseLink))
+  })
 })
