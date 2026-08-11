@@ -67,33 +67,45 @@
   --radius-3xl: 2rem;
 }
 
-/* Manual reset — replaces Preflight, which is intentionally disabled. */
-*,
-::before,
-::after {
-  box-sizing: border-box;
-  border-width: 0;
-  border-style: solid;
-  border-color: #e5e7eb;
-}
+/*
+ * Manual reset — replaces Preflight, which is intentionally disabled.
+ *
+ * MUST stay inside `@layer base`. Unlayered rules beat *every* layered rule
+ * regardless of specificity, so an unlayered `* { border-width: 0 }` silently
+ * defeats `.border` in `@layer utilities` — every border in the app renders at
+ * zero width. In v3 this block was safe unlayered because `@tailwind utilities`
+ * emitted unlayered rules that won on specificity; v4 puts them in a real
+ * cascade layer, which inverts the outcome. Same trap for the `a`/`input`/
+ * `button` rules below vs. text-colour and font utilities.
+ */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+  }
 
-a,
-input,
-button {
-  color: inherit;
-}
+  a,
+  input,
+  button {
+    color: inherit;
+  }
 
-a {
-  text-decoration: inherit;
-}
+  a {
+    text-decoration: inherit;
+  }
 
-input, button {
-  font-family: inherit;
-}
+  input, button {
+    font-family: inherit;
+  }
 
-a,
-button {
-  user-select: none;
+  a,
+  button {
+    user-select: none;
+  }
 }
 
 @layer base {
