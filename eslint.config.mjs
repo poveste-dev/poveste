@@ -43,11 +43,13 @@ export default antfu({
 }, {
   // `poveste` is a CLI. Build progress, the dev-server URL and collection
   // diagnostics are its output, not stray debugging — same for the plugins
-  // that report their own progress. Warning on them buried the one console
-  // call that is worth a second look (`poveste-app/src/app/util/events.ts`).
+  // that report their own progress, and for `scripts/`, whose output *is* the
+  // check result. Warning on them buried the one console call that is worth a
+  // second look (`poveste-app/src/app/util/events.ts`).
   files: [
     'packages/poveste/src/node/**',
     'packages/poveste-plugin-*/src/**',
+    'scripts/**',
   ],
   rules: {
     'no-console': 'off',

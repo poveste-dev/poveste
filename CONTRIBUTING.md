@@ -127,6 +127,17 @@ pnpm run story:dev
 pnpm run test:dev
 ```
 
+### StackBlitz starters
+
+The three "Try it live" starters in `docs/.vitepress/theme/starters.ts` install with npm from the public registry, so nothing in the suites above covers them — this workspace's `peerDependencyRules` let an example install where npm would fail with `ERESOLVE`. To resolve them for real:
+
+```sh
+# Root of the mono-repo — needs network
+pnpm run test:starters
+```
+
+It runs nightly rather than on every PR, because the usual way it breaks is the registry moving underneath a file nobody touched. Edit the versions in `starters.ts` only; the check reads the same manifests the launcher ships.
+
 ## Releasing
 
 Releases are cut from `main` with [bumpp](https://github.com/antfu-collective/bumpp), which bumps every workspace `package.json` in lockstep, commits, tags `v<version>` and pushes. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.

@@ -1,0 +1,37 @@
+name: Check StackBlitz starters
+
+# The "Try it live" starters install with npm from the public registry, so the
+# workspace suites cannot vouch for them — see the header of
+# scripts/check-starters.ts. The failure mode is the registry moving underneath
+# a file nobody touched, which is why this is mostly a scheduled run; the paths
+# filter just catches a bad edit before it ships.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - docs/.vitepress/theme/starters.ts
+      - scripts/check-starters.ts
+      - .github/workflows/starters.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  starters:
+    runs-on: ubuntu-latest
+    name: Resolve starters against npm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      # No `pnpm install`: the script's only import from the starters module is
+      # `import type`, so node strips it and nothing needs resolving locally.
+      - name: Resolve every starter
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-starters.ts
