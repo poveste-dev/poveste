@@ -8,6 +8,9 @@ const DARK_CLASS = /my-dark/
 const CHROME_DARK_CLASS = /ptw-dark/
 
 const IFRAME_STORY = '/story/src-components-contrastcolor-story-vue?variantId=_default'
+// Styles itself with `.dark .meow` / `.dark .only-dark`, i.e. the ordinary
+// `darkMode: 'class'` shape, so it fails if the class is present but unreachable.
+const DARK_STORY = '/story/src-components-darkmode-story-vue?variantId=src-components-darkmode-story-vue-0'
 // `layout: { type: 'single', iframe: false }` — rendered by the app itself.
 const NATIVE_STORY = '/story/src-components-complexparameter-story-vue?variantId=_default'
 
@@ -112,6 +115,34 @@ test.describe('sandbox color scheme', () => {
     await expect(sandboxHtml(page)).toHaveClass(DARK_CLASS)
     await page.getByTestId('toolbar-background').click()
     await expect(page.getByTestId('sandbox-color-scheme-dark')).toHaveClass(/bg-primary-500/)
+  })
+
+  /*
+   * Asserts the *effect* of the scheme, not just the class. Every other test in
+   * this file checks that the dark class is present on the sandbox, and all of
+   * them passed throughout #101, where the class was applied and did nothing.
+   *
+   * Read the scope of this honestly: it does **not** guard #101. That bug only
+   * reproduces under `poveste dev`, because user CSS is `@scope`-wrapped in dev
+   * and shipped unwrapped in a built book. This suite runs against
+   * `poveste preview`, so it exercises the path that was never broken. Verified
+   * by reverting the fix: this test still passed.
+   *
+   * It earns its place by guarding the built path against the same class of
+   * regression, and by making the dev-mode gap explicit rather than implied.
+   */
+  test('makes the scheme reach the story\'s own CSS, not just its class list', async ({ page }) => {
+    await page.goto(DARK_STORY)
+    const story = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+
+    await pickColorScheme(page, 'dark')
+    await expect(story.locator('.only-dark')).toBeVisible()
+    await expect(story.locator('.meow')).toHaveCSS('color', 'rgb(255, 255, 255)')
+    await expect(story.locator('.meow')).toHaveCSS('font-weight', '700')
+
+    await pickColorScheme(page, 'light')
+    await expect(story.locator('.only-dark')).toBeHidden()
+    await expect(story.locator('.meow')).not.toHaveCSS('color', 'rgb(255, 255, 255)')
   })
 
   test('reaches users whose settings predate the option', async ({ page }) => {

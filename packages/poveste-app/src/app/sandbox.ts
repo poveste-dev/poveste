@@ -37,16 +37,32 @@ const previewDark = computed(() => resolvePreviewDark(receivedSettings.colorSche
 // `theme.darkClass`. Still honoured on purpose: dropping it would silently stop
 // applying the class for anyone who set it. Removing the option is a breaking
 // config change and belongs to a major, not here.
+/*
+ * The class also has to land *inside* the story's `@scope` root, not only on
+ * `<html>` (#101).
+ *
+ * User CSS is wrapped in `@scope (.__poveste-render-story)`, and `<html>` sits
+ * above that root, so `@scope` cannot match it. A rule shaped like
+ * `.dark .foo { … }` — which is what Tailwind's `darkMode: 'class'` and most
+ * hand-written dark styling produce — is therefore inert, with no error and no
+ * warning to say so.
+ *
+ * Putting it on the scope root itself is *not* enough: a descendant combinator
+ * needs the ancestor to be matchable in scope too, and the root does not
+ * qualify. `#app` is strictly inside the root, which does.
+ *
+ * It stays on `<html>` as well, for user CSS that is not scope-wrapped and for
+ * anyone keying off `html.dark`.
+ */
+const darkClassTargets = [document.documentElement, document.querySelector('#app')]
+
 watch(previewDark, (value) => {
-  if (value) {
+  for (const el of darkClassTargets) {
+    if (!el) continue
+
     // eslint-disable-next-line ts/no-deprecated
-    document.documentElement.classList.add(povesteConfig.sandboxDarkClass)
-    document.documentElement.classList.add(povesteConfig.theme.darkClass)
-  }
-  else {
-    // eslint-disable-next-line ts/no-deprecated
-    document.documentElement.classList.remove(povesteConfig.sandboxDarkClass)
-    document.documentElement.classList.remove(povesteConfig.theme.darkClass)
+    el.classList.toggle(povesteConfig.sandboxDarkClass, value)
+    el.classList.toggle(povesteConfig.theme.darkClass, value)
   }
 }, {
   immediate: true,
