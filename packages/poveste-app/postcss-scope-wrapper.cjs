@@ -2,9 +2,17 @@ function isImportRule(node) {
   return node.type === 'atrule' && node.name === 'import'
 }
 
-// Inside `@scope (:root) to (…)` a bare `html` / `:root` selector matches
-// nothing — the scoping root has to be addressed as `:scope`.
-const ROOT_SELECTORS = ['html', ':root']
+// Inside `@scope (:root) to (…)` a bare `html` / `:root` / `body` selector
+// matches nothing — the scoping root has to be addressed as `:scope`.
+//
+// `body` belongs here for the same reason `html` does, even though it is not
+// the document root. poveste re-wraps this stylesheet a second time, rooted at
+// `.poveste-app-root`, so by the time it reaches the browser both `html` and
+// `body` sit *above* the effective scoping root and neither can be matched.
+// Chrome rules that target them mean "the app's root container", which is what
+// `:scope` resolves to. Leaving `body` out left `body { font-size: .875rem }`
+// inert and rendered the entire UI one size too large (#102).
+const ROOT_SELECTORS = ['html', ':root', 'body']
 
 function scopeRootSelectors(rule) {
   rule.selectors = rule.selectors

@@ -30,6 +30,8 @@
   "scripts": {
     "build": "rimraf dist && vite build && pnpm run build:css && node ./scripts/copy.mjs",
     "build:css": "postcss src/app/style/main.pcss -o ./dist/style.css",
+    "test": "vitest run",
+    "test:dev": "vitest",
     "watch": "concurrently \"vite build --watch\" \"pnpm run build:css --watch\" \"node ./scripts/watchAndCopy.mjs\""
   },
   "dependencies": {
@@ -55,6 +57,7 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vitest": "catalog:",
     "vue": "^3.5.26"
   }
 }
