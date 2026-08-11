@@ -8,7 +8,18 @@ import sdk from '@stackblitz/sdk'
 // StackBlitz WebContainer projects always boot with npm (the SDK has no
 // package-manager control), so the starters are plain npm — no packageManager
 // field, to avoid a misleading claim or a corepack conflict.
+//
+// That npm boot is why the versions below cannot be copied from `examples/*`.
+// This workspace sets `peerDependencyRules.allowedVersions.vite: ^8.0.0` in
+// pnpm-workspace.yaml, so an example can depend on a plugin whose declared peer
+// range stops at Vite 7 and still install. npm has no such override and fails
+// the install outright with ERESOLVE. Every version here is therefore picked
+// from the package's *declared* peer range, not from what the examples pin.
 const POVESTE = 'latest'
+
+// poveste >=0.3 peers `vite: ^8.0.0`; the catalog and `@nuxt/vite-builder` both
+// land on ^8.2.0.
+const VITE = '^8.2.0'
 
 type Framework = 'vue3' | 'svelte3' | 'nuxt3'
 
@@ -47,8 +58,9 @@ function vue3Starter(): Starter {
         'poveste-vue3-starter',
         {
           '@poveste/plugin-vue': POVESTE,
+          // v6 peers `^5 || ^6 || ^7 || ^8`, so it already spans Vite 8.
           '@vitejs/plugin-vue': '^6.0.0',
-          'vite': '^7.3.0',
+          'vite': VITE,
         },
         { vue: '^3.5.26' },
       ),
@@ -113,9 +125,11 @@ function svelte3Starter(): Starter {
     files: {
       'package.json': pkg('poveste-svelte-starter', {
         '@poveste/plugin-svelte': POVESTE,
-        '@sveltejs/vite-plugin-svelte': '^6.0.0',
-        'svelte': '^5.0.0',
-        'vite': '^7.3.0',
+        // v6 stops at `vite ^6.3 || ^7`; v7 is the first release to peer Vite 8,
+        // and it in turn requires `svelte ^5.46.4`.
+        '@sveltejs/vite-plugin-svelte': '^7.0.0',
+        'svelte': '^5.46.4',
+        'vite': VITE,
       }),
       'vite.config.ts': `/// <reference types="poveste" />
 import { HstSvelte } from '@poveste/plugin-svelte'
@@ -173,8 +187,10 @@ function nuxt3Starter(): Starter {
       'package.json': pkg('poveste-nuxt-starter', {
         '@poveste/plugin-nuxt': POVESTE,
         '@poveste/plugin-vue': POVESTE,
-        'nuxt': '^4.2.2',
-        'vite': '^7.3.0',
+        // Nuxt only moved to Vite 8 in 4.5 — 4.5.2's `@nuxt/vite-builder`
+        // resolves `vite ^8.2.0`. This is also the floor set in #39.
+        'nuxt': '^4.5.2',
+        'vite': VITE,
         'vue': '^3.5.26',
       }),
       'nuxt.config.ts': `export default defineNuxtConfig({
