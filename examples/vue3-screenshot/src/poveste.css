@@ -2,7 +2,11 @@
   color: #10B981;
 }
 
-html.ptw-dark {
-    background: #27272a ;
-    color: #e9e9ed;
+/*
+ * Consumer-side dark styling for the story. The story root carries
+ * `theme.darkClass` (default `dark`), not the chrome's own class — see #123.
+ */
+html.dark {
+  background: #27272a;
+  color: #e9e9ed;
 }

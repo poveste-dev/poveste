@@ -12,9 +12,14 @@
   color: #10B981;
 }
 
-html.ptw-dark {
-    background: #27272a;
-    color: #e9e9ed;
+/*
+ * Consumer-side dark styling for the story itself. `my-dark` is this example's
+ * `theme.darkClass`; the chrome's own class (`ptw-dark`, on the document root)
+ * is not reachable from here and never was — see #123.
+ */
+html.my-dark {
+  background: #27272a;
+  color: #e9e9ed;
 }
 
 /*

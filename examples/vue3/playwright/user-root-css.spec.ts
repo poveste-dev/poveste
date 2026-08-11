@@ -59,4 +59,22 @@ test.describe('root selectors in setup-file CSS', () => {
       '--user-primary': '',
     })
   })
+
+  // `html.my-dark { background: #27272a }` in `src/poveste.css` — the ordinary
+  // way a consumer dark-styles their own stories. It needs both halves: the
+  // `html` rewrite from #116, and the story's dark class rather than the
+  // chrome's, which is what #123 was.
+  test('paint the story when the consumer dark rule matches', async ({ page }) => {
+    await page.goto(NATIVE_STORY)
+    const story = page.getByTestId('sandbox-render').locator(STORY)
+    await expect(story).toBeVisible()
+    await expect(story).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+
+    await page.getByTestId('toolbar-background').click()
+    await page.getByTestId('sandbox-color-scheme-dark').click()
+    await page.getByTestId('toolbar-background').click()
+
+    await expect(story).toHaveCSS('background-color', 'rgb(39, 39, 42)')
+    await expect(story).toHaveCSS('color', 'rgb(233, 233, 237)')
+  })
 })
