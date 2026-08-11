@@ -6,10 +6,12 @@ import { Icon } from '@iconify/vue'
 import { refDebounced, useFocus } from '@vueuse/core'
 import Fuse from 'fuse.js'
 import { registeredCommands } from 'virtual:$poveste-commands'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCommandStore } from '../../stores/command.js'
 import { useStoryStore } from '../../stores/story'
 import { builtinCommands, getCommandContext } from '../../util/commands.js'
+import { onKeyboardShortcut } from '../../util/keyboard.js'
 import { useSelection } from '../../util/select.js'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import { onUpdate, searchData } from './search-title-data'
@@ -111,11 +113,13 @@ loadDocSearchIndex()
 
 // Search
 
-const titleResults = ref<SearchResult[]>([])
+const MAX_RESULTS = 50
+
+const titleResults = shallowRef<SearchResult[]>([])
 
 watch(rateLimitedSearch, async (value) => {
   const list: SearchResult[] = []
-  const result = titleSearchIndex.search(value)
+  const result = titleSearchIndex.search(value, { limit: MAX_RESULTS })
   let rank = 0
 
   for (const document of result) {
@@ -141,12 +145,12 @@ watch(rateLimitedSearch, async (value) => {
   titleResults.value = list
 })
 
-const docsResults = ref<SearchResult[]>([])
+const docsResults = shallowRef<SearchResult[]>([])
 
 async function searchOnDocField(query: string) {
   if (docSearchIndex) {
     const list: SearchResult[] = []
-    const result = docSearchIndex.search(query)
+    const result = docSearchIndex.search(query, { limit: MAX_RESULTS })
     let rank = 0
 
     for (const document of result) {
@@ -224,7 +228,7 @@ const allCommands = [
 const commandResults = computed(() => {
   if (__POVESTE_DEV__) {
     const commandCtx = getCommandContext()
-    const searchText = searchInputText.value.toLowerCase()
+    const searchText = rateLimitedSearch.value.toLowerCase()
     return allCommands
       .filter(command => !command.showIf || command.showIf(commandCtx))
       .filter(command => command.label.toLowerCase().includes(searchText) || command.searchText?.toLowerCase().includes(searchText))
@@ -250,8 +254,8 @@ function commandResultFactory(command: ClientCommand, rank: number): SearchResul
 
 // Results
 
-const results = computed(() => {
-  const list = [
+const results = computed<SearchResult[]>(() => {
+  const list: SearchResult[] = [
     ...commandResults.value,
     ...titleResults.value,
   ]
@@ -264,7 +268,7 @@ const results = computed(() => {
       list.push(r)
     }
   }
-  return list
+  return list.slice(0, MAX_RESULTS)
 })
 
 // Selection
@@ -274,6 +278,26 @@ const {
   selectNext,
   selectPrevious,
 } = useSelection(results)
+
+// Activation
+
+const router = useRouter()
+
+onKeyboardShortcut(['enter'], () => {
+  const result = results.value[selectedIndex.value]
+
+  if (!result) {
+    return
+  }
+
+  if ('route' in result) {
+    router.push(result.route)
+  }
+  if ('onActivate' in result) {
+    result.onActivate()
+  }
+  close()
+})
 </script>
 
 <template>

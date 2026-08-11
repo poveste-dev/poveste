@@ -2,8 +2,6 @@
 import type { PropType } from 'vue'
 import type { SearchResult } from '../../types'
 import { ref, toRefs } from 'vue'
-import { useRouter } from 'vue-router'
-import { onKeyboardShortcut } from '../../util/keyboard'
 import { useScrollOnActive } from '../../util/scroll'
 import BaseListItem from '../base/BaseListItem.vue'
 import BaseListItemLink from '../base/BaseListItemLink.vue'
@@ -30,17 +28,7 @@ const el = ref<HTMLDivElement>()
 const { selected } = toRefs(props)
 useScrollOnActive(selected, el)
 
-const router = useRouter()
-
-onKeyboardShortcut(['enter'], () => {
-  if (!props.selected) return
-  action()
-})
-
-function action(fromClick = false) {
-  if ('route' in props.result && !fromClick) {
-    router.push(props.result.route)
-  }
+function action() {
   if ('onActivate' in props.result) {
     props.result.onActivate()
   }
@@ -60,7 +48,7 @@ function action(fromClick = false) {
       :to="result.route"
       :is-active="selected"
       class="px-6 py-4 gap-4"
-      @navigate="action(true)"
+      @navigate="action()"
     >
       <SearchItemContent
         :result="result"
@@ -72,7 +60,7 @@ function action(fromClick = false) {
       v-if="'onActivate' in result"
       :is-active="selected"
       class="px-6 py-4 gap-4"
-      @navigate="action(true)"
+      @navigate="action()"
     >
       <SearchItemContent
         :result="result"
