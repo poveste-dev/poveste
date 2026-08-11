@@ -26,6 +26,19 @@ html.ptw-dark {
   --user-spacing: 24px;
 }
 
+/*
+ * #116 fixture. All three root spellings have to reach the story; `html` and
+ * `body` sit above the scoping root until they are rewritten to `:scope`.
+ * Custom properties only — a real declaration here restyles every story.
+ */
+html {
+  --user-html-token: rebeccapurple;
+}
+
+body {
+  --user-body-token: 14px;
+}
+
 .user-card {
   padding: var(--user-spacing);
   background: lime;

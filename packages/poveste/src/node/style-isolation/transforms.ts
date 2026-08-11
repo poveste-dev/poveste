@@ -16,7 +16,7 @@ export function wrapUserCss(css: string, opts: WrapOptions): string {
     return css
   }
   const { hoisted, remainder } = extractHoistableAtRules(css)
-  const body = remainder.includes(':root')
+  const body = hasRootSelector(remainder)
     ? rewriteRootToScope(remainder)
     : remainder
   const hoistedBlock = hoisted.length > 0 ? `${hoisted.join('\n')}\n` : ''
@@ -29,10 +29,10 @@ export function wrapChromeCss(css: string, opts: WrapWithLowerOptions): string {
     return css
   }
   const { hoisted, remainder } = extractHoistableAtRules(css)
-  // Rewrite `:root` to `:scope` so source-level `@scope (:root) to (...)`
+  // Rewrite root selectors to `:scope` so source-level `@scope (:root) to (...)`
   // rules nest correctly under the outer scope; without this, the inner
   // `:root` resolves to the document root which is outside the outer scope.
-  const body = remainder.includes(':root')
+  const body = hasRootSelector(remainder)
     ? rewriteRootToScope(remainder)
     : remainder
   const hoistedBlock = hoisted.length > 0 ? `${hoisted.join('\n')}\n` : ''
@@ -46,6 +46,21 @@ export function isGlobalImport(id: string): boolean {
   return parts.includes('global') || parts.some(p => p.startsWith('global='))
 }
 
+// `html` and `body` sit above the scoping root once the sheet is wrapped, so a
+// rule targeting either can never match. Inside a story they mean the same
+// thing `:root` does — the one root there is — which is what `:scope`
+// resolves to. Leaving them out made `body { font-size: 14px }` inert with no
+// error (#116); the chrome wrapper learned the same lesson in #102.
+const ROOT_TYPE_SELECTORS = new Set(['html', 'body'])
+
+// Only a gate on the lightningcss round-trip, so a false positive costs a
+// reparse and nothing else. Word-bounded to skip `.sidebar-body` and friends.
+const ROOT_SELECTOR_RE = /:root|(?:^|[\s,{}>+~])(?:html|body)\b/
+
+function hasRootSelector(css: string): boolean {
+  return ROOT_SELECTOR_RE.test(css)
+}
+
 function rewriteRootToScope(css: string): string {
   const processed = lightningcssTransform({
     filename: 'user.css',
@@ -53,12 +68,15 @@ function rewriteRootToScope(css: string): string {
     minify: false,
     visitor: {
       Selector(selector) {
-        for (const part of selector) {
+        return selector.map((part) => {
           if (part.type === 'pseudo-class' && (part as any).kind === 'root') {
-            ;(part as any).kind = 'scope'
+            return { type: 'pseudo-class', kind: 'scope' } as typeof part
           }
-        }
-        return selector
+          if (part.type === 'type' && ROOT_TYPE_SELECTORS.has(part.name)) {
+            return { type: 'pseudo-class', kind: 'scope' } as unknown as typeof part
+          }
+          return part
+        })
       },
     },
   })

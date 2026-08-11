@@ -3,10 +3,49 @@ import { isGlobalImport, wrapChromeCss, wrapUserCss } from '../transforms.js'
 
 describe('wrapUserCss', () => {
   it('wraps a single rule in @scope (.scope-root)', () => {
-    const out = wrapUserCss('body { color: red }', { scopeRoot: '.__poveste-render-story' })
+    const out = wrapUserCss('main { color: red }', { scopeRoot: '.__poveste-render-story' })
     expect(out).toContain('@scope (.__poveste-render-story)')
-    expect(out).toContain('body')
+    expect(out).toContain('main')
     expect(out).toContain('color: red')
+  })
+
+  // Every root spelling has to land on :scope. A rule left as `html`/`body`
+  // targets an ancestor of the scoping root and can never match — silently,
+  // which is what made #116 survive this long.
+  it.each([
+    ['body', 'body { font-size: 14px }', 'font-size: 14px'],
+    ['html', 'html { --brand: rebeccapurple }', '--brand: rebeccapurple'],
+    [':root', ':root { --brand: rebeccapurple }', '--brand: rebeccapurple'],
+  ])('rewrites %s → :scope so the rule can still match', (_name, css, decl) => {
+    const out = wrapUserCss(css, { scopeRoot: '.__poveste-render-story' })
+    expect(out).toContain(':scope')
+    expect(out).toContain(decl)
+    expect(out).not.toMatch(/(?:^|[\s,{])(?:html|body)\b/m)
+  })
+
+  it('rewrites a root selector that leads a descendant chain', () => {
+    const out = wrapUserCss('body .card { color: red }\nbody.dark .card { color: blue }', {
+      scopeRoot: '.__poveste-render-story',
+    })
+    expect(out).toContain(':scope .card')
+    expect(out).toContain(':scope.dark .card')
+  })
+
+  it('rewrites root selectors nested in at-rules', () => {
+    const out = wrapUserCss('@media (min-width: 700px) { body { color: red } }', {
+      scopeRoot: '.__poveste-render-story',
+    })
+    expect(out).toContain(':scope')
+    expect(out).not.toMatch(/(?:^|[\s,{])body\b/m)
+  })
+
+  it('leaves element selectors that merely contain a root name alone', () => {
+    const out = wrapUserCss('.body-copy { color: red }\n.page-html { color: blue }', {
+      scopeRoot: '.__poveste-render-story',
+    })
+    expect(out).toContain('.body-copy')
+    expect(out).toContain('.page-html')
+    expect(out).not.toContain(':scope')
   })
 
   it('rewrites :root → :scope inside the scope', () => {
@@ -47,7 +86,18 @@ describe('wrapChromeCss', () => {
       scopeLower: '.__poveste-render-story',
     })
     expect(out).toContain('@scope (.poveste-app-root) to (.__poveste-render-story)')
-    expect(out).toContain('body')
+    expect(out).toContain('color: red')
+  })
+
+  // Same rule as the user side: inside the wrap, `body` means the app's root
+  // container, which is what :scope resolves to (#102).
+  it('rewrites html and body to :scope', () => {
+    const out = wrapChromeCss('body { font-size: .875rem }\nhtml { color-scheme: dark }', {
+      scopeRoot: '.poveste-app-root',
+      scopeLower: '.__poveste-render-story',
+    })
+    expect(out).toContain(':scope')
+    expect(out).not.toMatch(/(?:^|[\s,{])(?:html|body)\b/m)
   })
 
   it('hoists @import to the top, outside @scope', () => {
