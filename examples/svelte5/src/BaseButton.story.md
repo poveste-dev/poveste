@@ -6,4 +6,4 @@
 </BaseButton>
 ```
 
-Hello world!
+Hello world! The component is `BaseButton`.
