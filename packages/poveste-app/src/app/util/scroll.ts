@@ -7,7 +7,7 @@ export function useScrollOnActive(active: Ref<boolean>, el: Ref<HTMLElement>) {
     if (value) {
       autoScroll()
     }
-  })
+  }, { flush: 'post' })
 
   function autoScroll() {
     if (el.value) {
@@ -16,6 +16,7 @@ export function useScrollOnActive(active: Ref<boolean>, el: Ref<HTMLElement>) {
         block: 'center',
         inline: 'nearest',
         behavior: 'smooth',
+        boundary: document.body,
       })
     }
   }
