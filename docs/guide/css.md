@@ -9,7 +9,18 @@ Two CSS scopes:
 - Your CSS, transitively imported via `poveste.setup.ts` (or directly from a story file), is wrapped in `@scope (.__poveste-render-story)`. It only reaches DOM rendered inside a story container.
 - Poveste's own CSS is wrapped in `@scope (.poveste-app-root) to (.__poveste-render-story)`. It only reaches Poveste's chrome and stops at story boundaries.
 
-`:root` selectors in your CSS are auto-rewritten to `:scope`, so design tokens like `:root { --color-primary: blue }` keep working as expected on `.__poveste-render-story`.
+### Root selectors
+
+`:root`, `html` and `body` all sit above the scoping root once your CSS is wrapped, so a rule targeting them could never match. Poveste rewrites all three to `:scope`, which resolves to `.__poveste-render-story` — inside a story that is the only root there is:
+
+```css
+/* what you write */          /* what runs */
+:root { --color-primary: blue }   /* :scope { --color-primary: blue } */
+html  { --brand: rebeccapurple }  /* :scope { --brand: rebeccapurple } */
+body  { font-size: 14px }         /* :scope { font-size: 14px } */
+```
+
+The rewrite follows the selector, so `body .card` becomes `:scope .card` and `body.dark .card` becomes `:scope.dark .card`. Element selectors that merely contain the word, like `.body-copy`, are left alone.
 
 ## Grid iframes
 
