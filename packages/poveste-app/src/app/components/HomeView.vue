@@ -40,12 +40,7 @@ const stats = computed(() => {
       alt="Logo"
       class="w-64 h-64 opacity-25 mb-8 hidden md:block"
     >
-    <!--
-      Names the set, so the counters are not three unlabelled numbers to anyone
-      browsing by group. Deliberately not a live region: the counts move
-      repeatedly while stories are collected, and announcing each step would be
-      noise rather than information.
-    -->
+    <!-- Not a live region: counts move repeatedly while stories are collected. -->
     <div
       role="group"
       aria-label="Book contents"
