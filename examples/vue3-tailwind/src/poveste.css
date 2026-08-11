@@ -1,0 +1,47 @@
+/*
+ * Consumer-side Tailwind v4, preflight included. This is the adversarial case
+ * behind histoire#779 / #791 / #811: v4 emits everything in cascade layers and
+ * preflight resets `*`, `a`, `button` and headings globally. It must stay
+ * scoped to story containers and never restyle poveste's own chrome.
+ *
+ * This lives in its own example on purpose. A global preflight is exactly the
+ * scenario under test, so it cannot be confined to a single story — the built
+ * book merges every story's CSS into one sandbox stylesheet. Kept alongside the
+ * other stories it would strip the borders, padding and headings off all of
+ * them, which is a real cost to pay in a fixture rather than a showcase.
+ */
+@import 'tailwindcss';
+
+html.ptw-dark {
+  background: #27272a;
+  color: #e9e9ed;
+}
+
+/*
+ * Adversarial rules that would normally bleed into Poveste's chrome
+ * without isolation; they should be scoped to story containers only.
+ */
+:root {
+  --user-primary: tomato;
+  --user-spacing: 24px;
+}
+
+body {
+  background: var(--user-primary);
+}
+
+* {
+  box-sizing: content-box;
+}
+
+a {
+  color: var(--user-primary);
+  text-decoration: underline wavy;
+}
+
+.user-card {
+  padding: var(--user-spacing);
+  background: lime;
+  color: navy;
+  border: 4px dashed var(--user-primary);
+}

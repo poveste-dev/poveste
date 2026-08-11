@@ -1,10 +1,12 @@
 /*
- * Consumer-side Tailwind v4, preflight included. This is the adversarial case
- * behind histoire#779 / #791 / #811: v4 emits everything in cascade layers and
- * preflight resets `*`, `a`, `button` and headings globally. It must stay
- * scoped to story containers and never restyle poveste's own chrome.
+ * Consumer-side global CSS for this example.
+ *
+ * The adversarial Tailwind v4 fixture (a consumer whose preflight resets `*`,
+ * `a`, `button` and headings globally) lives in `examples/vue3-tailwind`. It has
+ * to be global to be a faithful test, and a built book merges every story's CSS
+ * into one sandbox stylesheet — so kept here it stripped the borders, padding
+ * and headings off every story in this example.
  */
-@import 'tailwindcss';
 
 .demo {
   color: #10B981;
@@ -16,25 +18,12 @@ html.ptw-dark {
 }
 
 /*
- * Adversarial rules that would normally bleed into Poveste's chrome
- * without isolation; they should be scoped to story containers only.
+ * Opt-in user styling, used by the floating-vue story. Scoped to elements that
+ * ask for it by class, so it does not restyle the rest of the example.
  */
 :root {
   --user-primary: tomato;
   --user-spacing: 24px;
-}
-
-body {
-  background: var(--user-primary);
-}
-
-* {
-  box-sizing: content-box;
-}
-
-a {
-  color: var(--user-primary);
-  text-decoration: underline wavy;
 }
 
 .user-card {

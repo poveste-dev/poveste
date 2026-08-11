@@ -5,12 +5,20 @@ import { expect, test } from '@playwright/test'
  * Isolation between poveste's chrome and consumer stories, with the consumer
  * itself on Tailwind v4 (preflight included — see src/poveste.css).
  *
+ * This example exists solely to be that consumer. A global preflight is the
+ * scenario under test, and the built book merges every story's CSS into one
+ * sandbox stylesheet, so the fixture cannot be confined to a single story
+ * inside a larger example without ceasing to test the real thing.
+ *
  * This is the regression guard for histoire#779 / #791 / #811: with v4 emitting
  * everything into cascade layers, a consumer's Tailwind must style their stories
  * without leaking into poveste's UI, and poveste's UI must not leak into stories.
  *
- * Every test here has been verified to fail with `isolateStyles: false`, so they
- * genuinely exercise the isolation rather than passing incidentally.
+ * Five of the six have been verified to fail with `isolateStyles: false`, so they
+ * genuinely exercise the isolation rather than passing incidentally. The sixth
+ * ('styles the chrome root itself') is the exception by construction: it guards
+ * the wrapper's `html` → `:scope` rewrite, so with no wrapper at all the rule
+ * applies natively and the test passes. It can only fail while wrapping is on.
  */
 
 const STORY_URL = '/story/src-components-styleisolation-story-vue?variantId=src-components-styleisolation-story-vue-0'

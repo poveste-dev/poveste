@@ -1,0 +1,20 @@
+name: Vue 3 + Tailwind tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-example
+        with:
+          dir: ./examples/vue3-tailwind

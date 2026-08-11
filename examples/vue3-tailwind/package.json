@@ -1,32 +1,25 @@
 {
-  "name": "poveste-example-vue3",
+  "name": "poveste-example-vue3-tailwind",
   "type": "module",
   "version": "0.2.1",
   "private": true,
   "scripts": {
-    "dev:pvt": "nodemon --watch ../../packages/poveste/dist --watch ../../packages/poveste-plugin-vue/dist --exec \"rm -rf ./node_modules/.pvt* && POVESTE_DEV=true poveste dev\"",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
-    "story:preview": "poveste preview --port 4567",
+    "story:preview": "poveste preview --port 4571",
     "test": "playwright test",
     "test:dev": "playwright test --ui",
     "test:examples": "pnpm run story:build && pnpm run test"
   },
   "dependencies": {
-    "floating-vue": "5.2.2",
-    "lottie-web": "^5.12.2",
-    "pinia": "^2.3.0",
     "vue": "^3.5.26"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "@poveste/app": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
-    "@poveste/vendors": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
     "@vitejs/plugin-vue": "^5.2.1",
-    "nodemon": "^3.1.7",
     "poveste": "workspace:*",
-    "sass": "^1.82.0",
     "vite": "catalog:"
   }
 }
