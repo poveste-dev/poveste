@@ -147,6 +147,20 @@ pnpm run release:check
 
 The smoke test (`pnpm run test:smoke`) packs the publishable tarballs, installs them into a throwaway project with npm (no workspace symlinks) and runs a real `poveste build`. It is deliberately not part of `pnpm run test`, because it needs a completed build — but it is the check that catches "works in the pnpm workspace, broken for consumers" bugs, so the release must not skip it.
 
+Cut the release on the Node version in [`.node-version`](./.node-version). The gate only means something if it runs on the Node that publishes.
+
+### CHANGELOG.md
+
+Nothing writes `CHANGELOG.md` automatically. `changelogithub` generates the **GitHub release** from the commit log at tag time; it does not touch the file, which is why the file silently kept describing histoire through poveste's first six releases.
+
+So add the new section by hand as part of release prep, before `pnpm run release`:
+
+1. Draft the entries from `git log v<previous>..HEAD --format='%s'`, grouping them as `🚨 Breaking Changes` / `🚀 Enhancements` / `🩹 Fixes` / `🏡 Chore` and skipping anything invisible to a consumer.
+2. Add a `[compare changes]` link against the previous tag.
+3. Reference PRs as `#N` where there is one, and a short commit SHA otherwise.
+
+Then cross-check the published GitHub release once CI has run: if the two disagree, the release is the source of truth and the file is wrong.
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.

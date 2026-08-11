@@ -1,3 +1,104 @@
+# Changelog
+
+Poveste's own releases are below, newest first. Each one is also published as a
+[GitHub release](https://github.com/poveste-dev/poveste/releases), which is generated from the
+commit log at tag time and is the canonical source if the two ever disagree.
+
+Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog),
+kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's —
+poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
+whole.
+
+## v0.2.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.2.0...v0.2.1)
+
+### 🩹 Fixes
+
+- **plugin-svelte**: Replace leftover Histoire logo assets with the poveste mark ([#57](https://github.com/poveste-dev/poveste/pull/57))
+
+## v0.2.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.1.3...v0.2.0)
+
+### 🚨 Breaking Changes
+
+- Rename the Tailwind prefix `htw-` to `ptw-` ([#48](https://github.com/poveste-dev/poveste/pull/48))
+
+### 🚀 Enhancements
+
+- CSS isolation between poveste chrome and stories ([#52](https://github.com/poveste-dev/poveste/pull/52))
+- `defaultBackgroundColor` and `head` config options ([#55](https://github.com/poveste-dev/poveste/pull/55))
+- Sandbox-only color scheme switch ([#56](https://github.com/poveste-dev/poveste/pull/56))
+- **app**: Customize-layout modal, iOS-style top bar, per-story `storyOptions` ([#53](https://github.com/poveste-dev/poveste/pull/53))
+- **cli**: Support `--host` and `--open` on the preview command ([#23](https://github.com/poveste-dev/poveste/pull/23))
+
+### 🩹 Fixes
+
+- Stop missing-export warnings on setup hooks ([#49](https://github.com/poveste-dev/poveste/pull/49))
+- **app**: Forward keyboard shortcuts from sandbox iframes ([#45](https://github.com/poveste-dev/poveste/pull/45))
+- **node**: Resolve `optimizeDeps` bare specifiers from the Vite root ([#46](https://github.com/poveste-dev/poveste/pull/46))
+- **node**: Suppress JSDOM CSS parse errors during story collection ([#51](https://github.com/poveste-dev/poveste/pull/51))
+
+## v0.1.3
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.1.2...v0.1.3)
+
+### 🩹 Fixes
+
+- **plugin-vue**: Externalize deps in the lib build so no pnpm paths leak ([88f7e17](https://github.com/poveste-dev/poveste/commit/88f7e178))
+
+## v0.1.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.1.1...v0.1.2)
+
+### 🩹 Fixes
+
+- **app, vendors**: Add a `files` field so `dist` is published ([3faa468](https://github.com/poveste-dev/poveste/commit/3faa4685))
+
+## v0.1.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.1.0...v0.1.1)
+
+### 🚨 Breaking Changes
+
+- Rebrand build output paths `.histoire/dist` → `.poveste/dist` ([d937c5a](https://github.com/poveste-dev/poveste/commit/d937c5a0))
+
+### 🚀 Enhancements
+
+- Dual-emit the `__histoire-code` class for theme compatibility ([4cb7074](https://github.com/poveste-dev/poveste/commit/4cb70745))
+- **branding**: Replace the histoire logo with the poveste mark ([2cbbc97](https://github.com/poveste-dev/poveste/commit/2cbbc971))
+
+### 🩹 Fixes
+
+- Correct stale `packages/histoire-*` path references to `packages/poveste-*` ([0637833](https://github.com/poveste-dev/poveste/commit/0637833f))
+- **branding**: Swap demo favicons to poveste, align the controls-stories setup file ([e77f6a4](https://github.com/poveste-dev/poveste/commit/e77f6a4a))
+- **cli**: Correct stale "histoire" wording in the build command help ([d70806e](https://github.com/poveste-dev/poveste/commit/d70806e5))
+- **collect**: Inline published `@poveste/*` packages so story collection works on fresh installs ([1f56d0f](https://github.com/poveste-dev/poveste/commit/1f56d0f2))
+- **docs**: Remove broken links to undeployed subdomains and histoire starters ([40f9fc9](https://github.com/poveste-dev/poveste/commit/40f9fc96))
+- **docs/stackblitz**: Pin starter deps to versions that satisfy poveste peers ([2853095](https://github.com/poveste-dev/poveste/commit/2853095d))
+- **netlify**: Dedent toml keys to satisfy eslint `toml/indent` ([b7ec49a](https://github.com/poveste-dev/poveste/commit/b7ec49a8))
+- **plugin-nuxt**: Allow Nuxt 4 in `peerDependencies` ([0638c18](https://github.com/poveste-dev/poveste/commit/0638c185))
+
+## v0.1.0
+
+First release of **poveste** — a community-maintained, drop-in successor to
+[histoire](https://github.com/histoire-dev/histoire) by Guillaume Chau.
+
+This tag is the **changelog baseline**. Substantive changes (the full rebrand, compat shims, and
+output-path changes) land from v0.1.1 onward.
+
+- 📦 Published to npm as `poveste` and `@poveste/*` at `0.1.0`
+- 📖 Migrating an existing histoire project? See the [migration guide](https://poveste.dev/guide/migration-from-histoire).
+- ⚖️ Forked under MIT; original copyright retained — see [NOTICE.md](https://github.com/poveste-dev/poveste/blob/main/NOTICE.md).
+
+---
+
+# Inherited histoire changelog
+
+Everything below predates the fork and describes
+[histoire](https://github.com/histoire-dev/histoire). Links point at the upstream repository.
+
 ## v1.0.0-beta.1
 
 [compare changes](https://github.com/Akryum/histoire/compare/v1.0.0-alpha.5...v1.0.0-beta.1)
