@@ -56,7 +56,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
       }
       if (valueCode) {
         // Cleanup render code
-        valueCode = valueCode.replace(/^\$(setup|props|data)\./g, '')
+        valueCode = valueCode.replace(/^\$(?:setup|props|data)\./g, '')
       }
       const valueLines = valueCode ? [valueCode] : serializeAndCleanJs(dir.value)
       const attr: string[] = []

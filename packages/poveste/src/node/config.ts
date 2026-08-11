@@ -265,6 +265,9 @@ export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMod
     result = await loadConfigFile(resolvedConfigFile)
   }
   const viteConfig = await resolveViteConfig({}, 'serve')
+  // The `histoire` key is our own deprecation, and reading it is the whole
+  // point — it is what makes poveste drop-in for an existing histoire config.
+  // eslint-disable-next-line ts/no-deprecated
   const vitePovesteConfig = (viteConfig.poveste ?? viteConfig.histoire ?? {}) as PovesteConfig
 
   const preUserConfig = mergeConfig(result, vitePovesteConfig)

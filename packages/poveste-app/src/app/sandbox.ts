@@ -33,13 +33,19 @@ if (storedSettings) {
 const prefersDark = usePreferredDark()
 const previewDark = computed(() => resolvePreviewDark(receivedSettings.colorScheme, prefersDark.value, isDark.value))
 
+// `sandboxDarkClass` is poveste's own deprecated config option, superseded by
+// `theme.darkClass`. Still honoured on purpose: dropping it would silently stop
+// applying the class for anyone who set it. Removing the option is a breaking
+// config change and belongs to a major, not here.
 watch(previewDark, (value) => {
   if (value) {
-    document.documentElement.classList.add(povesteConfig.sandboxDarkClass) // @TODO remove
+    // eslint-disable-next-line ts/no-deprecated
+    document.documentElement.classList.add(povesteConfig.sandboxDarkClass)
     document.documentElement.classList.add(povesteConfig.theme.darkClass)
   }
   else {
-    document.documentElement.classList.remove(povesteConfig.sandboxDarkClass) // @TODO remove
+    // eslint-disable-next-line ts/no-deprecated
+    document.documentElement.classList.remove(povesteConfig.sandboxDarkClass)
     document.documentElement.classList.remove(povesteConfig.theme.darkClass)
   }
 }, {

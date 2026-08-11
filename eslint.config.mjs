@@ -101,4 +101,54 @@ export default antfu({
   rules: {
     'svelte/html-quotes': ['error', { prefer: 'double' }],
   },
+}, {
+  // The one type-aware rule we pay for. Nothing in the untyped setup catches a
+  // dependency deprecating something under us — #87 shipped a `useDebounce` →
+  // `refDebounced` fix that had to be spotted by hand.
+  //
+  // 29 findings on the first run, and the two clusters are excluded below
+  // rather than fixed: both turned out to be migrations that only look like
+  // renames (#98, #99). The other 4 are deliberate and suppressed where they
+  // sit, each with its reason. Turning this on also sharpened a rule already
+  // enabled: `regexp/no-unused-capturing-group` uses type information when it
+  // has it, and immediately found a stray capture group in `plugin-vue`'s
+  // codegen that had been invisible.
+  //
+  // Measured before switching on, since type information is not free. Best of
+  // three, `pnpm lint` over the repo: warm 3.2s → 3.7s, cold 8.6s → 14.6s. The
+  // warm number is the one a person feels between saves; the cold one is CI,
+  // where six seconds sits inside a job measured in minutes.
+  //
+  // `projectService` rather than `tsconfigPath` because there is no root
+  // tsconfig — each package has its own, and the service resolves per file.
+  //
+  // Scoped to package `.ts` sources. Extending it over `.vue` and `.svelte`
+  // means type information for SFCs, which is a much larger bill for whatever
+  // is left after this.
+  files: ['packages/*/src/**/*.ts'],
+  ignores: [
+    '**/*.spec.ts',
+    '**/__tests__/**',
+    // Seven hits, all one unfinished migration, all in code that decides which
+    // built file is which. Being wrong there produces a broken book rather than
+    // an exception, so it gets its own change: #98.
+    'packages/poveste/src/node/build.ts',
+    // Eighteen hits, all `SvelteComponentTyped` on the public `Hst` type. The
+    // rename to `Component<…>` compiles here and breaks every consumer: the
+    // class form carries Svelte 4 slot typing, so `svelte-check` on
+    // `examples/svelte5` goes 1 error → 5, all of them nested story content.
+    // Needs a decision on typing Svelte 5 children first: #99.
+    'packages/poveste-plugin-svelte/src/helpers.ts',
+  ],
+  languageOptions: {
+    parserOptions: {
+      projectService: {
+        allowDefaultProject: ['*.ts'],
+      },
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+  rules: {
+    'ts/no-deprecated': 'error',
+  },
 })
