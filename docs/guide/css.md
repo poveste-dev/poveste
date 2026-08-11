@@ -11,16 +11,22 @@ Two CSS scopes:
 
 ### Root selectors
 
-`:root`, `html` and `body` all sit above the scoping root once your CSS is wrapped, so a rule targeting them could never match. Poveste rewrites all three to `:scope`, which resolves to `.__poveste-render-story` — inside a story that is the only root there is:
+`:root`, `html` and `body` all sit above the scoping root once your CSS is wrapped, so a rule targeting them could never match. Poveste rewrites all three to `:scope`, which resolves to `.__poveste-render-story` — inside a story that is the only root there is.
 
-```css
-/* what you write */          /* what runs */
-:root { --color-primary: blue }   /* :scope { --color-primary: blue } */
-html  { --brand: rebeccapurple }  /* :scope { --brand: rebeccapurple } */
-body  { font-size: 14px }         /* :scope { font-size: 14px } */
-```
+| You write | It runs as |
+| --- | --- |
+| `:root { --color-primary: blue }` | `:scope { --color-primary: blue }` |
+| `html { --brand: rebeccapurple }` | `:scope { --brand: rebeccapurple }` |
+| `body { font-size: 14px }` | `:scope { font-size: 14px }` |
+| `body .card { … }` | `:scope .card { … }` |
+| `body.dark .card { … }` | `:scope.dark .card { … }` |
+| `.body-copy { … }` | `.body-copy { … }` — unchanged |
 
-The rewrite follows the selector, so `body .card` becomes `:scope .card` and `body.dark .card` becomes `:scope.dark .card`. Element selectors that merely contain the word, like `.body-copy`, are left alone.
+The rewrite reads the selector, not the text, so a class that merely contains the word is left alone.
+
+::: warning A root nested in `:is()` or `:where()` is not rewritten
+`:is(html, body) { … }` and `:where(:root) { … }` stay as written, and stay inert. Spell the root selector at the top level of the rule, or target `:scope` yourself.
+:::
 
 ## Grid iframes
 

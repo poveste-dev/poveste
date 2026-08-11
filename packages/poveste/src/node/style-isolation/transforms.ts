@@ -55,13 +55,24 @@ const ROOT_TYPE_SELECTORS = new Set(['html', 'body'])
 
 // Only a gate on the lightningcss round-trip, so a false positive costs a
 // reparse and nothing else. Word-bounded to skip `.sidebar-body` and friends.
-const ROOT_SELECTOR_RE = /:root|(?:^|[\s,{}>+~])(?:html|body)\b/
+const ROOT_SELECTOR_RE = /:root|(?:^|[\s,{}>+~])(?:html|body)\b/i
 
 function hasRootSelector(css: string): boolean {
   return ROOT_SELECTOR_RE.test(css)
 }
 
+// Type selectors are ASCII case-insensitive against HTML and lightningcss
+// reports the name as authored, so `BODY { … }` arrives spelled `BODY`.
+function isRootTypeSelector(name: string): boolean {
+  return ROOT_TYPE_SELECTORS.has(name.toLowerCase())
+}
+
+// Top level of the selector only: lightningcss hands `:is()`/`:where()`/`:not()`
+// over as one part with the inner selectors nested inside, so a root spelled
+// `:is(html, body)` is left alone. Descending needs a decision on `:not()`,
+// where rewriting would change what the rule matches rather than fix it (#124).
 function rewriteRootToScope(css: string): string {
+  const scope = { type: 'pseudo-class', kind: 'scope' } as const
   const processed = lightningcssTransform({
     filename: 'user.css',
     code: Buffer.from(css, 'utf8'),
@@ -70,10 +81,10 @@ function rewriteRootToScope(css: string): string {
       Selector(selector) {
         return selector.map((part) => {
           if (part.type === 'pseudo-class' && (part as any).kind === 'root') {
-            return { type: 'pseudo-class', kind: 'scope' } as typeof part
+            return scope as unknown as typeof part
           }
-          if (part.type === 'type' && ROOT_TYPE_SELECTORS.has(part.name)) {
-            return { type: 'pseudo-class', kind: 'scope' } as unknown as typeof part
+          if (part.type === 'type' && isRootTypeSelector(part.name)) {
+            return scope as unknown as typeof part
           }
           return part
         })

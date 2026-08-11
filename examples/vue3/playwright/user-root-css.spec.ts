@@ -47,16 +47,16 @@ test.describe('root selectors in setup-file CSS', () => {
     expect(await readTokens(frame, STORY)).toEqual(TOKENS)
   })
 
+  // The wrap exists to keep consumer CSS off the chrome; a rewrite that landed
+  // on the document root instead of the scope root would show up here.
   test('do not leak onto the app chrome', async ({ page }) => {
     await page.goto(NATIVE_STORY)
     await expect(page.getByTestId('sandbox-render')).toBeVisible()
 
-    // The wrap exists to keep consumer CSS off the chrome; a rewrite that
-    // targeted the document root instead of the scope root would show up here.
-    const onChrome = await page.locator('html').evaluate((el, names) => {
-      const style = getComputedStyle(el)
-      return names.filter(n => style.getPropertyValue(n).trim() !== '')
-    }, Object.keys(TOKENS))
-    expect(onChrome).toEqual([])
+    expect(await readTokens(page, 'html')).toEqual({
+      '--user-html-token': '',
+      '--user-body-token': '',
+      '--user-primary': '',
+    })
   })
 })

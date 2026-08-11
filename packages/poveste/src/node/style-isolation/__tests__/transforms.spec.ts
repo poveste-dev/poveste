@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { isGlobalImport, wrapChromeCss, wrapUserCss } from '../transforms.js'
 
+/** Selectors of every rule inside the wrap, so a test can assert on them whole. */
+function selectorsIn(css: string): string[] {
+  return css.split('{')
+    .slice(0, -1)
+    .map(chunk => chunk.slice(chunk.lastIndexOf('}') + 1).trim())
+    .filter(selector => selector.length > 0 && !selector.startsWith('@'))
+}
+
 describe('wrapUserCss', () => {
   it('wraps a single rule in @scope (.scope-root)', () => {
     const out = wrapUserCss('main { color: red }', { scopeRoot: '.__poveste-render-story' })
@@ -11,50 +19,30 @@ describe('wrapUserCss', () => {
 
   // Every root spelling has to land on :scope. A rule left as `html`/`body`
   // targets an ancestor of the scoping root and can never match — silently,
-  // which is what made #116 survive this long.
+  // which is what made #116 survive this long. Asserting the whole selector
+  // rather than "contains :scope": the failure mode is a leftover `html`, and
+  // a substring check passes right over it.
   it.each([
-    ['body', 'body { font-size: 14px }', 'font-size: 14px'],
-    ['html', 'html { --brand: rebeccapurple }', '--brand: rebeccapurple'],
-    [':root', ':root { --brand: rebeccapurple }', '--brand: rebeccapurple'],
-  ])('rewrites %s → :scope so the rule can still match', (_name, css, decl) => {
+    [':root', ':root { --brand: rebeccapurple }', ':scope'],
+    ['html', 'html { --brand: rebeccapurple }', ':scope'],
+    ['body', 'body { --brand: rebeccapurple }', ':scope'],
+    ['BODY', 'BODY { --brand: rebeccapurple }', ':scope'],
+    ['body .card', 'body .card { --brand: rebeccapurple }', ':scope .card'],
+    ['body.dark .card', 'body.dark .card { --brand: rebeccapurple }', ':scope.dark .card'],
+    ['.body-copy', '.body-copy { --brand: rebeccapurple }', '.body-copy'],
+    ['.page-html', '.page-html { --brand: rebeccapurple }', '.page-html'],
+  ])('compiles %s to a selector that can still match', (_input, css, expected) => {
     const out = wrapUserCss(css, { scopeRoot: '.__poveste-render-story' })
-    expect(out).toContain(':scope')
-    expect(out).toContain(decl)
-    expect(out).not.toMatch(/(?:^|[\s,{])(?:html|body)\b/m)
-  })
 
-  it('rewrites a root selector that leads a descendant chain', () => {
-    const out = wrapUserCss('body .card { color: red }\nbody.dark .card { color: blue }', {
-      scopeRoot: '.__poveste-render-story',
-    })
-    expect(out).toContain(':scope .card')
-    expect(out).toContain(':scope.dark .card')
+    expect(selectorsIn(out)).toEqual([expected])
   })
 
   it('rewrites root selectors nested in at-rules', () => {
-    const out = wrapUserCss('@media (min-width: 700px) { body { color: red } }', {
+    const out = wrapUserCss('@media (min-width: 700px) { body { --brand: rebeccapurple } }', {
       scopeRoot: '.__poveste-render-story',
     })
-    expect(out).toContain(':scope')
-    expect(out).not.toMatch(/(?:^|[\s,{])body\b/m)
-  })
 
-  it('leaves element selectors that merely contain a root name alone', () => {
-    const out = wrapUserCss('.body-copy { color: red }\n.page-html { color: blue }', {
-      scopeRoot: '.__poveste-render-story',
-    })
-    expect(out).toContain('.body-copy')
-    expect(out).toContain('.page-html')
-    expect(out).not.toContain(':scope')
-  })
-
-  it('rewrites :root → :scope inside the scope', () => {
-    const out = wrapUserCss(':root { --color-primary: blue }', {
-      scopeRoot: '.__poveste-render-story',
-    })
-    expect(out).toContain(':scope')
-    expect(out).not.toContain(':root')
-    expect(out).toContain('--color-primary: blue')
+    expect(selectorsIn(out)).toEqual([':scope'])
   })
 
   it('leaves :scope alone (idempotent)', () => {
