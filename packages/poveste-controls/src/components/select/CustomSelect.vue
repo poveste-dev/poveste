@@ -92,18 +92,22 @@ function selectValue(value: any, hide: () => void) {
 }
 
 .v-popper--theme-dropdown {
-  .ptw-dark & {
-    .v-popper__inner {
-      @apply bg-gray-700 border-gray-850 text-gray-100;
-    }
+  /*
+   * `dark:` rather than `.ptw-dark &` — the chrome CSS is wrapped in `@scope`
+   * and `.ptw-dark` lives on `<html>`, above the scope root, so a descendant
+   * rule keyed on it never matches and the select's options fall back to
+   * floating-vue's stock light theme (black text on the dark UI). See #101.
+   */
+  .v-popper__inner {
+    @apply dark:bg-gray-700 dark:border-gray-850 dark:text-gray-100;
+  }
 
-    .v-popper__arrow-inner {
-      @apply border-gray-700;
-    }
+  .v-popper__arrow-inner {
+    @apply dark:border-gray-700;
+  }
 
-    .v-popper__arrow-outer {
-      @apply border-gray-850;
-    }
+  .v-popper__arrow-outer {
+    @apply dark:border-gray-850;
   }
 
   &.v-popper__popper--show-from .v-popper__wrapper {

@@ -5,18 +5,24 @@
 }
 
 .v-popper--theme-dropdown {
-  .ptw-dark & {
-    .v-popper__inner {
-      @apply bg-gray-700 border-gray-850 text-gray-100;
-    }
+  /*
+   * Written with the `dark:` variant rather than a `.ptw-dark &` descendant
+   * rule. The chrome CSS is wrapped in `@scope`, and `.ptw-dark` sits on
+   * `<html>` — above the scope root — so a descendant rule keyed on it never
+   * matches and the dropdown silently falls back to floating-vue's stock light
+   * theme. `dark:` compiles to `&:where(.ptw-dark, .ptw-dark *)`, which puts the
+   * condition on the subject and survives the wrapper. See #101.
+   */
+  .v-popper__inner {
+    @apply dark:bg-gray-700 dark:border-gray-850 dark:text-gray-100;
+  }
 
-    .v-popper__arrow-inner {
-      @apply border-gray-700;
-    }
+  .v-popper__arrow-inner {
+    @apply dark:border-gray-700;
+  }
 
-    .v-popper__arrow-outer {
-      @apply border-gray-850;
-    }
+  .v-popper__arrow-outer {
+    @apply dark:border-gray-850;
   }
 
   &.v-popper__popper--show-from .v-popper__wrapper {
