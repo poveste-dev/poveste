@@ -103,7 +103,10 @@ Example:
 
 ## Nuxt
 
-<DemoLinks framework="nuxt3" />
+<div class="demo-links-box border-emerald-200 dark:border-emerald-900">
+  <img src="/nuxt.svg" alt="Nuxt logo" class="w-10 h-10 mt-3 object-contain" />
+  <DemoLinks framework="nuxt3" />
+</div>
 
 Poveste supports Nuxt with the `@poveste/plugin-nuxt` package.
 
