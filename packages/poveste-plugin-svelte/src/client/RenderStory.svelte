@@ -31,12 +31,13 @@
 
   if (!initState && $$slots.controls && currentVariant && !currentVariant.__pvtStateWarned) {
     currentVariant.__pvtStateWarned = true
-    console.error(
-      `[poveste] Story "${story?.title ?? story?.id}" has a controls slot but no \`initState\`. `
-        + `Controls will render and appear to work, but their edits cannot reach the story: `
-      + `the story is mounted separately for each slot, so a component-local variable is not shared. `
-        + `Pass \`initState\` and read state from the slot — https://poveste.dev/guide/svelte/app-setup.html`,
-    )
+    console.error([
+      `[poveste] Story "${story?.title ?? story?.id}" has a controls slot but no \`initState\`.`,
+      'Controls will render and appear to work, but their edits cannot reach the story:',
+      'the story is mounted separately for each slot, so a component-local variable is not shared.',
+      'Pass `initState` and read state from the slot —',
+      'https://poveste.dev/guide/svelte/app-setup.html',
+    ].join(' '))
   }
 
   // `variant.state` is a Vue-reactive object, so Svelte has no way to know when a
