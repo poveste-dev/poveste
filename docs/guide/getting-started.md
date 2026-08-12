@@ -73,6 +73,11 @@ a throwaway project with `npm install` — no workspace symlinks — and runs a 
   its workflow move first; the `peerDependencies` range follows in the same change.
 - **Floors move in minor releases** while Poveste is pre-1.0, and are always called out in
   the release notes as a breaking change.
+- **The commit type picks the number.** A `feat` lands a minor, everything else lands a patch —
+  the same field [changelogithub](https://github.com/antfu/changelogithub) groups the release
+  notes by, so the notes and the version can't disagree.
+- **Milestones are not versions.** They name a body of work, and their issues ship whenever they
+  are ready — several from *Toolchain & DX* shipped in 0.3.1 and 0.3.2.
 
 ## Supported frameworks
 

@@ -149,6 +149,8 @@ pnpm run release patch   # or: minor, major
 
 The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
 
+Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. Milestones name a body of work rather than a version — issues from one milestone routinely ship across several releases.
+
 `release` runs `release:check` first, which gates the release on lint, build, unit tests and the smoke test:
 
 ```sh
