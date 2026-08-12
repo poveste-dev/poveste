@@ -33,6 +33,11 @@ Poveste is a tool to generate stories applications (or "books").
   <DemoLinks framework="svelte" />
 </div>
 
+<div class="demo-links-box border-red-200 dark:border-red-900">
+  <img src="/svelte.svg" alt="SvelteKit logo" class="w-10 h-10 mt-3 object-contain" />
+  <DemoLinks framework="sveltekit" />
+</div>
+
 ## Supported versions
 
 Each row below is the range Poveste actually declares in `peerDependencies`, next to the

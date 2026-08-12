@@ -24,7 +24,7 @@ const VITE = '^8.2.0'
 
 // Unnumbered on purpose: `svelte3` outlived Svelte 3 by two majors before
 // anyone noticed. A bare framework name never goes stale — see #120.
-export type Framework = 'vue' | 'svelte' | 'nuxt'
+export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt'
 
 export interface Manifest {
   name: string
@@ -197,6 +197,92 @@ export default defineConfig({
   }
 }
 
+function svelteKitStarter(): Starter {
+  return {
+    openFile: 'src/lib/MyButton.story.svelte',
+    manifest: manifest('poveste-sveltekit-starter', {
+      '@poveste/plugin-svelte': POVESTE,
+      // The floor `@poveste/plugin-svelte` declares as its optional Kit peer.
+      // 2.53.0 is the first Kit to peer Vite 8 and vite-plugin-svelte v7.
+      '@sveltejs/kit': '^2.53.0',
+      '@sveltejs/vite-plugin-svelte': '^7.0.0',
+      'svelte': '^5.46.4',
+      'vite': VITE,
+    }),
+    files: {
+      // No adapter. One is only needed by `vite build`, which this project
+      // never runs — its scripts are poveste only — and `adapter-auto` would
+      // pull provider detection into a WebContainer for nothing.
+      'svelte.config.js': `export default {}
+`,
+      'vite.config.ts': `/// <reference types="poveste" />
+import { HstSvelte } from '@poveste/plugin-svelte'
+import { sveltekit } from '@sveltejs/kit/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [sveltekit()],
+  poveste: {
+    plugins: [HstSvelte()],
+  },
+})
+`,
+      'src/app.html': `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    %sveltekit.head%
+  </head>
+  <body>
+    <div>%sveltekit.body%</div>
+  </body>
+</html>
+`,
+      'src/routes/+page.svelte': `<script>
+  import MyButton from '$lib/MyButton.svelte'
+</script>
+
+<h1>SvelteKit + Poveste</h1>
+<MyButton label="Hello" />
+`,
+      'src/lib/MyButton.svelte': `<script>
+  export let label = 'Click me'
+</script>
+
+<button class="my-button">{label}</button>
+
+<style>
+  .my-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #24c56a;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+`,
+      'src/lib/MyButton.story.svelte': `<script>
+  import MyButton from './MyButton.svelte'
+
+  export let Hst
+</script>
+
+<Hst.Story title="MyButton">
+  <Hst.Variant title="default">
+    <MyButton />
+  </Hst.Variant>
+  <Hst.Variant title="custom label">
+    <MyButton label="Hello Poveste" />
+  </Hst.Variant>
+</Hst.Story>
+`,
+    },
+  }
+}
+
 function nuxtStarter(): Starter {
   return {
     openFile: 'components/MyButton.story.vue',
@@ -263,11 +349,13 @@ import MyButton from './MyButton.vue'
 export const starters: Record<Framework, () => Starter> = {
   vue: vueStarter,
   svelte: svelteStarter,
+  sveltekit: svelteKitStarter,
   nuxt: nuxtStarter,
 }
 
 export const titles: Record<Framework, string> = {
   vue: 'Poveste + Vue starter',
   svelte: 'Poveste + Svelte starter',
+  sveltekit: 'Poveste + SvelteKit starter',
   nuxt: 'Poveste + Nuxt starter',
 }
