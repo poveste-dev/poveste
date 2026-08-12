@@ -176,6 +176,27 @@ So add the new section by hand as part of release prep, before `pnpm run release
 
 Then cross-check the published GitHub release once CI has run: if the two disagree, the release is the source of truth and the file is wrong.
 
+### The GitHub release body
+
+`changelogithub` runs unconfigured, so the release body is built from **commit subjects alone**. That is fine for a release that is a list of changes, and not fine for a release that is a story — a deprecation, a migration, a changed default, a floor that moved.
+
+Since the GitHub release is the canonical artifact, it is the one that has to explain the release. So after `pnpm run release`, read the published body and ask whether someone who only reads that would know what to do. If not, edit it:
+
+```sh
+gh release edit v<version> --notes-file <file>
+```
+
+Keep the generated section at the bottom and put the explanation above it — the commit list is still the accurate record of *what* landed, it just does not carry *why it matters* or *what to change*.
+
+`v0.4.0` is the worked example. changelogithub produced a single line — "Accept setupVue alongside setupVue3" — which is a correct summary of the commit and a useless summary of the release: nothing told a reader that their existing code still works, that their editor would start flagging `defineSetupVue3`, or that 1.0 is the deadline for the old spelling.
+
+A rule of thumb for when the generated body is not enough:
+
+- something is deprecated, renamed, or removed
+- a supported version floor moved
+- a default changed
+- the upgrade needs any action, **or notably needs none** — "nothing to do" is worth saying out loud, because a deprecation notice in an editor makes people assume otherwise
+
 ## Pull Request Guidelines
 
 - Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.
