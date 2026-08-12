@@ -45,8 +45,12 @@
           }
         }
 
+        // `state` is the Vue-reactive mirror kept in sync by the `$:` below.
+        // Reading the plain `value` here would make the render depend on a
+        // variable Vue cannot track — it only saw fresh values because the
+        // `state` mutation was what triggered the re-render in the first place.
         return _h(controlComponent, {
-          modelValue: value,
+          modelValue: state.value,
           ...state.attrs,
           ...finalListeners,
           key: 'component',

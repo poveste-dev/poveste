@@ -111,22 +111,38 @@ export async function callSetupFunctions(
   }
 }
 
+/**
+ * Adds `controlComponent` to a props object **without** spreading it.
+ *
+ * Svelte 5 passes a bound prop as an accessor pair — `bind:value` becomes a
+ * `get value()` / `set value(v)` on the props object. Spreading invokes the
+ * getter and writes a plain data property, so the setter is dropped and the
+ * child's write-back silently goes nowhere: reads keep working, writes stop.
+ * That was the whole of #81.
+ *
+ * Copying the descriptors keeps the setter intact.
+ */
+function withControlComponent(props: any, controlComponent: any) {
+  const merged = Object.defineProperties({}, Object.getOwnPropertyDescriptors(props ?? {}))
+  Object.defineProperty(merged, 'controlComponent', {
+    value: controlComponent,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  })
+  return merged
+}
+
 export function createWrappedComponent(Wrap: any, controlComponent: any) {
   function ProxyWrap(anchorOrOptions: any, props?: any) {
     if (new.target) {
       return new Wrap({
         ...anchorOrOptions,
-        props: {
-          ...anchorOrOptions?.props,
-          controlComponent,
-        },
+        props: withControlComponent(anchorOrOptions?.props, controlComponent),
       })
     }
 
-    return Wrap(anchorOrOptions, {
-      ...props,
-      controlComponent,
-    })
+    return Wrap(anchorOrOptions, withControlComponent(props, controlComponent))
   }
 
   if (Wrap?.element) {

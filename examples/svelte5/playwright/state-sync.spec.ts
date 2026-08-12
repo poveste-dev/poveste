@@ -1,10 +1,32 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('state sync', () => {
-  // The Vue control now mounts and renders on Svelte 5 (see render-story.spec.ts),
-  // but writing back does not: `Wrap.svelte` assigns `value = args[0]` from
-  // inside the Vue render closure, and that assignment no longer reaches the
-  // story's `bind:value`. Story -> control works; control -> story does not.
+  test('writes a control change back into the story state', async ({ page }) => {
+    await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
+    const controls = page.getByTestId('story-controls')
+
+    await expect(controls.locator('pre')).toContainText('"disabled": false')
+
+    await controls.locator('[role="checkbox"]').click()
+    await expect(controls.locator('pre')).toContainText('"disabled": true')
+  })
+
+  // The two below need state to cross between component instances — the controls
+  // slot renders in the app frame, the story body in the sandbox — and on Svelte 5
+  // there is no bridge to carry it.
+  //
+  // `render.ts` syncs through `getLegacyStateApi`, which requires Svelte 4's
+  // `$capture_state` / `$inject_state`. Svelte 5 emits neither: the only two
+  // occurrences in a built book are inside our own `typeof` probe, so the function
+  // always returns null and the whole sync block — `apply`, the rAF loop,
+  // `injectState` — is skipped.
+  //
+  // Not the same fault the write-back had. That one was `createWrappedComponent`
+  // spreading the props object, which turned Svelte 5's `bind:` accessor into a
+  // plain data property and dropped the setter; fixed, and guarded by the test
+  // above. These need a Svelte 5 replacement for a capture/inject API that Svelte 5
+  // deliberately does not provide, which is a design decision rather than a fix.
+  //
   // Tracked in #81.
   test.fixme('syncs disabled state between iframe story and controls', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
