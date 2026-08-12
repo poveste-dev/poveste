@@ -5,7 +5,7 @@ icon: 'carbon:bookmark'
 
 # Welcome
 
-This is a demo book using Svelte 3.
+This is a demo book using Svelte 5.
 
 ---
 

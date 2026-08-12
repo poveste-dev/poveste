@@ -42,8 +42,12 @@ module.exports = {
                 link: '/guide/vue/getting-started',
               },
               {
-                text: 'Svelte 3',
+                text: 'Svelte',
                 link: '/guide/svelte/getting-started',
+              },
+              {
+                text: 'SvelteKit',
+                link: '/guide/svelte/getting-started#sveltekit',
               },
             ],
           },
@@ -202,12 +206,16 @@ module.exports = {
       ],
       '/guide/svelte/': [
         {
-          text: 'Guide - Svelte 3',
+          text: 'Guide - Svelte',
           collapsible: true,
           items: [
             {
               text: 'Getting Started',
               link: '/guide/svelte/getting-started',
+            },
+            {
+              text: 'SvelteKit',
+              link: '/guide/svelte/getting-started#sveltekit',
             },
             {
               text: 'Stories',
