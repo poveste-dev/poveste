@@ -149,6 +149,12 @@ pnpm run release patch   # or: minor, major
 
 The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
 
+Don't pass the flag yourself either. `pnpm release --release minor --yes` expands to `--release --release minor --yes`, so `--release` takes the string `--release` as its value and the version resolves to `undefined.undefined.undefined` ([#188](https://github.com/poveste-dev/poveste/issues/188)). The `execute` guard in [`bump.config.ts`](./bump.config.ts) now refuses any version that is not valid semver and greater than the current one, so a malformed invocation stops there: bumpp exits 1 with nothing committed, tagged or pushed. It bumps the files first, so recover with:
+
+```sh
+git checkout -- '*package.json'
+```
+
 Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. Milestones name a body of work rather than a version — issues from one milestone routinely ship across several releases.
 
 `major` is never reached this way. It is a deliberate stability declaration with its own checklist — see [What 1.0 means](https://poveste.dev/guide/getting-started.html#what-1-0-means).
