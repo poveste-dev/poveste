@@ -1,27 +1,27 @@
-<!-- Thank you for contributing! -->
+<!--
+  The PR title must follow the commit convention — CI checks it and it becomes
+  the squashed commit subject and the release-note line:
+  https://github.com/poveste-dev/poveste/blob/main/.github/commit-convention.md
 
-### Description
+  Avoid a bare @word in the title (`@scope`, `@layer`). Release notes are
+  generated from these subjects, so it becomes a real @-mention of a stranger.
+-->
 
-<!-- Please insert your description here and provide especially info about the "what" this PR is solving -->
+## What and why
 
-### Additional context
+<!-- What changes, and what problem it solves. If the reasoning is not obvious from the diff, this is the place for it. -->
 
-<!-- e.g. is there anything you'd like reviewers to focus on? -->
+Closes #
 
----
+## How it was verified
 
-### What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
+<!--
+  What you ran or looked at — a test you added, a command, a page you opened.
+  "CI is green" is worth saying only if CI actually covers the change.
+-->
 
-- [ ] Bug fix
-- [ ] New Feature
-- [ ] Documentation update
-- [ ] Other
+## Checklist
 
-### Before submitting the PR, please make sure you do the following
-
-- [ ] If it's a new feature, provide a convincing reason to add it. *Ideally, you should open a suggestion issue first and have it approved before working on it.*
-- [ ] Read the [Contributing Guidelines](https://github.com/poveste-dev/poveste/blob/main/CONTRIBUTING.md).
-- [ ] Read the [Pull Request Guidelines](https://github.com/poveste-dev/poveste/blob/main/CONTRIBUTING.md#pull-request-guidelines) and follow the [Commit Convention](https://github.com/poveste-dev/poveste/blob/main/.github/commit-convention.md).
-- [ ] Check that there isn't already a PR that solves the problem the same way to avoid creating a duplicate.
-- [ ] Provide a description in this PR that addresses **what** the PR is solving, or reference the issue that it solves (e.g. `fixes #123`).
-- [ ] Ideally, include relevant tests that fail without this PR but pass with it.
+- [ ] Tests cover the change, or there is a reason they cannot
+- [ ] `pnpm lint`, `pnpm build` and `pnpm test` pass locally
+- [ ] Docs updated if behaviour a consumer can see has changed

@@ -8,8 +8,10 @@ Messages must be matched by the following regex:
 
 <!-- prettier-ignore -->
 ```js
-/^(revert: )?(feat|fix|docs|dx|refactor|perf|test|workflow|build|ci|chore|types|wip|release|deps)(\(.+\))?: .{1,50}/
+/^(revert: )?(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?!?: .{1,50}/
 ```
+
+These are the [conventional commit types](https://github.com/commitizen/conventional-commit-types), which is also the set the `Check PR title` workflow enforces on every pull request title. Anything outside it fails a required check, so the two lists have to stay in step.
 
 #### Examples
 
