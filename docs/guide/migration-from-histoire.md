@@ -3,7 +3,11 @@
 **poveste** is a community-maintained, **drop-in successor** to
 [histoire](https://github.com/histoire-dev/histoire). It keeps the same
 `<Story>` / `<Variant>` API, the same `.story.*` file convention, and the same
-configuration format — so migrating is mostly a matter of swapping dependencies.
+configuration format — so for Vue and Nuxt, migrating is a matter of swapping dependencies.
+
+**Svelte projects need one code change too.** Svelte 5 removed the API histoire relied on to
+read a story's state, so story state moves onto `initState` — see
+[Svelte: story state moves to `initState`](#svelte-story-state-moves-to-initstate) below.
 
 ::: tip TL;DR
 Replace `histoire` → `poveste` and `@histoire/*` → `@poveste/*` in your
@@ -11,6 +15,9 @@ Replace `histoire` → `poveste` and `@histoire/*` → `@poveste/*` in your
 CSS variables, and render classes all keep working. The **one** thing that moves
 is the build output directory (`.histoire/dist` → `.poveste/dist`) — update it
 only if you deploy or ignore that path (see step 5).
+
+**Svelte only:** stories that use controls also need their state moved onto `initState`
+([below](#svelte-story-state-moves-to-initstate)).
 :::
 
 ::: warning Check your versions first
@@ -121,10 +128,96 @@ export default defineConfig({
 })
 ```
 
+## Svelte: story state moves to `initState`
+
+The one code change in the whole migration, and it applies to Svelte only. If your Svelte
+stories have no controls, there is nothing to do here.
+
+Histoire read your story's state out of the component itself, using Svelte 4's
+`$capture_state` / `$inject_state`. **Svelte 5 removed both and offers no replacement** —
+component internals are private now. That is upstream, not a poveste decision, and it leaves no
+way to read a `let` out of your story.
+
+It matters because Poveste mounts your story **once per slot** — once to fill the controls
+panel, once to render the story. A component-local variable therefore exists twice, and a
+control writes to one copy while your markup reads the other. Under histoire the capture/inject
+pass hid that; without it, controls silently stop working.
+
+So state moves onto the variant, where Poveste owns it — the same model the Vue plugin has
+always used:
+
+```svelte
+<!-- histoire -->
+<script>
+  export let Hst
+
+  let disabled = false
+</script>
+
+<Hst.Story>
+  <MyButton {disabled} />
+
+  <svelte:fragment slot="controls">
+    <Hst.Checkbox bind:value={disabled} title="Disabled" />
+  </svelte:fragment>
+</Hst.Story>
+```
+
+```svelte
+<!-- poveste -->
+<script>
+  export let Hst
+
+  const initState = () => ({ disabled: false })
+</script>
+
+<Hst.Story {initState}>
+  {#snippet children({ state })}
+    <MyButton disabled={state.disabled} />
+  {/snippet}
+
+  {#snippet controls({ state })}
+    <Hst.Checkbox bind:value={state.disabled} title="Disabled" />
+  {/snippet}
+</Hst.Story>
+```
+
+Three things changed: the `let` became `initState`, the slots became snippets that receive
+`state`, and every read went from `disabled` to `state.disabled`.
+
+Values that are genuinely local — a `bind:this` node, a DOM ref — stay in the component. Only
+what your controls drive needs to move.
+
+A `source` prop that reflected state also becomes a function, since props are evaluated in your
+`<script>` where `state` is not in scope:
+
+```svelte
+<script>
+  export let Hst
+
+  const initState = () => ({ disabled: false })
+
+  function source(state) {
+    return `<MyButton${state.disabled ? ' disabled' : ''} />`
+  }
+</script>
+
+<Hst.Story {initState} {source}>
+  {#snippet children({ state })}
+    <MyButton disabled={state.disabled} />
+  {/snippet}
+</Hst.Story>
+```
+
+If you miss one, Poveste tells you: a story with a controls slot and no `initState` logs an
+error naming the story and linking back here. Full details in
+[State & Controls](./svelte/controls.md).
+
 ## What you do NOT need to change
 
 - **Story files** — the `.story.vue` / `.story.svelte` convention is unchanged.
-- **The `<Story>` and `<Variant>` API** — identical, including all props and slots.
+- **The `<Story>` and `<Variant>` API** — identical for Vue and Nuxt, including all props and
+  slots. Svelte gains an `initState` prop and moves slots to snippets (see above).
 - **Plugin options** — same shapes.
 - **Controls** (`Hst*` components) — unchanged.
 
@@ -136,7 +229,8 @@ export default defineConfig({
 | `histoire` CLI command | ✅ still works (alias) |
 | `histoire` key in Vite config | ✅ still works (deprecated) |
 | `HistoireConfig` type | ✅ still exported (deprecated alias) |
-| `<Story>` / `<Variant>` API | ✅ identical |
+| `<Story>` / `<Variant>` API (Vue, Nuxt) | ✅ identical |
+| `<Story>` / `<Variant>` API (Svelte) | ⚠️ state moves to `initState` ([why](#svelte-story-state-moves-to-initstate)) |
 | `--histoire-contrast-color` CSS var | ✅ still set (alongside `--poveste-contrast-color`) |
 | `.histoire-generic-render-story` / `.histoire-wrapper` render classes | ✅ still emitted (for visual-regression selectors) |
 | `.histoire/dist` output dir default | ⚠️ renamed to `.poveste/dist` (see step 5) |

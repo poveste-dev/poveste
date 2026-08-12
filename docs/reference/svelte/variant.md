@@ -38,6 +38,37 @@ Id of the variant used in the URL. By default, the id is automatically generated
 </Hst.Story>
 ```
 
+## `initState`
+
+A function returning the initial state for the variant. Poveste owns this state, and passes it
+to the `children` and `controls` snippets — it is how controls reach your component.
+
+```svelte
+<script>
+  export let Hst
+
+  const initState = () => ({ disabled: false })
+</script>
+
+<Hst.Variant {initState}>
+  {#snippet children({ state })}
+    <MyButton disabled={state.disabled} />
+  {/snippet}
+
+  {#snippet controls({ state })}
+    <Hst.Checkbox bind:value={state.disabled} title="Disabled" />
+  {/snippet}
+</Hst.Variant>
+```
+
+A function rather than an object, because every variant gets its own copy.
+
+State cannot live in a component-local `let`: Poveste mounts the story once per slot, so such a
+variable exists twice and a control writes to a different copy than your markup reads. A story
+with a controls slot and no `initState` logs an error saying so. See
+[State & Controls](../../guide/svelte/controls.md) and, if you are coming from histoire,
+[the migration note](../../guide/migration-from-histoire.md#svelte-story-state-moves-to-initstate).
+
 ## `icon`
 
 An [Iconify id](https://icones.js.org/) to customize the variant icon in the UI.

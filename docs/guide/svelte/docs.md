@@ -59,10 +59,12 @@ To document a copyable source code manually you can use the `source` prop.
 <script>
   export let Hst
 
+  const initState = () => ({ count: 0 })
+
   const source = `<h1>Toto</h1>
 
 <input
-  bind:value={count}"
+  bind:value={state.count}
   type="number"
 >`
 </script>
@@ -70,14 +72,17 @@ To document a copyable source code manually you can use the `source` prop.
 <Hst.Story title="Hand-written source">
   <Hst.Variant
     title="Source prop"
+    {initState}
     {source}
   >
-    <h1>Toto</h1>
+    {#snippet children({ state })}
+      <h1>Toto</h1>
 
-    <input
-      bind:value={count}"
-      type="number"
-    >
+      <input
+        bind:value={state.count}
+        type="number"
+      >
+    {/snippet}
   </Hst.Variant>
 </Hst.Story>
 ```
