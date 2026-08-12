@@ -230,6 +230,10 @@ module.exports = {
               link: '/guide/svelte/events',
             },
             {
+              text: 'App setup',
+              link: '/guide/svelte/app-setup',
+            },
+            {
               text: 'Documentation',
               link: '/guide/svelte/docs',
             },

@@ -179,6 +179,24 @@ export const setupVue = defineSetupVue(({ app, story, variant }) => {
 
 [Learn more](./vue/app-setup.md)
 
+### Svelte setup
+
+Inside your setup file, you can export a `setupSvelte5` function that will be called by Poveste for every mounted story and variant. Poveste provides an optional `defineSetupSvelte` helper to have better types in your IDE:
+
+```ts
+// src/poveste.setup.ts
+
+import { defineSetupSvelte } from '@poveste/plugin-svelte'
+
+export const setupSvelte5 = defineSetupSvelte(({ app, story, variant }) => {
+  document.documentElement.dataset.theme = 'dark'
+})
+```
+
+Unlike the Vue pair, where the first name found wins, **every accepted Svelte name you export runs** — so export one of the three, not several. `app` is the mounted component instance, not an application object, and the hook runs after mount.
+
+[Learn more](./svelte/app-setup.md)
+
 ## Theming
 
 Poveste can be white-labeled to match your brand guidelines. Here are the available options:
