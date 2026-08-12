@@ -1,6 +1,6 @@
 {
   "name": "poveste-monorepo",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "repository": {
@@ -22,8 +22,9 @@
     "test:smoke": "bash scripts/smoke-test.sh",
     "test:starters": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-starters.ts",
     "test:versions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-versions.ts",
+    "test:readmes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-readmes.ts",
     "release": "pnpm run release:check && bumpp --yes --release",
-    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run build && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run build && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",

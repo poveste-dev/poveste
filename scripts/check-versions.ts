@@ -16,12 +16,13 @@
 //
 // No network, no install: it reads files and compares strings.
 
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const PACKAGES = join(ROOT, 'packages')
 
 interface Expectation {
   label: string
@@ -112,6 +113,31 @@ for (const table of tables) {
   }
 }
 
+// Each plugin's README states its own floor — the most useful fact on its npm
+// page, and one more hand-written copy of a peer range. Any `name@range` in a
+// package README that names one of that package's own peers must match it.
+for (const entry of await readdir(PACKAGES)) {
+  const readmePath = join(PACKAGES, entry, 'README.md')
+
+  let readme: string
+  let manifest: any
+  try {
+    manifest = JSON.parse(await readFile(join(PACKAGES, entry, 'package.json'), 'utf8'))
+    readme = await readFile(readmePath, 'utf8')
+  }
+  catch {
+    continue
+  }
+
+  const peers = manifest.peerDependencies ?? {}
+
+  for (const [, name, range] of readme.matchAll(/`(@?[\w./-]+)@([^`]+)`/g)) {
+    if (peers[name] && peers[name] !== range) {
+      problems.push(`packages/${entry}/README.md says ${name}@${range}, but its own peerDependencies say ${peers[name]}`)
+    }
+  }
+}
+
 if (problems.length > 0) {
   console.error('❌ Version tables disagree with what the packages declare:\n')
   for (const problem of problems) {
@@ -121,4 +147,4 @@ if (problems.length > 0) {
   process.exit(1)
 }
 
-console.log(`✅ ${TABLES.join(' and ')} match the declared ranges (${expected.length} rows each)`)
+console.log(`✅ ${TABLES.join(' and ')} match the declared ranges (${expected.length} rows each), as do the package READMEs`)
