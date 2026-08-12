@@ -144,10 +144,18 @@ Releases are cut from `main` with [bumpp](https://github.com/antfu-collective/bu
 
 ```sh
 # Root of the mono-repo
-pnpm run release patch   # or: minor, major
+pnpm run release patch   # or: minor, major, or an explicit 0.6.0-rc.1
 ```
 
-The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
+`pnpm run release` goes through [`scripts/release.ts`](./scripts/release.ts), which resolves the next version, checks it is valid semver and strictly greater than the current one, and only then calls bumpp with that explicit version. Nothing is written unless the version is already known to be sane.
+
+The invocation is deliberately strict: exactly one bare argument, and any flag is rejected. That is the fix for [#188](https://github.com/poveste-dev/poveste/issues/188), where `pnpm release --release minor --yes` made bumpp's own `--release` flag consume the string `--release` as its value, resolve to `undefined.undefined.undefined`, and write that into 22 manifests before committing, tagging and pushing it to `main`.
+
+To see what a release would do without doing it:
+
+```sh
+RELEASE_DRY_RUN=1 pnpm run release minor
+```
 
 Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. Milestones name a body of work rather than a version — issues from one milestone routinely ship across several releases.
 

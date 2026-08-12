@@ -6,12 +6,15 @@ import { defineConfig } from 'bumpp'
 // since `pnpm -r publish` skips them. The `v%s` tag matches the trigger in
 // .github/workflows/release.yml (`tags: - 'v*'`).
 //
-// Released with `pnpm release <patch|minor|major>`. The `release` script ends
-// in a bare `--release` on purpose: pnpm appends run args to the end of the
-// command string, so the version type lands as that flag's value. Don't add
-// anything after it, and don't reach for `pnpm release -- --release patch` —
-// bumpp's parser treats everything past `--` as positional file arguments, so
-// the type is read as a filename and it drops to an interactive prompt.
+// Released with `pnpm release <patch|minor|major>`, which goes through
+// scripts/release.ts. That script resolves the next version, checks it is valid
+// semver and greater than the current one, and only then calls bumpp with an
+// explicit version — so nothing here ever sees a type it has to interpret.
+//
+// It used to be a bare `--release` at the end of the script, relying on pnpm
+// appending the type as that flag's value. Passing the flag yourself made
+// `--release` consume `--release`, and `undefined.undefined.undefined` was
+// written into every file below, tagged, and pushed (#188).
 export default defineConfig({
   recursive: true,
   commit: 'chore: release v%s',
