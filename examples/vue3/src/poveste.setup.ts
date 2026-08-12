@@ -1,4 +1,4 @@
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import { createPinia } from 'pinia'
 import GlobalComp from './components/GlobalComp.vue'
 import WrapperGlobal from './components/WrapperGlobal.vue'
@@ -14,7 +14,7 @@ declare module 'poveste' {
   }
 }
 
-export const setupVue3 = defineSetupVue3(({ app, addWrapper }) => {
+export const setupVue = defineSetupVue(({ app, addWrapper }) => {
   app.provide('demo', 42)
   const pinia = createPinia()
   app.use(pinia)

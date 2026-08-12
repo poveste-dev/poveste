@@ -5,10 +5,10 @@ A Wrapper allows you to render things around the displayed story/variant.
 In your [setup file](./app-setup.md), you can add wrapper components with `addWrapper`:
 
 ```ts
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import WrapperGlobal from './poveste/GlobalWrapper.vue'
 
-export const setupVue3 = defineSetupVue3(({ addWrapper }) => {
+export const setupVue = defineSetupVue(({ addWrapper }) => {
   addWrapper(WrapperGlobal)
 })
 ```

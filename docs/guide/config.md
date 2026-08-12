@@ -156,21 +156,22 @@ import './poveste.css' // Import global CSS
 
 You can also tell Poveste to configure the sandbox application using the corresponding setup function (more details afterwards).
 
-| Framework | Setup function |
-| --------- | -------------- |
-| Vue 3 | `setupVue3` |
+| Framework | Setup function | Also accepted |
+| --------- | -------------- | ------------- |
+| Vue | `setupVue` | `setupVue3` |
+| Svelte | `setupSvelte5` | `setupSvelte4`, `setupSvelte3` |
 
 ### Vue setup
 
-Inside your setup file, you can export a `setupVue3` function that will be called by Poveste allowing you to configure the Vue 3 sandbox application. Poveste provides an optional `defineSetupVue3` helper to have better types in your IDE :
+Inside your setup file, you can export a `setupVue` function that will be called by Poveste allowing you to configure the Vue 3 sandbox application. Poveste provides an optional `defineSetupVue` helper to have better types in your IDE :
 
 ```ts
 // src/poveste.setup.ts
 
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import { createPinia } from 'pinia'
 
-export const setupVue3 = defineSetupVue3(({ app, story, variant }) => {
+export const setupVue = defineSetupVue(({ app, story, variant }) => {
   const pinia = createPinia()
   app.use(pinia) // Add Pinia store
 })

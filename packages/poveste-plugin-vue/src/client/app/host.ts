@@ -13,6 +13,7 @@ import {
   h,
   Suspense,
 } from 'vue'
+import { VUE_SETUP_HOOK_NAMES } from '../../setup-hooks.js'
 import { registerGlobalComponents } from './global-components.js'
 import { provideRenderContext } from './render-context.js'
 import { RouterLinkStub } from './RouterLinkStub'
@@ -124,12 +125,12 @@ export function createPreviewHost(options: PreviewHostOptions) {
 }
 
 async function runSetupHooks(setupApi: Vue3StorySetupApi) {
-  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, 'setupVue3')
+  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, VUE_SETUP_HOOK_NAMES)
   if (generatedSetupFn) {
     await generatedSetupFn(setupApi)
   }
 
-  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, 'setupVue3')
+  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, VUE_SETUP_HOOK_NAMES)
   if (setupFn) {
     await setupFn(setupApi)
   }

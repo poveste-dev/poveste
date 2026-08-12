@@ -4,13 +4,13 @@
 
 You can define a setup function globally in your setup file defined by the `setupFile` option in the global configuration ([learn more](../config.md#global-js-and-css)).
 
-For Vue 3, it must be called `setupVue3`. Poveste provides an optional `defineSetupVue3` helper to have better types in your IDE:
+For Vue, it must be called `setupVue`. Poveste provides an optional `defineSetupVue` helper to have better types in your IDE:
 
 ```ts
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import { createPinia } from 'pinia'
 
-export const setupVue3 = defineSetupVue3(({ app, story, variant }) => {
+export const setupVue = defineSetupVue(({ app, story, variant }) => {
   // Vue plugin
   app.use(createPinia())
 
@@ -27,6 +27,18 @@ export const setupVue3 = defineSetupVue3(({ app, story, variant }) => {
 
 ::: tip
 You can also import global CSS files or JS files in this setup file.
+:::
+
+::: info Coming from `setupVue3`?
+`setupVue3` and `defineSetupVue3` still work — nothing needs changing today. They are the
+original histoire-era names, kept because renaming an export people write in their own files
+cannot be done without breaking every existing setup.
+
+Export **one** of the two, not both: they are aliases for the same hook, so Poveste runs the
+first it finds (`setupVue3`) and warns about the other rather than running your setup twice.
+
+The numbered pair is supported for the whole of 0.x. 1.0 is the only release allowed to drop
+it, so moving across before then costs nothing and saves a migration later.
 :::
 
 ## Local setup
@@ -95,9 +107,9 @@ In global setup file:
 
 ```ts{6}
 import { createPinia } from 'pinia'
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 
-export const setupVue3 = defineSetupVue3(({ app, story, variant }) => {
+export const setupVue = defineSetupVue(({ app, story, variant }) => {
   // Vue plugin
   app.use(createPinia())
 })

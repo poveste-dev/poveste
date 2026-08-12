@@ -6,6 +6,7 @@ import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
 import * as setup from 'virtual:$poveste-setup'
 import { createApp, h } from 'vue'
+import { VUE_SETUP_HOOK_NAMES } from '../../setup-hooks.js'
 import Story from './Story'
 import Variant from './Variant'
 
@@ -37,12 +38,12 @@ export async function run({ file, storyData, el }: ServerRunPayload) {
     addWrapper: () => { /* noop */ },
   }
 
-  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, 'setupVue3')
+  const generatedSetupFn = getSetupHook<Vue3StorySetupHandler>(generatedSetup, VUE_SETUP_HOOK_NAMES)
   if (generatedSetupFn) {
     await generatedSetupFn(setupApi)
   }
 
-  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, 'setupVue3')
+  const setupFn = getSetupHook<Vue3StorySetupHandler>(setup, VUE_SETUP_HOOK_NAMES)
   if (setupFn) {
     await setupFn(setupApi)
   }
