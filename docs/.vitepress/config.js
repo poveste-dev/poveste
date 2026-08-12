@@ -190,15 +190,15 @@ module.exports = {
           collapsible: true,
           items: [
             {
-              text: 'About Poveste ⮌',
+              text: 'About Poveste',
               link: '/guide/',
             },
             {
-              text: 'Configuration ⮌',
+              text: 'Configuration',
               link: '/guide/config',
             },
             {
-              text: 'Plugins ⮌',
+              text: 'Plugins',
               link: '/guide/plugins/official',
             },
           ],
@@ -244,15 +244,15 @@ module.exports = {
           collapsible: true,
           items: [
             {
-              text: 'About Poveste ⮌',
+              text: 'About Poveste',
               link: '/guide/',
             },
             {
-              text: 'Configuration ⮌',
+              text: 'Configuration',
               link: '/guide/config',
             },
             {
-              text: 'Plugins ⮌',
+              text: 'Plugins',
               link: '/guide/plugins/official',
             },
           ],
