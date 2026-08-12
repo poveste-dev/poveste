@@ -87,8 +87,12 @@ a throwaway project with `npm install` — no workspace symlinks — and runs a 
 - **The commit type picks the number.** A `feat` lands a minor, everything else lands a patch —
   the same field [changelogithub](https://github.com/antfu/changelogithub) groups the release
   notes by, so the notes and the version can't disagree.
-- **Milestones are not versions.** They name a body of work, and their issues ship whenever they
-  are ready — several from *Toolchain & DX* shipped in 0.3.1 and 0.3.2.
+- **Milestones are targets, not guarantees.** A milestone names the release its issues are aimed
+  at. What actually publishes is whatever was ready; the number still comes from the commit
+  types, so the notes and the version cannot disagree.
+- **Toolchain work is a standing track, not a milestone.** `track:toolchain` issues ride along
+  with whatever version is shipping instead of being batched into one; that's why they sit in
+  *Backlog* rather than under a version milestone.
 - **Majors are declared, not derived.** No commit type produces one. Pre-1.0 a breaking change
   lands in a minor, so nothing in the log will ever add up to a major on its own.
 

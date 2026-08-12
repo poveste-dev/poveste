@@ -12,6 +12,13 @@ Contributing doesn't necessarily mean you need to write code and open Pull Reque
 - Report typos or issues of the docs.
 - Do you like Poveste? Spread the love on social media!
 
+## Issue triage
+
+Before an issue gets a milestone, it needs a native GitHub issue type (`Bug`, `Feature`, or
+`Task`) plus at least one `a:` area label. That pairing is what keeps the board queryable.
+`perf`, `docs`, `chore` and `spike` still exist as refinements for cases where `Bug` and `Task`
+are too coarse.
+
 ## Packages
 
 This mono-repo contains the following packages:
