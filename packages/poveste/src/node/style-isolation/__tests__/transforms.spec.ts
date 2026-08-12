@@ -45,6 +45,27 @@ describe('wrapUserCss', () => {
     expect(selectorsIn(out)).toEqual([':scope'])
   })
 
+  // `:is()` and `:where()` are plain selector lists, so a root inside one still
+  // means the root. `:not()` and `:has()` are not: rewriting there would change
+  // what the rule matches instead of fixing it, so the walk stops at them —
+  // including an `:is()` nested inside one (#124).
+  it.each([
+    [':is(html, body)', ':is(html, body) { --brand: rebeccapurple }', ':is(:scope, :scope)'],
+    [':where(:root)', ':where(:root) { --brand: rebeccapurple }', ':where(:scope)'],
+    // lightningcss collapses a single-argument `:is()`; same specificity.
+    [':is(html)', ':is(html) { --brand: rebeccapurple }', ':scope'],
+    [':is(.a, body) .card', ':is(.a, body) .card { --brand: rebeccapurple }', ':is(.a, :scope) .card'],
+    [':is(.a, :where(body))', ':is(.a, :where(body)) { --brand: rebeccapurple }', ':is(.a, :where(:scope))'],
+    [':not(body)', '.card:not(body) { --brand: rebeccapurple }', '.card:not(body)'],
+    [':has(body)', '.card:has(body) { --brand: rebeccapurple }', '.card:has(body)'],
+    [':not(:is(html))', '.card:not(:is(html)) { --brand: rebeccapurple }', '.card:not(:is(html))'],
+    ['nth-child of', 'li:nth-child(1 of body) { --brand: rebeccapurple }', 'li:nth-child(1 of body)'],
+  ])('handles a root inside %s', (_input, css, expected) => {
+    const out = wrapUserCss(css, { scopeRoot: '.__poveste-render-story' })
+
+    expect(selectorsIn(out)).toEqual([expected])
+  })
+
   it('leaves :scope alone (idempotent)', () => {
     const out = wrapUserCss(':scope { color: red }', {
       scopeRoot: '.__poveste-render-story',

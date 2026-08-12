@@ -54,8 +54,10 @@ export function isGlobalImport(id: string): boolean {
 const ROOT_TYPE_SELECTORS = new Set(['html', 'body'])
 
 // Only a gate on the lightningcss round-trip, so a false positive costs a
-// reparse and nothing else. Word-bounded to skip `.sidebar-body` and friends.
-const ROOT_SELECTOR_RE = /:root|(?:^|[\s,{}>+~])(?:html|body)\b/i
+// reparse and nothing else. Word-bounded to skip `.sidebar-body` and friends;
+// `(` is a boundary too, or a sheet whose only root is `:is(html)` would skip
+// the pass that exists to rewrite it.
+const ROOT_SELECTOR_RE = /:root|(?:^|[\s,{}>+~(])(?:html|body)\b/i
 
 function hasRootSelector(css: string): boolean {
   return ROOT_SELECTOR_RE.test(css)
@@ -67,28 +69,51 @@ function isRootTypeSelector(name: string): boolean {
   return ROOT_TYPE_SELECTORS.has(name.toLowerCase())
 }
 
-// Top level of the selector only: lightningcss hands `:is()`/`:where()`/`:not()`
-// over as one part with the inner selectors nested inside, so a root spelled
-// `:is(html, body)` is left alone. Descending needs a decision on `:not()`,
-// where rewriting would change what the rule matches rather than fix it (#124).
+// Matching pseudo-classes we descend into. `:is()` and `:where()` are plain
+// selector lists, so a root inside one still means the root.
+//
+// `:not()` and `:has()` are deliberately absent, and the recursion stops at
+// them entirely rather than skipping one level (#124). Negation inverts the
+// rewrite instead of fixing it: `.card:not(body)` today excludes nothing inside
+// a story, while `.card:not(:scope)` would start excluding the story root — a
+// behaviour change, silent in exactly the way the original bug was. `:has()` is
+// relational and has the same problem. `:nth-child(… of S)` keeps its list
+// under `of` rather than `selectors`, so it is untouched for free.
+const DESCENDABLE_PSEUDO_CLASSES = new Set(['is', 'where'])
+
+const SCOPE_PART = { type: 'pseudo-class', kind: 'scope' }
+
+// Structural stand-in for lightningcss's selector component union, which is not
+// exported in a form that survives the nesting below.
+interface SelectorPart {
+  type: string
+  kind?: string
+  name?: string
+  selectors?: SelectorPart[][]
+}
+
+function rewriteSelector(selector: SelectorPart[]): SelectorPart[] {
+  return selector.map((part) => {
+    if (part.type === 'pseudo-class' && part.kind === 'root') {
+      return SCOPE_PART
+    }
+    if (part.type === 'type' && isRootTypeSelector(part.name ?? '')) {
+      return SCOPE_PART
+    }
+    if (part.type === 'pseudo-class' && DESCENDABLE_PSEUDO_CLASSES.has(part.kind ?? '') && part.selectors) {
+      return { ...part, selectors: part.selectors.map(rewriteSelector) }
+    }
+    return part
+  })
+}
+
 function rewriteRootToScope(css: string): string {
-  const scope = { type: 'pseudo-class', kind: 'scope' } as const
   const processed = lightningcssTransform({
     filename: 'user.css',
     code: Buffer.from(css, 'utf8'),
     minify: false,
     visitor: {
-      Selector(selector) {
-        return selector.map((part) => {
-          if (part.type === 'pseudo-class' && (part as any).kind === 'root') {
-            return scope as unknown as typeof part
-          }
-          if (part.type === 'type' && isRootTypeSelector(part.name)) {
-            return scope as unknown as typeof part
-          }
-          return part
-        })
-      },
+      Selector: selector => rewriteSelector(selector as SelectorPart[]) as typeof selector,
     },
   })
   return Buffer.from(processed.code).toString('utf8')
