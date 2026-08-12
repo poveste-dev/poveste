@@ -2,6 +2,7 @@ name: Svelte 5 tests
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
