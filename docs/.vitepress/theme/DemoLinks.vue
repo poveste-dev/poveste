@@ -1,8 +1,9 @@
 <script lang="ts" setup>
+import type { Framework } from './starters'
 import { launchStackBlitz } from './stackblitz'
 
 defineProps<{
-  framework: string
+  framework: Framework
 }>()
 
 // The online-demo buttons (*.examples.poveste.dev) are omitted until those

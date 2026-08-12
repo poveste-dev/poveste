@@ -18,7 +18,7 @@ Poveste is a tool to generate stories applications (or "books").
 
 [Learn more about Poveste here &raquo;](../index.md)
 
-<DemoLinks framework="svelte3" />
+<DemoLinks framework="svelte" />
 
 ## Installation
 

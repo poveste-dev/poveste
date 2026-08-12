@@ -22,7 +22,9 @@ const POVESTE = 'latest'
 // land on ^8.2.0.
 const VITE = '^8.2.0'
 
-export type Framework = 'vue3' | 'svelte3' | 'nuxt3'
+// Unnumbered on purpose: `svelte3` outlived Svelte 3 by two majors before
+// anyone noticed. A bare framework name never goes stale — see #120.
+export type Framework = 'vue' | 'svelte' | 'nuxt'
 
 export interface Manifest {
   name: string
@@ -65,11 +67,11 @@ export function projectFiles(starter: Starter): ProjectFiles {
   }
 }
 
-function vue3Starter(): Starter {
+function vueStarter(): Starter {
   return {
     openFile: 'src/MyButton.story.vue',
     manifest: manifest(
-      'poveste-vue3-starter',
+      'poveste-vue-starter',
       {
         '@poveste/plugin-vue': POVESTE,
         // v6 peers `^5 || ^6 || ^7 || ^8`, so it already spans Vite 8.
@@ -134,7 +136,7 @@ import MyButton from './MyButton.vue'
   }
 }
 
-function svelte3Starter(): Starter {
+function svelteStarter(): Starter {
   return {
     openFile: 'src/MyButton.story.svelte',
     manifest: manifest('poveste-svelte-starter', {
@@ -195,7 +197,7 @@ export default defineConfig({
   }
 }
 
-function nuxt3Starter(): Starter {
+function nuxtStarter(): Starter {
   return {
     openFile: 'components/MyButton.story.vue',
     manifest: manifest('poveste-nuxt-starter', {
@@ -259,13 +261,13 @@ import MyButton from './MyButton.vue'
 }
 
 export const starters: Record<Framework, () => Starter> = {
-  vue3: vue3Starter,
-  svelte3: svelte3Starter,
-  nuxt3: nuxt3Starter,
+  vue: vueStarter,
+  svelte: svelteStarter,
+  nuxt: nuxtStarter,
 }
 
 export const titles: Record<Framework, string> = {
-  vue3: 'Poveste + Vue 3 starter',
-  svelte3: 'Poveste + Svelte starter',
-  nuxt3: 'Poveste + Nuxt starter',
+  vue: 'Poveste + Vue starter',
+  svelte: 'Poveste + Svelte starter',
+  nuxt: 'Poveste + Nuxt starter',
 }

@@ -18,7 +18,7 @@ Poveste is a tool to generate stories applications (or "books").
 
 [Learn more about Poveste here &raquo;](../index.md)
 
-<DemoLinks framework="vue3" />
+<DemoLinks framework="vue" />
 
 ## Installation
 
@@ -105,7 +105,7 @@ Example:
 
 <div class="demo-links-box border-emerald-200 dark:border-emerald-900">
   <img src="/nuxt.svg" alt="Nuxt logo" class="w-10 h-10 mt-3 object-contain" />
-  <DemoLinks framework="nuxt3" />
+  <DemoLinks framework="nuxt" />
 </div>
 
 Poveste supports Nuxt with the `@poveste/plugin-nuxt` package.
