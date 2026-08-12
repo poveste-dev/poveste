@@ -135,12 +135,6 @@ export default antfu({
     // built file is which. Being wrong there produces a broken book rather than
     // an exception, so it gets its own change: #98.
     'packages/poveste/src/node/build.ts',
-    // Eighteen hits, all `SvelteComponentTyped` on the public `Hst` type. The
-    // rename to `Component<…>` compiles here and breaks every consumer: the
-    // class form carries Svelte 4 slot typing, so `svelte-check` on
-    // `examples/svelte5` goes 1 error → 5, all of them nested story content.
-    // Needs a decision on typing Svelte 5 children first: #99.
-    'packages/poveste-plugin-svelte/src/helpers.ts',
   ],
   languageOptions: {
     parserOptions: {

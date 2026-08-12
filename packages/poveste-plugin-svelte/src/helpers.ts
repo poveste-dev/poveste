@@ -1,6 +1,6 @@
 import type { HstControlOption } from '@poveste/controls'
 import type { Story, StoryProps, Variant, VariantProps } from '@poveste/shared'
-import type { SvelteComponentTyped } from 'svelte'
+import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
   app: any
@@ -18,78 +18,95 @@ export const defineSetupSvelte3 = defineSetupSvelte
 export const defineSetupSvelte4 = defineSetupSvelte
 export const defineSetupSvelte5 = defineSetupSvelte
 
+/**
+ * Props plus Svelte 5 children.
+ *
+ * `StoryProps` and `VariantProps` live in `@poveste/shared` and are shared with
+ * the Vue plugin, so a Svelte-only `Snippet` cannot be added there — it is
+ * intersected in here instead.
+ *
+ * This is what the move off `SvelteComponentTyped` needed. The class form carried
+ * Svelte 4 slot typing, so nested content type-checked implicitly; `Component<P>`
+ * has no slots, and Svelte 5 passes children as a prop (#99).
+ */
+type WithChildren<P> = P & { children?: Snippet }
+
 export interface Hst {
   // Main built-ins
-  Story: typeof SvelteComponentTyped<StoryProps>
-  Variant: typeof SvelteComponentTyped<VariantProps>
+  Story: Component<WithChildren<StoryProps>>
+  Variant: Component<WithChildren<VariantProps>>
   // Controls
-  Button: typeof SvelteComponentTyped
-  ButtonGroup: typeof SvelteComponentTyped<{
+  // Deliberately permissive. This was previously a bare `SvelteComponentTyped`,
+  // i.e. props `any`; it wraps a Vue control whose default slot renders the label,
+  // and the prop set `Wrap` forwards is not pinned down. Narrowing it is its own
+  // change rather than a silent break.
+  Button: Component<WithChildren<Record<string, any>>>
+  ButtonGroup: Component<{
     value?: string
     options: (string | HstControlOption)[]
     title?: string
   }>
-  Checkbox: typeof SvelteComponentTyped<{
+  Checkbox: Component<{
     value?: boolean
     title: string
   }>
-  CheckboxList: typeof SvelteComponentTyped<{
+  CheckboxList: Component<{
     value: string[]
     options: (string | HstControlOption)[]
     title?: string
   }>
-  Text: typeof SvelteComponentTyped<{
+  Text: Component<{
     value?: string
     title: string
   }>
-  Number: typeof SvelteComponentTyped<{
+  Number: Component<{
     value?: number
     title: string
     step?: number
   }>
-  Slider: typeof SvelteComponentTyped<{
+  Slider: Component<{
     value?: number
     title: string
     min: number
     max: number
     step?: number
   }>
-  Textarea: typeof SvelteComponentTyped<{
+  Textarea: Component<{
     value?: string
     title: string
   }>
-  Select: typeof SvelteComponentTyped<{
+  Select: Component<{
     value?: string
     title: string
     options: Record<string, any> | string[] | HstControlOption[]
   }>
-  Radio: typeof SvelteComponentTyped<{
+  Radio: Component<{
     value?: string
     options: HstControlOption[]
     title?: string
   }>
-  Json: typeof SvelteComponentTyped<{
+  Json: Component<{
     value: unknown
     title: string
   }>
-  Shades: typeof SvelteComponentTyped<{
+  Shades: Component<{
     shades: Record<string, any>
     getName?: (key: string, color: string) => string
     search?: string
   }>
-  TokenList: typeof SvelteComponentTyped<{
+  TokenList: Component<{
     tokens: Record<string, string | number | any[] | Record<string, any>>
     getName?: (key: string, value: string | number | any[] | Record<string, any>) => string
   }>
-  TokenGrid: typeof SvelteComponentTyped<{
+  TokenGrid: Component<{
     tokens: Record<string, string | number | any[] | Record<string, any>>
     getName?: (key: string, value: string | number | any[] | Record<string, any>) => string
     colSize?: number
   }>
-  CopyIcon: typeof SvelteComponentTyped<{
+  CopyIcon: Component<{
     content: string
   }>
-  ColorSelect: typeof SvelteComponentTyped<{
+  ColorSelect: Component<{
     value?: string
     title: string
   }>
