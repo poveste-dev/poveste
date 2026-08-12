@@ -106,11 +106,16 @@ Poveste supports SvelteKit through the same `@poveste/plugin-svelte` package —
 separate SvelteKit plugin to install.
 
 ::: info Supported versions
-**SvelteKit 2.55 is the supported floor** (`@sveltejs/kit@^2.55.0`), alongside
-`@sveltejs/vite-plugin-svelte@^7`, which is the first major to peer Vite 8.
+Unlike Vue, Nuxt and Svelte, **no SvelteKit range is declared in `peerDependencies`** —
+`@poveste/plugin-svelte` peers only `svelte@^5.0.0`. What we can vouch for is what CI runs:
+`examples/sveltekit` pins `@sveltejs/kit@^2.55.0` and `@sveltejs/vite-plugin-svelte@^7`.
 
-`examples/sveltekit` is what CI proves, and it is the most thoroughly checked example we
-have: build, Playwright, and `svelte-check` on every pull request.
+The technical floor is lower. SvelteKit `2.53.0` is the first release to peer Vite 8 and
+`@sveltejs/vite-plugin-svelte@^7` — and v7 is in turn the first plugin major to peer Vite 8,
+which Poveste requires. So 2.53+ should work; 2.55+ is what is actually tested.
+
+That example is the most thoroughly checked one we have: build, Playwright, and
+`svelte-check` on every pull request.
 :::
 
 A standalone `poveste.config.ts` works exactly as it does above — Poveste reads it and the
@@ -138,10 +143,14 @@ export default defineConfig({
 })
 ```
 
-The `/// <reference types="poveste" />` line is what types the `poveste` key. Without it
-TypeScript rejects the key as unknown — reach for it before reaching for a cast, because
-`as any` on the config object silently switches off checking for everything inside it,
-including the Poveste options you came for.
+Importing `@poveste/plugin-svelte` is already enough to type the `poveste` key — poveste
+augments Vite's config type, and importing any poveste package pulls that augmentation into
+your program. The `/// <reference types="poveste" />` line makes it explicit, and is what you
+need in a config that sets the `poveste` key without importing a poveste package.
+
+If TypeScript does report the key as unknown, that reference is the fix. Do not reach for
+`as any` on the config object: Vite genuinely checks it for unknown keys, so a cast throws
+away that checking for everything inside — including the Poveste options you came for.
 
 Nothing else needs changing. `svelte.config.js` and your adapter stay as they are, and
 `@poveste/plugin-svelte` already excludes SvelteKit's compile plugin from the stories build,
