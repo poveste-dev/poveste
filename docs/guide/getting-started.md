@@ -90,9 +90,9 @@ a throwaway project with `npm install` — no workspace symlinks — and runs a 
 - **Milestones are targets, not guarantees.** A milestone names the release its issues are aimed
   at. What actually publishes is whatever was ready; the number still comes from the commit
   types, so the notes and the version cannot disagree.
-- **Toolchain work is a standing track, not a milestone.** `track:toolchain` issues ride along
-  with whatever version is shipping instead of being batched into one; that's why they sit in
-  *Backlog* rather than under a version milestone.
+- **Toolchain work is a standing track, not its own milestone.** `track:toolchain` issues wait
+  in *Backlog* and move to a version milestone when someone picks one up, rather than being
+  batched into a release of their own.
 - **Majors are declared, not derived.** No commit type produces one. Pre-1.0 a breaking change
   lands in a minor, so nothing in the log will ever add up to a major on its own.
 
