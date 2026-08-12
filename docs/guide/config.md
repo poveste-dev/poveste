@@ -176,7 +176,7 @@ export const setupVue3 = defineSetupVue3(({ app, story, variant }) => {
 })
 ```
 
-[Learn more](./vue3/app-setup.md)
+[Learn more](./vue/app-setup.md)
 
 ## Theming
 

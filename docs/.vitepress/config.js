@@ -39,11 +39,11 @@ module.exports = {
             items: [
               {
                 text: 'Vue 3',
-                link: '/guide/vue3/getting-started',
+                link: '/guide/vue/getting-started',
               },
               {
                 text: 'Svelte 3',
-                link: '/guide/svelte3/getting-started',
+                link: '/guide/svelte/getting-started',
               },
             ],
           },
@@ -119,11 +119,11 @@ module.exports = {
           items: [
             {
               text: 'Story',
-              link: '/reference/vue3/story',
+              link: '/reference/vue/story',
             },
             {
               text: 'Variant',
-              link: '/reference/vue3/variant',
+              link: '/reference/vue/variant',
             },
           ],
         },
@@ -133,51 +133,51 @@ module.exports = {
           items: [
             {
               text: 'Hst.Story',
-              link: '/reference/svelte3/story',
+              link: '/reference/svelte/story',
             },
             {
               text: 'Hst.Variant',
-              link: '/reference/svelte3/variant',
+              link: '/reference/svelte/variant',
             },
           ],
         },
       ],
-      '/guide/vue3/': [
+      '/guide/vue/': [
         {
           text: 'Guide - Vue 3',
           collapsible: true,
           items: [
             {
               text: 'Getting Started',
-              link: '/guide/vue3/getting-started',
+              link: '/guide/vue/getting-started',
             },
             {
               text: 'Stories',
-              link: '/guide/vue3/stories',
+              link: '/guide/vue/stories',
             },
             {
               text: 'State & Controls',
-              link: '/guide/vue3/controls',
+              link: '/guide/vue/controls',
             },
             {
               text: 'Events',
-              link: '/guide/vue3/events',
+              link: '/guide/vue/events',
             },
             {
               text: 'App setup',
-              link: '/guide/vue3/app-setup',
+              link: '/guide/vue/app-setup',
             },
             {
               text: 'Wrapper',
-              link: '/guide/vue3/wrapper',
+              link: '/guide/vue/wrapper',
             },
             {
               text: 'Documentation',
-              link: '/guide/vue3/docs',
+              link: '/guide/vue/docs',
             },
             {
               text: 'Hierarchy',
-              link: '/guide/vue3/hierarchy',
+              link: '/guide/vue/hierarchy',
             },
           ],
         },
@@ -200,34 +200,34 @@ module.exports = {
           ],
         },
       ],
-      '/guide/svelte3/': [
+      '/guide/svelte/': [
         {
           text: 'Guide - Svelte 3',
           collapsible: true,
           items: [
             {
               text: 'Getting Started',
-              link: '/guide/svelte3/getting-started',
+              link: '/guide/svelte/getting-started',
             },
             {
               text: 'Stories',
-              link: '/guide/svelte3/stories',
+              link: '/guide/svelte/stories',
             },
             {
               text: 'State & Controls',
-              link: '/guide/svelte3/controls',
+              link: '/guide/svelte/controls',
             },
             {
               text: 'Events',
-              link: '/guide/svelte3/events',
+              link: '/guide/svelte/events',
             },
             {
               text: 'Documentation',
-              link: '/guide/svelte3/docs',
+              link: '/guide/svelte/docs',
             },
             {
               text: 'Hierarchy',
-              link: '/guide/svelte3/hierarchy',
+              link: '/guide/svelte/hierarchy',
             },
           ],
         },
@@ -303,15 +303,15 @@ module.exports = {
           items: [
             {
               text: 'Single stories',
-              link: '/examples/vue3/single-stories',
+              link: '/examples/vue/single-stories',
             },
             {
               text: 'Variant stories',
-              link: '/examples/vue3/variant-stories',
+              link: '/examples/vue/variant-stories',
             },
             {
               text: 'Controlled stories',
-              link: '/examples/vue3/controlled-stories',
+              link: '/examples/vue/controlled-stories',
             },
           ],
         },

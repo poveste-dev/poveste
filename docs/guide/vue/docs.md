@@ -32,11 +32,11 @@ If you create a markdown file ending with `.story.md` that isn't related to a si
 
 You can add a frontmatter to the markdown to customize the virtual story with the following properties:
 
-- `id` ([reference](../../reference/vue3/story.md#id))
-- `title` ([reference](../../reference/vue3/story.md#title))
-- `icon` ([reference](../../reference/vue3/story.md#icon))
-- `iconColor` ([reference](../../reference/vue3/story.md#iconcolor))
-- `group` ([reference](../../reference/vue3/story.md#group))
+- `id` ([reference](../../reference/vue/story.md#id))
+- `title` ([reference](../../reference/vue/story.md#title))
+- `icon` ([reference](../../reference/vue/story.md#icon))
+- `iconColor` ([reference](../../reference/vue/story.md#iconcolor))
+- `group` ([reference](../../reference/vue/story.md#group))
 
 Example `Introduction.story.md` file:
 

@@ -57,7 +57,7 @@ Svelte 4 with the Vite we require.
 `@poveste/plugin-svelte` peers only `svelte@^5.0.0`, and it drives Svelte and SvelteKit
 alike. The `^2.55.0` above is what `examples/sveltekit` pins and CI therefore proves, not a
 range we enforce at install time. The technical floor is `2.53.0`, the first SvelteKit to
-peer Vite 8. See [the SvelteKit section](./svelte3/getting-started.md#sveltekit).
+peer Vite 8. See [the SvelteKit section](./svelte/getting-started.md#sveltekit).
 
 Node is the other exception to "declared in `peerDependencies`": the published
 packages carry no `engines` field, so nothing stops you installing on an older Node. `>=26`
@@ -102,10 +102,10 @@ waiting for?".
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
-| [Vue →](./vue3/getting-started.md) | ✅ | ✅ | 🏗️ |
-| [Nuxt →](./vue3/getting-started.md#nuxt) | ✅ | ✅ | 🏗️ |
-| [Svelte →](./svelte3/getting-started.md) | ✅ | - | 🏗️ |
-| [SvelteKit →](./svelte3/getting-started.md#sveltekit) | ✅ | - | 🏗️ |
+| [Vue →](./vue/getting-started.md) | ✅ | ✅ | 🏗️ |
+| [Nuxt →](./vue/getting-started.md#nuxt) | ✅ | ✅ | 🏗️ |
+| [Svelte →](./svelte/getting-started.md) | ✅ | - | 🏗️ |
+| [SvelteKit →](./svelte/getting-started.md#sveltekit) | ✅ | - | 🏗️ |
 | Solid | - | - | - |
 | Angular | - | - | - |
 | React | - ([Alternative](https://www.ladle.dev)) | - | - |

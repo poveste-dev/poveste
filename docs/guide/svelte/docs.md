@@ -14,11 +14,11 @@ If you create a markdown file ending with `.story.md` that isn't related to a si
 
 You can add a frontmatter to the markdown to customize the virtual story with the following properties:
 
-- `id` ([reference](../../reference/svelte3/story.md#id))
-- `title` ([reference](../../reference/svelte3/story.md#title))
-- `icon` ([reference](../../reference/svelte3/story.md#icon))
-- `iconColor` ([reference](../../reference/svelte3/story.md#iconcolor))
-- `group` ([reference](../../reference/svelte3/story.md#group))
+- `id` ([reference](../../reference/svelte/story.md#id))
+- `title` ([reference](../../reference/svelte/story.md#title))
+- `icon` ([reference](../../reference/svelte/story.md#icon))
+- `iconColor` ([reference](../../reference/svelte/story.md#iconcolor))
+- `group` ([reference](../../reference/svelte/story.md#group))
 
 Example `Introduction.story.md` file:
 

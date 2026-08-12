@@ -18,6 +18,38 @@ ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- docs/ netlify.toml 
 # Netlify's build image. (The repo/CI run Node 26; the docs don't need it.)
 NODE_VERSION = "24"
 
+# The framework URL segments carried histoire-era major versions (`/guide/svelte3/`
+# documenting Svelte 5) and were renamed in #120. These are permanent: the old paths have
+# years of inbound links behind them and nothing ever retires them.
+#
+# Order matters — Netlify takes the FIRST matching rule, so every one of these has to sit
+# above the catch-all below. Without them the catch-all would answer a stale URL with a
+# status-200 rewrite to the SPA, which renders VitePress's 404 instead of redirecting.
+[[redirects]]
+from = "/guide/vue3/*"
+to = "/guide/vue/:splat"
+status = 301
+
+[[redirects]]
+from = "/guide/svelte3/*"
+to = "/guide/svelte/:splat"
+status = 301
+
+[[redirects]]
+from = "/reference/vue3/*"
+to = "/reference/vue/:splat"
+status = 301
+
+[[redirects]]
+from = "/reference/svelte3/*"
+to = "/reference/svelte/:splat"
+status = 301
+
+[[redirects]]
+from = "/examples/vue3/*"
+to = "/examples/vue/:splat"
+status = 301
+
 # Fallback for any path with no generated file (real pages are served directly).
 [[redirects]]
 from = "/*"

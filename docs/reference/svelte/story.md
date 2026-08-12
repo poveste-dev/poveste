@@ -31,7 +31,7 @@ Layout of the story. Object with the following properties:
   - with `type: 'grid'` you can specify:
     - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
 
-[Learn more](../../guide/svelte3/stories.md#layout)
+[Learn more](../../guide/svelte/stories.md#layout)
 
 ## `group`
 
@@ -43,7 +43,7 @@ The id of a group to include the story in.
 </Hst.Story>
 ```
 
-[Learn more](../../guide/svelte3/hierarchy.md#groups)
+[Learn more](../../guide/svelte/hierarchy.md#groups)
 
 ## `icon`
 
@@ -122,4 +122,4 @@ Content of the 'Controls' pane used to interact with the story. This will be the
 </Hst.Story>
 ```
 
-[Learn more](../../guide/vue3/controls.md#controls-panel)
+[Learn more](../../guide/vue/controls.md#controls-panel)

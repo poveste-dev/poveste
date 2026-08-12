@@ -138,4 +138,4 @@ Content of the 'Controls' pane used to interact with the story.
 </Hst.Story>
 ```
 
-[Learn more](../../guide/svelte3/controls.md#controls-panel)
+[Learn more](../../guide/svelte/controls.md#controls-panel)
