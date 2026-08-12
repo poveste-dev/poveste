@@ -46,9 +46,7 @@ describe('wrapUserCss', () => {
   })
 
   // `:is()` and `:where()` are plain selector lists, so a root inside one still
-  // means the root. `:not()` and `:has()` are not: rewriting there would change
-  // what the rule matches instead of fixing it, so the walk stops at them —
-  // including an `:is()` nested inside one (#124).
+  // means the root (#124).
   it.each([
     [':is(html, body)', ':is(html, body) { --brand: rebeccapurple }', ':is(:scope, :scope)'],
     [':where(:root)', ':where(:root) { --brand: rebeccapurple }', ':where(:scope)'],
@@ -56,14 +54,28 @@ describe('wrapUserCss', () => {
     [':is(html)', ':is(html) { --brand: rebeccapurple }', ':scope'],
     [':is(.a, body) .card', ':is(.a, body) .card { --brand: rebeccapurple }', ':is(.a, :scope) .card'],
     [':is(.a, :where(body))', ':is(.a, :where(body)) { --brand: rebeccapurple }', ':is(.a, :where(:scope))'],
-    [':not(body)', '.card:not(body) { --brand: rebeccapurple }', '.card:not(body)'],
-    [':has(body)', '.card:has(body) { --brand: rebeccapurple }', '.card:has(body)'],
-    [':not(:is(html))', '.card:not(:is(html)) { --brand: rebeccapurple }', '.card:not(:is(html))'],
-    ['nth-child of', 'li:nth-child(1 of body) { --brand: rebeccapurple }', 'li:nth-child(1 of body)'],
-  ])('handles a root inside %s', (_input, css, expected) => {
+  ])('rewrites a root inside %s', (_input, css, expected) => {
     const out = wrapUserCss(css, { scopeRoot: '.__poveste-render-story' })
 
     expect(selectorsIn(out)).toEqual([expected])
+  })
+
+  // Rewriting inside a negation would change what the rule matches rather than
+  // fix it, so the walk stops at `:not()`/`:has()` — including an `:is()` nested
+  // inside one. A namespaced root is skipped for a different reason: the prefix
+  // is its own part, and `*|:scope` is invalid CSS the browser drops outright.
+  it.each([
+    [':not()', '.card:not(body) { --brand: rebeccapurple }', '.card:not(body)'],
+    [':has()', '.card:has(body) { --brand: rebeccapurple }', '.card:has(body)'],
+    ['an :is() nested in :not()', '.card:not(:is(html)) { --brand: rebeccapurple }', '.card:not(:is(html))'],
+    ['nth-child(… of S)', 'li:nth-child(1 of body) { --brand: rebeccapurple }', 'li:nth-child(1 of body)'],
+    ['any namespace', 'body { color: red }\n*|body { --brand: rebeccapurple }', '*|body'],
+    ['a named namespace', 'body { color: red }\nsvg|body { --brand: rebeccapurple }', 'svg|body'],
+    ['the empty namespace', 'body { color: red }\n|body { --brand: rebeccapurple }', '|body'],
+  ])('leaves a root inside %s alone', (_input, css, expected) => {
+    const out = wrapUserCss(css, { scopeRoot: '.__poveste-render-story' })
+
+    expect(selectorsIn(out)).toContain(expected)
   })
 
   it('leaves :scope alone (idempotent)', () => {

@@ -93,12 +93,17 @@ interface SelectorPart {
 }
 
 function rewriteSelector(selector: SelectorPart[]): SelectorPart[] {
-  return selector.map((part) => {
+  return selector.map((part, index) => {
     if (part.type === 'pseudo-class' && part.kind === 'root') {
       return SCOPE_PART
     }
+    // A namespace is its own part, immediately before the type selector it
+    // qualifies. Rewriting past it emits `*|:scope`, which is invalid — a
+    // prefix cannot qualify a pseudo-class — and the browser drops the rule.
+    // `svg|body` also means a body in the SVG namespace, which is not the
+    // document root, so leaving these alone is right on both counts.
     if (part.type === 'type' && isRootTypeSelector(part.name ?? '')) {
-      return SCOPE_PART
+      return selector[index - 1]?.type === 'namespace' ? part : SCOPE_PART
     }
     if (part.type === 'pseudo-class' && DESCENDABLE_PSEUDO_CLASSES.has(part.kind ?? '') && part.selectors) {
       return { ...part, selectors: part.selectors.map(rewriteSelector) }

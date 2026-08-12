@@ -23,10 +23,17 @@ Two CSS scopes:
 | `:is(html, body) { … }` | `:is(:scope, :scope) { … }` |
 | `.body-copy { … }` | `.body-copy { … }` — unchanged |
 | `.card:not(body) { … }` | `.card:not(body) { … }` — unchanged, see below |
+| `*\|body { … }` | `*\|body { … }` — unchanged, namespaced |
 
-The rewrite reads the selector, not the text, so a class that merely contains the word is left alone.
+The rewrite reads the selector, not the text, so a class that merely contains the word is left alone. A namespaced root is left alone too: `svg\|body` means a body in the SVG namespace, which is not the document root.
 
 A root nested in `:is()` or `:where()` is rewritten too, at any depth — `:is(html, body)` becomes `:is(:scope, :scope)`.
+
+::: tip The rewrite raises specificity
+`html` and `body` are type selectors (specificity `0,0,1`); `:scope` is a pseudo-class (`0,1,0`). A rewritten rule therefore weighs slightly more than what you wrote, and can win against a single-class rule it would otherwise have lost to.
+
+In practice this rarely bites, because the rule it replaces matched nothing at all before. But if a story looks over-styled after upgrading, this is the first thing to check — give the losing rule another class, or write `:where(html)` to keep the weight at zero.
+:::
 
 ::: warning `:not()` and `:has()` are left alone
 `.card:not(body)` and `.card:has(body)` stay exactly as written, including a root nested deeper inside them.
