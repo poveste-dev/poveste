@@ -1,0 +1,56 @@
+name: 📖 Documentation issue
+description: Report something wrong, missing or unclear in the docs
+type: Task
+labels: [docs, to triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the docs! For a problem with Poveste itself rather than the docs, use the bug report instead.
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: Link to the page, ideally to the specific heading.
+      placeholder: https://poveste.dev/guide/css.html#root-selectors
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is wrong with it
+      options:
+        - Incorrect — it says something that is not true
+        - Outdated — it was true once and no longer is
+        - Missing — something that should be documented is not
+        - Unclear — accurate, but hard to follow
+        - Broken link, code sample or example
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the problem
+      description: What does the page say, and what did you expect instead? If something is wrong rather than missing, quoting the sentence helps.
+      placeholder: The page says … but actually …
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording
+      description: Optional. If you already know what it should say, put it here — it is often faster than describing the gap.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Validations
+      description: Before submitting the issue, please make sure you do the following
+      options:
+        - label: Follow our [Code of Conduct](https://github.com/poveste-dev/poveste/blob/main/CODE_OF_CONDUCT.md)
+          required: true
+        - label: Check that there isn't [already an issue](https://github.com/poveste-dev/poveste/issues) reporting the same thing to avoid creating a duplicate.
+          required: true
+        - label: Check that this is about the documentation. For a bug in Poveste itself use the [bug report](https://github.com/poveste-dev/poveste/issues/new?template=bug-report.yml), and for questions open a [GitHub Discussion](https://github.com/poveste-dev/poveste/discussions).
+          required: true
