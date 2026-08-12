@@ -12,6 +12,13 @@ Contributing doesn't necessarily mean you need to write code and open Pull Reque
 - Report typos or issues of the docs.
 - Do you like Poveste? Spread the love on social media!
 
+## Issue triage
+
+Before an issue gets a milestone, it needs a native GitHub issue type (`Bug`, `Feature`, or
+`Task`) plus at least one `a:` area label. That pairing is what keeps the board queryable.
+`perf`, `docs`, `chore` and `spike` still exist as refinements for cases where `Bug` and `Task`
+are too coarse.
+
 ## Packages
 
 This mono-repo contains the following packages:
@@ -149,7 +156,7 @@ pnpm run release patch   # or: minor, major
 
 The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
 
-Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. Milestones name a body of work rather than a version — issues from one milestone routinely ship across several releases.
+Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. A milestone names the release its issues are aimed at, not a guarantee of what ships in it — issues can slip to a later version, so the milestone and the actual release can disagree.
 
 `major` is never reached this way. It is a deliberate stability declaration with its own checklist — see [What 1.0 means](https://poveste.dev/guide/getting-started.html#what-1-0-means).
 
