@@ -2,36 +2,37 @@
   import BaseButton from './BaseButton.svelte'
 
   export let Hst
+
+  const initState = () => ({
+    disabled: false,
+    content: 'Hello world',
+  })
 </script>
 
 <Hst.Story>
-  <Hst.Variant
-    title="Variant 1"
-    initState={() => ({ disabled: false, content: 'Hello world' })}
-    let:state
-  >
-    <BaseButton disabled={state.disabled}>
-      {state.content} 1
-    </BaseButton>
+  <Hst.Variant title="Variant 1" {initState}>
+    {#snippet children({ state })}
+      <BaseButton disabled={state.disabled}>
+        {state.content} 1
+      </BaseButton>
+    {/snippet}
 
-    <svelte:fragment slot="controls" let:state>
+    {#snippet controls({ state })}
       <Hst.Text bind:value={state.content} title="Content 1" />
       <Hst.Checkbox bind:value={state.disabled} title="Disabled 1" />
-    </svelte:fragment>
+    {/snippet}
   </Hst.Variant>
 
-  <Hst.Variant
-    title="Variant 2"
-    initState={() => ({ disabled: false, content: 'Hello world' })}
-    let:state
-  >
-    <BaseButton disabled={state.disabled}>
-      {state.content} 2
-    </BaseButton>
+  <Hst.Variant title="Variant 2" {initState}>
+    {#snippet children({ state })}
+      <BaseButton disabled={state.disabled}>
+        {state.content} 2
+      </BaseButton>
+    {/snippet}
 
-    <svelte:fragment slot="controls" let:state>
+    {#snippet controls({ state })}
       <Hst.Text bind:value={state.content} title="Content 2" />
       <Hst.Checkbox bind:value={state.disabled} title="Disabled 2" />
-    </svelte:fragment>
+    {/snippet}
   </Hst.Variant>
 </Hst.Story>

@@ -27,14 +27,16 @@
     currentVariant.state = { ...currentVariant.state, ...initState() }
   }
 
-  if (!initState && shouldRender && $$slots.controls && !currentVariant.__pvtStateWarned) {
+  // Controls mount only — see the note in RenderStory: the two mounts do not share
+  // a realm for iframe layouts, so this is what keeps it to one warning.
+  if (!initState && shouldRender && slotName === 'controls' && $$slots.controls && !currentVariant.__pvtStateWarned) {
     currentVariant.__pvtStateWarned = true
     console.error([
       `[poveste] Variant "${variant?.title ?? variant?.id}" has a controls slot but no \`initState\`.`,
       'Controls will render and appear to work, but their edits cannot reach the story:',
       'the story is mounted separately for each slot, so a component-local variable is not shared.',
-      'Pass `initState` and read state from the slot —',
-      'https://poveste.dev/guide/svelte/app-setup.html',
+      'Pass `initState` and read state from the snippet —',
+      'https://poveste.dev/guide/svelte/controls.html',
     ].join(' '))
   }
 
@@ -46,10 +48,15 @@
 
   onDestroy(stopWatchingState)
 
+  // `source` may be a function of the state. Story props are evaluated in the
+  // component's script, where the slot's `state` is not in scope, so a string
+  // literal cannot reflect what the controls are doing — which is most of the
+  // point of the source panel (#81).
   $: {
-    if (source != null) {
+    const resolvedSource = typeof source === 'function' ? source(state) : source
+    if (resolvedSource != null) {
       Object.assign(currentVariant, {
-        source,
+        source: resolvedSource,
       })
     }
   }

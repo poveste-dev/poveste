@@ -1,28 +1,35 @@
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst, StoryState } from '@poveste/plugin-svelte'
   import { logEvent } from 'poveste/client'
   import BaseButton from './BaseButton.svelte'
 
   export let Hst: Hst
+
+  const initState = () => ({
+    disabled: false,
+    size: 'medium',
+  })
+
+  function source(state: StoryState) {
+    const attrs = state.disabled ? ' disabled' : ''
+    return `<BaseButton${attrs}>Click me !</BaseButton>`
+  }
 </script>
 
-<Hst.Story
-  title="BaseButton"
-  source="<BaseButton>Click me !</BaseButton>"
-  initState={() => ({ disabled: false, size: 'medium' as 'small' | 'medium' | 'large' })}
-  let:state
->
-  <BaseButton disabled={state.disabled} size={state.size} on:click={event => logEvent('click', event)}>
-    Click me!
-  </BaseButton>
-  <div style="margin-top: 6px;">
-    <label>
-      <input type="checkbox" bind:checked={state.disabled}>
-      Disabled
-    </label>
-  </div>
+<Hst.Story title="BaseButton" {initState} {source}>
+  {#snippet children({ state })}
+    <BaseButton disabled={state.disabled} size={state.size} on:click={event => logEvent('click', event)}>
+      Click me!
+    </BaseButton>
+    <div style="margin-top: 6px;">
+      <label>
+        <input type="checkbox" bind:checked={state.disabled}>
+        Disabled
+      </label>
+    </div>
+  {/snippet}
 
-  <svelte:fragment slot="controls" let:state>
+  {#snippet controls({ state })}
     <Hst.Checkbox
       bind:value={state.disabled}
       title="Disabled"
@@ -33,7 +40,7 @@
       title="Size"
     />
     <pre>{JSON.stringify({ disabled: state.disabled, size: state.size }, null, 2)}</pre>
-  </svelte:fragment>
+  {/snippet}
 </Hst.Story>
 
 <style>

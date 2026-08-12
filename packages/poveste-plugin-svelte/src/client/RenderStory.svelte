@@ -29,14 +29,17 @@
     currentVariant.state = { ...currentVariant.state, ...initState() }
   }
 
-  if (!initState && $$slots.controls && currentVariant && !currentVariant.__pvtStateWarned) {
+  // Only from the mount that renders the controls. The story is mounted once per
+  // slot and, for an iframe layout, in a different realm — so the flag below cannot
+  // dedupe across them and the warning would appear twice.
+  if (!initState && slotName === 'controls' && $$slots.controls && currentVariant && !currentVariant.__pvtStateWarned) {
     currentVariant.__pvtStateWarned = true
     console.error([
       `[poveste] Story "${story?.title ?? story?.id}" has a controls slot but no \`initState\`.`,
       'Controls will render and appear to work, but their edits cannot reach the story:',
       'the story is mounted separately for each slot, so a component-local variable is not shared.',
-      'Pass `initState` and read state from the slot —',
-      'https://poveste.dev/guide/svelte/app-setup.html',
+      'Pass `initState` and read state from the snippet —',
+      'https://poveste.dev/guide/svelte/controls.html',
     ].join(' '))
   }
 
@@ -52,10 +55,15 @@
 
   onDestroy(stopWatchingState)
 
+  // `source` may be a function of the state. Story props are evaluated in the
+  // component's script, where the slot's `state` is not in scope, so a string
+  // literal cannot reflect what the controls are doing — which is most of the
+  // point of the source panel (#81).
   $: {
-    if (source != null) {
+    const resolvedSource = typeof source === 'function' ? source(state) : source
+    if (resolvedSource != null) {
       Object.assign(currentVariant, {
-        source,
+        source: resolvedSource,
       })
     }
   }

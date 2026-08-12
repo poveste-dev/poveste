@@ -76,3 +76,19 @@ test.describe('missing initState', () => {
     expect(warning).toContain('mounted separately for each slot')
   })
 })
+
+test.describe('source panel', () => {
+  // `source` used to be a reactive block in the story's script. With state owned
+  // by the variant it has to be a function of that state, or the panel freezes
+  // at whatever the story rendered first.
+  test('tracks the controls', async ({ page }) => {
+    await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
+    const source = page.getByTestId('story-source-code')
+    const controls = page.getByTestId('story-controls')
+
+    await expect(source).toContainText('<BaseButton>Click me !</BaseButton>')
+
+    await controls.locator('[role="checkbox"]').click()
+    await expect(source).toContainText('<BaseButton disabled>Click me !</BaseButton>')
+  })
+})

@@ -31,7 +31,10 @@ export type StoryState = Record<string, any>
  * Svelte 4 slot typing, so nested content type-checked implicitly; `Component<P>`
  * has no slots, and Svelte 5 passes children as a prop (#99).
  */
-type WithChildren<P> = P & { children?: Snippet<[{ state: StoryState }]> }
+type WithChildren<P> = P & {
+  children?: Snippet<[{ state: StoryState }]>
+  controls?: Snippet<[{ state: StoryState }]>
+}
 
 /**
  * Story state is owned by poveste, not by the story component.
@@ -40,7 +43,11 @@ type WithChildren<P> = P & { children?: Snippet<[{ state: StoryState }]> }
  * and cannot be shared. `initState` seeds `variant.state`, which both mounts read
  * and which the sandbox bridge carries across the iframe boundary (#81).
  */
-type WithState<P> = P & { initState?: () => StoryState }
+type WithState<P> = Omit<P, 'source'> & {
+  initState?: () => StoryState
+  /** A literal, or a function of the variant state so the source panel can track the controls. */
+  source?: string | ((state: StoryState) => string)
+}
 
 export interface Hst {
   // Main built-ins

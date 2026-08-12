@@ -5,33 +5,35 @@
   // neither serialisable nor shared across mounts. Only the control-driven value
   // moves onto the variant state.
   let button
+
+  const initState = () => ({
+    disabled: false,
+  })
 </script>
 
-<Hst.Story
-  title="BindThisVsControls"
-  initState={() => ({ disabled: false })}
-  let:state
->
-  <button bind:this={button} disabled={state.disabled}>
-    Hello Poveste
-  </button>
+<Hst.Story title="BindThisVsControls" {initState}>
+  {#snippet children({ state })}
+    <button bind:this={button} disabled={state.disabled}>
+      Hello Poveste
+    </button>
 
-  <section>
-    button={button}
-  </section>
+    <section>
+      button={button}
+    </section>
 
-  <label>
-    <input
-      type="checkbox"
-      bind:checked={state.disabled}
-    />
-    Disabled
-  </label>
+    <label>
+      <input
+        type="checkbox"
+        bind:checked={state.disabled}
+      />
+      Disabled
+    </label>
+  {/snippet}
 
-  <svelte:fragment slot="controls" let:state>
+  {#snippet controls({ state })}
     <Hst.Checkbox
       bind:value={state.disabled}
       title="Disabled"
     />
-  </svelte:fragment>
+  {/snippet}
 </Hst.Story>

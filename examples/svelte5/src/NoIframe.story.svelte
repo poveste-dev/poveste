@@ -1,25 +1,27 @@
 <script>
   export let Hst
+
+  const initState = () => ({
+    content: 'Some content',
+  })
 </script>
 
-<Hst.Story
-  layout={{ type: 'single', iframe: false }}
-  initState={() => ({ content: 'Some content' })}
-  let:state
->
-  No iframe story content
+<Hst.Story layout={{ type: 'single', iframe: false }} {initState}>
+  {#snippet children({ state })}
+    No iframe story content
 
-  <div>{state.content}</div>
-  <div>
-    <input bind:value={state.content} />
-  </div>
+    <div>{state.content}</div>
+    <div>
+      <input bind:value={state.content} />
+    </div>
+  {/snippet}
 
-  <svelte:fragment slot="controls" let:state>
+  {#snippet controls({ state })}
     <Hst.Text
       bind:value={state.content}
       title="Content"
     />
-  </svelte:fragment>
+  {/snippet}
 </Hst.Story>
 
 <style>
