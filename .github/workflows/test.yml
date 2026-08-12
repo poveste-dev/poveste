@@ -43,6 +43,11 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      # Cheap and needs nothing built, so it runs before the build rather than
+      # next to the smoke test.
+      - name: Check the version tables
+        run: pnpm run test:versions
+
       - name: Build
         run: pnpm run build
 

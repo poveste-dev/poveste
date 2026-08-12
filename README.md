@@ -46,8 +46,8 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 | Vite | `^8.0.0` |
 | Vue | `^3.5.26` |
 | Nuxt | `^4.5.0` |
-| Svelte | `^5.0.0` |
-| SvelteKit | `^2.55.0` |
+| Svelte | `^5.46.4` |
+| SvelteKit | `^2.53.0` |
 
 Every range is backed by a CI job that exercises it — see
 [supported versions](https://poveste.dev/guide/getting-started.html#supported-versions) for
