@@ -2,6 +2,7 @@ name: Vue 3 + Tailwind tests
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
