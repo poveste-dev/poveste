@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    name: Build and test
+    name: Nuxt 4 example
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/test-example

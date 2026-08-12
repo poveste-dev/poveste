@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Test
+    name: Vue 3 example
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/test-example

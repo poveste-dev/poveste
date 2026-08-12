@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    name: Build and test
+    name: Unit tests and smoke
     steps:
       - uses: actions/checkout@v4
 
