@@ -1,7 +1,7 @@
 name: 🚀 New feature proposal
 description: Propose a new feature to be added to Poveste
 type: Feature
-labels: ['enhancement: to triage']
+labels: [to triage]
 body:
   - type: markdown
     attributes:
