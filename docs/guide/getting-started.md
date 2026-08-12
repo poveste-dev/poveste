@@ -78,6 +78,19 @@ a throwaway project with `npm install` — no workspace symlinks — and runs a 
   notes by, so the notes and the version can't disagree.
 - **Milestones are not versions.** They name a body of work, and their issues ship whenever they
   are ready — several from *Toolchain & DX* shipped in 0.3.1 and 0.3.2.
+- **Majors are declared, not derived.** No commit type produces one. Pre-1.0 a breaking change
+  lands in a minor, so nothing in the log will ever add up to a major on its own.
+
+### What 1.0 means
+
+1.0 is a promise that the public surface — the config file, the `Hst` global, `<Story>` and
+`<Variant>` props, the plugin interface and the package names — will not break without a major.
+
+The [Stable surface](https://github.com/poveste-dev/poveste/milestone/6) milestone is that
+promise's checklist. Everything in it either costs a major to fix afterwards, or is something we
+already advertise and do not yet deliver. When the milestone is empty the 1.0 conversation is
+open — it does not happen by itself, and the issues in it are the whole answer to "what is 1.0
+waiting for?".
 
 ## Supported frameworks
 
