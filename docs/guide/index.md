@@ -39,6 +39,11 @@ Poveste is a tool to generate stories applications (or "books").
   <DemoLinks framework="svelte" />
 </div>
 
+<div class="demo-links-box border-red-200 dark:border-red-900">
+  <img src="/svelte.svg" alt="SvelteKit logo" class="w-10 h-10 mt-3 object-contain" />
+  <DemoLinks framework="sveltekit" />
+</div>
+
 A story is a scenario where you showcase in your browser one or more components for specific use cases.
 
 Stories are useful for several reasons:

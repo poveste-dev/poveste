@@ -16,3 +16,8 @@
   <img src="/svelte.svg" alt="Svelte logo" class="w-10 h-10 mt-3 object-contain" />
   <DemoLinks framework="svelte" />
 </div>
+
+<div class="demo-links-box border-red-200 dark:border-red-900">
+  <img src="/svelte.svg" alt="SvelteKit logo" class="w-10 h-10 mt-3 object-contain" />
+  <DemoLinks framework="sveltekit" />
+</div>
