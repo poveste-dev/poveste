@@ -4,43 +4,35 @@
   import BaseButton from './BaseButton.svelte'
 
   export let Hst: Hst
-
-  let disabled = false
-  let size = 'medium'
-
-  let source
-
-  $: {
-    source = `<BaseButton`
-    if (disabled) {
-      source += ` disabled`
-    }
-    source += `>Click me !</BaseButton>`
-  }
 </script>
 
-<Hst.Story title="BaseButton" {source}>
-  <BaseButton {disabled} {size} on:click={event => logEvent('click', event)}>
+<Hst.Story
+  title="BaseButton"
+  source="<BaseButton>Click me !</BaseButton>"
+  initState={() => ({ disabled: false, size: 'medium' as 'small' | 'medium' | 'large' })}
+  let:state
+>
+  <BaseButton disabled={state.disabled} size={state.size} on:click={event => logEvent('click', event)}>
     Click me!
   </BaseButton>
   <div style="margin-top: 6px;">
     <label>
-      <input type="checkbox" bind:checked={disabled}>
+      <input type="checkbox" bind:checked={state.disabled}>
       Disabled
     </label>
   </div>
 
-  <svelte:fragment slot="controls">
+  <svelte:fragment slot="controls" let:state>
     <Hst.Checkbox
-      bind:value={disabled}
+      bind:value={state.disabled}
       title="Disabled"
     />
     <Hst.Select
-      bind:value={size}
+      bind:value={state.size}
       options={['small', 'medium', 'large']}
       title="Size"
     />
-    <pre>{JSON.stringify({ disabled, size }, null, 2)}</pre>
+    <pre>{JSON.stringify({ disabled: state.disabled, size: state.size }, null, 2)}</pre>
   </svelte:fragment>
 </Hst.Story>
 

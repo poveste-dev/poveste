@@ -18,6 +18,8 @@ export const defineSetupSvelte3 = defineSetupSvelte
 export const defineSetupSvelte4 = defineSetupSvelte
 export const defineSetupSvelte5 = defineSetupSvelte
 
+export type StoryState = Record<string, any>
+
 /**
  * Props plus Svelte 5 children.
  *
@@ -29,12 +31,21 @@ export const defineSetupSvelte5 = defineSetupSvelte
  * Svelte 4 slot typing, so nested content type-checked implicitly; `Component<P>`
  * has no slots, and Svelte 5 passes children as a prop (#99).
  */
-type WithChildren<P> = P & { children?: Snippet }
+type WithChildren<P> = P & { children?: Snippet<[{ state: StoryState }]> }
+
+/**
+ * Story state is owned by poveste, not by the story component.
+ *
+ * The story is mounted once per slot, so a component-local variable exists twice
+ * and cannot be shared. `initState` seeds `variant.state`, which both mounts read
+ * and which the sandbox bridge carries across the iframe boundary (#81).
+ */
+type WithState<P> = P & { initState?: () => StoryState }
 
 export interface Hst {
   // Main built-ins
-  Story: Component<WithChildren<StoryProps>>
-  Variant: Component<WithChildren<VariantProps>>
+  Story: Component<WithState<WithChildren<StoryProps>>>
+  Variant: Component<WithState<WithChildren<VariantProps>>>
   // Controls
   // Deliberately permissive. This was previously a bare `SvelteComponentTyped`,
   // i.e. props `any`; it wraps a Vue control whose default slot renders the label,

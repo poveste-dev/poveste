@@ -8,6 +8,7 @@
   export let icon = null
   export let iconColor = null
   export let docsOnly = false
+  export let initState = null
 
   const addStory = getContext('__pvtAddStory')
   const file = getContext('__pvtStoryFile')
@@ -25,10 +26,16 @@
 
   addStory(story)
 
+  // Collection renders the story's markup purely to discover its variants, but
+  // that markup now reads `state`. Without a value here every expression
+  // referencing it throws and collection fails with a bare
+  // `Cannot read properties of undefined` (#81).
+  const state = initState ? initState() : {}
+
   setContext('__pvtStory', story)
   setContext('__pvtAddVariant', (variant) => {
     story.variants.push(variant)
   })
 </script>
 
-<slot />
+<slot {state} />

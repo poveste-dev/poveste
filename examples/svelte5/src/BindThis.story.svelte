@@ -1,12 +1,18 @@
 <script>
   export let Hst
 
-  let disabled = false
+  // Deliberately still a component local: `bind:this` is a DOM node, which is
+  // neither serialisable nor shared across mounts. Only the control-driven value
+  // moves onto the variant state.
   let button
 </script>
 
-<Hst.Story title="BindThisVsControls">
-  <button bind:this={button} {disabled}>
+<Hst.Story
+  title="BindThisVsControls"
+  initState={() => ({ disabled: false })}
+  let:state
+>
+  <button bind:this={button} disabled={state.disabled}>
     Hello Poveste
   </button>
 
@@ -17,14 +23,14 @@
   <label>
     <input
       type="checkbox"
-      bind:checked={disabled}
+      bind:checked={state.disabled}
     />
     Disabled
   </label>
 
-  <svelte:fragment slot="controls">
+  <svelte:fragment slot="controls" let:state>
     <Hst.Checkbox
-      bind:value={disabled}
+      bind:value={state.disabled}
       title="Disabled"
     />
   </svelte:fragment>

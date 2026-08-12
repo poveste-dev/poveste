@@ -4,48 +4,39 @@
   import ColorButton from './ColorButton.svelte'
 
   export let Hst: Hst
-
-  let disabled = false
-  let size = 'medium'
-  let colorselect = '#000000'
-
-  let source
-
-  $: {
-    source = `<ColorButton`
-    if (disabled) {
-      source += ` disabled`
-    }
-    source += `>Click me !</ColorButton>`
-  }
 </script>
 
-<Hst.Story title="ColorButton" {source}>
-  <ColorButton {disabled} {colorselect} on:click={event => logEvent('click', event)}>
+<Hst.Story
+  title="ColorButton"
+  source="<ColorButton>Click me !</ColorButton>"
+  initState={() => ({ disabled: false, size: 'medium', colorselect: '#000000' })}
+  let:state
+>
+  <ColorButton disabled={state.disabled} colorselect={state.colorselect} on:click={event => logEvent('click', event)}>
     Click me!
   </ColorButton>
   <div style="margin-top: 6px;">
     <label>
-      <input type="checkbox" bind:checked={disabled}>
+      <input type="checkbox" bind:checked={state.disabled}>
       Disabled
     </label>
   </div>
 
-  <svelte:fragment slot="controls">
+  <svelte:fragment slot="controls" let:state>
     <Hst.Checkbox
-      bind:value={disabled}
+      bind:value={state.disabled}
       title="Disabled"
     />
     <Hst.Select
-      bind:value={size}
+      bind:value={state.size}
       options={['small', 'medium', 'large']}
       title="Size"
     />
     <Hst.ColorSelect
-      bind:value={colorselect}
+      bind:value={state.colorselect}
       title="Background Color"
     />
-    <pre>{JSON.stringify({ disabled, size }, null, 2)}</pre>
+    <pre>{JSON.stringify({ disabled: state.disabled, size: state.size }, null, 2)}</pre>
   </svelte:fragment>
 </Hst.Story>
 

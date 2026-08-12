@@ -28,7 +28,7 @@ test.describe('state sync', () => {
   // deliberately does not provide, which is a design decision rather than a fix.
   //
   // Tracked in #81.
-  test.fixme('syncs disabled state between iframe story and controls', async ({ page }) => {
+  test('syncs disabled state between iframe story and controls', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
     const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
     const controls = page.getByTestId('story-controls')
@@ -43,7 +43,7 @@ test.describe('state sync', () => {
     await expect(controls.locator('pre')).toContainText('"disabled": false')
   })
 
-  test.fixme('syncs text state between inline story and controls', async ({ page }) => {
+  test('syncs text state between inline story and controls', async ({ page }) => {
     await page.goto('/story/src-noiframe-story-svelte?variantId=_default')
     const sandbox = page.getByTestId('sandbox-render')
     const controls = page.getByTestId('story-controls')
@@ -55,5 +55,24 @@ test.describe('state sync', () => {
 
     await sandbox.locator('input').fill('Meow')
     await expect(controls.locator('input')).toHaveValue('Meow')
+  })
+})
+
+test.describe('missing initState', () => {
+  test('says loudly that controls cannot reach the story', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        errors.push(message.text())
+      }
+    })
+
+    await page.goto('/story/src-unmigratedstate-story-svelte?variantId=_default')
+    await expect(page.getByTestId('story-controls').locator('[role="checkbox"]')).toBeVisible()
+
+    const warning = errors.find(text => text.includes('[poveste]'))
+    expect(warning, 'expected a [poveste] console error naming the missing initState').toBeTruthy()
+    expect(warning).toContain('no `initState`')
+    expect(warning).toContain('mounted separately for each slot')
   })
 })
