@@ -45,21 +45,26 @@ is wider than the CI job behind it, the range is the bug.
 | [Vite](https://vite.dev) | `^8.0.0` | every example |
 | [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue3` — build + Playwright (`Vue 3 tests`) |
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `examples/nuxt4` — build + Playwright (`Nuxt 4 tests`) |
-| [Svelte](https://svelte.dev) | `^5.0.0` | `examples/svelte5` — build + Playwright (`Svelte 5 tests`) |
-| [SvelteKit](https://svelte.dev/docs/kit)* | `^2.55.0` | `examples/sveltekit` — build + Playwright + `svelte-check` (`SvelteKit tests`) |
+| [Svelte](https://svelte.dev) | `^5.46.4` | `examples/svelte5` — build + Playwright (`Svelte 5 tests`) |
+| [SvelteKit](https://svelte.dev/docs/kit)* | `^2.53.0` | `examples/sveltekit` — build + Playwright + `svelte-check` (`SvelteKit tests`) |
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's
 last compatible `@sveltejs/vite-plugin-svelte` (v3) caps at Vite 5, so no release pairs
 Svelte 4 with the Vite we require.
 
-\* **SvelteKit is the second exception.** No package declares a `@sveltejs/kit` range —
-`@poveste/plugin-svelte` peers only `svelte@^5.0.0`, and it drives Svelte and SvelteKit
-alike. The `^2.55.0` above is what `examples/sveltekit` pins and CI therefore proves, not a
-range we enforce at install time. The technical floor is `2.53.0`, the first SvelteKit to
-peer Vite 8. See [the SvelteKit section](./svelte/getting-started.md#sveltekit).
+The same chain sets the exact Svelte number. Vite 8 forces
+`@sveltejs/vite-plugin-svelte@^7` — the first major to peer it — and v7 in turn requires
+`svelte@^5.46.4`. Svelte `5.0`–`5.46.3` therefore cannot be assembled into a working Poveste
+project at all, which is why the range starts where it does rather than at `^5.0.0`.
 
-Node is the other exception to "declared in `peerDependencies`": the published
+\* **SvelteKit is declared as an _optional_ peer.** `@poveste/plugin-svelte` drives plain
+Svelte and SvelteKit alike, so a plain-Svelte project has no `@sveltejs/kit` installed and a
+required peer would warn on every such install. Optional means the range is enforced when
+Kit is present and ignored when it is not. See [the SvelteKit
+section](./svelte/getting-started.md#sveltekit).
+
+Node is the one exception to "declared in `peerDependencies`": the published
 packages carry no `engines` field, so nothing stops you installing on an older Node. `>=26`
 is what CI runs and therefore all we can vouch for. Older Node may well work — Vite 8 itself
 allows `^20.19.0 || >=22.12.0` — but you would be the one testing it.

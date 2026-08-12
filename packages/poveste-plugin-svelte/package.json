@@ -30,8 +30,15 @@
     "watch": "concurrently \"vite build --watch\" \"tsc -d -P tsconfig.build.json --watch\" \"pnpm run build:types --watch\""
   },
   "peerDependencies": {
+    "@sveltejs/kit": "^2.53.0",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "poveste": "workspace:^",
-    "svelte": "^5.0.0"
+    "svelte": "^5.46.4"
+  },
+  "peerDependenciesMeta": {
+    "@sveltejs/kit": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@poveste/controls": "workspace:^",

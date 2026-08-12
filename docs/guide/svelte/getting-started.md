@@ -46,9 +46,15 @@ export default defineConfig({
 ```
 
 ::: info Supported versions
-**Svelte 5 is the supported floor** (`svelte@^5.0.0`). Svelte 4 is not in the peer range:
-its last compatible `@sveltejs/vite-plugin-svelte` is v3, which caps at Vite 5, and Poveste
-requires Vite 8. No release pairs the two.
+**`svelte@^5.46.4` is the supported floor**, alongside `@sveltejs/vite-plugin-svelte@^7` —
+both declared as peers.
+
+The chain is: Poveste requires Vite 8 → only `@sveltejs/vite-plugin-svelte@7` peers Vite 8
+→ v7 requires `svelte@^5.46.4`. Svelte `5.0`–`5.46.3` cannot be assembled into a working
+project, which is why the floor is not `^5.0.0`.
+
+Svelte 4 is further out for the same reason: its last compatible plugin is v3, which caps at
+Vite 5. No release pairs Svelte 4 with the Vite we require.
 :::
 
 ## TypeScript stories
@@ -106,13 +112,12 @@ Poveste supports SvelteKit through the same `@poveste/plugin-svelte` package —
 separate SvelteKit plugin to install.
 
 ::: info Supported versions
-Unlike Vue, Nuxt and Svelte, **no SvelteKit range is declared in `peerDependencies`** —
-`@poveste/plugin-svelte` peers only `svelte@^5.0.0`. What we can vouch for is what CI runs:
-`examples/sveltekit` pins `@sveltejs/kit@^2.55.0` and `@sveltejs/vite-plugin-svelte@^7`.
+`@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0` as an **optional** peer — enforced
+when Kit is installed, ignored when it is not, since the same package serves plain Svelte.
 
-The technical floor is lower. SvelteKit `2.53.0` is the first release to peer Vite 8 and
-`@sveltejs/vite-plugin-svelte@^7` — and v7 is in turn the first plugin major to peer Vite 8,
-which Poveste requires. So 2.53+ should work; 2.55+ is what is actually tested.
+`2.53.0` is the first SvelteKit release to peer Vite 8 and `@sveltejs/vite-plugin-svelte@^7`,
+and v7 is in turn the first plugin major to peer Vite 8, which Poveste requires. CI runs
+ahead of the floor: `examples/sveltekit` pins `^2.55.0`.
 
 That example is the most thoroughly checked one we have: build, Playwright, and
 `svelte-check` on every pull request.
