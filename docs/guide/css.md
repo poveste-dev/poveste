@@ -9,6 +9,35 @@ Two CSS scopes:
 - Your CSS, transitively imported via `poveste.setup.ts` (or directly from a story file), is wrapped in `@scope (.__poveste-render-story)`. It only reaches DOM rendered inside a story container.
 - Poveste's own CSS is wrapped in `@scope (.poveste-app-root) to (.__poveste-render-story)`. It only reaches Poveste's chrome and stops at story boundaries.
 
+`@scope` gives *one-directional* containment: it limits which elements a rule can match. The mutual protection above exists because both sides are wrapped, not because `@scope` provides it. CSS that is wrapped by neither — `globalStyles`, [`?global`](#global-per-import-escape), or anything loaded outside the setup path — is outside both scopes and reaches everything.
+
+### Inheritance still crosses the boundary
+
+"Stops at story boundaries" is true of *matching* and false of *inheritance*. A rule cannot match story content, but any inherited property it sets at or above the boundary is still inherited by it.
+
+This is not a leak to work around — it is what `@scope` does — but it has one consequence worth knowing. Poveste's chrome sets its own typography on its root, so **every story inherits chrome typography unless it sets its own**:
+
+```css
+/* chrome, after wrapping */
+:scope { font-family: 'Noto Sans Display', system-ui, sans-serif; }
+```
+
+Story content computes that font in both render paths. A component can therefore look subtly wrong in the book and right in your app, purely from the inherited font.
+
+::: warning Grid iframes are not an escape from this
+An iframe is a separate document, so nothing is inherited across it — but the sandbox loads the same chrome stylesheet, which applies the same typography to the iframe's own root. Story content computes `Noto Sans Display` inside the grid iframes too.
+:::
+
+To make a story independent of chrome typography, set the properties on your own root — which is what the [root-selector rewrite](#root-selectors) below is for:
+
+```css
+/* poveste.setup.ts → your CSS */
+html {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+}
+```
+
 ### Root selectors
 
 `:root`, `html` and `body` all sit above the scoping root once your CSS is wrapped, so a rule targeting them could never match. Poveste rewrites all three to `:scope`, which resolves to `.__poveste-render-story` — inside a story that is the only root there is.
@@ -124,4 +153,4 @@ Poveste's own sandbox-side defaults are wrapped in `@layer poveste-defaults` so 
 - Safari 17.4+ (March 2024)
 - Firefox 128+ (July 2024)
 
-There is no JavaScript fallback. If you need to support older browsers, use the `isolateStyles: false` escape hatch.
+There is no JavaScript fallback, and the failure is not a graceful one. An unrecognised at-rule is discarded along with its whole block, so on a browser without `@scope` every wrapped rule disappears — chrome and story CSS alike, leaving an unstyled book rather than a slightly-off one. On those browsers `isolateStyles: false` is a requirement, not a preference.
