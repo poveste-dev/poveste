@@ -99,6 +99,7 @@ waiting for?".
 | [Vue →](./vue3/getting-started.md) | ✅ | ✅ | 🏗️ |
 | [Nuxt →](./vue3/getting-started.md#nuxt) | ✅ | ✅ | 🏗️ |
 | [Svelte →](./svelte3/getting-started.md) | ✅ | - | 🏗️ |
+| [SvelteKit →](./svelte3/getting-started.md#sveltekit) | ✅ | - | 🏗️ |
 | Solid | - | - | - |
 | Angular | - | - | - |
 | React | - ([Alternative](https://www.ladle.dev)) | - | - |

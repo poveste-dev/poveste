@@ -100,6 +100,53 @@ And then run them with `npm run story:dev` or `npm run story:build`.
 
 You can specify additional CLI options like `--port`. For a full list of CLI options, run `npx poveste --help` in your project.
 
+## SvelteKit
+
+Poveste supports SvelteKit through the same `@poveste/plugin-svelte` package — there is no
+separate SvelteKit plugin to install.
+
+::: info Supported versions
+**SvelteKit 2.55 is the supported floor** (`@sveltejs/kit@^2.55.0`), alongside
+`@sveltejs/vite-plugin-svelte@^7`, which is the first major to peer Vite 8.
+
+`examples/sveltekit` is what CI proves, and it is the most thoroughly checked example we
+have: build, Playwright, and `svelte-check` on every pull request.
+:::
+
+A standalone `poveste.config.ts` works exactly as it does above — Poveste reads it and the
+`poveste` key of your Vite config and merges the two. Since SvelteKit already owns
+`vite.config.ts`, keeping everything in one file is usually the tidier option, and it is what
+`examples/sveltekit` does:
+
+```ts
+/// <reference types="poveste" />
+
+import { HstSvelte } from '@poveste/plugin-svelte'
+import { sveltekit } from '@sveltejs/kit/vite'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    sveltekit(),
+  ],
+  poveste: {
+    plugins: [
+      HstSvelte(),
+    ],
+    setupFile: './src/poveste.setup.ts',
+  },
+})
+```
+
+The `/// <reference types="poveste" />` line is what types the `poveste` key. Without it
+TypeScript rejects the key as unknown — reach for it before reaching for a cast, because
+`as any` on the config object silently switches off checking for everything inside it,
+including the Poveste options you came for.
+
+Nothing else needs changing. `svelte.config.js` and your adapter stay as they are, and
+`@poveste/plugin-svelte` already excludes SvelteKit's compile plugin from the stories build,
+so you do not need to configure `viteIgnorePlugins` yourself.
+
 ## Configuration
 
 Learn more about configuring Poveste [here](../config.md).
