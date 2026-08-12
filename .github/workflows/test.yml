@@ -48,6 +48,9 @@ jobs:
       - name: Check the version tables
         run: pnpm run test:versions
 
+      - name: Check the npm package pages
+        run: pnpm run test:readmes
+
       - name: Build
         run: pnpm run build
 
