@@ -9,6 +9,106 @@ kept verbatim as the history poveste forked from. Its version numbers are higher
 poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
 whole.
 
+## v0.5.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.0...v0.5.1)
+
+Documentation only. Nothing in any published package changed.
+
+### 📖 Documentation
+
+- Give Svelte an App setup guide page. It documents what the plugin does rather than mirroring
+  the Vue page: every accepted hook name runs, so exporting both `setupSvelte4` and
+  `setupSvelte5` runs your setup twice; `app` is the mounted component instance rather than an
+  application object, so there is no `use`/`provide` to call; and a `setupApp` on `<Hst.Story>`
+  does not reach explicit `<Hst.Variant>` children the way Vue's does
+  ([#189](https://github.com/poveste-dev/poveste/pull/189))
+- Add a SvelteKit "Try it live" starter, the one supported target with a required CI job and no
+  starter, along with the demo boxes that had nowhere to point
+  ([#193](https://github.com/poveste-dev/poveste/pull/193))
+
+## v0.5.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.4.0...v0.5.0)
+
+**Svelte story state moves onto `initState`.** This is a breaking change for Svelte, and the
+only one: Vue and Nuxt are untouched.
+
+Svelte 5 removed `$capture_state` / `$inject_state`, the API histoire used to read a story's
+state out of one component instance and push it into another. Poveste mounts each story once per
+slot — once to fill the controls panel, once to render the preview — so without that bridge a
+plain `let` in a story exists twice, and a control writes to the copy your component is not
+reading. Controls appeared to work and changed nothing.
+
+Poveste now owns the state instead, which is also what lets it cross the sandbox iframe:
+
+```diff
+-<script>
+-  let disabled = false
+-</script>
++<script>
++  const initState = () => ({ disabled: false })
++</script>
+
+-<Hst.Story title="MyButton">
+-  <MyButton {disabled} />
+-  <svelte:fragment slot="controls">
+-    <Hst.Checkbox bind:value={disabled} title="Disabled" />
+-  </svelte:fragment>
+-</Hst.Story>
++<Hst.Story title="MyButton" {initState}>
++  {#snippet children({ state })}
++    <MyButton disabled={state.disabled} />
++  {/snippet}
++  {#snippet controls({ state })}
++    <Hst.Checkbox bind:value={state.disabled} title="Disabled" />
++  {/snippet}
++</Hst.Story>
+```
+
+A story that has controls but no `initState` logs an error naming itself and linking the
+migration guide, so the old shape fails loudly rather than silently.
+
+The README's "drop-in successor" claim is now split accordingly: Vue and Nuxt migrate by swapping
+one dependency, Svelte needs this one change.
+
+### 🚨 Breaking Changes
+
+- Own Svelte story state so controls can reach the story — state moves onto `initState` and is
+  read from the `children` / `controls` snippets
+  ([#172](https://github.com/poveste-dev/poveste/pull/172))
+
+### 🩹 Fixes
+
+- Keep the `bind:` setter when wrapping a Svelte control. Svelte 5 passes bound props as
+  getter/setter accessors, and spreading them invoked the getter and dropped the setter, so a
+  control could never write back ([#147](https://github.com/poveste-dev/poveste/pull/147))
+- Retype the Svelte `Hst` surface off the deprecated `SvelteComponentTyped`
+  ([#145](https://github.com/poveste-dev/poveste/pull/145))
+
+### 🏡 Chore
+
+- Type-check `examples/svelte5` in CI — the example that exercises the public `Hst` surface most
+  had no type-check at all ([#177](https://github.com/poveste-dev/poveste/pull/177))
+- Smoke-test the Svelte plugin before publishing. The release gate packed and installed only the
+  Vue plugin, while this release's headline was the Svelte rewrite
+  ([#178](https://github.com/poveste-dev/poveste/pull/178))
+
+### 📖 Documentation
+
+- Qualify the drop-in claim and document the Svelte state migration
+  ([#174](https://github.com/poveste-dev/poveste/pull/174))
+- Give every published package a real npm page. The `poveste` page told readers to install
+  histoire ([#185](https://github.com/poveste-dev/poveste/pull/185))
+- Correct the README version table, and assert it against the declared peer ranges in CI
+  ([#181](https://github.com/poveste-dev/poveste/pull/181))
+- Stop calling the Svelte guide "Svelte 3", and link SvelteKit from the nav and sidebar
+  ([#179](https://github.com/poveste-dev/poveste/pull/179))
+- Drop an unrenderable arrow that showed as a tofu box on every "Learn more" sidebar entry
+  ([#182](https://github.com/poveste-dev/poveste/pull/182))
+- Say when to edit the generated GitHub release body
+  ([#144](https://github.com/poveste-dev/poveste/pull/144))
+
 ## v0.4.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.3.3...v0.4.0)
