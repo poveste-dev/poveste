@@ -1,5 +1,6 @@
 name: 🐞 Bug report
 description: Report an issue with Poveste
+type: Bug
 labels: [to triage]
 body:
   - type: markdown
