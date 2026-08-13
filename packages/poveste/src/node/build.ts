@@ -39,6 +39,24 @@ const PRELOAD_MODULES = [
   'vendor',
 ]
 
+// Kept out of the shared `vendor` chunk because only the app UI imports them,
+// while `vendor` is imported by the sandbox too.
+//
+// Shiki is the source panel's syntax highlighter: 386 grammars and 60 themes,
+// and it was the bulk of an 11.5 MB `vendor`. The sandbox entry pulls seven Vue
+// exports from that chunk and nothing else, but a grid renders one sandbox
+// iframe per cell and each iframe is its own realm — so every cell parsed and
+// executed all 11.5 MB again, with the HTTP cache saving only the download.
+// That was 34% of a scroll profile spent in top-level vendor evaluation (#103).
+//
+// They go to a chunk of their own rather than being left to Rollup: leaving
+// placement automatic emitted one chunk per grammar — 402 assets — and tripled
+// the blocking time it was meant to cut.
+const APP_ONLY_VENDORS = [
+  /[\\/]node_modules[\\/]shiki[\\/]/,
+  /[\\/]node_modules[\\/]@shikijs[\\/]/,
+]
+
 const PREFETCHED_MODULES = [
   'StoryView',
   'reactivity',
@@ -156,6 +174,10 @@ export async function build(ctx: Context) {
       config.build.rollupOptions.output = {
         manualChunks(id) {
           if (!id.includes('@poveste/app') && id.includes('node_modules')) {
+            if (APP_ONLY_VENDORS.some(test => test.test(id))) {
+              return 'highlighter'
+            }
+
             for (const test of ctx.config.build?.excludeFromVendorsChunk ?? []) {
               if ((
                 typeof test === 'string' && id.includes(test)
