@@ -3,6 +3,16 @@ import { expect, test } from '@playwright/test'
 // A broken `@property` registration still shows the right total, just
 // instantly — so the value and the animation need separate assertions.
 
+const SR_VALUE = '.poveste-home-counter-value ~ .sr-only'
+
+// `allTextContents()` has no auto-wait: it resolves against whatever matches at
+// that instant, so on a slow paint it returns [] and the test fails claiming
+// there are no counters. Settle the count first, then read.
+async function expectedTotals(page: import('@playwright/test').Page) {
+  await expect(page.locator(SR_VALUE)).toHaveCount(3)
+  return page.locator(SR_VALUE).allTextContents()
+}
+
 function countTransitions(page: import('@playwright/test').Page) {
   return page.evaluate(() =>
     document.getAnimations().filter(a => 'transitionProperty' in a
@@ -19,11 +29,8 @@ test.describe('home counters', () => {
   test('counts up to the real totals', async ({ page }) => {
     await page.goto('/')
 
-    // The sr-only value is the source of truth. `allTextContents` does not wait
-    // for anything, so the count has to be asserted with a locator first.
-    const values = page.locator('.poveste-home-counter-value ~ .sr-only')
-    await expect(values).toHaveCount(3)
-    const expected = await values.allTextContents()
+    // The sr-only value is the source of truth.
+    const expected = await expectedTotals(page)
     expect(expected.every(v => /^\d+$/.test(v))).toBe(true)
 
     await expect.poll(() => counterValues(page)).toEqual(expected)
@@ -60,9 +67,8 @@ test.describe('home counters', () => {
     test('lands on the total without animating', async ({ page }) => {
       await page.goto('/')
 
-      const values = page.locator('.poveste-home-counter-value ~ .sr-only')
-      await expect(values).toHaveCount(3)
-      await expect.poll(() => counterValues(page)).toEqual(await values.allTextContents())
+      const expected = await expectedTotals(page)
+      await expect.poll(() => counterValues(page)).toEqual(expected)
       expect(await countTransitions(page)).toBe(0)
     })
   })

@@ -24,64 +24,43 @@ const gridTemplateWidth = computed(() => {
   return layoutWidth
 })
 
-const margin = 16
 const gap = 16
 
-const itemWidth = ref(16)
+// Rows kept mounted on each side of the viewport, so a scroll does not expose a
+// blank band before the next update lands.
+const overscanRows = 2
+
+// What to render before any item has reported a height. One row would be enough
+// to measure with, but the row width is not known yet either.
+const initialCount = 10
+
 const maxItemHeight = ref(0)
-const maxCount = ref(10)
-const countPerRow = ref(0)
-const visibleRows = ref(0)
 
 const el = ref<HTMLDivElement>(null)
+const scrollTop = ref(0)
+const viewportHeight = ref(0)
+
+const variants = computed(() => storyStore.currentStory.variants)
 
 useResizeObserver(el, () => {
-  updateMaxCount()
+  updateWindow()
   updateSize()
 })
 
-function updateMaxCount() {
-  if (!maxItemHeight.value) return
-
-  const width = el.value!.clientWidth - margin * 2
-  const height = el.value!.clientHeight
-  const scrollTop = el.value!.scrollTop
-
-  // width = (countPerRow - 1) * gap + countPerRow * itemWidth.value
-
-  // W = (C - 1) * G + C * I
-  // W = C * G - G + C * I
-  // W + G = C * G + C * I
-  // W + G = C * (G + I)
-  // (W + G) / (G + I) = C
-
-  countPerRow.value = Math.floor((width + gap) / (itemWidth.value + gap))
-  visibleRows.value = Math.ceil((height + scrollTop + gap) / (maxItemHeight.value + gap))
-  const newMaxCount = countPerRow.value * visibleRows.value
-  if (maxCount.value < newMaxCount) {
-    maxCount.value = newMaxCount
-  }
-
-  if (storyStore.currentVariant) {
-    const index = storyStore.currentStory.variants.indexOf(storyStore.currentVariant)
-    if (index + 1 > maxCount.value) {
-      maxCount.value = index + 1
-    }
-  }
+function updateWindow() {
+  if (!el.value) return
+  scrollTop.value = el.value.scrollTop
+  viewportHeight.value = el.value.clientHeight
 }
 
-function onItemResize(w: number, h: number) {
-  itemWidth.value = w
+// The reported width is ignored: `columnCount` is what CSS lays out, so it is
+// the authority on how many items sit in a row.
+function onItemResize(_w: number, h: number) {
   if (maxItemHeight.value < h) {
     maxItemHeight.value = h
-    updateMaxCount()
+    updateWindow()
   }
 }
-
-watch(() => storyStore.currentVariant, () => {
-  maxItemHeight.value = 0 // Reset max height
-  updateMaxCount()
-})
 
 // Grid size
 
@@ -105,13 +84,60 @@ function updateSize() {
 
 onMounted(() => {
   updateSize()
+  updateWindow()
 })
 
 useResizeObserver(gridEl, () => {
   updateSize()
 })
 
-const columnCount = computed(() => Math.min(storyStore.currentStory.variants.length, Math.floor((viewWidth.value + gap) / (gridColumnWidth.value + gap))))
+const columnCount = computed(() => Math.max(1, Math.min(variants.value.length, Math.floor((viewWidth.value + gap) / (gridColumnWidth.value + gap)))))
+
+// The window is derived from what is on screen — a start *and* an end — rather
+// than from a high-water mark of everything scrolled past. `columnCount` is what
+// CSS actually lays out, so the row maths uses it rather than a second count
+// derived from the measured item width.
+const rowHeight = computed(() => maxItemHeight.value + gap)
+const measured = computed(() => maxItemHeight.value > 0)
+const rowCount = computed(() => Math.ceil(variants.value.length / columnCount.value))
+
+const startIndex = computed(() => {
+  if (!measured.value) return 0
+  const firstRow = Math.floor(scrollTop.value / rowHeight.value) - overscanRows
+  return Math.max(0, firstRow) * columnCount.value
+})
+
+const endIndex = computed(() => {
+  if (!measured.value) return Math.min(variants.value.length, initialCount)
+  const lastRow = Math.ceil((scrollTop.value + viewportHeight.value) / rowHeight.value) + overscanRows
+  return Math.min(variants.value.length, Math.max(lastRow, 1) * columnCount.value)
+})
+
+const visibleVariants = computed(() => variants.value.slice(startIndex.value, endIndex.value))
+
+// The spacer holds the full scroll extent; the grid is translated into place
+// inside it. Before anything is measured there is nothing to reserve, and a
+// height derived from a zero row height would be `Infinitypx` — dropped by the
+// browser, which is what left the grid with no scroll extent at all.
+const totalHeight = computed(() => measured.value ? rowCount.value * rowHeight.value - gap : undefined)
+const offsetY = computed(() => measured.value ? (startIndex.value / columnCount.value) * rowHeight.value : 0)
+
+// Selecting a variant that is outside the window has to move the scroller,
+// since the item it would otherwise scroll to is not mounted.
+watch(() => storyStore.currentVariant, (variant) => {
+  maxItemHeight.value = 0 // Reset max height
+  updateWindow()
+
+  if (!variant || !el.value || !measured.value) return
+  const index = variants.value.indexOf(variant)
+  if (index === -1) return
+
+  const top = Math.floor(index / columnCount.value) * rowHeight.value
+  if (top < scrollTop.value || top + rowHeight.value > scrollTop.value + viewportHeight.value) {
+    el.value.scrollTop = top
+    updateWindow()
+  }
+})
 </script>
 
 <template>
@@ -119,13 +145,13 @@ const columnCount = computed(() => Math.min(storyStore.currentStory.variants.len
     <div
       ref="el"
       class="overflow-y-auto flex flex-1"
-      @scroll="updateMaxCount()"
+      @scroll="updateWindow()"
     >
       <div class="flex w-0 flex-1 mx-4">
         <div
           class="m-auto"
           :style="{
-            minHeight: `${(storyStore.currentStory.variants.length / countPerRow) * (maxItemHeight + gap) - gap}px`,
+            minHeight: totalHeight != null ? `${totalHeight}px` : undefined,
           }"
         >
           <div
@@ -133,11 +159,12 @@ const columnCount = computed(() => Math.min(storyStore.currentStory.variants.len
             class="grid gap-4 my-4"
             :style="{
               gridTemplateColumns: `repeat(${columnCount}, ${gridColumnWidth}px)`,
+              transform: offsetY ? `translateY(${offsetY}px)` : undefined,
             }"
           >
             <StoryVariantGridItem
-              v-for="(variant, index) of storyStore.currentStory.variants.slice(0, maxCount)"
-              :key="index"
+              v-for="variant of visibleVariants"
+              :key="variant.id"
               :variant="variant"
               :story="storyStore.currentStory"
               @resize="onItemResize"

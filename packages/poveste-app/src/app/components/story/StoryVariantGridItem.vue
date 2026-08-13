@@ -4,7 +4,7 @@ import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon } from '@poveste/controls'
 import { useResizeObserver } from '@vueuse/core'
-import { computed, ref, toRefs } from 'vue'
+import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
@@ -56,12 +56,25 @@ const el = ref<HTMLDivElement>()
 
 const { autoScroll } = useScrollOnActive(isActive, el)
 
-useResizeObserver(el, () => {
-  if (props.variant.previewReady) {
-    emit('resize', el.value!.clientWidth, el.value!.clientHeight)
-    if (isActive.value) {
-      autoScroll()
-    }
+function reportSize() {
+  if (!el.value || !props.variant.previewReady) return
+  emit('resize', el.value.clientWidth, el.value.clientHeight)
+  if (isActive.value) {
+    autoScroll()
+  }
+}
+
+useResizeObserver(el, reportSize)
+
+// The observer fires once on mount and then only on a real size change. The
+// sandbox reports ready about a second later, and the item often never changes
+// size again — so the one callback that did happen was skipped by the guard
+// above and the grid never learned any item's height. It then divided by a
+// zero row count, produced `Infinitypx` for its scroll spacer, and stayed stuck
+// at its initial ten items with the rest unreachable (#103).
+watch(() => props.variant.previewReady, (ready) => {
+  if (ready) {
+    nextTick(reportSize)
   }
 })
 
