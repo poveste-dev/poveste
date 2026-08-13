@@ -8,6 +8,7 @@ import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
 import { EVENT_SEND, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from '../../util/const'
+import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
 import { getSandboxUrl } from '../../util/sandbox'
 import { toRawDeep } from '../../util/state'
@@ -56,7 +57,19 @@ const storyStore = useStoryStore()
 
 storyStore.setPreviewReady(props.variant, false)
 
+// Floor for a reported height, and what a cell shows before its sandbox reports.
+const MIN_HEIGHT = 40
+
+// A cell may grow to its story but not past this, because a grid row is as tall
+// as its tallest item — one long variant would otherwise stretch every sibling
+// in its row to match.
+const MAX_AUTO_HEIGHT = 400
+
 const reportedHeight = ref<number | null>(null)
+
+const placeholderHeight = computed(() => (
+  firstReportedHeight.value?.storyId === props.story.id ? firstReportedHeight.value.height : MIN_HEIGHT
+))
 
 useEventListener(window, 'message', (event) => {
   // With many grid iframes mounted, every sandbox postMessage hits every
@@ -73,9 +86,18 @@ useEventListener(window, 'message', (event) => {
       setPreviewReady()
       break
     case SANDBOX_HEIGHT:
-      if (typeof event.data.h === 'number') {
-        const next = Math.max(40, event.data.h)
+      // The sandbox reports on its first frames, before the story mounts, and
+      // those carry the empty body — 0, or a few px of margin. Clamping one to
+      // the floor would count as a real measurement and lock the cell out of
+      // the placeholder below, which is what left rows stuck at 40px. Anything
+      // under the floor renders as the floor anyway, so nothing is lost by
+      // waiting for a bigger number.
+      if (typeof event.data.h === 'number' && event.data.h >= MIN_HEIGHT) {
+        const next = event.data.h
         if (next !== reportedHeight.value) reportedHeight.value = next
+        if (props.autoHeight && firstReportedHeight.value?.storyId !== props.story.id) {
+          firstReportedHeight.value = { storyId: props.story.id, height: next }
+        }
       }
       break
   }
@@ -133,6 +155,26 @@ watch(() => settings, () => {
   immediate: true,
 })
 
+// `auto-height` — the grid — sizes a cell to the story it renders, and that
+// wins over the responsive height. The responsive size is for examining one
+// component at a viewport; applied to every cell it just makes the grid
+// unreadable. A stored `responsiveHeight` of 600 gives 729px cells holding one
+// small button, which is the shape #198 was filed about.
+function previewStyle(isResponsiveEnabled: boolean, finalWidth: number | null, finalHeight: number | null) {
+  const style: Record<string, string> = {}
+
+  if (isResponsiveEnabled) {
+    if (finalWidth) style.width = `${finalWidth}px`
+    if (finalHeight) style.height = `${finalHeight}px`
+  }
+
+  if (props.autoHeight) {
+    style.height = `${Math.min(reportedHeight.value ?? placeholderHeight.value, MAX_AUTO_HEIGHT)}px`
+  }
+
+  return style
+}
+
 // Iframe load
 
 function onIframeLoad() {
@@ -163,10 +205,7 @@ function onIframeLoad() {
         'invisible': !isIframeLoaded,
         'pointer-events-none': resizing,
       }"
-      :style="isResponsiveEnabled ? {
-        width: finalWidth ? `${finalWidth}px` : null,
-        height: finalHeight ? `${finalHeight}px` : null,
-      } : (props.autoHeight && reportedHeight ? { height: `${reportedHeight}px` } : undefined)"
+      :style="previewStyle(isResponsiveEnabled, finalWidth, finalHeight)"
       data-test-id="preview-iframe"
       @load="onIframeLoad()"
     />
