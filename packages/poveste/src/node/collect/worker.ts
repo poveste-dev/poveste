@@ -25,6 +25,19 @@ export interface ReturnData {
 
 const _moduleCache = new ModuleCacheMap()
 let _runner: ViteNodeRunner
+// One DOM environment for the worker's lifetime, not one per story.
+//
+// A framework runtime is externalised, so node caches it for as long as the
+// worker lives, and it may capture the DOM it first saw. Svelte 5 does exactly
+// that: `init_operations()` reads the `firstChild` getter off `Node.prototype`
+// once and keeps it. Handing the next run a fresh jsdom left that getter bound
+// to the previous one, and calling it threw `'get firstChild' called on an
+// object that is not a valid instance of Node` — only on a re-collect, because
+// the first run is the one that binds it.
+//
+// Tying the environment to the same lifetime as those modules is what keeps the
+// two consistent. Documents are reset per run instead.
+let _domEnv: ReturnType<typeof createDomEnv> | undefined
 let _rpc: ReturnType<typeof createBirpc<{
   fetchModule: FetchFunction
   resolveId: ResolveIdFunction
@@ -61,7 +74,10 @@ export default async (payload: Payload): Promise<ReturnData> => {
     },
   }))
 
-  const { destroy: destroyDomEnv } = createDomEnv()
+  _domEnv ??= createDomEnv()
+  // Each story gets a clean document rather than a clean environment.
+  window.document.body.replaceChildren()
+  window.document.head.replaceChildren()
 
   const el = window.document.createElement('div')
 
@@ -85,8 +101,6 @@ export default async (payload: Payload): Promise<ReturnData> => {
       s.docsText = text
     })
   }
-
-  destroyDomEnv()
 
   const endTime = performance.now()
   console.log(pc.dim(`${payload.storyFile.relativePath} ${Math.round(endTime - startTime)}ms (setup:${Math.round(beforeExecuteTime - startTime)}ms, execute:${Math.round(afterExecuteTime - beforeExecuteTime)}ms, run:${Math.round(afterRunTime - afterExecuteTime)}ms)`))
