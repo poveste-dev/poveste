@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-// `util/config` re-exports a virtual module Vite generates from the book's
+// `util/config` re-exports a virtual module Vite generates from the book's own
 // config, so the tests supply it directly.
 const config: { theme: { darkClass?: string }, sandboxDarkClass?: string } = { theme: {} }
 
@@ -10,52 +10,46 @@ vi.mock('../app/util/config', () => ({
   },
 }))
 
-// Pulls in browser storage on import; unrelated to the pure function here.
+// Touches browser storage on import; unrelated to the pure function under test.
 vi.mock('../app/util/dark', () => ({ isDark: { value: false } }))
 
 const { previewDarkClasses } = await import('../app/util/color-scheme')
 
+function darkClassesFor({ darkClass = 'dark', sandboxDarkClass }: { darkClass?: string, sandboxDarkClass?: string }) {
+  config.theme = { darkClass }
+  config.sandboxDarkClass = sandboxDarkClass
+  return previewDarkClasses()
+}
+
 describe('previewDarkClasses', () => {
-  beforeEach(() => {
-    config.theme = { darkClass: 'dark' }
-    config.sandboxDarkClass = undefined
+  it('returns the theme class for a book that configures neither', () => {
+    expect(darkClassesFor({})).toEqual(['dark'])
   })
 
-  it('returns the theme class alone for a book on defaults', () => {
-    expect(previewDarkClasses()).toEqual(['dark'])
-  })
-
+  // #126: the deprecated option used to default to `dark` and be emitted here
+  // too, which is what made the three render paths disagree.
   it('returns the theme class alone when only it is configured', () => {
-    config.theme = { darkClass: 'my-dark' }
-
-    // #126: the deprecated option used to default to `dark` and be emitted
-    // here too, which is what made the three render paths disagree.
-    expect(previewDarkClasses()).toEqual(['my-dark'])
+    expect(darkClassesFor({ darkClass: 'my-dark' })).toEqual(['my-dark'])
   })
 
-  it('adds an explicitly configured sandboxDarkClass', () => {
-    config.theme = { darkClass: 'my-dark' }
-    config.sandboxDarkClass = 'legacy'
-
-    expect(previewDarkClasses()).toEqual(['my-dark', 'legacy'])
+  it('appends sandboxDarkClass when a book still sets it', () => {
+    expect(darkClassesFor({ darkClass: 'my-dark', sandboxDarkClass: 'legacy' })).toEqual(['my-dark', 'legacy'])
   })
 
-  it('does not repeat a sandboxDarkClass that matches the theme class', () => {
-    config.sandboxDarkClass = 'dark'
-
-    expect(previewDarkClasses()).toEqual(['dark'])
+  it('returns one class when both names are the same', () => {
+    expect(darkClassesFor({ darkClass: 'dark', sandboxDarkClass: 'dark' })).toEqual(['dark'])
   })
 
   // `classList.toggle('')` throws, and the sandbox runs it during boot, so an
-  // empty entry would leave every preview blank rather than merely unstyled.
-  it.each([
-    ['an empty theme class', { darkClass: '' }, undefined, []],
-    ['an empty sandbox class', { darkClass: 'dark' }, '', ['dark']],
-    ['an undefined theme class', {}, 'legacy', ['legacy']],
-  ])('drops %s', (_name, theme, legacy, expected) => {
-    config.theme = theme
-    config.sandboxDarkClass = legacy
+  // empty entry leaves every preview blank rather than merely unstyled. Only
+  // the empty string reaches here — defu fills an undefined class.
+  describe('when a configured class name is empty', () => {
+    it('drops an empty theme class', () => {
+      expect(darkClassesFor({ darkClass: '' })).toEqual([])
+    })
 
-    expect(previewDarkClasses()).toEqual(expected)
+    it('drops an empty sandboxDarkClass', () => {
+      expect(darkClassesFor({ sandboxDarkClass: '' })).toEqual(['dark'])
+    })
   })
 })

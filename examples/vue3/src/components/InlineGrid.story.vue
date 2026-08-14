@@ -2,11 +2,7 @@
 import BaseButton from './BaseButton.vue'
 </script>
 
-<!--
-  `iframeGrid: false` renders grid cells inline rather than one sandbox per
-  cell. Nothing else in the examples exercises that path, which is how the grid
-  came to disagree with the other two about dark classes (#126).
--->
+<!-- `iframeGrid: false` renders cells inline; nothing else covers that path. -->
 <template>
   <Story
     title="InlineGrid"
