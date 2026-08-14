@@ -7,16 +7,18 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:4567',
+    baseURL: 'http://localhost:4569',
     trace: 'on-first-retry',
     testIdAttribute: 'data-test-id',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
+  // Port is unique per example: `reuseExistingServer` would otherwise adopt
+  // another book's preview and test it instead (#175).
   webServer: {
     command: 'pnpm run story:preview',
-    url: 'http://localhost:4567',
+    url: 'http://localhost:4569',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

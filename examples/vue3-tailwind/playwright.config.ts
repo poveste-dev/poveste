@@ -14,6 +14,8 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
+  // Port is unique per example: `reuseExistingServer` would otherwise adopt
+  // another book's preview and test it instead (#175).
   webServer: {
     command: 'pnpm run story:preview',
     url: 'http://localhost:4571',

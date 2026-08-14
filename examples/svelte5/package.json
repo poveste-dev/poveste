@@ -6,7 +6,7 @@
   "scripts": {
     "story:dev": "poveste dev",
     "story:build": "poveste build",
-    "story:preview": "poveste preview --port 4567",
+    "story:preview": "poveste preview --port 4569",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "playwright test",
     "test:dev": "playwright test --ui",
