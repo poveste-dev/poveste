@@ -1,8 +1,20 @@
 @import '@poveste/controls/dist/index.es.css';
 
+/*
+ * Transparent so the preview background chosen in the toolbar — a preset, the
+ * checkerboard, or nothing — shows through the iframe.
+ *
+ * Deliberately not `!important`. This file is wrapped in `@layer
+ * poveste-defaults` so that a user's own rules outrank it, and an important
+ * declaration inside a layer beats unlayered normal ones, which inverts that.
+ * The `!important` predates the layer by four years: it was how a default won
+ * before layers existed. Keeping it meant `body { background: … }` in a
+ * consumer's stylesheet never painted their story, while every other property
+ * in the same rule did.
+ */
 html,
 body {
-  background: transparent !important;
+  background: transparent;
 }
 
 body {
