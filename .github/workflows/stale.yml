@@ -1,0 +1,32 @@
+name: Close stale need-repro issues
+
+# Enforces what the bug report template promises: issues labeled `need
+# repro` get a warning after 7 days of inactivity, and are closed after
+# 14 if still no reproduction.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      # Please look up the latest version from
+      # https://github.com/actions/stale/releases
+      - uses: actions/stale@v11.0.0
+        with:
+          only-labels: need repro
+          days-before-stale: 7
+          days-before-close: 7
+          stale-issue-label: stale
+          stale-issue-message: >
+            This issue is missing a reproduction and has had no activity for 7 days.
+            It will be closed in 7 days if no reproduction is provided.
+          close-issue-message: >
+            Closing due to missing reproduction. Feel free to reopen with a reproduction if this is still an issue.
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
