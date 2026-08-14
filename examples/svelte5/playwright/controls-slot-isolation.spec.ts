@@ -1,17 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-// #173. The controls slot renders through the same `GenericRenderStory`
-// component as the story body, so it carried the same scope-root class, and a
-// consumer's page-level rule repainted Poveste's own panel — label styling,
-// dropdown and icon buttons included.
-//
-// The split is between page-level rules and author-written ones. `html`, `body`
-// and `:root` mean the consumer's page, so they stop at the story. A class the
-// consumer wrote still applies in the panel, because that markup is theirs.
-//
-// `src/poveste.css` declares only custom properties at page level, so the
-// signal here is whether they are set on the panel rather than whether it is
-// visibly repainted — the fixture deliberately no longer restyles the book.
+// #173. The controls slot renders through the same component as the story body,
+// so it carried the same scope-root class and a consumer's page-level rule
+// styled Poveste's own panel. Page-level rules stop at the story; the
+// consumer's own classes keep working in the panel.
 
 const SLOT = '.__poveste-controls-slot'
 const STORY = '/story/src-basebutton-story-svelte?variantId=_default'
@@ -21,8 +13,7 @@ test.describe('controls slot isolation', () => {
     await page.goto(STORY)
     await expect(page.getByTestId('story-controls')).toBeVisible()
 
-    // Asserted separately because losing the marker is the silent way this
-    // regresses: the rest would still pass against a panel rendering no slot.
+    // Separate: losing the marker would leave the rest passing vacuously.
     await expect(page.locator(SLOT)).toHaveCount(1)
 
     const tokens = await page.evaluate((sel) => {
@@ -34,8 +25,6 @@ test.describe('controls slot isolation', () => {
       }
     }, SLOT)
 
-    // Set on `body` and `:root` by the consumer; both are rewritten to `:scope`
-    // by the isolation pass, and `:scope` used to match this element.
     expect(tokens).toEqual({ body: '', root: '' })
   })
 
@@ -43,9 +32,7 @@ test.describe('controls slot isolation', () => {
     await page.goto(STORY)
     await expect(page.locator(SLOT)).toHaveCount(1)
 
-    // `.user-card` is the consumer's own rule from the same stylesheet.
-    // Excluding the panel wholesale would kill this too, which is the
-    // over-correction this guards against.
+    // Guards the over-correction: excluding the panel wholesale kills this too.
     const painted = await page.evaluate((sel) => {
       const slot = document.querySelector(sel)
       if (!slot) return null

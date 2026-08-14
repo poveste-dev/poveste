@@ -99,11 +99,8 @@ describe('wrapUserCss', () => {
     expect(occurrences).toBe(1)
   })
 
-  // #173. The controls slot renders through the same component as the story
-  // body, so it carries the same scope-root class and a user's `body` rule
-  // repainted Poveste's own panel. Page-level rules stop at the story body;
-  // rules the author wrote against their own markup keep working there, since
-  // that markup is theirs.
+  // #173. Page-level rules stop at the controls slot, which carries the same
+  // scope-root class as the story body; author-written rules still reach it.
   describe('with excludeRootClass', () => {
     const opts = {
       scopeRoot: '.__poveste-render-story',

@@ -1,16 +1,10 @@
 import { expect, test } from '@playwright/test'
 
-// `BaseButton.vue` carries `text-red-500`, and this example's whole stylesheet
-// is `@import 'tailwindcss'`. That class is the fixture for histoire's
-// 10e4927 — "support CSS + retrieve PostCSS config" — and until now nothing
-// asserted it, so the only signal that Nuxt's CSS pipeline still reaches
-// stories was somebody looking at the book and noticing the button was red.
-//
-// The isolation pass emits the utility as
-//   @layer utilities { @scope (.__poveste-render-story) { .text-red-500 { … } } }
-// which has two ways to fail quietly: the utility never arrives in the sandbox
-// at all, or it arrives with `--color-red-500` undefined, in which case `color`
-// is invalid at computed-value time and the text just inherits.
+// `BaseButton.vue` carries `text-red-500` and this example's stylesheet is only
+// `@import 'tailwindcss'` — the fixture for Nuxt CSS support since histoire's
+// 10e4927, previously unasserted. The utility is emitted inside both a cascade
+// layer and an `@scope`, so it can fail by never arriving or by arriving with
+// its theme variable undefined, where `color` silently inherits instead.
 
 const RED_500 = /oklch\(0\.637 0\.237 25\.331\)/
 
@@ -21,9 +15,8 @@ test.describe('tailwind utilities in the sandbox', () => {
     const button = page.frameLocator('iframe[data-test-id="preview-iframe"]').first().locator('button')
     await expect(button).toBeVisible()
 
-    // Asserting the computed colour rather than the class: the class is in the
-    // template either way, so `toHaveClass` would pass against a sandbox the
-    // stylesheet never reached.
+    // The computed colour, not the class: the class is in the template either
+    // way, so `toHaveClass` would pass without the stylesheet.
     await expect(button).toHaveCSS('color', RED_500)
   })
 
@@ -49,8 +42,7 @@ test.describe('tailwind utilities in the sandbox', () => {
     const items = page.locator('.poveste-story-variant-grid-item')
     await expect(items.first()).toBeVisible()
 
-    // A grid cell is its own realm, so the stylesheet has to arrive in each one
-    // separately — a regression could easily leave only the first cell styled.
+    // Each cell is its own realm, so the stylesheet must arrive in all of them.
     const colors = await page.evaluate(async () => {
       const cells = [...document.querySelectorAll('.poveste-story-variant-grid-item')]
       const read = () => cells.map((c) => {
