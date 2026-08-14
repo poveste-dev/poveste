@@ -4,15 +4,18 @@ import pc from 'picocolors'
 import { resolveConfigFile } from '../config.js'
 import { createContext } from '../context.js'
 import { createServer } from '../server.js'
+import { resolvePort } from './port.js'
 
 export interface DevOptions {
-  port: number
+  port?: number | string
   open?: boolean
   host?: string | boolean
   config?: string
 }
 
 export async function devCommand(options: DevOptions) {
+  const port = resolvePort(options.port, 'dev')
+
   let stop: () => Promise<void>
 
   async function start() {
@@ -21,7 +24,7 @@ export async function devCommand(options: DevOptions) {
       mode: 'dev',
     })
     const { server, viteConfigFile, close } = await createServer(ctx, {
-      port: options.port,
+      port,
       open: options.open,
       host: options.host,
     })

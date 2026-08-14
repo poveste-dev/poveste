@@ -1,13 +1,16 @@
 import { createContext } from '../context.js'
 import { startPreview } from '../preview.js'
+import { resolvePort } from './port.js'
 
 export interface PreviewOptions {
-  port?: number
+  port?: number | string
   host?: string | boolean
   open?: boolean
 }
 
 export async function previewCommand(options: PreviewOptions) {
+  const port = resolvePort(options.port, 'preview')
+
   const ctx = await createContext({
     mode: 'build',
   })
@@ -19,7 +22,7 @@ export async function previewCommand(options: PreviewOptions) {
   }
 
   const { printUrls } = await startPreview({
-    port: options.port,
+    port,
     host: options.host,
     open: options.open,
   }, ctx)
