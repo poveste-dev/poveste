@@ -85,10 +85,9 @@ export function createDomEnv() {
   return {
     window,
     destroy,
-    pristineKeys: {
-      window: new Set(Object.keys(window)),
-      global: new Set(Object.keys(globalThis)),
-    },
+    // `populateGlobal` does `global.window = global`, so `window` here is
+    // `globalThis` — one surface, not two.
+    pristineKeys: new Set(Object.keys(globalThis)),
   }
 }
 
@@ -106,6 +105,8 @@ export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' 
   doc.body?.replaceChildren()
 
   try {
+    // Only present when the key was proxied onto the global, which varies by
+    // node version.
     env.window.localStorage?.clear()
     env.window.sessionStorage?.clear()
   }
@@ -114,14 +115,9 @@ export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' 
   }
 
   // Additions only: the modules that installed the rest are cached, not re-run.
-  for (const [target, pristine] of [
-    [env.window, env.pristineKeys.window],
-    [globalThis, env.pristineKeys.global],
-  ] as const) {
-    for (const key of Object.keys(target)) {
-      if (!pristine.has(key)) {
-        delete (target as Record<string, unknown>)[key]
-      }
+  for (const key of Object.keys(globalThis)) {
+    if (!env.pristineKeys.has(key)) {
+      delete (globalThis as Record<string, unknown>)[key]
     }
   }
 }

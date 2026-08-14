@@ -70,7 +70,8 @@ describe('resetDomEnv', () => {
     doc.documentElement.setAttribute('lang', 'fr')
     doc.body.append(doc.createElement('div'))
     doc.head.append(doc.createElement('style'))
-    env.window.localStorage.setItem('seen', '1')
+    // Proxied onto the global only on some node versions.
+    env.window.localStorage?.setItem('seen', '1')
     ;(env.window as any).__setupInstalled = true
 
     resetDomEnv(env)
@@ -79,7 +80,7 @@ describe('resetDomEnv', () => {
     expect(doc.documentElement.getAttributeNames()).toEqual([])
     expect(doc.body.children).toHaveLength(0)
     expect(doc.head.children).toHaveLength(0)
-    expect(env.window.localStorage.getItem('seen')).toBeNull()
+    expect(env.window.localStorage?.getItem('seen') ?? null).toBeNull()
     // A setup marking itself installed would skip later stories in the worker.
     expect((env.window as any).__setupInstalled).toBeUndefined()
   })
