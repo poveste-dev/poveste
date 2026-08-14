@@ -26,7 +26,12 @@ export async function startPreview(options: StartPreviewOptions, ctx: Context): 
       port,
       host: options.host,
       open: options.open,
-      strictPort: false,
+      // A port asked for by name has to be that port or nothing. Moving to the
+      // next free one serves the book where nobody is looking, and lands it on
+      // whatever example owns that number, whose suite then adopts it (#175).
+      // Without an explicit port there is no such expectation, and `build`'s
+      // internal preview reads the port back off the server.
+      strictPort: options.port != null,
     },
   })
 
