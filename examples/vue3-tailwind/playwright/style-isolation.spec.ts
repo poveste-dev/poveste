@@ -62,6 +62,38 @@ test.describe('style isolation (consumer on Tailwind v4)', () => {
     await expect(page.locator('body')).not.toHaveCSS('background-color', CONSUMER_TOMATO)
   })
 
+  test('paints the story with the consumer\'s body rule, across the whole sandbox', async ({ page }) => {
+    await openStory(page)
+
+    // The mirror of the test above: the same `body { background }` that must not
+    // reach the chrome must reach the story, and reach all of it.
+    //
+    // `sandbox.css` sets `html, body { background: transparent }` so the
+    // toolbar's background shows through the iframe. That reset carried
+    // `!important` from 2022, four years before the cascade layer it now sits
+    // in, and an important declaration inside a layer beats unlayered normal
+    // ones — inverting the layer whose entire purpose is letting consumer rules
+    // win. The tell was a content-sized stripe: the story root took the colour,
+    // `body` could not, so nothing propagated to the canvas.
+    const measured = await page.evaluate(async ({ tomato }) => {
+      const frame = document.querySelector('iframe[data-test-id="preview-iframe"]') as HTMLIFrameElement
+      for (let i = 0; i < 100; i++) {
+        const doc = frame?.contentDocument
+        const root = doc?.querySelector('.__poveste-render-story')
+        if (doc && root && getComputedStyle(doc.body).backgroundColor === tomato) {
+          return { frame: frame.clientHeight, content: Math.round(root.getBoundingClientRect().height) }
+        }
+        await new Promise(r => setTimeout(r, 100))
+      }
+      const doc = frame?.contentDocument
+      return { bodyBg: doc ? getComputedStyle(doc.body).backgroundColor : null }
+    }, { tomato: CONSUMER_TOMATO })
+
+    expect(measured, 'the story body never took the consumer background').toHaveProperty('frame')
+    expect((measured as { frame: number, content: number }).frame)
+      .toBeGreaterThan((measured as { frame: number, content: number }).content)
+  })
+
   test('keeps the consumer\'s universal selector from resetting the chrome', async ({ page }) => {
     await openStory(page)
 

@@ -6,9 +6,19 @@
   --user-accent: deeppink;
 }
 
+/*
+ * Custom properties only — same rule as the vue3 example. A real declaration
+ * here restyles every story in the book, because the sandbox honours a
+ * page-level rule (correctly), and a background or font that shouts is
+ * unpleasant to actually work in.
+ *
+ * It still crosses the boundary under test: a page-level declaration must reach
+ * the story and must not reach poveste's controls panel. The cases that need a
+ * loud, visible declaration live in `examples/vue3-tailwind`, which exists to be
+ * an adversarial consumer and is not somewhere anyone reads stories.
+ */
 body {
-  background: var(--user-accent);
-  font-family: cursive;
+  --user-body-token: 14px;
 }
 
 * {
