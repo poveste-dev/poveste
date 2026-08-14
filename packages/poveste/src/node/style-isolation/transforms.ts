@@ -3,11 +3,7 @@ import { transform as lightningcssTransform } from 'lightningcss'
 
 export interface WrapOptions {
   scopeRoot: string
-  /**
-   * Bare class name the rewritten page-level selectors must not match, so
-   * `body`/`:root` rules stop at the story and never reach the controls slot,
-   * which carries the same scope-root class (#173).
-   */
+  /** Bare class name rewritten roots must not match — the panel shares the scope-root class (#173). */
   excludeRootClass?: string
 }
 
@@ -98,8 +94,7 @@ interface SelectorPart {
   selectors?: SelectorPart[][]
 }
 
-// Only rewritten roots carry the exclusion, so an author's own classes still
-// apply in the controls slot.
+// Rewritten roots only, so an author's own classes still apply in the panel.
 function scopeParts(excludeClass?: string): SelectorPart[] {
   if (!excludeClass) {
     return [SCOPE_PART]

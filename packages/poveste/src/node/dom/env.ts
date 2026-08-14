@@ -85,5 +85,43 @@ export function createDomEnv() {
   return {
     window,
     destroy,
+    pristineKeys: {
+      window: new Set(Object.keys(window)),
+      global: new Set(Object.keys(globalThis)),
+    },
+  }
+}
+
+/** Returns a reused environment to the state a fresh one would have been in. */
+export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' | 'pristineKeys'>) {
+  const doc = env.window.document
+
+  for (const el of [doc.documentElement, doc.head, doc.body]) {
+    if (!el) continue
+    for (const name of [...el.getAttributeNames()]) {
+      el.removeAttribute(name)
+    }
+  }
+  doc.head?.replaceChildren()
+  doc.body?.replaceChildren()
+
+  try {
+    env.window.localStorage?.clear()
+    env.window.sessionStorage?.clear()
+  }
+  catch {
+    // Unavailable for some jsdom urls.
+  }
+
+  // Additions only: the modules that installed the rest are cached, not re-run.
+  for (const [target, pristine] of [
+    [env.window, env.pristineKeys.window],
+    [globalThis, env.pristineKeys.global],
+  ] as const) {
+    for (const key of Object.keys(target)) {
+      if (!pristine.has(key)) {
+        delete (target as Record<string, unknown>)[key]
+      }
+    }
   }
 }

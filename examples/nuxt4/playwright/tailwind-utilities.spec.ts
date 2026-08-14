@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test'
 
 // `BaseButton.vue` carries `text-red-500` and this example's stylesheet is only
-// `@import 'tailwindcss'` — the fixture for Nuxt CSS support since histoire's
-// 10e4927, previously unasserted. The utility is emitted inside both a cascade
-// layer and an `@scope`, so it can fail by never arriving or by arriving with
-// its theme variable undefined, where `color` silently inherits instead.
+// `@import 'tailwindcss'` — the fixture for Nuxt CSS support (histoire 10e4927),
+// previously unasserted. Emitted inside a cascade layer and an `@scope`, it can
+// fail by never arriving, or by arriving with its theme variable undefined.
 
 const RED_500 = /oklch\(0\.637 0\.237 25\.331\)/
 
@@ -15,8 +14,7 @@ test.describe('tailwind utilities in the sandbox', () => {
     const button = page.frameLocator('iframe[data-test-id="preview-iframe"]').first().locator('button')
     await expect(button).toBeVisible()
 
-    // The computed colour, not the class: the class is in the template either
-    // way, so `toHaveClass` would pass without the stylesheet.
+    // The colour, not the class: the class is in the template regardless.
     await expect(button).toHaveCSS('color', RED_500)
   })
 
@@ -42,7 +40,6 @@ test.describe('tailwind utilities in the sandbox', () => {
     const items = page.locator('.poveste-story-variant-grid-item')
     await expect(items.first()).toBeVisible()
 
-    // Each cell is its own realm, so the stylesheet must arrive in all of them.
     const colors = await page.evaluate(async () => {
       const cells = [...document.querySelectorAll('.poveste-story-variant-grid-item')]
       const read = () => cells.map((c) => {

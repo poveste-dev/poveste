@@ -1,9 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-// #173. The controls slot renders through the same component as the story body,
-// so it carried the same scope-root class and a consumer's page-level rule
-// styled Poveste's own panel. Page-level rules stop at the story; the
-// consumer's own classes keep working in the panel.
+// #173. The panel shares the story's scope-root class, so consumer page-level
+// rules used to style it. They stop at the story; consumer classes do not.
 
 const SLOT = '.__poveste-controls-slot'
 const STORY = '/story/src-basebutton-story-svelte?variantId=_default'
@@ -13,7 +11,6 @@ test.describe('controls slot isolation', () => {
     await page.goto(STORY)
     await expect(page.getByTestId('story-controls')).toBeVisible()
 
-    // Separate: losing the marker would leave the rest passing vacuously.
     await expect(page.locator(SLOT)).toHaveCount(1)
 
     const tokens = await page.evaluate((sel) => {
@@ -32,7 +29,6 @@ test.describe('controls slot isolation', () => {
     await page.goto(STORY)
     await expect(page.locator(SLOT)).toHaveCount(1)
 
-    // Guards the over-correction: excluding the panel wholesale kills this too.
     const painted = await page.evaluate((sel) => {
       const slot = document.querySelector(sel)
       if (!slot) return null

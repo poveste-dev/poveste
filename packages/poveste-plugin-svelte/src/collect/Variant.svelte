@@ -5,9 +5,8 @@
   export let id = null
   export let icon = null
   export let iconColor = null
-  // Absorbs the prop so stories passing it don't warn; collection never renders
-  // variant children. `export const` (the compiler's suggestion) would make it
-  // read-only, so passing one becomes an error.
+  // Absorbs the prop; collection never renders variant children. `export const`
+  // (the compiler's suggestion) would make passing one an error.
   // svelte-ignore export_let_unused
   export let initState = null
 

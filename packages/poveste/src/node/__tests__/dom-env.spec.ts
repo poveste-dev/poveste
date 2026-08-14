@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createDomEnv } from '../dom/env.js'
+import { createDomEnv, resetDomEnv } from '../dom/env.js'
 
 describe('createDomEnv', () => {
   let env: ReturnType<typeof createDomEnv>
@@ -52,5 +52,45 @@ describe('createDomEnv', () => {
 
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('boom from story script'))
     })
+  })
+})
+
+describe('resetDomEnv', () => {
+  let env: ReturnType<typeof createDomEnv>
+
+  afterEach(() => {
+    env?.destroy()
+  })
+
+  it('returns a dirtied environment to its pristine state', () => {
+    env = createDomEnv()
+    const doc = env.window.document
+
+    doc.body.classList.add('theme-dark')
+    doc.documentElement.setAttribute('lang', 'fr')
+    doc.body.append(doc.createElement('div'))
+    doc.head.append(doc.createElement('style'))
+    env.window.localStorage.setItem('seen', '1')
+    ;(env.window as any).__setupInstalled = true
+
+    resetDomEnv(env)
+
+    expect(doc.body.getAttributeNames()).toEqual([])
+    expect(doc.documentElement.getAttributeNames()).toEqual([])
+    expect(doc.body.children).toHaveLength(0)
+    expect(doc.head.children).toHaveLength(0)
+    expect(env.window.localStorage.getItem('seen')).toBeNull()
+    // A setup marking itself installed would skip later stories in the worker.
+    expect((env.window as any).__setupInstalled).toBeUndefined()
+  })
+
+  it('leaves the globals the environment itself installed', () => {
+    env = createDomEnv()
+
+    resetDomEnv(env)
+
+    expect(typeof env.window.ResizeObserver).toBe('function')
+    expect(typeof env.window.matchMedia).toBe('function')
+    expect(env.window.document.body).toBeTruthy()
   })
 })

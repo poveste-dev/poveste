@@ -8,7 +8,7 @@ import { createBirpc } from 'birpc'
 import { dirname, resolve } from 'pathe'
 import pc from 'picocolors'
 import { ModuleCacheMap, ViteNodeRunner } from 'vite-node/client'
-import { createDomEnv } from '../dom/env.js'
+import { createDomEnv, resetDomEnv } from '../dom/env.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -25,9 +25,8 @@ export interface ReturnData {
 
 const _moduleCache = new ModuleCacheMap()
 let _runner: ViteNodeRunner
-// Shares the worker's lifetime because externalised runtimes cache the DOM they
-// first saw — Svelte 5 keeps the `firstChild` getter off `Node.prototype`, so a
-// fresh jsdom per story broke re-collection.
+// Worker-lifetime: externalised runtimes cache the DOM they first saw, so one
+// per story broke re-collection.
 let _domEnv: ReturnType<typeof createDomEnv> | undefined
 let _rpc: ReturnType<typeof createBirpc<{
   fetchModule: FetchFunction
@@ -65,9 +64,12 @@ export default async (payload: Payload): Promise<ReturnData> => {
     },
   }))
 
-  _domEnv ??= createDomEnv()
-  window.document.body.replaceChildren()
-  window.document.head.replaceChildren()
+  if (_domEnv) {
+    resetDomEnv(_domEnv)
+  }
+  else {
+    _domEnv = createDomEnv()
+  }
 
   const el = window.document.createElement('div')
 

@@ -65,11 +65,7 @@ test.describe('style isolation (consumer on Tailwind v4)', () => {
   test('paints the story with the consumer\'s body rule', async ({ page }) => {
     await openStory(page)
 
-    // Mirror of the test above: the rule that must not reach the chrome must
-    // reach the story. It has to land on `body` rather than only on the story
-    // root, because that is what propagates to the canvas and fills the
-    // preview. `sandbox.css` keeps the sandbox transparent for the toolbar
-    // background, and while that reset was `!important` it beat the consumer.
+    // On `body`, not just the story root: that is what reaches the canvas.
     await expect(async () => {
       const bodyBg = await page.evaluate(() => {
         const doc = (document.querySelector('iframe[data-test-id="preview-iframe"]') as HTMLIFrameElement)?.contentDocument
