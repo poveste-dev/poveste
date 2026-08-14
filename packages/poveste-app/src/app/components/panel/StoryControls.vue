@@ -58,7 +58,7 @@ const hasInitState = computed(() => Object
       slot-name="controls"
       :variant="variant"
       :story="story"
-      class="__poveste-render-custom-controls __histoire-render-custom-controls flex-none"
+      class="__poveste-controls-slot __poveste-render-custom-controls __histoire-render-custom-controls flex-none"
       @ready="ready = true"
     />
 

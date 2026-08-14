@@ -1,5 +1,5 @@
 import type { Plugin as VitePlugin } from 'vite'
-import { STORY_SCOPE_ROOT } from './selectors.js'
+import { CONTROLS_SLOT, STORY_SCOPE_ROOT } from './selectors.js'
 import { wrapUserCss } from './transforms.js'
 import { USER_CSS_MARK_END, USER_CSS_MARK_START } from './vite-plugin.js'
 
@@ -126,7 +126,7 @@ export function wrapMarkedUserCss(css: string, scopeRoot: string): string {
     }
     const inner = css.slice(start + USER_CSS_MARK_START.length, end).trim()
     if (inner.length > 0) {
-      out += `${wrapUserCss(inner, { scopeRoot })}\n`
+      out += `${wrapUserCss(inner, { scopeRoot, excludeRootClass: CONTROLS_SLOT.slice(1) })}\n`
     }
     cursor = end + USER_CSS_MARK_END.length
   }

@@ -9,6 +9,11 @@ export const STORY_SCOPE_ROOT = '.__poveste-render-story'
 // .__poveste-render-custom-controls) but render inside the chrome panel,
 // so the @scope boundary must keep them in chrome scope.
 export const STORY_SCOPE_BOUNDARY = '.__poveste-render-story:not(.__poveste-render-custom-controls)'
+// The controls slot only. Distinct from the class above, which the sandbox body
+// also carries to opt out of render-root layout rules — excluding *that* would
+// stop a user's `body` rule applying inside their own story, which is the one
+// place it is meant to apply. This marks the panel and nothing else.
+export const CONTROLS_SLOT = '.__poveste-controls-slot'
 export const DEFAULTS_LAYER = 'poveste-defaults'
 export const USER_GLOBALS_LAYER = 'poveste-user-globals'
 // Import query `globalStyles` files carry so the user-CSS plugin leaves them

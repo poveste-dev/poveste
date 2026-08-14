@@ -1,5 +1,5 @@
 import type { Plugin as VitePlugin } from 'vite'
-import { GLOBAL_LAYER_QUERY, STORY_SCOPE_ROOT } from './selectors.js'
+import { CONTROLS_SLOT, GLOBAL_LAYER_QUERY, STORY_SCOPE_ROOT } from './selectors.js'
 import { wrapUserCss } from './transforms.js'
 
 export const USER_CSS_MARK_START = '/*__PVT_USER_CSS_START__*/'
@@ -29,7 +29,7 @@ export function userCssScopePlugin(opts: UserCssScopePluginOptions): VitePlugin 
       if (!isCssPath(path, query)) return null
       if (hasGlobalQuery(query)) return null
       if (mode === 'wrap') {
-        return { code: wrapUserCss(code, { scopeRoot: STORY_SCOPE_ROOT }), map: null }
+        return { code: wrapUserCss(code, { scopeRoot: STORY_SCOPE_ROOT, excludeRootClass: CONTROLS_SLOT.slice(1) }), map: null }
       }
       return {
         code: `${USER_CSS_MARK_START}\n${code}\n${USER_CSS_MARK_END}\n`,

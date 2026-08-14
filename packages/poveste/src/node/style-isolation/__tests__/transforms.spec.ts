@@ -98,6 +98,46 @@ describe('wrapUserCss', () => {
     const occurrences = (out.match(/@scope/g) ?? []).length
     expect(occurrences).toBe(1)
   })
+
+  // #173. The controls slot renders through the same component as the story
+  // body, so it carries the same scope-root class and a user's `body` rule
+  // repainted Poveste's own panel. Page-level rules stop at the story body;
+  // rules the author wrote against their own markup keep working there, since
+  // that markup is theirs.
+  describe('with excludeRootClass', () => {
+    const opts = {
+      scopeRoot: '.__poveste-render-story',
+      excludeRootClass: '__poveste-controls-slot',
+    }
+
+    it.each([
+      [':root', ':root { background: deeppink }', ':scope:not(.__poveste-controls-slot)'],
+      ['html', 'html { background: deeppink }', ':scope:not(.__poveste-controls-slot)'],
+      ['body', 'body { background: deeppink }', ':scope:not(.__poveste-controls-slot)'],
+      ['body .card', 'body .card { color: red }', ':scope:not(.__poveste-controls-slot) .card'],
+    ])('keeps a page-level %s rule out of the controls slot', (_name, css, expected) => {
+      expect(selectorsIn(wrapUserCss(css, opts))).toEqual([expected])
+    })
+
+    it.each([
+      ['.user-card { background: deeppink }', '.user-card'],
+      ['.body-copy { color: red }', '.body-copy'],
+    ])('leaves the author-written %s alone', (css, expected) => {
+      expect(selectorsIn(wrapUserCss(css, opts))).toEqual([expected])
+    })
+
+    it('carries the exclusion into roots nested in :is()', () => {
+      const out = wrapUserCss(':is(html, body) { color: red }', opts)
+
+      expect(selectorsIn(out)).toEqual([
+        ':is(:scope:not(.__poveste-controls-slot), :scope:not(.__poveste-controls-slot))',
+      ])
+    })
+
+    it('is opt-in, so the chrome pass is unaffected', () => {
+      expect(selectorsIn(wrapUserCss('body { color: red }', { scopeRoot: '.x' }))).toEqual([':scope'])
+    })
+  })
 })
 
 describe('wrapChromeCss', () => {
