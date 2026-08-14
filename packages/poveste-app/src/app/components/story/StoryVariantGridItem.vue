@@ -8,7 +8,7 @@ import { computed, ref, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { usePreviewDark } from '../../util/color-scheme'
+import { previewDarkClasses, usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getSourceCode } from '../../util/docs'
 import { getContrastColor } from '../../util/preview-settings'
@@ -163,9 +163,7 @@ const useIframe = computed(() => {
           :variant="variant"
           :story="story"
           :dir="settings.textDirection"
-          :class="{
-            [povesteConfig.theme.darkClass]: previewDark,
-          }"
+          :class="previewDark ? previewDarkClasses() : undefined"
           @ready="onReady"
         />
       </div>

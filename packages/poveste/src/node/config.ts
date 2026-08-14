@@ -122,7 +122,6 @@ export function getDefaultConfig(): PovesteConfig {
         contrastColor: '#eee',
       },
     ],
-    sandboxDarkClass: 'dark',
     routerMode: 'history',
     build: {
       excludeFromVendorsChunk: [],

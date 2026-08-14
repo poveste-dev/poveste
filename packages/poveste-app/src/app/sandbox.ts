@@ -8,8 +8,7 @@ import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { setupPluginApi } from './plugin.js'
-import { resolvePreviewDark } from './util/color-scheme.js'
-import { povesteConfig } from './util/config.js'
+import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
 import { PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
@@ -33,10 +32,6 @@ if (storedSettings) {
 const prefersDark = usePreferredDark()
 const previewDark = computed(() => resolvePreviewDark(receivedSettings.colorScheme, prefersDark.value, isDark.value))
 
-// `sandboxDarkClass` is poveste's own deprecated config option, superseded by
-// `theme.darkClass`. Still honoured on purpose: dropping it would silently stop
-// applying the class for anyone who set it. Removing the option is a breaking
-// config change and belongs to a major, not here.
 /*
  * The class also has to land *inside* the story's `@scope` root, not only on
  * `<html>` (#101).
@@ -60,9 +55,9 @@ watch(previewDark, (value) => {
   for (const el of darkClassTargets) {
     if (!el) continue
 
-    // eslint-disable-next-line ts/no-deprecated
-    el.classList.toggle(povesteConfig.sandboxDarkClass, value)
-    el.classList.toggle(povesteConfig.theme.darkClass, value)
+    for (const className of previewDarkClasses()) {
+      el.classList.toggle(className, value)
+    }
   }
 }, {
   immediate: true,

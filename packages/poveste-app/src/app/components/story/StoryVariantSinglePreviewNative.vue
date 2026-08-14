@@ -3,7 +3,7 @@ import type { Story, Variant } from '../../types'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { usePreviewDark } from '../../util/color-scheme'
+import { previewDarkClasses, usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getContrastColor } from '../../util/preview-settings'
 import GenericRenderStory from './GenericRenderStory.vue'
@@ -57,10 +57,7 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
         :variant="variant"
         :story="story"
         class="h-full"
-        :class="{
-          [povesteConfig.sandboxDarkClass]: previewDark, // @TODO remove
-          [povesteConfig.theme.darkClass]: previewDark,
-        }"
+        :class="previewDark ? previewDarkClasses() : undefined"
         :dir="settings.textDirection"
         @ready="onReady"
       />

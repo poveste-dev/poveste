@@ -11,8 +11,13 @@
   </Story>
 </template>
 
+<!--
+  Keyed on `my-dark`, this book's `theme.darkClass`. It used to say `.dark`,
+  which only worked because the deprecated `sandboxDarkClass` defaulted to
+  `dark` and was emitted alongside it (#126).
+-->
 <style scoped>
-.dark .meow {
+.my-dark .meow {
   color: #fff;
   font-size: 20px;
   font-weight: bold;
@@ -22,7 +27,7 @@
   display: none;
 }
 
-.dark .only-dark {
+.my-dark .only-dark {
   display: inline;
 }
 </style>

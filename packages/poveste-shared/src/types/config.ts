@@ -214,6 +214,10 @@ export interface PovesteConfig {
   head?: UseHeadInput
   /**
    * Class added to the html root of the story preview when dark mode is enabled.
+   *
+   * Applied only when you set it. It has no default, so a book that configures
+   * `theme.darkClass` alone gets that one class on every render path rather
+   * than a second, different one (#126).
    * @deprecated use `theme.darkClass` instead
    */
   sandboxDarkClass?: string
