@@ -47,5 +47,8 @@ export function previewDarkClasses(): string[] {
   const { darkClass } = povesteConfig.theme
   // eslint-disable-next-line ts/no-deprecated
   const legacy = povesteConfig.sandboxDarkClass
-  return legacy && legacy !== darkClass ? [darkClass, legacy] : [darkClass]
+  // Empty entries are dropped rather than passed on: `classList.toggle('')`
+  // throws, and it runs during sandbox boot, so one `darkClass: ''` would leave
+  // every preview blank.
+  return [...new Set([darkClass, legacy])].filter((name): name is string => !!name)
 }
