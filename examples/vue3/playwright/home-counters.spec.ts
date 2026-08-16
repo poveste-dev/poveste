@@ -19,10 +19,11 @@ test.describe('home counters', () => {
   test('counts up to the real totals', async ({ page }) => {
     await page.goto('/')
 
-    // The sr-only value is the source of truth.
-    const expected = await page.locator('.poveste-home-counter-value ~ .sr-only')
-      .allTextContents()
-    expect(expected.length).toBe(3)
+    // The sr-only value is the source of truth. `allTextContents` does not wait
+    // for anything, so the count has to be asserted with a locator first.
+    const values = page.locator('.poveste-home-counter-value ~ .sr-only')
+    await expect(values).toHaveCount(3)
+    const expected = await values.allTextContents()
     expect(expected.every(v => /^\d+$/.test(v))).toBe(true)
 
     await expect.poll(() => counterValues(page)).toEqual(expected)
@@ -59,9 +60,9 @@ test.describe('home counters', () => {
     test('lands on the total without animating', async ({ page }) => {
       await page.goto('/')
 
-      const expected = await page.locator('.poveste-home-counter-value ~ .sr-only')
-        .allTextContents()
-      await expect.poll(() => counterValues(page)).toEqual(expected)
+      const values = page.locator('.poveste-home-counter-value ~ .sr-only')
+      await expect(values).toHaveCount(3)
+      await expect.poll(() => counterValues(page)).toEqual(await values.allTextContents())
       expect(await countTransitions(page)).toBe(0)
     })
   })

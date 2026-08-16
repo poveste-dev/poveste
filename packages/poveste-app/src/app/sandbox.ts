@@ -9,7 +9,7 @@ import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { setupPluginApi } from './plugin.js'
 import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
-import { PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
+import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
@@ -25,6 +25,15 @@ const file = ref<StoryFile>(mapFile(files.find(f => f.id === query.storyId)))
 const storedSettings = loadStoredPreviewSettings()
 if (storedSettings) {
   applyPreviewSettings(storedSettings)
+}
+
+// The app pushes settings when it sees the iframe load, which is one document
+// swap away from being wrong: a push aimed at a document that is going away is
+// dropped with no error and nothing re-sends it, leaving the sandbox on the
+// stored value or on none at all (#75). Ask instead — a request can only come
+// from a document that is running and listening.
+if (window.parent && window.parent !== window) {
+  window.parent.postMessage({ type: PREVIEW_SETTINGS_REQUEST }, window.location.origin)
 }
 
 // The story preview has its own color scheme, independent from the app chrome.

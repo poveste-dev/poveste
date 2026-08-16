@@ -7,7 +7,7 @@ import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
 import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { EVENT_SEND, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from '../../util/const'
+import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from '../../util/const'
 import { trackWindow } from '../../util/keyboard'
 import { getSandboxUrl } from '../../util/sandbox'
 import { toRawDeep } from '../../util/state'
@@ -26,7 +26,7 @@ const settings = usePreviewSettingsStore().currentSettings
 const iframe = ref<HTMLIFrameElement>()
 
 function syncState() {
-  if (iframe.value && props.variant.previewReady) {
+  if (iframe.value?.contentWindow && props.variant.previewReady) {
     iframe.value.contentWindow.postMessage({
       type: STATE_SYNC,
       state: toRawDeep(props.variant.state, true),
@@ -71,6 +71,9 @@ useEventListener(window, 'message', (event) => {
       break
     case SANDBOX_READY:
       setPreviewReady()
+      break
+    case PREVIEW_SETTINGS_REQUEST:
+      syncSettings()
       break
     case SANDBOX_HEIGHT:
       if (typeof event.data.h === 'number') {
@@ -118,7 +121,7 @@ onBeforeUnmount(() => {
 // Settings
 
 function syncSettings() {
-  if (iframe.value) {
+  if (iframe.value?.contentWindow) {
     iframe.value.contentWindow.postMessage({
       type: PREVIEW_SETTINGS_SYNC,
       settings: toRaw(settings),

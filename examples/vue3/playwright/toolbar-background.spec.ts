@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test'
 
+declare global {
+  interface Window {
+    __settingsRequests: number
+  }
+}
+
 const presets = [
   { bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' }, // Transparent
   { bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' }, // White
@@ -36,6 +42,22 @@ test.describe('background color', () => {
       await expect(iframe.locator('.contrast-color')).toHaveCSS('color', presets[i].contrast)
       await page.getByTestId('toolbar-background').click()
     }
+  })
+
+  // The app's own push depends on it seeing the iframe load. The request is the
+  // sandbox's guarantee that it gets settings even when that push is missed.
+  test('is requested by the sandbox when it boots', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.assign(window, { __settingsRequests: 0 })
+      window.addEventListener('message', (event) => {
+        if (event.data?.type === '__poveste:preview-settings-request') {
+          window.__settingsRequests++
+        }
+      })
+    })
+    await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
+    await expect(page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.contrast-color')).toBeVisible()
+    await expect.poll(() => page.evaluate(() => window.__settingsRequests)).toBeGreaterThan(0)
   })
 
   test('applies the picked preset to grid-rendered stories', async ({ page }) => {
