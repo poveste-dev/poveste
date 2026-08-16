@@ -219,6 +219,11 @@ A rule of thumb for when the generated body is not enough:
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable.
 
+- Don't write a closing keyword you don't mean, even negated. GitHub matches `close`, `fix` and
+  `resolve` followed by an issue number and ignores the words around them, so **"this does not
+  close #75" closes #75** — which is exactly what happened to that issue. When a PR deliberately
+  leaves an issue open, reference it without a keyword: `see #75`, `related to #75`.
+
 - It's OK to have multiple small commits as you work on the PR - GitHub can automatically squash them before merging.
 
 - Make sure to follow the code style of the project.
