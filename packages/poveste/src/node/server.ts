@@ -30,6 +30,13 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
       if (options.host) {
         viteConfig.server.host = options.host
       }
+
+      // Same rule as `preview`: a port asked for by name is that port or
+      // nothing. Floating to the next free one hands back a server nobody asked
+      // for, and whoever opens the port they typed reads a different book.
+      if (options.port != null) {
+        viteConfig.server.strictPort = true
+      }
     }
 
     const server = await createViteServer(
