@@ -186,10 +186,11 @@ test.describe('codegen (vue 3)', () => {
   for (const { variant, expected } of cases) {
     test(`renders source code for the ${variant} variant`, async ({ page }) => {
       await page.goto(`/story/src-components-codegen-story-vue?variantId=${variant}`)
-      // textContent comparison preserves whitespace; toHaveText would normalize it.
+      // textContent comparison preserves whitespace; toHaveText would normalize
+      // it. Polled because the pane is visible before it is highlighted.
       const code = page.getByTestId('story-source-code')
       await expect(code).toBeVisible()
-      expect(await code.textContent()).toEqual(expected)
+      await expect.poll(() => code.textContent()).toEqual(expected)
     })
   }
 })
