@@ -19,6 +19,7 @@
     "test:dev": "pnpm run -r --parallel --filter \"./packages/**\" test:dev",
     "test:examples": "pnpm run -r --workspace-concurrency 1 --filter \"./examples/vue**\"  test:examples",
     "test:examples:all": "pnpm run -r --workspace-concurrency 1 --filter \"./examples/**\" test:examples",
+    "test:e2e": "playwright test",
     "test:smoke": "bash scripts/smoke-test.sh",
     "test:starters": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-starters.ts",
     "test:versions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-versions.ts",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",
     "@iconify/vue": "^4.1.2",
+    "@playwright/test": "^1.59.1",
     "@poveste/vendors": "workspace:*",
     "@stackblitz/sdk": "^1.11.1",
     "@tailwindcss/postcss": "catalog:",
