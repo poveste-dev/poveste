@@ -10,8 +10,11 @@ test.describe('stories list', () => {
     await expect(page.getByTestId('story-list-item').filter({ hasText: '🐱 Meow' })).toBeVisible()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()
-    // 'Style Isolation' folder comes from the CSS isolation regression stories.
-    await expect(page.getByTestId('story-list-folder')).toHaveCount(3)
+    // 'Style Isolation' comes from the CSS isolation regression stories,
+    // 'Conformance' from the shared contract set (#89). A story titled
+    // `Conformance/Docs` produced a *second* 'Conformance' folder — the segment
+    // collides with a reserved tree name — so that one is titled Documentation.
+    await expect(page.getByTestId('story-list-folder')).toHaveCount(4)
   })
 
   test('toggles folder visibility', async ({ page }) => {

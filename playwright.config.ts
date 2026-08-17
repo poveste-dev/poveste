@@ -18,18 +18,22 @@ interface Example {
   port: number
   /** Specs that also run against `poveste dev` (#108). */
   dev?: { port: number, specs: string[] }
+  /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
+  conformance?: boolean
 }
 
 const EXAMPLES: Example[] = [
   {
     name: 'vue3',
     port: 4567,
+    conformance: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-color-scheme.spec.ts'] },
   },
   { name: 'nuxt4', port: 4568 },
   {
     name: 'svelte5',
     port: 4569,
+    conformance: true,
     dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts'] },
   },
   { name: 'sveltekit', port: 4570 },
@@ -59,6 +63,13 @@ export default defineConfig({
       testDir: `./examples/${example.name}/playwright`,
       use: chrome(`http://localhost:${example.port}`),
     },
+    ...example.conformance
+      ? [{
+          name: `${example.name}:conformance`,
+          testDir: './e2e',
+          use: chrome(`http://localhost:${example.port}`),
+        }]
+      : [],
     ...example.dev
       ? [{
           name: `${example.name}:dev`,
