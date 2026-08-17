@@ -1,7 +1,7 @@
 <template>
   <Story
     id="conformance-docs"
-    title="Conformance/Docs"
+    title="Conformance/Documentation"
   >
     <Variant
       id="default"
