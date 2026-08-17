@@ -38,10 +38,15 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
+      // `pnpm exec`, not `pnpm run story:dev`: pnpm drops the forwarded flag
+      // and the server comes up on the default port instead, where nothing is
+      // waiting for it.
       command: `pnpm exec poveste dev --port ${DEV_PORT}`,
       url: `http://localhost:${DEV_PORT}`,
       reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
+      // Longer than the preview server's: a dev start collects every story and
+      // optimizes deps, where preview only serves files that already exist.
+      timeout: 180_000,
     },
   ],
 })
