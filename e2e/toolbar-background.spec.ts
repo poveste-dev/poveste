@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 declare global {
@@ -33,6 +33,15 @@ function primerFor(index: number) {
   return presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
 }
 
+// Arrange, not an assertion in its own right: the target has to be picked
+// *from* a different preset, or the case whose target is the page default
+// asserts an already-true state. Waiting for the primer to land is what makes
+// the pick that follows a real transition.
+async function startFromAnotherPreset(page: Page, index: number, text: Locator) {
+  await pickPreset(page, primerFor(index))
+  await expect(text).toHaveCSS('color', presets[primerFor(index)].contrast)
+}
+
 async function pickPreset(page: Page, index: number) {
   await page.getByTestId('toolbar-background').click()
   const buttons = page.getByTestId('background-popper').locator('> button')
@@ -42,15 +51,12 @@ async function pickPreset(page: Page, index: number) {
 
 test.describe('background color', () => {
   for (const [index, preset] of presets.entries()) {
-    const primer = presets[primerFor(index)]
-
     test(`applies the ${preset.name} preset to inline-rendered stories`, async ({ page }) => {
       await page.goto('/story/conformance-no-iframe')
       const bg = page.getByTestId('responsive-preview-bg')
       const text = page.locator('.conformance-inline')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(bg).toHaveCSS('background-color', preset.bg)
@@ -61,8 +67,7 @@ test.describe('background color', () => {
       await page.goto('/story/conformance-contrast')
       const text = page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(text).toHaveCSS('color', preset.contrast)
@@ -77,8 +82,7 @@ test.describe('background color', () => {
       const frame = page.getByTestId('preview-iframe').first().contentFrame()
       const text = frame.locator('.conformance-text')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(bg).toHaveCSS('background-color', preset.bg)
