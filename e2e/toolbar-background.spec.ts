@@ -30,7 +30,14 @@ const presets = [
 // The primer has to differ in both colors: two presets share a contrast color,
 // and one that matched would assert nothing.
 function primerFor(index: number) {
-  return presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
+  const primer = presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
+  if (primer === -1) {
+    // Two presets already share a contrast color, so this is one edit away:
+    // without a row differing in both, the case cannot start from anywhere and
+    // would assert an already-true state instead of a repaint.
+    throw new Error(`No preset differs from '${presets[index].name}' in both background and contrast color.`)
+  }
+  return primer
 }
 
 // Arrange, not an assertion in its own right: the target has to be picked
