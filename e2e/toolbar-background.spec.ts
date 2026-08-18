@@ -59,7 +59,7 @@ test.describe('background color', () => {
 
     test(`applies the ${preset.name} preset to single-iframe stories`, async ({ page }) => {
       await page.goto('/story/conformance-contrast')
-      const text = page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.conformance-contrast')
+      const text = page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')
 
       await pickPreset(page, primerFor(index))
       await expect(text).toHaveCSS('color', primer.contrast)
@@ -74,7 +74,7 @@ test.describe('background color', () => {
     test(`applies the ${preset.name} preset to grid-rendered stories`, async ({ page }) => {
       await page.goto('/story/conformance-grid')
       const bg = page.getByTestId('responsive-preview-bg').first()
-      const frame = page.locator('iframe[data-test-id="preview-iframe"]').first().contentFrame()
+      const frame = page.getByTestId('preview-iframe').first().contentFrame()
       const text = frame.locator('.conformance-text')
 
       await pickPreset(page, primerFor(index))
@@ -98,7 +98,7 @@ test.describe('background color', () => {
       })
     })
     await page.goto('/story/conformance-contrast')
-    await expect(page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.conformance-contrast')).toBeVisible()
+    await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__settingsRequests)).toBeGreaterThan(0)
   })
 })

@@ -18,7 +18,7 @@ const NATIVE_STORY = '/story/src-components-complexparameter-story-vue?variantId
 const INLINE_GRID_STORY = '/story/src-components-inlinegrid-story-vue'
 
 function sandboxHtml(page: Page) {
-  return page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('html')
+  return page.getByTestId('preview-iframe').contentFrame().locator('html')
 }
 
 /**
@@ -174,7 +174,7 @@ test.describe('sandbox color scheme', () => {
    */
   test('makes the scheme reach the story\'s own CSS, not just its class list', async ({ page }) => {
     await page.goto(DARK_STORY)
-    const story = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const story = page.getByTestId('preview-iframe').contentFrame()
 
     await pickColorScheme(page, 'dark')
     await expect(story.locator('.only-dark')).toBeVisible()

@@ -25,7 +25,7 @@ test.describe('stories list', () => {
     // Filter on the title button instead of the folder element so nested
     // folder names don't leak into the parent's text content.
     const folderButton = (label: string) =>
-      page.locator('[data-test-id="story-list-folder"] [role="button"]').filter({ hasText: label })
+      page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: label })
 
     await folderButton('Sub Folder').click()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Sub Story 2' })).toBeVisible()

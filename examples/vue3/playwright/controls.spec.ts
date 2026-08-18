@@ -7,7 +7,7 @@ test.describe('controls', () => {
   })
 
   test('HstText updates the bound state', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('.state-output')).toContainText('"text": "Hello"')
@@ -16,7 +16,7 @@ test.describe('controls', () => {
   })
 
   test('HstCheckbox toggles the bound state', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('.state-output')).toContainText('"checkbox": false')
@@ -27,7 +27,7 @@ test.describe('controls', () => {
   })
 
   test('HstNumber updates the bound state', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('.state-output')).toContainText('"number": 20')
@@ -36,7 +36,7 @@ test.describe('controls', () => {
   })
 
   test('HstTextarea updates the bound state', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('.state-output')).toContainText('"longText": "Longer text..."')
@@ -45,7 +45,7 @@ test.describe('controls', () => {
   })
 
   test('HstColorSelect updates the bound state', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('.state-output')).toContainText('"colorselect": "#000000"')

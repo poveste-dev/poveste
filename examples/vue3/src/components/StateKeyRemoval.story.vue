@@ -10,13 +10,13 @@
     })"
   >
     <template #default="{ state }">
-      <p data-test-id="label">
+      <p data-testid="label">
         {{ state.label }}
       </p>
-      <p data-test-id="extras">
+      <p data-testid="extras">
         {{ Object.keys(state.extras).join(',') }}
       </p>
-      <button data-test-id="drop" @click="delete state.extras.drop">
+      <button data-testid="drop" @click="delete state.extras.drop">
         Drop a key
       </button>
     </template>

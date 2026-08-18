@@ -55,7 +55,7 @@ const panelContentComponent = computed(() => {
         :save-id="`story-sidepane-${innerOrientation}`"
         :orientation="innerOrientation"
         class="poveste-story-side-panel poveste-loaded h-full"
-        data-test-id="story-side-panel"
+        data-testid="story-side-panel"
       >
         <template #first>
           <div class="flex flex-col h-full">

@@ -33,14 +33,14 @@ const CHROME_FONT = '"Noto Sans Display", system-ui, sans-serif'
 /** Opens the isolation story and returns its preview frame. */
 async function openStory(page: Page) {
   await page.goto(STORY_URL)
-  return page.frameLocator('iframe[data-test-id="preview-iframe"]')
+  return page.getByTestId('preview-iframe').contentFrame()
 }
 
 test.describe('style isolation (consumer on Tailwind v4)', () => {
   test('applies the consumer\'s own Tailwind utilities inside the story', async ({ page }) => {
     const story = await openStory(page)
 
-    const box = story.locator('[data-test-id="consumer-tailwind"]')
+    const box = story.getByTestId('consumer-tailwind')
 
     await expect(box).toHaveCSS('background-color', CONSUMER_RED_500)
     await expect(box).toHaveCSS('padding', '16px')
@@ -50,7 +50,7 @@ test.describe('style isolation (consumer on Tailwind v4)', () => {
     const story = await openStory(page)
 
     // `bg-primary-500` styles poveste's own UI; it must do nothing in here.
-    const box = story.locator('[data-test-id="chrome-utility-leak"]')
+    const box = story.getByTestId('chrome-utility-leak')
 
     await expect(box).toHaveCSS('background-color', TRANSPARENT)
   })
@@ -68,7 +68,7 @@ test.describe('style isolation (consumer on Tailwind v4)', () => {
     // On `body`, not just the story root: that is what reaches the canvas.
     await expect(async () => {
       const bodyBg = await page.evaluate(() => {
-        const doc = (document.querySelector('iframe[data-test-id="preview-iframe"]') as HTMLIFrameElement)?.contentDocument
+        const doc = (document.querySelector('iframe[data-testid="preview-iframe"]') as HTMLIFrameElement)?.contentDocument
         return doc ? getComputedStyle(doc.body).backgroundColor : null
       })
       expect(bodyBg).toBe(CONSUMER_TOMATO)

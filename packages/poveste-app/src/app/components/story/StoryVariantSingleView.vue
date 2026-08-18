@@ -12,7 +12,7 @@ defineProps<{
 <template>
   <div
     class="poveste-story-variant-single-view h-full flex flex-col"
-    data-test-id="story-variant-single-view"
+    data-testid="story-variant-single-view"
   >
     <StoryVariantSinglePreviewNative
       v-if="story.layout?.iframe === false"

@@ -34,14 +34,14 @@ test.describe('root selectors in setup-file CSS', () => {
     await page.goto(NATIVE_STORY)
     await expect(page.getByTestId('sandbox-render').locator(STORY)).toBeVisible()
 
-    expect(await readTokens(page, `[data-test-id="sandbox-render"] ${STORY}`)).toEqual(TOKENS)
+    expect(await readTokens(page, `[data-testid="sandbox-render"] ${STORY}`)).toEqual(TOKENS)
   })
 
   // `bundle-sandbox.css` is not wrapped — inside the iframe the story root *is*
   // the body, so these selectors resolve natively. Pins that, nothing more.
   test('reach a story rendered in the sandbox iframe', async ({ page }) => {
     await page.goto(IFRAME_STORY)
-    const frame = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const frame = page.getByTestId('preview-iframe').contentFrame()
     await expect(frame.locator(STORY)).toBeVisible()
 
     expect(await readTokens(frame, STORY)).toEqual(TOKENS)

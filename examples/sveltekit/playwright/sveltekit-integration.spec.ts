@@ -32,7 +32,7 @@ test.describe('story collection in a SvelteKit app', () => {
 test.describe('story render', () => {
   test('renders a component that goes through svelte-preprocess', async ({ page }) => {
     await page.goto(COUNTER)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
 
     // Counter.svelte is `<script lang="ts">` and imports `spring` from
     // svelte/motion, so this covers the preprocessor and the Svelte runtime,
@@ -44,7 +44,7 @@ test.describe('story render', () => {
 
   test('runs the component, not just its initial markup', async ({ page }) => {
     await page.goto(COUNTER)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const digits = iframe.locator('.counter-digits strong:not(.hidden)')
 
     await expect(digits).toHaveText('0')
@@ -57,7 +57,7 @@ test.describe('story render', () => {
 test.describe('setup file', () => {
   test('applies poveste.setup.ts styles inside the story sandbox', async ({ page }) => {
     await page.goto(COUNTER)
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
 
     // `--accent-color: #ff3e00` is declared in src/poveste.css, which only
     // reaches the page via the `setupFile` entry in vite.config.ts. The counter

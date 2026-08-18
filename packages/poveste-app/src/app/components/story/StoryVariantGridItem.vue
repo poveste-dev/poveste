@@ -140,13 +140,13 @@ const useIframe = computed(() => {
         'border-gray-100 dark:border-gray-800': !isActive,
         'border-primary-200 dark:border-primary-900': isActive,
       }"
-      data-test-id="sandbox-render"
+      data-testid="sandbox-render"
       @click.stop="selectVariant()"
       @keyup="selectVariant()"
     >
       <div
         class="absolute inset-0 rounded bind-preview-bg"
-        data-test-id="responsive-preview-bg"
+        data-testid="responsive-preview-bg"
       />
 
       <CheckerboardPattern

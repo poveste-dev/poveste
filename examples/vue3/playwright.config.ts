@@ -17,7 +17,6 @@ export default defineConfig({
   reporter: 'list',
   use: {
     trace: 'on-first-retry',
-    testIdAttribute: 'data-test-id',
   },
   projects: [
     {

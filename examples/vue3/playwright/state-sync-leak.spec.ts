@@ -22,7 +22,7 @@ test.describe('state sync across story navigation', () => {
     test.setTimeout(90_000)
 
     await page.goto(GRID)
-    await expect(page.locator('iframe[data-test-id="preview-iframe"]').first()).toBeVisible()
+    await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
     const clickStory = async (href: string) => {
       await page.locator(`a[href$="${href.split('/').pop()}"]`).first().click()
@@ -46,7 +46,7 @@ test.describe('state sync across story navigation', () => {
     }
 
     // The grid renders one sandbox iframe per variant, and BaseButton has 3.
-    await expect(page.locator('iframe[data-test-id="preview-iframe"]')).toHaveCount(3)
+    await expect(page.getByTestId('preview-iframe')).toHaveCount(3)
   })
 
   test('binds the variant unmount hook, so no state sync outlives its story', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('state sync across story navigation', () => {
     })
 
     await page.goto(GRID)
-    await expect(page.locator('iframe[data-test-id="preview-iframe"]').first()).toBeVisible()
+    await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
     // Vue drops any lifecycle hook registered after an await in an async
     // setup() and warns. That warning firing means the teardown is unbound

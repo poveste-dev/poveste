@@ -218,7 +218,7 @@ watch(sourceHtml, async () => {
       class="__poveste-code-placeholder w-full h-full p-4 outline-none bg-transparent resize-none m-0"
       :value="displayedSourceCode"
       readonly
-      data-test-id="story-source-code"
+      data-testid="story-source-code"
       @scroll="onScroll"
     />
     <!-- eslint-disable vue/no-v-html -->
@@ -226,7 +226,7 @@ watch(sourceHtml, async () => {
       v-else
       ref="scroller"
       class="w-full h-full overflow-auto"
-      data-test-id="story-source-code"
+      data-testid="story-source-code"
       @scroll="onScroll"
     >
       <div

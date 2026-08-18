@@ -209,7 +209,7 @@ function onIframeLoad() {
         'pointer-events-none': resizing,
       }"
       :style="previewStyle(isResponsiveEnabled, finalWidth, finalHeight)"
-      data-test-id="preview-iframe"
+      data-testid="preview-iframe"
       @load="onIframeLoad()"
     />
   </StoryResponsivePreview>

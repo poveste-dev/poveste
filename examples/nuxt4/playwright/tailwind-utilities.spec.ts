@@ -11,7 +11,7 @@ test.describe('tailwind utilities in the sandbox', () => {
   test('reach the story, resolving their theme variable', async ({ page }) => {
     await page.goto('/story/app-components-basebutton-story-vue')
 
-    const button = page.locator('iframe[data-test-id="preview-iframe"]').first().contentFrame().locator('button')
+    const button = page.getByTestId('preview-iframe').first().contentFrame().locator('button')
     await expect(button).toBeVisible()
 
     // The colour, not the class: the class is in the template regardless.
@@ -20,10 +20,10 @@ test.describe('tailwind utilities in the sandbox', () => {
 
   test('defines the theme variable inside the sandbox, not just in the chrome', async ({ page }) => {
     await page.goto('/story/app-components-basebutton-story-vue')
-    await expect(page.locator('iframe[data-test-id="preview-iframe"]').first()).toBeVisible()
+    await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
     const declared = await page.evaluate(async () => {
-      const frame = document.querySelector('iframe[data-test-id="preview-iframe"]') as HTMLIFrameElement
+      const frame = document.querySelector('iframe[data-testid="preview-iframe"]') as HTMLIFrameElement
       const doc = frame.contentDocument!
       const read = () => getComputedStyle(doc.documentElement).getPropertyValue('--color-red-500')
         || getComputedStyle(doc.body).getPropertyValue('--color-red-500')

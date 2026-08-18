@@ -37,7 +37,7 @@ const hasInitState = computed(() => Object
 
 <template>
   <div
-    data-test-id="story-controls"
+    data-testid="story-controls"
     class="poveste-story-controls flex flex-col divide-y divide-gray-100 dark:divide-gray-750"
   >
     <!-- Toolbar -->

@@ -50,7 +50,7 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
         },
       ]"
       class="relative"
-      data-test-id="sandbox-render"
+      data-testid="sandbox-render"
     >
       <GenericRenderStory
         :key="`${story.id}-${variant.id}`"
