@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test.describe('events', () => {
   test('logs events when story buttons are clicked', async ({ page }) => {
     await page.goto('/story/src-components-eventbutton-story-vue?variantId=_default&tab=events')
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const eventItems = page.getByTestId('event-item')
 
     await iframe.locator('button').filter({ hasText: 'Send' }).click()
@@ -19,7 +19,7 @@ test.describe('events', () => {
 
   test('shows event payload in the popper', async ({ page }) => {
     await page.goto('/story/src-components-eventbutton-story-vue?variantId=_default&tab=events')
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
 
     await iframe.locator('button').filter({ hasText: 'Send' }).click()
     await page.getByTestId('event-item').filter({ hasText: 'My event' }).click()

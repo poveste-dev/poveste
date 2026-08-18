@@ -30,7 +30,7 @@ test.describe('state sync', () => {
   // Tracked in #81.
   test('syncs disabled state between iframe story and controls', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const controls = page.getByTestId('story-controls')
 
     await expect(iframe.locator('button')).not.toHaveClass(/disabled/)

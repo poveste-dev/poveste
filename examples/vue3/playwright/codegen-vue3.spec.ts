@@ -10,7 +10,7 @@ const cases: { variant: string, expected: string }[] = [
     "foo": "bar"
   }
 }</pre>
-<div data-test-id="object">
+<div data-testid="object">
   {
     "object": {
       "foo": "bar"

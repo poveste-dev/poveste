@@ -28,7 +28,7 @@ function close() {
   <div
     v-show="shown"
     class="poveste-search-modal fixed inset-0 bg-white/80 dark:bg-gray-900/80 z-20"
-    data-test-id="search-modal"
+    data-testid="search-modal"
   >
     <div
       class="absolute inset-0"

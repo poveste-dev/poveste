@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test.describe('story render', () => {
   test('renders the iframe story content', async ({ page }) => {
     await page.goto('/story/src-meow-story-svelte?variantId=src-meow-story-svelte-0')
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     await expect(iframe.getByText('😺')).toBeVisible()
   })
 
@@ -16,7 +16,7 @@ test.describe('story render', () => {
     await page.goto('/story/src-cars-story-svelte')
     // With CSS isolation on, each grid item renders in its own sandbox iframe.
     const gridFrame = (index: number) =>
-      page.frameLocator('iframe[data-test-id="preview-iframe"]').nth(index)
+      page.getByTestId('preview-iframe').nth(index).contentFrame()
     await expect(gridFrame(0).getByText('🚗')).toBeVisible()
     await expect(gridFrame(1).getByText('🏎️')).toBeVisible()
     await expect(gridFrame(2).getByText('🚜')).toBeVisible()

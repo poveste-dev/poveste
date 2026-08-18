@@ -12,7 +12,7 @@ async function openDemoAndFocusPreview(page: Page) {
   await page.getByTestId('story-list-item').filter({ hasText: 'Demo' }).click()
   await page.getByTestId('story-variant-list-item').filter({ hasText: 'untitled' }).click()
 
-  const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+  const iframe = page.getByTestId('preview-iframe').contentFrame()
   await expect(iframe.getByText('Hello world!')).toBeVisible()
   await iframe.getByText('Hello world!').click()
 

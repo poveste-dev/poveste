@@ -26,7 +26,7 @@ function toggleOpen() {
 
 <template>
   <div
-    data-test-id="story-group"
+    data-testid="story-group"
     class="poveste-story-group my-2 first:mt-0 last:mb-0 group"
   >
     <template v-if="group.title">

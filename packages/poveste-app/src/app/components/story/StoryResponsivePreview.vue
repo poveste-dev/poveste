@@ -146,7 +146,7 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
       >
         <div
           class="bind-preview-bg rounded-lg h-full"
-          data-test-id="responsive-preview-bg"
+          data-testid="responsive-preview-bg"
         >
           <CheckerboardPattern
             v-if="settings.checkerboard"

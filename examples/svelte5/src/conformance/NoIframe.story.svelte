@@ -13,3 +13,9 @@
     <p class="conformance-inline">Rendered without an iframe</p>
   </Hst.Variant>
 </Hst.Story>
+
+<style>
+  .conformance-inline {
+    color: var(--poveste-contrast-color);
+  }
+</style>

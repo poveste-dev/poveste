@@ -15,7 +15,7 @@ test.describe('search', () => {
 
     await page.getByTestId('search-btn').click()
     await page.getByTestId('search-modal').locator('input').fill('variant 2')
-    await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('Variant 2')
+    await expect(page.locator('[data-testid="search-item"][data-selected]')).toContainText('Variant 2')
     await page.getByTestId('search-modal').locator('input').press('Enter')
     await expect(page.locator('.poveste-toolbar-title')).toContainText('Variant 2')
   })
@@ -26,11 +26,15 @@ test.describe('search', () => {
 
     const input = page.getByTestId('search-modal').locator('input')
     await input.fill('Demo')
-    await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('Demo')
+    // Search is async, and arrowing through a list that is still populating
+    // moves the selection to whatever now sits at that index. Wait for the item
+    // this test walks to before walking, or the run is load-sensitive.
+    await expect(page.getByTestId('search-item').filter({ hasText: 'Variant 2' }).first()).toBeVisible()
+    await expect(page.locator('[data-testid="search-item"][data-selected]')).toContainText('Demo')
     await input.press('ArrowDown')
-    await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('untitled')
+    await expect(page.locator('[data-testid="search-item"][data-selected]')).toContainText('untitled')
     await input.press('ArrowDown')
-    await expect(page.locator('[data-test-id="search-item"][data-selected]')).toContainText('Variant 2')
+    await expect(page.locator('[data-testid="search-item"][data-selected]')).toContainText('Variant 2')
     await input.press('Enter')
     await expect(page.locator('.poveste-toolbar-title')).toContainText('Variant 2')
   })

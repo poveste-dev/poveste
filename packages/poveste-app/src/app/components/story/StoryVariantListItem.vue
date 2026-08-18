@@ -24,7 +24,7 @@ useScrollOnActive(isActive, el)
   <div
     ref="el"
     class="poveste-story-variant-list-item"
-    data-test-id="story-variant-list-item"
+    data-testid="story-variant-list-item"
   >
     <BaseListItemLink
       v-slot="{ active }"

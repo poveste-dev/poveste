@@ -11,7 +11,7 @@ test.describe('head config', () => {
 
   test('injects the configured tags into the sandbox', async ({ page }) => {
     await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     await expect(iframe.locator('.contrast-color')).toBeVisible()
     await expect(iframe.locator(themeColor)).toHaveAttribute('content', '#10b981')
   })
