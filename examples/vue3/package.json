@@ -19,7 +19,7 @@
     "vue": "^3.5.26"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.62.1",
     "@poveste/app": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@poveste/vendors": "workspace:*",
