@@ -14,3 +14,9 @@
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.conformance-inline {
+  color: var(--poveste-contrast-color);
+}
+</style>

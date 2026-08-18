@@ -16,7 +16,7 @@ test.describe('story render', () => {
     await page.goto('/story/src-cars-story-svelte')
     // With CSS isolation on, each grid item renders in its own sandbox iframe.
     const gridFrame = (index: number) =>
-      page.frameLocator('iframe[data-test-id="preview-iframe"]').nth(index)
+      page.locator('iframe[data-test-id="preview-iframe"]').nth(index).contentFrame()
     await expect(gridFrame(0).getByText('🚗')).toBeVisible()
     await expect(gridFrame(1).getByText('🏎️')).toBeVisible()
     await expect(gridFrame(2).getByText('🚜')).toBeVisible()

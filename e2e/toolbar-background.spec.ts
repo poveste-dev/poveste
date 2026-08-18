@@ -7,6 +7,15 @@ declare global {
   }
 }
 
+/*
+ * Chrome, not framework: the toolbar and the sandbox bridge are `poveste-app`,
+ * shared by every plugin. This ran only under vue3 until it moved here (#89).
+ *
+ * It drives conformance ids rather than path-derived ones, so the same file
+ * runs against every project carrying the contract. Tier-1 examples keep the
+ * same `backgroundPresets` for that reason — a differing set would fail the
+ * shared suite rather than the example's own config.
+ */
 const presets = [
   { name: 'transparent', bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' },
   { name: 'white', bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' },
@@ -36,9 +45,9 @@ test.describe('background color', () => {
     const primer = presets[primerFor(index)]
 
     test(`applies the ${preset.name} preset to inline-rendered stories`, async ({ page }) => {
-      await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
+      await page.goto('/story/conformance-no-iframe')
       const bg = page.getByTestId('responsive-preview-bg')
-      const text = page.getByTestId('story-variant-single-view').locator('.native-story')
+      const text = page.locator('.conformance-inline')
 
       await pickPreset(page, primerFor(index))
       await expect(text).toHaveCSS('color', primer.contrast)
@@ -49,8 +58,8 @@ test.describe('background color', () => {
     })
 
     test(`applies the ${preset.name} preset to single-iframe stories`, async ({ page }) => {
-      await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
-      const text = page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.contrast-color')
+      await page.goto('/story/conformance-contrast')
+      const text = page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.conformance-contrast')
 
       await pickPreset(page, primerFor(index))
       await expect(text).toHaveCSS('color', primer.contrast)
@@ -63,10 +72,10 @@ test.describe('background color', () => {
     // so the story markup lives in the frame and the item contributes its own
     // preview background element on top of the grid-level one.
     test(`applies the ${preset.name} preset to grid-rendered stories`, async ({ page }) => {
-      await page.goto('/story/src-components-substory-story-vue?variantId=src-components-substory-story-vue-0')
+      await page.goto('/story/conformance-grid')
       const bg = page.getByTestId('responsive-preview-bg').first()
-      const frame = page.frameLocator('iframe[data-test-id="preview-iframe"]').first()
-      const text = frame.locator('.poveste-generic-render-story .text')
+      const frame = page.locator('iframe[data-test-id="preview-iframe"]').first().contentFrame()
+      const text = frame.locator('.conformance-text')
 
       await pickPreset(page, primerFor(index))
       await expect(text).toHaveCSS('color', primer.contrast)
@@ -88,8 +97,8 @@ test.describe('background color', () => {
         }
       })
     })
-    await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
-    await expect(page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.contrast-color')).toBeVisible()
+    await page.goto('/story/conformance-contrast')
+    await expect(page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.conformance-contrast')).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__settingsRequests)).toBeGreaterThan(0)
   })
 })

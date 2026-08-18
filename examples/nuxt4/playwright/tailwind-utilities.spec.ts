@@ -11,7 +11,7 @@ test.describe('tailwind utilities in the sandbox', () => {
   test('reach the story, resolving their theme variable', async ({ page }) => {
     await page.goto('/story/app-components-basebutton-story-vue')
 
-    const button = page.frameLocator('iframe[data-test-id="preview-iframe"]').first().locator('button')
+    const button = page.locator('iframe[data-test-id="preview-iframe"]').first().contentFrame().locator('button')
     await expect(button).toBeVisible()
 
     // The colour, not the class: the class is in the template regardless.
