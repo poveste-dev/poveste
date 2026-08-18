@@ -40,7 +40,7 @@ function action() {
   <div
     ref="el"
     class="poveste-search-item"
-    data-test-id="search-item"
+    data-testid="search-item"
     :data-selected="selected ? '' : undefined"
   >
     <BaseListItemLink

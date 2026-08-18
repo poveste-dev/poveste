@@ -24,7 +24,7 @@ const themeIcon = computed(() => {
       v-if="!isMobile"
       v-tooltip="makeTooltip('Layout', ({ isMac }) => isMac ? 'meta+shift+l' : 'ctrl+shift+l')"
       aria-label="Open layout customization"
-      data-test-id="layout-btn"
+      data-testid="layout-btn"
       @click="$emit('layout')"
     >
       <Icon
@@ -35,7 +35,7 @@ const themeIcon = computed(() => {
 
     <TopBarChipItem
       v-tooltip="makeTooltip('Search', ({ isMac }) => isMac ? 'meta+k' : 'ctrl+k')"
-      data-test-id="search-btn"
+      data-testid="search-btn"
       @click="$emit('search')"
     >
       <Icon

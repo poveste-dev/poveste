@@ -42,7 +42,7 @@ const value = ref('Foo')
         <h1>Title</h1>
         <hr>
         <pre>{{ { object: state.object } }}</pre>
-        <div data-test-id="object">
+        <div data-testid="object">
           {{ { object: state.object } }}
         </div>
         <button>A button</button>

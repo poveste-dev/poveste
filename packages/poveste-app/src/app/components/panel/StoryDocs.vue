@@ -195,7 +195,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       v-else
       ref="renderedEl"
       class="prose dark:prose-invert p-4 max-w-none"
-      data-test-id="story-docs"
+      data-testid="story-docs"
       v-html="renderedDoc"
     />
   </div>

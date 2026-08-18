@@ -29,7 +29,7 @@ onKeyboardShortcut(['escape'], () => {
   <div
     v-show="shown"
     class="poveste-layout-modal fixed inset-0 bg-white/80 dark:bg-gray-900/80 z-20"
-    data-test-id="layout-modal"
+    data-testid="layout-modal"
   >
     <div
       class="absolute inset-0"
@@ -44,7 +44,7 @@ onKeyboardShortcut(['escape'], () => {
           type="button"
           class="flex items-center justify-center p-1 bg-transparent border-0 text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer"
           aria-label="Close layout customization"
-          data-test-id="layout-modal-close"
+          data-testid="layout-modal-close"
           @click="close()"
         >
           <Icon

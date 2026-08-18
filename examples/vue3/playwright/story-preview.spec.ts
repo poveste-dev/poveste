@@ -15,7 +15,7 @@ test.describe('story preview', () => {
   test('renders the untitled (first) variant', async ({ page }) => {
     await openDemoVariant(page, 'untitled')
 
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     await expect(iframe.getByText('Hello world!')).toBeVisible()
     // Polled, not read once: the story renders before the pane is highlighted.
     await expect.poll(() => page.getByTestId('story-source-code').textContent())
@@ -25,7 +25,7 @@ test.describe('story preview', () => {
   test('renders the second variant', async ({ page }) => {
     await openDemoVariant(page, 'Variant 2')
 
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     await expect(iframe.getByText('Meow!')).toBeVisible()
     await expect.poll(() => page.getByTestId('story-source-code').textContent())
       .toEqual('<Demo message="Meow!" />')

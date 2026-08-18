@@ -26,7 +26,7 @@ useScrollOnActive(isActive, el)
 <template>
   <div
     ref="el"
-    data-test-id="story-list-item"
+    data-testid="story-list-item"
     class="poveste-story-list-item"
   >
     <BaseListItemLink

@@ -27,7 +27,7 @@ test.describe('state key removal', () => {
   })
 
   test('keeps mirroring control edits after the story removes a state key', async ({ page }) => {
-    const iframe = page.frameLocator('iframe[data-test-id="preview-iframe"]')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
     const label = page.getByTestId('story-controls').locator('.poveste-wrapper').filter({ hasText: 'label' }).locator('input')
 
     await expect(iframe.getByTestId('extras')).toHaveText('keep,drop')

@@ -9,7 +9,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4568',
     trace: 'on-first-retry',
-    testIdAttribute: 'data-test-id',
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

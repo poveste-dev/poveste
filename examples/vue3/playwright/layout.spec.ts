@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test.describe('layout customization', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.removeItem('_poveste-layout-v1'))
+    await page.localStorage.removeItem('_poveste-layout-v1')
     await page.reload()
   })
 

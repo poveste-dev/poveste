@@ -31,7 +31,7 @@ const folderPadding = computed(() => {
 
 <template>
   <div
-    data-test-id="story-list-folder"
+    data-testid="story-list-folder"
     class="poveste-story-list-folder"
   >
     <div

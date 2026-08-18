@@ -26,7 +26,7 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets.length
     placement="bottom-end"
     :skidding="6"
     class="poveste-toolbar-background flex-none"
-    data-test-id="toolbar-background"
+    data-testid="toolbar-background"
   >
     <!-- The tooltip would sit on top of the first row of the dropdown, so drop
     it while the dropdown is open. -->
@@ -49,17 +49,17 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets.length
     <template #popper="{ hide }">
       <div
         class="flex flex-col items-stretch"
-        data-test-id="background-popper"
+        data-testid="background-popper"
       >
         <div
           v-if="showColorScheme"
           class="flex items-stretch gap-1 px-2 pt-2"
-          data-test-id="sandbox-color-scheme"
+          data-testid="sandbox-color-scheme"
         >
           <button
             v-for="option in colorSchemeOptions"
             :key="option.value"
-            :data-test-id="`sandbox-color-scheme-${option.value}`"
+            :data-testid="`sandbox-color-scheme-${option.value}`"
             class="flex-1 px-3 py-1.5 rounded flex items-center justify-center gap-1.5 cursor-pointer text-sm"
             :class="[
               settings.colorScheme === option.value

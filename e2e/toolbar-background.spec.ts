@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 declare global {
@@ -7,6 +7,15 @@ declare global {
   }
 }
 
+/*
+ * Chrome, not framework: the toolbar and the sandbox bridge are `poveste-app`,
+ * shared by every plugin. This ran only under vue3 until it moved here (#89).
+ *
+ * It drives conformance ids rather than path-derived ones, so the same file
+ * runs against every project carrying the contract. Tier-1 examples keep the
+ * same `backgroundPresets` for that reason — a differing set would fail the
+ * shared suite rather than the example's own config.
+ */
 const presets = [
   { name: 'transparent', bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' },
   { name: 'white', bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' },
@@ -21,7 +30,23 @@ const presets = [
 // The primer has to differ in both colors: two presets share a contrast color,
 // and one that matched would assert nothing.
 function primerFor(index: number) {
-  return presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
+  const primer = presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
+  if (primer === -1) {
+    // Two presets already share a contrast color, so this is one edit away:
+    // without a row differing in both, the case cannot start from anywhere and
+    // would assert an already-true state instead of a repaint.
+    throw new Error(`No preset differs from '${presets[index].name}' in both background and contrast color.`)
+  }
+  return primer
+}
+
+// Arrange, not an assertion in its own right: the target has to be picked
+// *from* a different preset, or the case whose target is the page default
+// asserts an already-true state. Waiting for the primer to land is what makes
+// the pick that follows a real transition.
+async function startFromAnotherPreset(page: Page, index: number, text: Locator) {
+  await pickPreset(page, primerFor(index))
+  await expect(text).toHaveCSS('color', presets[primerFor(index)].contrast)
 }
 
 async function pickPreset(page: Page, index: number) {
@@ -33,15 +58,12 @@ async function pickPreset(page: Page, index: number) {
 
 test.describe('background color', () => {
   for (const [index, preset] of presets.entries()) {
-    const primer = presets[primerFor(index)]
-
     test(`applies the ${preset.name} preset to inline-rendered stories`, async ({ page }) => {
-      await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
+      await page.goto('/story/conformance-no-iframe')
       const bg = page.getByTestId('responsive-preview-bg')
-      const text = page.getByTestId('story-variant-single-view').locator('.native-story')
+      const text = page.locator('.conformance-inline')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(bg).toHaveCSS('background-color', preset.bg)
@@ -49,11 +71,10 @@ test.describe('background color', () => {
     })
 
     test(`applies the ${preset.name} preset to single-iframe stories`, async ({ page }) => {
-      await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
-      const text = page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.contrast-color')
+      await page.goto('/story/conformance-contrast')
+      const text = page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(text).toHaveCSS('color', preset.contrast)
@@ -63,13 +84,12 @@ test.describe('background color', () => {
     // so the story markup lives in the frame and the item contributes its own
     // preview background element on top of the grid-level one.
     test(`applies the ${preset.name} preset to grid-rendered stories`, async ({ page }) => {
-      await page.goto('/story/src-components-substory-story-vue?variantId=src-components-substory-story-vue-0')
+      await page.goto('/story/conformance-grid')
       const bg = page.getByTestId('responsive-preview-bg').first()
-      const frame = page.frameLocator('iframe[data-test-id="preview-iframe"]').first()
-      const text = frame.locator('.poveste-generic-render-story .text')
+      const frame = page.getByTestId('preview-iframe').first().contentFrame()
+      const text = frame.locator('.conformance-text')
 
-      await pickPreset(page, primerFor(index))
-      await expect(text).toHaveCSS('color', primer.contrast)
+      await startFromAnotherPreset(page, index, text)
 
       await pickPreset(page, index)
       await expect(bg).toHaveCSS('background-color', preset.bg)
@@ -88,8 +108,8 @@ test.describe('background color', () => {
         }
       })
     })
-    await page.goto('/story/src-components-contrastcolor-story-vue?variantId=_default')
-    await expect(page.frameLocator('iframe[data-test-id="preview-iframe"]').locator('.contrast-color')).toBeVisible()
+    await page.goto('/story/conformance-contrast')
+    await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__settingsRequests)).toBeGreaterThan(0)
   })
 })

@@ -34,7 +34,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",
     "@iconify/vue": "^4.1.2",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.62.1",
     "@poveste/vendors": "workspace:*",
     "@stackblitz/sdk": "^1.11.1",
     "@tailwindcss/postcss": "catalog:",
