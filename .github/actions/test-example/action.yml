@@ -55,8 +55,9 @@ runs:
       if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{ inputs.dir }}
-      timeout-minutes: 5
-      run: pnpm exec playwright install-deps chromium
+      # `timeout` the command, not the step: composite actions reject
+      # `timeout-minutes`, and the template fails to load if you try.
+      run: timeout 300 pnpm exec playwright install-deps chromium
 
     - name: Build
       shell: bash
