@@ -1,28 +1,33 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+
+// Markdown rendering and prose styling are chrome: one renderer serves every
+// book, and this ran only under vue3 (#89).
+async function openDocs(page: Page) {
+  await page.goto('/story/conformance-docs')
+  await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
+}
 
 test.describe('story docs', () => {
   test('renders the docs panel for a story variant', async ({ page }) => {
-    await page.goto('/')
-    await page.getByTestId('story-list-item').filter({ hasText: 'Demo' }).click()
-    await page.getByTestId('story-variant-list-item').filter({ hasText: 'untitled' }).click()
-    await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
+    await openDocs(page)
 
     const docs = page.getByTestId('story-docs')
     await expect(docs.locator('h1')).toContainText('Title 1')
     await expect(docs.locator('h2')).toContainText('Title 2')
-    await expect(docs.locator('a').filter({ hasText: 'Link' })).toBeVisible()
+    await expect(docs.locator('a').filter({ hasText: 'Link' }).first()).toBeVisible()
   })
 
   /*
-   * A markdown code block is a `not-prose` island sitting inside the
-   * `<pre><code>` markdown-it wraps around it, so three different rules have to
-   * stay out of it: the prose `code` pill on shiki's `code`, the same pill on
-   * the wrapping `code`, and the absolutely positioned language label. All
-   * three broke independently in the Tailwind v4 upgrade, and the docs still
-   * rendered — nothing short of asserting the computed styles notices.
+   * A markdown code block is a `not-prose` island inside the `<pre><code>`
+   * markdown-it wraps around it, so three rules have to stay out of it: the
+   * prose `code` pill on shiki's `code`, the same pill on the wrapping `code`,
+   * and the absolutely positioned language label. All three broke independently
+   * in the Tailwind v4 upgrade and the docs still rendered — nothing short of
+   * asserting the computed styles notices.
    */
   test('keeps prose styling out of markdown code blocks', async ({ page }) => {
-    await page.goto('/story/src-longfile1-story-js')
+    await openDocs(page)
 
     const block = page.locator('.__poveste-code').first()
     await expect(block).toHaveCSS('position', 'relative')
@@ -40,17 +45,15 @@ test.describe('story docs', () => {
   })
 
   /*
-   * `not-prose` is typography's documented escape hatch, and it has to opt out
-   * of poveste's overrides too — the plugin guards every rule it generates, and
-   * these were plugin-generated until the v4 port made them hand-written CSS.
-   * Separate from the code-block test above: a code block is a `not-prose`
-   * island, but everything inside one also sits in a `pre`, so that test passes
-   * with the guard removed entirely.
+   * `not-prose` is typography's documented escape hatch and has to opt out of
+   * poveste's overrides too. Separate from the code-block test: a code block is
+   * a `not-prose` island, but everything inside one also sits in a `pre`, so
+   * that test passes with the guard removed entirely.
    */
   test('honours not-prose in markdown', async ({ page }) => {
-    await page.goto('/story/src-longfile1-story-js')
+    await openDocs(page)
 
-    const linkColor = async (locator: ReturnType<typeof page.locator>) =>
+    const linkColor = (locator: ReturnType<Page['locator']>) =>
       locator.evaluate(el => getComputedStyle(el).color)
 
     const proseLink = page.locator('#prose-link')
