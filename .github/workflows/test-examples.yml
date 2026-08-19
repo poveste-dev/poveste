@@ -1,0 +1,74 @@
+name: Example tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # A wedged job otherwise burns GitHub's 360-minute default in silence.
+    timeout-minutes: 25
+    name: Example e2e
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | sed 's/Version //')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install chromium
+
+      # Best-effort: `install-deps` shells out to apt, which blocks on a lock or
+      # a slow mirror. The runner image already ships Playwright's libraries —
+      # every job that skipped this step passed — so it must not fail the build.
+      # A genuinely missing library still surfaces, loudly, at browser launch.
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Build books
+        run: pnpm run story:build:e2e
+
+      # One config, one project per example plus the dev and conformance
+      # projects. The shared `e2e/` suite runs here and nowhere else, so it had
+      # no CI coverage at all while the per-example workflows were the gate.
+      - name: Run tests
+        run: pnpm run test:e2e
+
+      # `test-results`, not `playwright-report`: the reporter is `list`, so no
+      # report directory is ever written, and `trace: on-first-retry` puts the
+      # traces here. Pointed at the wrong path this silently uploaded nothing.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results
