@@ -1,8 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-// Layout is chrome — the top bar, the panes, the modal — and ran only under
-// vue3 (#89). The story-options tests drive `conformance-button`, which the
-// contract guarantees has controls.
+// The story-options tests need a story with controls, which the contract
+// guarantees `conformance-button` has.
 const CONTROLS_STORY = '/story/conformance-button'
 
 test.describe('layout customization', () => {

@@ -29,8 +29,7 @@ test.describe('story docs', () => {
     await expect(block).toHaveCSS('position', 'relative')
     await expect(block.locator('> div').first()).toHaveCSS('position', 'absolute')
 
-    // Any highlighted language: each book's docs show its own framework, so
-    // pinning one would put a Vue snippet in the Svelte books.
+    // Any language: each book's docs show the framework it demonstrates.
     for (const code of [block.locator('pre code'), page.locator('pre > code[class*="language-"]').first()]) {
       await expect(code).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
       await expect(code).toHaveCSS('padding', '0px')

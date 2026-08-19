@@ -1,8 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { openDocs } from './support'
 
-// Link handling is markdown rendering, not framework: the same renderer serves
-// every book, and it only ran under vue3 (#89).
+// Link handling is markdown rendering, not framework.
 const STORY = 'conformance-markdown-links'
 
 test.describe('markdown links', () => {
