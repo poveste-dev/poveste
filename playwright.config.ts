@@ -16,8 +16,8 @@ import { defineConfig, devices } from '@playwright/test'
 interface Example {
   name: string
   port: number
-  /** Specs that also run against `poveste dev` (#108). */
-  dev?: { port: number, specs: string[] }
+  /** Specs that also run against `poveste dev` (#108). `shared` are in `e2e/`. */
+  dev?: { port: number, specs?: string[], shared?: string[] }
   /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
   conformance?: boolean
 }
@@ -27,7 +27,7 @@ const EXAMPLES: Example[] = [
     name: 'vue3',
     port: 4567,
     conformance: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-color-scheme.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
   { name: 'nuxt4', port: 4568, conformance: true },
   {
@@ -69,11 +69,21 @@ export default defineConfig({
           use: chrome(`http://localhost:${example.port}`),
         }]
       : [],
-    ...example.dev
+    ...example.dev?.specs
       ? [{
           name: `${example.name}:dev`,
           testDir: `./examples/${example.name}/playwright`,
           testMatch: example.dev.specs,
+          use: chrome(`http://localhost:${example.dev.port}`),
+        }]
+      : [],
+    // Shared specs against the dev server: the spec moved to `e2e/`, and the
+    // dev-vs-build divergence it guards did not move with it (#108).
+    ...example.dev?.shared
+      ? [{
+          name: `${example.name}:dev-shared`,
+          testDir: './e2e',
+          testMatch: example.dev.shared,
           use: chrome(`http://localhost:${example.dev.port}`),
         }]
       : [],

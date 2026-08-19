@@ -12,6 +12,8 @@ const CONTRACT = [
   'conformance-no-iframe',
   'conformance-events',
   'conformance-wrapper',
+  'conformance-dark',
+  'conformance-inline-grid',
 ]
 
 test.describe('conformance contract', () => {
