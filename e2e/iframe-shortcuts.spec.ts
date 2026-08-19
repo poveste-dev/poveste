@@ -27,16 +27,20 @@ test.describe('shortcuts from the preview iframe', () => {
     await expect(page.getByTestId('search-modal')).toBeVisible()
   })
 
+  // Pinned to light so the assertions can name the state rather than negate
+  // whatever it happened to start in — a relative assertion passes even if the
+  // shortcut toggles the wrong way.
+  test.use({ colorScheme: 'light' })
+
   test('toggles dark mode with ctrl+shift+d while the preview has focus', async ({ page }) => {
     await openStoryAndFocusPreview(page)
-
     const isDark = async () => page.locator('html').evaluate(el => el.classList.contains('ptw-dark'))
-    const wasDark = await isDark()
+    await expect.poll(isDark).toBe(false)
 
     await page.keyboard.press('Control+Shift+D')
-    await expect.poll(isDark).toBe(!wasDark)
+    await expect.poll(isDark).toBe(true)
 
     await page.keyboard.press('Control+Shift+D')
-    await expect.poll(isDark).toBe(wasDark)
+    await expect.poll(isDark).toBe(false)
   })
 })
