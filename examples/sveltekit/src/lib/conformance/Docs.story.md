@@ -6,7 +6,7 @@ A [Link](https://poveste.dev/) in prose, and some inline `code` that keeps its p
 
 ```svelte
 <script>
-  let message = 'Hello world!'
+  const message = 'Hello world!'
 </script>
 
 <Demo {message} />
