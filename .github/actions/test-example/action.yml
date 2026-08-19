@@ -46,10 +46,18 @@ runs:
       working-directory: ${{ inputs.dir }}
       run: pnpm exec playwright install chromium
 
+    # Gated with the browser install, not run every job: `install-deps` shells
+    # out to apt, which blocks indefinitely on a lock or a slow mirror. It hung
+    # 15 minutes here with no output while every later step waited. The runner
+    # image already ships Playwright's system libraries, so this only matters
+    # when browsers are actually being fetched.
     - name: Install Playwright system deps
+      if: steps.playwright-cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{ inputs.dir }}
-      run: pnpm exec playwright install-deps chromium
+      # `timeout` the command, not the step: composite actions reject
+      # `timeout-minutes`, and the template fails to load if you try.
+      run: timeout 300 pnpm exec playwright install-deps chromium
 
     - name: Build
       shell: bash
