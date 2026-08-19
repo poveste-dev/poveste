@@ -1,3 +1,5 @@
-# Conformance markdown links
+[Link to welcome header](#welcome){id="link-to-welcome"}
 
-A relative link to [the button story](./Button.story.svelte).
+# Welcome
+
+This is just a link to [Poveste.dev](https://poveste.dev/){id="link-to-history"}.

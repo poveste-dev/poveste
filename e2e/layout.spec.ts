@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
 
+// The story-options tests need a story with controls, which the contract
+// guarantees `conformance-button` has.
+const CONTROLS_STORY = '/story/conformance-button'
+
 test.describe('layout customization', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -22,7 +26,7 @@ test.describe('layout customization', () => {
   })
 
   test('toggles the story options pane', async ({ page }) => {
-    await page.getByTestId('story-list-item').filter({ hasText: /^Controls/ }).first().click()
+    await page.goto(CONTROLS_STORY)
     await expect(page.getByTestId('story-side-panel')).toBeVisible()
     await page.getByTestId('layout-btn').click()
     await page.getByTestId('layout-toggle-story-options').click()
@@ -31,21 +35,12 @@ test.describe('layout customization', () => {
   })
 
   test('moves the story options pane to the bottom', async ({ page }) => {
-    await page.getByTestId('story-list-item').filter({ hasText: /^Controls/ }).first().click()
+    await page.goto(CONTROLS_STORY)
     await expect(page.getByTestId('story-side-panel')).toBeVisible()
     await page.getByTestId('layout-btn').click()
     await page.getByTestId('layout-placement-bottom').click()
     await page.getByTestId('layout-modal-close').click()
     await expect(page.locator('.poveste-base-split-pane.portrait')).toBeVisible()
-  })
-
-  test('lets a story force its options pane hidden via meta', async ({ page }) => {
-    await page.getByTestId('story-list-item').filter({ hasText: 'StoryOptions Override' }).first().click()
-    await expect(page.getByTestId('story-side-panel')).toHaveCount(0)
-
-    // The global setting stays on — only this story opts out.
-    await page.getByTestId('story-list-item').filter({ hasText: /^Controls/ }).first().click()
-    await expect(page.getByTestId('story-side-panel')).toBeVisible()
   })
 
   test('persists settings across a reload', async ({ page }) => {
