@@ -1,12 +1,8 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-/**
- * The sandbox runs in an iframe, so key events fired while it has focus never
- * reach the parent window. These guard the forwarding that keeps global
- * shortcuts working from inside the preview — chrome behaviour, so it runs
- * under every conformance project (#89).
- */
+// Key events in the sandbox iframe never reach the parent window, so global
+// shortcuts depend on forwarding. Chrome, so it runs under every project.
 async function openStoryAndFocusPreview(page: Page) {
   await page.goto('/story/conformance-button')
 
@@ -14,8 +10,7 @@ async function openStoryAndFocusPreview(page: Page) {
   await expect(preview.getByText('Click me')).toBeVisible()
   await preview.getByText('Click me').click()
 
-  // Guard against the click silently leaving focus on the parent, which would
-  // make the shortcuts below pass for the wrong reason.
+  // Without this the shortcuts below pass for the wrong reason.
   await expect.poll(async () => page.evaluate(() => document.activeElement?.tagName)).toBe('IFRAME')
 }
 
@@ -27,9 +22,8 @@ test.describe('shortcuts from the preview iframe', () => {
     await expect(page.getByTestId('search-modal')).toBeVisible()
   })
 
-  // Pinned to light so the assertions can name the state rather than negate
-  // whatever it happened to start in — a relative assertion passes even if the
-  // shortcut toggles the wrong way.
+  // Pinned so the assertions can name the state; negating the start passes
+  // whichever way the shortcut goes.
   test.use({ colorScheme: 'light' })
 
   test('toggles dark mode with ctrl+shift+d while the preview has focus', async ({ page }) => {

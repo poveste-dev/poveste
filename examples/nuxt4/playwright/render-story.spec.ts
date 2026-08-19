@@ -10,9 +10,8 @@ test.describe('story render', () => {
   test('keeps the `nuxt-test` app empty inside the sandbox', async ({ page }) => {
     await page.goto('/story/app-components-simple-story-vue?variantId=_default')
     const iframe = page.getByTestId('preview-iframe').contentFrame()
-    // Wait for the story before asserting the app root is empty: `toBeEmpty`
-    // on an element the sandbox has not created yet reads as a failure rather
-    // than as "not ready", which is how this lost under full-suite load.
+    // `toBeEmpty` on an element the sandbox has not created yet fails rather
+    // than waits.
     await expect(iframe.locator('.poveste-generic-render-story')).toBeVisible()
     await expect(iframe.locator('#nuxt-test[data-v-app]')).toBeEmpty()
   })
