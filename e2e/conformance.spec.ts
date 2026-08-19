@@ -1,17 +1,8 @@
 import { expect, test } from '@playwright/test'
 
-/*
- * The conformance contract (#89, section 4).
- *
- * Story ids are normally derived from file paths, so the same story has a
- * different URL in every framework. Both plugins accept an explicit id, which
- * is what lets one spec drive every framework — each authors its own
- * implementation, the ids stay identical.
- *
- * This spec runs under every conformance project. Eight stories times four
- * frameworks is a lot of files that have to stay in agreement, so drift fails
- * here rather than turning into a shared spec that silently skips.
- */
+// Story ids are normally path-derived, so the same story has a different URL
+// per framework. Both plugins accept an explicit id, which is what lets one
+// spec drive every framework. Drift fails here rather than silently skipping.
 const CONTRACT = [
   'conformance-button',
   'conformance-grid',

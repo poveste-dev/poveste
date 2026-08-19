@@ -7,15 +7,8 @@ declare global {
   }
 }
 
-/*
- * Chrome, not framework: the toolbar and the sandbox bridge are `poveste-app`,
- * shared by every plugin. This ran only under vue3 until it moved here (#89).
- *
- * It drives conformance ids rather than path-derived ones, so the same file
- * runs against every project carrying the contract. Tier-1 examples keep the
- * same `backgroundPresets` for that reason — a differing set would fail the
- * shared suite rather than the example's own config.
- */
+// Chrome, not framework. Drives conformance ids so it runs under every
+// project; tier-1 examples therefore keep identical `backgroundPresets`.
 const presets = [
   { name: 'transparent', bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' },
   { name: 'white', bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' },
@@ -25,25 +18,19 @@ const presets = [
   { name: 'custom', bg: 'rgb(202, 255, 245)', contrast: 'rgb(0, 81, 66)' },
 ]
 
-// Every case picks another preset before its own, so a preview that never
-// repaints fails even where the target is the default the page opened on.
-// The primer has to differ in both colors: two presets share a contrast color,
-// and one that matched would assert nothing.
+// A primer differing in both colors: two presets share a contrast color, and
+// one that matched would assert nothing.
 function primerFor(index: number) {
   const primer = presets.findIndex(p => p.bg !== presets[index].bg && p.contrast !== presets[index].contrast)
   if (primer === -1) {
-    // Two presets already share a contrast color, so this is one edit away:
-    // without a row differing in both, the case cannot start from anywhere and
-    // would assert an already-true state instead of a repaint.
+    // One edit away, not hypothetical: transparent and white already match.
     throw new Error(`No preset differs from '${presets[index].name}' in both background and contrast color.`)
   }
   return primer
 }
 
-// Arrange, not an assertion in its own right: the target has to be picked
-// *from* a different preset, or the case whose target is the page default
-// asserts an already-true state. Waiting for the primer to land is what makes
-// the pick that follows a real transition.
+// Arrange, not an assertion: without it the case whose target is the page
+// default asserts an already-true state.
 async function startFromAnotherPreset(page: Page, index: number, text: Locator) {
   await pickPreset(page, primerFor(index))
   await expect(text).toHaveCSS('color', presets[primerFor(index)].contrast)

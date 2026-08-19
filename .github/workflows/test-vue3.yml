@@ -13,6 +13,8 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A wedged job otherwise burns GitHub\'s 360-minute default in silence.
+    timeout-minutes: 15
     name: Vue 3 example
     steps:
       - uses: actions/checkout@v4

@@ -10,6 +10,9 @@ test.describe('story render', () => {
   test('keeps the `nuxt-test` app empty inside the sandbox', async ({ page }) => {
     await page.goto('/story/app-components-simple-story-vue?variantId=_default')
     const iframe = page.getByTestId('preview-iframe').contentFrame()
+    // `toBeEmpty` on an element the sandbox has not created yet fails rather
+    // than waits.
+    await expect(iframe.locator('.poveste-generic-render-story')).toBeVisible()
     await expect(iframe.locator('#nuxt-test[data-v-app]')).toBeEmpty()
   })
 
