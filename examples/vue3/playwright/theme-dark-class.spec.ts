@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { sandboxHtml, seedChromeScheme, seedPreviewSettings } from '../../../e2e/support'
 
 // Stays per-example: it asserts a book with a *custom* `theme.darkClass` gets
 // that class and not the legacy `dark`. A book on the default cannot express
@@ -9,31 +10,6 @@ const DARK_CLASS = /my-dark/
 const IFRAME_STORY = '/story/conformance-contrast'
 const NATIVE_STORY = '/story/conformance-no-iframe'
 const INLINE_GRID_STORY = '/story/conformance-inline-grid'
-
-function sandboxHtml(page: Page) {
-  return page.getByTestId('preview-iframe').contentFrame().locator('html')
-}
-
-function seedChromeScheme(page: Page, scheme: 'light' | 'dark') {
-  return page.addInitScript((value) => {
-    localStorage.setItem('poveste-color-scheme', value)
-  }, scheme)
-}
-
-function seedPreviewSettings(page: Page, settings: Record<string, unknown>) {
-  return page.addInitScript((value) => {
-    localStorage.setItem('_poveste-sandbox-settings-v3', JSON.stringify({
-      responsiveWidth: 720,
-      responsiveHeight: null,
-      rotate: false,
-      backgroundColor: '#fff',
-      backgroundColorPicked: true,
-      checkerboard: false,
-      textDirection: 'ltr',
-      ...value,
-    }))
-  }, settings)
-}
 
 test.describe('custom theme.darkClass', () => {
   const DARK_PATHS = [

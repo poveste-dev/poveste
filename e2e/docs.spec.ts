@@ -1,16 +1,12 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { openDocs } from './support'
 
-// Markdown rendering and prose styling are chrome: one renderer serves every
-// book, and this ran only under vue3 (#89).
-async function openDocs(page: Page) {
-  await page.goto('/story/conformance-docs')
-  await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
-}
+const DOCS_STORY = 'conformance-docs'
 
 test.describe('story docs', () => {
   test('renders the docs panel for a story variant', async ({ page }) => {
-    await openDocs(page)
+    await openDocs(page, DOCS_STORY)
 
     const docs = page.getByTestId('story-docs')
     await expect(docs.locator('h1')).toContainText('Title 1')
@@ -27,7 +23,7 @@ test.describe('story docs', () => {
    * asserting the computed styles notices.
    */
   test('keeps prose styling out of markdown code blocks', async ({ page }) => {
-    await openDocs(page)
+    await openDocs(page, DOCS_STORY)
 
     const block = page.locator('.__poveste-code').first()
     await expect(block).toHaveCSS('position', 'relative')
@@ -51,7 +47,7 @@ test.describe('story docs', () => {
    * that test passes with the guard removed entirely.
    */
   test('honours not-prose in markdown', async ({ page }) => {
-    await openDocs(page)
+    await openDocs(page, DOCS_STORY)
 
     const linkColor = (locator: ReturnType<Page['locator']>) =>
       locator.evaluate(el => getComputedStyle(el).color)

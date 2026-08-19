@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { sandboxHtml, seedChromeScheme, seedPreviewSettings } from './support'
 
 // `theme.darkClass` is per-book config — vue3 sets `my-dark`, the rest take the
 // default — so a shared spec matches either rather than pinning one book's.
@@ -16,36 +17,6 @@ const NATIVE_STORY = '/story/conformance-no-iframe'
 // Grid cells rendered by the app rather than one sandbox each — the third
 // render path (#126).
 const INLINE_GRID_STORY = '/story/conformance-inline-grid'
-
-function sandboxHtml(page: Page) {
-  return page.getByTestId('preview-iframe').contentFrame().locator('html')
-}
-
-/**
- * `theme.storeColorScheme` defaults to true, so the app scheme lives in
- * localStorage. Seeding it lets a test put the chrome and the preview on
- * opposite schemes.
- */
-function seedChromeScheme(page: Page, scheme: 'light' | 'dark') {
-  return page.addInitScript((value) => {
-    localStorage.setItem('poveste-color-scheme', value)
-  }, scheme)
-}
-
-function seedPreviewSettings(page: Page, settings: Record<string, unknown>) {
-  return page.addInitScript((value) => {
-    localStorage.setItem('_poveste-sandbox-settings-v3', JSON.stringify({
-      responsiveWidth: 720,
-      responsiveHeight: null,
-      rotate: false,
-      backgroundColor: '#fff',
-      backgroundColorPicked: true,
-      checkerboard: false,
-      textDirection: 'ltr',
-      ...value,
-    }))
-  }, settings)
-}
 
 async function pickColorScheme(page: Page, value: 'auto' | 'light' | 'dark') {
   await page.getByTestId('toolbar-background').click()
