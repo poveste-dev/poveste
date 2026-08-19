@@ -29,14 +29,14 @@ const EXAMPLES: Example[] = [
     conformance: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-color-scheme.spec.ts'] },
   },
-  { name: 'nuxt4', port: 4568 },
+  { name: 'nuxt4', port: 4568, conformance: true },
   {
     name: 'svelte5',
     port: 4569,
     conformance: true,
     dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts'] },
   },
-  { name: 'sveltekit', port: 4570 },
+  { name: 'sveltekit', port: 4570, conformance: true },
   {
     name: 'vue3-tailwind',
     port: 4571,
