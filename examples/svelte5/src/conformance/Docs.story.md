@@ -4,10 +4,12 @@
 
 A [Link](https://poveste.dev/) in prose, and some inline `code` that keeps its pill.
 
-```vue
-<template>
-  <Demo message="Hello world!" />
-</template>
+```svelte
+<script>
+  let message = 'Hello world!'
+</script>
+
+<Demo {message} />
 ```
 
 <div id="not-prose-island" class="not-prose">
