@@ -13,8 +13,8 @@ whole.
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.2...v0.5.3)
 
-Fixes to how Poveste's chrome and a consumer's own styles coexist, plus the dev server finally
-getting test coverage.
+Fixes to how Poveste's chrome and a consumer's own styles coexist, a Nuxt story build that no
+longer disturbs the host application, plus the dev server finally getting test coverage.
 
 ### 🩹 Fixes
 
@@ -22,7 +22,13 @@ getting test coverage.
   while the inline preview and the sandbox iframe also emitted the deprecated
   `sandboxDarkClass` — both default to `dark`, so a book configuring neither never noticed, and a
   book setting `theme.darkClass` got its CSS working in two views and silently not in the third.
-  `sandboxDarkClass` is now `@deprecated` in favour of `theme.darkClass`
+  `sandboxDarkClass` is now `@deprecated` in favour of `theme.darkClass`.
+
+  **Behaviour change worth checking if you set a custom `theme.darkClass`.** `sandboxDarkClass`
+  no longer defaults to `dark`, so it is applied only when you set it yourself. A book with a
+  custom `theme.darkClass` used to receive `dark` as well on the inline and sandbox paths, and
+  now receives only its own class. If any story CSS keys on `.dark` — Tailwind's `dark:` variant
+  does by default — set `sandboxDarkClass: 'dark'` explicitly, or point the CSS at your own class
   ([#202](https://github.com/poveste-dev/poveste/pull/202))
 - Honour an explicitly requested `--port`, and give each example its own. Four examples previewed
   on 4567 with `reuseExistingServer` enabled, so a second suite attached to the first one's book
@@ -35,6 +41,14 @@ getting test coverage.
 - Generate the Tailwind and Pinceau design-system stories on dev start. Neither appeared until
   its own watcher fired, because nothing called `generate()` before the watcher was installed
   ([#204](https://github.com/poveste-dev/poveste/pull/204))
+- Build the auxiliary Nuxt instance into `.nuxt/poveste` rather than the host application's
+  `.nuxt`. Rendering stories regenerated the app's own declarations and left Poveste's in their
+  place, so a later type-aware ESLint or `vue-tsc` run read the wrong ones — the same commit
+  passed or failed lint depending on whether `nuxt prepare` or `poveste build` ran last, with no
+  warning that the type environment had been replaced. `process.env.POVESTE` is now set alongside
+  `HISTOIRE`, so a consumer branching on it has a correctly-named variable
+  ([#224](https://github.com/poveste-dev/poveste/pull/224),
+  [#223](https://github.com/poveste-dev/poveste/issues/223))
 
 ### 🏡 Chore
 
