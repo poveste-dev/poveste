@@ -118,6 +118,10 @@ async function useNuxtViteConfig() {
     ready: false,
     dev: true,
     overrides: {
+      // Keep the auxiliary instance out of the host's `.nuxt`: it regenerates
+      // `imports.d.ts` and friends, which any later type-aware lint or vue-tsc
+      // run would then read instead of the application's own (#223).
+      buildDir: '.nuxt/poveste',
       devtools: { enabled: false },
       ssr: false,
       experimental: {

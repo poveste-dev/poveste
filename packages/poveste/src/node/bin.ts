@@ -9,6 +9,7 @@ const { version } = JSON.parse(fs.readFileSync(resolve(__dirname, '../../package
 
 process.env.NODE_ENV = 'development'
 process.env.HISTOIRE = 'true'
+process.env.POVESTE = 'true'
 
 const program = sade('poveste')
 program.version(version)
