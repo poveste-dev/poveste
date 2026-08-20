@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-nuxt",
   "type": "module",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Poveste plugin to integrate with Nuxt 4",
   "author": {
     "name": "Sorin Gitlan"
