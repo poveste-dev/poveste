@@ -9,6 +9,62 @@ kept verbatim as the history poveste forked from. Its version numbers are higher
 poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
 whole.
 
+## v0.5.3
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.2...v0.5.3)
+
+Fixes to how Poveste's chrome and a consumer's own styles coexist, plus the dev server finally
+getting test coverage.
+
+### 🩹 Fixes
+
+- Apply the same dark classes on every render path. The grid emitted `theme.darkClass` alone
+  while the inline preview and the sandbox iframe also emitted the deprecated
+  `sandboxDarkClass` — both default to `dark`, so a book configuring neither never noticed, and a
+  book setting `theme.darkClass` got its CSS working in two views and silently not in the third.
+  `sandboxDarkClass` is now `@deprecated` in favour of `theme.darkClass`
+  ([#202](https://github.com/poveste-dev/poveste/pull/202))
+- Honour an explicitly requested `--port`, and give each example its own. Four examples previewed
+  on 4567 with `reuseExistingServer` enabled, so a second suite attached to the first one's book
+  and failed as a confident, wrong regression
+  ([#205](https://github.com/poveste-dev/poveste/pull/205))
+- Let the sandbox ask for its preview settings instead of being pushed them. A push aimed at a
+  document that is going away is dropped with no error, no ack and no retry, so delivery rested
+  entirely on the app observing every document swap
+  ([#206](https://github.com/poveste-dev/poveste/pull/206))
+- Generate the Tailwind and Pinceau design-system stories on dev start. Neither appeared until
+  its own watcher fired, because nothing called `generate()` before the watcher was installed
+  ([#204](https://github.com/poveste-dev/poveste/pull/204))
+
+### 🏡 Chore
+
+- Scope workflow `push` triggers to `main`, so a PR no longer runs the full matrix twice
+  ([#208](https://github.com/poveste-dev/poveste/pull/208))
+- Close `need repro` issues after 14 days, which is what the bug template already promised
+  ([#201](https://github.com/poveste-dev/poveste/pull/201))
+- Give the example e2e a root Playwright config with one project per example, and run the
+  isolation specs against `poveste dev` as well as a built book — `poveste dev` previously had no
+  automated coverage at all ([#211](https://github.com/poveste-dev/poveste/pull/211),
+  [#210](https://github.com/poveste-dev/poveste/pull/210),
+  [#209](https://github.com/poveste-dev/poveste/pull/209))
+
+### 📖 Documentation
+
+- Warn that a negated closing keyword still closes the issue — GitHub matches `close #N` and
+  ignores the words around it ([#207](https://github.com/poveste-dev/poveste/pull/207))
+
+## v0.5.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.1...v0.5.2)
+
+A single fix, backfilled — this section was missed at release time.
+
+### 🩹 Fixes
+
+- Stop consumer CSS and Poveste's chrome overriding each other. A consumer's page-level rules
+  repainted the controls panel rather than only their own story, and Poveste's reset reached the
+  other way ([#200](https://github.com/poveste-dev/poveste/pull/200))
+
 ## v0.5.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.0...v0.5.1)
