@@ -8,6 +8,7 @@
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4568",
     "test": "playwright test",
+    "test:build-dir": "node scripts/assert-host-build-dir.mjs",
     "test:dev": "playwright test --ui",
     "test:examples": "pnpm run story:build && pnpm run test"
   },

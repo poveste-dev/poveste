@@ -19,3 +19,8 @@ jobs:
       - uses: ./.github/actions/test-example
         with:
           dir: ./examples/nuxt4
+
+      - name: Assert the host .nuxt is untouched by a story build
+        shell: bash
+        working-directory: ./examples/nuxt4
+        run: pnpm run test:build-dir
