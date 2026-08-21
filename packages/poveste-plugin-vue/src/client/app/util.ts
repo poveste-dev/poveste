@@ -1,4 +1,4 @@
-import { applyState } from '@poveste/shared'
+import { applyState, createStateBaseline } from '@poveste/shared'
 import {
   isRef as _isRef,
   unref as _unref,
@@ -90,33 +90,27 @@ function _toRawObject(obj: Record<any, any>, target: Record<any, any>, seen = ne
  * @param externalState Reactive state created with the external/user Vue
  */
 export function syncStateBundledAndExternal(bundledState, externalState) {
-  // `syncing` means "the next firing on the other side is the echo of a write I
-  // just made, ignore it". The subtlety, and the whole of #95, is that it is
-  // only safe to set when a firing is actually coming.
+  // Each side is asked only for what *it* changed, and that is all that crosses.
   //
-  // It used to be set unconditionally, on the assumption that every apply
-  // provokes exactly one counterpart firing. Nothing enforced that. A change
-  // `applyState` cannot express — a removed key is the simplest — provokes none,
-  // and the flag then sat set through the next genuine edit and swallowed it.
+  // Both watchers used to mirror the whole of their side. That works while the
+  // edits take turns, and coordinating the echoes needed a shared `syncing`
+  // boolean that had to be right about whether a firing was coming — the whole
+  // of #95. It stops working the moment both sides change in the same tick: the
+  // second watcher to fire carries not just its own edit but its stale copy of
+  // the other side's key, and writes the first edit back out from under it. The
+  // edit was not delayed, it was gone, from both sides (#96).
   //
-  // What held the assumption up in practice was an accident: `applyState`
-  // rebuilt every object it copied, so any state carrying an object or an array
-  // triggered the far side whether or not a value had moved. Vue stories always
-  // carry `_hPropState` and `_hPropDefs`, so in this plugin it never actually
-  // bit — which is exactly why the issue had no repro, and why making
-  // `applyState` skip no-op writes had to come with this change rather than
-  // before it.
-  //
-  // `applyState` now reports whether it wrote, and that is what the flag holds.
-  let syncing = false
+  // A baseline of the last agreed state answers both. It is what the far side is
+  // known to hold, so diffing against it yields this side's own edits and never
+  // the far side's — there is nothing stale left to send. And an echo diffs to
+  // nothing, so no flag is needed to recognise one; the boolean is gone, and
+  // with it the question of what happens when the alternation slips.
+  const baseline = createStateBaseline()
 
   const _stop = _watch(() => bundledState, (value) => {
     if (value == null) return
-    if (syncing) {
-      syncing = false
-      return
-    }
-    syncing = applyState(externalState, _toRawDeep(value))
+    const changes = baseline.take(_toRawDeep(value))
+    if (changes) applyState(externalState, changes)
   }, {
     deep: true,
     immediate: true,
@@ -124,11 +118,8 @@ export function syncStateBundledAndExternal(bundledState, externalState) {
 
   const stop = watch(() => externalState, (value) => {
     if (value == null) return
-    if (syncing) {
-      syncing = false
-      return
-    }
-    syncing = applyState(bundledState, toRawDeep(value))
+    const changes = baseline.take(toRawDeep(value))
+    if (changes) applyState(bundledState, changes)
   }, {
     deep: true,
     immediate: true,
