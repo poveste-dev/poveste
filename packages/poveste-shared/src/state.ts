@@ -88,6 +88,32 @@ export function isEquivalent(a: any, b: any, seen?: WeakMap<object, WeakSet<obje
 }
 
 /**
+ * Whether a key's value is merged one level rather than replaced whole.
+ *
+ * One rule, stated once, because it has to hold in three places at once:
+ * `applyState` writes by it, `diffState` narrows by it — sending less than the
+ * whole object is only safe as far as the write will merge — and the baseline in
+ * `createStateBaseline` records by it. They drifted apart when it was three
+ * copies, and the `_h` clause was the one that went missing.
+ *
+ * `_h`-prefixed keys are never merged: the sandbox needs those replaced outright
+ * so a nested key the story dropped actually disappears.
+ *
+ * Both sides have to be objects worth merging. `existing` is loose about how it
+ * got its prototype, because a target may hold anything a story put there; the
+ * incoming value must be a plain object, because merging a primitive or an array
+ * into an object writes nothing useful — `for (const nested in 5)` iterates
+ * nothing at all, and the assignment is then skipped entirely.
+ */
+function mergesNested(key: string, existing: any, incoming: any) {
+  return !key.startsWith('_h')
+    && isPlainObject(incoming)
+    && existing != null
+    && typeof existing === 'object'
+    && !Array.isArray(existing)
+}
+
+/**
  * Copies `state` onto `target`, and reports whether it wrote anything.
  *
  * The return value is what the syncs in `plugin-svelte` and the sandbox bridge
@@ -124,7 +150,7 @@ export function applyState(target: any, state: any, override = false) {
     }
 
     // iframe sync needs to update properties without overriding them
-    if (!override && current && !key.startsWith('_h') && typeof current === 'object' && !Array.isArray(current)) {
+    if (!override && mergesNested(key, current, state[key])) {
       // Not `Object.assign`, because the reason the two are not equivalent may
       // be a key that `current` has and `state[key]` does not — a removal, which
       // this merge cannot express. Assigning the rest would then change nothing
@@ -173,6 +199,8 @@ export function applyState(target: any, state: any, override = false) {
  * it walks the keys of a nested object and assigns each, so a value handed to it
  * at depth two is written whole. Narrow past that and the write lands the narrow
  * subset *as* the object and takes its siblings with it.
+ *
+ * Whether a key gets here at all is `mergesNested`'s call, not this function's.
  */
 function narrowState(before: any, after: any): Record<string, any> | null {
   let changes: Record<string, any> | null = null
@@ -196,11 +224,10 @@ function narrowState(before: any, after: any): Record<string, any> | null {
  *
  * The narrowing is what lets two sides edit one object at once without either
  * clobbering the other — whatever is not sent cannot be overwritten — so it has
- * to line up with `applyState`'s merge rule exactly. `applyState` merges a plain
- * object one level down, and skips `_h`-prefixed keys because the sandbox needs
- * those replaced rather than merged; this narrows on the same terms, so those
- * keys still cross whole and concurrent edits *inside* one of them still race.
- * Ordinary story state does not live there.
+ * to line up with how `applyState` writes, exactly. Both ask `mergesNested`.
+ * A key it refuses, `_h`-prefixed ones included, crosses whole, so concurrent
+ * edits *inside* one of those still race; ordinary story state does not live
+ * there.
  *
  * Only keys `next` has are considered. A key `baseline` has and `next` does not
  * is a removal, which `applyState` cannot express, so reporting it would produce
@@ -221,7 +248,7 @@ export function diffState(baseline: any, next: any): Record<string, any> | null 
 
     let value = after
 
-    if (known && !key.startsWith('_h') && isPlainObject(before) && isPlainObject(after)) {
+    if (known && mergesNested(key, before, after)) {
       value = narrowState(before, after)
 
       // Only a removal, then. Nothing to send.
@@ -264,9 +291,15 @@ function copyState(value: any, seen = new WeakMap<object, any>()) {
 
 /**
  * Records `changes` — the shape `diffState` returns — into `baseline`, on the
- * same terms `applyState` writes it: merge the one narrowed level, take
- * everything under it whole. Keys the diff did not mention survive, which is
- * what keeps a removal the far side could not mirror from being replayed.
+ * same terms `applyState` writes it: `mergesNested` decides, the one narrowed
+ * level is merged, everything under it taken whole. Keys the diff did not
+ * mention survive, which is what keeps a removal the far side could not mirror
+ * from being replayed.
+ *
+ * Getting that predicate wrong here is quiet and permanent. Merge an `_h` key
+ * that the write replaced and the baseline keeps a nested key the real state has
+ * dropped — it can never match again, so every later pass reports the same
+ * phantom change, forever.
  *
  * Copies on the way in. The same `changes` object goes to `applyState`, which
  * assigns its values straight into a reactive state; sharing them would let a
@@ -278,7 +311,7 @@ function recordState(baseline: any, changes: any) {
   for (const key in changes) {
     const value = changes[key]
 
-    if (isPlainObject(value) && isPlainObject(baseline[key])) {
+    if (mergesNested(key, baseline[key], value)) {
       for (const nested in value) {
         baseline[key][nested] = copyState(value[nested])
       }

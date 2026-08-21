@@ -124,6 +124,21 @@ describe('applyState', () => {
     expect(target.nested).toEqual({ a: 1, b: 3 })
   })
 
+  it('replaces an object with a value it cannot merge into it', () => {
+    // The merge branch used to be chosen from the *target*'s type alone, so an
+    // incoming primitive met `for (const nested in 5)` — no iterations, nothing
+    // written, and the write silently dropped. A story swapping an object for a
+    // scalar is ordinary; a sync that records the write as done while the far
+    // side never got it then reverts that edit on the next pass.
+    const target: any = { config: { a: 1 }, list: { a: 1 } }
+
+    expect(applyState(target, { config: 5 })).toBe(true)
+    expect(target.config).toBe(5)
+
+    expect(applyState(target, { list: [1, 2] })).toBe(true)
+    expect(target.list).toEqual([1, 2])
+  })
+
   it('swallows writes to read-only properties', () => {
     const target: any = {}
     Object.defineProperty(target, 'ro', { get: () => 1, enumerable: true })
@@ -267,6 +282,20 @@ describe('createStateBaseline', () => {
     expect(baseline.take({ a: 1, b: 0 })).toEqual({ a: 1 })
     expect(baseline.take({ a: 1, b: 1 })).toEqual({ b: 1 })
     expect(baseline.take({ a: 1, b: 1 })).toBeNull()
+  })
+
+  it('stops reporting an `_h` key once the far side holds the shrunk value', () => {
+    // `_h` keys are replaced whole rather than merged, so the baseline has to
+    // record them the same way. Merging instead leaves behind a nested key the
+    // real state has dropped, and the baseline can never match again — every
+    // later pass reports the same phantom change, forever. Every Vue story
+    // carries `_hPropState`, so "forever" means every story whose auto-props
+    // ever shrink.
+    const baseline = createStateBaseline()
+    baseline.take({ _hPropState: { a: 1, b: 2 } })
+
+    expect(baseline.take({ _hPropState: { a: 9 } })).toEqual({ _hPropState: { a: 9 } })
+    expect(baseline.take({ _hPropState: { a: 9 } })).toBeNull()
   })
 
   it('keeps a key the far side removed rather than replaying it', () => {
