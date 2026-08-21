@@ -355,5 +355,20 @@ export function createStateBaseline() {
 
       return changes
     },
+
+    /**
+     * Take `changes` as agreed without reporting them.
+     *
+     * What a peer just sent is by definition something both sides now hold, and
+     * it must not come back the other way. Two sides sharing one baseline —
+     * `plugin-vue`, where both watchers run in one context — never need this,
+     * because `take` on either side records for both. Two sides holding a
+     * baseline each — the sandbox bridge, split across a `postMessage` — do:
+     * the receiver has to record what arrived, or its own watcher will read the
+     * applied write as a local edit and echo it straight back.
+     */
+    record(changes: any) {
+      recordState(baseline, changes)
+    },
   }
 }
