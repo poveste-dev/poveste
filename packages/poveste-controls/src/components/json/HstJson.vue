@@ -46,6 +46,12 @@ const emit = defineEmits({
 })
 
 let editorView: EditorView
+// The document this control last rendered from `modelValue`. A change producing
+// exactly this is our own render, not an edit, and must not be written back:
+// `stringifyState` substitutes markers for what JSON cannot carry, so echoing
+// our own document replaces a cycle in the story's state with the string
+// `[Circular]`, and a function with `[Function]`.
+let renderedDoc: string | undefined
 const internalValue = ref('')
 const invalidValue = ref(false)
 const editorElement = ref<HTMLInputElement>()
@@ -77,8 +83,10 @@ const extensions = [
 ]
 
 onMounted(() => {
+  renderedDoc = stringifyState(props.modelValue, 2)
+
   editorView = new EditorView({
-    doc: stringifyState(props.modelValue, 2),
+    doc: renderedDoc,
     extensions,
     parent: editorElement.value,
   })
@@ -103,11 +111,18 @@ watch(() => props.modelValue, () => {
   }
 
   if (!sameDocument) {
-    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: stringifyState(props.modelValue, 2) }] })
+    renderedDoc = stringifyState(props.modelValue, 2)
+    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: renderedDoc }] })
   }
 }, { deep: true })
 
 watch(() => internalValue.value, () => {
+  // Our own render coming back round. The model already holds this, and parsing
+  // it would hand back the markers instead of the values they stand for.
+  if (internalValue.value === renderedDoc) {
+    return
+  }
+
   invalidValue.value = false
   try {
     emit('update:modelValue', JSON.parse(internalValue.value))
