@@ -1,17 +1,20 @@
 import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-// #103. Two failures, and each one hides the other.
+// #103, run on every framework. The variant grid is `@poveste/app`, but what it
+// mounts into each cell is the framework's own renderer, and the height it
+// measures comes back across the sandbox bridge — so "the window stays bounded"
+// is a claim about the pair, not about the chrome alone.
 //
-// The grid never learned an item's height, so it divided by a zero row count,
-// produced `Infinitypx` for its scroll spacer and stayed at ten items — 990 of
-// HugeGrid's variants were unreachable. Fixing only that exposes the original
-// report: the rendered count was a high-water mark derived from everything
-// scrolled past, so nothing was ever unmounted.
+// Two failures, and each one hides the other. The grid never learned an item's
+// height, so it divided by a zero row count, produced `Infinitypx` for its
+// scroll spacer and stayed at ten items — 990 variants unreachable. Fixing only
+// that exposes the original report: the rendered count was a high-water mark
+// derived from everything scrolled past, so nothing was ever unmounted.
 //
 // Reading the count too early reads low, which would pass a bound assertion on
 // a broken build — so every count here waits for two equal readings first.
-
+const STORY = '/story/conformance-huge-grid'
 const ITEM = '.poveste-story-variant-grid-item'
 const VARIANT_COUNT = 1000
 
@@ -32,33 +35,36 @@ async function scrollTo(scroller: Locator, fraction: number) {
   }, fraction)
 }
 
+async function openGrid(page: Page) {
+  await page.goto(STORY)
+  const scroller = page.locator('.poveste-story-variant-grid .overflow-y-auto')
+  await expect(scroller).toBeVisible()
+
+  // Every variant has to be reachable. When the height measurement is lost the
+  // spacer is never applied and this stays at roughly one viewport.
+  await expect.poll(
+    () => scroller.evaluate(el => el.scrollHeight),
+    { timeout: 30_000, message: 'grid never reserved a scroll extent' },
+  ).toBeGreaterThan(20_000)
+
+  return scroller
+}
+
 test.describe('variant grid windowing', () => {
   test('reserves the full scroll extent and keeps the mounted set bounded', async ({ page }) => {
     test.setTimeout(180_000)
-    await page.goto('/story/src-components-hugegrid-story-vue')
-
-    const scroller = page.locator('.poveste-story-variant-grid .overflow-y-auto')
-    await expect(scroller).toBeVisible()
-
-    // Every variant has to be reachable. When the height measurement is lost the
-    // spacer is never applied and this stays at roughly one viewport.
-    await expect.poll(
-      () => scroller.evaluate(el => el.scrollHeight),
-      { timeout: 30_000, message: 'grid never reserved a scroll extent' },
-    ).toBeGreaterThan(20_000)
+    const scroller = await openGrid(page)
 
     const atTop = await settledCount(page)
     expect(atTop).toBeGreaterThan(0)
     expect(atTop).toBeLessThan(60)
 
     await scrollTo(scroller, 0.5)
-    const midway = await settledCount(page)
     // The report had this at 1000 — every variant scrolled past, all still mounted.
-    expect(midway).toBeLessThan(60)
+    expect(await settledCount(page)).toBeLessThan(60)
 
     await scrollTo(scroller, 1)
-    const atEnd = await settledCount(page)
-    expect(atEnd).toBeLessThan(60)
+    expect(await settledCount(page)).toBeLessThan(60)
 
     // Items that leave the window must actually unmount, which is what the
     // monotonic counter never did.
@@ -68,14 +74,7 @@ test.describe('variant grid windowing', () => {
 
   test('shows the variants the scroll position implies', async ({ page }) => {
     test.setTimeout(180_000)
-    await page.goto('/story/src-components-hugegrid-story-vue')
-
-    const scroller = page.locator('.poveste-story-variant-grid .overflow-y-auto')
-    await expect(scroller).toBeVisible()
-    await expect.poll(
-      () => scroller.evaluate(el => el.scrollHeight),
-      { timeout: 30_000 },
-    ).toBeGreaterThan(20_000)
+    const scroller = await openGrid(page)
     await settledCount(page)
 
     // Guards the translateY offset against the spacer height: if the two ever
