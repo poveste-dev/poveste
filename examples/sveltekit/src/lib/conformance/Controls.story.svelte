@@ -3,11 +3,16 @@
 
   export let Hst: Hst
 
-  // Titled "Control bindings" rather than "Controls" for the same reason
-// `Conformance/Docs` is titled Documentation: a story titled `A/B` makes the
-// tree grow a *second* `A` folder when another story is titled exactly `B` at
-// the top level, and vue3 has one called Controls. The id is what this suite
-// addresses, so the title is free to dodge it.
+  // Titled "Control bindings" rather than "Controls" to stay out of the vue3
+// example's tree groups, which route by a regex on the title:
+//
+//   { title: 'My Group', include: file => /Code gen|Controls|Docs/.test(file.title) }
+//
+// A folder is built once per group, so a title matching that regex puts this
+// story in `My Group` and every other conformance story in `Components` — two
+// `Conformance` folders, each half full. Working as configured, not a bug, and
+// the same reason `Conformance/Docs` is titled Documentation. The id is what
+// this suite addresses, so the title is free to dodge it.
 //
 // Titles are deliberately distinct words rather than the control's own name:
   // a locator filtering on "Text" would match "Textarea" too, and the resulting
