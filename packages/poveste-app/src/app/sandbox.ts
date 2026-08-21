@@ -1,5 +1,4 @@
 import type { StoryFile } from './types'
-import { applyState } from '@poveste/shared'
 import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
 import { files } from 'virtual:$poveste-stories'
@@ -13,6 +12,7 @@ import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBO
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
+import { createStateBridge } from './util/state-bridge.js'
 import { toRawDeep } from './util/state.js'
 
 const query = parseQuery(window.location.search)
@@ -79,19 +79,22 @@ const app = createApp({
     const story = computed(() => file.value.story)
     const variant = computed(() => story.value?.variants.find(v => v.id === query.variantId))
 
-    // `synced` is the sandbox end of the same flag the host holds, with the same
-    // #95 caveat: only set it when the apply will actually provoke the watcher
-    // below, which is what `applyState`'s return value reports. Set it
-    // unconditionally and an apply that changes nothing leaves it stuck, so the
-    // next edit the story makes never reaches the host.
-    let synced = false
+    // The sandbox end of the bridge. It sends what the story changed rather than
+    // the whole state, so a write here and a control edit on the host cannot
+    // overwrite each other — see `createStateBridge` for what that used to cost.
+    const bridge = createStateBridge((changes) => {
+      window.parent?.postMessage({
+        type: STATE_SYNC,
+        state: changes,
+      })
+    })
     let mounted = false
 
     window.addEventListener('message', (event) => {
       // console.log('[sandbox] received message', event.data)
       if (event.data?.type === STATE_SYNC) {
         if (!mounted) return
-        synced = applyState(variant.value.state, event.data.state)
+        bridge.receive(variant.value.state, event.data.state)
       }
       else if (event.data?.type === PREVIEW_SETTINGS_SYNC) {
         applyPreviewSettings(event.data.settings)
@@ -99,14 +102,7 @@ const app = createApp({
     })
 
     watch(() => variant.value.state, (value) => {
-      if (synced && mounted) {
-        synced = false
-        return
-      }
-      window.parent?.postMessage({
-        type: STATE_SYNC,
-        state: toRawDeep(value, true),
-      })
+      bridge.send(toRawDeep(value, true))
     }, {
       deep: true,
     })
