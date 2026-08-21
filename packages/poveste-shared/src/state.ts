@@ -88,12 +88,42 @@ export function isEquivalent(a: any, b: any, seen?: WeakMap<object, WeakSet<obje
 }
 
 /**
+ * Whether a key's value is merged one level rather than replaced whole.
+ *
+ * One rule, stated once, because it has to hold in three places at once:
+ * `applyState` writes by it, `diffState` narrows by it — sending less than the
+ * whole object is only safe as far as the write will merge — and the baseline in
+ * `createStateBaseline` records by it. They drifted apart when it was three
+ * copies, and the `_h` clause was the one that went missing.
+ *
+ * `_h`-prefixed keys are never merged: the sandbox needs those replaced outright
+ * so a nested key the story dropped actually disappears.
+ *
+ * Both sides have to be objects worth merging. `existing` is loose about how it
+ * got its prototype, because a target may hold anything a story put there; the
+ * incoming value must be a plain object, because merging a primitive or an array
+ * into an object writes nothing useful — `for (const nested in 5)` iterates
+ * nothing at all, and the assignment is then skipped entirely.
+ */
+function mergesNested(key: string, existing: any, incoming: any) {
+  return !key.startsWith('_h')
+    && isPlainObject(incoming)
+    && existing != null
+    && typeof existing === 'object'
+    && !Array.isArray(existing)
+}
+
+/**
  * Copies `state` onto `target`, and reports whether it wrote anything.
  *
- * The return value is what the state syncs in `plugin-vue`, `plugin-svelte` and
- * the sandbox bridge use to decide whether to expect an echo. Each of them holds
- * a flag meaning "the next firing is mine, ignore it", and that flag is only
- * safe to set when a firing is actually coming. See #95.
+ * The return value is what the syncs in `plugin-svelte` and the sandbox bridge
+ * use to decide whether to expect an echo. Each holds a flag meaning "the next
+ * firing is mine, ignore it", and that flag is only safe to set when a firing is
+ * actually coming. See #95.
+ *
+ * `plugin-vue` no longer needs it: `createStateBaseline` recognises an echo by
+ * it not being a change, so there is no flag left to keep honest. The two are
+ * the same idea at different strengths, and the others can move across (#96).
  */
 export function applyState(target: any, state: any, override = false) {
   let wrote = false
@@ -120,7 +150,7 @@ export function applyState(target: any, state: any, override = false) {
     }
 
     // iframe sync needs to update properties without overriding them
-    if (!override && current && !key.startsWith('_h') && typeof current === 'object' && !Array.isArray(current)) {
+    if (!override && mergesNested(key, current, state[key])) {
       // Not `Object.assign`, because the reason the two are not equivalent may
       // be a key that `current` has and `state[key]` does not — a removal, which
       // this merge cannot express. Assigning the rest would then change nothing
@@ -160,4 +190,170 @@ export function applyState(target: any, state: any, override = false) {
   }
 
   return wrote
+}
+
+/**
+ * The nested keys of `after` that differ from `before`, or `null` for none.
+ *
+ * One level, and no deeper, because that is exactly how far `applyState` merges:
+ * it walks the keys of a nested object and assigns each, so a value handed to it
+ * at depth two is written whole. Narrow past that and the write lands the narrow
+ * subset *as* the object and takes its siblings with it.
+ *
+ * Whether a key gets here at all is `mergesNested`'s call, not this function's.
+ */
+function narrowState(before: any, after: any): Record<string, any> | null {
+  let changes: Record<string, any> | null = null
+
+  for (const key in after) {
+    if (Object.hasOwn(before, key) && isEquivalent(before[key], after[key])) {
+      continue
+    }
+
+    changes ??= {}
+    changes[key] = after[key]
+  }
+
+  return changes
+}
+
+/**
+ * The subset of `next` that differs from `baseline`, shaped so `applyState` can
+ * copy it faithfully: a key it will merge is narrowed to the nested keys that
+ * moved, and everything else is carried whole. `null` when nothing changed.
+ *
+ * The narrowing is what lets two sides edit one object at once without either
+ * clobbering the other — whatever is not sent cannot be overwritten — so it has
+ * to line up with how `applyState` writes, exactly. Both ask `mergesNested`.
+ * A key it refuses, `_h`-prefixed ones included, crosses whole, so concurrent
+ * edits *inside* one of those still race; ordinary story state does not live
+ * there.
+ *
+ * Only keys `next` has are considered. A key `baseline` has and `next` does not
+ * is a removal, which `applyState` cannot express, so reporting it would produce
+ * a write that changes nothing — and, worse, one the baseline would go on
+ * reporting forever. Removals stay unmirrored, exactly as they were.
+ */
+export function diffState(baseline: any, next: any): Record<string, any> | null {
+  let changes: Record<string, any> | null = null
+
+  for (const key in next) {
+    const before = baseline[key]
+    const after = next[key]
+    const known = Object.hasOwn(baseline, key)
+
+    if (known && isEquivalent(before, after)) {
+      continue
+    }
+
+    let value = after
+
+    if (known && mergesNested(key, before, after)) {
+      value = narrowState(before, after)
+
+      // Only a removal, then. Nothing to send.
+      if (value === null) {
+        continue
+      }
+    }
+
+    changes ??= {}
+    changes[key] = value
+  }
+
+  return changes
+}
+
+/**
+ * A structural copy, narrow in exactly the way `isEquivalent` is: plain objects
+ * and arrays get fresh containers, everything else is carried by reference —
+ * which is right, because those are the values `isEquivalent` compares by
+ * `Object.is`, so a reference is the identity the comparison is about.
+ */
+function copyState(value: any, seen = new WeakMap<object, any>()) {
+  if (!Array.isArray(value) && !isPlainObject(value)) {
+    return value
+  }
+
+  if (seen.has(value)) {
+    return seen.get(value)
+  }
+
+  const copy: any = Array.isArray(value) ? [] : {}
+  seen.set(value, copy)
+
+  for (const key in value) {
+    copy[key] = copyState(value[key], seen)
+  }
+
+  return copy
+}
+
+/**
+ * Records `changes` — the shape `diffState` returns — into `baseline`, on the
+ * same terms `applyState` writes it: `mergesNested` decides, the one narrowed
+ * level is merged, everything under it taken whole. Keys the diff did not
+ * mention survive, which is what keeps a removal the far side could not mirror
+ * from being replayed.
+ *
+ * Getting that predicate wrong here is quiet and permanent. Merge an `_h` key
+ * that the write replaced and the baseline keeps a nested key the real state has
+ * dropped — it can never match again, so every later pass reports the same
+ * phantom change, forever.
+ *
+ * Copies on the way in. The same `changes` object goes to `applyState`, which
+ * assigns its values straight into a reactive state; sharing them would let a
+ * later write through that state's proxy mutate the baseline as well, and a
+ * baseline that tracks a live side reports every one of that side's edits as
+ * already agreed — which is to say, drops them.
+ */
+function recordState(baseline: any, changes: any) {
+  for (const key in changes) {
+    const value = changes[key]
+
+    if (mergesNested(key, baseline[key], value)) {
+      for (const nested in value) {
+        baseline[key][nested] = copyState(value[nested])
+      }
+    }
+    else {
+      baseline[key] = copyState(value)
+    }
+  }
+}
+
+/**
+ * Tracks the last state both sides of a sync agreed on.
+ *
+ * The syncs used to mirror whole state objects and coordinate with a boolean
+ * meaning "the next firing is my own echo, ignore it". That has two costs. An
+ * echo is only distinguishable from a genuine edit by counting firings, which
+ * is what made the flag load-bearing and fragile (#95). And a side that mirrors
+ * everything it holds also mirrors the keys it did *not* change, stale by one
+ * edit if the far side changed them in the same tick — so the second firing
+ * reverted the first side's edit and it was lost from both (#96).
+ *
+ * A baseline answers both. Ask it for what a side changed and it reports that
+ * side's own edits, never the far side's; an echo diffs to nothing and needs no
+ * flag to recognise, because it is not a change.
+ */
+export function createStateBaseline() {
+  const baseline: Record<string, any> = {}
+
+  return {
+    /**
+     * What `next` changed since both sides last agreed, or `null` for nothing.
+     * The changes count as agreed from here, so ask once per firing and mirror
+     * what you get.
+     */
+    take(next: any): Record<string, any> | null {
+      const changes = diffState(baseline, next)
+
+      if (changes) {
+        recordState(baseline, changes)
+      }
+
+      return changes
+    },
+  }
 }
