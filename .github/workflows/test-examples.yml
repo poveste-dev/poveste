@@ -14,8 +14,19 @@ jobs:
   test:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub's 360-minute default in silence.
-    timeout-minutes: 25
-    name: Example e2e
+    timeout-minutes: 20
+    # One job per example, so a red check names the framework on its own. The
+    # shared `e2e/` suite runs in every one of them against that framework's
+    # book — the whole point of a conformance suite is that a chrome regression
+    # which only shows up under one plugin cannot hide behind the others.
+    #
+    # `fail-fast: false` because "svelte5 broke" and "svelte5 and nuxt4 broke"
+    # are different bugs, and cancelling the rest hides which one it is.
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [vue3, nuxt4, svelte5, sveltekit, vue3-tailwind]
+    name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v4
 
@@ -59,16 +70,19 @@ jobs:
       # plugin-nuxt has no test infrastructure, and this is the only job that
       # builds a Nuxt book (#223).
       - name: Assert the host .nuxt is untouched by a story build
+        if: matrix.example == 'nuxt4'
         working-directory: ./examples/nuxt4
         run: pnpm run test:build-dir
 
-      - name: Build books
-        run: pnpm run story:build:e2e
+      - name: Build book
+        run: pnpm --filter ./examples/${{ matrix.example }} run story:build
 
-      # One config, one project per example plus the dev and conformance
-      # projects. The shared `e2e/` suite runs here and nowhere else, so it had
-      # no CI coverage at all while the per-example workflows were the gate.
+      # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
+      # config starts, so this job boots one preview server rather than five.
+      # See the config for why that is not just `--project`.
       - name: Run tests
+        env:
+          POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
         run: pnpm run test:e2e
 
       # `test-results`, not `playwright-report`: the reporter is `list`, so no
@@ -77,5 +91,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ matrix.example }}
           path: test-results
