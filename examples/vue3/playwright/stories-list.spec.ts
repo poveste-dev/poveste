@@ -11,9 +11,14 @@ test.describe('stories list', () => {
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()
     // 'Style Isolation' comes from the CSS isolation regression stories,
-    // 'Conformance' from the shared contract set (#89). A story titled
-    // `Conformance/Docs` produced a *second* 'Conformance' folder — the segment
-    // collides with a reserved tree name — so that one is titled Documentation.
+    // 'Conformance' from the shared contract set (#89).
+    //
+    // One folder per group, and this example's `tree.groups` route by a regex
+    // on the title — `/Code gen|Controls|Docs/` picks out 'My Group'. So a
+    // conformance story whose title matches lands in a different group from its
+    // siblings and splits 'Conformance' into two half-full folders. That is the
+    // config working as written, not a tree bug: `Conformance/Docs` is titled
+    // Documentation for this reason, and the controls one 'Control bindings'.
     await expect(page.getByTestId('story-list-folder')).toHaveCount(4)
   })
 
