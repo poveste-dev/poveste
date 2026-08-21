@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import type { HstEvent } from '../../stores/events'
 import type { Story, Variant } from '../../types'
-import { applyState } from '@poveste/shared'
 import { useEventListener } from '@vueuse/core'
 import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
 import { useEventsStore } from '../../stores/events'
@@ -12,6 +11,7 @@ import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
 import { getSandboxUrl } from '../../util/sandbox'
 import { toRawDeep } from '../../util/state'
+import { createStateBridge } from '../../util/state-bridge'
 import StoryResponsivePreview from './StoryResponsivePreview.vue'
 
 const props = defineProps<{
@@ -26,27 +26,29 @@ const settings = usePreviewSettingsStore().currentSettings
 
 const iframe = ref<HTMLIFrameElement>()
 
-function syncState() {
-  if (iframe.value?.contentWindow && props.variant.previewReady) {
-    iframe.value.contentWindow.postMessage({
-      type: STATE_SYNC,
-      state: toRawDeep(props.variant.state, true),
-    })
-  }
+// The host end of the bridge. It sends what this side changed rather than the
+// whole state, so a write here and a write in the story cannot overwrite each
+// other — see `createStateBridge` for what that used to cost.
+function postState(changes: Record<string, any>) {
+  iframe.value?.contentWindow?.postMessage({
+    type: STATE_SYNC,
+    state: changes,
+  })
 }
 
-// The host end of the bridge, and the same flag as `plugin-vue`'s state sync
-// with the same #95 caveat: `synced` may only be set when the write below will
-// actually provoke the watcher. `applyState` reports that now. Setting it
-// unconditionally means an apply that changes nothing leaves it set, and the
-// next real edit is skipped instead — a control that does nothing.
-let synced = false
+let bridge = createStateBridge(postState)
+
+function syncState() {
+  // Nothing can be sent yet, so nothing may be recorded as agreed either — the
+  // baseline would then hold changes the sandbox has never seen, and send it
+  // only the ones that came after. Returning early leaves the first message
+  // that does go out carrying the whole state, which is what it carried before.
+  if (!iframe.value?.contentWindow || !props.variant.previewReady) return
+
+  bridge.send(toRawDeep(props.variant.state, true))
+}
 
 watch(() => props.variant.state, () => {
-  if (synced) {
-    synced = false
-    return
-  }
   syncState()
 }, {
   deep: true,
@@ -107,7 +109,7 @@ useEventListener(window, 'message', (event) => {
 })
 
 function updateVariantState(state: any) {
-  synced = applyState(props.variant.state, state)
+  bridge.receive(props.variant.state, state)
 }
 
 function logEvent(event: HstEvent) {
@@ -129,6 +131,9 @@ let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
 
 watch(sandboxUrl, () => {
+  // A fresh document has agreed to nothing, so neither has this end. Kept as a
+  // new bridge rather than a reset so there is one way to be in that state.
+  bridge = createStateBridge(postState)
   isIframeLoaded.value = false
   storyStore.setPreviewReady(props.variant, false)
   stopTrackKeyboard?.()
