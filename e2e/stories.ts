@@ -51,12 +51,12 @@ export const SHARED_STORIES: SharedStory[] = [
  * carry fewer, which is how vue3 ended up as the only book exercising the
  * chrome.
  *
- * Six of vue3's stories are still absent. `Auto State & Props` needs auto-props
- * (#233) and the two `WrapperMetaOn…` stories need `addWrapper` (#232), so they
- * wait on the plugin. `Tailwind` is generated from design-system config rather
- * than being a story file at all. `LottieAnimation` needs its dependency, and
- * `Story setup` leans on Vue's `provide`/`inject`, which has no app-level
- * equivalent in Svelte. They go in here as they land.
+ * Five of vue3's stories are still absent, and four of them wait on the plugin:
+ * `Auto State & Props` needs auto-props (#233), the two `WrapperMetaOn…` stories
+ * need `addWrapper` (#232), and `Story setup` needs setup hooks that run before
+ * the story mounts and an app to register things on (#234). `Tailwind` is the
+ * odd one out — it is generated from design-system config rather than being a
+ * story file at all. They go in here as they land.
  */
 export const SHARED_STORY_TITLES: string[] = [
   'BaseButton',
@@ -86,6 +86,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'Introduction',
   'LongFile1',
   'LongFile2',
+  'LottieAnimation',
   'Markdown links',
   'MarkdownFile',
   'MarkdownLinks',
