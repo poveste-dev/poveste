@@ -1,4 +1,7 @@
 @import '@poveste/controls/dist/index.es.css';
+/* Same self-hosted face as the app chrome (#219), so `html { font-family }`
+   below resolves the same way in a realm that has no app stylesheet. */
+@import '@fontsource/noto-sans-display';
 
 /* Lets the toolbar's preview background show through. Not `!important`: this
    file is wrapped in `@layer poveste-defaults` so consumer rules outrank it,

@@ -73,8 +73,8 @@ export function pinceauTokens(_options: PinceauTokensOptions = {}): Plugin {
 function storyTemplate(pinceauConfig: any) {
   pinceauConfig = pinceauConfig?.theme || pinceauConfig?.default?.theme || {}
 
-  return `import 'poveste-style'
-import './style.css'
+  // No `import 'poveste-style'` — see the tailwind plugin's template (#219).
+  return `import './style.css'
 import { createApp, h, markRaw, ref } from ${getInjectedImport('@poveste/vendors/vue')}
 import {
   HstColorShades,
