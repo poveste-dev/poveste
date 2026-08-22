@@ -26,6 +26,13 @@ export default defineConfig({
       },
     ],
     defaultBackgroundColor: 'transparent',
+    // `src/bench/` holds the #197 grid-fill fixtures. Out of the book unless
+    // the bench runner asks — see examples/vue3/histoire.config.ts, including
+    // why the defaults are spread in (#244).
+    storyIgnored: [
+      ...getDefaultConfig().storyIgnored,
+      ...(process.env.POVESTE_BENCH ? [] : ['**/src/bench/**']),
+    ],
     tree: {
       groups: [
         {
