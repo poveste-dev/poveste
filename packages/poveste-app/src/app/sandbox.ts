@@ -1,7 +1,7 @@
 import type { StoryFile } from './types'
 import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
-import { files } from 'virtual:$poveste-stories'
+import { files, onUpdate } from 'virtual:$poveste-stories'
 import { computed, createApp, h, onMounted, ref, watch } from 'vue'
 import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
@@ -16,7 +16,25 @@ import { createStateBridge } from './util/state-bridge.js'
 import { toRawDeep } from './util/state.js'
 
 const query = parseQuery(window.location.search)
-const file = ref<StoryFile>(mapFile(files.find(f => f.id === query.storyId)))
+
+// `files` is `[]` until the dev server's first collect lands. The app's iframe
+// never sees that — it mounts after — but a sandbox opened on its own does, and
+// the list only arrives through `onUpdate`.
+const findFile = (list: StoryFile[]) => list.find(f => f.id === query.storyId)
+const file = ref<StoryFile | null>(null)
+const initialFile = findFile(files)
+if (initialFile) {
+  file.value = mapFile(initialFile)
+}
+else {
+  onUpdate((newFiles: StoryFile[]) => {
+    if (file.value) return
+    const found = findFile(newFiles)
+    if (found) {
+      file.value = mapFile(found)
+    }
+  })
+}
 
 // Sandboxes opened on their own (the "open in a new tab" toolbar button) never
 // receive a PREVIEW_SETTINGS_SYNC, and inside the app the first one only lands
@@ -76,7 +94,7 @@ const app = createApp({
   name: 'SandboxApp',
 
   setup() {
-    const story = computed(() => file.value.story)
+    const story = computed(() => file.value?.story)
     const variant = computed(() => story.value?.variants.find(v => v.id === query.variantId))
 
     // The sandbox end of the bridge. It sends what the story changed rather than
@@ -93,7 +111,7 @@ const app = createApp({
     window.addEventListener('message', (event) => {
       // console.log('[sandbox] received message', event.data)
       if (event.data?.type === STATE_SYNC) {
-        if (!mounted) return
+        if (!mounted || !variant.value) return
         bridge.receive(variant.value.state, event.data.state)
       }
       else if (event.data?.type === PREVIEW_SETTINGS_SYNC) {
@@ -101,7 +119,8 @@ const app = createApp({
       }
     })
 
-    watch(() => variant.value.state, (value) => {
+    watch(() => variant.value?.state, (value) => {
+      if (!value) return
       bridge.send(toRawDeep(value, true))
     }, {
       deep: true,
@@ -118,6 +137,10 @@ const app = createApp({
   },
 
   render() {
+    if (!file.value) {
+      return null
+    }
+
     return [
       h('div', { class: '__poveste-sandbox-hidden' }, [
         h(GenericMountStory, {

@@ -27,7 +27,7 @@ const ALL_EXAMPLES: Example[] = [
     name: 'vue3',
     port: 4567,
     conformance: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
   { name: 'nuxt4', port: 4568, conformance: true },
   {
