@@ -4,9 +4,6 @@ import { defineConfig } from 'poveste'
 export default defineConfig({
   plugins: [
     HstVue(),
-    {
-      name: 'builtin:tailwind-tokens',
-    },
   ],
 
   storyMatch: ['../poveste-controls/src/**/*.story.vue'],

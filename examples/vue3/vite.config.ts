@@ -1,6 +1,7 @@
 /// <reference types="poveste" />
 
 import path from 'node:path'
+import { HstTailwind } from '@poveste/plugin-tailwind'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
@@ -42,6 +43,7 @@ export default defineConfig({
 
   poveste: {
     plugins: [
+      HstTailwind(),
       {
         name: 'test',
         config() {
