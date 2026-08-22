@@ -248,6 +248,16 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
     return true
   }
 
+  // An ignore list adds to the defaults rather than replacing them. Under the
+  // replace rule below, `storyIgnored: ['**/fixtures/**']` silently dropped
+  // `**/node_modules/**`, and the watchers then crawled the pnpm store until
+  // the build died with EMFILE (#244). `storyMatch` stays on the replace rule:
+  // narrowing it is a legitimate use.
+  if (obj[key] && key === 'storyIgnored') {
+    obj[key] = [...new Set([...obj[key], ...value])]
+    return true
+  }
+
   // By default, arrays should be replaced
   if (obj[key] && Array.isArray(obj[key])) {
     obj[key] = value

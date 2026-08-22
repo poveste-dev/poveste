@@ -17,12 +17,8 @@ export default defineConfig({
   defaultBackgroundColor: 'transparent',
   // `src/bench/` holds the #197 grid-fill fixtures. Out of the book unless the
   // bench runner asks, so the story-list counts and anyone browsing the example
-  // never see them. Defaults spread in on purpose: a bare override loses them
-  // and the build crawls node_modules into EMFILE (#244).
-  storyIgnored: [
-    ...getDefaultConfig().storyIgnored,
-    ...(process.env.POVESTE_BENCH ? [] : ['**/src/bench/**']),
-  ],
+  // never see them.
+  storyIgnored: process.env.POVESTE_BENCH ? [] : ['**/src/bench/**'],
   // autoApplyContrastColor: true,
   // routerMode: 'hash',
   head: {

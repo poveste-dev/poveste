@@ -61,13 +61,12 @@ Use `src/**/*.story.vue` to prevent search errors in binary files (e.g., in iOS 
 
 `string[]` - Default: `[ '**/node_modules/**', '**/dist/**' ]`
 
-Glob patterns to ignore files while searching for story files.
+Glob patterns to ignore files while searching for story files. Patterns you set are added to the defaults, so `node_modules` and `dist` stay ignored without being spelled out again.
 
 ```ts
 export default defineConfig({
   storyIgnored: [
-    '**/node_modules/**',
-    '**/dist/**',
+    '**/fixtures/**',
   ],
 })
 ```
