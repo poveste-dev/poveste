@@ -42,17 +42,28 @@
 
   let state = currentVariant?.state
 
-  const stopWatchingState = _watch(() => currentVariant?.state, () => {
-    state = currentVariant?.state
-  }, { deep: true })
+  // Only the variant that renders watches. The story's `{#each}` instantiates
+  // one of these per variant in every realm, and a deep Vue watcher per
+  // instance on the same state object was a thousand watchers to render one
+  // button (#197). The others render nothing, so they have nothing to update.
+  let stopWatchingState = () => {}
+  if (shouldRender) {
+    stopWatchingState = _watch(() => currentVariant?.state, () => {
+      state = currentVariant?.state
+    }, { deep: true })
+  }
 
-  onDestroy(stopWatchingState)
+  onDestroy(() => stopWatchingState())
 
   // `source` may be a function of the state. Story props are evaluated in the
   // component's script, where the slot's `state` is not in scope, so a string
   // literal cannot reflect what the controls are doing — which is most of the
   // point of the source panel (#81).
-  $: {
+  //
+  // Guarded by `shouldRender`: this is *this* variant's `source`, and it goes
+  // onto `currentVariant` — so an unguarded instance for another variant would
+  // overwrite the rendered variant's source with its own.
+  $: if (shouldRender) {
     const resolvedSource = typeof source === 'function' ? source(state) : source
     if (resolvedSource != null) {
       Object.assign(currentVariant, {
