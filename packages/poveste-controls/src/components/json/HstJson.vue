@@ -34,6 +34,7 @@ import { VTooltip as vTooltip } from 'floating-vue'
 import { onMounted, ref, watch, watchEffect } from 'vue'
 import { isDark } from '../../utils'
 import HstWrapper from '../HstWrapper.vue'
+import { stringifyState } from './serialize.js'
 
 const props = defineProps<{
   title?: string
@@ -77,7 +78,7 @@ const extensions = [
 
 onMounted(() => {
   editorView = new EditorView({
-    doc: JSON.stringify(props.modelValue, null, 2),
+    doc: stringifyState(props.modelValue, 2),
     extensions,
     parent: editorElement.value,
   })
@@ -95,14 +96,14 @@ watch(() => props.modelValue, () => {
   let sameDocument
 
   try {
-    sameDocument = (JSON.stringify(JSON.parse(internalValue.value)) === JSON.stringify(props.modelValue))
+    sameDocument = (stringifyState(JSON.parse(internalValue.value)) === stringifyState(props.modelValue))
   }
   catch (e) {
     sameDocument = false
   }
 
   if (!sameDocument) {
-    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: JSON.stringify(props.modelValue, null, 2) }] })
+    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: stringifyState(props.modelValue, 2) }] })
   }
 }, { deep: true })
 
