@@ -1,4 +1,5 @@
 import { HstNuxt } from '@poveste/plugin-nuxt'
+import { HstTailwind } from '@poveste/plugin-tailwind'
 import { HstVue } from '@poveste/plugin-vue'
 import { defineConfig, getDefaultConfig } from 'poveste'
 
@@ -6,6 +7,7 @@ export default defineConfig({
   plugins: [
     HstVue(),
     HstNuxt(),
+    HstTailwind(),
   ],
   // Identical to the other tier-1 examples: the shared toolbar spec asserts one
   // case per preset (#89).

@@ -15,7 +15,6 @@ import {
   mergeConfig as mergeViteConfig,
   resolveConfig as resolveViteConfig,
 } from 'vite'
-import { tailwindTokens } from './builtin-plugins/tailwind-tokens.js'
 import { vanillaSupport } from './builtin-plugins/vanilla-support/plugin.js'
 import { defaultColors } from './colors.js'
 import { findUp } from './util/find-up.js'
@@ -26,7 +25,6 @@ export function getDefaultConfig(): PovesteConfig {
   return {
     plugins: [
       vanillaSupport(),
-      tailwindTokens(),
     ],
     outDir: '.poveste/dist',
     storyMatch: [

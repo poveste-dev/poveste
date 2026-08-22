@@ -1,0 +1,45 @@
+{
+  "name": "@poveste/plugin-tailwind",
+  "type": "module",
+  "version": "0.5.3",
+  "description": "Poveste plugin that renders a Tailwind design system as a story",
+  "author": {
+    "name": "Sorin Gitlan"
+  },
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/poveste-dev/poveste.git",
+    "type": "git",
+    "directory": "packages/poveste-plugin-tailwind"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./*": "./*"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rimraf dist && tsc -d",
+    "watch": "tsc -d -w --sourceMap",
+    "test": "vitest run",
+    "test:dev": "vitest"
+  },
+  "peerDependencies": {
+    "poveste": "workspace:^"
+  },
+  "dependencies": {
+    "@poveste/shared": "workspace:*",
+    "pathe": "^1.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "poveste": "workspace:*",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

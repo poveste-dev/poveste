@@ -1,7 +1,39 @@
 import type { Plugin, PluginApiBase } from '@poveste/shared'
 import fs from 'node:fs'
-import { findUp } from '../util/find-up.js'
-import { getInjectedImport } from '../util/vendors.js'
+import path from 'pathe'
+import { getInjectedImport } from 'poveste'
+
+/**
+ * The first of `fileNames` that exists and satisfies `accept`, searching `cwd`
+ * and then upwards.
+ *
+ * `accept` is not a convenience: every name below is an ordinary one, so a
+ * near-miss in the same directory would otherwise shadow the real entrypoint
+ * sitting behind it in the list.
+ */
+function findUp(cwd: string, fileNames: string[], accept: (filePath: string) => boolean): string | null {
+  let { root } = path.parse(cwd)
+  let dir = cwd
+
+  // On Windows this is `C:` and needs the trailing slash to terminate.
+  if (root[1] === ':' && root[2] === undefined) {
+    root += '/'
+  }
+
+  while (dir !== root) {
+    for (const fileName of fileNames) {
+      const searchPath = path.join(dir, fileName)
+
+      if (fs.existsSync(searchPath) && accept(searchPath)) {
+        return searchPath
+      }
+    }
+
+    dir = path.dirname(dir)
+  }
+
+  return null
+}
 
 export interface TailwindTokensOptions {
   /**
@@ -62,7 +94,7 @@ export function isTailwindEntry(filePath: string) {
     || /@theme\b/.test(source)
 }
 
-export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
+export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
   // An explicit `cssFile` is the caller saying so, and is taken at their word.
   const tailwindCssFile = options.cssFile ?? findUp(process.cwd(), CSS_ENTRY_CANDIDATES, isTailwindEntry)
 
@@ -83,7 +115,7 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
   }
 
   return {
-    name: 'builtin:tailwind-tokens',
+    name: 'tailwind-tokens',
 
     config(config) {
       if (tailwindCssFile) {
@@ -725,3 +757,6 @@ const css = `.__pvt-shade {
 .__pvt-width-box {
   height: 5rem;
 }`
+
+/** @deprecated Use `HstTailwind`. Kept for books that named the old builtin. */
+export const tailwindTokens = HstTailwind

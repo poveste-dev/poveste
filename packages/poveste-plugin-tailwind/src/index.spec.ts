@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { isTailwindEntry } from '../builtin-plugins/tailwind-tokens.js'
+import { isTailwindEntry } from './index.js'
 
 function cssFile(contents: string) {
   const dir = mkdtempSync(join(tmpdir(), 'poveste-tw-'))
