@@ -12,7 +12,9 @@ import { expect, test } from '@playwright/test'
 // server came up the test runs, so the second test makes the window itself: it
 // opens a sandbox for a story that does not exist yet and only then creates the
 // story file. Pre-fix that order is the same failure — a list without the story
-// at boot, and the story arriving through `onUpdate` afterwards.
+// at boot, and the story arriving through `onUpdate` afterwards. Only a dev
+// server can deliver that: a built book's list is static, so there the second
+// test skips and the first stands on its own.
 const BARE_URL = '/__sandbox.html?storyId=conformance-huge-grid&variantId=v7'
 
 const LATE_STORY_ID = 'e2e-late-arrival'
@@ -37,6 +39,8 @@ test.describe('bare sandbox URL in dev', () => {
   })
 
   test('waits for a story the list does not have yet', async ({ page }) => {
+    test.skip(!/(?:^|:)dev$/.test(test.info().project.name), 'the story list is static in a built book')
+
     const errors: string[] = []
     page.on('pageerror', error => errors.push(error.message))
 
