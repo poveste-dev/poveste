@@ -144,6 +144,9 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
         version: 7.0.0(svelte@5.55.0)(vite@8.2.0(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0))
+      lottie-web:
+        specifier: ^5.12.2
+        version: 5.13.0
       poveste:
         specifier: workspace:*
         version: link:../../packages/poveste
@@ -190,6 +193,9 @@ importers:
       '@types/cookie':
         specifier: ^1.0.0
         version: 1.0.0
+      lottie-web:
+        specifier: ^5.12.2
+        version: 5.13.0
       poveste:
         specifier: workspace:*
         version: link:../../packages/poveste
