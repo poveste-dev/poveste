@@ -15,6 +15,7 @@ const CONTRACT = [
   'conformance-dark',
   'conformance-inline-grid',
   'conformance-concurrent-state',
+  'conformance-controls',
 ]
 
 test.describe('conformance contract', () => {

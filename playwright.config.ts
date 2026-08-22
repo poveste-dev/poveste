@@ -22,7 +22,7 @@ interface Example {
   conformance?: boolean
 }
 
-const EXAMPLES: Example[] = [
+const ALL_EXAMPLES: Example[] = [
   {
     name: 'vue3',
     port: 4567,
@@ -43,6 +43,36 @@ const EXAMPLES: Example[] = [
     dev: { port: 4671, specs: ['**/style-isolation.spec.ts'] },
   },
 ]
+
+/*
+ * Which examples this run covers, from `POVESTE_E2E_EXAMPLE` (comma-separated,
+ * empty means all). This is #89's step 2, and the decision it left open.
+ *
+ * `webServer` is a top-level option, so `--project=svelte5` on its own still
+ * boots every server in the array — four book builds and four preview servers
+ * to run one framework's specs. Filtering here is what makes a job per
+ * framework worth having: CI can fan out over the examples and each job pays
+ * for its own server only, and the failure is attributed to a framework by
+ * which job went red rather than by reading a project name out of a log.
+ *
+ * `--project` still works and still filters; this narrows what gets started.
+ * Naming an example that does not exist is an error rather than an empty run,
+ * because a silent no-op here reads exactly like a suite that passed.
+ */
+const selected = (process.env.POVESTE_E2E_EXAMPLE ?? '')
+  .split(',')
+  .map(name => name.trim())
+  .filter(Boolean)
+
+for (const name of selected) {
+  if (!ALL_EXAMPLES.some(example => example.name === name)) {
+    throw new Error(`POVESTE_E2E_EXAMPLE names "${name}", which is not one of: ${ALL_EXAMPLES.map(e => e.name).join(', ')}`)
+  }
+}
+
+const EXAMPLES = selected.length
+  ? ALL_EXAMPLES.filter(example => selected.includes(example.name))
+  : ALL_EXAMPLES
 
 function chrome(baseURL: string) {
   return { ...devices['Desktop Chrome'], baseURL }
@@ -88,9 +118,8 @@ export default defineConfig({
         }]
       : [],
   ]),
-  // `webServer` is top-level, not per-project, so every server here starts even
-  // for a single `--project` run. That is #89's step 2 and is why the
-  // per-example configs are still the way to iterate on one example.
+  // Only the selected examples' servers, which is the whole point of the filter
+  // above — see it for why.
   webServer: EXAMPLES.flatMap(example => [
     {
       command: `pnpm --filter ./examples/${example.name} run story:preview`,
