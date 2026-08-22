@@ -18,4 +18,26 @@ export default defineConfig({
     },
   ],
   defaultBackgroundColor: 'transparent',
+
+  // Mirrors the vue3 example: the same stories, the same setup, and the same
+  // tree groups, so opening either book shows the same list. A framework's own
+  // stories sit under a `Nuxt/` title so the shared set stays recognisable.
+  setupFile: '/app/poveste.setup.ts',
+
+  tree: {
+    groups: [
+      {
+        id: 'top',
+        title: '',
+      },
+      {
+        title: 'My Group',
+        include: file => /Code gen|Controls|Docs/.test(file.title),
+      },
+      {
+        title: 'Components',
+        include: file => !file.title.includes('Serialize'),
+      },
+    ],
+  },
 })
