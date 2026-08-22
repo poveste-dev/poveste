@@ -179,6 +179,14 @@ async function useNuxtViteConfig() {
         nuxt.hook('vite:configResolved', (config, { isClient }) => {
           if (isClient) {
             resolve(config as any)
+            // The resolved config is all this instance is for. Left running,
+            // `buildNuxt` goes on to build the Nuxt client, start Nitro and
+            // open Nuxt's own dev server — seconds of work on every `poveste
+            // dev` and `poveste build`, a `NUXT_B7005` warning for the entry
+            // it does not have, and an HMR socket on 24678 that collides with
+            // any other Nuxt dev server on the machine (#220, #221). The catch
+            // below has always known this sentinel; nothing threw it.
+            throw new Error('_stop_')
           }
         })
       })
