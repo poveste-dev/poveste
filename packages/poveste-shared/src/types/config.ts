@@ -52,6 +52,7 @@ export interface PovesteConfig {
   storyMatch: string[]
   /**
    * Glob patterns to ignore files while searching for story files.
+   * Added to the defaults (`node_modules`, `dist`), not a replacement for them.
    */
   storyIgnored: string[]
   /**
