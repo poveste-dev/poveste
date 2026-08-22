@@ -11,10 +11,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Built once and handed to every example, so all of them are tested against
+  # the same bytes. Five jobs each running their own `pnpm run build` would also
+  # work, but then "it fails only on svelte5" has one more explanation in it.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-dist
+          path: packages/*/dist
+          retention-days: 1
+          # The examples resolve these through workspace symlinks, so a missing
+          # one would surface as a confusing module-not-found in every matrix
+          # job rather than here.
+          if-no-files-found: error
+
   test:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub's 360-minute default in silence.
     timeout-minutes: 20
+    needs: build
     # One job per example, so a red check names the framework on its own. The
     # shared `e2e/` suite runs in every one of them against that framework's
     # book — the whole point of a conformance suite is that a chrome regression
@@ -40,6 +74,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages-dist
+          path: packages
+
       - name: Resolve Playwright version
         id: playwright
         run: echo "version=$(pnpm exec playwright --version | sed 's/Version //')" >> "$GITHUB_OUTPUT"
@@ -62,9 +101,6 @@ jobs:
       - name: Install Playwright system deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
-
-      - name: Build
-        run: pnpm run build
 
       # Lives here rather than in the nuxt4 example's own suite because
       # plugin-nuxt has no test infrastructure, and this is the only job that

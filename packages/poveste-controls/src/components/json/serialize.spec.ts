@@ -1,4 +1,8 @@
+import { EditorView } from '@codemirror/view'
+import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
+import HstJson from './HstJson.vue'
 import { stringifyState } from './serialize.js'
 
 describe('stringifyState', () => {
@@ -41,5 +45,41 @@ describe('stringifyState', () => {
 
   it('carries a bigint across as its digits', () => {
     expect(JSON.parse(stringifyState({ n: 10n }))).toEqual({ n: '10' })
+  })
+})
+
+describe('hstJson round-trip', () => {
+  it('does not write its own markers back into the model', async () => {
+    // The markers stand for what JSON cannot carry. Parsing the rendered
+    // document and emitting it replaces the thing itself with its label — a
+    // cycle in the story's state becomes the string `[Circular]` — and it used
+    // to happen on mount, with nobody touching the editor.
+    const parent: any = { name: 'hello' }
+    parent.child = { parent }
+
+    const wrapper = mount(HstJson, { props: { modelValue: parent, title: 'Recursive' } })
+    await nextTick()
+
+    await wrapper.setProps({ modelValue: { ...parent, name: 'changed' } })
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('still reports a document the reader changed', async () => {
+    // The guard is keyed on the exact text this control last rendered, so it
+    // must not swallow anything else. Without this, suppressing the echo would
+    // quietly turn the editor read-only and the test above would still pass.
+    const wrapper = mount(HstJson, { props: { modelValue: { a: 1 }, title: 'Plain' } })
+    await nextTick()
+
+    const view = EditorView.findFromDOM(wrapper.find('.cm-content').element as HTMLElement)!
+    expect(view).toBeTruthy()
+
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '{ "a": 2 }' } })
+    await nextTick()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([{ a: 2 }])
   })
 })

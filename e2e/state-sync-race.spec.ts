@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // The sandbox bridge is the iframe half of the same defect as #96, which was
 // fixed in `plugin-vue` first. It lives in `@poveste/app`, so it is not a Vue
@@ -17,14 +18,14 @@ import { expect, test } from '@playwright/test'
 // re-asserts the correct value and the damage heals within a frame. It takes
 // one write on each side and then silence, which is why the collision here is
 // forced from a single task rather than by racing a timer.
-const STORY = '/story/conformance-concurrent-state'
+const STORY = 'conformance-concurrent-state'
 
 const LABEL = '.conformance-state-label'
 const BUMPS = '.conformance-state-bumps'
 
 test.describe('state sync race', () => {
   test('keeps both edits when the story and a control write in the same task', async ({ page }) => {
-    await page.goto(STORY)
+    await openStory(page, STORY)
 
     const iframe = page.getByTestId('preview-iframe').contentFrame()
     const control = page.getByTestId('story-controls').locator('input').first()

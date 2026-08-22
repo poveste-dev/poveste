@@ -1,6 +1,6 @@
 <template>
   <Story
-    title="BaseButton with NuxtLink"
+    title="Nuxt/BaseButton with NuxtLink"
     :layout="{
       type: 'single',
       iframe: false,

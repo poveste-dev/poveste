@@ -1,10 +1,11 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // Key events in the sandbox iframe never reach the parent window, so global
 // shortcuts depend on forwarding. Chrome, so it runs under every project.
 async function openStoryAndFocusPreview(page: Page) {
-  await page.goto('/story/conformance-button')
+  await openStory(page, 'conformance-button')
 
   const preview = page.getByTestId('preview-iframe').contentFrame()
   await expect(preview.getByText('Click me')).toBeVisible()

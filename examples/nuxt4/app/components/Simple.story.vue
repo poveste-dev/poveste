@@ -1,5 +1,7 @@
 <template>
-  <Story>
+  <Story
+    title="Nuxt/Simple"
+  >
     Simple story in Nuxt
     <NuxtLink to="/">
       NuxtLink

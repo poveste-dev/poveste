@@ -1,4 +1,4 @@
-import { applyState, createStateBaseline } from '@poveste/shared'
+import { applyState, createStateBaseline, isEquivalent } from '@poveste/shared'
 
 /**
  * One end of the state bridge between the app and a sandbox iframe.
@@ -35,10 +35,61 @@ export function createStateBridge(post: (changes: Record<string, any>) => void) 
       }
     },
 
-    /** The far end sent changes: apply them, and treat them as agreed. */
+    /** The far end sent changes: apply them, and agree to the ones that landed. */
     receive(target: any, changes: any) {
       applyState(target, changes)
-      baseline.record(changes)
+      baseline.record(agreedFrom(target, changes))
     },
   }
+}
+
+/**
+ * Of `changes`, the part `target` actually took.
+ *
+ * `applyState` swallows a write a setter refuses — a read-only `computed` in
+ * state is the case that occurs — and reports it as written anyway. Recording
+ * that as agreed is worse than losing it: the far side still holds the old
+ * value, its next firing diffs that against a baseline claiming the new one,
+ * and it comes back as a fresh edit that reverts the sender. A control edit
+ * silently undoing itself, with nothing to show for it.
+ *
+ * So read the target back. Comparing per nested key as well as per key is what
+ * keeps a merged write recordable: `applyState` merges one level, so a narrowed
+ * change never equals the whole object it landed in.
+ */
+function agreedFrom(target: any, changes: any) {
+  const agreed: Record<string, any> = {}
+
+  for (const key in changes) {
+    const wanted = changes[key]
+    const current = target[key]
+
+    if (isEquivalent(current, wanted)) {
+      agreed[key] = wanted
+      continue
+    }
+
+    if (wanted === null || typeof wanted !== 'object' || Array.isArray(wanted)) {
+      continue
+    }
+
+    if (current === null || typeof current !== 'object') {
+      continue
+    }
+
+    let landed: Record<string, any> | null = null
+
+    for (const nested in wanted) {
+      if (isEquivalent(current[nested], wanted[nested])) {
+        landed ??= {}
+        landed[nested] = wanted[nested]
+      }
+    }
+
+    if (landed) {
+      agreed[key] = landed
+    }
+  }
+
+  return agreed
 }

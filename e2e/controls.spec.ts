@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // The controls panel is `@poveste/app` plus `@poveste/controls`, shared by every
 // framework — but what reaches a control is the framework's own state binding,
@@ -6,12 +7,12 @@ import { expect, test } from '@playwright/test'
 // `bind:value`, which passes a getter/setter pair rather than a value. A control
 // that silently stops writing back under one plugin is exactly the regression
 // this suite exists to catch, and it had no cross-framework coverage.
-const STORY = '/story/conformance-controls'
+const STORY = 'conformance-controls'
 const STATE = '.conformance-controls-state'
 
 test.describe('controls', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(STORY)
+    await openStory(page, STORY)
   })
 
   test('writes text back to the state', async ({ page }) => {

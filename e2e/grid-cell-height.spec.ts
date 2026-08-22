@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
-// #198. A grid cell's iframe is given `auto-height`, but the height binding was
+// #198, run on every framework. The cell is `@poveste/app`, but the height it
+// takes is measured inside the sandbox by the framework's own renderer and sent
+// back across the bridge — so this is a claim about the pair, not the chrome.
+//
+// A grid cell's iframe is given `auto-height`, but the height binding was
 // an *alternative* to the responsive one — and responsive is on unless a variant
 // opts out. So the grid, the only caller passing `auto-height`, always took the
 // responsive branch, never received a height, fell back to `h-full` and took
@@ -10,6 +15,7 @@ import { expect, test } from '@playwright/test'
 // 48px button rendered in a 279px cell here and a ~760px cell on a larger
 // display.
 
+const STORY = 'conformance-huge-grid'
 const ITEM = '.poveste-story-variant-grid-item'
 
 async function cellMetrics(page: import('@playwright/test').Page) {
@@ -36,7 +42,7 @@ test.describe('grid cell height', () => {
       { width: 2560, height: 1400 },
     ]) {
       await page.setViewportSize(viewport)
-      await page.goto('/story/src-components-hugegrid-story-vue')
+      await openStory(page, STORY)
       await expect(page.locator(ITEM).first()).toBeVisible()
 
       // The first report carries 0 — posted before the story renders — and the
@@ -61,7 +67,7 @@ test.describe('grid cell height', () => {
   test('sizes cells whose sandbox has not reported yet', async ({ page }) => {
     test.setTimeout(180_000)
     await page.setViewportSize({ width: 1900, height: 1200 })
-    await page.goto('/story/src-components-hugegrid-story-vue')
+    await openStory(page, STORY)
     await expect(page.locator(ITEM).first()).toBeVisible()
     await expect.poll(
       async () => (await cellMetrics(page)).contentHeight,
@@ -105,7 +111,7 @@ test.describe('grid cell height', () => {
     }, '_poveste-sandbox-settings-v3')
 
     await page.setViewportSize({ width: 1900, height: 1200 })
-    await page.goto('/story/src-components-hugegrid-story-vue')
+    await openStory(page, STORY)
     await expect(page.locator(ITEM).first()).toBeVisible()
 
     await expect.poll(

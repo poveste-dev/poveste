@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 declare global {
   interface Window {
@@ -46,7 +47,7 @@ async function pickPreset(page: Page, index: number) {
 test.describe('background color', () => {
   for (const [index, preset] of presets.entries()) {
     test(`applies the ${preset.name} preset to inline-rendered stories`, async ({ page }) => {
-      await page.goto('/story/conformance-no-iframe')
+      await openStory(page, 'conformance-no-iframe')
       const bg = page.getByTestId('responsive-preview-bg')
       const text = page.locator('.conformance-inline')
 
@@ -58,7 +59,7 @@ test.describe('background color', () => {
     })
 
     test(`applies the ${preset.name} preset to single-iframe stories`, async ({ page }) => {
-      await page.goto('/story/conformance-contrast')
+      await openStory(page, 'conformance-contrast')
       const text = page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')
 
       await startFromAnotherPreset(page, index, text)
@@ -71,7 +72,7 @@ test.describe('background color', () => {
     // so the story markup lives in the frame and the item contributes its own
     // preview background element on top of the grid-level one.
     test(`applies the ${preset.name} preset to grid-rendered stories`, async ({ page }) => {
-      await page.goto('/story/conformance-grid')
+      await openStory(page, 'conformance-grid')
       const bg = page.getByTestId('responsive-preview-bg').first()
       const frame = page.getByTestId('preview-iframe').first().contentFrame()
       const text = frame.locator('.conformance-text')
@@ -95,7 +96,7 @@ test.describe('background color', () => {
         }
       })
     })
-    await page.goto('/story/conformance-contrast')
+    await openStory(page, 'conformance-contrast')
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')).toBeVisible()
     await expect.poll(() => page.evaluate(() => window.__settingsRequests)).toBeGreaterThan(0)
   })
