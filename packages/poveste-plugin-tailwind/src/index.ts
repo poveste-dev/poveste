@@ -1,6 +1,39 @@
 import type { Plugin, PluginApiBase } from '@poveste/shared'
-import { findUp } from '../util/find-up.js'
-import { getInjectedImport } from '../util/vendors.js'
+import fs from 'node:fs'
+import path from 'pathe'
+import { getInjectedImport } from 'poveste'
+
+/**
+ * The first of `fileNames` that exists and satisfies `accept`, searching `cwd`
+ * and then upwards.
+ *
+ * `accept` is not a convenience: every name below is an ordinary one, so a
+ * near-miss in the same directory would otherwise shadow the real entrypoint
+ * sitting behind it in the list.
+ */
+function findUp(cwd: string, fileNames: string[], accept: (filePath: string) => boolean): string | null {
+  let { root } = path.parse(cwd)
+  let dir = cwd
+
+  // On Windows this is `C:` and needs the trailing slash to terminate.
+  if (root[1] === ':' && root[2] === undefined) {
+    root += '/'
+  }
+
+  while (dir !== root) {
+    for (const fileName of fileNames) {
+      const searchPath = path.join(dir, fileName)
+
+      if (fs.existsSync(searchPath) && accept(searchPath)) {
+        return searchPath
+      }
+    }
+
+    dir = path.dirname(dir)
+  }
+
+  return null
+}
 
 export interface TailwindTokensOptions {
   /**
@@ -30,8 +63,40 @@ const CSS_ENTRY_CANDIDATES = [
   'styles.css',
 ]
 
-export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
-  const tailwindCssFile = options.cssFile ?? findUp(process.cwd(), CSS_ENTRY_CANDIDATES)
+/**
+ * Whether a stylesheet is a Tailwind entrypoint, rather than merely a file with
+ * one of the names Tailwind entrypoints tend to have.
+ *
+ * Every name in `CSS_ENTRY_CANDIDATES` is an ordinary one — `src/app.css`,
+ * `styles.css` — so matching on the name alone hands the whole feature to
+ * projects that have never used Tailwind: a `Design System` group inserted into
+ * their tree, and a story rendering Tailwind's own defaults as if it were their
+ * design system.
+ *
+ * Both markers are Tailwind v4, which is what this plugin reads: the theme comes
+ * from CSS custom properties, so a v3 project using `@tailwind base` would be
+ * accepted here and then produce nothing.
+ */
+export function isTailwindEntry(filePath: string) {
+  let source: string
+
+  try {
+    source = fs.readFileSync(filePath, 'utf8')
+  }
+  catch {
+    return false
+  }
+
+  // `@import 'tailwindcss'`, `"tailwindcss/theme"`, and the `layer(…)` and
+  // `source(…)` forms that follow the specifier. Deliberately not a bare
+  // `@import` test — the file that prompted this imports a font.
+  return /@import\s+["']tailwindcss(?:\/[^"']*)?["']/.test(source)
+    || /@theme\b/.test(source)
+}
+
+export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
+  // An explicit `cssFile` is the caller saying so, and is taken at their word.
+  const tailwindCssFile = options.cssFile ?? findUp(process.cwd(), CSS_ENTRY_CANDIDATES, isTailwindEntry)
 
   async function generate(api: PluginApiBase) {
     try {
@@ -50,7 +115,7 @@ export function tailwindTokens(options: TailwindTokensOptions = {}): Plugin {
   }
 
   return {
-    name: 'builtin:tailwind-tokens',
+    name: 'tailwind-tokens',
 
     config(config) {
       if (tailwindCssFile) {
@@ -692,3 +757,6 @@ const css = `.__pvt-shade {
 .__pvt-width-box {
   height: 5rem;
 }`
+
+/** @deprecated Use `HstTailwind`. Kept for books that named the old builtin. */
+export const tailwindTokens = HstTailwind

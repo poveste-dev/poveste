@@ -37,3 +37,30 @@ export default defineConfig({
 ```
 
 You can now use Tailwind utility classes in your stories (or import components using them)!
+
+## Design system story
+
+Poveste can render your Tailwind theme — colours, spacing, typography — as a
+story, with [@poveste/plugin-tailwind](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-tailwind):
+
+```js
+import { HstTailwind } from '@poveste/plugin-tailwind'
+
+export default defineConfig({
+  plugins: [
+    HstTailwind(),
+  ],
+})
+```
+
+It finds the CSS entrypoint itself, taking the first of the usual names
+(`src/style.css`, `src/app.css`, `app/assets/css/main.css`, …) that actually
+imports `tailwindcss` or declares `@theme`. Pass `cssFile` to point it elsewhere.
+
+Tailwind v4 only: the theme is read from CSS custom properties, which is where
+v4 keeps it.
+
+::: tip
+This was built into poveste and on by default before 0.5.4. It is opt-in now —
+add the plugin to keep the story.
+:::

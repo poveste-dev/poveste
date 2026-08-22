@@ -5,8 +5,6 @@ import { defineConfig } from 'poveste'
 export default defineConfig({
   plugins: [
     HstVue(),
-    HstScreenshot({
-      ignored: ({ file }) => file.includes('tailwind-tokens'),
-    }),
+    HstScreenshot(),
   ],
 })

@@ -21,6 +21,7 @@
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@poveste/app": "workspace:*",
+    "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@poveste/vendors": "workspace:*",
     "@vitejs/plugin-vue": "^5.2.1",
