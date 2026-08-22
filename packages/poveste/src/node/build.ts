@@ -173,6 +173,18 @@ export async function build(ctx: Context) {
       // Force chunk strategy
       config.build.rollupOptions.output = {
         manualChunks(id) {
+          // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
+          // virtual modules, so the node_modules routing below never sees them
+          // and their placement is left to the bundler — which parked
+          // `__vitePreload` inside the 10 MB `highlighter` chunk. Every chunk
+          // importing the helper then statically imported the whole highlighter,
+          // and the sandbox was back to evaluating it once per grid cell (#197),
+          // undoing exactly what `APP_ONLY_VENDORS` is for. Pin them somewhere
+          // harmless instead of leaving the choice to chunking heuristics.
+          if (id.replace(/^\0/, '').startsWith('vite/')) {
+            return 'app-runtime'
+          }
+
           if (!id.includes('@poveste/app') && id.includes('node_modules')) {
             if (APP_ONLY_VENDORS.some(test => test.test(id))) {
               return 'highlighter'
