@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // #103, run on every framework. The variant grid is `@poveste/app`, but what it
 // mounts into each cell is the framework's own renderer, and the height it
@@ -14,7 +15,7 @@ import { expect, test } from '@playwright/test'
 //
 // Reading the count too early reads low, which would pass a bound assertion on
 // a broken build — so every count here waits for two equal readings first.
-const STORY = '/story/conformance-huge-grid'
+const STORY = 'conformance-huge-grid'
 const ITEM = '.poveste-story-variant-grid-item'
 const VARIANT_COUNT = 1000
 
@@ -36,7 +37,7 @@ async function scrollTo(scroller: Locator, fraction: number) {
 }
 
 async function openGrid(page: Page) {
-  await page.goto(STORY)
+  await openStory(page, STORY)
   const scroller = page.locator('.poveste-story-variant-grid .overflow-y-auto')
   await expect(scroller).toBeVisible()
 

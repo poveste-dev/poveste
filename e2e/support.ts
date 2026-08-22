@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test'
+import { expect } from '@playwright/test'
 
 // Not a `.spec.ts`, so Playwright does not collect it as a test file.
 
@@ -39,4 +40,24 @@ export function seedPreviewSettings(page: Page, settings: Record<string, unknown
 export async function openDocs(page: Page, storyId: string) {
   await page.goto(`/story/${storyId}`)
   await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
+}
+
+/**
+ * Open a story by id, and fail on the story rather than on whatever the spec
+ * does next.
+ *
+ * An id that resolves to nothing is not an error here: the app renders the
+ * sidebar and an empty shell — no toolbar title, no preview iframe — so every
+ * assertion after it fails on a missing selector instead. That reads as a broken
+ * feature when it is really a story renamed, moved, or never added to this
+ * framework's example. Since these specs run against four books at once, the
+ * same mistake is four confusing failures.
+ */
+export async function openStory(page: Page, id: string, query = '') {
+  await page.goto(`/story/${id}${query}`)
+
+  await expect(
+    page.locator('.poveste-toolbar-title'),
+    `story "${id}" is missing from this book`,
+  ).toBeVisible()
 }

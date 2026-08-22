@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // #198, run on every framework. The cell is `@poveste/app`, but the height it
 // takes is measured inside the sandbox by the framework's own renderer and sent
@@ -14,7 +15,7 @@ import { expect, test } from '@playwright/test'
 // 48px button rendered in a 279px cell here and a ~760px cell on a larger
 // display.
 
-const STORY = '/story/conformance-huge-grid'
+const STORY = 'conformance-huge-grid'
 const ITEM = '.poveste-story-variant-grid-item'
 
 async function cellMetrics(page: import('@playwright/test').Page) {
@@ -41,7 +42,7 @@ test.describe('grid cell height', () => {
       { width: 2560, height: 1400 },
     ]) {
       await page.setViewportSize(viewport)
-      await page.goto(STORY)
+      await openStory(page, STORY)
       await expect(page.locator(ITEM).first()).toBeVisible()
 
       // The first report carries 0 — posted before the story renders — and the
@@ -66,7 +67,7 @@ test.describe('grid cell height', () => {
   test('sizes cells whose sandbox has not reported yet', async ({ page }) => {
     test.setTimeout(180_000)
     await page.setViewportSize({ width: 1900, height: 1200 })
-    await page.goto(STORY)
+    await openStory(page, STORY)
     await expect(page.locator(ITEM).first()).toBeVisible()
     await expect.poll(
       async () => (await cellMetrics(page)).contentHeight,
@@ -110,7 +111,7 @@ test.describe('grid cell height', () => {
     }, '_poveste-sandbox-settings-v3')
 
     await page.setViewportSize({ width: 1900, height: 1200 })
-    await page.goto(STORY)
+    await openStory(page, STORY)
     await expect(page.locator(ITEM).first()).toBeVisible()
 
     await expect.poll(
