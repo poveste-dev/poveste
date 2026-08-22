@@ -6,5 +6,6 @@ poveste-dist/
 **/test-results/
 **/playwright-report/
 playwright-results.json
+bench/sandbox.cpuprofile
 .DS_Store
 .eslintcache
