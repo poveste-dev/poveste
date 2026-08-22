@@ -19,6 +19,7 @@ export default antfu({
   ignores: [
     '**/poveste-dist/',
     '**/generated/',
+    '**/*.generated.ts',
     '**/public/',
     // SvelteKit's name for the same thing: served assets, not source.
     '**/static/',

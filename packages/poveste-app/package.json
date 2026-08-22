@@ -28,13 +28,15 @@
     "src"
   ],
   "scripts": {
-    "build": "rimraf dist && vite build && pnpm run build:css && node ./scripts/copy.mjs",
+    "build": "pnpm run icons && rimraf dist && vite build && pnpm run build:css && node ./scripts/copy.mjs",
     "build:css": "postcss src/app/style/main.pcss -o ./dist/style.css",
+    "icons": "node ./scripts/icons.mjs",
     "test": "vitest run",
     "test:dev": "vitest",
     "watch": "concurrently \"vite build --watch\" \"pnpm run build:css --watch\" \"node ./scripts/watchAndCopy.mjs\""
   },
   "dependencies": {
+    "@fontsource/noto-sans-display": "^5.3.0",
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
@@ -42,6 +44,11 @@
     "shiki": "^3.0.0"
   },
   "devDependencies": {
+    "@iconify-json/carbon": "^1.2.25",
+    "@iconify-json/fluent": "1.2.56",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/ri": "^1.2.10",
+    "@iconify/utils": "^3.1.4",
     "@tailwindcss/postcss": "catalog:",
     "@tailwindcss/typography": "^0.5.15",
     "@types/fs-extra": "^11.0.4",

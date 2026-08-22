@@ -1,4 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Display&display=swap');
+/* The app face (Noto Sans Display) is imported by the bundle entries, not here:
+   this file is compiled by the postcss CLI into dist/style.css, which rebases
+   font URLs relative to the *source* and ships a path into node_modules. Vite
+   processes the entries and hashes the files into the book (#219). */
 @import 'floating-vue/dist/style.css';
 @import '@poveste/controls/dist/index.es.css';
 

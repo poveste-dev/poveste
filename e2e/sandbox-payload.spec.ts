@@ -14,20 +14,39 @@ import { expect, test } from '@playwright/test'
  */
 const SANDBOX_JS_BUDGET = 4 * 1024 * 1024
 
+// Same logic for the stylesheet: a sandbox once carried the whole app chrome
+// stylesheet (~100 KB it can never match) because a plugin's story imported it,
+// plus a render-blocking Google Fonts @import every realm re-fetched (#219).
+const SANDBOX_CSS_BUDGET = 48 * 1024
+
 test('the sandbox boots inside its script budget, without the highlighter', async ({ page }) => {
   const scripts: { name: string, bytes: number }[] = []
+  const styles: { name: string, bytes: number }[] = []
+  const external: string[] = []
+  page.on('request', (request) => {
+    const url = request.url()
+    if (/^https?:/.test(url) && !/^https?:\/\/(?:localhost|127\.0\.0\.1)[:/]/.test(url)) {
+      external.push(url)
+    }
+  })
   page.on('response', async (response) => {
-    if (!response.url().endsWith('.js')) return
+    const url = response.url()
+    if (!url.endsWith('.js') && !url.endsWith('.css')) return
     const body = await response.body().catch(() => null)
-    scripts.push({ name: response.url().split('/').pop(), bytes: body?.length ?? 0 })
+    const entry = { name: url.split('/').pop(), bytes: body?.length ?? 0 }
+    ;(url.endsWith('.js') ? scripts : styles).push(entry)
   })
 
   await page.goto('/__sandbox.html?storyId=conformance-button&variantId=default')
   await expect(page.locator('.__poveste-render-story button').first()).toBeVisible()
 
-  const total = scripts.reduce((sum, s) => sum + s.bytes, 0)
+  const totalJs = scripts.reduce((sum, s) => sum + s.bytes, 0)
+  const totalCss = styles.reduce((sum, s) => sum + s.bytes, 0)
   const highlighter = scripts.filter(s => s.name.startsWith('highlighter'))
 
   expect(highlighter, `sandbox loaded ${highlighter.map(s => s.name).join(', ')}`).toHaveLength(0)
-  expect(total, `sandbox booted with ${scripts.length} scripts totalling ${total} bytes`).toBeLessThan(SANDBOX_JS_BUDGET)
+  expect(totalJs, `sandbox booted with ${scripts.length} scripts totalling ${totalJs} bytes`).toBeLessThan(SANDBOX_JS_BUDGET)
+  expect(totalCss, `sandbox booted with ${styles.length} stylesheets totalling ${totalCss} bytes`).toBeLessThan(SANDBOX_CSS_BUDGET)
+  // A realm that needs the network to boot is a realm that fails offline.
+  expect(external, `sandbox reached out to ${external.join(', ')}`).toEqual([])
 })

@@ -6,7 +6,6 @@ import { computed, createApp, h, onMounted, ref, watch } from 'vue'
 import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
-import { setupPluginApi } from './plugin.js'
 import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
 import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
@@ -194,6 +193,11 @@ const ro = new ResizeObserver(scheduleReport)
 ro.observe(document.body)
 requestAnimationFrame(scheduleReport)
 
-if (import.meta.hot) {
-  /* #__PURE__ */ setupPluginApi()
+// Dev only, and loaded lazily on purpose: a static import of `plugin.js`
+// carried the app router — and through its lazy routes every app view and
+// their CSS — into the sandbox graph, so each sandbox realm parsed ~100 KB of
+// chrome styles it can never match (#219). `import.meta.env.DEV` is a build-time
+// literal, so the whole branch, dynamic import included, drops out of a build.
+if (import.meta.env.DEV && import.meta.hot) {
+  import('./plugin.js').then(({ setupPluginApi }) => setupPluginApi())
 }

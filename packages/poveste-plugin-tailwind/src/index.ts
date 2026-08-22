@@ -306,9 +306,12 @@ async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
   }
 }
 
+// No `import 'poveste-style'`: the story renders in a sandbox realm, where the
+// app stylesheet is @scope'd away from story markup anyway — it only added
+// ~100 KB of chrome CSS to every sandbox of every book using this plugin (#219).
+// The swatches style themselves from the local stylesheet below.
 function storyTemplate(tailwindConfig: any) {
   return `
-import 'poveste-style'
 import './style.css'
 import { createApp, h, markRaw, ref } from ${getInjectedImport('@poveste/vendors/vue')}
 import {
