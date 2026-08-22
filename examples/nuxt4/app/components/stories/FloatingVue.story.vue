@@ -4,7 +4,7 @@ import FloatingVue from './FloatingVue.vue'
 
 <template>
   <Story
-    title="Style Isolation/Floating Vue"
+    title="Style Isolation/Popover theming"
     :layout="{
       type: 'grid',
       width: 360,
