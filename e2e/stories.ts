@@ -38,3 +38,67 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-no-iframe', title: 'No iframe' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
+
+/**
+ * Every story title all four framework examples must present.
+ *
+ * Titles rather than ids, because most of these stories do not set an id — the
+ * list is about the book a reader opens, and that is what the sidebar shows.
+ * `SHARED_STORIES` above is the smaller set that specs address by id.
+ *
+ * An example is free to carry more: `Nuxt/…`, `SvelteKit/…` and the Svelte
+ * regression fixtures are framework-specific by nature. What it may not do is
+ * carry fewer, which is how vue3 ended up as the only book exercising the
+ * chrome.
+ *
+ * Twelve of vue3's stories are deliberately absent: `Auto State & Props` needs
+ * auto-props (#233), the two `WrapperMetaOn…` stories need `addWrapper` (#232),
+ * `Tailwind` is generated from design-system config rather than a story file,
+ * and the rest are Vue-shaped features whose Svelte counterpart has not been
+ * decided. They go in here as they land.
+ */
+export const SHARED_STORY_TITLES: string[] = [
+  'BaseButton',
+  'Button',
+  'Color Button',
+  'ComplexParameter',
+  'Concurrent state',
+  'Contrast',
+  'ContrastColor',
+  'Control bindings',
+  'Controls',
+  'Dark',
+  'Dark mode',
+  'Demo',
+  'Docs',
+  'Documentation',
+  'EventButton',
+  'EventButtonGrid',
+  'Events',
+  'Grid',
+  'Hand-written source',
+  'Huge grid',
+  'HugeGrid',
+  'Inline grid',
+  'InlineGrid',
+  'Introduction',
+  'LongFile1',
+  'LongFile2',
+  'Markdown links',
+  'MarkdownFile',
+  'MarkdownLinks',
+  'NestedButton',
+  'No iframe',
+  'No variant tag',
+  'Responsive',
+  'Serialize',
+  'Shared Controls',
+  'State',
+  'State key removal',
+  'StoryOptions Override',
+  'Sub Story 1',
+  'Sub Story 2',
+  'With sass',
+  'Wrapper',
+  '🐱 Meow',
+]

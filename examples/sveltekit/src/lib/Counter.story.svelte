@@ -4,6 +4,6 @@
   export let Hst
 </script>
 
-<Hst.Story>
+<Hst.Story title="Counter">
   <Counter />
 </Hst.Story>
