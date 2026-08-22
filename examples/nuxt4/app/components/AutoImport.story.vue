@@ -6,7 +6,9 @@ console.log('useRuntimeConfig', config)
 </script>
 
 <template>
-  <Story>
+  <Story
+    title="Nuxt/AutoImport"
+  >
     <Meow />
 
     <h3>Nuxt runtime config</h3>

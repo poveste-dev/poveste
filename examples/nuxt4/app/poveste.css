@@ -1,0 +1,52 @@
+/*
+ * Consumer-side global CSS for this example.
+ *
+ * The adversarial Tailwind v4 fixture (a consumer whose preflight resets `*`,
+ * `a`, `button` and headings globally) lives in `examples/vue3-tailwind`. It has
+ * to be global to be a faithful test, and a built book merges every story's CSS
+ * into one sandbox stylesheet — so kept here it stripped the borders, padding
+ * and headings off every story in this example.
+ */
+
+.demo {
+  color: #10B981;
+}
+
+/*
+ * Consumer-side dark styling for the story itself. `my-dark` is this example's
+ * `theme.darkClass`; the chrome's own class (`ptw-dark`, on the document root)
+ * is not reachable from here and never was — see #123.
+ */
+html.my-dark {
+  background: #27272a;
+  color: #e9e9ed;
+}
+
+/*
+ * Opt-in user styling, used by the floating-vue story. Scoped to elements that
+ * ask for it by class, so it does not restyle the rest of the example.
+ */
+:root {
+  --user-primary: tomato;
+  --user-spacing: 24px;
+}
+
+/*
+ * #116 fixture. All three root spellings have to reach the story; `html` and
+ * `body` sit above the scoping root until they are rewritten to `:scope`.
+ * Custom properties only — a real declaration here restyles every story.
+ */
+html {
+  --user-html-token: rebeccapurple;
+}
+
+body {
+  --user-body-token: 14px;
+}
+
+.user-card {
+  padding: var(--user-spacing);
+  background: lime;
+  color: navy;
+  border: 4px dashed var(--user-primary);
+}
