@@ -32,7 +32,9 @@ const env = { ...process.env, POVESTE_BENCH: '1' }
 
 function sh(cmd, cmdArgs, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, cmdArgs, { stdio: 'inherit', env, ...options })
+    // Child stdout goes to *our* stderr: with `--json`, stdout is the report,
+    // and a build's progress lines would land inside it.
+    const child = spawn(cmd, cmdArgs, { stdio: ['ignore', process.stderr, 'inherit'], env, ...options })
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error(`${cmd} ${cmdArgs.join(' ')} exited ${code}`))))
   })
 }

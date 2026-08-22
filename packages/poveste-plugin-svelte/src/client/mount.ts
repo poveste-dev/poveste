@@ -32,6 +32,14 @@ export default _defineComponent({
       type: Object as _PropType<Story>,
       required: true,
     },
+
+    // Set by a sandbox: the one variant this realm serves. The story's `{#each}`
+    // still instantiates a MountVariant per variant — that is the user's
+    // template — but the others can skip their bookkeeping (#197).
+    targetVariantId: {
+      type: String,
+      default: null,
+    },
   },
 
   setup(props) {
@@ -55,6 +63,7 @@ export default _defineComponent({
         },
         context: new Map(Object.entries({
           __pvtStory: props.story,
+          __pvtTargetVariantId: props.targetVariantId,
         })),
       }, 'client')
       app = mountedApp.app
