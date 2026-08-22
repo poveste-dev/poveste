@@ -17,7 +17,7 @@
   }
 </script>
 
-<Hst.Story title="ColorButton" {initState} {source}>
+<Hst.Story title="Color Button" {initState} {source}>
   {#snippet children({ state })}
     <ColorButton disabled={state.disabled} colorselect={state.colorselect} on:click={event => logEvent('click', event)}>
       Click me!

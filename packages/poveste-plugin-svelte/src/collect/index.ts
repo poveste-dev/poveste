@@ -42,7 +42,19 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
 
   await tick()
 
-  if (!storyData[0]?.variants.length) {
+  // A file with no `Hst.Story` in it collects nothing, which is a thing people
+  // write — a scratch file, a component that lost its story tag in a refactor.
+  // The optional chain below used to guard only the read: with no story the
+  // condition came out true and the body then dereferenced the same `undefined`,
+  // so the collector crashed the whole build instead of skipping one file. The
+  // Vue collector warns and carries on, and the shared warning downstream
+  // (`No story found for …`) is already written for exactly this.
+  if (!storyData[0]) {
+    mountedApp.destroy()
+    return
+  }
+
+  if (!storyData[0].variants.length) {
     storyData[0].variants.push({
       id: '_default',
       title: 'default',
