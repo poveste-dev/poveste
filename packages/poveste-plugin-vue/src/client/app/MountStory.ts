@@ -21,6 +21,11 @@ export default _defineComponent({
       type: Object as _PropType<Story>,
       required: true,
     },
+
+    targetVariantId: {
+      type: String,
+      default: null,
+    },
   },
 
   setup(props) {
@@ -29,6 +34,7 @@ export default _defineComponent({
       mode: 'mount' as const,
       slotName: 'default',
       currentVariant: null,
+      targetVariantId: props.targetVariantId,
       externalState: null,
       nextVariantIndex: {
         value: 0,

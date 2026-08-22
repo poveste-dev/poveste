@@ -115,6 +115,16 @@ export default defineComponent({
     function renderMountStory() {
       let index = 0
 
+      // A sandbox exists to serve one variant, but this pass used to mount a
+      // Variant component per <Variant> — 1000 setups, state syncs and
+      // auto-props walks per grid cell to render one button (#197). Skip the
+      // rest; variants resolve positionally, so `index` still advances past
+      // them. Stories whose variants live in child components are invisible to
+      // this vnode walk, so they keep the full mount.
+      const targetIndex = renderContext?.targetVariantId && !attrs.story.meta?.hasVariantChildComponents
+        ? attrs.story.variants.findIndex(v => v.id === renderContext.targetVariantId)
+        : -1
+
       const applyAttrs = (vnodes: VNode[]) => {
         const result: VNode[] = []
 
@@ -125,6 +135,10 @@ export default defineComponent({
             index++
 
             if (!variant) {
+              continue
+            }
+
+            if (targetIndex !== -1 && index - 1 !== targetIndex) {
               continue
             }
 
@@ -180,6 +194,48 @@ export default defineComponent({
 
       if (renderContext.slotName === 'default' || attrs.story.meta?.hasVariantChildComponents) {
         children.push(...(vm.proxy.$slots.default?.(slotProps) ?? []))
+      }
+
+      // Same story as the mount pass above: every Variant component here runs
+      // its full setup and then all but the current one render null (#197).
+      // Keep only the current one, and seed the positional index so it still
+      // resolves to the right variant data. Filtering only the default slot —
+      // the controls slot carries controls, and stories with variants in child
+      // components are invisible to a vnode walk.
+      if (
+        renderContext.slotName === 'default'
+        && renderContext.currentVariant
+        && !attrs.story.meta?.hasVariantChildComponents
+      ) {
+        const targetIndex = attrs.story.variants.findIndex(v => v.id === renderContext.currentVariant.id)
+        if (targetIndex !== -1) {
+          let seen = 0
+          let kept = false
+          const keepTargetVariant = (vnodes: VNode[]) => {
+            const result: VNode[] = []
+            for (const vnode of vnodes) {
+              // @ts-expect-error custom option
+              if (vnode?.type?.__povesteType === 'variant') {
+                if (seen === targetIndex) {
+                  result.push(vnode)
+                  kept = true
+                }
+                seen++
+                continue
+              }
+              if (Array.isArray(vnode?.children) && vnode.children.length) {
+                vnode.children = keepTargetVariant(vnode.children as VNode[])
+              }
+              result.push(vnode)
+            }
+            return result
+          }
+          const filtered = keepTargetVariant(children)
+          if (kept) {
+            renderContext.nextVariantIndex.value = targetIndex
+            return filtered
+          }
+        }
       }
 
       return children
