@@ -3,7 +3,7 @@ import PiniaStore from './PiniaStore.vue'
 </script>
 
 <template>
-  <Story title="PiniaStory">
+  <Story title="Store">
     <PiniaStore />
   </Story>
 </template>
