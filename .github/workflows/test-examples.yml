@@ -124,8 +124,15 @@ jobs:
       # `test-results`, not `playwright-report`: the reporter is `list`, so no
       # report directory is ever written, and `trace: on-first-retry` puts the
       # traces here. Pointed at the wrong path this silently uploaded nothing.
+      #
+      # Not `if: failure()`. A flaky test passes on retry, so the job succeeds
+      # and that gate skips the upload — discarding the trace in the one case
+      # nobody can reproduce on demand (#75). `test-results` is empty unless
+      # something retried, hence `ignore` rather than `error`.
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !cancelled() }}
         with:
           name: playwright-traces-${{ matrix.example }}
           path: test-results
+          if-no-files-found: ignore
+          retention-days: 7
