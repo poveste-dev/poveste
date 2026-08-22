@@ -5,6 +5,7 @@ import chokidar from 'chokidar'
 import { globby } from 'globby'
 import micromatch from 'micromatch'
 import { basename, resolve } from 'pathe'
+import { createWatchIgnore } from './util/watch-ignore.js'
 
 type StoryChangeHandler = (file?: ServerStoryFile) => unknown
 const storyChangeHandlers: StoryChangeHandler[] = []
@@ -60,17 +61,7 @@ export async function watchStories(newContext: Context) {
 
   const watcher = chokidar.watch(baseWatchPaths, {
     cwd: context.root,
-    ignored: (path, stats) => {
-      if (resolvedStoryIgnored.some(pattern => micromatch.isMatch(path, pattern))) {
-        return true
-      }
-      if (resolveStoryMatch.some(pattern => micromatch.isMatch(path, pattern))) {
-        return false
-      }
-
-      // Allow directories to be traversed, only ignore files that don't match
-      return stats?.isFile() ?? false
-    },
+    ignored: createWatchIgnore(resolvedStoryIgnored, resolveStoryMatch),
   })
 
   watcher

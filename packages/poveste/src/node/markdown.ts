@@ -10,12 +10,12 @@ import MarkdownIt from 'markdown-it'
 import anchor from 'markdown-it-anchor'
 import attrs from 'markdown-it-attrs'
 import { full as emoji } from 'markdown-it-emoji'
-import micromatch from 'micromatch'
 import path from 'pathe'
 import pc from 'picocolors'
 import { bundledLanguages, createHighlighter } from 'shiki'
 import { addStory, notifyStoryChange, removeStory } from './stories.js'
 import { slugify } from './util/slugify.js'
+import { createWatchIgnore } from './util/watch-ignore.js'
 
 const onMarkdownListChangeHandlers: (() => unknown)[] = []
 
@@ -161,16 +161,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
 
   const watcher = chokidar.watch('.', {
     cwd: ctx.root,
-    ignored: (path, stats) => {
-      if (ctx.config.storyIgnored.some(pattern => micromatch.isMatch(path, pattern))) {
-        return true
-      }
-      if (micromatch.isMatch(path, '**/*.story.md')) {
-        return false
-      }
-
-      return stats?.isFile()
-    },
+    ignored: createWatchIgnore(ctx.config.storyIgnored, ['**/*.story.md']),
   })
 
   /**
