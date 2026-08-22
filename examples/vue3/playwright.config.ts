@@ -7,7 +7,7 @@ const DEV_PORT = 4667
 // paths isolate user CSS by different means — dev wraps it in `@scope` at
 // transform time, a build wraps its main entry and ships the sandbox entry
 // unwrapped — and only the built one was ever tested (#108).
-const ISOLATION_SPECS = ['**/user-root-css.spec.ts', '**/sandbox-color-scheme.spec.ts']
+const ISOLATION_SPECS = ['**/user-root-css.spec.ts', '**/sandbox-color-scheme.spec.ts', '**/sandbox-direct.spec.ts']
 
 export default defineConfig({
   testDir: './playwright',
