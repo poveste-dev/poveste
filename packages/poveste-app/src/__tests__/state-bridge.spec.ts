@@ -97,6 +97,35 @@ describe('createStateBridge', () => {
     expect(bridge.state.sandbox).toEqual({ label: 'raced', bumps: 1 })
   })
 
+  it('does not revert the sender when the receiver refuses the write', () => {
+    // `applyState` swallows a write a setter refuses — a read-only `computed` in
+    // state is the case that occurs — and reports it as written anyway. Agreeing
+    // to it regardless is worse than losing it: the receiver still holds the old
+    // value, its next firing diffs that against a baseline claiming the new one,
+    // and it comes back as a fresh edit that reverts the sender. The reader's
+    // control edit undoes itself with nothing to show for it.
+    const queues: any = { host: [], sandbox: [] }
+    const host: any = { a: 0 }
+    const sandbox: any = {}
+    Object.defineProperty(sandbox, 'a', { get: () => 0, enumerable: true, configurable: true })
+
+    const hostBridge = createStateBridge(changes => queues.sandbox.push(changes))
+    const sandboxBridge = createStateBridge(changes => queues.host.push(changes))
+
+    hostBridge.send({ ...host })
+    for (const changes of queues.sandbox.splice(0)) sandboxBridge.receive(sandbox, changes)
+
+    host.a = 1
+    hostBridge.send({ a: 1 })
+    for (const changes of queues.sandbox.splice(0)) sandboxBridge.receive(sandbox, changes)
+
+    // The sandbox refused it, so its own next firing still reads 0.
+    sandboxBridge.send({ a: sandbox.a })
+    for (const changes of queues.host.splice(0)) hostBridge.receive(host, changes)
+
+    expect(host.a).toBe(1)
+  })
+
   it('leaves a simultaneous write to the same key unresolved, as it always did', () => {
     // Not something a diff can fix, and not something this changed. Both ends
     // accept what the other sent, so the two values swap. Landing them on one

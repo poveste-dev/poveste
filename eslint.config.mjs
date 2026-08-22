@@ -20,6 +20,8 @@ export default antfu({
     '**/poveste-dist/',
     '**/generated/',
     '**/public/',
+    // SvelteKit's name for the same thing: served assets, not source.
+    '**/static/',
     '**/.svelte-kit/',
   ],
 }, {

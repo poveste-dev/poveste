@@ -1,14 +1,16 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // `logEvent` crosses from the story into the app's events panel, and how it gets
 // there differs by framework — the sandbox posts it across, the inline path
 // calls the store directly. The panel is shared chrome either way, and this had
 // no coverage outside vue3.
-const STORY = '/story/conformance-events?variantId=default&tab=events'
+const STORY = 'conformance-events'
+const EVENTS_TAB = '?variantId=default&tab=events'
 
 test.describe('events', () => {
   test('logs each event the story emits', async ({ page }) => {
-    await page.goto(STORY)
+    await openStory(page, STORY, EVENTS_TAB)
 
     const iframe = page.getByTestId('preview-iframe').contentFrame()
     const events = page.getByTestId('event-item')
@@ -27,7 +29,7 @@ test.describe('events', () => {
   })
 
   test('shows the payload of an event', async ({ page }) => {
-    await page.goto(STORY)
+    await openStory(page, STORY, EVENTS_TAB)
 
     const iframe = page.getByTestId('preview-iframe').contentFrame()
 

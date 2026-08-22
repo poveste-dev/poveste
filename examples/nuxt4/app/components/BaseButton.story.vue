@@ -10,7 +10,7 @@ function initState() {
 
 <template>
   <Story
-    title="BaseButton"
+    title="Nuxt/BaseButton"
     :layout="{
       type: 'grid',
       width: 200,
