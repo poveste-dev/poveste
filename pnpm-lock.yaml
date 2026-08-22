@@ -193,6 +193,9 @@ importers:
       poveste:
         specifier: workspace:*
         version: link:../../packages/poveste
+      sass:
+        specifier: ^1.82.0
+        version: 1.97.2
       svelte:
         specifier: ^5.55.0
         version: 5.55.0
