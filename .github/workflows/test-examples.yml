@@ -121,9 +121,17 @@ jobs:
           POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
         run: pnpm run test:e2e
 
-      # `test-results`, not `playwright-report`: the reporter is `list`, so no
-      # report directory is ever written, and `trace: on-first-retry` puts the
-      # traces here. Pointed at the wrong path this silently uploaded nothing.
+      # Retries make a flake green, so this is the only thing that says one
+      # happened. A warning, never a failure: a flake is worth reading, not
+      # worth blocking a merge on (#75).
+      - name: Flag flaky tests
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/annotate-flaky.mjs playwright-results.json ${{ matrix.example }}
+
+      # `test-results`, not `playwright-report`: the reporters are `list` and
+      # `json`, so no report directory is ever written, and `trace:
+      # on-first-retry` puts the traces here. Pointed at the wrong path this
+      # silently uploaded nothing.
       #
       # Not `if: failure()`. A flaky test passes on retry, so the job succeeds
       # and that gate skips the upload — discarding the trace in the one case
@@ -133,6 +141,8 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: playwright-traces-${{ matrix.example }}
-          path: test-results
+          path: |
+            test-results
+            playwright-results.json
           if-no-files-found: ignore
           retention-days: 7

@@ -82,7 +82,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  reporter: 'list',
+  // `retries` turns a flake into a green job, so CI also needs a machine-readable
+  // result to find one after the fact — the list output is for humans and is not
+  // a stable contract (#75).
+  reporter: process.env.CI
+    ? [['list'], ['json', { outputFile: 'playwright-results.json' }]]
+    : 'list',
   use: {
     trace: 'on-first-retry',
   },
