@@ -123,6 +123,11 @@ const app = createApp({
         h(GenericMountStory, {
           key: file.value.story.id,
           story: file.value.story,
+          // This realm serves exactly one variant; a plugin that mounts
+          // variants can skip all the others (#197). Falls through
+          // GenericMountStory as an attr, so plugins that don't know the prop
+          // ignore it.
+          targetVariantId: typeof query.variantId === 'string' ? query.variantId : null,
         }),
       ]),
       this.story && this.variant
