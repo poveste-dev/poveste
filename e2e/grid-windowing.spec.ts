@@ -15,6 +15,12 @@ import { openStory } from './support.js'
 //
 // Reading the count too early reads low, which would pass a bound assertion on
 // a broken build — so every count here waits for two equal readings first.
+//
+// Since #240 cells are pooled: a cell that scrolls out keeps its element and its
+// warm sandbox, hidden, until it is handed the next variant, and a cell's
+// position on screen is CSS `order`, not DOM order. So "mounted" here means the
+// pool, which is still bounded — and anything about *which* variant is where
+// reads the screen, not the DOM sequence.
 const STORY = 'conformance-huge-grid'
 const ITEM = '.poveste-story-variant-grid-item'
 const VARIANT_COUNT = 1000
@@ -67,8 +73,8 @@ test.describe('variant grid windowing', () => {
     await scrollTo(scroller, 1)
     expect(await settledCount(page)).toBeLessThan(60)
 
-    // Items that leave the window must actually unmount, which is what the
-    // monotonic counter never did.
+    // Items that leave the window must leave the working set — unmounted, or
+    // parked in the pool — which is what the monotonic counter never did.
     await scrollTo(scroller, 0)
     expect(await settledCount(page)).toBeLessThan(60)
   })
@@ -80,13 +86,17 @@ test.describe('variant grid windowing', () => {
 
     // Guards the translateY offset against the spacer height: if the two ever
     // disagree the grid still scrolls, it just shows the wrong variants.
-    const firstOnScreen = async () => page.evaluate((sel) => {
+    // Visual order, not DOM order: cells are pooled and placed with CSS `order`.
+    const onScreen = async () => page.evaluate((sel) => {
       const sc = document.querySelector('.poveste-story-variant-grid .overflow-y-auto')!
       const top = sc.getBoundingClientRect().top
-      const visible = [...document.querySelectorAll(sel)]
-        .find(i => i.getBoundingClientRect().bottom > top)
-      return Number(visible?.querySelector('.truncate')?.textContent?.replace('Variant ', ''))
+      return [...document.querySelectorAll(sel)]
+        .map(i => ({ rect: i.getBoundingClientRect(), n: Number(i.querySelector('.truncate')?.textContent?.replace('Variant ', '')) }))
+        .filter(({ rect }) => rect.height > 0 && rect.bottom > top)
+        .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
+        .map(({ n }) => n)
     }, ITEM)
+    const firstOnScreen = async () => (await onScreen())[0]
 
     expect(await firstOnScreen()).toBe(1)
 
@@ -99,6 +109,6 @@ test.describe('variant grid windowing', () => {
     await scrollTo(scroller, 1)
     await settledCount(page)
     // The last row has to land at the bottom of the spacer, not short of it.
-    await expect(page.locator(ITEM).last().locator('.truncate')).toHaveText(`Variant ${VARIANT_COUNT}`)
+    await expect.poll(async () => (await onScreen()).at(-1)).toBe(VARIANT_COUNT)
   })
 })

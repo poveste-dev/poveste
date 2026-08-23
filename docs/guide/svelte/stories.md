@@ -120,6 +120,7 @@ Display all the variants in a grid.
 
 Additional `layout` properties:
 - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+- `isolate`: Give every render of this story a fresh sandbox document instead of reusing a warm one. Sandboxes are pooled by default — a cell or the single preview is handed the next variant to show rather than reloaded — so a story that leaves JavaScript state behind (patched globals, leaked timers) that the next story must not see can opt out with `isolate: true`. Style isolation is the same either way.
 
 ```svelte{7}
 <script>

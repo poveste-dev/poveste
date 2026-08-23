@@ -6,7 +6,7 @@ import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
 import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from '../../util/const'
+import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
 import { getSandboxUrl } from '../../util/sandbox'
@@ -85,6 +85,9 @@ useEventListener(window, 'message', (event) => {
       logEvent(event.data.event)
       break
     case SANDBOX_READY:
+      // A ready for an occupant this host has since moved on from. Unnamed
+      // readies come from sandboxes that predate retargeting; take those.
+      if (event.data.variantId && (event.data.variantId !== props.variant.id || event.data.storyId !== props.story.id)) break
       setPreviewReady()
       break
     case PREVIEW_SETTINGS_REQUEST:
@@ -117,31 +120,85 @@ function logEvent(event: HstEvent) {
   eventsStore.addEvent(event)
 }
 
+// Realm reuse state (#240) — see the block below `sandboxUrl` for the design.
+const REUSE_LIMIT = 30
+const RETARGET_TIMEOUT = 8_000
+const retargeting = ref(false)
+let retargetTimer: ReturnType<typeof setTimeout> | undefined
+
 function setPreviewReady() {
+  retargeting.value = false
+  clearTimeout(retargetTimer)
   storyStore.setPreviewReady(props.variant, true)
+  // A fresh mount starts from the story's own state; what this side holds for
+  // the variant — earlier control edits, or the state it had the last time this
+  // realm showed it — is the truth the story should render.
+  syncState()
 }
 
 const sandboxUrl = computed(() => {
   return getSandboxUrl(props.story, props.variant)
 })
 
+/*
+ * Realm reuse (#240). A sandbox document is a full realm boot — bundle
+ * evaluation, story mount — and same-origin iframes boot serially on one main
+ * thread, so a grid that scrolls pays that for every cell that enters the
+ * window. Instead of changing `src`, a warm realm is told which variant to
+ * show next and remounts it in place: the order of the realm boot cost becomes
+ * the number of cells on screen, not the number scrolled past.
+ *
+ * What survives between occupants is the realm's JS state — globals a story
+ * patched, timers it leaked. Style isolation is untouched. Two valves for
+ * stories that cannot share: `layout.isolate` opts a story back into a cold
+ * document per render, and a realm is cold-reloaded after REUSE_LIMIT
+ * retargets so what does accumulate stays bounded. A retarget that never
+ * reports ready falls back to a reload.
+ */
+const reuse = computed(() => props.story.layout?.isolate !== true)
+// What the iframe actually loads. Only a cold (re)load assigns it.
+const iframeSrc = ref(sandboxUrl.value)
 const isIframeLoaded = ref(false)
+let retargets = 0
 
 let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
 
-watch(sandboxUrl, () => {
-  // A fresh document has agreed to nothing, so neither has this end. Kept as a
-  // new bridge rather than a reset so there is one way to be in that state.
-  bridge = createStateBridge(postState)
+function reload(url: string) {
+  retargets = 0
+  retargeting.value = false
+  clearTimeout(retargetTimer)
   isIframeLoaded.value = false
-  storyStore.setPreviewReady(props.variant, false)
   stopTrackKeyboard?.()
   stopTrackKeyboard = undefined
+  iframeSrc.value = url
+}
+
+watch(sandboxUrl, (url) => {
+  // A new occupant has agreed to nothing, so neither has this end. Kept as a
+  // new bridge rather than a reset so there is one way to be in that state.
+  bridge = createStateBridge(postState)
+  storyStore.setPreviewReady(props.variant, false)
+  reportedHeight.value = null
+
+  const target = iframe.value?.contentWindow
+  if (reuse.value && isIframeLoaded.value && target && retargets < REUSE_LIMIT) {
+    retargets++
+    retargeting.value = true
+    target.postMessage({ type: SANDBOX_RETARGET, storyId: props.story.id, variantId: props.variant.id }, window.location.origin)
+    clearTimeout(retargetTimer)
+    retargetTimer = setTimeout(() => {
+      if (retargeting.value && !unmounted) reload(url)
+    }, RETARGET_TIMEOUT)
+    return
+  }
+
+  reload(url)
 })
 
 onBeforeUnmount(() => {
   unmounted = true
+  clearTimeout(retargetTimer)
   stopTrackKeyboard?.()
 })
 
@@ -189,6 +246,7 @@ function onIframeLoad() {
   if (unmounted) {
     return
   }
+  retargets = 0
   isIframeLoaded.value = true
   syncState()
   syncSettings()
@@ -207,10 +265,10 @@ function onIframeLoad() {
   >
     <iframe
       ref="iframe"
-      :src="sandboxUrl"
+      :src="iframeSrc"
       class="w-full h-full relative"
       :class="{
-        'invisible': !isIframeLoaded,
+        'invisible': !isIframeLoaded || retargeting,
         'pointer-events-none': resizing,
       }"
       :style="previewStyle(isResponsiveEnabled, finalWidth, finalHeight)"
