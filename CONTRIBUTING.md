@@ -172,6 +172,20 @@ The smoke test (`pnpm run test:smoke`) packs the publishable tarballs, installs 
 
 Cut the release on the Node version in [`.node-version`](./.node-version). The gate only means something if it runs on the Node that publishes.
 
+### What the release workflow gates on
+
+bumpp pushes the version-bump commit straight to `main`, which bypasses branch protection — so it is the one published commit that no required check ever cleared. The push does start the test workflows; nothing waited for them. `release.yml` now does, before it builds anything:
+
+```
+Require the tagged commit to be green   ->   build -> smoke -> release -> publish
+```
+
+It waits for `test.yml` — lint, versions, readmes, build, unit tests and the consumer smoke test — and fails if it is not `success`. If it is red, re-run it; once it is green, re-run the release job. Nothing is published in the meantime.
+
+The browser example suites are deliberately not part of this gate: they are flaky under full-suite parallelism ([#75](https://github.com/poveste-dev/poveste/issues/75)), and a flake blocking a release costs more than the coverage buys, given they already ran on the PR that produced the commit. Add them to `WORKFLOWS` in [`await-commit-checks.sh`](./.github/scripts/await-commit-checks.sh) once #75 is closed.
+
+The other half is the release body. `changelogithub` is allowed to fail so a GitHub API blip cannot block an otherwise good publish, but a run used to go green with the packages shipped and no release behind the tag. The last step now checks the release exists and fails the run if it does not — the publish has already happened at that point, so treat it as "create the release now", not "the release failed".
+
 ### CHANGELOG.md
 
 Nothing writes `CHANGELOG.md` automatically. `changelogithub` generates the **GitHub release** from the commit log at tag time; it does not touch the file, which is why the file silently kept describing histoire through poveste's first six releases.

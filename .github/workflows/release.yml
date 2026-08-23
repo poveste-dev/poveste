@@ -3,6 +3,9 @@ name: Release
 permissions:
   contents: write
   id-token: write
+  # Reading the tagged commit's workflow runs (#192). An explicit block sets
+  # every scope it omits to `none`, so this has to be named.
+  actions: read
 
 on:
   push:
@@ -16,6 +19,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # The version bump is pushed straight to `main` and bypasses branch
+      # protection, so it is the one published commit no gate ever cleared.
+      # The push does start the test workflows; this waits for them (#192).
+      - name: Require the tagged commit to be green
+        run: bash .github/scripts/await-commit-checks.sh "$GITHUB_SHA"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v4.0.0
 
@@ -48,3 +59,17 @@ jobs:
       # requires each package to have been published once already).
       - name: Publish to npm
         run: pnpm -r publish --provenance --access public --no-git-checks
+
+      # changelogithub stays non-fatal so a GitHub API blip cannot block an
+      # otherwise good publish — but the run must not go green without the
+      # release that explains it. Last, so it reports rather than gates (#186).
+      - name: Verify the GitHub release was created
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName; then
+            echo "::error::Published $GITHUB_REF_NAME to npm, but no GitHub release exists for it."
+            echo "changelogithub failed earlier in this run. Create the release now — the packages are already out:"
+            echo "  npx changelogithub --draft   # then review and publish"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
