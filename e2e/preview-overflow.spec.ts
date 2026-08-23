@@ -73,6 +73,9 @@ test.describe('preview resize handles', () => {
     await openStory(page, 'conformance-button')
     await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
-    expect(await resizeHandleCount(page, 'body')).toBeGreaterThan(0)
+    // Scoped to the preview: the split pane between the story and the controls
+    // has draggers of its own, and counting those would pass this whether or
+    // not the preview kept any.
+    expect(await resizeHandleCount(page, '.poveste-story-responsive-preview')).toBeGreaterThan(0)
   })
 })
