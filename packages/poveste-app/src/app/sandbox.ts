@@ -107,10 +107,15 @@ const app = createApp({
     // The sandbox end of the bridge. It sends what the story changed rather than
     // the whole state, so a write here and a control edit on the host cannot
     // overwrite each other — see `createStateBridge` for what that used to cost.
+    // Named, like SANDBOX_READY and SANDBOX_HEIGHT: after a retarget the host
+    // is waiting on the new occupant, and anything the old one still says
+    // must be told apart from that.
     const postState = (changes: Record<string, any>) => {
       window.parent?.postMessage({
         type: STATE_SYNC,
         state: changes,
+        storyId: storyId.value,
+        variantId: variantId.value,
       })
     }
     let bridge = createStateBridge(postState)
@@ -137,8 +142,13 @@ const app = createApp({
       }
     })
 
-    watch(() => variant.value?.state, (value) => {
-      if (!value) return
+    watch(() => variant.value?.state, (value, previous) => {
+      // A retarget swapped the occupant, not a story writing its state. The
+      // new one has agreed to nothing yet, and a send here would carry its
+      // whole state — defaults, or a copy left from the last time this realm
+      // served it — over what the host holds, and the host's does come down
+      // once the new mount reports ready.
+      if (!value || value !== previous) return
       bridge.send(toRawDeep(value, true))
     }, {
       deep: true,
@@ -209,7 +219,7 @@ function reportHeight() {
   lastReportedHeight = h
   // Same-origin: parent and iframe are both served by the poveste dev /
   // build server, so scope the target rather than broadcasting.
-  window.parent?.postMessage({ type: SANDBOX_HEIGHT, h }, window.location.origin)
+  window.parent?.postMessage({ type: SANDBOX_HEIGHT, h, storyId: storyId.value, variantId: variantId.value }, window.location.origin)
 }
 function scheduleReport() {
   if (pendingFrame !== null) return

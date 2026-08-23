@@ -72,6 +72,14 @@ export default _defineComponent({
       host?.forceUpdate()
     })
 
+    // A retargeted realm (#240) serves another variant of the same story: the
+    // mount pass has to run that variant's setup — its `initState` above all —
+    // which it skipped as a non-target. The context is reactive, so the story
+    // re-renders its mount pass on the change.
+    _watch(() => props.targetVariantId, (id) => {
+      renderContext.targetVariantId = id
+    })
+
     _onUnmounted(() => {
       unmountStory()
     })

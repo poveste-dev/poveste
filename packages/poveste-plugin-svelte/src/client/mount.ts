@@ -12,6 +12,7 @@ import {
   ref as _ref,
   watch as _watch,
 } from '@poveste/vendors/vue'
+import { writable } from 'svelte/store'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
@@ -48,6 +49,14 @@ export default _defineComponent({
     let target: HTMLDivElement
     let destroyApp: (() => void) | null = null
 
+    // A store rather than a value, so a retargeted realm (#240) can tell the
+    // variant it now serves to register without remounting the story — the
+    // context is fixed at mount, a store subscription is not.
+    const targetVariantId = writable<string | null>(props.targetVariantId)
+    _watch(() => props.targetVariantId, (id) => {
+      targetVariantId.set(id)
+    })
+
     async function mountStory() {
       target = document.createElement('div')
       el.value.appendChild(target)
@@ -63,7 +72,7 @@ export default _defineComponent({
         },
         context: new Map(Object.entries({
           __pvtStory: props.story,
-          __pvtTargetVariantId: props.targetVariantId,
+          __pvtTargetVariantId: targetVariantId,
         })),
       }, 'client')
       app = mountedApp.app

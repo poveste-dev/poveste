@@ -61,6 +61,8 @@ Layout of the story. Object with the following properties:
     - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
   - with `type: 'grid'` you can specify:
     - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+  - with either type:
+    - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
 
 [Learn more](../../guide/svelte/stories.md#layout)
 

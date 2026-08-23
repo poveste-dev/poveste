@@ -6,7 +6,8 @@ const count = 30
 
 <template>
   <Story
-    title="IsolatedGrid"
+    id="conformance-isolated-grid"
+    title="Conformance/Isolated grid"
     :layout="{ type: 'grid', width: 200, isolate: true }"
   >
     <Variant
@@ -16,7 +17,7 @@ const count = 30
       :title="`Variant ${n}`"
     >
       <button
-        class="isolated-grid-button"
+        class="conformance-isolated-grid-button"
         style="height: 48px"
       >
         Button {{ n }}
