@@ -144,12 +144,19 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
       class="h-full overflow-auto relative"
     >
       <div
-        class="overflow-hidden bg-white dark:bg-gray-700 rounded-lg relative"
-        :class="isResponsiveEnabled ? {
-          'w-fit': !!finalWidth,
-          'h-fit': !!finalHeight,
-          'h-full': !finalHeight,
-        } : 'h-full'"
+        class="bg-white dark:bg-gray-700 rounded-lg relative"
+        :class="[
+          isResponsiveEnabled ? {
+            'w-fit': !!finalWidth,
+            'h-fit': !!finalHeight,
+            'h-full': !finalHeight,
+          } : 'h-full',
+          // Sized to content, so nothing can overflow it and clipping keeps the
+          // corners. Sized by its container, a taller story overflows — and
+          // clipping there put the content past the fold out of reach entirely,
+          // since the scroll parent then sees nothing to scroll (#258).
+          isResponsiveEnabled && finalHeight ? 'overflow-hidden' : 'overflow-auto',
+        ]"
       >
         <div
           class="bind-preview-bg rounded-lg h-full"
