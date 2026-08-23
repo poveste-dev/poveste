@@ -9,9 +9,16 @@ import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import CheckerboardPattern from '../misc/CheckerboardPattern.vue'
 import HatchedPattern from '../misc/HatchedPattern.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   variant: Variant
-}>()
+  /**
+   * Whether this preview is one a reader can size. False in a grid, where the
+   * cell is sized by the column and the story it renders (#257).
+   */
+  responsive?: boolean
+}>(), {
+  responsive: true,
+})
 
 const settings = usePreviewSettingsStore().currentSettings
 
@@ -116,7 +123,7 @@ const finalHeight = computed(() => settings.rotate ? settings.responsiveWidth : 
 
 // Disabled responsive
 
-const isResponsiveEnabled = computed(() => !props.variant.responsiveDisabled)
+const isResponsiveEnabled = computed(() => props.responsive && !props.variant.responsiveDisabled)
 
 const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${responsiveHeight.value ?? 'Auto'}`)
 </script>
@@ -164,15 +171,18 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
               />
             </div>
 
-            <!-- Markers -->
-            <div class="absolute top-5 left-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute top-5 right-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute bottom-5 left-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute bottom-5 right-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute left-5 top-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute left-5 bottom-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute right-5 top-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute right-5 bottom-8 w-2 h-px bg-gray-400/25" />
+            <!-- Markers: the ruler ticks for the size the draggers set, so they
+                 go wherever the draggers do (#257). -->
+            <template v-if="isResponsiveEnabled">
+              <div class="absolute top-5 left-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute top-5 right-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute bottom-5 left-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute bottom-5 right-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute left-5 top-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute left-5 bottom-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute right-5 top-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute right-5 bottom-8 w-2 h-px bg-gray-400/25" />
+            </template>
           </div>
 
           <!-- Resize Dragger -->
