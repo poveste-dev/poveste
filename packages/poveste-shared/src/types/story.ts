@@ -12,10 +12,19 @@ export interface StoryFile {
 export type StoryLayout = {
   type: 'single'
   iframe?: boolean
+  /**
+   * Give every render of this story a fresh sandbox document instead of
+   * reusing a warm one. Style isolation is the same either way; this is for
+   * stories that leave JS state behind — patched globals, leaked timers —
+   * that the next occupant of the realm must not see.
+   */
+  isolate?: boolean
 } | {
   type: 'grid'
   width?: number | string
   iframeGrid?: boolean
+  /** See the single layout's `isolate`. */
+  isolate?: boolean
 }
 
 export interface CommonProps {

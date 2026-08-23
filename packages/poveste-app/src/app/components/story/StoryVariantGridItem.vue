@@ -163,9 +163,10 @@ const useIframe = computed(() => {
           'color': autoApplyContrastColor ? contrastColor : undefined,
         }"
       >
+        <!-- Not keyed by variant: the realm is reused and retargeted when
+             this cell is handed another variant (#240). -->
         <StoryVariantSinglePreviewRemote
           v-if="useIframe"
-          :key="`iframe-${story.id}-${variant.id}`"
           :story="story"
           :variant="variant"
           auto-height

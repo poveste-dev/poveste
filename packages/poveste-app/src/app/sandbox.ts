@@ -7,7 +7,7 @@ import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
-import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, STATE_SYNC } from './util/const.js'
+import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
@@ -16,24 +16,27 @@ import { toRawDeep } from './util/state.js'
 
 const query = parseQuery(window.location.search)
 
+// What this realm serves. Set from the URL on boot, and again by a
+// SANDBOX_RETARGET from the host: a warm realm is handed the next story or
+// variant instead of being torn down for a new document (#240).
+const storyId = ref(typeof query.storyId === 'string' ? query.storyId : null)
+const variantId = ref(typeof query.variantId === 'string' ? query.variantId : null)
+
 // `files` is `[]` until the dev server's first collect lands. The app's iframe
 // never sees that — it mounts after — but a sandbox opened on its own does, and
 // the list only arrives through `onUpdate`.
-const findFile = (list: StoryFile[]) => list.find(f => f.id === query.storyId)
 const file = ref<StoryFile | null>(null)
-const initialFile = findFile(files)
-if (initialFile) {
-  file.value = mapFile(initialFile)
+function resolveFile(list: StoryFile[] = files) {
+  const found = list.find(f => f.id === storyId.value)
+  // Same story, different variant: keep the mapped file so the story component
+  // is not remounted for a variant switch.
+  if (found && file.value?.story.id === found.id) return
+  file.value = found ? mapFile(found) : null
 }
-else {
-  onUpdate((newFiles: StoryFile[]) => {
-    if (file.value) return
-    const found = findFile(newFiles)
-    if (found) {
-      file.value = mapFile(found)
-    }
-  })
-}
+resolveFile()
+onUpdate((newFiles: StoryFile[]) => {
+  if (!file.value) resolveFile(newFiles)
+})
 
 // Sandboxes opened on their own (the "open in a new tab" toolbar button) never
 // receive a PREVIEW_SETTINGS_SYNC, and inside the app the first one only lands
@@ -89,22 +92,28 @@ watch(previewDark, (value) => {
   immediate: true,
 })
 
+// Height reporting state, declared here because the retarget handler inside the
+// app resets it.
+let pendingFrame: number | null = null
+let lastReportedHeight = -1
+
 const app = createApp({
   name: 'SandboxApp',
 
   setup() {
     const story = computed(() => file.value?.story)
-    const variant = computed(() => story.value?.variants.find(v => v.id === query.variantId))
+    const variant = computed(() => story.value?.variants.find(v => v.id === variantId.value))
 
     // The sandbox end of the bridge. It sends what the story changed rather than
     // the whole state, so a write here and a control edit on the host cannot
     // overwrite each other — see `createStateBridge` for what that used to cost.
-    const bridge = createStateBridge((changes) => {
+    const postState = (changes: Record<string, any>) => {
       window.parent?.postMessage({
         type: STATE_SYNC,
         state: changes,
       })
-    })
+    }
+    let bridge = createStateBridge(postState)
     let mounted = false
 
     window.addEventListener('message', (event) => {
@@ -115,6 +124,16 @@ const app = createApp({
       }
       else if (event.data?.type === PREVIEW_SETTINGS_SYNC) {
         applyPreviewSettings(event.data.settings)
+      }
+      else if (event.data?.type === SANDBOX_RETARGET) {
+        // A new occupant: nothing has been agreed with the host about it, and
+        // the last height belonged to the old one. The keyed render below
+        // remounts and reports both afresh.
+        bridge = createStateBridge(postState)
+        lastReportedHeight = -1
+        variantId.value = typeof event.data.variantId === 'string' ? event.data.variantId : null
+        storyId.value = typeof event.data.storyId === 'string' ? event.data.storyId : null
+        resolveFile()
       }
     })
 
@@ -145,18 +164,27 @@ const app = createApp({
         h(GenericMountStory, {
           key: file.value.story.id,
           story: file.value.story,
-          // This realm serves exactly one variant; a plugin that mounts
-          // variants can skip all the others (#197). Falls through
+          // This realm serves exactly one variant at a time; a plugin that
+          // mounts variants can skip all the others (#197). Falls through
           // GenericMountStory as an attr, so plugins that don't know the prop
           // ignore it.
-          targetVariantId: typeof query.variantId === 'string' ? query.variantId : null,
+          targetVariantId: variantId.value,
         }),
       ]),
       this.story && this.variant
-        ? h(GenericRenderStory, { story: this.story, variant: this.variant, onReady: () => {
+        // Keyed so a retarget is a clean unmount and mount, not a prop update
+        // into a host that is halfway through rendering the previous occupant.
+        ? h(GenericRenderStory, { key: `${this.story.id}/${this.variant.id}`, story: this.story, variant: this.variant, onReady: () => {
+            // Named, so a host that has since retargeted this realm can tell a
+            // late ready for the old occupant from the one it is waiting for.
             window.parent?.postMessage({
               type: SANDBOX_READY,
+              storyId: this.story.id,
+              variantId: this.variant.id,
             })
+            // A retarget to a same-height story would otherwise never report:
+            // the observer only fires on a change.
+            scheduleReport()
           } })
         : null,
     ]
@@ -171,8 +199,6 @@ app.mount('#app')
 // source-level rules that add overflow/min-height to the render root.
 document.body.classList.add('__poveste-render-story', '__poveste-render-custom-controls')
 
-let pendingFrame: number | null = null
-let lastReportedHeight = -1
 function reportHeight() {
   pendingFrame = null
   const renderRoot = document.querySelector('.__poveste-render-story')

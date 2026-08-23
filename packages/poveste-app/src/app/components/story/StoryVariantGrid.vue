@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Variant } from '../../types'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStoryStore } from '../../stores/story'
@@ -115,6 +116,45 @@ const endIndex = computed(() => {
 
 const visibleVariants = computed(() => variants.value.slice(startIndex.value, endIndex.value))
 
+/*
+ * Cells are slots, not variants (#240). Keyed by variant, a cell that scrolls
+ * out of the window unmounts — and with it the sandbox realm it had booted —
+ * and a cell scrolling in boots a new one. Keyed by slot, the same component and
+ * the same iframe stay mounted and are handed the next variant to show, which
+ * the preview turns into a retarget rather than a new document.
+ *
+ * Assignment is sticky: a variant that is still visible keeps its slot, so a
+ * one-row scroll re-targets one row's worth of cells, not every cell. DOM order
+ * is slot order, so each cell carries its visual position as `order` for the
+ * grid to lay it out where the variant belongs.
+ */
+/*
+ * A slot whose variant scrolled out keeps it, hidden, until a new variant needs
+ * the slot: unmounting it would throw away the warm realm, and the window's
+ * size wobbles by a row while a scroll settles, which would churn realms at the
+ * edge for nothing. The pool is therefore the largest window seen, not the
+ * current one.
+ */
+interface Slot { variant: Variant, visible: boolean, order: number }
+const slots = ref<Slot[]>([])
+
+watch(visibleVariants, (visible) => {
+  const position = new Map(visible.map((v, i) => [v.id, i]))
+  const next: Slot[] = slots.value.map(slot => (
+    position.has(slot.variant.id)
+      ? { variant: slot.variant, visible: true, order: position.get(slot.variant.id) }
+      : { variant: slot.variant, visible: false, order: 0 }
+  ))
+  const placed = new Set(next.filter(s => s.visible).map(s => s.variant.id))
+  for (const [i, variant] of visible.entries()) {
+    if (placed.has(variant.id)) continue
+    const free = next.findIndex(s => !s.visible)
+    if (free === -1) next.push({ variant, visible: true, order: i })
+    else next[free] = { variant, visible: true, order: i }
+  }
+  slots.value = next
+}, { immediate: true })
+
 // The spacer holds the full scroll extent; the grid is translated into place
 // inside it. Before anything is measured there is nothing to reserve, and a
 // height derived from a zero row height would be `Infinitypx` — dropped by the
@@ -163,10 +203,11 @@ watch(() => storyStore.currentVariant, (variant) => {
             }"
           >
             <StoryVariantGridItem
-              v-for="variant of visibleVariants"
-              :key="variant.id"
-              :variant="variant"
+              v-for="(slot, index) of slots"
+              :key="index"
+              :variant="slot.variant"
               :story="storyStore.currentStory"
+              :style="{ order: slot.order, display: slot.visible ? undefined : 'none' }"
               @resize="onItemResize"
             />
           </div>
