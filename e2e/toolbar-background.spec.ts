@@ -37,11 +37,37 @@ async function startFromAnotherPreset(page: Page, index: number, text: Locator) 
   await expect(text).toHaveCSS('color', presets[primerFor(index)].contrast)
 }
 
+/*
+ * Picking one is an arrange step, and it has a postcondition the app states
+ * itself: the handler is `setBackgroundColor(...); hide()`, so a dropdown that
+ * is still open means the click never reached the button.
+ *
+ * It does miss. Under load the popper is repositioned between the moment
+ * Playwright judges it settled and the moment the click lands, so the click
+ * goes to where the button was — often the color-scheme row above, which is
+ * nested and so not one of these buttons, and which does not close the
+ * dropdown. Nothing then sets the colour, and the assertion that follows spends
+ * its timeout watching the primer it started from (#75).
+ *
+ * Retrying the pick is not a weaker check: the colour is still asserted below,
+ * unchanged. This only insists the click be delivered before that is judged.
+ */
 async function pickPreset(page: Page, index: number) {
-  await page.getByTestId('toolbar-background').click()
-  const buttons = page.getByTestId('background-popper').locator('> button')
-  await expect(buttons).toHaveCount(presets.length)
-  await buttons.nth(index).click()
+  const trigger = page.getByTestId('toolbar-background')
+  const popper = page.getByTestId('background-popper')
+
+  await expect(async () => {
+    if (!await popper.isVisible()) {
+      await trigger.click()
+      await expect(popper).toBeVisible()
+    }
+
+    const buttons = popper.locator('> button')
+    await expect(buttons).toHaveCount(presets.length)
+    await buttons.nth(index).click()
+
+    await expect(popper, 'the preset click did not reach the button').toBeHidden({ timeout: 2_000 })
+  }).toPass({ timeout: 20_000 })
 }
 
 test.describe('background color', () => {
