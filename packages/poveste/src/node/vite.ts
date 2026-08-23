@@ -188,7 +188,13 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
         define: {
           // We need to force this to be able to use `devtoolsRawSetupState`
           '__VUE_PROD_DEVTOOLS__': 'true',
-          // Disable warnings
+          // Vue's esm-bundler build expects every feature flag to be injected;
+          // in a production build an undefined one logs a warning per realm.
+          '__VUE_OPTIONS_API__': 'true',
+          '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'false',
+          // `bin.ts` sets this per command: development for `dev`, production
+          // for `build` and `preview`. Every built book used to ship the
+          // development build of Vue, Pinia, vue-router and VueUse.
           'process.env.NODE_ENV': JSON.stringify(isServer ? 'production' : process.env.NODE_ENV ?? 'development'),
           ...!isServer
             ? {

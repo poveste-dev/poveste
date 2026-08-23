@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const { version } = JSON.parse(fs.readFileSync(resolve(__dirname, '../../package.json'), 'utf8'))
 
-process.env.NODE_ENV = 'development'
+process.env.NODE_ENV = process.argv.includes('build') || process.argv.includes('preview') ? 'production' : 'development'
 process.env.HISTOIRE = 'true'
 process.env.POVESTE = 'true'
 
