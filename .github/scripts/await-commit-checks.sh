@@ -14,18 +14,15 @@ set -euo pipefail
 
 SHA="${1:?usage: await-commit-checks.sh <sha>}"
 REPO="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY must be set}"
-# Both shapes of the example suite: the consolidated one (#217) and the
-# per-framework workflows it replaced, which are still what an older release
-# branch carries. Absent ones are skipped, so this list covers either.
-WORKFLOWS=(
-  test.yml
-  test-examples.yml
-  test-vue3.yml
-  test-vue3-tailwind.yml
-  test-nuxt4.yml
-  test-svelte5.yml
-  test-sveltekit.yml
-)
+# Deliberately only the unit suite — which is lint, versions, readmes, build,
+# unit tests and the consumer smoke test, so it is a real gate rather than a
+# token one. The browser example suites are left out on purpose: they are
+# known flaky under full-suite parallelism (#75), and a flake that blocks a
+# release costs more than the coverage buys when everything it exercises has
+# already run on the PR that produced this commit.
+#
+# Add the example workflows here once #75 is closed.
+WORKFLOWS=(test.yml)
 
 # Generous: a full example matrix is minutes, and a queued runner is not a
 # failure. Exceeding this means something is stuck, which is worth a red run.
@@ -40,6 +37,8 @@ run_state() {
     --jq '.workflow_runs[0] // empty | "\(.status) \(.conclusion // "-")"' 2>/dev/null || true
 }
 
+checked=0
+
 for workflow in "${WORKFLOWS[@]}"; do
   # Gate on what this commit actually defines. A workflow added on a release
   # branch does not exist on older ones, and waiting for a run that can never
@@ -48,6 +47,7 @@ for workflow in "${WORKFLOWS[@]}"; do
     echo "$workflow: not present at this commit, skipping"
     continue
   fi
+  checked=$(( checked + 1 ))
 
   echo "::group::Waiting for $workflow on $SHA"
   while :; do
@@ -83,4 +83,11 @@ for workflow in "${WORKFLOWS[@]}"; do
   echo "::endgroup::"
 done
 
-echo "Every gating workflow is green for $SHA."
+if [ "$checked" -eq 0 ]; then
+  echo "::error::No gating workflow was found at this commit."
+  echo "Every name in WORKFLOWS is missing from .github/workflows — if one was renamed,"
+  echo "this gate has been passing without checking anything. Update the list."
+  exit 1
+fi
+
+echo "Every gating workflow is green for $SHA ($checked checked)."

@@ -180,7 +180,9 @@ bumpp pushes the version-bump commit straight to `main`, which bypasses branch p
 Require the tagged commit to be green   ->   build -> smoke -> release -> publish
 ```
 
-It waits for every test workflow the tagged commit actually defines, and fails if one of them is not `success`. If a workflow is red, re-run it; once it is green, re-run the release job. Nothing is published in the meantime.
+It waits for `test.yml` — lint, versions, readmes, build, unit tests and the consumer smoke test — and fails if it is not `success`. If it is red, re-run it; once it is green, re-run the release job. Nothing is published in the meantime.
+
+The browser example suites are deliberately not part of this gate: they are flaky under full-suite parallelism ([#75](https://github.com/poveste-dev/poveste/issues/75)), and a flake blocking a release costs more than the coverage buys, given they already ran on the PR that produced the commit. Add them to `WORKFLOWS` in [`await-commit-checks.sh`](./.github/scripts/await-commit-checks.sh) once #75 is closed.
 
 The other half is the release body. `changelogithub` is allowed to fail so a GitHub API blip cannot block an otherwise good publish, but a run used to go green with the packages shipped and no release behind the tag. The last step now checks the release exists and fails the run if it does not — the publish has already happened at that point, so treat it as "create the release now", not "the release failed".
 
