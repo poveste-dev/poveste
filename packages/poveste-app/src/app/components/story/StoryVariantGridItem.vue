@@ -42,6 +42,16 @@ const storyStore = useStoryStore()
 
 storyStore.setPreviewReady(props.variant, false)
 
+// This cell is a slot (#240): it is handed other variants without being
+// recreated, so the setup-time reset above runs once. Neither the variant
+// leaving nor the one arriving is shown anywhere until something renders it
+// again, and a stale `previewReady` lets the size report below and the
+// preview's state sync run against a render that has not happened.
+watch(() => props.variant, (next, previous) => {
+  if (previous) storyStore.setPreviewReady(previous, false)
+  storyStore.setPreviewReady(next, false)
+})
+
 function onReady() {
   storyStore.setPreviewReady(props.variant, true)
 }

@@ -1,8 +1,9 @@
 <script lang="ts" setup>
-import type { Variant } from '../../types'
+import type { Slot } from '../../util/grid-slots'
 import { useResizeObserver } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useStoryStore } from '../../stores/story'
+import { assignSlots, trimSlots } from '../../util/grid-slots'
 import StoryVariantGridItem from './StoryVariantGridItem.vue'
 
 const storyStore = useStoryStore()
@@ -121,39 +122,38 @@ const visibleVariants = computed(() => variants.value.slice(startIndex.value, en
  * out of the window unmounts — and with it the sandbox realm it had booted —
  * and a cell scrolling in boots a new one. Keyed by slot, the same component and
  * the same iframe stay mounted and are handed the next variant to show, which
- * the preview turns into a retarget rather than a new document.
- *
- * Assignment is sticky: a variant that is still visible keeps its slot, so a
- * one-row scroll re-targets one row's worth of cells, not every cell. DOM order
- * is slot order, so each cell carries its visual position as `order` for the
- * grid to lay it out where the variant belongs.
+ * the preview turns into a retarget rather than a new document. DOM order is
+ * slot order, so each cell carries its visual position as `order` for the grid
+ * to lay it out where the variant belongs; see `grid-slots` for the rules.
  */
-/*
- * A slot whose variant scrolled out keeps it, hidden, until a new variant needs
- * the slot: unmounting it would throw away the warm realm, and the window's
- * size wobbles by a row while a scroll settles, which would churn realms at the
- * edge for nothing. The pool is therefore the largest window seen, not the
- * current one.
- */
-interface Slot { variant: Variant, visible: boolean, order: number }
 const slots = ref<Slot[]>([])
 
+// Idle slots are let go once the window has stopped moving. Not before it is
+// measured: a story switch resets the measurement, which collapses the window
+// to its initial ten until the first cell reports, and trimming on that would
+// throw away the realms the re-grown window is about to ask for.
+const TRIM_DELAY = 2_000
+let trimTimer: ReturnType<typeof setTimeout> | undefined
+
+function scheduleTrim() {
+  clearTimeout(trimTimer)
+  trimTimer = setTimeout(() => {
+    if (!measured.value) {
+      scheduleTrim()
+      return
+    }
+    slots.value = trimSlots(slots.value)
+  }, TRIM_DELAY)
+}
+
 watch(visibleVariants, (visible) => {
-  const position = new Map(visible.map((v, i) => [v.id, i]))
-  const next: Slot[] = slots.value.map(slot => (
-    position.has(slot.variant.id)
-      ? { variant: slot.variant, visible: true, order: position.get(slot.variant.id) }
-      : { variant: slot.variant, visible: false, order: 0 }
-  ))
-  const placed = new Set(next.filter(s => s.visible).map(s => s.variant.id))
-  for (const [i, variant] of visible.entries()) {
-    if (placed.has(variant.id)) continue
-    const free = next.findIndex(s => !s.visible)
-    if (free === -1) next.push({ variant, visible: true, order: i })
-    else next[free] = { variant, visible: true, order: i }
-  }
-  slots.value = next
+  slots.value = assignSlots(slots.value, storyStore.currentStory.id, visible)
+  scheduleTrim()
 }, { immediate: true })
+
+onBeforeUnmount(() => {
+  clearTimeout(trimTimer)
+})
 
 // The spacer holds the full scroll extent; the grid is translated into place
 // inside it. Before anything is measured there is nothing to reserve, and a
@@ -196,7 +196,7 @@ watch(() => storyStore.currentVariant, (variant) => {
         >
           <div
             ref="gridEl"
-            class="grid gap-4 my-4"
+            class="poveste-story-variant-grid-cells grid gap-4 my-4"
             :style="{
               gridTemplateColumns: `repeat(${columnCount}, ${gridColumnWidth}px)`,
               transform: offsetY ? `translateY(${offsetY}px)` : undefined,
@@ -216,3 +216,12 @@ watch(() => storyStore.currentVariant, (variant) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Cells are placed with `order`, so without this Tab and a screen reader walk
+   them in slot order — the order they were recycled in, not the screen's.
+   Chromium only for now; elsewhere the rule is ignored. */
+.poveste-story-variant-grid-cells {
+  reading-flow: grid-order;
+}
+</style>

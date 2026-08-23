@@ -48,11 +48,14 @@ function syncState() {
   bridge.send(toRawDeep(props.variant.state, true))
 }
 
-watch(() => props.variant.state, () => {
+watch(() => props.variant.state, (state, previous) => {
+  // Another variant's state, not a change to this one: this cell was handed a
+  // new occupant (#240). The handover below syncs once the realm reports it in;
+  // sending now would put the new variant's state into the old occupant.
+  if (state !== previous) return
   syncState()
 }, {
   deep: true,
-  immediate: true,
 })
 
 const storyStore = useStoryStore()
@@ -73,27 +76,36 @@ const placeholderHeight = computed(() => (
   firstReportedHeight.value?.storyId === props.story.id ? firstReportedHeight.value.height : MIN_HEIGHT
 ))
 
+// Whether a message is about the variant this cell shows now. A realm that has
+// just been retargeted can still speak for its old occupant — a height from an
+// observer, a state change from a timer — until it processes the handover, and
+// those must not land on the new one. Unnamed messages come from sandboxes that
+// predate retargeting; take those.
+function fromCurrentOccupant(data: { storyId?: string, variantId?: string }) {
+  return !data.variantId || (data.variantId === props.variant.id && data.storyId === props.story.id)
+}
+
 useEventListener(window, 'message', (event) => {
   // With many grid iframes mounted, every sandbox postMessage hits every
   // parent listener. Skip events that didn't originate from this iframe.
   if (event.source !== iframe.value?.contentWindow) return
   switch (event.data?.type) {
     case STATE_SYNC:
+      if (!fromCurrentOccupant(event.data)) break
       updateVariantState(event.data.state)
       break
     case EVENT_SEND:
       logEvent(event.data.event)
       break
     case SANDBOX_READY:
-      // A ready for an occupant this host has since moved on from. Unnamed
-      // readies come from sandboxes that predate retargeting; take those.
-      if (event.data.variantId && (event.data.variantId !== props.variant.id || event.data.storyId !== props.story.id)) break
+      if (!fromCurrentOccupant(event.data)) break
       setPreviewReady()
       break
     case PREVIEW_SETTINGS_REQUEST:
       syncSettings()
       break
     case SANDBOX_HEIGHT:
+      if (!fromCurrentOccupant(event.data)) break
       // The sandbox reports on its first frames, before the story mounts, and
       // those carry the empty body — 0, or a few px of margin. Clamping one to
       // the floor would count as a real measurement and lock the cell out of
@@ -151,15 +163,17 @@ const sandboxUrl = computed(() => {
  * What survives between occupants is the realm's JS state — globals a story
  * patched, timers it leaked. Style isolation is untouched. Two valves for
  * stories that cannot share: `layout.isolate` opts a story back into a cold
- * document per render, and a realm is cold-reloaded after REUSE_LIMIT
+ * document per render — on the way in and on the way out, since what it
+ * leaves behind is the point — and a realm is cold-reloaded after REUSE_LIMIT
  * retargets so what does accumulate stays bounded. A retarget that never
  * reports ready falls back to a reload.
  */
-const reuse = computed(() => props.story.layout?.isolate !== true)
 // What the iframe actually loads. Only a cold (re)load assigns it.
 const iframeSrc = ref(sandboxUrl.value)
 const isIframeLoaded = ref(false)
 let retargets = 0
+// The story whose document the realm holds — booted or retargeted into it.
+let servedStory = props.story
 
 let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
@@ -169,8 +183,14 @@ function reload(url: string) {
   retargeting.value = false
   clearTimeout(retargetTimer)
   isIframeLoaded.value = false
+  reportedHeight.value = null
+  servedStory = props.story
   stopTrackKeyboard?.()
   stopTrackKeyboard = undefined
+  // The document the realm booted with is the one wanted again — after a
+  // retarget that timed out, or one past the reuse limit. The binding would
+  // not change, so nothing would load; set the attribute by hand.
+  if (iframeSrc.value === url && iframe.value) iframe.value.src = url
   iframeSrc.value = url
 }
 
@@ -179,10 +199,14 @@ watch(sandboxUrl, (url) => {
   // new bridge rather than a reset so there is one way to be in that state.
   bridge = createStateBridge(postState)
   storyStore.setPreviewReady(props.variant, false)
-  reportedHeight.value = null
 
+  const reuse = props.story.layout?.isolate !== true && servedStory.layout?.isolate !== true
   const target = iframe.value?.contentWindow
-  if (reuse.value && isIframeLoaded.value && target && retargets < REUSE_LIMIT) {
+  if (reuse && isIframeLoaded.value && target && retargets < REUSE_LIMIT) {
+    // Within a story the last height is the best guess until the new occupant
+    // reports; snapping to the placeholder in between made rows jump twice.
+    if (servedStory.id !== props.story.id) reportedHeight.value = null
+    servedStory = props.story
     retargets++
     retargeting.value = true
     target.postMessage({ type: SANDBOX_RETARGET, storyId: props.story.id, variantId: props.variant.id }, window.location.origin)

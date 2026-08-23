@@ -119,9 +119,14 @@ export default defineComponent({
       // Variant component per <Variant> — 1000 setups, state syncs and
       // auto-props walks per grid cell to render one button (#197). Skip the
       // rest; variants resolve positionally, so `index` still advances past
-      // them. Stories whose variants live in child components are invisible to
-      // this vnode walk, so they keep the full mount.
-      const targetIndex = renderContext?.targetVariantId && !attrs.story.meta?.hasVariantChildComponents
+      // them. Variants that live in child components never reach this walk,
+      // so they mount as they always did.
+      //
+      // Not gated on `hasVariantChildComponents`: every explicit <Variant> sets
+      // that as it registers, so the gate held for the first render only and
+      // turned the re-render a retarget needs into a full mount of every
+      // sibling.
+      const targetIndex = renderContext?.targetVariantId
         ? attrs.story.variants.findIndex(v => v.id === renderContext.targetVariantId)
         : -1
 
@@ -144,6 +149,14 @@ export default defineComponent({
 
             const nextProps: any = {
               variant,
+            }
+
+            // Keyed by variant: a retarget (#240) moves `targetIndex`, and an
+            // unkeyed walk would patch the old target's instance into the new
+            // one's props instead of mounting it — setup, and with it
+            // `initState`, has to run for the variant this realm now serves.
+            if (vnode.key == null) {
+              nextProps.key = variant.id
             }
 
             if (!vnode.props?.initState && !vnode.props?.['init-state']) {
