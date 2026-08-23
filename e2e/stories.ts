@@ -38,6 +38,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-isolated-grid', title: 'Isolated grid' },
   { id: 'conformance-markdown-links', title: 'Markdown links' },
   { id: 'conformance-no-iframe', title: 'No iframe' },
+  { id: 'conformance-tall-story', title: 'Tall story' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
 
@@ -110,6 +111,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'StoryOptions Override',
   'Sub Story 1',
   'Sub Story 2',
+  'Tall story',
   'With sass',
   'Wrapper',
   '🐱 Meow',

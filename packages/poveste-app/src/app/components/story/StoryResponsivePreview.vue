@@ -9,9 +9,16 @@ import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import CheckerboardPattern from '../misc/CheckerboardPattern.vue'
 import HatchedPattern from '../misc/HatchedPattern.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   variant: Variant
-}>()
+  /**
+   * Whether this preview is one a reader can size. False in a grid, where the
+   * cell is sized by the column and the story it renders (#257).
+   */
+  responsive?: boolean
+}>(), {
+  responsive: true,
+})
 
 const settings = usePreviewSettingsStore().currentSettings
 
@@ -116,7 +123,7 @@ const finalHeight = computed(() => settings.rotate ? settings.responsiveWidth : 
 
 // Disabled responsive
 
-const isResponsiveEnabled = computed(() => !props.variant.responsiveDisabled)
+const isResponsiveEnabled = computed(() => props.responsive && !props.variant.responsiveDisabled)
 
 const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${responsiveHeight.value ?? 'Auto'}`)
 </script>
@@ -137,15 +144,28 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
       class="h-full overflow-auto relative"
     >
       <div
-        class="overflow-hidden bg-white dark:bg-gray-700 rounded-lg relative"
-        :class="isResponsiveEnabled ? {
-          'w-fit': !!finalWidth,
-          'h-fit': !!finalHeight,
-          'h-full': !finalHeight,
-        } : 'h-full'"
+        class="bg-white dark:bg-gray-700 rounded-lg relative"
+        :class="[
+          isResponsiveEnabled ? {
+            'w-fit': !!finalWidth,
+            'h-fit': !!finalHeight,
+            'h-full': !finalHeight,
+          } : 'h-full',
+          // Sized to content, so nothing can overflow it and clipping keeps the
+          // corners. Sized by its container, a taller story overflows — and
+          // clipping there put the content past the fold out of reach entirely,
+          // since the scroll parent then sees nothing to scroll (#258).
+          isResponsiveEnabled && finalHeight ? 'overflow-hidden' : 'overflow-auto',
+        ]"
       >
+        <!-- `min-h-full`, not `h-full`: this paints the reader's preview
+             background, and the box above it scrolls, so a story taller than
+             the preview would otherwise be shown against the bare box below
+             the first screenful. The checkerboard is measured against this for
+             the same reason — but the draggers are not, since they belong to
+             the visible box rather than to the story's full height. -->
         <div
-          class="bind-preview-bg rounded-lg h-full"
+          class="bind-preview-bg rounded-lg min-h-full relative"
           data-testid="responsive-preview-bg"
         >
           <CheckerboardPattern
@@ -164,46 +184,49 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
               />
             </div>
 
-            <!-- Markers -->
-            <div class="absolute top-5 left-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute top-5 right-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute bottom-5 left-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute bottom-5 right-8 h-2 w-px bg-gray-400/25" />
-            <div class="absolute left-5 top-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute left-5 bottom-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute right-5 top-8 w-2 h-px bg-gray-400/25" />
-            <div class="absolute right-5 bottom-8 w-2 h-px bg-gray-400/25" />
+            <!-- Markers: the ruler ticks for the size the draggers set, so they
+                 go wherever the draggers do (#257). -->
+            <template v-if="isResponsiveEnabled">
+              <div class="absolute top-5 left-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute top-5 right-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute bottom-5 left-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute bottom-5 right-8 h-2 w-px bg-gray-400/25" />
+              <div class="absolute left-5 top-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute left-5 bottom-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute right-5 top-8 w-2 h-px bg-gray-400/25" />
+              <div class="absolute right-5 bottom-8 w-2 h-px bg-gray-400/25" />
+            </template>
           </div>
-
-          <!-- Resize Dragger -->
-          <template v-if="isResponsiveEnabled">
-            <div
-              ref="horizontalDragger"
-              v-tooltip.right="sizeTooltip"
-              class="absolute w-4 top-0 bottom-4 right-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ew-resize group hover:text-primary-500"
-            >
-              <Icon
-                icon="mdi:drag-vertical-variant"
-                class="w-4 h-4 opacity-20 group-hover:opacity-90"
-              />
-            </div>
-            <div
-              ref="verticalDragger"
-              v-tooltip.bottom="sizeTooltip"
-              class="absolute h-4 left-0 right-4 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ns-resize group hover:text-primary-500"
-            >
-              <Icon
-                icon="mdi:drag-horizontal-variant"
-                class="w-4 h-4 opacity-20 group-hover:opacity-90"
-              />
-            </div>
-            <div
-              ref="cornerDragger"
-              v-tooltip.bottom="sizeTooltip"
-              class="absolute w-4 h-4 right-0 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-nwse-resize group hover:text-primary-500"
-            />
-          </template>
         </div>
+
+        <!-- Resize Dragger -->
+        <template v-if="isResponsiveEnabled">
+          <div
+            ref="horizontalDragger"
+            v-tooltip.right="sizeTooltip"
+            class="absolute w-4 top-0 bottom-4 right-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ew-resize group hover:text-primary-500"
+          >
+            <Icon
+              icon="mdi:drag-vertical-variant"
+              class="w-4 h-4 opacity-20 group-hover:opacity-90"
+            />
+          </div>
+          <div
+            ref="verticalDragger"
+            v-tooltip.bottom="sizeTooltip"
+            class="absolute h-4 left-0 right-4 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ns-resize group hover:text-primary-500"
+          >
+            <Icon
+              icon="mdi:drag-horizontal-variant"
+              class="w-4 h-4 opacity-20 group-hover:opacity-90"
+            />
+          </div>
+          <div
+            ref="cornerDragger"
+            v-tooltip.bottom="sizeTooltip"
+            class="absolute w-4 h-4 right-0 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-nwse-resize group hover:text-primary-500"
+          />
+        </template>
       </div>
     </div>
   </div>

@@ -180,6 +180,7 @@ const useIframe = computed(() => {
           :story="story"
           :variant="variant"
           auto-height
+          :responsive="false"
         />
         <GenericRenderStory
           v-else

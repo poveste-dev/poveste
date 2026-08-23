@@ -14,11 +14,14 @@ import { toRawDeep } from '../../util/state'
 import { createStateBridge } from '../../util/state-bridge'
 import StoryResponsivePreview from './StoryResponsivePreview.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   story: Story
   variant: Variant
   autoHeight?: boolean
-}>()
+  responsive?: boolean
+}>(), {
+  responsive: true,
+})
 
 const settings = usePreviewSettingsStore().currentSettings
 
@@ -286,6 +289,7 @@ function onIframeLoad() {
     v-slot="{ isResponsiveEnabled, finalWidth, finalHeight, resizing }"
     class="poveste-story-variant-single-preview-remote"
     :variant="variant"
+    :responsive="responsive"
   >
     <iframe
       ref="iframe"
