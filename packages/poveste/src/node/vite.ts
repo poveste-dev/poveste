@@ -11,6 +11,7 @@ import { dirname, join, relative } from 'pathe'
 import {
   loadConfigFromFile as loadViteConfigFromFile,
   mergeConfig as mergeViteConfig,
+  searchForWorkspaceRoot,
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { createMarkdownPlugins } from './markdown.js'
@@ -172,6 +173,10 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
               TEMP_PATH,
               ctx.resolvedViteConfig.root,
               process.cwd(),
+              // Vite's own default, which setting `allow` at all replaces. In a
+              // workspace the app's deps resolve above the project — the
+              // bundled font under the root `node_modules` was refused (#252).
+              searchForWorkspaceRoot(process.cwd()),
               ...supportPluginAllowPaths,
               ...process.env.POVESTE_DEV
                 ? [
