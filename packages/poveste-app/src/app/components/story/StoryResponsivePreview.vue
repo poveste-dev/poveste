@@ -144,8 +144,16 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
       class="h-full overflow-auto relative"
     >
       <div
-        class="bg-white dark:bg-gray-700 rounded-lg relative"
+        class="rounded-lg relative"
         :class="[
+          // The surface, the reader's background, the checkerboard and the
+          // padding below are all skipped in a grid cell, where the item around
+          // this preview already paints and pads them — rendering them again
+          // stacked a second identical box inside the first and doubled the
+          // padding (#264). Gated on `responsive`, not `isResponsiveEnabled`:
+          // a single-view story with `responsiveDisabled` still needs its own
+          // chrome, it just loses the draggers.
+          responsive ? 'bg-white dark:bg-gray-700' : '',
           isResponsiveEnabled ? {
             'w-fit': !!finalWidth,
             'h-fit': !!finalHeight,
@@ -158,21 +166,25 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
           isResponsiveEnabled && finalHeight ? 'overflow-hidden' : 'overflow-auto',
         ]"
       >
-        <!-- `min-h-full`, not `h-full`: this paints the reader's preview
-             background, and the box above it scrolls, so a story taller than
-             the preview would otherwise be shown against the bare box below
-             the first screenful. The checkerboard is measured against this for
-             the same reason — but the draggers are not, since they belong to
-             the visible box rather than to the story's full height. -->
+        <!-- `min-h-full`, not `h-full`: when this paints the reader's preview
+             background the box above it scrolls, so a story taller than the
+             preview would otherwise be shown against the bare box below the
+             first screenful. The checkerboard is measured against this for the
+             same reason — but the draggers are not, since they belong to the
+             visible box rather than to the story's full height. -->
         <div
-          class="bind-preview-bg rounded-lg min-h-full relative"
-          data-testid="responsive-preview-bg"
+          class="rounded-lg min-h-full relative"
+          :class="responsive ? 'bind-preview-bg' : ''"
+          :data-testid="responsive ? 'responsive-preview-bg' : undefined"
         >
           <CheckerboardPattern
-            v-if="settings.checkerboard"
+            v-if="settings.checkerboard && responsive"
             class="absolute inset-0 w-full h-full text-gray-500/20"
           />
-          <div class="p-8 h-full relative">
+          <div
+            class="h-full relative"
+            :class="responsive ? 'p-8' : ''"
+          >
             <div class="w-full h-full relative">
               <div class="absolute inset-0" />
 
