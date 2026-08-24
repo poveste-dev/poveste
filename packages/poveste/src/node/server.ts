@@ -4,6 +4,7 @@ import { performance } from 'node:perf_hooks'
 import pc from 'picocolors'
 import { createServer as createViteServer, mergeConfig as mergeViteConfig } from 'vite'
 import { useCollectStories } from './collect/index.js'
+import { hmrPortFor } from './commands/port.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownListChange } from './markdown.js'
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
@@ -22,7 +23,22 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
   const getViteServer = async (collecting: boolean) => {
     const { viteConfig, viteConfigFile } = await getViteConfigWithPlugins(collecting, ctx)
 
-    if (!collecting) {
+    if (collecting) {
+      // The collection server drives vite-node and has no browser, so it needs
+      // no HMR socket. Left enabled, `@nuxt/vite-builder` gives it one on the
+      // framework default port (24678) — see the book server below.
+      viteConfig.server.hmr = false
+    }
+    else {
+      // `@nuxt/vite-builder` pins the HMR socket to the constant 24678 on every
+      // server it configures, so two poveste dev servers on different `--port`s
+      // collide on it and the second silently loses HMR (#221). It only does
+      // this when `server.hmr` carries no port of its own (it fills the gap with
+      // `defu`), so pin the socket to a port derived from this book's `--port`,
+      // before the config is resolved: each dev server then owns a distinct one
+      // (#175).
+      viteConfig.server.hmr = { port: hmrPortFor(options.port ?? viteConfig.server.port) }
+
       if (options.open) {
         viteConfig.server.open = true
       }

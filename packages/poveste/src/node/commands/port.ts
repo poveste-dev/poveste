@@ -27,3 +27,15 @@ export function resolvePort(value: unknown, command: string): number | undefined
 
   return port
 }
+
+/**
+ * The HMR socket port for a book served on `devPort`. Derived from the dev port
+ * so each concurrent dev server's socket is as distinct as its book port (#175),
+ * offset clear of the usual dev-port range and wrapped so it stays a valid port
+ * for an unusually high `--port`. `@nuxt/vite-builder` otherwise pins every
+ * server to the framework default (24678), a constant that collides (#221).
+ */
+export function hmrPortFor(devPort: number | undefined): number {
+  const base = devPort ?? 6006
+  return base < 45536 ? base + 20000 : base - 20000
+}
