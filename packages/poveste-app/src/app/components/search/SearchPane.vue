@@ -284,6 +284,14 @@ const {
 const router = useRouter()
 
 onKeyboardShortcut(['enter'], () => {
+  // The modal hides with `v-show`, so this pane stays mounted and the listener
+  // stays live once search has been opened — without this guard, Enter anywhere
+  // in the app navigates to the last selected result (#114). `LayoutModal`'s
+  // escape handler guards on `shown` the same way.
+  if (!props.shown) {
+    return
+  }
+
   const result = results.value[selectedIndex.value]
 
   if (!result) {
