@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest'
 import { FONT_PACKAGE, generateFontCss } from '../../scripts/font.mjs'
 
 // Vitest runs from the package root, and stubs `?raw` CSS imports to empty.
-const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8')
+// Newlines are normalised: the shipped sheet is checked in, so a Windows
+// checkout hands it back with CRLF, and this compares content against the
+// LF-newline installed package, not line endings (#156).
+const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8').replace(/\r\n/g, '\n')
 
 const shipped = read('src/app/style/font.css')
 const upstream = read(join('node_modules', FONT_PACKAGE, 'index.css'))
