@@ -35,11 +35,12 @@ test.describe('a grid cell', () => {
     await openStory(page, 'conformance-huge-grid')
     await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
-    const cell = '.poveste-story-variant-grid-item'
-    // One of each, contributed by the cell — not two, the cell's plus the
-    // preview's.
-    expect(await surfaces(page, cell)).toBe(1)
-    expect(await previewBackgrounds(page, cell)).toBe(1)
+    // Scoped to the preview, not the whole cell: the thing #264 fixed is that
+    // the preview adds none of its own, and asserting that directly does not
+    // depend on how many the grid item around it happens to paint.
+    const preview = '.poveste-story-variant-grid-item .poveste-story-responsive-preview'
+    expect(await surfaces(page, preview)).toBe(0)
+    expect(await previewBackgrounds(page, preview)).toBe(0)
   })
 
   test('does not add the preview\'s padding on top of its own (#264)', async ({ page }) => {
@@ -49,7 +50,12 @@ test.describe('a grid cell', () => {
     const previewPadding = await page.evaluate(() => {
       const preview = document.querySelector('.poveste-story-variant-grid-item .poveste-story-responsive-preview')
       if (!preview) return -1
-      return [...preview.querySelectorAll('*')].filter(el => getComputedStyle(el as HTMLElement).paddingTop !== '0px').length
+      // All four sides, not just the top: padding the fix removed could return
+      // on one axis (`px-8`, `ps-8`) and leave `paddingTop` at 0.
+      return [...preview.querySelectorAll('*')].filter((el) => {
+        const s = getComputedStyle(el as HTMLElement)
+        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].some(p => p !== '0px')
+      }).length
     })
 
     expect(previewPadding).toBe(0)
@@ -66,7 +72,10 @@ test.describe('a single view', () => {
 
     const padded = await page.evaluate(() => {
       const p = document.querySelector('.poveste-story-responsive-preview')!
-      return [...p.querySelectorAll('*')].some(el => getComputedStyle(el as HTMLElement).paddingTop !== '0px')
+      return [...p.querySelectorAll('*')].some((el) => {
+        const s = getComputedStyle(el as HTMLElement)
+        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].some(v => v !== '0px')
+      })
     })
     expect(padded).toBe(true)
   }
@@ -83,7 +92,7 @@ test.describe('a single view', () => {
   test('keeps it even when the variant disables responsive', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('vue3'), 'design-system story is vue3-only')
 
-    await page.goto('/story/tailwind?variantId=background-color')
+    await openStory(page, 'tailwind', '?variantId=background-color')
     await expectChrome(page)
   })
 })
