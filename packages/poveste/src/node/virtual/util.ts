@@ -11,6 +11,20 @@ export function getSetupFnNames(ctx: Context) {
 }
 
 /**
+ * Setup hooks grouped by the plugin that contributes them, canonical name first.
+ * A plugin's `setupFn` lists one hook under several names — `['setupVue3',
+ * 'setupVue']` is a single hook whose established name is `setupVue3` and whose
+ * alias is `setupVue`. The first is canonical; the rest are aliases kept so
+ * older setup files still resolve.
+ */
+export function getSetupFnGroups(ctx: Context) {
+  return ctx.supportPlugins.map((p) => {
+    const names = typeof p.setupFn === 'string' ? [p.setupFn] : p.setupFn
+    return { canonical: names[0], aliases: names.slice(1) }
+  })
+}
+
+/**
  * Declares the setup hooks as named exports set to `undefined`.
  *
  * Consumers read them off a namespace import (`generatedSetup.setupVue3`) behind

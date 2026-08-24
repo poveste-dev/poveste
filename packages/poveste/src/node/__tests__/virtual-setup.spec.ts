@@ -29,12 +29,22 @@ describe('virtual setup modules', () => {
       }
     })
 
-    it('should export a real hook per support plugin when there is setup code', () => {
+    it('exports each plugin\'s canonical hook as a real function when there is setup code', () => {
       const code = resolvedGeneratedGlobalSetup(contextFactory({ setupCode: ['export function setupVue3() {}'] }))
 
-      for (const fnName of SETUP_FN_NAMES) {
-        expect(code).toContain(`export async function ${fnName} (payload)`)
+      for (const canonical of ['setupVanilla', 'setupVue3', 'setupSvelte4']) {
+        expect(code).toContain(`export async function ${canonical} (payload)`)
       }
+    })
+
+    // setupSvelte5 is an alias of setupSvelte4. Emitting both as functions made
+    // getSetupHook see two interchangeable hooks in poveste's own generated
+    // module and warn once per story (#231).
+    it('declares alias hooks undefined rather than as functions', () => {
+      const code = resolvedGeneratedGlobalSetup(contextFactory({ setupCode: ['export function setupVue3() {}'] }))
+
+      expect(code).toContain('export const setupSvelte5 = undefined')
+      expect(code).not.toContain('export async function setupSvelte5 (payload)')
     })
   })
 
