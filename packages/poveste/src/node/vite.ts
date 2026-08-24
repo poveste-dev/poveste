@@ -15,6 +15,7 @@ import {
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { createMarkdownPlugins } from './markdown.js'
+import { sfcCustomBlockFallback } from './sfc-custom-blocks.js'
 import { notifyStoryChange } from './stories.js'
 import {
   chromeCssScopePlugin,
@@ -309,6 +310,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     },
   })
 
+  plugins.push(sfcCustomBlockFallback())
   plugins.push(createVirtualFilesPlugin(ctx, isServer))
   plugins.push(globalStylesPlugin({
     files: ctx.config.globalStyles ?? [],

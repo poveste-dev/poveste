@@ -12,7 +12,7 @@ test.describe('stories list', () => {
     await page.localStorage.clear()
     await page.reload()
 
-    await expect(page.getByTestId('story-list-item')).toHaveCount(37)
+    await expect(page.getByTestId('story-list-item')).toHaveCount(38)
     // The Nuxt-specific set, kept out of the shared names so a collision with
     // vue3's `BaseButton` cannot split a folder in two.
     await expect(page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: 'Nuxt' })).toBeVisible()
