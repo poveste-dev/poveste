@@ -13,6 +13,7 @@
     "test:examples": "pnpm run story:build && pnpm run test"
   },
   "devDependencies": {
+    "@nuxtjs/i18n": "^10.6.0",
     "@playwright/test": "^1.62.1",
     "@poveste/plugin-nuxt": "workspace:*",
     "@poveste/plugin-tailwind": "workspace:*",
