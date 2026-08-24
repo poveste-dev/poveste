@@ -68,6 +68,8 @@ And then run them with `npm run story:dev` or `npm run story:build`.
 
 You can specify additional CLI options like `--port`. For a full list of CLI options, run `npx poveste --help` in your project.
 
+Running several books at once is fine: give each `poveste dev` a distinct `--port` and the servers stay fully isolated, hot-reload included.
+
 ## TypeScript
 
 To enable the global components types in your project, create an `env.d.ts` file at the root of your project if it doesn't already exist.
