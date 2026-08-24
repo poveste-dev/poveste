@@ -62,3 +62,42 @@ jobs:
 
       - name: Smoke test (pack + install + build)
         run: pnpm run test:smoke
+
+  # Story collection is the code that breaks on Windows — `storyMatch` /
+  # `storyIgnored` globs, the vite-node module graph, path handling throughout
+  # `packages/poveste/src/node/` — and until something runs there upstream's
+  # Windows collection bug (histoire#463) cannot be reproduced or declined
+  # (#156). A dedicated job rather than a matrix on the one above, so the
+  # required `Unit tests and smoke` check keeps its name. Unit tests plus a real
+  # book build cover the class of path bug; the Playwright example suites, which
+  # are costly and already flaky under parallelism (#75), stay Linux-only.
+  collection-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    name: Collection (windows)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run tests
+        run: pnpm run test
+
+      # The real Windows exercise: collect and build a book end to end. vue3 is
+      # the plainest collector path, no Nuxt app boot in the way of the globbing
+      # and path handling this is here to prove.
+      - name: Build a book
+        run: pnpm --filter ./examples/vue3 run story:build
