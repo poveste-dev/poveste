@@ -52,6 +52,29 @@ test.describe('search', () => {
     await expect(page.getByTestId('search-modal')).toBeHidden()
   })
 
+  test('does not navigate on Enter once it has been closed', async ({ page }) => {
+    await page.goto('/')
+
+    // Open, get a real selection, then close — the modal hides with `v-show`,
+    // so its Enter handler stays live afterwards (#114).
+    await page.getByTestId('search-btn').click()
+    await page.getByTestId('search-modal').locator('input').fill('Variant 2')
+    await expect(page.locator('[data-testid="search-item"][data-selected]')).toContainText('Variant 2')
+    await page.getByTestId('search-modal').locator('input').press('Escape')
+    await expect(page.getByTestId('search-modal')).toBeHidden()
+
+    const urlWhileClosed = page.url()
+    // A window `keydown`, which is what the issue means by "any keystroke that
+    // reaches the window": the handler has no focus requirement, so this is the
+    // real surface — and Playwright's own `.press()` does not drive this
+    // window-level shortcut path the way a genuine keystroke does.
+    await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+    await page.waitForTimeout(300)
+
+    await expect(page.getByTestId('search-modal')).toBeHidden()
+    expect(page.url()).toBe(urlWhileClosed)
+  })
+
   test('finds matches inside docs content', async ({ page }) => {
     await page.goto('/')
     await page.getByTestId('search-btn').click()
