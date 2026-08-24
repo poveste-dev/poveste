@@ -30,6 +30,18 @@ function previewBackgrounds(page: Page, root: string) {
   }, root)
 }
 
+/** Elements inside `root` with padding on any side. */
+function paddedElements(page: Page, root: string) {
+  return page.evaluate((selector) => {
+    const scope = document.querySelector(selector)
+    if (!scope) return -1
+    return [...scope.querySelectorAll('*')].filter((el) => {
+      const style = getComputedStyle(el as HTMLElement)
+      return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft].some(p => p !== '0px')
+    }).length
+  }, root)
+}
+
 test.describe('a grid cell', () => {
   test('does not stack the preview\'s own surface on its own (#264)', async ({ page }) => {
     await openStory(page, 'conformance-huge-grid')
@@ -47,18 +59,8 @@ test.describe('a grid cell', () => {
     await openStory(page, 'conformance-huge-grid')
     await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
 
-    const previewPadding = await page.evaluate(() => {
-      const preview = document.querySelector('.poveste-story-variant-grid-item .poveste-story-responsive-preview')
-      if (!preview) return -1
-      // All four sides, not just the top: padding the fix removed could return
-      // on one axis (`px-8`, `ps-8`) and leave `paddingTop` at 0.
-      return [...preview.querySelectorAll('*')].filter((el) => {
-        const s = getComputedStyle(el as HTMLElement)
-        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].some(p => p !== '0px')
-      }).length
-    })
-
-    expect(previewPadding).toBe(0)
+    const preview = '.poveste-story-variant-grid-item .poveste-story-responsive-preview'
+    expect(await paddedElements(page, preview)).toBe(0)
   })
 })
 
@@ -69,15 +71,7 @@ test.describe('a single view', () => {
     await expect(page.locator(preview)).toBeVisible()
     expect(await surfaces(page, preview)).toBeGreaterThan(0)
     expect(await previewBackgrounds(page, preview)).toBe(1)
-
-    const padded = await page.evaluate(() => {
-      const p = document.querySelector('.poveste-story-responsive-preview')!
-      return [...p.querySelectorAll('*')].some((el) => {
-        const s = getComputedStyle(el as HTMLElement)
-        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft].some(v => v !== '0px')
-      })
-    })
-    expect(padded).toBe(true)
+    expect(await paddedElements(page, preview)).toBeGreaterThan(0)
   }
 
   test('keeps the preview\'s surface, background and padding', async ({ page }) => {
@@ -89,7 +83,7 @@ test.describe('a single view', () => {
   // whose variant is `responsiveDisabled` still needs its chrome — it only
   // loses the draggers. The design-system story is the one that carries the
   // flag, and it is vue3-only.
-  test('keeps it even when the variant disables responsive', async ({ page }, testInfo) => {
+  test('keeps its chrome even when the variant disables responsive', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.startsWith('vue3'), 'design-system story is vue3-only')
 
     await openStory(page, 'tailwind', '?variantId=background-color')
