@@ -78,7 +78,13 @@ test.describe('grid cell height', () => {
     // they keep falling through to `h-full`, which is what turned a grid of
     // not-yet-loaded variants into a wall of tall empty boxes.
     const spread = await page.evaluate((sel) => {
-      const hs = [...document.querySelectorAll(sel)].map(i => (i as HTMLElement).clientHeight)
+      // Visible cells only. The slot pool (#240) parks spare cells at
+      // `display: none`, and once cells are short enough that more of them fit
+      // the window it keeps some parked here — those measure 0, which has
+      // nothing to do with whether the on-screen grid is uniform.
+      const hs = [...document.querySelectorAll(sel)]
+        .filter(i => (i as HTMLElement).offsetParent !== null)
+        .map(i => (i as HTMLElement).clientHeight)
       return { min: Math.min(...hs), max: Math.max(...hs), count: hs.length }
     }, ITEM)
 
