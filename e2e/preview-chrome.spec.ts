@@ -1,0 +1,89 @@
+import type { Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
+
+/*
+ * `StoryResponsivePreview` frames a single preview: a surface, the reader's
+ * background, an optional checkerboard, and padding. A grid cell already paints
+ * and pads all of that around the preview, so the preview must not render its
+ * own set inside the cell's — doing so stacked a second identical box in the
+ * first and doubled the padding (#264). A single view has no such container, so
+ * it keeps the whole set (#257 only took the resize furniture).
+ */
+
+/** Elements inside `root` painting the chrome's white/gray surface. */
+function surfaces(page: Page, root: string) {
+  return page.evaluate((selector) => {
+    const scope = document.querySelector(selector)
+    if (!scope) return -1
+    return [...scope.querySelectorAll('*')].filter((el) => {
+      const cls = String((el as HTMLElement).className)
+      return cls.includes('bg-white') && cls.includes('dark:bg-gray-700')
+    }).length
+  }, root)
+}
+
+function previewBackgrounds(page: Page, root: string) {
+  return page.evaluate((selector) => {
+    const scope = document.querySelector(selector)
+    return scope ? scope.querySelectorAll('[data-testid="responsive-preview-bg"]').length : -1
+  }, root)
+}
+
+test.describe('a grid cell', () => {
+  test('does not stack the preview\'s own surface on its own (#264)', async ({ page }) => {
+    await openStory(page, 'conformance-huge-grid')
+    await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
+
+    const cell = '.poveste-story-variant-grid-item'
+    // One of each, contributed by the cell — not two, the cell's plus the
+    // preview's.
+    expect(await surfaces(page, cell)).toBe(1)
+    expect(await previewBackgrounds(page, cell)).toBe(1)
+  })
+
+  test('does not add the preview\'s padding on top of its own (#264)', async ({ page }) => {
+    await openStory(page, 'conformance-huge-grid')
+    await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
+
+    const previewPadding = await page.evaluate(() => {
+      const preview = document.querySelector('.poveste-story-variant-grid-item .poveste-story-responsive-preview')
+      if (!preview) return -1
+      return [...preview.querySelectorAll('*')].filter(el => getComputedStyle(el as HTMLElement).paddingTop !== '0px').length
+    })
+
+    expect(previewPadding).toBe(0)
+  })
+})
+
+test.describe('a single view', () => {
+  // Its container adds none of this, so the preview is where it comes from.
+  async function expectChrome(page: Page) {
+    const preview = '.poveste-story-responsive-preview'
+    await expect(page.locator(preview)).toBeVisible()
+    expect(await surfaces(page, preview)).toBeGreaterThan(0)
+    expect(await previewBackgrounds(page, preview)).toBe(1)
+
+    const padded = await page.evaluate(() => {
+      const p = document.querySelector('.poveste-story-responsive-preview')!
+      return [...p.querySelectorAll('*')].some(el => getComputedStyle(el as HTMLElement).paddingTop !== '0px')
+    })
+    expect(padded).toBe(true)
+  }
+
+  test('keeps the preview\'s surface, background and padding', async ({ page }) => {
+    await openStory(page, 'conformance-contrast')
+    await expectChrome(page)
+  })
+
+  // The case gating on `isResponsiveEnabled` would have broken: a single view
+  // whose variant is `responsiveDisabled` still needs its chrome — it only
+  // loses the draggers. The design-system story is the one that carries the
+  // flag, and it is vue3-only.
+  test('keeps it even when the variant disables responsive', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('vue3'), 'design-system story is vue3-only')
+
+    await page.goto('/story/tailwind?variantId=background-color')
+    await expectChrome(page)
+  })
+})
