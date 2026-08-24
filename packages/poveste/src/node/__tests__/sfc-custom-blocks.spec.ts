@@ -16,6 +16,13 @@ describe('the SFC custom-block fallback', () => {
     expect(transform(RAW_YAML, I18N_BLOCK)?.code).toBe('export default {}')
   })
 
+  it('empties a block whose data merely contains the word export or import', () => {
+    // The token appears in the translation, not as a statement — a word-match
+    // guard would mistake this for a handler's output and let it run and throw.
+    expect(transform('en:\n  action: export', I18N_BLOCK)?.code).toBe('export default {}')
+    expect(transform('{"en":{"label":"import"}}', I18N_BLOCK)?.code).toBe('export default {}')
+  })
+
   it('leaves a block a real handler already turned into a module', () => {
     // What `@intlify/unplugin-vue-i18n` leaves behind, roughly.
     const handled = 'export default function (Component) { Component.i18n = { en: { hello: \'Hello\' } } }'
