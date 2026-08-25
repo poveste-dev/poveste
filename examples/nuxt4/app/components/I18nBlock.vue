@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { watchEffect } from 'vue'
+import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // A component-local `<i18n>` block: its own messages, compiled by the block
@@ -7,9 +7,9 @@ import { useI18n } from 'vue-i18n'
 const props = defineProps<{ locale: string }>()
 
 const { locale, t } = useI18n()
-watchEffect(() => {
-  locale.value = props.locale
-})
+watch(() => props.locale, (l) => {
+  locale.value = l
+}, { immediate: true })
 </script>
 
 <template>
