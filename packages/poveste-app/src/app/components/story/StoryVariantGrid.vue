@@ -58,16 +58,23 @@ function updateWindow() {
 // A window shift retargets a row of sandbox iframes, and each retarget re-renders
 // a story — fine while reading, ruinous while flicking a 1000-cell grid, which
 // would render every row it flies past (#283). So the window follows a slow
-// scroll promptly but is deferred while scrolling fast: the frozen cells scroll
-// out of view and the final window lands on settle, rendering only where you
-// stop instead of everything in between. Resize/mount call `updateWindow`
-// directly — they are not the churn path.
-const FAST_PX_PER_MS = 2
+// scroll promptly but skips most events during a fast flick. It is not frozen
+// solid though: a bounded refresh keeps it tracking the scroller so a sustained
+// fast drag still shows cells instead of a blank band, and the final window
+// lands on settle. Resize/mount call `updateWindow` directly — not the churn path.
+//
+// The threshold sits above an ordinary mouse-wheel notch (a few px/ms) so plain
+// reading takes the prompt path; only a genuine fling defers.
+const FAST_PX_PER_MS = 8
+// Cap on how long the window may lag the scroller during a fast flick: at most
+// one retarget per this interval, versus one per row on the prompt path.
+const FAST_REFRESH_MS = 150
 let lastScrollTop = 0
 let lastScrollTime = 0
+let lastWindowUpdate = 0
 
 // Lands the final window shortly after scrolling stops, whatever the speed was —
-// this is what fills a fast scroll back in.
+// this is what fills the tail of a fast scroll back in.
 const settleWindow = useDebounceFn(updateWindow, 120)
 
 function onScroll() {
@@ -78,8 +85,9 @@ function onScroll() {
   lastScrollTop = top
   lastScrollTime = now
 
-  if (velocity <= FAST_PX_PER_MS) {
+  if (velocity <= FAST_PX_PER_MS || now - lastWindowUpdate >= FAST_REFRESH_MS) {
     updateWindow()
+    lastWindowUpdate = now
   }
   settleWindow()
 }
@@ -182,6 +190,8 @@ watch(visibleVariants, (visible) => {
 
 onBeforeUnmount(() => {
   clearTimeout(trimTimer)
+  // Drop any settle still pending, so it cannot fire updateWindow after teardown.
+  settleWindow.cancel()
 })
 
 // The spacer holds the full scroll extent; the grid is translated into place
