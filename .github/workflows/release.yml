@@ -48,6 +48,13 @@ jobs:
       - name: Smoke test (pack + install + build)
         run: pnpm run test:smoke
 
+      # Refuse before anything is pushed if a publishable package is missing from
+      # the registry (OIDC cannot bootstrap it) or packs an unrewritten
+      # `workspace:` protocol. A partial publish cannot be walked back — the tag,
+      # the GitHub release and half the registry would all refer to it (#286).
+      - name: Preflight — every package is bootstrappable and installable
+        run: pnpm run test:publishable
+
       - name: Create GitHub release
         run: npx changelogithub
         continue-on-error: true

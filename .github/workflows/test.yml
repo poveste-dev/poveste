@@ -54,6 +54,9 @@ jobs:
       - name: Check the npm package pages
         run: pnpm run test:readmes
 
+      - name: Test the release scripts
+        run: pnpm run test:scripts
+
       - name: Build
         run: pnpm run build
 
