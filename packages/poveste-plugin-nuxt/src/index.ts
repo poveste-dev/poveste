@@ -14,13 +14,28 @@ const ignorePlugins = [
   'nuxt:import-protection',
 ]
 
-export function HstNuxt(): Plugin {
+export interface HstNuxtOptions {
+  /**
+   * Client plugins to drop from the story sandbox, matched against each
+   * plugin's resolved `src` (string `includes` or `RegExp`). Added on top of
+   * the built-in defaults, not replacing them.
+   */
+  excludePlugins?: (string | RegExp)[]
+}
+
+// Some Nuxt modules register client plugins that assume a full Nuxt runtime the
+// headless story sandbox can't provide, so they 500 the iframe on entry boot;
+// @nuxtjs/i18n's are dropped by default (#65), and `excludePlugins` drops more
+// without patching this package (#277).
+const DEFAULT_EXCLUDED_PLUGINS: (string | RegExp)[] = [/[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/]
+
+export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
   let nuxt: Nuxt
   return {
     name: '@poveste/plugin-nuxt',
 
     async defaultConfig() {
-      const nuxtViteConfig = await useNuxtViteConfig()
+      const nuxtViteConfig = await useNuxtViteConfig([...DEFAULT_EXCLUDED_PLUGINS, ...(options.excludePlugins ?? [])])
       const { viteConfig } = nuxtViteConfig
 
       nuxt = nuxtViteConfig.nuxt // We save it to close it later
@@ -111,7 +126,7 @@ export async function setupVue3 () {
   }
 }
 
-async function useNuxtViteConfig() {
+async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
   const { loadNuxt, buildNuxt } = await import('@nuxt/kit')
   const nuxt = await loadNuxt({
     // cwd: process.cwd(),
@@ -144,6 +159,18 @@ async function useNuxtViteConfig() {
     { src: join(runtimeDir, 'composables.mjs'), filename: 'poveste/composables.mjs' },
     { src: join(runtimeDir, 'components.mjs'), filename: 'poveste/components.mjs' },
   )
+
+  // Drop the sandbox-incompatible client plugins named by `excludePlugins`, so
+  // they don't 500 the story iframe on entry boot. See DEFAULT_EXCLUDED_PLUGINS.
+  nuxt.hook('app:resolve', (app) => {
+    app.plugins = app.plugins.filter((p) => {
+      const src = p.src ?? ''
+      // `match`, not `test`: it doesn't advance a caller's /g regex `lastIndex`, so
+      // matching stays stateless without mutating an input we don't own.
+      return !excludePlugins.some(pattern =>
+        typeof pattern === 'string' ? src.includes(pattern) : src.match(pattern) !== null)
+    })
+  })
 
   nuxt.hook('app:templates', (app) => {
     app.templates = app.templates.filter(template => template.filename !== 'app-component.mjs')
