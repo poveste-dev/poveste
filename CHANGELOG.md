@@ -9,6 +9,36 @@ kept verbatim as the history poveste forked from. Its version numbers are higher
 poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
 whole.
 
+## v0.6.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.6.0...v0.6.1)
+
+**A republish of 0.6.0. No code changed.**
+
+Three of 0.6.0's packages cannot be installed. `@poveste/plugin-vue`, `@poveste/plugin-nuxt` and
+`@poveste/plugin-tailwind` were published outside the release workflow, and the tool used does not
+rewrite pnpm's `workspace:` protocol the way `pnpm publish` does — so those three shipped it
+literally in their manifests:
+
+```
+npm error code EUNSUPPORTEDPROTOCOL
+npm error Unsupported URL Type "workspace:": workspace:^
+```
+
+Any install of them fails. The other eight 0.6.0 packages, published by the release workflow, are
+unaffected — but because the set is versioned in lockstep, all eleven are republished here so a
+0.6.1 install resolves as one consistent set.
+
+The three broken versions are deprecated on npm rather than unpublished, so anyone pinned to them
+gets told why.
+
+**If you are on 0.6.0 and it installed, nothing changed for you.** If it did not install, this is
+the fix — no migration, no config change.
+
+Tracked in [#286](https://github.com/poveste-dev/poveste/issues/286), along with the release-path
+check that should have caught it before publishing: pack every publishable package and refuse to
+release when a manifest still contains `workspace:`.
+
 ## v0.6.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.3...v0.6.0)
