@@ -42,6 +42,31 @@ async function scrollTo(scroller: Locator, fraction: number) {
   }, fraction)
 }
 
+// A burst of large jumps a few ms apart reproduces a fast flick, where the grid
+// defers the window (#283) — a single `scrollTo` cannot, its lone scroll event
+// reads as slow and takes the prompt path.
+async function flickTo(page: Page, scroller: Locator, fraction: number) {
+  const steps = 12
+  for (let i = 1; i <= steps; i++) {
+    await scrollTo(scroller, (fraction * i) / steps)
+    await page.waitForTimeout(10)
+  }
+}
+
+// Variant numbers on screen, top-to-bottom. Visual order, not DOM order: cells
+// are pooled and placed with CSS `order`.
+async function onScreen(page: Page): Promise<number[]> {
+  return page.evaluate((sel) => {
+    const sc = document.querySelector('.poveste-story-variant-grid .overflow-y-auto')!
+    const top = sc.getBoundingClientRect().top
+    return [...document.querySelectorAll(sel)]
+      .map(i => ({ rect: i.getBoundingClientRect(), n: Number(i.querySelector('.truncate')?.textContent?.replace('Variant ', '')) }))
+      .filter(({ rect }) => rect.height > 0 && rect.bottom > top)
+      .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
+      .map(({ n }) => n)
+  }, ITEM)
+}
+
 async function openGrid(page: Page) {
   await openStory(page, STORY)
   const scroller = page.locator('.poveste-story-variant-grid .overflow-y-auto')
@@ -86,17 +111,7 @@ test.describe('variant grid windowing', () => {
 
     // Guards the translateY offset against the spacer height: if the two ever
     // disagree the grid still scrolls, it just shows the wrong variants.
-    // Visual order, not DOM order: cells are pooled and placed with CSS `order`.
-    const onScreen = async () => page.evaluate((sel) => {
-      const sc = document.querySelector('.poveste-story-variant-grid .overflow-y-auto')!
-      const top = sc.getBoundingClientRect().top
-      return [...document.querySelectorAll(sel)]
-        .map(i => ({ rect: i.getBoundingClientRect(), n: Number(i.querySelector('.truncate')?.textContent?.replace('Variant ', '')) }))
-        .filter(({ rect }) => rect.height > 0 && rect.bottom > top)
-        .sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left)
-        .map(({ n }) => n)
-    }, ITEM)
-    const firstOnScreen = async () => (await onScreen())[0]
+    const firstOnScreen = async () => (await onScreen(page))[0]
 
     expect(await firstOnScreen()).toBe(1)
 
@@ -109,6 +124,20 @@ test.describe('variant grid windowing', () => {
     await scrollTo(scroller, 1)
     await settledCount(page)
     // The last row has to land at the bottom of the spacer, not short of it.
-    await expect.poll(async () => (await onScreen()).at(-1)).toBe(VARIANT_COUNT)
+    await expect.poll(async () => (await onScreen(page)).at(-1)).toBe(VARIANT_COUNT)
+  })
+
+  test('settles on the true final window after a fast flick', async ({ page }) => {
+    test.setTimeout(180_000)
+    const scroller = await openGrid(page)
+    await settledCount(page)
+
+    // The window is deferred through the flick; the guarantee is that it still
+    // lands on the real end once scrolling stops (settle), not frozen mid-list.
+    await flickTo(page, scroller, 1)
+
+    await expect.poll(async () => (await onScreen(page)).at(-1), { timeout: 30_000 }).toBe(VARIANT_COUNT)
+    // Deferring the window must not defeat the pooling that bounds the set.
+    expect(await settledCount(page)).toBeLessThan(60)
   })
 })

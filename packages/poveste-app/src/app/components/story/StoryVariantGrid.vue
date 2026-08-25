@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Slot } from '../../util/grid-slots'
-import { useResizeObserver } from '@vueuse/core'
+import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useStoryStore } from '../../stores/story'
 import { assignSlots, trimSlots } from '../../util/grid-slots'
@@ -53,6 +53,43 @@ function updateWindow() {
   if (!el.value) return
   scrollTop.value = el.value.scrollTop
   viewportHeight.value = el.value.clientHeight
+}
+
+// A window shift retargets a row of sandbox iframes, and each retarget re-renders
+// a story — fine while reading, ruinous while flicking a 1000-cell grid, which
+// would render every row it flies past (#283). So the window follows a slow
+// scroll promptly but skips most events during a fast flick. It is not frozen
+// solid though: a bounded refresh keeps it tracking the scroller so a sustained
+// fast drag still shows cells instead of a blank band, and the final window
+// lands on settle. Resize/mount call `updateWindow` directly — not the churn path.
+//
+// The threshold sits above an ordinary mouse-wheel notch (a few px/ms) so plain
+// reading takes the prompt path; only a genuine fling defers.
+const FAST_PX_PER_MS = 8
+// Cap on how long the window may lag the scroller during a fast flick: at most
+// one retarget per this interval, versus one per row on the prompt path.
+const FAST_REFRESH_MS = 150
+let lastScrollTop = 0
+let lastScrollTime = 0
+let lastWindowUpdate = 0
+
+// Lands the final window shortly after scrolling stops, whatever the speed was —
+// this is what fills the tail of a fast scroll back in.
+const settleWindow = useDebounceFn(updateWindow, 120)
+
+function onScroll() {
+  const now = performance.now()
+  const top = el.value?.scrollTop ?? 0
+  const dt = now - lastScrollTime
+  const velocity = dt > 0 ? Math.abs(top - lastScrollTop) / dt : 0
+  lastScrollTop = top
+  lastScrollTime = now
+
+  if (velocity <= FAST_PX_PER_MS || now - lastWindowUpdate >= FAST_REFRESH_MS) {
+    updateWindow()
+    lastWindowUpdate = now
+  }
+  settleWindow()
 }
 
 // The reported width is ignored: `columnCount` is what CSS lays out, so it is
@@ -153,6 +190,8 @@ watch(visibleVariants, (visible) => {
 
 onBeforeUnmount(() => {
   clearTimeout(trimTimer)
+  // Drop any settle still pending, so it cannot fire updateWindow after teardown.
+  settleWindow.cancel()
 })
 
 // The spacer holds the full scroll extent; the grid is translated into place
@@ -185,7 +224,7 @@ watch(() => storyStore.currentVariant, (variant) => {
     <div
       ref="el"
       class="overflow-y-auto flex flex-1"
-      @scroll="updateWindow()"
+      @scroll="onScroll()"
     >
       <div class="flex w-0 flex-1 mx-4">
         <div
