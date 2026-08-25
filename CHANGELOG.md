@@ -9,6 +9,88 @@ kept verbatim as the history poveste forked from. Its version numbers are higher
 poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
 whole.
 
+## v0.6.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.3...v0.6.0)
+
+The variant grid stops falling over. A 1000-variant grid previously mounted every cell it scrolled
+past and never released one; it now keeps a bounded set alive, reuses sandbox realms instead of
+booting one per cell, and sizes each cell from the story inside it. Alongside that: story state no
+longer loses an edit when both sides change at once, `poveste build` ships a production bundle, and
+the chrome no longer fetches its font and icons from the network at boot.
+
+Every framework now runs the same conformance suite, so a regression in the shared app chrome can no
+longer ship because it only manifested under Svelte or Nuxt.
+
+### 🚨 Breaking Changes
+
+- **The Tailwind design-system story moved out of core into a plugin** ([#236](https://github.com/poveste-dev/poveste/pull/236)). It used to
+  appear on its own in any book with a Tailwind config. If you relied on that, add the plugin
+  explicitly:
+
+  ```ts
+  import { HstTailwind } from '@poveste/plugin-tailwind'
+
+  export default defineConfig({
+    plugins: [HstTailwind()],
+  })
+  ```
+
+  Books that never used it lose nothing, and no longer pay to detect it.
+
+### 🚀 Enhancements
+
+- **Sandbox realms are pooled and retargeted** rather than booted per cell, which is what makes a
+  large grid survivable ([#250](https://github.com/poveste-dev/poveste/pull/250))
+- **`poveste build` emits a production client bundle** ([#251](https://github.com/poveste-dev/poveste/pull/251))
+- **The chrome ships its font and icons** instead of fetching them at boot, so a book renders
+  correctly offline and behind a proxy ([#247](https://github.com/poveste-dev/poveste/pull/247), [#254](https://github.com/poveste-dev/poveste/pull/254))
+- **Svelte keeps non-rendered variants out of the sandbox's work** ([#248](https://github.com/poveste-dev/poveste/pull/248))
+- **Story collection is exercised on Windows in CI** ([#273](https://github.com/poveste-dev/poveste/pull/273))
+
+### 🩹 Fixes
+
+- **The variant grid windows its cells** — a bounded set stays mounted, the scroll extent is finite,
+  and the highlighter no longer rides along into every sandbox ([#196](https://github.com/poveste-dev/poveste/pull/196))
+- **Grid cells size from their story rather than the row**, so a small component no longer occupies a
+  cell several times its height ([#199](https://github.com/poveste-dev/poveste/pull/199), [#259](https://github.com/poveste-dev/poveste/pull/259), [#267](https://github.com/poveste-dev/poveste/pull/267))
+- **A concurrent edit survives.** Both sides of a state sync mirrored their whole state, so when both
+  changed in the same tick the second writer carried its stale copy of the other's key and wrote the
+  edit back out from under it — the change was not delayed, it was gone. Each side now diffs against
+  the last agreed baseline and sends only what it changed, which also removes the `syncing` flag that
+  had to be right about whether an echo was coming ([#226](https://github.com/poveste-dev/poveste/pull/226), [#227](https://github.com/poveste-dev/poveste/pull/227))
+- **Nuxt i18n no longer 500s every story iframe.** Nuxt's client plugins that assume a full runtime
+  are dropped inside the sandbox ([#276](https://github.com/poveste-dev/poveste/pull/276))
+- **The Nuxt HMR socket derives its port from `--port`**, so concurrent dev servers stop colliding
+  ([#272](https://github.com/poveste-dev/poveste/pull/272))
+- **`storyIgnored` adds to the defaults instead of replacing them**, which had made `poveste build`
+  crash with `EMFILE` ([#246](https://github.com/poveste-dev/poveste/pull/246), [#243](https://github.com/poveste-dev/poveste/pull/243))
+- **Only the canonical setup hook is emitted**, so a Nuxt story stops warning that the setup file is
+  misconfigured ([#271](https://github.com/poveste-dev/poveste/pull/271))
+- **Enter no longer navigates to a stale search result** while the modal is closed ([#268](https://github.com/poveste-dev/poveste/pull/268))
+- Smaller: a bare sandbox waits for the story list in dev ([#242](https://github.com/poveste-dev/poveste/pull/242)), the presets panel stops
+  logging a failed clone on mount ([#262](https://github.com/poveste-dev/poveste/pull/262)), only the variant a realm exists to serve is
+  mounted ([#241](https://github.com/poveste-dev/poveste/pull/241)), the auxiliary Nuxt build stops once its Vite config resolves
+  ([#249](https://github.com/poveste-dev/poveste/pull/249)), sandbox handover holes closed ([#253](https://github.com/poveste-dev/poveste/pull/253)), vite runtime helpers pinned out of
+  the highlighter chunk ([#239](https://github.com/poveste-dev/poveste/pull/239)), and `lottie-web` is pre-bundled so navigating does not force
+  a reload ([#280](https://github.com/poveste-dev/poveste/pull/280))
+
+### 🏡 Chore
+
+- **The example e2e runs from one root config with a project per framework**, and the shared chrome
+  specs — controls, events, grids, toolbar, iframe shortcuts — moved into a conformance suite that
+  every framework runs ([#213](https://github.com/poveste-dev/poveste/pull/213), [#214](https://github.com/poveste-dev/poveste/pull/214), [#215](https://github.com/poveste-dev/poveste/pull/215), [#216](https://github.com/poveste-dev/poveste/pull/216),
+  [#217](https://github.com/poveste-dev/poveste/pull/217), [#218](https://github.com/poveste-dev/poveste/pull/218), [#228](https://github.com/poveste-dev/poveste/pull/228), [#230](https://github.com/poveste-dev/poveste/pull/230))
+- **A flaky test is annotated rather than hidden by a retry**, and its trace is kept
+  ([#237](https://github.com/poveste-dev/poveste/pull/237), [#238](https://github.com/poveste-dev/poveste/pull/238))
+- **The publish is gated on the tagged commit** and fails loudly when the release is missing
+  ([#256](https://github.com/poveste-dev/poveste/pull/256))
+- A grid-fill benchmark harness behind `POVESTE_BENCH` ([#245](https://github.com/poveste-dev/poveste/pull/245))
+
+### 📖 Documentation
+
+- Windows support and concurrent dev servers ([#274](https://github.com/poveste-dev/poveste/pull/274))
+
 ## v0.5.3
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.2...v0.5.3)
