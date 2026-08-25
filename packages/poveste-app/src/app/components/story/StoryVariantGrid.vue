@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Slot } from '../../util/grid-slots'
-import { useResizeObserver } from '@vueuse/core'
+import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useStoryStore } from '../../stores/story'
 import { assignSlots, trimSlots } from '../../util/grid-slots'
@@ -53,6 +53,35 @@ function updateWindow() {
   if (!el.value) return
   scrollTop.value = el.value.scrollTop
   viewportHeight.value = el.value.clientHeight
+}
+
+// A window shift retargets a row of sandbox iframes, and each retarget re-renders
+// a story — fine while reading, ruinous while flicking a 1000-cell grid, which
+// would render every row it flies past (#283). So the window follows a slow
+// scroll promptly but is deferred while scrolling fast: the frozen cells scroll
+// out of view and the final window lands on settle, rendering only where you
+// stop instead of everything in between. Resize/mount call `updateWindow`
+// directly — they are not the churn path.
+const FAST_PX_PER_MS = 2
+let lastScrollTop = 0
+let lastScrollTime = 0
+
+// Lands the final window shortly after scrolling stops, whatever the speed was —
+// this is what fills a fast scroll back in.
+const settleWindow = useDebounceFn(updateWindow, 120)
+
+function onScroll() {
+  const now = performance.now()
+  const top = el.value?.scrollTop ?? 0
+  const dt = now - lastScrollTime
+  const velocity = dt > 0 ? Math.abs(top - lastScrollTop) / dt : 0
+  lastScrollTop = top
+  lastScrollTime = now
+
+  if (velocity <= FAST_PX_PER_MS) {
+    updateWindow()
+  }
+  settleWindow()
 }
 
 // The reported width is ignored: `columnCount` is what CSS lays out, so it is
@@ -185,7 +214,7 @@ watch(() => storyStore.currentVariant, (variant) => {
     <div
       ref="el"
       class="overflow-y-auto flex flex-1"
-      @scroll="updateWindow()"
+      @scroll="onScroll()"
     >
       <div class="flex w-0 flex-1 mx-4">
         <div
