@@ -177,7 +177,9 @@ export const setupVue = defineSetupVue(({ app }) => {
 plain vue-i18n install rather than the Nuxt module's:
 
 - **Messages are the ones you pass here.** Stories do not load your app's locale files, so
-  give the setup the messages your stories need.
+  give the setup the messages your stories need. Keeping them in files is fine — JSON
+  imports directly (`import en from './locales/en.json'`); YAML or JSON5 files go through
+  `unplugin-vue-i18n`'s resource loading, which `@nuxtjs/i18n` already sets up.
 - **Nuxt-specific helpers are not wired** (`useLocalePath`, `useSwitchLocalePath`,
   localized routing). Stories showcase components, not routes, so this is rarely a limit;
   when a component needs one, stub it in the setup.
