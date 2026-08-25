@@ -1,12 +1,16 @@
 module.exports = {
   title: 'Poveste',
-  description: 'Fast stories powered by Vite',
+  description: 'Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire',
+
+  sitemap: {
+    hostname: 'https://poveste.dev',
+  },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-    ['meta', { property: 'og:title', content: 'Poveste' }],
+    ['meta', { property: 'og:title', content: 'Poveste — interactive component playgrounds for Vue, Svelte and Nuxt' }],
     ['meta', { property: 'og:site_name', content: 'Poveste' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:description', content: 'Fast stories powered by Vite' }],
+    ['meta', { property: 'og:description', content: 'Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire' }],
     ['meta', { property: 'og:url', content: 'https://poveste.dev/' }],
     ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],

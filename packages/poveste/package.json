@@ -2,16 +2,33 @@
   "name": "poveste",
   "type": "module",
   "version": "0.6.1",
-  "description": "A fast story book powered by Vite",
+  "description": "Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire",
   "author": {
     "name": "Sorin Gitlan"
   },
   "license": "MIT",
+  "homepage": "https://poveste.dev",
   "repository": {
     "url": "https://github.com/poveste-dev/poveste.git",
     "type": "git",
     "directory": "packages/poveste"
   },
+  "keywords": [
+    "poveste",
+    "histoire",
+    "storybook",
+    "component-playground",
+    "component-explorer",
+    "stories",
+    "styleguide",
+    "design-system",
+    "vite",
+    "vue",
+    "svelte",
+    "nuxt",
+    "sveltekit",
+    "cli"
+  ],
   "publishConfig": {
     "access": "public"
   },

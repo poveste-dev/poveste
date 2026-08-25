@@ -7,11 +7,15 @@
     "name": "Sorin Gitlan"
   },
   "license": "MIT",
+  "homepage": "https://poveste.dev",
   "repository": {
     "url": "https://github.com/poveste-dev/poveste.git",
     "type": "git",
     "directory": "packages/poveste-shared"
   },
+  "keywords": [
+    "poveste"
+  ],
   "publishConfig": {
     "access": "public"
   },
