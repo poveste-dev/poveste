@@ -170,3 +170,48 @@ function setupApp ({ app, story, variant }) {
   </Story>
 </template>
 ```
+
+### i18n (vue-i18n)
+
+Install [vue-i18n](https://vue-i18n.intlify.dev) on the story app in your setup file, the same
+as any other plugin:
+
+```ts
+import { defineSetupVue } from '@poveste/plugin-vue'
+import { createI18n } from 'vue-i18n'
+
+export const setupVue = defineSetupVue(({ app }) => {
+  app.use(createI18n({
+    legacy: false,
+    globalInjection: true,
+    locale: 'en',
+    messages: {
+      en: { greeting: 'Hello' },
+      fr: { greeting: 'Bonjour' },
+    },
+  }))
+})
+```
+
+Two Vite-config touches are needed so it works in the story sandbox — see
+`examples/vue3`:
+
+```ts
+export default defineConfig({
+  // vue-i18n reads these compile-time flags; a plain Vite app has to define them.
+  define: {
+    __VUE_PROD_DEVTOOLS__: 'false',
+    __VUE_I18N_FULL_INSTALL__: 'true',
+    __VUE_I18N_LEGACY_API__: 'false',
+    __INTLIFY_PROD_DEVTOOLS__: 'false',
+  },
+  poveste: {
+    // Story collection externalizes node modules, so the `define` above never
+    // reaches vue-i18n — inline it (and `@intlify/*`) so it does.
+    viteNodeInlineDeps: [/vue-i18n/, /@intlify/],
+  },
+})
+```
+
+Nuxt users need none of this: `@nuxtjs/i18n` provides the flags, and its own client
+plugin is handled for you — see the [Nuxt i18n guide](./getting-started.md#i18n).

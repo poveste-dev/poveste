@@ -28,6 +28,7 @@
     "nodemon": "^3.1.7",
     "poveste": "workspace:*",
     "sass": "^1.82.0",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vue-i18n": "^11.4.9"
   }
 }

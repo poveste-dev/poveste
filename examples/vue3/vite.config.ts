@@ -6,6 +6,15 @@ import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  // vue-i18n reads these compile-time feature flags; a plain Vite+Vue app has to
+  // define them (a Nuxt app gets them from @nuxtjs/i18n). See the i18n example.
+  define: {
+    __VUE_PROD_DEVTOOLS__: 'false',
+    __VUE_I18N_FULL_INSTALL__: 'true',
+    __VUE_I18N_LEGACY_API__: 'false',
+    __INTLIFY_PROD_DEVTOOLS__: 'false',
+  },
+
   // Example build config for a component library
   build: {
     lib: {
@@ -42,6 +51,10 @@ export default defineConfig({
   ],
 
   poveste: {
+    // vue-i18n is a node module, so the collection server externalizes it and the
+    // `define` flags above never reach it — inline it so they do (#65 follow-up).
+    viteNodeInlineDeps: [/vue-i18n/, /@intlify/],
+
     plugins: [
       HstTailwind(),
       {
