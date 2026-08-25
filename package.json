@@ -52,6 +52,7 @@
     "svelte-eslint-parser": "^1.8.0",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
-    "vitepress": "1.6.4"
+    "vitepress": "1.6.4",
+    "vitest": "catalog:"
   }
 }
