@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import I18nBlock from './I18nBlock.vue'
+import I18nBlockYaml from './I18nBlockYaml.vue'
 import I18nDemo from './I18nDemo.vue'
 
 // @nuxtjs/i18n's client plugin can't boot in the story sandbox, so vue-i18n is
@@ -60,6 +61,23 @@ function initState() {
     >
       <template #default="{ state }">
         <I18nBlock :locale="state.locale" />
+      </template>
+
+      <template #controls="{ state }">
+        <HstSelect
+          v-model="state.locale"
+          title="Locale"
+          :options="LOCALES"
+        />
+      </template>
+    </Variant>
+
+    <Variant
+      title="yaml block"
+      :init-state="initState"
+    >
+      <template #default="{ state }">
+        <I18nBlockYaml :locale="state.locale" />
       </template>
 
       <template #controls="{ state }">

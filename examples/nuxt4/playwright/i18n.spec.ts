@@ -49,4 +49,11 @@ test.describe('nuxt i18n', () => {
     await pickLocale(page, 'English', 'Français')
     await expect(iframe.getByText('Depuis un bloc dans le composant')).toBeVisible()
   })
+
+  test('compiles a YAML <i18n> block', async ({ page }) => {
+    // Same block feature, `lang="yaml"` — handled by the same block compiler.
+    await page.goto('/story/app-components-i18n-story-vue?variantId=app-components-i18n-story-vue-3')
+    const iframe = page.getByTestId('preview-iframe').contentFrame()
+    await expect(iframe.getByText('From a YAML block')).toBeVisible()
+  })
 })

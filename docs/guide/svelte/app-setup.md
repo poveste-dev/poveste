@@ -112,3 +112,12 @@ Poveste mounts your story component directly, so SvelteKit's routing is not invo
 `+layout.svelte` wraps your story, and no `+page.ts` load runs. Anything a layout would have
 provided has to come from the story — wrap the component under test in the story body, the
 same as you would for any other provider.
+
+## i18n
+
+There is nothing special to do. A Svelte i18n library — or a hand-rolled `t()` — is an
+ordinary module, not a framework plugin, so it has none of the sandbox trouble the [Nuxt
+i18n guide](../vue/getting-started.md#i18n) describes: nothing gets booted through an app
+entry, so nothing 500s the iframe. Import or initialise it like any other module (in a
+`.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. `examples/svelte5`
+carries a minimal version.
