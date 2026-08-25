@@ -145,6 +145,13 @@ async function useNuxtViteConfig() {
     { src: join(runtimeDir, 'components.mjs'), filename: 'poveste/components.mjs' },
   )
 
+  // @nuxtjs/i18n's client plugins assume a full Nuxt runtime the headless story
+  // sandbox can't give them, so they 500 the iframe on entry boot (#65). Drop
+  // them; stories get i18n from vue-i18n installed into the story app instead.
+  nuxt.hook('app:resolve', (app) => {
+    app.plugins = app.plugins.filter(p => !/[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/.test(p.src))
+  })
+
   nuxt.hook('app:templates', (app) => {
     app.templates = app.templates.filter(template => template.filename !== 'app-component.mjs')
     app.templates.push({ src: join(runtimeDir, 'app-component.mjs'), filename: 'app-component.mjs' })

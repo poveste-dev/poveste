@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test'
 
 // The same count vue3's `stories-list.spec.ts` asserts, because this example now
 // carries the same stories: the point of mirroring them is that a chrome feature
-// exercised on Vue is exercised under the Nuxt plugin too. The four Nuxt-only
+// exercised on Vue is exercised under the Nuxt plugin too. The five Nuxt-only
 // stories sit under a `Nuxt/` title, so they fold into one folder rather than
-// adding four entries here.
+// adding five entries here.
 test.describe('stories list', () => {
   test('shows all stories', async ({ page, context }) => {
     await context.clearCookies()

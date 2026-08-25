@@ -141,6 +141,47 @@ export default defineConfig({
 })
 ```
 
+### i18n
+
+[`@nuxtjs/i18n`](https://i18n.nuxtjs.org) works in stories, with one deliberate seam.
+
+Its runtime is a Nuxt client plugin that expects a full Nuxt app — router, request
+context, the real `useNuxtApp()`. A story renders in a headless sandbox that has none of
+that, so the plugin throws on boot and Nuxt paints a 500 into the story iframe. Poveste
+therefore **skips `@nuxtjs/i18n`'s client plugins in the sandbox** — the module's build-time
+parts (the `<i18n>` block compiler, the `useI18n` auto-import) stay, only the runtime plugin
+that cannot run is dropped.
+
+That leaves the story app without an i18n instance, so install one yourself in the
+[setup file](./app-setup.md) — the same `app` your stories mount into:
+
+```ts
+// poveste.setup.ts
+import { defineSetupVue } from '@poveste/plugin-vue'
+import { createI18n } from 'vue-i18n'
+
+export const setupVue = defineSetupVue(({ app }) => {
+  app.use(createI18n({
+    legacy: false,
+    globalInjection: true,
+    locale: 'en',
+    messages: {
+      en: { greeting: 'Hello' },
+      fr: { greeting: 'Bonjour' },
+    },
+  }))
+})
+```
+
+`useI18n()` and `$t` then resolve against this instance. Two things follow from it being a
+plain vue-i18n install rather than the Nuxt module's:
+
+- **Messages are the ones you pass here.** Stories do not load your app's locale files, so
+  give the setup the messages your stories need.
+- **Nuxt-specific helpers are not wired** (`useLocalePath`, `useSwitchLocalePath`,
+  localized routing). Stories showcase components, not routes, so this is rarely a limit;
+  when a component needs one, stub it in the setup.
+
 ## Configuration
 
 Learn more about configuring Poveste [here](../config.md).
