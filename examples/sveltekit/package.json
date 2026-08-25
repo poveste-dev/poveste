@@ -1,7 +1,7 @@
 {
   "name": "sveltekit",
   "type": "module",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "scripts": {
     "sk:dev": "vite dev",
