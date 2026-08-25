@@ -1,5 +1,6 @@
 ---
 layout: home
+titleTemplate: Interactive component playgrounds for Vue, Svelte and Nuxt
 
 hero:
   name: Poveste

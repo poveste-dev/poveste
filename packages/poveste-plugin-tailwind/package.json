@@ -7,11 +7,27 @@
     "name": "Sorin Gitlan"
   },
   "license": "MIT",
+  "homepage": "https://poveste.dev",
   "repository": {
     "url": "https://github.com/poveste-dev/poveste.git",
     "type": "git",
     "directory": "packages/poveste-plugin-tailwind"
   },
+  "keywords": [
+    "poveste",
+    "histoire",
+    "storybook",
+    "component-playground",
+    "component-explorer",
+    "stories",
+    "styleguide",
+    "design-system",
+    "vite",
+    "tailwind",
+    "tailwindcss",
+    "design-tokens",
+    "plugin"
+  ],
   "publishConfig": {
     "access": "public"
   },
