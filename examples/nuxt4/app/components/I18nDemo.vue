@@ -1,15 +1,13 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ locale: string, count?: number }>()
 
-const { locale, t } = useI18n({ useScope: 'global' })
-watch(() => props.locale, (l) => {
-  locale.value = l
-}, { immediate: true })
+// Resolve in the requested locale per call rather than writing the shared global
+// `locale`, so sibling grid cells stay independent (#65 review).
+const { t } = useI18n({ useScope: 'global' })
 </script>
 
 <template>
-  <p>{{ props.count == null ? t('greeting') : t('items', props.count) }}</p>
+  <p>{{ props.count == null ? t('greeting', {}, { locale: props.locale }) : t('items', props.count, { locale: props.locale }) }}</p>
 </template>

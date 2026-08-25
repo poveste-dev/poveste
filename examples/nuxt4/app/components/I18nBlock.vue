@@ -1,19 +1,15 @@
 <script lang="ts" setup>
-import { watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 // A component-local `<i18n>` block: its own messages, compiled by the block
 // compiler @nuxtjs/i18n installs. `useI18n()` with no scope picks up the block.
 const props = defineProps<{ locale: string }>()
 
-const { locale, t } = useI18n()
-watch(() => props.locale, (l) => {
-  locale.value = l
-}, { immediate: true })
+const { t } = useI18n()
 </script>
 
 <template>
-  <p>{{ t('blockMessage') }}</p>
+  <p>{{ t('blockMessage', {}, { locale: props.locale }) }}</p>
 </template>
 
 <i18n lang="json">

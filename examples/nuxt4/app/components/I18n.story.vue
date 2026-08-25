@@ -4,6 +4,8 @@ import I18nDemo from './I18nDemo.vue'
 
 // @nuxtjs/i18n's client plugin can't boot in the story sandbox, so vue-i18n is
 // installed in `poveste.setup.ts` instead (#65). `useI18n` resolves against it.
+const LOCALES = { en: 'English', fr: 'Français' }
+
 function initState() {
   return { locale: 'en', count: 2 }
 }
@@ -23,7 +25,7 @@ function initState() {
         <HstSelect
           v-model="state.locale"
           title="Locale"
-          :options="{ en: 'English', fr: 'Français' }"
+          :options="LOCALES"
         />
       </template>
     </Variant>
@@ -43,7 +45,7 @@ function initState() {
         <HstSelect
           v-model="state.locale"
           title="Locale"
-          :options="{ en: 'English', fr: 'Français' }"
+          :options="LOCALES"
         />
         <HstNumber
           v-model="state.count"
@@ -64,7 +66,7 @@ function initState() {
         <HstSelect
           v-model="state.locale"
           title="Locale"
-          :options="{ en: 'English', fr: 'Français' }"
+          :options="LOCALES"
         />
       </template>
     </Variant>
