@@ -29,12 +29,25 @@ test.describe('nuxt i18n', () => {
   })
 
   test('interpolates the plural count in each locale', async ({ page }) => {
-    // The pluralization variant renders `t('items', count)` with the default
-    // count of 2 — the `{count}` placeholder has to be filled, in either locale.
+    // The pluralization variant renders `t('items', count)`, so `{count}` has to
+    // be filled and the right plural form picked, across the count and locale.
     await page.goto('/story/app-components-i18n-story-vue?variantId=app-components-i18n-story-vue-1')
     const iframe = page.getByTestId('preview-iframe').contentFrame()
-    await expect(iframe.getByText('2 items')).toBeVisible()
+    // `Count` (capital) is the HstNumber; a lower-case `count` prop control may
+    // sit beside it, so the regex is case-sensitive.
+    const count = page.locator('[data-testid="story-controls"] label.poveste-wrapper')
+      .filter({ hasText: /Count/ })
+      .locator('input[type="number"]')
 
+    // All three English plural forms.
+    await expect(iframe.getByText('2 items')).toBeVisible()
+    await count.fill('1')
+    await expect(iframe.getByText('one item')).toBeVisible()
+    await count.fill('0')
+    await expect(iframe.getByText('no items')).toBeVisible()
+
+    // The same key in the other locale still interpolates `{count}`.
+    await count.fill('2')
     await pickLocale(page, 'English', 'Français')
     await expect(iframe.getByText('2 articles')).toBeVisible()
   })

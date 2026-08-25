@@ -165,14 +165,10 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
   nuxt.hook('app:resolve', (app) => {
     app.plugins = app.plugins.filter((p) => {
       const src = p.src ?? ''
-      return !excludePlugins.some((pattern) => {
-        if (typeof pattern === 'string') {
-          return src.includes(pattern)
-        }
-        // Reset so a caller's /g pattern can't match order-dependently across plugins.
-        pattern.lastIndex = 0
-        return pattern.test(src)
-      })
+      // `match`, not `test`: it doesn't advance a caller's /g regex `lastIndex`, so
+      // matching stays stateless without mutating an input we don't own.
+      return !excludePlugins.some(pattern =>
+        typeof pattern === 'string' ? src.includes(pattern) : src.match(pattern) !== null)
     })
   })
 

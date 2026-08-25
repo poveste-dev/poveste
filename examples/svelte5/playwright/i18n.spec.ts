@@ -11,7 +11,7 @@ test.describe('svelte i18n', () => {
     // CSS isolation gives each grid cell its own sandbox iframe; select the cell
     // by the variant its `src` names, so this doesn't depend on cell ordering.
     const cell = (variant: number) =>
-      page.locator(`iframe[data-testid="preview-iframe"][src*="variantId=${STORY}-${variant}"]`).contentFrame()
+      page.locator(`iframe[data-testid="preview-iframe"][src$="variantId=${STORY}-${variant}"]`).contentFrame()
 
     await expect(cell(0).getByText('Hello')).toBeVisible()
     await expect(cell(1).getByText('Bonjour')).toBeVisible()
