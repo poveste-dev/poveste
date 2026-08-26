@@ -127,6 +127,22 @@ already advertise and do not yet deliver. When the milestone is empty the 1.0 co
 open — it does not happen by itself, and the issues in it are the whole answer to "what is 1.0
 waiting for?".
 
+## When a component throws
+
+A story whose component throws shows an error over the preview, with the message
+and stack, and the variant and story are marked in the lists beside it.
+
+Two limits are worth knowing, because neither is obvious from a green run:
+
+- **`poveste build` does not render your components.** Collection runs in Node
+  and evaluates the story file; the component itself only renders in a browser.
+  So a book where every variant throws still builds, and still exits `0`. A CI
+  job that runs `poveste build` as a gate is checking that stories *collect*,
+  not that they work.
+- **A story is only marked once it has rendered.** Variants mount as they come
+  into view, so an unopened story carries no marker. The absence of a marker
+  means "not seen to fail", never "fine".
+
 ## Supported frameworks
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |

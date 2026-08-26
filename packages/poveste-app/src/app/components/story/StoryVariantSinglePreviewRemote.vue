@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import type { HstEvent } from '../../stores/events'
 import type { Story, Variant } from '../../types'
+import { Icon } from '@iconify/vue'
+import { SANDBOX_ERROR } from '@poveste/shared'
 import { useEventListener } from '@vueuse/core'
 import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
 import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
+import { useStoryErrorStore } from '../../stores/story-errors'
 import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
@@ -24,6 +27,15 @@ const props = withDefaults(defineProps<{
 })
 
 const settings = usePreviewSettingsStore().currentSettings
+const errorStore = useStoryErrorStore()
+
+const storyError = computed(() => errorStore.forVariant(props.story.id, props.variant.id))
+
+// The realm re-renders on every retarget, so a stale error must not outlive the
+// render that produced it — otherwise a fixed story stays marked until reload.
+watch(() => [props.story.id, props.variant.id], () => {
+  errorStore.clear(props.story.id, props.variant.id)
+})
 
 // Iframe
 
@@ -103,6 +115,15 @@ useEventListener(window, 'message', (event) => {
     case SANDBOX_READY:
       if (!fromCurrentOccupant(event.data)) break
       setPreviewReady()
+      break
+    case SANDBOX_ERROR:
+      if (!fromCurrentOccupant(event.data)) break
+      errorStore.report({
+        message: event.data.message,
+        stack: event.data.stack,
+        storyId: props.story.id,
+        variantId: props.variant.id,
+      })
       break
     case PREVIEW_SETTINGS_REQUEST:
       syncSettings()
@@ -303,5 +324,28 @@ function onIframeLoad() {
       data-testid="preview-iframe"
       @load="onIframeLoad()"
     />
+
+    <!--
+      Covers the preview rather than sitting beside it: a component that threw
+      has rendered something, but nothing about it can be trusted — the template
+      below is exactly what makes a broken story look like a working one (#323).
+    -->
+    <div
+      v-if="storyError"
+      class="poveste-story-error absolute inset-0 overflow-auto p-6 bg-white dark:bg-gray-900"
+      data-testid="story-error"
+    >
+      <div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium">
+        <Icon icon="carbon:warning-alt" class="w-5 h-5 flex-none" />
+        <span>This component threw while rendering</span>
+      </div>
+      <p class="mt-2 font-mono text-sm text-red-700 dark:text-red-300" data-testid="story-error-message">
+        {{ storyError.message }}
+      </p>
+      <pre
+        v-if="storyError.stack"
+        class="mt-4 text-xs whitespace-pre-wrap text-gray-600 dark:text-gray-400"
+      >{{ storyError.stack }}</pre>
+    </div>
   </StoryResponsivePreview>
 </template>

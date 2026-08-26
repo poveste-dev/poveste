@@ -3,6 +3,7 @@ import type { Story } from '../../types'
 import { Icon } from '@iconify/vue'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useStoryErrorStore } from '../../stores/story-errors'
 import { useScrollOnActive } from '../../util/scroll'
 import BaseListItemLink from '../base/BaseListItemLink.vue'
 
@@ -12,6 +13,12 @@ const props = withDefaults(defineProps<{
 }>(), {
   depth: 0,
 })
+
+// Only ever means "a variant of this story was seen to throw". A variant that
+// has not rendered cannot have reported, so no marker is not a clean bill of
+// health — see the store, and the open half of #323.
+const errorStore = useStoryErrorStore()
+const hasError = computed(() => errorStore.storyHasError(props.story.id))
 
 const filePadding = computed(() => {
   return `${props.depth * 12}px`
@@ -50,6 +57,14 @@ useScrollOnActive(isActive, el)
         />
         <span class="truncate">{{ story.title }}</span>
       </span>
+
+      <Icon
+        v-if="hasError"
+        icon="carbon:warning-alt"
+        class="w-4 h-4 flex-none ml-auto text-red-500"
+        data-testid="story-error-marker"
+        aria-label="A variant of this story threw while rendering"
+      />
 
       <span
         v-if="!story.docsOnly"
