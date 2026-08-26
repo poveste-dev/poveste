@@ -1,3 +1,11 @@
+// Netlify sets these during a build and nothing sets them locally. Emitting them
+// makes "which branch is poveste.dev serving?" a question the page answers, rather
+// than one inferred from whichever prose happens to differ between branches — an
+// inference that stopped working once the branches converged (#321).
+const deploy = [process.env.BRANCH, process.env.COMMIT_REF?.slice(0, 7), process.env.CONTEXT]
+  .filter(Boolean)
+  .join(' ')
+
 module.exports = {
   title: 'Poveste',
   description: 'Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire',
@@ -17,6 +25,7 @@ module.exports = {
     ['meta', { property: 'og:image:height', content: '630' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['link', { rel: 'stylesheet', href: 'https://fonts.bunny.net/css?family=fira-sans:400,400i,600,600i' }],
+    ...(deploy ? [['meta', { name: 'poveste:deploy', content: deploy }]] : []),
   ],
 
   lastUpdated: true,

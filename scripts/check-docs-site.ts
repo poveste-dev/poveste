@@ -114,6 +114,30 @@ export function robotsProblems(body: string): string[] {
   return problems
 }
 
+// The build stamps Netlify's BRANCH/COMMIT_REF/CONTEXT into the page, so a live run
+// can say which deploy it reached instead of leaving that to be inferred (#321).
+// Attribute order and quoting are the renderer's business, not a contract, so this
+// finds the tag first and reads `content` out of it either way.
+export function deployMarker(html: string): string | undefined {
+  const tag = html.match(/<meta[^>]*poveste:deploy[^>]*>/i)?.[0]
+  const content = tag?.match(/content=(?:"([^"]*)"|'([^']*)')/i)
+  const raw = content?.[1] ?? content?.[2]
+  return raw ? decodeEntities(raw) : undefined
+}
+
+// The renderer escapes the value, and git permits `&` and `"` in a branch name, so
+// an undecoded marker would name something you cannot paste back into git.
+// `&amp;` last, or `&amp;quot;` would decode twice.
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#0*39;/g, '\'')
+    .replace(/&apos;/g, '\'')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
 export function sitemapLocations(xml: string): string[] {
   return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
 }
@@ -329,7 +353,7 @@ export function liveTarget(argv: string[]): string {
   return candidate && !candidate.startsWith('-') ? candidate.replace(/\/$/, '') : SITE
 }
 
-async function checkLive(problems: string[], site: string): Promise<void> {
+async function checkLive(problems: string[], site: string): Promise<string | undefined> {
   const get = async (path: string) => {
     const response = await fetch(`${site}${path}`, { redirect: 'manual' })
     return {
@@ -373,6 +397,15 @@ async function checkLive(problems: string[], site: string): Promise<void> {
       problems.push(`live: /guide/vue3/stories.html redirects to ${expected}, which answers ${target.status}`)
     }
   }
+
+  // Informational only, and it runs after every assertion — so a blip here must not
+  // cost the report that is already in hand.
+  try {
+    return deployMarker((await get('/')).body)
+  }
+  catch {
+    return undefined
+  }
 }
 
 async function main(): Promise<void> {
@@ -380,8 +413,9 @@ async function main(): Promise<void> {
   const site = liveTarget(process.argv)
   const problems: string[] = []
 
+  let deployed: string | undefined
   if (live) {
-    await checkLive(problems, site)
+    deployed = await checkLive(problems, site)
   }
   else {
     const built = existsSync(DIST) ? await builtEntries(DIST) : undefined
@@ -389,15 +423,19 @@ async function main(): Promise<void> {
     checkBuild(problems, built)
   }
 
+  // Which deploy was reached matters as much as the verdict: a green run against a
+  // stale deploy proves nothing about the commit in hand.
+  const reached = live ? `${site} (${deployed ?? 'deploy unidentified'})` : 'The docs site'
+
   if (problems.length) {
-    console.error(`${live ? site : 'The docs site'} does not hold up:\n`)
+    console.error(`${reached} does not hold up:\n`)
     for (const problem of problems) {
       console.error(`  ✗ ${problem}`)
     }
     process.exit(1)
   }
 
-  console.log(live ? `${site} answers correctly.` : 'The docs site config and build hold up.')
+  console.log(live ? `${reached} answers correctly.` : 'The docs site config and build hold up.')
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
