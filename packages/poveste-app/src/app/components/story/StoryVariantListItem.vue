@@ -2,7 +2,9 @@
 import type { PropType } from 'vue'
 import type { Variant } from '../../types'
 import { Icon } from '@iconify/vue'
-import { ref, toRefs } from 'vue'
+import { computed, ref, toRefs } from 'vue'
+import { useStoryStore } from '../../stores/story'
+import { useStoryErrorStore } from '../../stores/story-errors'
 import { useScrollOnActive } from '../../util/scroll'
 import { useCurrentVariantRoute } from '../../util/variant'
 import BaseListItemLink from '../base/BaseListItemLink.vue'
@@ -18,6 +20,14 @@ const { variant } = toRefs(props)
 const { isActive, targetRoute } = useCurrentVariantRoute(variant)
 const el = ref<HTMLDivElement>()
 useScrollOnActive(isActive, el)
+
+// This list only ever shows the current story's variants.
+const storyStore = useStoryStore()
+const errorStore = useStoryErrorStore()
+const error = computed(() => {
+  const storyId = storyStore.currentStory?.id
+  return storyId ? errorStore.forVariant(storyId, props.variant.id) : undefined
+})
 </script>
 
 <template>
@@ -41,6 +51,13 @@ useScrollOnActive(isActive, el)
         }"
       />
       <span class="truncate">{{ variant.title }}</span>
+      <Icon
+        v-if="error"
+        icon="carbon:warning-alt"
+        class="w-4 h-4 flex-none ml-auto text-red-500"
+        data-testid="variant-error-marker"
+        :aria-label="`Threw while rendering: ${error.message}`"
+      />
     </BaseListItemLink>
   </div>
 </template>
