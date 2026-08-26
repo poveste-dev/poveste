@@ -34,7 +34,7 @@ export default defineConfig({
     ],
     defaultBackgroundColor: 'transparent',
     // `src/bench/` holds the #197 grid-fill fixtures. Out of the book unless
-    // the bench runner asks — see examples/vue3/histoire.config.ts.
+    // the bench runner asks — see examples/vue3/poveste.config.ts.
     storyIgnored: process.env.POVESTE_BENCH ? [] : ['**/src/bench/**'],
     tree: {
       groups: [
