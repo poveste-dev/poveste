@@ -1,7 +1,7 @@
 {
   "name": "@poveste/shared",
   "type": "module",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Shared utilities for Poveste",
   "author": {
     "name": "Sorin Gitlan"

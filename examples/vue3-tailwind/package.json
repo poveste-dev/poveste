@@ -1,7 +1,7 @@
 {
   "name": "poveste-example-vue3-tailwind",
   "type": "module",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "story:dev": "poveste dev",

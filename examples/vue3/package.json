@@ -1,7 +1,7 @@
 {
   "name": "poveste-example-vue3",
   "type": "module",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev:pvt": "nodemon --watch ../../packages/poveste/dist --watch ../../packages/poveste-plugin-vue/dist --exec \"rm -rf ./node_modules/.pvt* && POVESTE_DEV=true poveste dev\"",
