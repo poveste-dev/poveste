@@ -17,6 +17,7 @@ export interface Payload {
   base: string
   port: MessagePort
   storyFile: ServerStoryFile
+  defineGlobals?: Record<string, unknown>
 }
 
 export interface ReturnData {
@@ -43,6 +44,11 @@ parentPort.on('message', (message) => {
 export default async (payload: Payload): Promise<ReturnData> => {
   const startTime = performance.now()
   process.env.HST_COLLECT = 'true'
+
+  // Before any module runs: an externalised dep reads these at import time.
+  for (const [key, value] of Object.entries(payload.defineGlobals ?? {})) {
+    ;(globalThis as Record<string, unknown>)[key] = value
+  }
 
   _rpc = createBirpc<{
     fetchModule: FetchFunction
