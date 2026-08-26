@@ -15,6 +15,12 @@
 // here; duplicating the versions would just move the staleness.
 //
 // Needs network, and resolves `latest` against what is published right now.
+//
+// `--after-publish` runs it as a release step (#298). Before a release `latest`
+// is still the previous version, so it would vouch for the wrong one; straight
+// after, it is the only check that installs the published set the way a user
+// does. It retries there, because `latest` can lag the publish by seconds, and
+// it reports rather than gates — the packages are already out.
 
 import type { Framework } from '../docs/.vitepress/theme/starters.ts'
 import { execFile } from 'node:child_process'
@@ -62,18 +68,39 @@ async function check(framework: Framework): Promise<Result> {
   }
 }
 
-const results: Result[] = []
-for (const framework of Object.keys(starters) as Framework[]) {
-  console.log(`▸ ${framework}`)
-  const result = await check(framework)
-  console.log(`  ${result.ok ? '✓' : '✗'} ${result.detail.replaceAll('\n', '\n    ')}`)
-  results.push(result)
+const afterPublish = process.argv.includes('--after-publish')
+const attempts = afterPublish ? 4 : 1
+
+let results: Result[] = []
+for (let attempt = 1; attempt <= attempts; attempt++) {
+  if (attempt > 1) {
+    console.log(`\nRetrying (${attempt}/${attempts}) — \`latest\` may still be catching up.`)
+    await new Promise(resolve => setTimeout(resolve, 20_000))
+  }
+  results = []
+  for (const framework of Object.keys(starters) as Framework[]) {
+    console.log(`▸ ${framework}`)
+    const result = await check(framework)
+    console.log(`  ${result.ok ? '✓' : '✗'} ${result.detail.replaceAll('\n', '\n    ')}`)
+    results.push(result)
+  }
+  if (results.every(r => r.ok)) {
+    break
+  }
 }
 
 const failed = results.filter(r => !r.ok)
 if (failed.length) {
   console.error(`\n${failed.length}/${results.length} starters cannot be installed: ${failed.map(r => r.framework).join(', ')}`)
-  console.error('Fix the versions in docs/.vitepress/theme/starters.ts.')
+  if (afterPublish) {
+    // The versions are live and npm versions are immutable, so there is nothing
+    // to fix in place — 0.6.1 is the worked example of the way out.
+    console.error('::error::The release that just published cannot be installed.')
+    console.error('Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.')
+  }
+  else {
+    console.error('Fix the versions in docs/.vitepress/theme/starters.ts.')
+  }
   process.exit(1)
 }
 console.log(`\nAll ${results.length} starters resolve.`)
