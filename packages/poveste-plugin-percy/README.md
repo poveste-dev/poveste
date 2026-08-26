@@ -6,7 +6,7 @@ You need the [Percy CLI](https://docs.percy.io/docs/cli-overview) installed to b
 pnpm add -D @poveste/plugin-percy
 ```
 
-Add the plugin in histoire config:
+Add the plugin in your Poveste config:
 
 ```js
 import { HstPercy } from '@poveste/plugin-percy'
@@ -27,3 +27,5 @@ Then use the Percy CLI
 # Replace `story:build` with the script to build the stories if you changed it
 percy exec pnpm run story:build
 ```
+
+[Documentation](https://poveste.dev)

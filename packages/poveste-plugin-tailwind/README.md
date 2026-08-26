@@ -26,3 +26,6 @@ Adding the plugin also adds a `Design System` group to the story tree.
 > This used to be built into `poveste` and enabled by default, which meant a
 > project that merely had a file named `src/app.css` got a design-system group
 > and a story full of Tailwind's defaults it never asked for. It is opt-in now.
+
+[Configuration](https://poveste.dev/reference/config.html) ·
+[Documentation](https://poveste.dev)

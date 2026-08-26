@@ -1,42 +1,27 @@
-# Nuxt 4 Minimal Starter
+# Nuxt 4 example
 
-Look at the [Nuxt documentation](https://nuxt.com/docs) to learn more.
+A Nuxt 4 application with Poveste wired in, used as a fixture: its story build
+and Playwright suite run in CI as the `nuxt4` project, so this is what proves
+the Nuxt integration rather than a sentence in the docs.
 
-## Setup
+## Running it
 
-Make sure to install the dependencies:
-
-```bash
-# yarn
-yarn install
-
-# npm
-npm install
-
-# pnpm
-pnpm install --shamefully-hoist
-```
-
-## Development Server
-
-Start the development server on http://localhost:3000
+From the repository root — the workspace is installed once, not per example:
 
 ```bash
-npm run dev
+pnpm install
+pnpm run build
 ```
 
-## Production
-
-Build the application for production:
+Then, in this directory:
 
 ```bash
-npm run build
+pnpm run story:dev      # the book, on a dev server
+pnpm run story:build    # build it
+pnpm run story:preview  # serve the built book
+pnpm run dev            # the Nuxt app itself
 ```
 
-Locally preview production build:
-
-```bash
-npm run preview
-```
-
-Checkout the [deployment documentation](https://v3.nuxtjs.org/guide/deploy/presets) for more information.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the wider development loop, and
+the [Nuxt guide](https://poveste.dev/guide/vue/getting-started.html#nuxt) for how
+to set this up in your own project.

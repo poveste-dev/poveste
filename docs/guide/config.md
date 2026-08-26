@@ -51,7 +51,7 @@ export default defineConfig({
 })
 ```
 
-You can use the `process.env.HISTOIRE` environment variable in conditions to modify the vite configuration for Poveste.
+You can use the `process.env.POVESTE` environment variable in conditions to modify the vite configuration for Poveste. `process.env.HISTOIRE` is still set as a deprecated alias, so histoire-era configs keep working.
 
 ## Overriding Vite configuration
 
@@ -103,7 +103,7 @@ export default defineConfig({
 
 ### Conditions in Vite config
 
-It might be more convenient to toggle some values in the Vite config using conditions instead, with the `process.env.HISTOIRE` environment variable.
+It might be more convenient to toggle some values in the Vite config using conditions instead, with the `process.env.POVESTE` environment variable.
 
 ```ts
 // vite.config.js
@@ -111,7 +111,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   server: {
-    port: process.env.HISTOIRE ? 6006 : 3000,
+    port: process.env.POVESTE ? 6006 : 3000,
   },
 })
 ```

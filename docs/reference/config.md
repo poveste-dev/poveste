@@ -322,11 +322,11 @@ export default defineConfig({
 })
 ```
 
-You can use current contrast color via the css variable `--histoire-contrast-color`:
+You can use the current contrast color via the css variable `--poveste-contrast-color`. The histoire-era `--histoire-contrast-color` is still set as a deprecated alias:
 
 ```css
 .my-class {
-  color: var(--histoire-contrast-color);
+  color: var(--poveste-contrast-color);
 }
 ```
 

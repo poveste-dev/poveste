@@ -17,11 +17,8 @@ the API histoire used to read a story's state, so story state moves onto `initSt
 ([how, and why](https://poveste.dev/guide/migration-from-histoire.html#svelte-story-state-moves-to-initstate)).
 Say it however you like — we answer to "po-VEST" too. 🙂
 
-[![Test status](https://github.com/poveste-dev/poveste/actions/workflows/test.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test.yml)
-[![Test status](https://github.com/poveste-dev/poveste/actions/workflows/test-vue3.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-vue3.yml)
-[![Test status](https://github.com/poveste-dev/poveste/actions/workflows/test-svelte5.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-svelte5.yml)
-[![Test status](https://github.com/poveste-dev/poveste/actions/workflows/test-sveltekit.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-sveltekit.yml)
-[![Test status](https://github.com/poveste-dev/poveste/actions/workflows/test-nuxt4.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-nuxt4.yml)
+[![Unit tests and smoke](https://github.com/poveste-dev/poveste/actions/workflows/test.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test.yml)
+[![Example suites](https://github.com/poveste-dev/poveste/actions/workflows/test-examples.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-examples.yml)
 
 [Read the Documentation](https://poveste.dev) |
 [Discussions board](https://github.com/poveste-dev/poveste/discussions)
@@ -32,11 +29,11 @@ Say it however you like — we answer to "po-VEST" too. 🙂
   </a>
 </p>
 
-- ⚡️ Lightning fast development and instant HMR thanks to [Vite](http://vitejs.dev)
-- 👓 Build and visually test your components in isolation
-- 📚 Document your components with stories and variants
-- 📝 Generate source code examples automatically
-- 🎨 Beautiful and customizable interface
+- ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
+- 🧩 Vue 3, Nuxt 4, Svelte 5 and SvelteKit, each proven by its own example suite in CI
+- 🪟 Collects on Windows, macOS and Linux — all three run in CI
+- 📚 Stories and variants, with source examples generated from what you wrote
+- 🚀 Grids stay responsive at a thousand variants, and built books render offline
 
 ## Requirements
 
