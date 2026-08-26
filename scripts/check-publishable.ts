@@ -123,27 +123,52 @@ function packedPaths(tarball: string): string[] {
     .map(path => path.replace(/^package\//, ''))
 }
 
-// npm ships these whatever `files` says.
-const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e|changelog|notice)(?:\.[^/]*)?$/i
+// npm ships these whatever `files` says. Deliberately not the `main` file,
+// which npm also forces in: a main outside the declared surface is a defect.
+const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e)(?:\.[^/]*)?$/i
 
 // Packed paths no `files` entry accounts for. Entries match as an exact path or
 // a directory prefix, which is all this repo declares; a glob would be reported
 // here rather than quietly accepted (#300).
 export function undeclaredPackedPaths(paths: string[], files: string[]): string[] {
+  const { include } = parseEntries(files)
   return paths.filter(path =>
     !ALWAYS_PACKED.test(path)
-    && !normalizeEntries(files).some(entry => covers(entry, path)))
+    && !include.some(entry => covers(entry, path)))
 }
 
 // `files` entries that shipped nothing — a renamed or mistyped directory. The
 // package then publishes without it, which no entrypoint check would notice
 // when the path is loaded at runtime rather than imported (#300).
 export function emptyFilesEntries(paths: string[], files: string[]): string[] {
-  return normalizeEntries(files).filter(entry => !paths.some(path => covers(entry, path)))
+  const { include } = parseEntries(files)
+  return include.filter(entry => !paths.some(path => covers(entry, path)))
 }
 
-function normalizeEntries(files: string[]): string[] {
-  return files.map(entry => entry.replace(/^\.\//, '').replace(/\/$/, ''))
+// Entry forms this matcher cannot judge. A positive glob would make every path
+// it covers look undeclared, so say so instead of reporting nonsense.
+export function unsupportedFilesEntries(files: string[]): string[] {
+  return parseEntries(files).unsupported
+}
+
+// `!` entries only subtract, so they never grant coverage and are never
+// expected to ship anything of their own.
+function parseEntries(files: string[]): { include: string[], unsupported: string[] } {
+  const include: string[] = []
+  const unsupported: string[] = []
+  for (const raw of files) {
+    if (raw.startsWith('!')) {
+      continue
+    }
+    const entry = raw.replace(/^\.\//, '').replace(/\/$/, '')
+    if (/[*?[\]]/.test(entry)) {
+      unsupported.push(raw)
+    }
+    else {
+      include.push(entry)
+    }
+  }
+  return { include, unsupported }
 }
 
 function covers(entry: string, path: string): boolean {
@@ -238,6 +263,12 @@ function main(): void {
       // npm versions are immutable (#300).
       if (!manifest.files) {
         problems.push(`${pkg.name} declares no \`files\`, so it publishes whatever happens to sit in its directory`)
+      }
+      else if (!Array.isArray(manifest.files)) {
+        problems.push(`${pkg.name} declares \`files\` as ${typeof manifest.files}, which must be an array`)
+      }
+      else if (unsupportedFilesEntries(manifest.files).length) {
+        problems.push(`${pkg.name} declares \`files\` entries this check cannot match: ${unsupportedFilesEntries(manifest.files).join(', ')}`)
       }
       else {
         const paths = packedPaths(packed.tarball)

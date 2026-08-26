@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyFilesEntries, unacceptedResolutionProblems, undeclaredPackedPaths, workspaceProtocolDeps } from './check-publishable.ts'
+import { emptyFilesEntries, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, workspaceProtocolDeps } from './check-publishable.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -113,9 +113,15 @@ describe('undeclaredPackedPaths', () => {
   })
 
   it('accepts a file npm ships whatever files says', () => {
-    const paths = ['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']
+    const paths = ['package.json', 'README.md', 'LICENSE']
 
     expect(undeclaredPackedPaths(paths, ['dist'])).toEqual([])
+  })
+
+  it('grants no coverage from a negated entry, which only subtracts', () => {
+    const paths = ['dist/index.js', 'src/index.ts']
+
+    expect(undeclaredPackedPaths(paths, ['dist', '!dist/**/*.map'])).toEqual(['src/index.ts'])
   })
 
   it('accepts an entry naming a single file', () => {
@@ -146,5 +152,25 @@ describe('emptyFilesEntries', () => {
     const paths = ['dist/index.js', 'runtime/composables.mjs', 'bin.mjs']
 
     expect(emptyFilesEntries(paths, ['dist', 'runtime', 'bin.mjs'])).toEqual([])
+  })
+
+  it('never expects a negated entry to ship anything', () => {
+    const paths = ['dist/index.js']
+
+    expect(emptyFilesEntries(paths, ['dist', '!dist/**/*.map'])).toEqual([])
+  })
+})
+
+describe('unsupportedFilesEntries', () => {
+  it('flags a positive glob, which this matcher cannot judge', () => {
+    expect(unsupportedFilesEntries(['dist', 'lib/**/*.js'])).toEqual(['lib/**/*.js'])
+  })
+
+  it('passes a negated glob, which only subtracts', () => {
+    expect(unsupportedFilesEntries(['dist', '!dist/**/*.map'])).toEqual([])
+  })
+
+  it('passes plain paths', () => {
+    expect(unsupportedFilesEntries(['dist', 'bin.mjs'])).toEqual([])
   })
 })
