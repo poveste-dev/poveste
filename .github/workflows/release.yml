@@ -49,10 +49,13 @@ jobs:
         run: pnpm run test:smoke
 
       # Refuse before anything is pushed if a publishable package is missing from
-      # the registry (OIDC cannot bootstrap it) or packs an unrewritten
-      # `workspace:` protocol. A partial publish cannot be walked back — the tag,
-      # the GitHub release and half the registry would all refer to it (#286).
-      - name: Preflight — every package is bootstrappable and installable
+      # the registry (OIDC cannot bootstrap it), packs an unrewritten `workspace:`
+      # protocol, or advertises an entrypoint whose types do not resolve (#302).
+      # A partial publish cannot be walked back — the tag, the GitHub release and
+      # half the registry would all refer to it (#286). The last two checks also
+      # run on every pull request (`test:packaging`); only the registry lookup is
+      # release-only, since it needs the network.
+      - name: Preflight — every package is bootstrappable, installable and resolvable
         run: pnpm run test:publishable
 
       - name: Create GitHub release

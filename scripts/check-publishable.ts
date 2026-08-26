@@ -3,9 +3,10 @@
 // with no unrewritten `workspace:` protocol (else it cannot be installed), and
 // have every advertised entrypoint resolve to real types (#302). A partial
 // publish cannot be walked back, so this refuses before anything is pushed. See
-// #286. Talks to the network (`npm view`), unlike the sibling checks; the
-// entrypoint check runs `attw` against the packed tarball, which is offline, so
-// it needs each package built first.
+// #286. The registry lookup talks to the network (`npm view`), unlike the
+// sibling checks; `--offline` drops it so the rest can run on pull requests,
+// where a broken entrypoint is still cheap to fix. The entrypoint check runs
+// `attw` against the packed tarball, so it needs each package built first.
 
 import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs'
@@ -98,15 +99,22 @@ export function workspaceProtocolDeps(manifest: any): string[] {
 // removes `dest`.
 function packPackage(pkg: Pkg): { dest: string, tarball: string } {
   const dest = mkdtempSync(join(tmpdir(), 'poveste-pack-'))
-  execFileSync('pnpm', ['pack', '--pack-destination', dest, '--config.ignore-scripts=true'], {
-    cwd: pkg.dir,
-    stdio: ['ignore', 'ignore', 'pipe'],
-  })
-  const tarball = readdirSync(dest).find(file => file.endsWith('.tgz'))
-  if (!tarball) {
-    throw new Error('pnpm pack produced no tarball')
+  try {
+    execFileSync('pnpm', ['pack', '--pack-destination', dest, '--config.ignore-scripts=true'], {
+      cwd: pkg.dir,
+      stdio: ['ignore', 'ignore', 'pipe'],
+    })
+    const tarball = readdirSync(dest).find(file => file.endsWith('.tgz'))
+    if (!tarball) {
+      throw new Error('pnpm pack produced no tarball')
+    }
+    return { dest, tarball: join(dest, tarball) }
   }
-  return { dest, tarball: join(dest, tarball) }
+  catch (err) {
+    // Nothing is returned, so nothing else can clean this up.
+    rmSync(dest, { recursive: true, force: true })
+    throw err
+  }
 }
 
 function unrewrittenWorkspaceDeps(tarball: string): string[] {
@@ -166,17 +174,42 @@ function entrypointResolutionProblems(tarball: string, dest: string): string[] {
   if (!output) {
     throw runError ?? new Error('attw produced no output')
   }
-  return unacceptedResolutionProblems(JSON.parse(output).problems)
+
+  const problems = JSON.parse(output).problems
+  // `attw` exits non-zero only when it has findings to report, so a failing exit
+  // with nothing under `problems` means we are reading the wrong shape — a
+  // renamed or moved key in a future version. Refuse rather than report the
+  // package clean, which is how a guard like this silently stops guarding (#302).
+  if (runError && !Object.keys(problems ?? {}).length) {
+    throw new Error(`attw exited non-zero but reported no problems under \`problems\` — its output shape has probably changed: ${output.slice(0, 200)}`)
+  }
+  return unacceptedResolutionProblems(problems)
+}
+
+// execFileSync's own message is just `Command failed: <argv>`; the reason the
+// command failed is on stderr, which is worth keeping when the failure blocks a
+// release.
+function describeError(err: any): string {
+  const stderr = String(err.stderr ?? '').trim()
+  return stderr ? `${err.message} — ${stderr}` : err.message
 }
 
 function main(): void {
+  // `--offline` drops only the registry lookups, so the checks that need no
+  // network — the packed manifest and every advertised entrypoint — can run on
+  // pull requests too. Left to the release alone, a broken entrypoint is not
+  // caught until the version bump has already been pushed to `main`.
+  const offline = process.argv.includes('--offline')
   const packages = publishablePackages()
   const problems: string[] = []
+  const skippedEntrypoints: string[] = []
 
   for (const pkg of packages) {
-    const status = registryStatus(pkg.name)
-    if (status !== true) {
-      problems.push(`${pkg.name} ${status}`)
+    if (!offline) {
+      const status = registryStatus(pkg.name)
+      if (status !== true) {
+        problems.push(`${pkg.name} ${status}`)
+      }
     }
 
     let packed: { dest: string, tarball: string }
@@ -184,21 +217,24 @@ function main(): void {
       packed = packPackage(pkg)
     }
     catch (err: any) {
-      problems.push(`${pkg.name} could not be packed to verify it: ${err.message}`)
+      problems.push(`${pkg.name} could not be packed to verify it: ${describeError(err)}`)
       continue
     }
     try {
       for (const dep of unrewrittenWorkspaceDeps(packed.tarball)) {
         problems.push(`${pkg.name} packs an unrewritten workspace protocol (${dep}); publish with pnpm, not npm`)
       }
-      if (!BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
+      if (BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
+        skippedEntrypoints.push(pkg.name)
+      }
+      else {
         for (const entrypoint of entrypointResolutionProblems(packed.tarball, packed.dest)) {
           problems.push(`${pkg.name} advertises an entrypoint whose types do not resolve: ${entrypoint}`)
         }
       }
     }
     catch (err: any) {
-      problems.push(`${pkg.name} could not be verified: ${err.message}`)
+      problems.push(`${pkg.name} could not be verified: ${describeError(err)}`)
     }
     finally {
       rmSync(packed.dest, { recursive: true, force: true })
@@ -214,7 +250,14 @@ function main(): void {
     process.exit(1)
   }
 
-  console.log(`✅ All ${packages.length} publishable packages exist on the registry, pack to an installable manifest, and resolve every advertised entrypoint`)
+  // Name what was not checked. A green line that overstates its own coverage is
+  // the same invisibility this check exists to remove.
+  const checks = [
+    offline ? null : 'exist on the registry',
+    'pack to an installable manifest',
+    `resolve every advertised entrypoint (${packages.length - skippedEntrypoints.length}/${packages.length}${skippedEntrypoints.length ? `, bundler-only and skipped: ${skippedEntrypoints.join(', ')} — #312` : ''})`,
+  ].filter(Boolean)
+  console.log(`✅ All ${packages.length} publishable packages ${checks.join(', ')}`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
