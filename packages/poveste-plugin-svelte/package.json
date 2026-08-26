@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-svelte",
   "type": "module",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Poveste plugin for Svelte 5 and SvelteKit support",
   "author": {
     "name": "Sorin Gitlan"
