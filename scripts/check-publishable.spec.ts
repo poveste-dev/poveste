@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { unacceptedResolutionProblems, workspaceProtocolDeps } from './check-publishable.ts'
+import { emptyFilesEntries, unacceptedResolutionProblems, undeclaredPackedPaths, workspaceProtocolDeps } from './check-publishable.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -94,5 +94,57 @@ describe('unacceptedResolutionProblems', () => {
 
   it('reports nothing when attw found no problems', () => {
     expect(unacceptedResolutionProblems({})).toEqual([])
+  })
+})
+
+describe('undeclaredPackedPaths', () => {
+  it('flags a packed path that no files entry accounts for', () => {
+    const paths = ['dist/index.js', 'src/index.ts']
+
+    const undeclared = undeclaredPackedPaths(paths, ['dist'])
+
+    expect(undeclared).toEqual(['src/index.ts'])
+  })
+
+  it('treats a files entry as a directory prefix', () => {
+    const paths = ['dist/node/index.js', 'dist/client/client.js']
+
+    expect(undeclaredPackedPaths(paths, ['dist'])).toEqual([])
+  })
+
+  it('accepts a file npm ships whatever files says', () => {
+    const paths = ['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']
+
+    expect(undeclaredPackedPaths(paths, ['dist'])).toEqual([])
+  })
+
+  it('accepts an entry naming a single file', () => {
+    const paths = ['bin.mjs', 'client.d.ts']
+
+    expect(undeclaredPackedPaths(paths, ['bin.mjs', 'client.d.ts'])).toEqual([])
+  })
+
+  it('ignores a leading ./ and a trailing slash on an entry', () => {
+    const paths = ['dist/index.js']
+
+    expect(undeclaredPackedPaths(paths, ['./dist/'])).toEqual([])
+  })
+})
+
+describe('emptyFilesEntries', () => {
+  it('flags an entry that ships nothing, as a rename leaves behind', () => {
+    // plugin-nuxt's `runtime` is load-bearing and reached at runtime, not
+    // imported, so nothing else would notice it stopped shipping.
+    const paths = ['dist/index.js']
+
+    const empty = emptyFilesEntries(paths, ['dist', 'runtime-renamed'])
+
+    expect(empty).toEqual(['runtime-renamed'])
+  })
+
+  it('passes entries that all match something packed', () => {
+    const paths = ['dist/index.js', 'runtime/composables.mjs', 'bin.mjs']
+
+    expect(emptyFilesEntries(paths, ['dist', 'runtime', 'bin.mjs'])).toEqual([])
   })
 })

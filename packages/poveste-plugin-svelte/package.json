@@ -46,6 +46,12 @@
   "main": "./dist/index.node.js",
   "module": "./dist/index.node.js",
   "types": "./dist/index.node.d.ts",
+  "files": [
+    "assets",
+    "client.d.ts",
+    "collect.d.ts",
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && vite build && tsc -d -P tsconfig.build.json && pnpm run build:types",
     "build:types": "tsc --declaration --emitDeclarationOnly",

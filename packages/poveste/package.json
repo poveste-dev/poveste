@@ -2,7 +2,7 @@
   "name": "poveste",
   "type": "module",
   "version": "0.6.1",
-  "description": "Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire",
+  "description": "Interactive component playgrounds for Vue, Svelte and Nuxt \u2014 a maintained, drop-in successor to histoire",
   "author": {
     "name": "Sorin Gitlan"
   },
@@ -54,6 +54,15 @@
     "poveste": "./bin.mjs",
     "histoire": "./bin.mjs"
   },
+  "files": [
+    "bin.mjs",
+    "client.d.ts",
+    "client.js",
+    "dist",
+    "index.d.ts",
+    "plugin.d.ts",
+    "plugin.js"
+  ],
   "scripts": {
     "build": "rimraf dist && tsc",
     "watch": "tsc -w --sourceMap",

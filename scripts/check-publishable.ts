@@ -110,11 +110,44 @@ function packPackage(pkg: Pkg): { dest: string, tarball: string } {
   }
 }
 
-function unrewrittenWorkspaceDeps(tarball: string): string[] {
-  const manifest = JSON.parse(
+function packedManifest(tarball: string): any {
+  return JSON.parse(
     String(execFileSync('tar', ['-xzOf', tarball, 'package/package.json'], { stdio: ['ignore', 'pipe', 'pipe'] })),
   )
-  return workspaceProtocolDeps(manifest)
+}
+
+function packedPaths(tarball: string): string[] {
+  return String(execFileSync('tar', ['-tzf', tarball], { stdio: ['ignore', 'pipe', 'pipe'] }))
+    .split('\n')
+    .filter(path => path && !path.endsWith('/'))
+    .map(path => path.replace(/^package\//, ''))
+}
+
+// npm ships these whatever `files` says.
+const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e|changelog|notice)(?:\.[^/]*)?$/i
+
+// Packed paths no `files` entry accounts for. Entries match as an exact path or
+// a directory prefix, which is all this repo declares; a glob would be reported
+// here rather than quietly accepted (#300).
+export function undeclaredPackedPaths(paths: string[], files: string[]): string[] {
+  return paths.filter(path =>
+    !ALWAYS_PACKED.test(path)
+    && !normalizeEntries(files).some(entry => covers(entry, path)))
+}
+
+// `files` entries that shipped nothing — a renamed or mistyped directory. The
+// package then publishes without it, which no entrypoint check would notice
+// when the path is loaded at runtime rather than imported (#300).
+export function emptyFilesEntries(paths: string[], files: string[]): string[] {
+  return normalizeEntries(files).filter(entry => !paths.some(path => covers(entry, path)))
+}
+
+function normalizeEntries(files: string[]): string[] {
+  return files.map(entry => entry.replace(/^\.\//, '').replace(/\/$/, ''))
+}
+
+function covers(entry: string, path: string): boolean {
+  return path === entry || path.startsWith(`${entry}/`)
 }
 
 // One entry per `attw` problem, keyed by problem kind.
@@ -197,8 +230,23 @@ function main(): void {
       continue
     }
     try {
-      for (const dep of unrewrittenWorkspaceDeps(packed.tarball)) {
+      const manifest = packedManifest(packed.tarball)
+      for (const dep of workspaceProtocolDeps(manifest)) {
         problems.push(`${pkg.name} packs an unrewritten workspace protocol (${dep}); publish with pnpm, not npm`)
+      }
+      // An undeclared surface drifts: whatever lands in the directory ships, and
+      // npm versions are immutable (#300).
+      if (!manifest.files) {
+        problems.push(`${pkg.name} declares no \`files\`, so it publishes whatever happens to sit in its directory`)
+      }
+      else {
+        const paths = packedPaths(packed.tarball)
+        for (const path of undeclaredPackedPaths(paths, manifest.files)) {
+          problems.push(`${pkg.name} packs \`${path}\`, which no \`files\` entry declares`)
+        }
+        for (const entry of emptyFilesEntries(paths, manifest.files)) {
+          problems.push(`${pkg.name} declares \`${entry}\` in \`files\` but ships nothing for it; renamed or mistyped?`)
+        }
       }
       if (BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
         skippedEntrypoints.push(pkg.name)
@@ -229,7 +277,7 @@ function main(): void {
   // Name what was not checked; a green line that overstates its coverage hides.
   const checks = [
     offline ? null : 'exist on the registry',
-    'pack to an installable manifest',
+    'pack to an installable manifest, declaring every path they ship',
     `resolve every advertised entrypoint (${packages.length - skippedEntrypoints.length}/${packages.length}${skippedEntrypoints.length ? `, bundler-only and skipped: ${skippedEntrypoints.join(', ')} — #312` : ''})`,
   ].filter(Boolean)
   console.log(`✅ All ${packages.length} publishable packages ${checks.join(', ')}`)

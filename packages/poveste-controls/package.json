@@ -36,6 +36,9 @@
   "main": "./dist/index.es.js",
   "module": "./dist/index.es.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && pnpm run build:css && vite build && pnpm run build:types",
     "build:css": "tailwindcss -i src/style/main.css -o ./dist/style-standalone.css",
