@@ -1,12 +1,8 @@
 // Release preflight: every non-private workspace package must exist on the
-// registry (else OIDC cannot bootstrap its first publish), pack to a manifest
-// with no unrewritten `workspace:` protocol (else it cannot be installed), and
-// have every advertised entrypoint resolve to real types (#302). A partial
-// publish cannot be walked back, so this refuses before anything is pushed. See
-// #286. The registry lookup talks to the network (`npm view`), unlike the
-// sibling checks; `--offline` drops it so the rest can run on pull requests,
-// where a broken entrypoint is still cheap to fix. The entrypoint check runs
-// `attw` against the packed tarball, so it needs each package built first.
+// registry (OIDC cannot bootstrap a first publish), pack with no unrewritten
+// `workspace:` protocol, and resolve every advertised entrypoint. A partial
+// publish cannot be walked back (#286, #302). `--offline` drops the registry
+// lookup, the only networked check. Needs each package built.
 
 import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs'
@@ -19,10 +15,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PACKAGES = join(ROOT, 'packages')
 const DEP_KEYS = ['dependencies', 'peerDependencies', 'optionalDependencies']
 
-// The entrypoint-resolution check is scoped to the packages consumers install
-// and type-import. These are published only so the workspace can depend on them
-// and are consumed exclusively through bundler resolution inside Poveste — their
-// node10/type-resolution defects predate #302 and are their own cleanup (#312).
+// Published only so the workspace can depend on them, and consumed through
+// bundler resolution alone; their resolution defects predate #302 and are #312.
 const BUNDLER_ONLY_PACKAGES = new Set([
   '@poveste/app',
   '@poveste/controls',
@@ -94,9 +88,8 @@ export function workspaceProtocolDeps(manifest: any): string[] {
   return offenders
 }
 
-// Pack the package into a throwaway dir (scripts ignored: the dist is already
-// built, and running prepack here would rebuild the whole graph). The caller
-// removes `dest`.
+// Scripts ignored: dist is already built, and prepack would rebuild the graph.
+// The caller removes `dest`.
 function packPackage(pkg: Pkg): { dest: string, tarball: string } {
   const dest = mkdtempSync(join(tmpdir(), 'poveste-pack-'))
   try {
@@ -127,15 +120,8 @@ function unrewrittenWorkspaceDeps(tarball: string): string[] {
 // One entry per `attw` problem, keyed by problem kind.
 type AttwProblems = Record<string, Array<{ kind: string, entrypoint?: string, resolutionKind?: string }>>
 
-// The `attw` findings we accept, so the check fires on real defects only:
-//   - CJSResolvesToESM anywhere — the packages are ESM-only (Node >=26), so a
-//     CommonJS consumer is expected to `import()` rather than `require`.
-//   - NoResolution on a `*-dev` entrypoint — those point at TypeScript source and
-//     are resolved only under POVESTE_DEV, by Vite, while developing Poveste
-//     itself (see a plugin's `client-dev`/`collect-dev`); no Node consumer reaches
-//     them. A broken *published* entrypoint (`./client-node`, #302) does not end
-//     in `-dev`, so it still fails.
-// Pure, so the policy is unit-tested without packing or a network round-trip.
+// Accepted: CJSResolvesToESM (the packages are ESM-only), and NoResolution on a
+// `*-dev` entrypoint (TypeScript source, resolved only under POVESTE_DEV).
 export function unacceptedResolutionProblems(problems: AttwProblems): string[] {
   const offenders: string[] = []
   for (const list of Object.values(problems ?? {})) {
@@ -153,9 +139,8 @@ export function unacceptedResolutionProblems(problems: AttwProblems): string[] {
 }
 
 function entrypointResolutionProblems(tarball: string, dest: string): string[] {
-  // Capture to a file, not a pipe: `attw` exits non-zero when it reports
-  // problems, and on a non-zero exit Node caps `err.stdout` at 64KB, which
-  // truncates the larger reports mid-JSON. The file gets the whole thing.
+  // A file, not a pipe: attw exits non-zero when it reports problems, and Node
+  // caps a failed process's stdout at 64KB, truncating larger reports mid-JSON.
   const jsonPath = join(dest, 'attw.json')
   const fd = openSync(jsonPath, 'w')
   let runError: unknown
@@ -169,36 +154,27 @@ function entrypointResolutionProblems(tarball: string, dest: string): string[] {
     closeSync(fd)
   }
   const output = readFileSync(jsonPath, 'utf8')
-  // No output means `attw` never ran (missing binary, unreadable tarball) rather
-  // than a clean report — surface that error instead of a JSON parse failure.
+  // No output means attw never ran, not that the package is clean.
   if (!output) {
     throw runError ?? new Error('attw produced no output')
   }
 
   const problems = JSON.parse(output).problems
-  // `attw` exits non-zero only when it has findings to report, so a failing exit
-  // with nothing under `problems` means we are reading the wrong shape — a
-  // renamed or moved key in a future version. Refuse rather than report the
-  // package clean, which is how a guard like this silently stops guarding (#302).
+  // A non-zero exit means attw had findings, so nothing under `problems` means
+  // the shape moved. Refusing beats reporting the package clean.
   if (runError && !Object.keys(problems ?? {}).length) {
     throw new Error(`attw exited non-zero but reported no problems under \`problems\` — its output shape has probably changed: ${output.slice(0, 200)}`)
   }
   return unacceptedResolutionProblems(problems)
 }
 
-// execFileSync's own message is just `Command failed: <argv>`; the reason the
-// command failed is on stderr, which is worth keeping when the failure blocks a
-// release.
+// execFileSync's message is only `Command failed: <argv>`; the reason is on stderr.
 function describeError(err: any): string {
   const stderr = String(err.stderr ?? '').trim()
   return stderr ? `${err.message} — ${stderr}` : err.message
 }
 
 function main(): void {
-  // `--offline` drops only the registry lookups, so the checks that need no
-  // network — the packed manifest and every advertised entrypoint — can run on
-  // pull requests too. Left to the release alone, a broken entrypoint is not
-  // caught until the version bump has already been pushed to `main`.
   const offline = process.argv.includes('--offline')
   const packages = publishablePackages()
   const problems: string[] = []
@@ -250,8 +226,7 @@ function main(): void {
     process.exit(1)
   }
 
-  // Name what was not checked. A green line that overstates its own coverage is
-  // the same invisibility this check exists to remove.
+  // Name what was not checked; a green line that overstates its coverage hides.
   const checks = [
     offline ? null : 'exist on the registry',
     'pack to an installable manifest',

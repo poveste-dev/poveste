@@ -3,8 +3,7 @@ import { unacceptedResolutionProblems, workspaceProtocolDeps } from './check-pub
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
-// attw groups its findings by kind and repeats the kind inside each entry, so
-// building the shape here keeps a test to the parts it actually cares about.
+// attw groups findings by kind and repeats the kind inside each entry.
 function attwReport(...problems: AttwProblem[]): Record<string, AttwProblem[]> {
   const report: Record<string, AttwProblem[]> = {}
   for (const problem of problems) {
