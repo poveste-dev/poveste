@@ -13,6 +13,7 @@
     "type": "git",
     "directory": "packages/poveste-controls"
   },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
   "keywords": [
     "poveste",
     "controls",
@@ -39,6 +40,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "rimraf dist && pnpm run build:css && vite build && pnpm run build:types",
     "build:css": "tailwindcss -i src/style/main.css -o ./dist/style-standalone.css",

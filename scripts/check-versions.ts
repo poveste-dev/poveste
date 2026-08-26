@@ -10,9 +10,10 @@
 // The policy those docs state is "if a range is wider than the CI job behind
 // it, the range is the bug". This script is that policy, enforced.
 //
-// Node is the one row with no manifest behind it — the published packages carry
-// no `engines` field — so it is checked against `.node-version`, which is what
-// the release workflow installs.
+// Node is checked against the published `engines.node`, not `.node-version`:
+// the table states what a consumer needs, while `.node-version` pins the
+// toolchain contributors and the release build use. They are allowed to differ
+// (#303).
 //
 // No network, no install: it reads files and compares strings.
 
@@ -49,10 +50,14 @@ async function expectations(): Promise<Expectation[]> {
     return { expected: range, source: `${path} → peerDependencies["${key}"]` }
   }
 
-  const nodeVersion = (await readFile(join(ROOT, '.node-version'), 'utf8')).trim()
+  const povesteManifest = 'packages/poveste/package.json'
+  const engines = JSON.parse(await readFile(join(ROOT, povesteManifest), 'utf8')).engines?.node
+  if (!engines) {
+    throw new Error(`${povesteManifest} declares no engines.node`)
+  }
 
   return [
-    { label: 'Node', expected: `>=${nodeVersion}`, source: '.node-version' },
+    { label: 'Node', expected: engines, source: `${povesteManifest} → engines.node` },
     { label: 'Vite', ...await peer('packages/poveste/package.json', 'vite') },
     { label: 'Vue', ...await peer('packages/poveste-plugin-vue/package.json', 'vue') },
     { label: 'Nuxt', ...await peer('packages/poveste-plugin-nuxt/package.json', 'nuxt') },
@@ -70,7 +75,7 @@ function parseTable(file: string, markdown: string): Table {
       continue
     }
 
-    const cells = line.split('|').slice(1, -1).map(cell => cell.trim())
+    const cells = line.split(/(?<!\\)\|/).slice(1, -1).map(cell => cell.replace(/\\\|/g, '|').trim())
     if (cells.length < 2) {
       continue
     }

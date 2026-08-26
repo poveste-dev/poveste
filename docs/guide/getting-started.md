@@ -46,7 +46,7 @@ is wider than the CI job behind it, the range is the bug.
 
 | | Supported | Proven by |
 | --- | --- | --- |
-| [Node](https://nodejs.org) | `>=26` | every workflow runs Node 26 |
+| [Node](https://nodejs.org) | `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` | `Node floor` — installs the tarballs and builds a book on 22.22.2 |
 | [Vite](https://vite.dev) | `^8.0.0` | every example |
 | [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue3` — build + Playwright (`Vue 3 tests`) |
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `examples/nuxt4` — build + Playwright (`Nuxt 4 tests`) |
@@ -69,10 +69,15 @@ required peer would warn on every such install. Optional means the range is enfo
 Kit is present and ignored when it is not. See [the SvelteKit
 section](./svelte/getting-started.md#sveltekit).
 
-Node is the one exception to "declared in `peerDependencies`": the published
-packages carry no `engines` field, so nothing stops you installing on an older Node. `>=26`
-is what CI runs and therefore all we can vouch for. Older Node may well work — Vite 8 itself
-allows `^20.19.0 || >=22.12.0` — but you would be the one testing it.
+Node is the one exception to "declared in `peerDependencies`": it is an `engines` field on
+every published package, so npm warns you at install time rather than leaving you to find out
+at runtime.
+
+The range is not ours to choose freely — it is what `jsdom`, which Poveste uses to collect
+stories, imposes on anything that depends on it. Declaring the same range means npm's warning
+names Poveste rather than a transitive dependency you did not ask for. The floor was `>=26`
+until a run on the minimum showed the requirement was never real: `>=26` was what CI happened
+to run, which proves Poveste works *on* 26, not that it *needs* it.
 
 ### Package managers
 

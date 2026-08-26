@@ -13,6 +13,7 @@
     "type": "git",
     "directory": "packages/poveste-app"
   },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
   "keywords": [
     "poveste",
     "ui"
@@ -32,6 +33,9 @@
     "dist",
     "src"
   ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "pnpm run icons && rimraf dist && vite build && pnpm run build:css && node ./scripts/copy.mjs",
     "build:css": "postcss src/app/style/main.pcss -o ./dist/style.css",

@@ -13,6 +13,7 @@
     "type": "git",
     "directory": "packages/poveste-plugin-nuxt"
   },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
   "keywords": [
     "poveste",
     "histoire",
@@ -43,6 +44,9 @@
     "dist",
     "runtime"
   ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "rimraf dist && tsc -d",
     "watch": "tsc -d -w --sourceMap",
