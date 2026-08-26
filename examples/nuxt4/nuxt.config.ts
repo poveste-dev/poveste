@@ -19,11 +19,6 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
-    // See the vue3 example: pre-bundle the story's runtime-imported lottie-web so
-    // navigating to it doesn't force a full reload.
-    optimizeDeps: {
-      include: ['lottie-web'],
-    },
   },
 
   runtimeConfig: {

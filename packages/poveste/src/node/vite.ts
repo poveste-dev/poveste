@@ -15,6 +15,7 @@ import {
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { createMarkdownPlugins } from './markdown.js'
+import { optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
 import {
   chromeCssScopePlugin,
@@ -157,6 +158,9 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           entries: [
             `${APP_PATH}/bundle-main.js`,
             `${APP_PATH}/bundle-sandbox.js`,
+            // Without these the scanner never sees a story or the setup file, and
+            // their deps cost a full reload when they turn up later (#282).
+            ...optimizeEntries(ctx.config, ctx.root, isServer),
           ],
           include: optimizeDeps([
             'shiki',

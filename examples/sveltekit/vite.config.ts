@@ -6,13 +6,6 @@ import { getDefaultConfig } from 'poveste'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  // Pre-bundle lottie-web at startup — it's only reached via a runtime dynamic
-  // import in a story, so Vite would otherwise re-optimize and force a full
-  // reload on first navigation to it.
-  optimizeDeps: {
-    include: ['lottie-web'],
-  },
-
   plugins: [
     sveltekit(),
   ],
