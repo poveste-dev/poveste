@@ -66,10 +66,30 @@ jobs:
       - name: Publish to npm
         run: pnpm -r publish --provenance --access public --no-git-checks
 
+      # `pnpm -r publish` logged "✅ Published" for a package the registry never
+      # recorded, and the run went green — v0.7.0 shipped without
+      # @poveste/plugin-vue (#327). Everything above this line inspects tarballs
+      # we are about to send; this asks npm what arrived.
+      #
+      # These three run even after one of them fails, so a single run names every
+      # problem: a partial publish and a missing GitHub release would otherwise
+      # take two cycles to discover, one per re-run.
+      - name: Verify every package reached npm
+        if: ${{ !cancelled() }}
+        run: pnpm run test:published
+
+      # The only check that installs the published set the way a user does, so
+      # it is meaningless before the publish and meaningful right after. On a
+      # cron it was up to 17.7h behind a broken release (#298).
+      - name: Verify the published set installs
+        if: ${{ !cancelled() }}
+        run: pnpm run test:starters:release
+
       # changelogithub stays non-fatal so a GitHub API blip cannot block an
       # otherwise good publish — but the run must not go green without the
       # release that explains it. Last, so it reports rather than gates (#186).
       - name: Verify the GitHub release was created
+        if: ${{ !cancelled() }}
         run: |
           if ! gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName; then
             echo "::error::Published $GITHUB_REF_NAME to npm, but no GitHub release exists for it."
