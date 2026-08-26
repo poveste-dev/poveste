@@ -9,6 +9,73 @@ kept verbatim as the history poveste forked from. Its version numbers are higher
 poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
 whole.
 
+## v0.7.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.6.1...v0.7.0)
+
+**The first release that checks what it publishes.**
+
+Every prior version shipped at least one defect that no test could see, because lint, build, unit
+tests and the smoke test all work from source or a workspace install — never from the tarball npm
+actually hands a consumer. Two of this release's changes are the gates that close that gap, and
+three more are defects those gates found.
+
+### 🚨 Breaking Changes
+
+- **The packages no longer ship `src/`.** Ten of twelve had no `files` field, so their publish
+  surface was defined by omission: source, tsconfigs and build configs went out on every install.
+  Each package now declares exactly what it publishes ([#300](https://github.com/poveste-dev/poveste/issues/300)).
+  Nothing documented changes — but a deep import of an undocumented path such as
+  `poveste/src/node/...` will now fail. Use the package's declared entrypoints.
+- **`@poveste/shared/client-node` is gone** ([#302](https://github.com/poveste-dev/poveste/issues/302)).
+  It pointed at a file that has never existed in this project — inherited verbatim from
+  `@histoire/shared`, which still ships the same dead entry. It resolved to nothing in all four
+  module modes, so nothing can have depended on it.
+
+### 🚀 Enhancements
+
+- **A failing Nuxt client plugin no longer takes the story with it**
+  ([#277](https://github.com/poveste-dev/poveste/issues/277)). Nuxt's `applyPlugins` aborts every
+  plugin after the first throw and sets `payload.error`, so one plugin assuming a full runtime
+  rendered the whole iframe as a 500. Each plugin's setup now runs inside a guard: one that throws
+  is logged and skipped, the rest run, the story renders. `excludePlugins` remains the explicit
+  override for a plugin that must not run at all.
+
+### 🩹 Fixes
+
+- **Two advertised entrypoints now resolve** ([#302](https://github.com/poveste-dev/poveste/issues/302)).
+  Beyond the dead entry above, `@poveste/plugin-vue` shipped ten extensionless ESM specifiers in its
+  reachable type graph, so the published declarations misrepresented the JavaScript under `node16`
+  resolution.
+- **The New Issue page no longer links histoire's Discord**
+  ([#151](https://github.com/poveste-dev/poveste/issues/151)).
+
+### ⚡ Performance
+
+- **Variant-grid retargets are deferred during fast scroll**
+  ([#283](https://github.com/poveste-dev/poveste/issues/283)). Stated plainly: the benchmark suite
+  measures grid *fill* and never scrolls, so it cannot yet demonstrate this change either way — runs
+  on both sides of the commit are flat within noise. A scroll benchmark is tracked in
+  [#319](https://github.com/poveste-dev/poveste/issues/319), and its acceptance criterion is that it
+  separates the two builds. Until it exists, treat this as a change and not a measured improvement.
+
+### 🏡 Chore
+
+- **A package the registry cannot bootstrap now fails the release**
+  ([#286](https://github.com/poveste-dev/poveste/issues/286)) — plus checks for unrewritten
+  `workspace:` protocols and unresolvable `exports` entries, all before a tag exists. This is the
+  gate that would have caught 0.6.0, where a brand-new package could not bootstrap npm Trusted
+  Publishing and `pnpm -r publish` aborted mid-way.
+- **Four user-reachable advisories cleared** ([#315](https://github.com/poveste-dev/poveste/issues/315))
+  by refreshing a stale lockfile pin. No manifest changed: the declared range already permitted the
+  patched version.
+- **The packages have keywords and the docs site has a sitemap**
+  ([#288](https://github.com/poveste-dev/poveste/issues/288)).
+
+### Upgrading
+
+Nothing to do, unless you deep-import a package's internals — see Breaking Changes above.
+
 ## v0.6.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.6.0...v0.6.1)
