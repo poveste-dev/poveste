@@ -116,10 +116,14 @@ export async function build(ctx: Context) {
     build: {
       lib: false,
       rollupOptions: {
-        input: [
-          join(APP_PATH, 'bundle-main.js'),
-          join(APP_PATH, 'bundle-sandbox.js'),
-        ],
+        // Named, not an array. With an array the bundler derives `[name]` from the
+        // path, and `APP_PATH` is absolute — so any framework whose `entryFileNames`
+        // refuses a path-shaped `[name]` fails the build outright (#369, and
+        // histoire-dev/histoire#802 before it). The keys make `[name]` the key.
+        input: {
+          'bundle-main': join(APP_PATH, 'bundle-main.js'),
+          'bundle-sandbox': join(APP_PATH, 'bundle-sandbox.js'),
+        },
         plugins: [
           {
             name: 'poveste-build-rollup-options-override',
@@ -203,6 +207,16 @@ export async function build(ctx: Context) {
             return 'vendor'
           }
         },
+      }
+
+      // A framework that declares Vite environments gives each one its own
+      // `build.outDir`, and that wins over the top-level value for the environment's
+      // output — so the book was written to the framework's directory (Vike: `dist/client`)
+      // while poveste kept looking in `outDir` (#369). Only the client environment
+      // builds the book. Where no framework declared environments there is nothing to
+      // override, and where one did this puts the book back where poveste reads it.
+      if (config.environments?.client?.build) {
+        config.environments.client.build.outDir = ctx.config.outDir
       }
 
       // Force vite build options
