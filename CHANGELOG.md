@@ -1,13 +1,45 @@
 # Changelog
 
-Poveste's own releases are below, newest first. Each one is also published as a
-[GitHub release](https://github.com/poveste-dev/poveste/releases), which is generated from the
-commit log at tag time and is the canonical source if the two ever disagree.
+Poveste's own releases are below, newest first. Each one is also published as a [GitHub release](https://github.com/poveste-dev/poveste/releases), which is generated from the commit log at tag time and is the canonical source if the two ever disagree.
 
-Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog),
-kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's —
-poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the
-whole.
+Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
+
+## v0.7.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.6.1...v0.7.0)
+
+**The first release that checks what it publishes.**
+
+Every prior version shipped at least one defect that no test could see, because lint, build, unit tests and the smoke test all work from source or a workspace install — never from the tarball npm actually hands a consumer. Two of this release's changes are the gates that close that gap, and three more are defects those gates found.
+
+### 🚨 Breaking Changes
+
+- **The packages no longer ship `src/`.** Ten of twelve had no `files` field, so their publish surface was defined by omission: source, tsconfigs and build configs went out on every install. Each package now declares exactly what it publishes ([#300](https://github.com/poveste-dev/poveste/issues/300)). Nothing documented changes — but a deep import of an undocumented path such as `poveste/src/node/...` will now fail. Use the package's declared entrypoints.
+- **`@poveste/shared/client-node` is gone** ([#302](https://github.com/poveste-dev/poveste/issues/302)). It pointed at a file that has never existed in this project — inherited verbatim from `@histoire/shared`, which still ships the same dead entry. It resolved to nothing in all four module modes, so nothing can have depended on it.
+
+### 🚀 Enhancements
+
+- **Poveste now installs on Node 22 and 24** ([#303](https://github.com/poveste-dev/poveste/issues/303)). The advertised floor was `>=26`, which was never declared to npm and was never measured — it was what CI happened to run. Packing the real tarballs and building a book with npm succeeds on 22.22.2, 24.13.0 and 26.7.0 alike. All eleven packages now declare `engines: "^22.22.2 || ^24.15.0 || >=26.0.0"`, which is the range `jsdom` binds us to as shipped runtime code, and a CI job builds a book on the lowest of them. Node 20 is untested and EOL since April 2026.
+- **A failing Nuxt client plugin no longer takes the story with it** ([#277](https://github.com/poveste-dev/poveste/issues/277)). Nuxt's `applyPlugins` aborts every plugin after the first throw and sets `payload.error`, so one plugin assuming a full runtime rendered the whole iframe as a 500. Each plugin's setup now runs inside a guard: one that throws is logged and skipped, the rest run, the story renders. `excludePlugins` remains the explicit override for a plugin that must not run at all.
+
+### 🩹 Fixes
+
+- **Two advertised entrypoints now resolve** ([#302](https://github.com/poveste-dev/poveste/issues/302)). Beyond the dead entry above, `@poveste/plugin-vue` shipped ten extensionless ESM specifiers in its reachable type graph, so the published declarations misrepresented the JavaScript under `node16` resolution.
+- **The New Issue page no longer links histoire's Discord** ([#151](https://github.com/poveste-dev/poveste/issues/151)).
+
+### ⚡ Performance
+
+- **Variant-grid retargets are deferred during fast scroll** ([#283](https://github.com/poveste-dev/poveste/issues/283)). Stated plainly: the benchmark suite measures grid *fill* and never scrolls, so it cannot yet demonstrate this change either way — runs on both sides of the commit are flat within noise. A scroll benchmark is tracked in [#319](https://github.com/poveste-dev/poveste/issues/319), and its acceptance criterion is that it separates the two builds. Until it exists, treat this as a change and not a measured improvement.
+
+### 🏡 Chore
+
+- **A package the registry cannot bootstrap now fails the release** ([#286](https://github.com/poveste-dev/poveste/issues/286)) — plus checks for unrewritten `workspace:` protocols and unresolvable `exports` entries, all before a tag exists. This is the gate that would have caught 0.6.0, where a brand-new package could not bootstrap npm Trusted Publishing and `pnpm -r publish` aborted mid-way.
+- **Four user-reachable advisories cleared** ([#315](https://github.com/poveste-dev/poveste/issues/315)) by refreshing a stale lockfile pin. No manifest changed: the declared range already permitted the patched version.
+- **The packages have keywords and the docs site has a sitemap** ([#288](https://github.com/poveste-dev/poveste/issues/288)).
+
+### Upgrading
+
+Nothing to do, unless you deep-import a package's internals — see Breaking Changes above.
 
 ## v0.6.1
 
@@ -15,48 +47,32 @@ whole.
 
 **A republish of 0.6.0. No code changed.**
 
-Three of 0.6.0's packages cannot be installed. `@poveste/plugin-vue`, `@poveste/plugin-nuxt` and
-`@poveste/plugin-tailwind` were published outside the release workflow, and the tool used does not
-rewrite pnpm's `workspace:` protocol the way `pnpm publish` does — so those three shipped it
-literally in their manifests:
+Three of 0.6.0's packages cannot be installed. `@poveste/plugin-vue`, `@poveste/plugin-nuxt` and `@poveste/plugin-tailwind` were published outside the release workflow, and the tool used does not rewrite pnpm's `workspace:` protocol the way `pnpm publish` does — so those three shipped it literally in their manifests:
 
 ```
 npm error code EUNSUPPORTEDPROTOCOL
 npm error Unsupported URL Type "workspace:": workspace:^
 ```
 
-Any install of them fails. The other eight 0.6.0 packages, published by the release workflow, are
-unaffected — but because the set is versioned in lockstep, all eleven are republished here so a
-0.6.1 install resolves as one consistent set.
+Any install of them fails. The other eight 0.6.0 packages, published by the release workflow, are unaffected — but because the set is versioned in lockstep, all eleven are republished here so a 0.6.1 install resolves as one consistent set.
 
-The three broken versions are deprecated on npm rather than unpublished, so anyone pinned to them
-gets told why.
+The three broken versions are deprecated on npm rather than unpublished, so anyone pinned to them gets told why.
 
-**If you are on 0.6.0 and it installed, nothing changed for you.** If it did not install, this is
-the fix — no migration, no config change.
+**If you are on 0.6.0 and it installed, nothing changed for you.** If it did not install, this is the fix — no migration, no config change.
 
-Tracked in [#286](https://github.com/poveste-dev/poveste/issues/286), along with the release-path
-check that should have caught it before publishing: pack every publishable package and refuse to
-release when a manifest still contains `workspace:`.
+Tracked in [#286](https://github.com/poveste-dev/poveste/issues/286), along with the release-path check that should have caught it before publishing: pack every publishable package and refuse to release when a manifest still contains `workspace:`.
 
 ## v0.6.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.3...v0.6.0)
 
-The variant grid stops falling over. A 1000-variant grid previously mounted every cell it scrolled
-past and never released one; it now keeps a bounded set alive, reuses sandbox realms instead of
-booting one per cell, and sizes each cell from the story inside it. Alongside that: story state no
-longer loses an edit when both sides change at once, `poveste build` ships a production bundle, and
-the chrome no longer fetches its font and icons from the network at boot.
+The variant grid stops falling over. A 1000-variant grid previously mounted every cell it scrolled past and never released one; it now keeps a bounded set alive, reuses sandbox realms instead of booting one per cell, and sizes each cell from the story inside it. Alongside that: story state no longer loses an edit when both sides change at once, `poveste build` ships a production bundle, and the chrome no longer fetches its font and icons from the network at boot.
 
-Every framework now runs the same conformance suite, so a regression in the shared app chrome can no
-longer ship because it only manifested under Svelte or Nuxt.
+Every framework now runs the same conformance suite, so a regression in the shared app chrome can no longer ship because it only manifested under Svelte or Nuxt.
 
 ### 🚨 Breaking Changes
 
-- **The Tailwind design-system story moved out of core into a plugin** ([#236](https://github.com/poveste-dev/poveste/pull/236)). It used to
-  appear on its own in any book with a Tailwind config. If you relied on that, add the plugin
-  explicitly:
+- **The Tailwind design-system story moved out of core into a plugin** ([#236](https://github.com/poveste-dev/poveste/pull/236)). It used to appear on its own in any book with a Tailwind config. If you relied on that, add the plugin explicitly:
 
   ```ts
   import { HstTailwind } from '@poveste/plugin-tailwind'
@@ -66,55 +82,33 @@ longer ship because it only manifested under Svelte or Nuxt.
   })
   ```
 
-  Books that never used it lose nothing, and no longer pay to detect it.
+Books that never used it lose nothing, and no longer pay to detect it.
 
 ### 🚀 Enhancements
 
-- **Sandbox realms are pooled and retargeted** rather than booted per cell, which is what makes a
-  large grid survivable ([#250](https://github.com/poveste-dev/poveste/pull/250))
+- **Sandbox realms are pooled and retargeted** rather than booted per cell, which is what makes a large grid survivable ([#250](https://github.com/poveste-dev/poveste/pull/250))
 - **`poveste build` emits a production client bundle** ([#251](https://github.com/poveste-dev/poveste/pull/251))
-- **The chrome ships its font and icons** instead of fetching them at boot, so a book renders
-  correctly offline and behind a proxy ([#247](https://github.com/poveste-dev/poveste/pull/247), [#254](https://github.com/poveste-dev/poveste/pull/254))
+- **The chrome ships its font and icons** instead of fetching them at boot, so a book renders correctly offline and behind a proxy ([#247](https://github.com/poveste-dev/poveste/pull/247), [#254](https://github.com/poveste-dev/poveste/pull/254))
 - **Svelte keeps non-rendered variants out of the sandbox's work** ([#248](https://github.com/poveste-dev/poveste/pull/248))
 - **Story collection is exercised on Windows in CI** ([#273](https://github.com/poveste-dev/poveste/pull/273))
 
 ### 🩹 Fixes
 
-- **The variant grid windows its cells** — a bounded set stays mounted, the scroll extent is finite,
-  and the highlighter no longer rides along into every sandbox ([#196](https://github.com/poveste-dev/poveste/pull/196))
-- **Grid cells size from their story rather than the row**, so a small component no longer occupies a
-  cell several times its height ([#199](https://github.com/poveste-dev/poveste/pull/199), [#259](https://github.com/poveste-dev/poveste/pull/259), [#267](https://github.com/poveste-dev/poveste/pull/267))
-- **A concurrent edit survives.** Both sides of a state sync mirrored their whole state, so when both
-  changed in the same tick the second writer carried its stale copy of the other's key and wrote the
-  edit back out from under it — the change was not delayed, it was gone. Each side now diffs against
-  the last agreed baseline and sends only what it changed, which also removes the `syncing` flag that
-  had to be right about whether an echo was coming ([#226](https://github.com/poveste-dev/poveste/pull/226), [#227](https://github.com/poveste-dev/poveste/pull/227))
-- **Nuxt i18n no longer 500s every story iframe.** Nuxt's client plugins that assume a full runtime
-  are dropped inside the sandbox ([#276](https://github.com/poveste-dev/poveste/pull/276))
-- **The Nuxt HMR socket derives its port from `--port`**, so concurrent dev servers stop colliding
-  ([#272](https://github.com/poveste-dev/poveste/pull/272))
-- **`storyIgnored` adds to the defaults instead of replacing them**, which had made `poveste build`
-  crash with `EMFILE` ([#246](https://github.com/poveste-dev/poveste/pull/246), [#243](https://github.com/poveste-dev/poveste/pull/243))
-- **Only the canonical setup hook is emitted**, so a Nuxt story stops warning that the setup file is
-  misconfigured ([#271](https://github.com/poveste-dev/poveste/pull/271))
+- **The variant grid windows its cells** — a bounded set stays mounted, the scroll extent is finite, and the highlighter no longer rides along into every sandbox ([#196](https://github.com/poveste-dev/poveste/pull/196))
+- **Grid cells size from their story rather than the row**, so a small component no longer occupies a cell several times its height ([#199](https://github.com/poveste-dev/poveste/pull/199), [#259](https://github.com/poveste-dev/poveste/pull/259), [#267](https://github.com/poveste-dev/poveste/pull/267))
+- **A concurrent edit survives.** Both sides of a state sync mirrored their whole state, so when both changed in the same tick the second writer carried its stale copy of the other's key and wrote the edit back out from under it — the change was not delayed, it was gone. Each side now diffs against the last agreed baseline and sends only what it changed, which also removes the `syncing` flag that had to be right about whether an echo was coming ([#226](https://github.com/poveste-dev/poveste/pull/226), [#227](https://github.com/poveste-dev/poveste/pull/227))
+- **Nuxt i18n no longer 500s every story iframe.** Nuxt's client plugins that assume a full runtime are dropped inside the sandbox ([#276](https://github.com/poveste-dev/poveste/pull/276))
+- **The Nuxt HMR socket derives its port from `--port`**, so concurrent dev servers stop colliding ([#272](https://github.com/poveste-dev/poveste/pull/272))
+- **`storyIgnored` adds to the defaults instead of replacing them**, which had made `poveste build` crash with `EMFILE` ([#246](https://github.com/poveste-dev/poveste/pull/246), [#243](https://github.com/poveste-dev/poveste/pull/243))
+- **Only the canonical setup hook is emitted**, so a Nuxt story stops warning that the setup file is misconfigured ([#271](https://github.com/poveste-dev/poveste/pull/271))
 - **Enter no longer navigates to a stale search result** while the modal is closed ([#268](https://github.com/poveste-dev/poveste/pull/268))
-- Smaller: a bare sandbox waits for the story list in dev ([#242](https://github.com/poveste-dev/poveste/pull/242)), the presets panel stops
-  logging a failed clone on mount ([#262](https://github.com/poveste-dev/poveste/pull/262)), only the variant a realm exists to serve is
-  mounted ([#241](https://github.com/poveste-dev/poveste/pull/241)), the auxiliary Nuxt build stops once its Vite config resolves
-  ([#249](https://github.com/poveste-dev/poveste/pull/249)), sandbox handover holes closed ([#253](https://github.com/poveste-dev/poveste/pull/253)), vite runtime helpers pinned out of
-  the highlighter chunk ([#239](https://github.com/poveste-dev/poveste/pull/239)), and `lottie-web` is pre-bundled so navigating does not force
-  a reload ([#280](https://github.com/poveste-dev/poveste/pull/280))
+- Smaller: a bare sandbox waits for the story list in dev ([#242](https://github.com/poveste-dev/poveste/pull/242)), the presets panel stops logging a failed clone on mount ([#262](https://github.com/poveste-dev/poveste/pull/262)), only the variant a realm exists to serve is mounted ([#241](https://github.com/poveste-dev/poveste/pull/241)), the auxiliary Nuxt build stops once its Vite config resolves ([#249](https://github.com/poveste-dev/poveste/pull/249)), sandbox handover holes closed ([#253](https://github.com/poveste-dev/poveste/pull/253)), vite runtime helpers pinned out of the highlighter chunk ([#239](https://github.com/poveste-dev/poveste/pull/239)), and `lottie-web` is pre-bundled so navigating does not force a reload ([#280](https://github.com/poveste-dev/poveste/pull/280))
 
 ### 🏡 Chore
 
-- **The example e2e runs from one root config with a project per framework**, and the shared chrome
-  specs — controls, events, grids, toolbar, iframe shortcuts — moved into a conformance suite that
-  every framework runs ([#213](https://github.com/poveste-dev/poveste/pull/213), [#214](https://github.com/poveste-dev/poveste/pull/214), [#215](https://github.com/poveste-dev/poveste/pull/215), [#216](https://github.com/poveste-dev/poveste/pull/216),
-  [#217](https://github.com/poveste-dev/poveste/pull/217), [#218](https://github.com/poveste-dev/poveste/pull/218), [#228](https://github.com/poveste-dev/poveste/pull/228), [#230](https://github.com/poveste-dev/poveste/pull/230))
-- **A flaky test is annotated rather than hidden by a retry**, and its trace is kept
-  ([#237](https://github.com/poveste-dev/poveste/pull/237), [#238](https://github.com/poveste-dev/poveste/pull/238))
-- **The publish is gated on the tagged commit** and fails loudly when the release is missing
-  ([#256](https://github.com/poveste-dev/poveste/pull/256))
+- **The example e2e runs from one root config with a project per framework**, and the shared chrome specs — controls, events, grids, toolbar, iframe shortcuts — moved into a conformance suite that every framework runs ([#213](https://github.com/poveste-dev/poveste/pull/213), [#214](https://github.com/poveste-dev/poveste/pull/214), [#215](https://github.com/poveste-dev/poveste/pull/215), [#216](https://github.com/poveste-dev/poveste/pull/216), [#217](https://github.com/poveste-dev/poveste/pull/217), [#218](https://github.com/poveste-dev/poveste/pull/218), [#228](https://github.com/poveste-dev/poveste/pull/228), [#230](https://github.com/poveste-dev/poveste/pull/230))
+- **A flaky test is annotated rather than hidden by a retry**, and its trace is kept ([#237](https://github.com/poveste-dev/poveste/pull/237), [#238](https://github.com/poveste-dev/poveste/pull/238))
+- **The publish is gated on the tagged commit** and fails loudly when the release is missing ([#256](https://github.com/poveste-dev/poveste/pull/256))
 - A grid-fill benchmark harness behind `POVESTE_BENCH` ([#245](https://github.com/poveste-dev/poveste/pull/245))
 
 ### 📖 Documentation
@@ -125,59 +119,27 @@ longer ship because it only manifested under Svelte or Nuxt.
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.5.2...v0.5.3)
 
-Fixes to how Poveste's chrome and a consumer's own styles coexist, a Nuxt story build that no
-longer disturbs the host application, plus the dev server finally getting test coverage.
+Fixes to how Poveste's chrome and a consumer's own styles coexist, a Nuxt story build that no longer disturbs the host application, plus the dev server finally getting test coverage.
 
 ### 🩹 Fixes
 
-- Apply the same dark classes on every render path. The grid emitted `theme.darkClass` alone
-  while the inline preview and the sandbox iframe also emitted the deprecated
-  `sandboxDarkClass` — both default to `dark`, so a book configuring neither never noticed, and a
-  book setting `theme.darkClass` got its CSS working in two views and silently not in the third.
-  `sandboxDarkClass` is now `@deprecated` in favour of `theme.darkClass`.
+- Apply the same dark classes on every render path. The grid emitted `theme.darkClass` alone while the inline preview and the sandbox iframe also emitted the deprecated `sandboxDarkClass` — both default to `dark`, so a book configuring neither never noticed, and a book setting `theme.darkClass` got its CSS working in two views and silently not in the third. `sandboxDarkClass` is now `@deprecated` in favour of `theme.darkClass`.
 
-  **Behaviour change worth checking if you set a custom `theme.darkClass`.** `sandboxDarkClass`
-  no longer defaults to `dark`, so it is applied only when you set it yourself. A book with a
-  custom `theme.darkClass` used to receive `dark` as well on the inline and sandbox paths, and
-  now receives only its own class. If any story CSS keys on `.dark` — Tailwind's `dark:` variant
-  does by default — set `sandboxDarkClass: 'dark'` explicitly, or point the CSS at your own class
-  ([#202](https://github.com/poveste-dev/poveste/pull/202))
-- Honour an explicitly requested `--port`, and give each example its own. Four examples previewed
-  on 4567 with `reuseExistingServer` enabled, so a second suite attached to the first one's book
-  and failed as a confident, wrong regression
-  ([#205](https://github.com/poveste-dev/poveste/pull/205))
-- Let the sandbox ask for its preview settings instead of being pushed them. A push aimed at a
-  document that is going away is dropped with no error, no ack and no retry, so delivery rested
-  entirely on the app observing every document swap
-  ([#206](https://github.com/poveste-dev/poveste/pull/206))
-- Generate the Tailwind and Pinceau design-system stories on dev start. Neither appeared until
-  its own watcher fired, because nothing called `generate()` before the watcher was installed
-  ([#204](https://github.com/poveste-dev/poveste/pull/204))
-- Build the auxiliary Nuxt instance into `.nuxt/poveste` rather than the host application's
-  `.nuxt`. Rendering stories regenerated the app's own declarations and left Poveste's in their
-  place, so a later type-aware ESLint or `vue-tsc` run read the wrong ones — the same commit
-  passed or failed lint depending on whether `nuxt prepare` or `poveste build` ran last, with no
-  warning that the type environment had been replaced. `process.env.POVESTE` is now set alongside
-  `HISTOIRE`, so a consumer branching on it has a correctly-named variable
-  ([#224](https://github.com/poveste-dev/poveste/pull/224),
-  [#223](https://github.com/poveste-dev/poveste/issues/223))
+**Behaviour change worth checking if you set a custom `theme.darkClass`.** `sandboxDarkClass` no longer defaults to `dark`, so it is applied only when you set it yourself. A book with a custom `theme.darkClass` used to receive `dark` as well on the inline and sandbox paths, and now receives only its own class. If any story CSS keys on `.dark` — Tailwind's `dark:` variant does by default — set `sandboxDarkClass: 'dark'` explicitly, or point the CSS at your own class ([#202](https://github.com/poveste-dev/poveste/pull/202))
+- Honour an explicitly requested `--port`, and give each example its own. Four examples previewed on 4567 with `reuseExistingServer` enabled, so a second suite attached to the first one's book and failed as a confident, wrong regression ([#205](https://github.com/poveste-dev/poveste/pull/205))
+- Let the sandbox ask for its preview settings instead of being pushed them. A push aimed at a document that is going away is dropped with no error, no ack and no retry, so delivery rested entirely on the app observing every document swap ([#206](https://github.com/poveste-dev/poveste/pull/206))
+- Generate the Tailwind and Pinceau design-system stories on dev start. Neither appeared until its own watcher fired, because nothing called `generate()` before the watcher was installed ([#204](https://github.com/poveste-dev/poveste/pull/204))
+- Build the auxiliary Nuxt instance into `.nuxt/poveste` rather than the host application's `.nuxt`. Rendering stories regenerated the app's own declarations and left Poveste's in their place, so a later type-aware ESLint or `vue-tsc` run read the wrong ones — the same commit passed or failed lint depending on whether `nuxt prepare` or `poveste build` ran last, with no warning that the type environment had been replaced. `process.env.POVESTE` is now set alongside `HISTOIRE`, so a consumer branching on it has a correctly-named variable ([#224](https://github.com/poveste-dev/poveste/pull/224), [#223](https://github.com/poveste-dev/poveste/issues/223))
 
 ### 🏡 Chore
 
-- Scope workflow `push` triggers to `main`, so a PR no longer runs the full matrix twice
-  ([#208](https://github.com/poveste-dev/poveste/pull/208))
-- Close `need repro` issues after 14 days, which is what the bug template already promised
-  ([#201](https://github.com/poveste-dev/poveste/pull/201))
-- Give the example e2e a root Playwright config with one project per example, and run the
-  isolation specs against `poveste dev` as well as a built book — `poveste dev` previously had no
-  automated coverage at all ([#211](https://github.com/poveste-dev/poveste/pull/211),
-  [#210](https://github.com/poveste-dev/poveste/pull/210),
-  [#209](https://github.com/poveste-dev/poveste/pull/209))
+- Scope workflow `push` triggers to `main`, so a PR no longer runs the full matrix twice ([#208](https://github.com/poveste-dev/poveste/pull/208))
+- Close `need repro` issues after 14 days, which is what the bug template already promised ([#201](https://github.com/poveste-dev/poveste/pull/201))
+- Give the example e2e a root Playwright config with one project per example, and run the isolation specs against `poveste dev` as well as a built book — `poveste dev` previously had no automated coverage at all ([#211](https://github.com/poveste-dev/poveste/pull/211), [#210](https://github.com/poveste-dev/poveste/pull/210), [#209](https://github.com/poveste-dev/poveste/pull/209))
 
 ### 📖 Documentation
 
-- Warn that a negated closing keyword still closes the issue — GitHub matches `close #N` and
-  ignores the words around it ([#207](https://github.com/poveste-dev/poveste/pull/207))
+- Warn that a negated closing keyword still closes the issue — GitHub matches `close #N` and ignores the words around it ([#207](https://github.com/poveste-dev/poveste/pull/207))
 
 ## v0.5.2
 
@@ -187,9 +149,7 @@ A single fix, backfilled — this section was missed at release time.
 
 ### 🩹 Fixes
 
-- Stop consumer CSS and Poveste's chrome overriding each other. A consumer's page-level rules
-  repainted the controls panel rather than only their own story, and Poveste's reset reached the
-  other way ([#200](https://github.com/poveste-dev/poveste/pull/200))
+- Stop consumer CSS and Poveste's chrome overriding each other. A consumer's page-level rules repainted the controls panel rather than only their own story, and Poveste's reset reached the other way ([#200](https://github.com/poveste-dev/poveste/pull/200))
 
 ## v0.5.1
 
@@ -199,28 +159,16 @@ Documentation only. Nothing in any published package changed.
 
 ### 📖 Documentation
 
-- Give Svelte an App setup guide page. It documents what the plugin does rather than mirroring
-  the Vue page: every accepted hook name runs, so exporting both `setupSvelte4` and
-  `setupSvelte5` runs your setup twice; `app` is the mounted component instance rather than an
-  application object, so there is no `use`/`provide` to call; and a `setupApp` on `<Hst.Story>`
-  does not reach explicit `<Hst.Variant>` children the way Vue's does
-  ([#189](https://github.com/poveste-dev/poveste/pull/189))
-- Add a SvelteKit "Try it live" starter, the one supported target with a required CI job and no
-  starter, along with the demo boxes that had nowhere to point
-  ([#193](https://github.com/poveste-dev/poveste/pull/193))
+- Give Svelte an App setup guide page. It documents what the plugin does rather than mirroring the Vue page: every accepted hook name runs, so exporting both `setupSvelte4` and `setupSvelte5` runs your setup twice; `app` is the mounted component instance rather than an application object, so there is no `use`/`provide` to call; and a `setupApp` on `<Hst.Story>` does not reach explicit `<Hst.Variant>` children the way Vue's does ([#189](https://github.com/poveste-dev/poveste/pull/189))
+- Add a SvelteKit "Try it live" starter, the one supported target with a required CI job and no starter, along with the demo boxes that had nowhere to point ([#193](https://github.com/poveste-dev/poveste/pull/193))
 
 ## v0.5.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.4.0...v0.5.0)
 
-**Svelte story state moves onto `initState`.** This is a breaking change for Svelte, and the
-only one: Vue and Nuxt are untouched.
+**Svelte story state moves onto `initState`.** This is a breaking change for Svelte, and the only one: Vue and Nuxt are untouched.
 
-Svelte 5 removed `$capture_state` / `$inject_state`, the API histoire used to read a story's
-state out of one component instance and push it into another. Poveste mounts each story once per
-slot — once to fill the controls panel, once to render the preview — so without that bridge a
-plain `let` in a story exists twice, and a control writes to the copy your component is not
-reading. Controls appeared to work and changed nothing.
+Svelte 5 removed `$capture_state` / `$inject_state`, the API histoire used to read a story's state out of one component instance and push it into another. Poveste mounts each story once per slot — once to fill the controls panel, once to render the preview — so without that bridge a plain `let` in a story exists twice, and a control writes to the copy your component is not reading. Controls appeared to work and changed nothing.
 
 Poveste now owns the state instead, which is also what lets it cross the sandbox iframe:
 
@@ -248,56 +196,38 @@ Poveste now owns the state instead, which is also what lets it cross the sandbox
 +</Hst.Story>
 ```
 
-A story that has controls but no `initState` logs an error naming itself and linking the
-migration guide, so the old shape fails loudly rather than silently.
+A story that has controls but no `initState` logs an error naming itself and linking the migration guide, so the old shape fails loudly rather than silently.
 
-The README's "drop-in successor" claim is now split accordingly: Vue and Nuxt migrate by swapping
-one dependency, Svelte needs this one change.
+The README's "drop-in successor" claim is now split accordingly: Vue and Nuxt migrate by swapping one dependency, Svelte needs this one change.
 
 ### 🚨 Breaking Changes
 
-- Own Svelte story state so controls can reach the story — state moves onto `initState` and is
-  read from the `children` / `controls` snippets
-  ([#172](https://github.com/poveste-dev/poveste/pull/172))
+- Own Svelte story state so controls can reach the story — state moves onto `initState` and is read from the `children` / `controls` snippets ([#172](https://github.com/poveste-dev/poveste/pull/172))
 
 ### 🩹 Fixes
 
-- Keep the `bind:` setter when wrapping a Svelte control. Svelte 5 passes bound props as
-  getter/setter accessors, and spreading them invoked the getter and dropped the setter, so a
-  control could never write back ([#147](https://github.com/poveste-dev/poveste/pull/147))
-- Retype the Svelte `Hst` surface off the deprecated `SvelteComponentTyped`
-  ([#145](https://github.com/poveste-dev/poveste/pull/145))
+- Keep the `bind:` setter when wrapping a Svelte control. Svelte 5 passes bound props as getter/setter accessors, and spreading them invoked the getter and dropped the setter, so a control could never write back ([#147](https://github.com/poveste-dev/poveste/pull/147))
+- Retype the Svelte `Hst` surface off the deprecated `SvelteComponentTyped` ([#145](https://github.com/poveste-dev/poveste/pull/145))
 
 ### 🏡 Chore
 
-- Type-check `examples/svelte5` in CI — the example that exercises the public `Hst` surface most
-  had no type-check at all ([#177](https://github.com/poveste-dev/poveste/pull/177))
-- Smoke-test the Svelte plugin before publishing. The release gate packed and installed only the
-  Vue plugin, while this release's headline was the Svelte rewrite
-  ([#178](https://github.com/poveste-dev/poveste/pull/178))
+- Type-check `examples/svelte5` in CI — the example that exercises the public `Hst` surface most had no type-check at all ([#177](https://github.com/poveste-dev/poveste/pull/177))
+- Smoke-test the Svelte plugin before publishing. The release gate packed and installed only the Vue plugin, while this release's headline was the Svelte rewrite ([#178](https://github.com/poveste-dev/poveste/pull/178))
 
 ### 📖 Documentation
 
-- Qualify the drop-in claim and document the Svelte state migration
-  ([#174](https://github.com/poveste-dev/poveste/pull/174))
-- Give every published package a real npm page. The `poveste` page told readers to install
-  histoire ([#185](https://github.com/poveste-dev/poveste/pull/185))
-- Correct the README version table, and assert it against the declared peer ranges in CI
-  ([#181](https://github.com/poveste-dev/poveste/pull/181))
-- Stop calling the Svelte guide "Svelte 3", and link SvelteKit from the nav and sidebar
-  ([#179](https://github.com/poveste-dev/poveste/pull/179))
-- Drop an unrenderable arrow that showed as a tofu box on every "Learn more" sidebar entry
-  ([#182](https://github.com/poveste-dev/poveste/pull/182))
-- Say when to edit the generated GitHub release body
-  ([#144](https://github.com/poveste-dev/poveste/pull/144))
+- Qualify the drop-in claim and document the Svelte state migration ([#174](https://github.com/poveste-dev/poveste/pull/174))
+- Give every published package a real npm page. The `poveste` page told readers to install histoire ([#185](https://github.com/poveste-dev/poveste/pull/185))
+- Correct the README version table, and assert it against the declared peer ranges in CI ([#181](https://github.com/poveste-dev/poveste/pull/181))
+- Stop calling the Svelte guide "Svelte 3", and link SvelteKit from the nav and sidebar ([#179](https://github.com/poveste-dev/poveste/pull/179))
+- Drop an unrenderable arrow that showed as a tofu box on every "Learn more" sidebar entry ([#182](https://github.com/poveste-dev/poveste/pull/182))
+- Say when to edit the generated GitHub release body ([#144](https://github.com/poveste-dev/poveste/pull/144))
 
 ## v0.4.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.3.3...v0.4.0)
 
-Vue setup hooks get unnumbered names. `setupVue3` is a name **you** write in your own setup
-file, which makes it public API — it could not be renamed after 1.0 without a major. Adding
-the new spelling now, as an alias, costs nothing; adding it later would cost a major.
+Vue setup hooks get unnumbered names. `setupVue3` is a name **you** write in your own setup file, which makes it public API — it could not be renamed after 1.0 without a major. Adding the new spelling now, as an alias, costs nothing; adding it later would cost a major.
 
 **Nothing to do today.** `setupVue3` and `defineSetupVue3` keep working for the whole of 0.x.
 
@@ -307,10 +237,7 @@ the new spelling now, as an alias, costs nothing; adding it later would cost a m
 
 ### 📢 Deprecations
 
-- `defineSetupVue3` is marked `@deprecated` in favour of `defineSetupVue`, and the `setupVue3`
-  hook name in favour of `setupVue`. Both spellings are supported for all of 0.x. **1.0 is the
-  only release allowed to drop the numbered pair**, so migrating before then is free and saves
-  a migration later.
+- `defineSetupVue3` is marked `@deprecated` in favour of `defineSetupVue`, and the `setupVue3` hook name in favour of `setupVue`. Both spellings are supported for all of 0.x. **1.0 is the only release allowed to drop the numbered pair**, so migrating before then is free and saves a migration later.
 
   ```diff
   -import { defineSetupVue3 } from '@poveste/plugin-vue'
@@ -322,38 +249,26 @@ the new spelling now, as an alias, costs nothing; adding it later would cost a m
    })
   ```
 
-  Export **one** of the two, not both. They are aliases for the same hook, so Poveste runs the
-  first it finds (`setupVue3`) and warns about the other rather than running your setup twice.
+Export **one** of the two, not both. They are aliases for the same hook, so Poveste runs the first it finds (`setupVue3`) and warns about the other rather than running your setup twice.
 
 ## v0.3.3
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.3.2...v0.3.3)
 
-`@poveste/plugin-svelte` advertised a Svelte range that could not be installed. Poveste requires
-Vite 8, the only `@sveltejs/vite-plugin-svelte` major peering Vite 8 is v7, and v7 requires
-`svelte@^5.46.4` — so Svelte `5.0`–`5.46.3` never worked, while the package declared `^5.0.0`.
-npm rejected those installs already, but the error named `@sveltejs/vite-plugin-svelte`, a package
-the user never chose, with nothing pointing back at the range poveste published.
+`@poveste/plugin-svelte` advertised a Svelte range that could not be installed. Poveste requires Vite 8, the only `@sveltejs/vite-plugin-svelte` major peering Vite 8 is v7, and v7 requires `svelte@^5.46.4` — so Svelte `5.0`–`5.46.3` never worked, while the package declared `^5.0.0`. npm rejected those installs already, but the error named `@sveltejs/vite-plugin-svelte`, a package the user never chose, with nothing pointing back at the range poveste published.
 
-No working configuration changes: only combinations that were already impossible are now refused
-honestly, and by the package responsible.
+No working configuration changes: only combinations that were already impossible are now refused honestly, and by the package responsible.
 
 ### 🩹 Fixes
 
-- Narrow the `svelte` peer range to `^5.46.4`, and declare the two constraints that were missing
-  entirely — `@sveltejs/vite-plugin-svelte@^7.0.0`, and `@sveltejs/kit@^2.53.0` as an *optional*
-  peer, since the same package serves plain Svelte ([#142](https://github.com/poveste-dev/poveste/pull/142))
+- Narrow the `svelte` peer range to `^5.46.4`, and declare the two constraints that were missing entirely — `@sveltejs/vite-plugin-svelte@^7.0.0`, and `@sveltejs/kit@^2.53.0` as an *optional* peer, since the same package serves plain Svelte ([#142](https://github.com/poveste-dev/poveste/pull/142))
 
 ### 📖 Documentation
 
-- Document SvelteKit properly: a guide section of its own, and a row in the supported-frameworks
-  table it had been missing from while a required CI job built, tested and type-checked it
-  ([#139](https://github.com/poveste-dev/poveste/pull/139))
-- Rename the framework URL segments — `/guide/svelte3/` documented Svelte 5 — to bare framework
-  names, with permanent 301s for the histoire-era paths ([#141](https://github.com/poveste-dev/poveste/pull/141))
+- Document SvelteKit properly: a guide section of its own, and a row in the supported-frameworks table it had been missing from while a required CI job built, tested and type-checked it ([#139](https://github.com/poveste-dev/poveste/pull/139))
+- Rename the framework URL segments — `/guide/svelte3/` documented Svelte 5 — to bare framework names, with permanent 301s for the histoire-era paths ([#141](https://github.com/poveste-dev/poveste/pull/141))
 - Drop the stale version numbers from the "Try it live" starter identifiers ([#136](https://github.com/poveste-dev/poveste/pull/136))
-- State what 1.0 promises and what it is waiting for, and that a major is declared rather than
-  derived from the commit log ([#134](https://github.com/poveste-dev/poveste/pull/134))
+- State what 1.0 promises and what it is waiting for, and that a major is declared rather than derived from the commit log ([#134](https://github.com/poveste-dev/poveste/pull/134))
 - State what picks a release number, and that milestones are not versions ([#133](https://github.com/poveste-dev/poveste/pull/133))
 - Add the Nuxt tile to the homepage framework chooser ([#130](https://github.com/poveste-dev/poveste/pull/130))
 - Explain that `@scope` stops matching, not inheritance ([#129](https://github.com/poveste-dev/poveste/pull/129))
@@ -367,10 +282,7 @@ honestly, and by the package responsible.
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.3.1...v0.3.2)
 
-Follow-ups to the root-selector rewrite in 0.3.1. A namespaced selector such as `*|body` was
-compiled to `*|:scope`, which is invalid CSS — a namespace prefix cannot qualify a pseudo-class —
-so the browser dropped the rule outright. It only occurred in a stylesheet that also contained a
-plain `html`, `body` or `:root` rule.
+Follow-ups to the root-selector rewrite in 0.3.1. A namespaced selector such as `*|body` was compiled to `*|:scope`, which is invalid CSS — a namespace prefix cannot qualify a pseudo-class — so the browser dropped the rule outright. It only occurred in a stylesheet that also contained a plain `html`, `body` or `:root` rule.
 
 ### 🩹 Fixes
 
@@ -389,10 +301,7 @@ plain `html`, `body` or `:root` rule.
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.3.0...v0.3.1)
 
-CSS you import from `poveste.setup.ts` is wrapped in `@scope`, which puts `html` and `body` above
-the scoping root. Only `:root` was being rewritten, so `body { font-size: 14px }` and anything like
-it went inert with no error and no warning. All three spellings now resolve to the story root. See
-[Styles & CSS isolation](https://poveste.dev/guide/css.html#root-selectors) for what runs.
+CSS you import from `poveste.setup.ts` is wrapped in `@scope`, which puts `html` and `body` above the scoping root. Only `:root` was being rewritten, so `body { font-size: 14px }` and anything like it went inert with no error and no warning. All three spellings now resolve to the story root. See [Styles & CSS isolation](https://poveste.dev/guide/css.html#root-selectors) for what runs.
 
 ### 🚀 Enhancements
 
@@ -415,12 +324,7 @@ it went inert with no error and no warning. All three spellings now resolve to t
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.2.1...v0.3.0)
 
-This release moves the supported floors: **Vite 8**, **Nuxt 4.5**, **Svelte 5**. Vite 8 is a hard
-floor rather than a preference — poveste's own build runs on Rolldown — and it is what sets the
-other two, since Nuxt only moved to Vite 8 in 4.5.0 and no `@sveltejs/vite-plugin-svelte` release
-pairs Svelte 4 with Vite 8. See the
-[supported versions](https://poveste.dev/guide/getting-started.html#supported-versions) table
-before upgrading.
+This release moves the supported floors: **Vite 8**, **Nuxt 4.5**, **Svelte 5**. Vite 8 is a hard floor rather than a preference — poveste's own build runs on Rolldown — and it is what sets the other two, since Nuxt only moved to Vite 8 in 4.5.0 and no `@sveltejs/vite-plugin-svelte` release pairs Svelte 4 with Vite 8. See the [supported versions](https://poveste.dev/guide/getting-started.html#supported-versions) table before upgrading.
 
 ### 🚨 Breaking Changes
 
@@ -529,11 +433,9 @@ before upgrading.
 
 ## v0.1.0
 
-First release of **poveste** — a community-maintained, drop-in successor to
-[histoire](https://github.com/histoire-dev/histoire) by Guillaume Chau.
+First release of **poveste** — a community-maintained, drop-in successor to [histoire](https://github.com/histoire-dev/histoire) by Guillaume Chau.
 
-This tag is the **changelog baseline**. Substantive changes (the full rebrand, compat shims, and
-output-path changes) land from v0.1.1 onward.
+This tag is the **changelog baseline**. Substantive changes (the full rebrand, compat shims, and output-path changes) land from v0.1.1 onward.
 
 - 📦 Published to npm as `poveste` and `@poveste/*` at `0.1.0`
 - 📖 Migrating an existing histoire project? See the [migration guide](https://poveste.dev/guide/migration-from-histoire).
