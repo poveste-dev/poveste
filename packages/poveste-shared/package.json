@@ -13,6 +13,7 @@
     "type": "git",
     "directory": "packages/poveste-shared"
   },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
   "keywords": [
     "poveste"
   ],
@@ -30,6 +31,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "rimraf dist && tsc",
     "watch": "tsc -w --sourceMap",

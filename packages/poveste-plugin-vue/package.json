@@ -13,6 +13,7 @@
     "type": "git",
     "directory": "packages/poveste-plugin-vue"
   },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
   "keywords": [
     "poveste",
     "histoire",
@@ -64,6 +65,9 @@
     "dist",
     "src"
   ],
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "rimraf dist && vite build && tsc -d -P tsconfig.build.json && pnpm run build:types",
     "build:types": "tsc --declaration --emitDeclarationOnly",

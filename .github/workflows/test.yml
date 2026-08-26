@@ -109,3 +109,39 @@ jobs:
       # and path handling this is here to prove.
       - name: Build a book
         run: pnpm --filter ./examples/vue3 run story:build
+
+  # The floor is a claim about the published tarballs, so it is proven the way a
+  # consumer meets it: build on the release toolchain, then install and build a
+  # real book on the minimum the manifests declare. Without this the floor is a
+  # sentence — `>=26` was asserted for exactly that reason and was never real (#303).
+  minimum-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Node floor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4.0.0
+
+      - name: Install node (release toolchain)
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      # The lowest version `engines.node` admits. Bump both together.
+      - name: Switch to the declared minimum
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+
+      - name: Smoke test on the minimum (pack + install + build)
+        run: |
+          node --version
+          pnpm run test:smoke
