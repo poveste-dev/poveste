@@ -14,9 +14,9 @@
     "directory": "packages/poveste-controls-stories"
   },
   "scripts": {
-    "story:dev": "histoire dev",
-    "story:build": "histoire build",
-    "story:preview": "histoire preview"
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview"
   },
   "dependencies": {
     "@poveste/controls": "workspace:*",

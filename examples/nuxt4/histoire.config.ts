@@ -1,3 +1,8 @@
+// Deliberately still `histoire.config.ts` while every other example uses the
+// canonical name: `configFileNames` resolves the histoire spelling as a fallback,
+// and this is the only place that promise is exercised end to end — nuxt4 is built
+// by `story:build:e2e`. Unit coverage lives in config.spec.ts (#336). Rename this
+// and the fallback has tests but no real book proving it.
 import { HstNuxt } from '@poveste/plugin-nuxt'
 import { HstTailwind } from '@poveste/plugin-tailwind'
 import { HstVue } from '@poveste/plugin-vue'
