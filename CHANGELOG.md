@@ -34,6 +34,13 @@ three more are defects those gates found.
 
 ### 🚀 Enhancements
 
+- **Poveste now installs on Node 22 and 24** ([#303](https://github.com/poveste-dev/poveste/issues/303)).
+  The advertised floor was `>=26`, which was never declared to npm and was never measured — it was
+  what CI happened to run. Packing the real tarballs and building a book with npm succeeds on
+  22.22.2, 24.13.0 and 26.7.0 alike. All eleven packages now declare
+  `engines: "^22.22.2 || ^24.15.0 || >=26.0.0"`, which is the range `jsdom` binds us to as shipped
+  runtime code, and a CI job builds a book on the lowest of them. Node 20 is untested and EOL since
+  April 2026.
 - **A failing Nuxt client plugin no longer takes the story with it**
   ([#277](https://github.com/poveste-dev/poveste/issues/277)). Nuxt's `applyPlugins` aborts every
   plugin after the first throw and sets `payload.error`, so one plugin assuming a full runtime
