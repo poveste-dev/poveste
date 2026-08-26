@@ -16,13 +16,6 @@ export default defineConfig({
     __INTLIFY_PROD_DEVTOOLS__: 'false',
   },
 
-  // Pre-bundle lottie-web at startup. It's only reached via a runtime dynamic
-  // import in a story, so Vite would otherwise discover it on first navigation
-  // and force a full reload ('optimized dependencies changed. reloading').
-  optimizeDeps: {
-    include: ['lottie-web'],
-  },
-
   // Example build config for a component library
   build: {
     lib: {
