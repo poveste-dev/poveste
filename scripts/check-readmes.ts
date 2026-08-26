@@ -80,10 +80,24 @@ export const DEPRECATED_ALIASES: Array<{ deprecated: string, canonical: string }
   { deprecated: '--histoire-contrast-color', canonical: '--poveste-contrast-color' },
 ]
 
-export function aliasesTaughtAlone(content: string): string[] {
-  return DEPRECATED_ALIASES
-    .filter(({ deprecated, canonical }) => content.includes(deprecated) && !content.includes(canonical))
-    .map(({ deprecated, canonical }) => `${deprecated} (canonical: ${canonical})`)
+export interface AliasTaughtAlone { line: number, deprecated: string, canonical: string }
+
+// Per line, not per file. Checking the file as a whole let a page mention the
+// canonical name once in prose and still hand the reader a code sample built on
+// the alias — which is the sample they copy, and the thing #292 exists about.
+export function aliasesTaughtAlone(content: string): AliasTaughtAlone[] {
+  const lines = content.split('\n')
+  const found: AliasTaughtAlone[] = []
+
+  for (const { deprecated, canonical } of DEPRECATED_ALIASES) {
+    lines.forEach((line, index) => {
+      if (line.includes(deprecated) && !line.includes(canonical)) {
+        found.push({ line: index + 1, deprecated, canonical })
+      }
+    })
+  }
+
+  return found
 }
 
 // Only fenced blocks are removed. Inline code is kept on purpose: `histoire`
@@ -254,13 +268,13 @@ async function main(): Promise<void> {
   }
 
   for (const path of [...pages.map(p => p.path)]) {
-    for (const alias of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
-      problems.push(`${relative(ROOT, path)} teaches only the deprecated ${alias}`)
+    for (const { line, deprecated, canonical } of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
+      problems.push(`${relative(ROOT, path)}:${line} names ${deprecated} without ${canonical}`)
     }
   }
   for await (const path of markdownUnder(docsDir)) {
-    for (const alias of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
-      problems.push(`${relative(ROOT, path)} teaches only the deprecated ${alias}`)
+    for (const { line, deprecated, canonical } of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
+      problems.push(`${relative(ROOT, path)}:${line} names ${deprecated} without ${canonical}`)
     }
   }
 
