@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { unpublishedReleases } from './check-published.ts'
+import { probeArgs, unpublishedReleases } from './check-published.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -70,5 +70,19 @@ describe('unpublishedReleases', () => {
     )
 
     expect(problems).toEqual(['poveste@0.7.0 could not be verified: npm error network timeout'])
+  })
+})
+
+describe('probeArgs', () => {
+  it('asks the registry to revalidate, since the preflight cached it pre-publish', () => {
+    // Without this the packument's 300s max-age hides a version published
+    // seconds ago, and the gate fails a good release (#327).
+    expect(probeArgs('poveste', '0.7.0')).toContain('--prefer-online')
+  })
+
+  it('asks for the exact released version', () => {
+    expect(probeArgs('@poveste/plugin-vue', '0.7.0')).toEqual(
+      ['view', '@poveste/plugin-vue@0.7.0', 'version', '--prefer-online'],
+    )
   })
 })

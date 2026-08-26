@@ -28,6 +28,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { starters } from '../docs/.vitepress/theme/starters.ts'
 
@@ -39,7 +40,22 @@ interface Result {
   detail: string
 }
 
-async function check(framework: Framework): Promise<Result> {
+// `--prefer-online` matters only after a publish, and matters a lot: the
+// registry caches packuments for 300s, so `latest` can still resolve to the
+// previous release — this step would then install the version before the one it
+// was added to vouch for, and pass (#298).
+export function installArgs(afterPublish: boolean): string[] {
+  const args = ['install', '--dry-run', '--no-audit', '--no-fund']
+  return afterPublish ? [...args, '--prefer-online'] : args
+}
+
+// Successes are kept, so only what is still failing is retried and a blip in the
+// final attempt cannot undo a starter that already resolved.
+export function mergeResults(previous: Result[], latest: Result[]): Result[] {
+  return previous.map(before => latest.find(after => after.framework === before.framework) ?? before)
+}
+
+async function check(framework: Framework, afterPublish = false): Promise<Result> {
   const dir = await mkdtemp(join(tmpdir(), `poveste-starter-${framework}-`))
   try {
     const { manifest } = starters[framework]()
@@ -47,7 +63,7 @@ async function check(framework: Framework): Promise<Result> {
 
     const { stdout } = await run(
       'npm',
-      ['install', '--dry-run', '--no-audit', '--no-fund'],
+      installArgs(afterPublish),
       {
         cwd: dir,
         env: { ...process.env, npm_config_update_notifier: 'false' },
@@ -68,39 +84,52 @@ async function check(framework: Framework): Promise<Result> {
   }
 }
 
-const afterPublish = process.argv.includes('--after-publish')
-const attempts = afterPublish ? 4 : 1
+async function main(): Promise<void> {
+  const afterPublish = process.argv.includes('--after-publish')
+  const attempts = afterPublish ? 4 : 1
 
-let results: Result[] = []
-for (let attempt = 1; attempt <= attempts; attempt++) {
-  if (attempt > 1) {
-    console.log(`\nRetrying (${attempt}/${attempts}) — \`latest\` may still be catching up.`)
-    await new Promise(resolve => setTimeout(resolve, 20_000))
+  let results: Result[] = []
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const pending = attempt === 1
+      ? (Object.keys(starters) as Framework[])
+      : results.filter(r => !r.ok).map(r => r.framework)
+
+    if (attempt > 1) {
+      console.log(`\nRetrying ${pending.join(', ')} (${attempt}/${attempts}) — \`latest\` may still be catching up.`)
+      await new Promise(resolve => setTimeout(resolve, 20_000))
+    }
+
+    const round: Result[] = []
+    for (const framework of pending) {
+      console.log(`▸ ${framework}`)
+      const result = await check(framework, afterPublish)
+      console.log(`  ${result.ok ? '✓' : '✗'} ${result.detail.replaceAll('\n', '\n    ')}`)
+      round.push(result)
+    }
+    results = attempt === 1 ? round : mergeResults(results, round)
+
+    if (results.every(r => r.ok)) {
+      break
+    }
   }
-  results = []
-  for (const framework of Object.keys(starters) as Framework[]) {
-    console.log(`▸ ${framework}`)
-    const result = await check(framework)
-    console.log(`  ${result.ok ? '✓' : '✗'} ${result.detail.replaceAll('\n', '\n    ')}`)
-    results.push(result)
+
+  const failed = results.filter(r => !r.ok)
+  if (failed.length) {
+    console.error(`\n${failed.length}/${results.length} starters cannot be installed: ${failed.map(r => r.framework).join(', ')}`)
+    if (afterPublish) {
+      // The versions are live and npm versions are immutable, so there is nothing
+      // to fix in place — 0.6.1 is the worked example of the way out.
+      console.error('::error::The release that just published cannot be installed.')
+      console.error('Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.')
+    }
+    else {
+      console.error('Fix the versions in docs/.vitepress/theme/starters.ts.')
+    }
+    process.exit(1)
   }
-  if (results.every(r => r.ok)) {
-    break
-  }
+  console.log(`\nAll ${results.length} starters resolve.`)
 }
 
-const failed = results.filter(r => !r.ok)
-if (failed.length) {
-  console.error(`\n${failed.length}/${results.length} starters cannot be installed: ${failed.map(r => r.framework).join(', ')}`)
-  if (afterPublish) {
-    // The versions are live and npm versions are immutable, so there is nothing
-    // to fix in place — 0.6.1 is the worked example of the way out.
-    console.error('::error::The release that just published cannot be installed.')
-    console.error('Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.')
-  }
-  else {
-    console.error('Fix the versions in docs/.vitepress/theme/starters.ts.')
-  }
-  process.exit(1)
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  await main()
 }
-console.log(`\nAll ${results.length} starters resolve.`)

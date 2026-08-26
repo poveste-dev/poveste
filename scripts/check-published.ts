@@ -53,9 +53,17 @@ export function unpublishedReleases(
   return problems
 }
 
+// `--prefer-online` is load-bearing, not a tweak: the registry serves packuments
+// with `max-age=300`, and the pre-publish preflight has already cached every one
+// of them. Without revalidation this reads a five-minute-old view of the
+// registry and calls a version that just published missing (#327).
+export function probeArgs(name: string, version: string): string[] {
+  return ['view', `${name}@${version}`, 'version', '--prefer-online']
+}
+
 function npmProbe(name: string, version: string): string {
   try {
-    const out = String(execFileSync('npm', ['view', `${name}@${version}`, 'version'], {
+    const out = String(execFileSync('npm', probeArgs(name, version), {
       stdio: ['ignore', 'pipe', 'pipe'],
     })).trim()
     // A silent success is not a confirmation.
