@@ -4,6 +4,32 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.8.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.7.0...v0.8.0)
+
+**Things that were quietly wrong now say so.**
+
+0.7.0 shipped two gates against publishing a broken package, then half-published: ten of eleven packages reached npm, `@poveste/plugin-vue` did not, and the run went green because every check fired *before* the publish and the only one after it looked at GitHub rather than the registry. This release closes that, and four more cases of the same shape — a status code, a badge, a README or a missing page reporting success while being wrong.
+
+### 🚀 Enhancements
+
+- **A story whose component throws now says so** ([#323](https://github.com/poveste-dev/poveste/issues/323)). It used to render its template as if nothing had happened, with the only trace a line in the browser console — Vue routes a throw in `setup` to `console.error` and carries on, so `window.onerror` never fires. The preview is now covered by the error and the variant and story are marked beside it. Two limits are documented rather than hidden: a variant is only checked once it renders, and `poveste build` still exits 0 on a book whose components throw, because collection evaluates story files in Node and never mounts them ([#339](https://github.com/poveste-dev/poveste/issues/339) tracks closing that).
+
+### 🩹 Fixes
+
+- **A release that does not reach npm now fails** ([#327](https://github.com/poveste-dev/poveste/issues/327), [#298](https://github.com/poveste-dev/poveste/issues/298)). Two steps after the publish: every non-private package is checked against the registry at its released version, and the published set is installed the way a consumer would. Only unaccounted packages are retried, and all of them are named, so recovery is one re-run rather than one per package. The failure message points at re-running the release job — `npm publish` by hand is the wrong move, since it does not rewrite pnpm's `workspace:` protocol.
+- **poveste.dev no longer answers every missing path with the home page** ([#343](https://github.com/poveste-dev/poveste/issues/343)). A `/*` → `/index.html` rewrite at status 200 — the SPA pattern — sat in `netlify.toml` on a site where VitePress builds a real file per page. Every URL the site did not have returned 200 with the home page byte for byte, which search engines record as a soft 404 and may index as duplicate content. Netlify already resolves extensionless paths, directory indexes and assets before redirects run, and serves `404.html` on its own, so the rule is deleted rather than replaced.
+
+### 📖 Documentation
+
+- **The README pages describe this project** ([#293](https://github.com/poveste-dev/poveste/issues/293), [#294](https://github.com/poveste-dev/poveste/issues/294), [#295](https://github.com/poveste-dev/poveste/issues/295)). Four of five badges pointed at workflows deleted a release earlier and rendered as broken images on the repository front page and seven npm package pages. Two npm pages said "add the plugin in histoire config" above a fence that correctly said `poveste`. The root README's blockquote and feature list were histoire's verbatim. All replaced, badges labelled for what each covers, and `check-readmes.ts` widened to the root README and workflow references — it had gone green on all three defects because it read neither.
+- **The repository records which branch serves poveste.dev** ([#321](https://github.com/poveste-dev/poveste/issues/321)), and the check that verifies it reads page bodies rather than status codes.
+
+### Upgrading
+
+Nothing to do.
+
 ## v0.7.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.6.1...v0.7.0)
