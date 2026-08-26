@@ -2,7 +2,7 @@ import type { Story, Variant } from '@poveste/shared'
 import type { App, Component, PropType, VNode } from 'vue'
 import type { Vue3StorySetupApi, Vue3StorySetupHandler } from '../../helpers.js'
 import type { PreviewRenderContext } from './render-context.js'
-import { getSetupHook } from '@poveste/shared'
+import { getSetupHook, reportStoryError } from '@poveste/shared'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
@@ -85,6 +85,17 @@ export function createPreviewHost(options: PreviewHostOptions) {
         return h(Suspense, {}, vnode)
       },
     })
+
+    // Vue catches a throw from setup or render and logs it to `console.error`,
+    // leaving the template on screen — so without this the host cannot tell a
+    // broken story from a working one (#323).
+    app.config.errorHandler = (err) => {
+      reportStoryError(err, {
+        storyId: options.getStory()?.id,
+        variantId: options.getVariant()?.id,
+      })
+      console.error(err)
+    }
 
     registerGlobalComponents(app)
     app.component('RouterLink', RouterLinkStub)

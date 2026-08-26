@@ -1,5 +1,9 @@
+import type { StoryError } from '@poveste/shared'
 import type { SvelteStorySetupApi, SvelteStorySetupHandler } from '../helpers.js'
+import { reportStoryError } from '@poveste/shared'
 import * as svelte from 'svelte'
+
+type StoryOccupant = Pick<StoryError, 'storyId' | 'variantId'>
 
 type SetupModule = Record<string, unknown>
 
@@ -23,14 +27,30 @@ function loadSvelteModule(moduleId: string) {
   return import(/* @vite-ignore */ moduleId)
 }
 
+function report<T>(mount: () => T, occupant?: StoryOccupant): T {
+  try {
+    return mount()
+  }
+  catch (error) {
+    reportStoryError(error, occupant)
+    throw error
+  }
+}
+
 export async function mountSvelteComponent(
   component: any,
   options: Record<string, any>,
   mode: 'auto' | 'client' | 'server-compat' = 'auto',
+  // Which story this is, so a report is not misattributed to whatever the realm
+  // was retargeted to next (#240).
+  occupant?: StoryOccupant,
 ): Promise<MountedSvelteComponent> {
   if (mode !== 'server-compat') {
     if (typeof (svelte as any)?.mount === 'function') {
-      const app = (svelte as any).mount(component, options)
+      // Svelte throws out of `mount` rather than swallowing it, so this only
+      // reports and rethrows — the host needs to know a story is broken, and
+      // nothing downstream should behave differently for it (#323).
+      const app = report(() => (svelte as any).mount(component, options), occupant)
       return {
         app,
         destroy: () => {
@@ -47,7 +67,7 @@ export async function mountSvelteComponent(
 
   try {
     // eslint-disable-next-line new-cap
-    const app = new component(options)
+    const app = report(() => new component(options), occupant)
     return {
       app,
       destroy: () => {

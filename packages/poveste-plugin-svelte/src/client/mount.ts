@@ -74,7 +74,7 @@ export default _defineComponent({
           __pvtStory: props.story,
           __pvtTargetVariantId: targetVariantId,
         })),
-      }, 'client')
+      }, 'client', { storyId: props.story.id, variantId: props.targetVariantId ?? undefined })
       app = mountedApp.app
       destroyApp = mountedApp.destroy
 

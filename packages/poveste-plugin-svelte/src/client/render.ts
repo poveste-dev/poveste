@@ -87,7 +87,7 @@ export default _defineComponent({
           __pvtVariant: props.variant,
           __pvtSlot: props.slotName,
         })),
-      }, 'client')
+      }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
       app = mountedApp.app
       tearDownHandlers.push(() => {
         mountedApp.destroy()

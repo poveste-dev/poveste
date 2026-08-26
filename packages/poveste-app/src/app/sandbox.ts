@@ -1,4 +1,5 @@
 import type { StoryFile } from './types'
+import { reportStoryError } from '@poveste/shared'
 import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
 import { files, onUpdate } from 'virtual:$poveste-stories'
@@ -55,6 +56,17 @@ if (storedSettings) {
 if (window.parent && window.parent !== window) {
   window.parent.postMessage({ type: PREVIEW_SETTINGS_REQUEST }, window.location.origin)
 }
+
+// The framework hooks catch what the framework swallows; this catches what
+// escapes it — a throw from an event handler, a rejected promise, an async
+// effect. Neither alone is enough: Vue never lets a render error reach the
+// window, and no framework hook sees an error raised outside its own call
+// stack (#323).
+function reportUncaught(error: unknown) {
+  reportStoryError(error, { storyId: storyId.value, variantId: variantId.value })
+}
+window.addEventListener('error', event => reportUncaught(event.error ?? event.message))
+window.addEventListener('unhandledrejection', event => reportUncaught(event.reason))
 
 // The story preview has its own color scheme, independent from the app chrome.
 // The fallback covers settings stored before the option existed.
