@@ -420,7 +420,7 @@ importers:
         version: link:../poveste-vendors
       '@types/markdown-it':
         specifier: ^14.1.2
-        version: 14.1.2
+        version: 14.2.0
       birpc:
         specifier: ^0.2.19
         version: 0.2.19
@@ -459,13 +459,13 @@ importers:
         version: 1.33.0
       markdown-it:
         specifier: ^14.1.0
-        version: 14.1.0
+        version: 14.3.0
       markdown-it-anchor:
         specifier: ^9.2.0
-        version: 9.2.0(@types/markdown-it@14.1.2)(markdown-it@14.1.0)
+        version: 9.2.0(@types/markdown-it@14.2.0)(markdown-it@14.3.0)
       markdown-it-attrs:
         specifier: ^4.3.0
-        version: 4.3.1(markdown-it@14.1.0)
+        version: 4.3.1(markdown-it@14.3.0)
       markdown-it-emoji:
         specifier: ^3.0.0
         version: 3.0.0
@@ -937,7 +937,7 @@ importers:
         version: 11.0.4
       '@types/markdown-it':
         specifier: ^14.1.2
-        version: 14.1.2
+        version: 14.2.0
       chokidar:
         specifier: ^4.0.1
         version: 4.0.3
@@ -3369,8 +3369,8 @@ packages:
   '@types/linkify-it@5.0.0':
     resolution: {integrity: sha512-sVDA58zAw4eWAffKOaQH5/5j3XeayukzDk+ewSsnv3p4yJEZHCCzMDiZM8e0OUrRvmpGZ85jf4yDHkHsgBNr9Q==}
 
-  '@types/markdown-it@14.1.2':
-    resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
+  '@types/markdown-it@14.2.0':
+    resolution: {integrity: sha512-NoQ2yGlLWj4wpxMs+TYmRKk3thDrQ97agr7sFqfLsAlvoS8SNQuTrlObhFqG9iugdTtgOE9jpJ6FNM4ZGsa5xQ==}
 
   '@types/mdast@4.0.4':
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -5738,8 +5738,8 @@ packages:
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
-  linkify-it@5.0.0:
-    resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
+  linkify-it@5.0.2:
+    resolution: {integrity: sha512-ONTm2jCMAVZjgQa/Fy1kScXsuOoF5NPTsoFBdE1KVIZ2vAh/r9+Bqo+0jINCBYnavTPQZz38QzFTme79ENoN3Q==}
 
   listhen@1.10.1:
     resolution: {integrity: sha512-6nt/86SkqUQSLW1ofz8MxC6RhRMqOl3ONISe6qqvJ3xj09aJWQx6DhgSZpugs3PX4PXdOas/WD6A9jx6J2N19A==}
@@ -5834,8 +5834,8 @@ packages:
   markdown-it-emoji@3.0.0:
     resolution: {integrity: sha512-+rUD93bXHubA4arpEZO3q80so0qgoFJEKRkRbjKX8RTdca89v2kfyF+xR3i2sQTwql9tpPZPOQN5B+PunspXRg==}
 
-  markdown-it@14.1.0:
-    resolution: {integrity: sha512-a54IwgWPaeBCAAsv13YgmALOF1elABB08FxO9i+r4VFk5Vl4pKokRPeX8u5TCgSsPi6ec1otfLjdOpVcgbpshg==}
+  markdown-it@14.3.0:
+    resolution: {integrity: sha512-RCEsPjR+sr0x+AuYp601tKTkgFG4YEPLCzHST3cQ/fhlJkqAkz1L2/Qbp1j9qw5SBwQHFBoW8+hoN5xssOF0Tw==}
     hasBin: true
 
   markdown-table@3.0.4:
@@ -10831,7 +10831,7 @@ snapshots:
 
   '@types/linkify-it@5.0.0': {}
 
-  '@types/markdown-it@14.1.2':
+  '@types/markdown-it@14.2.0':
     dependencies:
       '@types/linkify-it': 5.0.0
       '@types/mdurl': 2.0.0
@@ -13397,7 +13397,7 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  linkify-it@5.0.0:
+  linkify-it@5.0.2:
     dependencies:
       uc.micro: 2.1.0
 
@@ -13496,22 +13496,22 @@ snapshots:
 
   mark.js@8.11.1: {}
 
-  markdown-it-anchor@9.2.0(@types/markdown-it@14.1.2)(markdown-it@14.1.0):
+  markdown-it-anchor@9.2.0(@types/markdown-it@14.2.0)(markdown-it@14.3.0):
     dependencies:
-      '@types/markdown-it': 14.1.2
-      markdown-it: 14.1.0
+      '@types/markdown-it': 14.2.0
+      markdown-it: 14.3.0
 
-  markdown-it-attrs@4.3.1(markdown-it@14.1.0):
+  markdown-it-attrs@4.3.1(markdown-it@14.3.0):
     dependencies:
-      markdown-it: 14.1.0
+      markdown-it: 14.3.0
 
   markdown-it-emoji@3.0.0: {}
 
-  markdown-it@14.1.0:
+  markdown-it@14.3.0:
     dependencies:
       argparse: 2.0.1
       entities: 4.5.0
-      linkify-it: 5.0.0
+      linkify-it: 5.0.2
       mdurl: 2.0.0
       punycode.js: 2.3.1
       uc.micro: 2.1.0
@@ -16174,7 +16174,7 @@ snapshots:
       '@shikijs/core': 2.5.0
       '@shikijs/transformers': 2.5.0
       '@shikijs/types': 2.5.0
-      '@types/markdown-it': 14.1.2
+      '@types/markdown-it': 14.2.0
       '@vitejs/plugin-vue': 5.2.4(vite@5.4.21(@types/node@22.19.3)(lightningcss@1.33.0)(sass@1.97.2)(terser@5.44.1))(vue@3.5.41(typescript@5.6.3))
       '@vue/devtools-api': 7.7.9
       '@vue/shared': 3.5.41
