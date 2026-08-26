@@ -7,8 +7,8 @@ import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 import * as setup from 'virtual:$poveste-setup'
 import { createApp, h } from 'vue'
 import { VUE_SETUP_HOOK_NAMES } from '../../setup-hooks.js'
-import Story from './Story'
-import Variant from './Variant'
+import Story from './Story.js'
+import Variant from './Variant.js'
 
 export async function run({ file, storyData, el }: ServerRunPayload) {
   const { default: Comp } = await import(/* @vite-ignore */ file.moduleId)

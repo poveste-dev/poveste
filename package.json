@@ -29,7 +29,7 @@
     "test:publishable": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-publishable.ts",
     "test:scripts": "vitest run scripts",
     "release": "pnpm run release:check && bumpp --yes --release",
-    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run test:publishable && pnpm run test:scripts && pnpm run build && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",
+    "@arethetypeswrong/cli": "^0.18.5",
     "@iconify/vue": "^4.1.2",
     "@playwright/test": "^1.62.1",
     "@poveste/vendors": "workspace:*",

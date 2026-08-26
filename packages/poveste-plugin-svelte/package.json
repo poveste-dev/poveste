@@ -32,8 +32,14 @@
     "access": "public"
   },
   "exports": {
-    "./client": "./dist/client/index.js",
-    "./collect": "./dist/collect/index.js",
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./collect": {
+      "types": "./dist/collect/index.d.ts",
+      "default": "./dist/collect/index.js"
+    },
     ".": "./dist/index.node.js",
     "./*": "./*"
   },

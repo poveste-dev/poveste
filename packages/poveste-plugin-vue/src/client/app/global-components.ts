@@ -19,8 +19,8 @@ import {
   onUpdated,
   ref,
 } from 'vue'
-import Story from './Story'
-import Variant from './Variant'
+import Story from './Story.js'
+import Variant from './Variant.js'
 
 export function registerGlobalComponents(app: App) {
   app.component('Story', Story)
