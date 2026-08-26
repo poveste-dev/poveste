@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   declaredOrigins,
+  deployMarker,
   liveTarget,
   missingRedirectTargets,
   parseRedirects,
@@ -275,5 +276,47 @@ describe('liveTarget', () => {
 
   it('does not read argv[0] as a url when --live is absent', () => {
     expect(liveTarget(['/usr/bin/node', 'scripts/check-docs-site.ts'])).toBe('https://poveste.dev')
+  })
+})
+
+describe('deployMarker', () => {
+  it('reads the branch, commit and context the build stamped in', () => {
+    const html = '<head><meta name="poveste:deploy" content="main 21cb684 production"></head>'
+
+    expect(deployMarker(html)).toBe('main 21cb684 production')
+  })
+
+  it('reads it with the attributes the other way round', () => {
+    const html = '<head><meta content="main 21cb684 production" name="poveste:deploy"></head>'
+
+    expect(deployMarker(html)).toBe('main 21cb684 production')
+  })
+
+  it('reads it from single-quoted attributes', () => {
+    const html = `<head><meta name='poveste:deploy' content='main 21cb684 production'></head>`
+
+    expect(deployMarker(html)).toBe('main 21cb684 production')
+  })
+
+  it('decodes a branch name the renderer had to escape', () => {
+    const html = '<head><meta name="poveste:deploy" content="fix/a&amp;b abc1234 deploy-preview"></head>'
+
+    expect(deployMarker(html)).toBe('fix/a&b abc1234 deploy-preview')
+  })
+
+  it('decodes an escaped ampersand once, not twice', () => {
+    const html = '<head><meta name="poveste:deploy" content="a&amp;quot;b abc1234 production"></head>'
+
+    expect(deployMarker(html)).toBe('a&quot;b abc1234 production')
+  })
+
+  it('is not fooled by another meta tag on the page', () => {
+    const html = '<head><meta name="twitter:card" content="summary_large_image"><meta name="poveste:deploy" content="next abc1234 branch-deploy"></head>'
+
+    expect(deployMarker(html)).toBe('next abc1234 branch-deploy')
+  })
+
+  it('returns nothing for a deploy made before the marker shipped', () => {
+    expect(deployMarker('<head><title>Poveste</title></head>')).toBeUndefined()
   })
 })

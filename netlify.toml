@@ -1,7 +1,33 @@
 # VitePress docs deploy for poveste.dev.
+#
+# poveste.dev serves the PRODUCTION branch, which is `main`. Netlify has no key for
+# that — `[context.production]` configures the production context but does not say
+# which branch fills it, so it is set in the Netlify UI (Site configuration → Build
+# & deploy → Branches) and recorded here because a checkout has no other way to know
+# (#321). The practical consequence: a docs-only fix merged to `next` is not on the
+# site until a release moves it to `main`.
+#
+# To confirm which branch and commit built what the site is serving:
+#
+#   curl -s https://poveste.dev/ | sed -n 's/.*name="poveste:deploy" content="\([^"]*\)".*/\1/p'
+#
+# That meta tag is emitted from Netlify's own BRANCH/COMMIT_REF/CONTEXT during the
+# build (see docs/.vitepress/config.js); it is absent from local builds, and from any
+# deploy made before it shipped.
+#
+# Read the commit as "what last rebuilt the docs", NOT as the tip of the branch. The
+# `ignore` rule below skips the build when nothing the site is made of changed, so a
+# code-only merge to `main` leaves the previous deploy — and its commit — in place. A
+# marker behind the branch tip is the skip working, not a failed deploy. The branch
+# and context are always current; only the commit can lag.
+#
+# A branch name containing `&` or `"` arrives HTML-escaped through the curl form;
+# `pnpm run test:docs-site:live` decodes it.
+#
 # `pnpm run test:docs-site` checks this file against the build; after a deploy,
 # `pnpm run test:docs-site:live` checks the same contract against production — pass a
-# deploy preview url to check a redirect change before it lands.
+# deploy preview url to check a redirect change before it lands, and it reports the
+# branch it reached.
 # Netlify detects pnpm from pnpm-lock.yaml and runs `pnpm install` before the
 # build command below.
 [build]
