@@ -741,6 +741,9 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 8.2.0(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@22.19.3)(jsdom@30.0.1)(vite@8.2.0(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.0))
 
   packages/poveste-plugin-percy:
     dependencies:

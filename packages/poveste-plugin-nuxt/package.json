@@ -41,7 +41,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc -d",
-    "watch": "tsc -d -w --sourceMap"
+    "watch": "tsc -d -w --sourceMap",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "@poveste/plugin-vue": "workspace:^",
@@ -60,6 +61,7 @@
     "@types/node": "^22.10.1",
     "poveste": "workspace:*",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

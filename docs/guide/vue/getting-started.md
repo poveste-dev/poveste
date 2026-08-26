@@ -184,6 +184,40 @@ plain vue-i18n install rather than the Nuxt module's:
   localized routing). Stories showcase components, not routes, so this is rarely a limit;
   when a component needs one, stub it in the setup.
 
+### Incompatible client plugins
+
+`@nuxtjs/i18n` is one case of a general problem: a Nuxt module can register a **client
+plugin that assumes a full Nuxt runtime** — the real `useNuxtApp()`, a router, request
+context — which the headless story sandbox does not provide. Such a plugin throws while it
+sets up. Poveste handles this in two layers.
+
+**Failing plugins are skipped, not fatal.** If a client plugin throws while setting up in
+the sandbox, Poveste catches it, logs a `[poveste] … skipping it` warning naming the
+plugin, and renders the story anyway — one broken plugin no longer paints a 500 into every
+iframe. Whatever that plugin would have provided is simply absent. So a module Poveste has
+never seen degrades gracefully instead of taking the story down.
+
+**Drop a plugin outright with `excludePlugins`.** For a plugin that must not run at all —
+it fails at *import* time (before setup, which the tolerant boot above cannot catch), or it
+has side effects you want gone — list it and Poveste removes it before boot:
+
+```js
+import { HstNuxt } from '@poveste/plugin-nuxt'
+
+export default defineConfig({
+  plugins: [
+    HstVue(),
+    HstNuxt({
+      // Substring or RegExp, matched against each plugin's resolved path.
+      excludePlugins: [/[\\/]my-module[\\/].*[\\/]plugins[\\/]/, 'analytics.client'],
+    }),
+  ],
+})
+```
+
+Your patterns are added **on top of** the built-in defaults (which already drop
+`@nuxtjs/i18n`'s client plugins), not in place of them.
+
 ## Configuration
 
 Learn more about configuring Poveste [here](../config.md).
