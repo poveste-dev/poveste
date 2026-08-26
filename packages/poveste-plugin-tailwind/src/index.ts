@@ -189,8 +189,36 @@ async function resolveStylesheet(api: PluginApiBase, id: string, importBase: str
   return api.path.resolve(api.path.dirname(packageJsonPath), packageJson.style ?? 'index.css')
 }
 
+export const TAILWIND_V4_REQUIRED
+  = '@poveste/plugin-tailwind needs Tailwind v4: the installed tailwindcss does not export '
+    + '`__unstable__loadDesignSystem`. A v3 project has nothing for this plugin to read — install tailwindcss@^4.'
+
+// `__unstable__loadDesignSystem` is Tailwind's own signal that this export may be
+// renamed or dropped in any release. The `tailwindcss` peer range is the only thing
+// bounding that, so whoever widens it re-checks this call site. Without the check the
+// failure reads as `__unstable__loadDesignSystem is not a function`, which points at
+// Poveste and says nothing about the version mismatch that caused it (#320).
+export function hasDesignSystemLoader(tailwind: unknown): boolean {
+  return typeof (tailwind as { __unstable__loadDesignSystem?: unknown } | null | undefined)
+    ?.__unstable__loadDesignSystem === 'function'
+}
+
+type LoadDesignSystem = typeof import('tailwindcss')['__unstable__loadDesignSystem']
+
+// The import is a parameter so the mismatch path is testable without a Tailwind v3
+// installed alongside v4.
+export async function resolveDesignSystemLoader(
+  importTailwind: () => Promise<unknown> = () => import('tailwindcss'),
+): Promise<LoadDesignSystem> {
+  const tailwind = await importTailwind()
+  if (!hasDesignSystemLoader(tailwind)) {
+    throw new Error(TAILWIND_V4_REQUIRED)
+  }
+  return (tailwind as { __unstable__loadDesignSystem: LoadDesignSystem }).__unstable__loadDesignSystem
+}
+
 async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
-  const { __unstable__loadDesignSystem } = await import('tailwindcss')
+  const __unstable__loadDesignSystem = await resolveDesignSystemLoader()
 
   const base = api.path.dirname(cssFile)
   const designSystem = await __unstable__loadDesignSystem(
