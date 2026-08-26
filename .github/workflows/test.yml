@@ -60,6 +60,11 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # The offline half of the release preflight. Here too, not just at release:
+      # there the same failure lands after the bump is already on `main` (#302).
+      - name: Check the published package surface
+        run: pnpm run test:packaging
+
       - name: Run tests
         run: pnpm run test
 

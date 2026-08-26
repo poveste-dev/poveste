@@ -22,8 +22,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
-    "./*": "./*",
-    "./client-node": "./dist/client/server/run.js"
+    "./*": "./*"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",

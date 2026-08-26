@@ -24,7 +24,7 @@ import {
 } from '../util/svelte.js'
 import RenderStorySvelte from './RenderStory.svelte'
 import RenderVariantSvelte from './RenderVariant.svelte'
-import { syncState } from './util'
+import { syncState } from './util.js'
 import Wrap from './Wrap.svelte'
 
 export default _defineComponent({

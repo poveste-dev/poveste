@@ -1,6 +1,6 @@
 import type { AutoPropComponentDefinition, PropDefinition, Variant } from '@poveste/shared'
 import { applyState } from '@poveste/shared'
-import { getTagName } from '../codegen'
+import { getTagName } from '../codegen.js'
 
 export function syncVariantAutoProps(
   variant: Variant,

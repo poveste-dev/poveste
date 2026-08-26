@@ -1,2 +1,2 @@
-export { default as MountStory } from './MountStory'
-export { default as RenderStory } from './RenderStory'
+export { default as MountStory } from './MountStory.js'
+export { default as RenderStory } from './RenderStory.js'

@@ -16,7 +16,7 @@ import {
 import { VUE_SETUP_HOOK_NAMES } from '../../setup-hooks.js'
 import { registerGlobalComponents } from './global-components.js'
 import { provideRenderContext } from './render-context.js'
-import { RouterLinkStub } from './RouterLinkStub'
+import { RouterLinkStub } from './RouterLinkStub.js'
 
 interface PreviewHostOptions {
   name: string

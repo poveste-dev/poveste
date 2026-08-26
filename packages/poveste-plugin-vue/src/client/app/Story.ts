@@ -3,7 +3,7 @@ import type { PropType, VNode } from 'vue'
 import { omitInheritStoryProps } from '@poveste/shared'
 import { cloneVNode, computed, defineComponent, getCurrentInstance, h, isRef, provide, reactive, useAttrs } from 'vue'
 import { useRenderContext } from './render-context.js'
-import Variant from './Variant'
+import Variant from './Variant.js'
 
 export default defineComponent({
 

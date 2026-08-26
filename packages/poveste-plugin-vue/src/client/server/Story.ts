@@ -1,7 +1,7 @@
 import type { ServerStory, ServerStoryFile, ServerVariant } from '@poveste/shared'
 import type { PropType } from 'vue'
 import { defineComponent, inject, onMounted, provide } from 'vue'
-import { autoStubComponents } from './stub'
+import { autoStubComponents } from './stub.js'
 
 export default defineComponent({
   name: 'PovesteStory',
