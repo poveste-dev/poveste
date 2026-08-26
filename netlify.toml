@@ -1,4 +1,7 @@
 # VitePress docs deploy for poveste.dev.
+# `pnpm run test:docs-site` checks this file against the build; after a deploy,
+# `pnpm run test:docs-site:live` checks the same contract against production — pass a
+# deploy preview url to check a redirect change before it lands.
 # Netlify detects pnpm from pnpm-lock.yaml and runs `pnpm install` before the
 # build command below.
 [build]
@@ -22,9 +25,8 @@ NODE_VERSION = "24"
 # documenting Svelte 5) and were renamed in #120. These are permanent: the old paths have
 # years of inbound links behind them and nothing ever retires them.
 #
-# Order matters — Netlify takes the FIRST matching rule, so every one of these has to sit
-# above the catch-all below. Without them the catch-all would answer a stale URL with a
-# status-200 rewrite to the SPA, which renders VitePress's 404 instead of redirecting.
+# Order matters — Netlify takes the FIRST matching rule, so nothing broader may be
+# added above these.
 [[redirects]]
 from = "/guide/vue3/*"
 to = "/guide/vue/:splat"
@@ -50,8 +52,10 @@ from = "/examples/vue3/*"
 to = "/examples/vue/:splat"
 status = 301
 
-# Fallback for any path with no generated file (real pages are served directly).
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+# There is deliberately no `/*` catch-all below. Netlify serves `404.html` from the
+# publish directory for unmatched paths on its own, with a 404 status. The rule that
+# used to sit here was a status-200 rewrite to `/index.html` — the SPA pattern, wrong
+# for a static site — so every missing path answered 200 with the home page byte for
+# byte, which search engines read as a soft 404 (#343). Real pages never needed it
+# either: VitePress builds a file per page, and Netlify resolves extensionless paths
+# and directory indexes without a rule.

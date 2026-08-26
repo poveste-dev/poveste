@@ -1,0 +1,279 @@
+import { describe, expect, it } from 'vitest'
+import {
+  declaredOrigins,
+  liveTarget,
+  missingRedirectTargets,
+  parseRedirects,
+  parseRedirectsFile,
+  robotsProblems,
+  rulesBelowCatchAll,
+  sitemapGaps,
+  sitemapLocations,
+  unsafeCatchAlls,
+} from './check-docs-site.ts'
+
+const REDIRECTS = `
+[build]
+command = "pnpm docs:build"
+
+# A comment that mentions from = "/decoy" and must not be parsed.
+[[redirects]]
+from = "/guide/vue3/*"
+to = "/guide/vue/:splat"
+status = 301
+
+[[redirects]]
+from = "/old-page.html"
+to = "/new.html"
+status = 301
+`
+
+describe('parseRedirects', () => {
+  it('reads every rule in file order and ignores commented-out ones', () => {
+    const redirects = parseRedirects(REDIRECTS)
+
+    expect(redirects).toEqual([
+      { from: '/guide/vue3/*', to: '/guide/vue/:splat', status: 301 },
+      { from: '/old-page.html', to: '/new.html', status: 301 },
+    ])
+  })
+
+  it('defaults a rule with no status to a permanent redirect', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/a"\nto = "/b"\n')
+
+    expect(redirects[0].status).toBe(301)
+  })
+})
+
+describe('unsafeCatchAlls', () => {
+  it('flags a root catch-all that rewrites with a success status', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/*"\nto = "/index.html"\nstatus = 200\n')
+
+    expect(unsafeCatchAlls(redirects)).toHaveLength(1)
+  })
+
+  it('flags a catch-all whose status is too malformed to read', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/*"\nto = "/index.html"\nstatus = "20O"\n')
+
+    expect(unsafeCatchAlls(redirects)).toHaveLength(1)
+  })
+
+  it('accepts a root catch-all that answers 404', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/*"\nto = "/404.html"\nstatus = 404\n')
+
+    expect(unsafeCatchAlls(redirects)).toEqual([])
+  })
+
+  it('accepts a root catch-all that redirects', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/*"\nto = "/"\nstatus = 301\n')
+
+    expect(unsafeCatchAlls(redirects)).toEqual([])
+  })
+
+  it('accepts a narrower rewrite, which only shadows the paths it names', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/api/*"\nto = "/index.html"\nstatus = 200\n')
+
+    expect(unsafeCatchAlls(redirects)).toEqual([])
+  })
+})
+
+describe('parseRedirectsFile', () => {
+  it('reads the _redirects line format Netlify also honours', () => {
+    const redirects = parseRedirectsFile('# a comment\n\n/*  /index.html  200\n/old  /new\n')
+
+    expect(redirects).toEqual([
+      { from: '/*', to: '/index.html', status: 200 },
+      { from: '/old', to: '/new', status: 301 },
+    ])
+  })
+
+  it('reads a forced status, which Netlify writes with a trailing bang', () => {
+    expect(parseRedirectsFile('/*  /index.html  200!')[0].status).toBe(200)
+  })
+
+  it('sees the soft 404 this project deleted from netlify.toml', () => {
+    expect(unsafeCatchAlls(parseRedirectsFile('/*  /index.html  200\n'))).toHaveLength(1)
+  })
+})
+
+describe('rulesBelowCatchAll', () => {
+  it('flags a rule Netlify can never reach', () => {
+    const redirects = parseRedirects(
+      '[[redirects]]\nfrom = "/*"\nto = "/404.html"\nstatus = 404\n\n[[redirects]]\nfrom = "/guide/vue3/*"\nto = "/guide/vue/:splat"\nstatus = 301\n',
+    )
+
+    expect(rulesBelowCatchAll(redirects).map(r => r.from)).toEqual(['/guide/vue3/*'])
+  })
+
+  it('accepts the redirects sitting above the catch-all', () => {
+    const redirects = parseRedirects(
+      '[[redirects]]\nfrom = "/guide/vue3/*"\nto = "/guide/vue/:splat"\nstatus = 301\n\n[[redirects]]\nfrom = "/*"\nto = "/404.html"\nstatus = 404\n',
+    )
+
+    expect(rulesBelowCatchAll(redirects)).toEqual([])
+  })
+})
+
+describe('missingRedirectTargets', () => {
+  const built = new Set(['/', '/guide/vue', '/guide/vue/stories.html', '/new.html'])
+
+  it('flags a splat target whose directory was renamed away', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/guide/vue3/*"\nto = "/guide/svelte4/:splat"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built).map(r => r.to)).toEqual(['/guide/svelte4/:splat'])
+  })
+
+  it('accepts a splat target whose directory is in the build', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/guide/vue3/*"\nto = "/guide/vue/:splat"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+
+  it('accepts a literal target that names a built page', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/quickstart"\nto = "/new.html"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+
+  it('accepts a target that leaves the site, which no build can contain', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/chat"\nto = "https://chat.example/invite"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+
+  it('accepts a target carrying an anchor, and resolves the page it names', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/sveltekit"\nto = "/guide/vue/stories.html#sveltekit"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+})
+
+describe('robotsProblems', () => {
+  it('flags the HTML page a missing robots.txt used to serve', () => {
+    const problems = robotsProblems('<!DOCTYPE html>\n<html lang="en-US" dir="ltr">\n')
+
+    expect(problems[0]).toMatch(/markup/)
+  })
+
+  it('flags rules that name no sitemap', () => {
+    expect(robotsProblems('User-agent: *\nAllow: /\n')).toEqual([
+      'robots.txt names no sitemap',
+    ])
+  })
+
+  it('accepts the file the site actually ships', () => {
+    expect(robotsProblems('User-agent: *\nAllow: /\n\nSitemap: https://poveste.dev/sitemap.xml\n')).toEqual([])
+  })
+})
+
+describe('sitemapGaps', () => {
+  const built = ['/index.html', '/guide/index.html', '/guide/css.html', '/404.html']
+
+  it('reports a built page the sitemap does not list', () => {
+    const { missing } = sitemapGaps(built, ['/', '/guide/'])
+
+    expect(missing).toEqual(['/guide/css.html'])
+  })
+
+  it('reports a listed URL the build does not contain', () => {
+    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css.html', '/guide/gone.html'])
+
+    expect(extra).toEqual(['/guide/gone.html'])
+  })
+
+  it('reports the 404 page as extra, since advertising it invites indexing', () => {
+    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css.html', '/404.html'])
+
+    expect(extra).toEqual(['/404.html'])
+  })
+
+  it('accepts a sitemap that matches the build page for page', () => {
+    expect(sitemapGaps(built, ['/', '/guide/', '/guide/css.html'])).toEqual({ missing: [], extra: [] })
+  })
+
+  it('treats a page merely ending in index.html as a page, not an index', () => {
+    expect(sitemapGaps(['/guide/myindex.html'], ['/guide/myindex.html'])).toEqual({ missing: [], extra: [] })
+  })
+})
+
+describe('sitemapLocations', () => {
+  it('reads every URL out of a single-line sitemap', () => {
+    const xml = '<?xml version="1.0"?><urlset><url><loc>https://poveste.dev/</loc></url><url><loc>https://poveste.dev/new.html</loc></url></urlset>'
+
+    expect(sitemapLocations(xml)).toEqual(['https://poveste.dev/', 'https://poveste.dev/new.html'])
+  })
+})
+
+describe('declaredOrigins', () => {
+  const robots = 'User-agent: *\n\nSitemap: https://poveste.dev/sitemap.xml\n'
+  const config = `
+    sitemap: { hostname: 'https://poveste.dev' },
+    head: [
+      ['meta', { property: 'og:url', content: 'https://poveste.dev/' }],
+      ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
+      ['link', { rel: 'canonical', href: 'https://github.com/poveste-dev/poveste' }],
+    ],
+  `
+
+  it('finds the hostname in all four places it is declared', () => {
+    expect(declaredOrigins(robots, config).map(d => d.where)).toEqual([
+      'robots.txt Sitemap:',
+      'config sitemap.hostname',
+      'config og:url',
+      'config og:image',
+    ])
+  })
+
+  it('ignores unrelated URLs in the config', () => {
+    const origins = declaredOrigins(robots, config).map(d => d.origin)
+
+    expect(new Set(origins)).toEqual(new Set(['https://poveste.dev']))
+  })
+
+  it('finds a declaration written with double quotes', () => {
+    const doubled = config.replace(`property: 'og:url', content: 'https://poveste.dev/'`, `property: "og:url", content: "https://poveste.dev/"`)
+
+    expect(declaredOrigins(robots, doubled).map(d => d.where)).toContain('config og:url')
+  })
+
+  it('reports a relative url as having no origin instead of throwing', () => {
+    const relative = config.replace(`content: 'https://poveste.dev/opengraph.png'`, `content: '/opengraph.png'`)
+    const image = declaredOrigins(robots, relative).find(d => d.where === 'config og:image')
+
+    expect(image).toEqual({ where: 'config og:image', url: '/opengraph.png', origin: undefined })
+  })
+
+  it('omits a declaration that is not there, so the caller can name it', () => {
+    expect(declaredOrigins('User-agent: *\n', 'themeConfig: {}')).toEqual([])
+  })
+
+  it('separates a drifted declaration from the rest', () => {
+    const drifted = config.replace(`hostname: 'https://poveste.dev'`, `hostname: 'https://www.poveste.dev'`)
+
+    expect(declaredOrigins(robots, drifted).map(d => d.origin)).toEqual([
+      'https://poveste.dev',
+      'https://www.poveste.dev',
+      'https://poveste.dev',
+      'https://poveste.dev',
+    ])
+  })
+})
+
+describe('liveTarget', () => {
+  it('defaults to production when --live carries no url', () => {
+    expect(liveTarget(['node', 'check-docs-site.ts', '--live'])).toBe('https://poveste.dev')
+  })
+
+  it('takes a deploy preview url and drops its trailing slash', () => {
+    expect(liveTarget(['node', 'check-docs-site.ts', '--live', 'https://deploy-preview-346--poveste.netlify.app/']))
+      .toBe('https://deploy-preview-346--poveste.netlify.app')
+  })
+
+  it('does not read a following flag as a url', () => {
+    expect(liveTarget(['node', 'check-docs-site.ts', '--live', '--verbose'])).toBe('https://poveste.dev')
+  })
+
+  it('does not read argv[0] as a url when --live is absent', () => {
+    expect(liveTarget(['/usr/bin/node', 'scripts/check-docs-site.ts'])).toBe('https://poveste.dev')
+  })
+})

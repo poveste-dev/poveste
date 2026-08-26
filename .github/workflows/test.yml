@@ -57,6 +57,15 @@ jobs:
       - name: Test the release scripts
         run: pnpm run test:scripts
 
+      # The docs site is not part of the package build, so it gets its own. Both
+      # defects this covers answered HTTP 200 while broken (#288, #343), which is
+      # why the check reads the build instead of probing it.
+      - name: Build the docs site
+        run: pnpm run docs:build
+
+      - name: Check the docs site
+        run: pnpm run test:docs-site
+
       - name: Build
         run: pnpm run build
 
