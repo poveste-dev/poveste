@@ -73,11 +73,39 @@ describe('externalHosts', () => {
 describe('aliasesTaughtAlone', () => {
   it('flags a page that teaches only the deprecated spelling', () => {
     expect(aliasesTaughtAlone('set process.env.HISTOIRE to true')).toEqual([
-      'process.env.HISTOIRE (canonical: process.env.POVESTE)',
+      { line: 1, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
     ])
   })
 
-  it('passes a page that records the alias beside the canonical name', () => {
+  it('passes a line that records the alias beside the canonical name', () => {
     expect(aliasesTaughtAlone('use process.env.POVESTE; process.env.HISTOIRE still works')).toEqual([])
+  })
+
+  it('flags a code sample on the alias even when prose elsewhere names the canonical', () => {
+    const page = [
+      'Use the `process.env.POVESTE` environment variable.',
+      '',
+      '```ts',
+      'port: process.env.HISTOIRE ? 6006 : 3000,',
+      '```',
+    ].join('\n')
+
+    expect(aliasesTaughtAlone(page)).toEqual([
+      { line: 4, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+
+  it('reports the line so the sample can be found', () => {
+    const page = 'intro\n\ncolor: var(--histoire-contrast-color);\n'
+
+    expect(aliasesTaughtAlone(page)).toEqual([
+      { line: 3, deprecated: '--histoire-contrast-color', canonical: '--poveste-contrast-color' },
+    ])
+  })
+
+  it('passes the migration table, which names both on one row', () => {
+    const row = '| `--histoire-contrast-color` CSS var | still set (alongside `--poveste-contrast-color`) |'
+
+    expect(aliasesTaughtAlone(row)).toEqual([])
   })
 })

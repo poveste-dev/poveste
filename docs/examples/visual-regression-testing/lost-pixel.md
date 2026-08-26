@@ -19,6 +19,11 @@ export const config: CustomProjectConfig = {
   failOnDifference: true
 }
 ```
+
+::: tip `histoireShots` and `histoireUrl` are lost-pixel's names, not ours
+Those two keys belong to lost-pixel's own config schema, which still spells them the histoire way — see `histoireShots` in its shipped types. They are not a Poveste alias and renaming them breaks the config. Only the path they point at is yours: `./.poveste/dist` is where `poveste build` writes.
+:::
+
 **Before running visual tests you need to have your Poveste book built first**.
 
 This setup allows you to run visual tests locally. To test your stories run `npx lost-pixel`
