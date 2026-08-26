@@ -57,6 +57,13 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.node.d.ts",
+  "files": [
+    "client.d.ts",
+    "collect.d.ts",
+    "components.d.ts",
+    "dist",
+    "src"
+  ],
   "scripts": {
     "build": "rimraf dist && vite build && tsc -d -P tsconfig.build.json && pnpm run build:types",
     "build:types": "tsc --declaration --emitDeclarationOnly",
