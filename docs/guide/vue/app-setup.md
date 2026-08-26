@@ -193,25 +193,26 @@ export const setupVue = defineSetupVue(({ app }) => {
 })
 ```
 
-Two Vite-config touches are needed so it works in the story sandbox — see
+Declare vue-i18n's compile-time flags, the same as any plain Vite app — see
 `examples/vue3`:
 
 ```ts
 export default defineConfig({
   // vue-i18n reads these compile-time flags; a plain Vite app has to define them.
   define: {
-    __VUE_PROD_DEVTOOLS__: 'false',
     __VUE_I18N_FULL_INSTALL__: 'true',
     __VUE_I18N_LEGACY_API__: 'false',
     __INTLIFY_PROD_DEVTOOLS__: 'false',
   },
-  poveste: {
-    // Story collection externalizes node modules, so the `define` above never
-    // reaches vue-i18n — inline it (and `@intlify/*`) so it does.
-    viteNodeInlineDeps: [/vue-i18n/, /@intlify/],
-  },
 })
 ```
+
+Story collection applies this `define` too, so nothing extra is needed to reach
+vue-i18n through it. Earlier versions also required
+`viteNodeInlineDeps: [/vue-i18n/, /@intlify/]` because collection externalises node
+modules and `define` never reached them; that is fixed (#284) and the entry can go.
+Vue's own flags — `__VUE_PROD_DEVTOOLS__` and friends — come from `@vitejs/plugin-vue`
+and never needed declaring.
 
 Nuxt users need none of this: `@nuxtjs/i18n` provides the flags, and its own client
 plugin is handled for you — see the [Nuxt i18n guide](./getting-started.md#i18n).

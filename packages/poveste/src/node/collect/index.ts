@@ -13,6 +13,7 @@ import { ViteNodeServer } from 'vite-node/server'
 import { TEMP_PATH } from '../alias.js'
 import { createPath } from '../tree.js'
 import { slash } from '../util/fs.js'
+import { globalsFromDefine } from './define-globals.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -47,6 +48,9 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     },
     transformMode: ctx.config.viteNodeTransformMode,
   })
+
+  // Same values a real build substitutes, so externalised deps see their flags.
+  const defineGlobals = globalsFromDefine(server.config.define)
 
   const maxThreads = ctx.config.collectMaxThreads ?? cpus().length
 
@@ -108,6 +112,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         base: server.config.base,
         storyFile,
         port: workerPort,
+        defineGlobals,
       }
       const { storyData } = await threadPool.run(payload, {
         transferList: [
