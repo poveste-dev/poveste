@@ -1,0 +1,108 @@
+name: Clean up caches for closed PRs
+
+# Actions caches are scoped by ref: a cache written on `refs/pull/N/merge` can
+# only ever be restored by that same PR. Once it closes, the entry is unreadable
+# by anything and sits in the repository's 10 GB budget until GitHub's 7-day
+# idle eviction reaches it.
+#
+# That budget was full: 61 caches, 10.01 GB, of which 8.29 GB belonged to 16
+# merged PRs (#417). Because the cap evicts least-recently-used, dead PR entries
+# were pushing out the `main` entries every new PR actually restores from.
+#
+# Roughly 500 MB per merged PR, so this pays for itself within a few merges.
+#
+# Two events, because caches attach to two kinds of ref:
+#
+#   - a closed PR owns `refs/pull/N/merge`, whatever branch it targeted, so this
+#     covers PRs into `next` as well as `main`
+#   - a run started by `workflow_dispatch`, or by a push to `next`, owns
+#     `refs/heads/<branch>` — and deleting that branch fires no PR event. That
+#     is not hypothetical: `fix/optimize-deps-entries` left 501 MB stranded
+#     after the branch was gone.
+
+on:
+  pull_request_target:
+    types:
+      - closed
+  delete:
+
+# `pull_request_target`, not `pull_request`: a PR from a fork gets a read-only
+# GITHUB_TOKEN, so `actions: write` would not be granted and the delete would
+# fail on exactly the PRs nobody is watching. This repo has forks.
+#
+# The usual `pull_request_target` hazard is running untrusted head code with a
+# privileged token — this job checks nothing out and only calls the REST API
+# with a ref built from the event payload. Do not add a checkout step here.
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Delete the ref's caches
+    # Tag deletions are deliberate and rare, and a release tag's caches are not
+    # this job's business.
+    if: github.event_name != 'delete' || github.event.ref_type == 'branch'
+    steps:
+      - name: Delete caches scoped to the closed ref
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.event.ref }}
+        run: |
+          set -euo pipefail
+
+          # Picked here rather than in a workflow expression: a folded scalar
+          # keeps the newlines when its continuation lines are more indented,
+          # so the multi-line form silently produces a ref with newlines in it.
+          #
+          # Expressions are also evaluated inside `run:`, so an empty pair of
+          # expression braces anywhere in this block — even in a comment — is a
+          # parse error that fails the whole file.
+          if [ "$EVENT" = delete ]; then
+            REF="refs/heads/$BRANCH"
+          else
+            REF="refs/pull/$PR_NUMBER/merge"
+          fi
+
+          # One listing, then delete from it — the sizes are only for the
+          # summary line, and re-reading the list per entry would be an API
+          # call per cache for nothing.
+          entries=$(gh api "repos/$REPO/actions/caches?ref=$REF&per_page=100" \
+            --jq '.actions_caches[] | "\(.id) \(.size_in_bytes)"')
+
+          if [ -z "$entries" ]; then
+            echo "No caches for $REF — nothing to do."
+            exit 0
+          fi
+
+          deleted=0
+          freed=0
+          failed=0
+          while read -r id size; do
+            [ -n "$id" ] || continue
+            # Only a 404 is benign — an idle eviction, or a re-run of this job.
+            # Anything else (a revoked `actions: write`, an org policy, a
+            # rejected token) must go red: this job runs unattended, so a
+            # green run that deleted nothing would let the budget refill
+            # unnoticed, which is the exact failure it exists to prevent.
+            if err=$(gh api --method DELETE "repos/$REPO/actions/caches/$id" --silent 2>&1); then
+              deleted=$((deleted + 1))
+              freed=$((freed + size))
+            elif printf '%s' "$err" | grep -qi 'HTTP 404'; then
+              echo "::warning::Cache $id was already gone."
+            else
+              echo "::error::Deleting cache $id failed: $err"
+              failed=$((failed + 1))
+            fi
+          done <<< "$entries"
+
+          echo "Deleted $deleted cache(s) for $REF, freeing $((freed / 1048576)) MB."
+
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::$failed deletion(s) failed for a reason other than 404 — this job is reclaiming nothing."
+            exit 1
+          fi
