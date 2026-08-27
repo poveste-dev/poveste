@@ -1,14 +1,19 @@
 name: Example tests
 
 on:
+  # `next` as well as `main` — staged work lands there by rebase, so a push is a
+  # tree no run has seen (#396), and a run on `next` is what PRs targeting it
+  # restore their cache from (#417). Same reasoning as `test.yml`.
   push:
-    branches: [main]
+    branches: [main, next]
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Pushes always finish — a cancelled job skips `actions/cache`'s post step and
+  # saves nothing. Same reasoning as `test.yml` (#335).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Built once and handed to every example, so all of them are tested against

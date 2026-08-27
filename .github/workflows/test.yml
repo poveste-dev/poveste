@@ -1,14 +1,28 @@
 name: Continuous tests
 
 on:
+  # `next` as well as `main`. Staged work parks on `next` and lands there by
+  # rebase, so a push produces a tree no run has ever seen — individually tested
+  # commits, jointly unverified (#396).
+  #
+  # It also gives PRs targeting `next` something to restore from. Cache reads are
+  # scoped to the run's own ref plus the default branch, so without a run on
+  # `next` they fall back to `main`, and the moment the two lockfiles diverge
+  # every such PR saves its own full copy instead (#417).
   push:
-    branches: [main]
+    branches: [main, next]
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Only a PR's own runs supersede each other. A push must always finish: a
+  # cancelled job never runs `actions/cache`'s post step, so it saves nothing —
+  # and on `next`, where work lands by rebase, a burst of force-pushes would
+  # otherwise leave the branch with neither a cache nor a result.
+  #
+  # The same reason the release commit ends up with no result on `main` (#335).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-and-test:
