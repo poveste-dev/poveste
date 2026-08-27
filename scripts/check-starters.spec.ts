@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { installArgs, mergeResults, pinLatest, releasedVersion } from './check-starters.ts'
+import { installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './check-starters.ts'
 
 const result = (framework: string, ok: boolean) => ({ framework, ok, detail: ok ? 'resolves' : 'ERESOLVE' } as any)
 
@@ -65,6 +65,17 @@ describe('pinLatest', () => {
     expect(pinLatest(manifest, '0.8.1').dependencies).toEqual({ vue: '^3.5.26' })
   })
 
+  it('does not hand the poveste version to somebody else\'s `latest`', () => {
+    // A starter asking for `typescript: latest` would otherwise be resolved as
+    // `typescript@0.8.1`, failing a healthy release over a package nobody touched.
+    const withForeignLatest = {
+      ...manifest,
+      devDependencies: { ...manifest.devDependencies, typescript: 'latest' },
+    }
+
+    expect(pinLatest(withForeignLatest, '0.8.1').devDependencies.typescript).toBe('latest')
+  })
+
   it('does not touch anything outside the dependency maps', () => {
     const pinned = pinLatest(manifest, '0.8.1')
 
@@ -82,5 +93,16 @@ describe('pinLatest', () => {
 describe('releasedVersion', () => {
   it('is the workspace version, which is the tag being cut', () => {
     expect(releasedVersion()).toMatch(/^\d+\.\d+\.\d+/)
+  })
+})
+
+describe('isPovestePackage', () => {
+  it('claims the CLI and the scope', () => {
+    expect(['poveste', '@poveste/plugin-vue'].map(isPovestePackage)).toEqual([true, true])
+  })
+
+  it('leaves everything else alone', () => {
+    expect(['typescript', 'vue', 'histoire', '@histoire/plugin-vue'].map(isPovestePackage))
+      .toEqual([false, false, false, false])
   })
 })

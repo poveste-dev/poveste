@@ -16,11 +16,13 @@
 //
 // Needs network, and resolves `latest` against what is published right now.
 //
-// `--after-publish` runs it as a release step (#298). Before a release `latest`
-// is still the previous version, so it would vouch for the wrong one; straight
-// after, it is the only check that installs the published set the way a user
-// does. It retries there, because `latest` can lag the publish by seconds, and
-// it reports rather than gates — the packages are already out.
+// `--after-publish` runs it as a release step (#298), and there it substitutes the
+// version being released for `latest`: during a publish `latest` is still the
+// previous release, so resolving it would vouch for the wrong one and pass (#411).
+// The literal `latest` manifest a StackBlitz visitor gets is what every ordinary
+// run resolves, where there is no propagation race to lose. It retries after a
+// publish, because the new version can take a minute to be resolvable, and it
+// reports rather than gates — the packages are already out.
 
 import type { Framework, Manifest } from '../docs/.vitepress/theme/starters.ts'
 import { execFile } from 'node:child_process'
@@ -53,10 +55,17 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // So after a publish it asks for the version being released by name. The literal
 // `latest` manifest a StackBlitz visitor gets is still resolved on every ordinary
 // CI run, where there is no race to lose.
+export function isPovestePackage(name: string): boolean {
+  return name === 'poveste' || name.startsWith('@poveste/')
+}
+
 export function pinLatest(manifest: Manifest, version: string): Manifest {
+  // Keyed on the package, not on the range: a starter that one day asks for
+  // `typescript: latest` must not be handed the poveste version and fail a
+  // healthy release with a `notarget` about a package nobody touched.
   const pin = (deps: Record<string, string>): Record<string, string> =>
     Object.fromEntries(Object.entries(deps).map(([name, range]) =>
-      [name, range === 'latest' ? version : range]))
+      [name, isPovestePackage(name) && range === 'latest' ? version : range]))
 
   return {
     ...manifest,
@@ -71,10 +80,11 @@ export function releasedVersion(): string {
   return JSON.parse(readFileSync(join(ROOT, 'packages/poveste/package.json'), 'utf8')).version
 }
 
-// `--prefer-online` matters only after a publish, and matters a lot: the
-// registry caches packuments for 300s, so `latest` can still resolve to the
-// previous release — this step would then install the version before the one it
-// was added to vouch for, and pass (#298).
+// `--prefer-online` matters only after a publish, and matters a lot: the registry
+// caches packuments for 300s, so a version published seconds ago can be absent
+// from the cached view and resolve as `notarget` (#298). That is still true now
+// that the release run asks for an exact version rather than `latest` — the
+// cached packument is what would be missing it. Do not drop this flag.
 export function installArgs(afterPublish: boolean): string[] {
   const args = ['install', '--dry-run', '--no-audit', '--no-fund']
   return afterPublish ? [...args, '--prefer-online'] : args
