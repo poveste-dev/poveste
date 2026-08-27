@@ -124,25 +124,31 @@ jobs:
         if: matrix.example == 'vike'
         run: pnpm --filter ./examples/vike run vike:build
 
-      # poveste relied on Node's default unhandled-rejection exit to terminate its
-      # own CLI. Vike installs an `unhandledRejection` handler, so that safety net
-      # is gone and a broken component left `poveste build` running forever with
-      # its error already printed — CI reporting a job timeout over the real
-      # failure (#405). This is the only book here that reproduces it: everywhere
-      # else Node's default still kills the process and hides the missing teardown.
+      # Two books, two different regressions, and each passes while the other's
+      # defect is live.
+      #
+      # Vike installs its own `unhandledRejection` listener, removing the default
+      # that used to be the only thing terminating a failed build (#405). It has one
+      # story, so nothing is ever in flight to strand.
+      #
+      # vue3 has 57, so a failure abandons executions mid-run — and collection ports
+      # that are not closed then keep the process alive with nothing left to do
+      # (#426). Measured: with the leak restored, vue3 hangs here and vike does not.
       - name: Assert a broken component fails the book build
-        if: matrix.example == 'vike'
-        working-directory: ./examples/vike
+        if: matrix.example == 'vike' || matrix.example == 'vue3'
+        working-directory: ./examples/${{ matrix.example }}
+        env:
+          COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || 'src/components/InjectDemo.vue' }}
         run: |
-          cp src/Button.vue "$RUNNER_TEMP/Button.vue.bak"
-          printf '<script setup lang="ts">\ndefineProps<{ label: string }>(\n</script>\n' > src/Button.vue
+          cp "$COMPONENT" "$RUNNER_TEMP/component.bak"
+          printf '<script setup lang="ts">\ndefineProps<{ label: string }>(\n</script>\n' > "$COMPONENT"
           set +e
-          timeout 120 pnpm run story:build > "$RUNNER_TEMP/broken-build.log" 2>&1
+          timeout 180 pnpm run story:build > "$RUNNER_TEMP/broken-build.log" 2>&1
           code=$?
           set -e
-          cp "$RUNNER_TEMP/Button.vue.bak" src/Button.vue
+          cp "$RUNNER_TEMP/component.bak" "$COMPONENT"
           if [ "$code" -eq 124 ]; then
-            echo "::error::poveste build hung on a broken component instead of failing (#405)"
+            echo "::error::poveste build hung on a broken component instead of failing (#405, #426)"
             exit 1
           fi
           if [ "$code" -eq 0 ]; then
