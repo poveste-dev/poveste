@@ -1,6 +1,6 @@
 # Changelog
 
-Poveste's own releases are below, newest first. Each one is also published as a [GitHub release](https://github.com/poveste-dev/poveste/releases), which is generated from the commit log at tag time and is the canonical source if the two ever disagree.
+Poveste's own releases are below, newest first. Each one is also published as a [GitHub release](https://github.com/poveste-dev/poveste/releases), whose body is this file's section for that version with the generated commit list appended underneath. So this file is the source, and what is written here is what release subscribers are emailed.
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 

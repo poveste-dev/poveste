@@ -54,8 +54,46 @@ jobs:
       - name: Preflight — every package is bootstrappable, installable and resolvable
         run: pnpm run test:publishable
 
-      - name: Create GitHub release
-        run: npx changelogithub
+      # The release body is the hand-written CHANGELOG section, because publishing
+      # the release is what emails every watcher — and editing it afterwards never
+      # re-notifies, so a generated commit list was the only thing subscribers ever
+      # saw (#399). Extracted before anything publishes: a missing section stops the
+      # release here rather than shipping a release with no body.
+      - name: Build the release notes
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-changelog.ts "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+
+      # Drafted, not published: publishing is what emails every watcher, and the
+      # body now tells them what to upgrade — so it must not go out before npm has
+      # the packages it describes. The draft is published further down, once the
+      # registry has been verified.
+      #
+      # `create` fails when a release already exists, which is exactly what a
+      # re-run of this job hits — the documented recovery for a failed publish. So
+      # an existing release is edited instead, or a re-run would leave the old body
+      # published and still go green.
+      - name: Draft the GitHub release
+        run: |
+          cp "$RUNNER_TEMP/notes.md" "$RUNNER_TEMP/body.md"
+          # The generated commit list is still the accurate record of what landed,
+          # so it goes underneath — best-effort, since it is not the part that has
+          # to explain the release.
+          if npx changelogithub --output "$RUNNER_TEMP/generated.md"; then
+            printf '\n---\n\n' >> "$RUNNER_TEMP/body.md"
+            cat "$RUNNER_TEMP/generated.md" >> "$RUNNER_TEMP/body.md"
+          fi
+          prerelease=()
+          case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --notes-file "$RUNNER_TEMP/body.md" \
+              "${prerelease[@]}"
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --draft \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file "$RUNNER_TEMP/body.md" \
+              "${prerelease[@]}"
+          fi
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,7 +123,17 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm run test:starters:release
 
-      # changelogithub stays non-fatal so a GitHub API blip cannot block an
+      # Publishing the draft is what sends the release notification, so it waits
+      # until the packages the notes point at are on npm and installable. A step
+      # with no `if` runs only when every step before it succeeded, which is the
+      # condition wanted here: a failed registry check must not mail anyone.
+      - name: Publish the GitHub release
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Both release steps stay non-fatal so a GitHub API blip cannot block an
       # otherwise good publish — but the run must not go green without the
       # release that explains it. Last, so it reports rather than gates (#186).
       - name: Verify the GitHub release was created
@@ -93,8 +141,15 @@ jobs:
         run: |
           if ! gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName; then
             echo "::error::Published $GITHUB_REF_NAME to npm, but no GitHub release exists for it."
-            echo "changelogithub failed earlier in this run. Create the release now — the packages are already out:"
-            echo "  npx changelogithub --draft   # then review and publish"
+            echo "Creating it failed earlier in this run. Create it now — the packages are already out:"
+            echo "  node scripts/check-changelog.ts $GITHUB_REF_NAME > notes.md"
+            echo "  gh release create $GITHUB_REF_NAME --title $GITHUB_REF_NAME --notes-file notes.md"
+            exit 1
+          fi
+          if [ "$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft)" = "true" ]; then
+            echo "::error::$GITHUB_REF_NAME is still a draft, so nobody watching the repo was notified."
+            echo "The draft is published only once the packages are verified on npm. Fix what failed above, then:"
+            echo "  gh release edit $GITHUB_REF_NAME --draft=false"
             exit 1
           fi
         env:

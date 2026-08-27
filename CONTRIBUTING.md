@@ -184,11 +184,11 @@ It waits for `test.yml` — lint, versions, readmes, build, unit tests and the c
 
 The browser example suites are deliberately not part of this gate: they are flaky under full-suite parallelism ([#75](https://github.com/poveste-dev/poveste/issues/75)), and a flake blocking a release costs more than the coverage buys, given they already ran on the PR that produced the commit. Add them to `WORKFLOWS` in [`await-commit-checks.sh`](./.github/scripts/await-commit-checks.sh) once #75 is closed.
 
-The other half is the release body. `changelogithub` is allowed to fail so a GitHub API blip cannot block an otherwise good publish, but a run used to go green with the packages shipped and no release behind the tag. The last step now checks the release exists and fails the run if it does not — the publish has already happened at that point, so treat it as "create the release now", not "the release failed".
+The other half is the release body. Creating the release is allowed to fail so a GitHub API blip cannot block an otherwise good publish, but a run used to go green with the packages shipped and no release behind the tag. The last step now checks the release exists and fails the run if it does not — the publish has already happened at that point, so treat it as "create the release now", not "the release failed".
 
 ### CHANGELOG.md
 
-Nothing writes `CHANGELOG.md` automatically. `changelogithub` generates the **GitHub release** from the commit log at tag time; it does not touch the file, which is why the file silently kept describing histoire through poveste's first six releases.
+Nothing writes `CHANGELOG.md` automatically, and nothing can: it is the release notes, written by hand. The release workflow reads the section for the tag and publishes it as the **GitHub release** body, so an absent or careless section is what the world sees.
 
 So add the new section by hand as part of release prep, before `pnpm run release`:
 
@@ -196,23 +196,25 @@ So add the new section by hand as part of release prep, before `pnpm run release
 2. Add a `[compare changes]` link against the previous tag.
 3. Reference PRs as `#N` where there is one, and a short commit SHA otherwise.
 
-Then cross-check the published GitHub release once CI has run: if the two disagree, the release is the source of truth and the file is wrong.
+The release then carries exactly this section, so there is nothing to cross-check afterwards — and nothing to fix afterwards either, which is the point of the next part.
 
 ### The GitHub release body
 
-`changelogithub` runs unconfigured, so the release body is built from **commit subjects alone**. That is fine for a release that is a list of changes, and not fine for a release that is a story — a deprecation, a migration, a changed default, a floor that moved.
+The body is the `CHANGELOG.md` section for that version, with the generated commit list appended underneath. That order is deliberate: the commit list is an accurate record of *what* landed and carries none of *why it matters* or *what to change*.
 
-Since the GitHub release is the canonical artifact, it is the one that has to explain the release. So after `pnpm run release`, read the published body and ask whether someone who only reads that would know what to do. If not, edit it:
+**This is the one part of a release that cannot be fixed afterwards.** Publishing a release is what emails everyone watching the repository, and editing a published release never re-sends that notification. Through v0.8.1 the body was generated from commit subjects and rewritten by hand afterwards, so subscribers were emailed a commit list every time and the notes written for them reached nobody (#399).
+
+The release is created as a **draft** and published only after the packages are verified on npm, because publishing it is what sends the email — and notes telling people to upgrade must not arrive before the version exists. If the run fails before that point the draft stays unpublished, and the last step says so.
+
+So the section has to be right **before** the tag is cut. The workflow extracts it and fails before publishing anything if it is missing — check what it will publish first:
 
 ```sh
-gh release edit v<version> --notes-file <file>
+node scripts/check-changelog.ts v<version>
 ```
-
-Keep the generated section at the bottom and put the explanation above it — the commit list is still the accurate record of *what* landed, it just does not carry *why it matters* or *what to change*.
 
 `v0.4.0` is the worked example. changelogithub produced a single line — "Accept setupVue alongside setupVue3" — which is a correct summary of the commit and a useless summary of the release: nothing told a reader that their existing code still works, that their editor would start flagging `defineSetupVue3`, or that 1.0 is the deadline for the old spelling.
 
-A rule of thumb for when the generated body is not enough:
+A rule of thumb for when the commit list alone would leave a reader stuck, and the section has to do the work:
 
 - something is deprecated, renamed, or removed
 - a supported version floor moved
