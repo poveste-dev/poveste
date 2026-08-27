@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { installArgs, mergeResults } from './check-starters.ts'
+import { installArgs, mergeResults, pinLatest, releasedVersion } from './check-starters.ts'
 
 const result = (framework: string, ok: boolean) => ({ framework, ok, detail: ok ? 'resolves' : 'ERESOLVE' } as any)
 
@@ -38,5 +38,49 @@ describe('mergeResults', () => {
     const merged = mergeResults(previous, [result('svelte', true), result('vue', true)])
 
     expect(merged.map(r => r.framework)).toEqual(['vue', 'nuxt', 'svelte'])
+  })
+})
+
+// #411: during a publish `latest` is still the previous release, so this step
+// could resolve the old version and report the new one green.
+describe('pinLatest', () => {
+  const manifest = {
+    name: 'poveste-vue-starter',
+    private: true as const,
+    type: 'module' as const,
+    scripts: { dev: 'poveste dev' },
+    dependencies: { vue: '^3.5.26' },
+    devDependencies: { 'poveste': 'latest', '@poveste/plugin-vue': 'latest', 'vite': '^8.0.0' },
+  }
+
+  it('asks for the version being released instead of the moving tag', () => {
+    expect(pinLatest(manifest, '0.8.1').devDependencies).toEqual({
+      'poveste': '0.8.1',
+      '@poveste/plugin-vue': '0.8.1',
+      'vite': '^8.0.0',
+    })
+  })
+
+  it('leaves every pinned range alone', () => {
+    expect(pinLatest(manifest, '0.8.1').dependencies).toEqual({ vue: '^3.5.26' })
+  })
+
+  it('does not touch anything outside the dependency maps', () => {
+    const pinned = pinLatest(manifest, '0.8.1')
+
+    expect(pinned.name).toBe('poveste-vue-starter')
+    expect(pinned.scripts).toEqual({ dev: 'poveste dev' })
+  })
+
+  it('leaves the original manifest untouched, since the starters are shared', () => {
+    pinLatest(manifest, '0.8.1')
+
+    expect(manifest.devDependencies.poveste).toBe('latest')
+  })
+})
+
+describe('releasedVersion', () => {
+  it('is the workspace version, which is the tag being cut', () => {
+    expect(releasedVersion()).toMatch(/^\d+\.\d+\.\d+/)
   })
 })
