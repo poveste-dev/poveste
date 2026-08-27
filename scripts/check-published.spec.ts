@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { probeArgs, unpublishedReleases } from './check-published.ts'
+import { backoffMs, probeArgs, unpublishedReleases } from './check-published.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -70,6 +70,54 @@ describe('unpublishedReleases', () => {
     )
 
     expect(problems).toEqual(['poveste@0.7.0 could not be verified: npm error network timeout'])
+  })
+})
+
+// The defaults are the guard, so these exercise them rather than an injected
+// window: only `sleep` is replaced, and it records the simulated wait.
+describe('the default retry window', () => {
+  it('tolerates the propagation that failed a healthy v0.8.1', () => {
+    // #401: the last package reached npm 60s after the check began.
+    let waited = 0
+    const probe = (name: string): string =>
+      name === '@poveste/plugin-vue' && waited < 60_000 ? 'missing' : 'present'
+
+    const problems = unpublishedReleases(RELEASES, probe, {
+      sleep: (ms: number) => {
+        waited += ms
+      },
+    })
+
+    expect(problems).toEqual([])
+  })
+
+  it('still reports the gap it exists for', () => {
+    // #327 was ten minutes and never resolved. Widening the window must not
+    // turn this gate into one that waits out a real half-publish.
+    let waited = 0
+    const probe = (): string => (waited < 10 * 60_000 ? 'missing' : 'present')
+
+    const problems = unpublishedReleases(RELEASES, probe, {
+      sleep: (ms: number) => {
+        waited += ms
+      },
+    })
+
+    expect(problems).toHaveLength(2)
+  })
+})
+
+describe('backoffMs', () => {
+  it('waits the base interval before the second attempt', () => {
+    expect(backoffMs(2, 6_000, 60_000)).toBe(6_000)
+  })
+
+  it('doubles the wait on each further attempt', () => {
+    expect([3, 4, 5].map(attempt => backoffMs(attempt, 6_000, 60_000))).toEqual([12_000, 24_000, 48_000])
+  })
+
+  it('stops doubling at the ceiling', () => {
+    expect(backoffMs(9, 6_000, 60_000)).toBe(60_000)
   })
 })
 
