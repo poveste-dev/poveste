@@ -4,6 +4,34 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.8.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.1...v0.8.2)
+
+**A release gate can be wrong in three directions. This one had been wrong in all of them.**
+
+0.8.0 added the checks that ask npm whether a release actually arrived, and they earned their place immediately — 0.7.0 had half-published and gone green. What followed was two releases where those same checks reported failures that had not happened, and one check that had never reported anything because it could not fail. All three are fixed here. If you are reading this in an email from GitHub rather than a commit list, that is the fourth fix.
+
+### 🩹 Fixes
+
+- **`poveste build` exits when a build fails, instead of running forever** ([#405](https://github.com/poveste-dev/poveste/issues/405)). A collection error printed correctly and then the process sat holding its worker threads until something outside killed it — in CI, a job timeout reported over the top of the real error in the log. Two causes: teardown ran only on the success path, and the CLI depended on Node's default handling of an unhandled rejection to terminate at all. Teardown now runs in `finally` and the exit is explicit, so it no longer matters that a dependency has installed its own `unhandledRejection` handler — which is why this reproduced under Vike and not elsewhere. A failed build still leaks a timer and three worker ports ([#422](https://github.com/poveste-dev/poveste/issues/422)); the explicit exit makes that harmless to the CLI rather than fixed.
+- **A slow publish no longer fails the release** ([#401](https://github.com/poveste-dev/poveste/issues/401)). The check that asks npm whether every package arrived allowed roughly 24 seconds. v0.8.1's last package reached the registry 60 seconds after the check began, so a release in which all eleven packages published correctly went red and asked for a re-run that did nothing. The wait now doubles from 6 seconds to a 60-second cap over seven attempts. The gap this check exists for was ten minutes and never resolved, so the two stay far apart.
+- **The release notes are the ones written for you** ([#399](https://github.com/poveste-dev/poveste/issues/399)). Publishing a release is what emails everyone watching the repository, and editing it afterwards never re-sends. The body was generated from commit subjects and rewritten by hand after the fact, so through v0.8.1 subscribers were emailed a commit list every time and these notes reached nobody. The workflow now publishes this file's section, with the generated commit list appended underneath, and refuses to release a version that has no section. The release is created as a draft and published only once the packages it describes are verified on npm — notes telling you to upgrade should not arrive before the version exists.
+- **The install check can no longer vouch for the previous release** ([#411](https://github.com/poveste-dev/poveste/issues/411)). The step that installs the published set resolved `poveste@latest`, and during a publish `latest` genuinely is the version before the one being cut. It could install the old release, find it resolves cleanly, and report the new one green — and since the retry loop only re-runs what is still failing, a first-attempt success settled it. The starters are pinned to the released version during a release run, and the log line names the version it vouches for. Nothing yet verifies the `latest` dist-tag itself advanced ([#421](https://github.com/poveste-dev/poveste/issues/421)).
+
+### 🤖 CI
+
+- **A release no longer cancels `main`'s own CI** ([#335](https://github.com/poveste-dev/poveste/issues/335)). `cancel-in-progress` applied to every ref, so the pre-release commit was routinely left with no result — and a cancelled job never runs the cache's post step, so it saved nothing either. It applies to pull requests only now. The suites also run on `next`, which is where staged work lands by rebase and had never been tested as the tree it becomes.
+- **Merged pull requests stop holding the Actions cache** (part of [#417](https://github.com/poveste-dev/poveste/issues/417)). The cache had reached GitHub's 10 GB cap with 8.29 GB belonging to closed pull requests — entries no other run could read, evicting the ones every new run restores from. They are now deleted when the ref goes away.
+
+### ✅ Tests
+
+- **The example harness lists are checked against each other** ([#397](https://github.com/poveste-dev/poveste/issues/397)). An example can appear in the CI matrix and not in the Playwright config, or state its preview port three times and disagree with itself — one is YAML and the others are TypeScript, so nothing compared them. The new check imports the configs rather than reading their source, so it sees what the harness actually resolves.
+
+### Upgrading
+
+Nothing to do.
+
 ## v0.8.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.0...v0.8.1)
