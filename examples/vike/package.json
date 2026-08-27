@@ -4,6 +4,7 @@
   "version": "0.8.0",
   "private": true,
   "scripts": {
+    "vike:build": "vite build",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4572",
