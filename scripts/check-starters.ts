@@ -16,19 +16,22 @@
 //
 // Needs network, and resolves `latest` against what is published right now.
 //
-// `--after-publish` runs it as a release step (#298). Before a release `latest`
-// is still the previous version, so it would vouch for the wrong one; straight
-// after, it is the only check that installs the published set the way a user
-// does. It retries there, because `latest` can lag the publish by seconds, and
-// it reports rather than gates — the packages are already out.
+// `--after-publish` runs it as a release step (#298), and there it substitutes the
+// version being released for `latest`: during a publish `latest` is still the
+// previous release, so resolving it would vouch for the wrong one and pass (#411).
+// The literal `latest` manifest a StackBlitz visitor gets is what every ordinary
+// run resolves, where there is no propagation race to lose. It retries after a
+// publish, because the new version can take a minute to be resolvable, and it
+// reports rather than gates — the packages are already out.
 
-import type { Framework } from '../docs/.vitepress/theme/starters.ts'
+import type { Framework, Manifest } from '../docs/.vitepress/theme/starters.ts'
 import { execFile } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { starters } from '../docs/.vitepress/theme/starters.ts'
 
@@ -40,10 +43,48 @@ interface Result {
   detail: string
 }
 
-// `--prefer-online` matters only after a publish, and matters a lot: the
-// registry caches packuments for 300s, so `latest` can still resolve to the
-// previous release — this step would then install the version before the one it
-// was added to vouch for, and pass (#298).
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// The one thing the starters do not pin. During a publish `latest` genuinely is
+// the previous release, for as long as propagation takes — 60s for v0.8.1 (#401)
+// — so this step could install the release before the one it was added to vouch
+// for, resolve it cleanly, and report green having never touched the new version
+// (#411). `--prefer-online` does not help: the registry's answer is correct and
+// current, it is just still the old one.
+//
+// So after a publish it asks for the version being released by name. The literal
+// `latest` manifest a StackBlitz visitor gets is still resolved on every ordinary
+// CI run, where there is no race to lose.
+export function isPovestePackage(name: string): boolean {
+  return name === 'poveste' || name.startsWith('@poveste/')
+}
+
+export function pinLatest(manifest: Manifest, version: string): Manifest {
+  // Keyed on the package, not on the range: a starter that one day asks for
+  // `typescript: latest` must not be handed the poveste version and fail a
+  // healthy release with a `notarget` about a package nobody touched.
+  const pin = (deps: Record<string, string>): Record<string, string> =>
+    Object.fromEntries(Object.entries(deps).map(([name, range]) =>
+      [name, isPovestePackage(name) && range === 'latest' ? version : range]))
+
+  return {
+    ...manifest,
+    dependencies: pin(manifest.dependencies),
+    devDependencies: pin(manifest.devDependencies),
+  }
+}
+
+// The workspace is checked out at the tag during a release, so its own version is
+// the one being published — no need to parse the ref.
+export function releasedVersion(): string {
+  return JSON.parse(readFileSync(join(ROOT, 'packages/poveste/package.json'), 'utf8')).version
+}
+
+// `--prefer-online` matters only after a publish, and matters a lot: the registry
+// caches packuments for 300s, so a version published seconds ago can be absent
+// from the cached view and resolve as `notarget` (#298). That is still true now
+// that the release run asks for an exact version rather than `latest` — the
+// cached packument is what would be missing it. Do not drop this flag.
 export function installArgs(afterPublish: boolean): string[] {
   const args = ['install', '--dry-run', '--no-audit', '--no-fund']
   return afterPublish ? [...args, '--prefer-online'] : args
@@ -59,7 +100,8 @@ async function check(framework: Framework, afterPublish = false): Promise<Result
   const dir = await mkdtemp(join(tmpdir(), `poveste-starter-${framework}-`))
   try {
     const { manifest } = starters[framework]()
-    await writeFile(join(dir, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`)
+    const resolved = afterPublish ? pinLatest(manifest, releasedVersion()) : manifest
+    await writeFile(join(dir, 'package.json'), `${JSON.stringify(resolved, null, 2)}\n`)
 
     const { stdout } = await run(
       'npm',
@@ -73,7 +115,8 @@ async function check(framework: Framework, afterPublish = false): Promise<Result
       },
     )
     const packages = /added (\d+) package/.exec(stdout)?.[1] ?? '?'
-    return { framework, ok: true, detail: `resolves, ${packages} packages` }
+    const asked = afterPublish ? ` for ${releasedVersion()}` : ''
+    return { framework, ok: true, detail: `resolves${asked}, ${packages} packages` }
   }
   catch (error) {
     const { stderr, message } = error as { stderr?: string, message: string }
