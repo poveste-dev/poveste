@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-tailwind",
   "type": "module",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Poveste plugin that renders a Tailwind design system as a story",
   "author": {
     "name": "Sorin Gitlan"
