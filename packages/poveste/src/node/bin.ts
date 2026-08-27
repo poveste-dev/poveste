@@ -17,15 +17,22 @@ process.env.POVESTE = 'true'
 // and take it away, which Vike does — and a failed build then ran forever with
 // its error already printed (#405).
 //
-// So failure is reported and exited here, deliberately. `exit` rather than
-// `exitCode` because teardown does not get every handle back: after a failed
-// build a `Timeout` and three `MessagePort`s are still open, and waiting for an
-// empty event loop is what hung in the first place.
+// So failure is reported and exited here, deliberately. `exitCode` alone is not
+// enough — teardown does not get every handle back, and after a failed build a
+// `Timeout` and three `MessagePort`s are still open, so waiting for an empty
+// event loop is what hung in the first place. But exiting on the same tick as
+// the error would truncate it: writes to a piped stderr are asynchronous, and a
+// framed compiler error is long.
+//
+// So both: the exit code is set immediately, and the hard exit is a timer that
+// does not itself hold the loop open. A process with nothing leaked exits on its
+// own, flushing normally; one that leaked is cut loose a moment later, by which
+// time the error has been written.
 function run(command: () => Promise<unknown>): Promise<void> {
   return command().then(() => undefined, (error) => {
     console.error(error)
     process.exitCode = 1
-    process.exit(1)
+    setTimeout(() => process.exit(1), 500).unref()
   })
 }
 

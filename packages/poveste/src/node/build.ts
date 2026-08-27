@@ -33,6 +33,7 @@ import {
   userCssScopePlugin,
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
+import { wrapLogError } from './util/log.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
 const PRELOAD_MODULES = [
@@ -116,7 +117,10 @@ export async function build(ctx: Context) {
       await Promise.all(ctx.storyFiles.map(storyFile => executeStoryFile(storyFile)))
     }
     finally {
-      await destroyCollectStories()
+      // Logged, not thrown: a teardown that rejects would replace the error that
+      // caused the teardown, which is the failure this whole change is about.
+      // Same wrapper the dev path uses for these exact calls (server.ts).
+      await wrapLogError('destroyCollectStories', () => destroyCollectStories())
     }
 
     const storyCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ? 1 : 0), 0)
@@ -302,24 +306,30 @@ export async function build(ctx: Context) {
     // Render
     if (previewStoryCallbacks.length) {
       const { baseUrl, close } = await startPreview({}, ctx)
-      for (const storyFile of ctx.storyFiles) {
-        const story = storyFile.story
-        for (const variant of story.variants) {
-          const query = new URLSearchParams()
-          query.append('storyId', story.id)
-          query.append('variantId', variant.id)
-          const url = `${baseUrl}__sandbox.html?${query.toString()}`
-          for (const fn of previewStoryCallbacks) {
-            await fn({
-              file: storyFile.path,
-              story,
-              variant,
-              url,
-            })
+      try {
+        for (const storyFile of ctx.storyFiles) {
+          const story = storyFile.story
+          for (const variant of story.variants) {
+            const query = new URLSearchParams()
+            query.append('storyId', story.id)
+            query.append('variantId', variant.id)
+            const url = `${baseUrl}__sandbox.html?${query.toString()}`
+            for (const fn of previewStoryCallbacks) {
+              await fn({
+                file: storyFile.path,
+                story,
+                variant,
+                url,
+              })
+            }
           }
         }
       }
-      await close()
+      finally {
+        // A screenshot or percy callback that throws would otherwise leave this
+        // server bound — the same leak as the two above, one level down.
+        await wrapLogError('startPreview.close', () => close())
+      }
     }
 
     await server.close()
@@ -331,7 +341,7 @@ export async function build(ctx: Context) {
   }
   finally {
     if (!serverClosed) {
-      await server.close()
+      await wrapLogError('server.close', () => server.close())
     }
   }
 }
