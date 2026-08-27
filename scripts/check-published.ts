@@ -19,21 +19,29 @@ function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 }
 
+// The wait doubles up to a ceiling, so a release that propagates in seconds still
+// exits in seconds while a slow one is tolerated. A flat 6s x 5 gave up 31s before
+// v0.8.1's last package landed and failed a release that was entirely healthy
+// (#401); the gap this gate exists for (#327) was ten minutes and never resolved,
+// so widening to ~3.5 minutes keeps the two far apart.
+export function backoffMs(attempt: number, waitMs: number, maxWaitMs: number): number {
+  return Math.min(maxWaitMs, waitMs * 2 ** (attempt - 2))
+}
+
 // Releases the registry cannot account for. Only the still-unaccounted-for are
-// retried — propagation is real, just far shorter than the ten minutes the
-// v0.7.0 gap lasted — and every one is reported, so recovery is a single
-// operation rather than one per run.
+// retried, and every one is reported, so recovery is a single operation rather
+// than one per run.
 export function unpublishedReleases(
   releases: Release[],
   probe: Probe,
-  { attempts = 5, waitMs = 6_000, sleep = sleepSync } = {},
+  { attempts = 7, waitMs = 6_000, maxWaitMs = 60_000, sleep = sleepSync } = {},
 ): string[] {
   let pending = releases
   let problems: string[] = []
 
   for (let attempt = 1; attempt <= attempts && pending.length > 0; attempt++) {
     if (attempt > 1) {
-      sleep(waitMs)
+      sleep(backoffMs(attempt, waitMs, maxWaitMs))
     }
     const unresolved: Release[] = []
     problems = []
