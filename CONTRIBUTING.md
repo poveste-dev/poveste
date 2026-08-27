@@ -204,6 +204,8 @@ The body is the `CHANGELOG.md` section for that version, with the generated comm
 
 **This is the one part of a release that cannot be fixed afterwards.** Publishing a release is what emails everyone watching the repository, and editing a published release never re-sends that notification. Through v0.8.1 the body was generated from commit subjects and rewritten by hand afterwards, so subscribers were emailed a commit list every time and the notes written for them reached nobody (#399).
 
+The release is created as a **draft** and published only after the packages are verified on npm, because publishing it is what sends the email — and notes telling people to upgrade must not arrive before the version exists. If the run fails before that point the draft stays unpublished, and the last step says so.
+
 So the section has to be right **before** the tag is cut. The workflow extracts it and fails before publishing anything if it is missing — check what it will publish first:
 
 ```sh

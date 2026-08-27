@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeVersion, releasedVersions, sectionFor } from './check-changelog.ts'
+import { normalizeVersion, releasedVersions, sectionFor, strayHeadings } from './check-changelog.ts'
 
 // The shape of the real file: newest release first, then older ones, then the
 // inherited histoire history behind its own `## ` heading.
@@ -65,6 +65,56 @@ describe('sectionFor', () => {
     const changelog = '## v0.8.10\n\n- Ten\n'
 
     expect(sectionFor(changelog, 'v0.8.1')).toBeUndefined()
+  })
+})
+
+// Both cases below silently truncated the published body, which is the one thing
+// about a release that cannot be corrected once the notification is sent.
+describe('a heading written inside a section', () => {
+  const WITH_H2 = [
+    '## v0.9.0',
+    '',
+    '- A real fix',
+    '',
+    '## Upgrading',
+    '',
+    '- Run `pnpm add poveste@0.9.0`',
+    '',
+    '## v0.8.1',
+    '',
+    '- older',
+  ].join('\n')
+
+  it('no longer ends the section, so the notes below it survive', () => {
+    expect(sectionFor(WITH_H2, 'v0.9.0')).toContain('pnpm add poveste@0.9.0')
+  })
+
+  it('is reported, because `##` still reads as a new release', () => {
+    expect(strayHeadings(WITH_H2, 'v0.9.0')).toEqual(['## Upgrading'])
+  })
+})
+
+describe('a heading-like line inside a code sample', () => {
+  const WITH_FENCE = [
+    '## v0.9.0',
+    '',
+    '```sh',
+    '## not a heading',
+    '```',
+    '',
+    '- After the fence',
+    '',
+    '## v0.8.1',
+    '',
+    '- older',
+  ].join('\n')
+
+  it('does not end the section', () => {
+    expect(sectionFor(WITH_FENCE, 'v0.9.0')).toContain('After the fence')
+  })
+
+  it('is not mistaken for a stray heading', () => {
+    expect(strayHeadings(WITH_FENCE, 'v0.9.0')).toEqual([])
   })
 })
 
