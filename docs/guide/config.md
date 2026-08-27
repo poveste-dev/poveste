@@ -170,6 +170,8 @@ export default defineConfig({
 
 Your app is untouched — it still gets Vike — and the book is built as a plain Vite + Vue app, which is all it needed to be.
 
+A working version of exactly this is in the repository: [`examples/vike`](https://github.com/poveste-dev/poveste/tree/main/examples/vike) builds a book beside a real Vike app, and its tests fail if the condition is removed.
+
 ::: danger Remove only the plugin that is failing
 Your framework's plugin is usually also what compiles your components, and removing it takes the compiler with it. Dropping `sveltekit()` from the SvelteKit example turns a book of 58 stories into 58 collection failures:
 
