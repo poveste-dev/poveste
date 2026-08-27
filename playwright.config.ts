@@ -42,6 +42,13 @@ const ALL_EXAMPLES: Example[] = [
     port: 4571,
     dev: { port: 4671, specs: ['**/style-isolation.spec.ts'] },
   },
+  {
+    name: 'vike',
+    port: 4572,
+    // The failure this example guards is a runtime one, and dev and build reach
+    // the sandbox by different paths — so both are exercised.
+    dev: { port: 4672, specs: ['**/vike-interop.spec.ts'] },
+  },
 ]
 
 /*

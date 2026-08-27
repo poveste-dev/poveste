@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [vue3, nuxt4, svelte5, sveltekit, vue3-tailwind]
+        example: [vue3, nuxt4, svelte5, sveltekit, vue3-tailwind, vike]
     name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v4
@@ -109,6 +109,15 @@ jobs:
         if: matrix.example == 'nuxt4'
         working-directory: ./examples/nuxt4
         run: pnpm run test:build-dir
+
+      # The other half of the vike example's contract. `vite.config.ts` drops
+      # `vike()` when POVESTE is set, and only the book side of that condition is
+      # covered by the e2e run below — break it in the app direction and the book
+      # still builds. Without `vike()` there is no `index.html` for Vite to enter
+      # from, so this step fails loudly (#369).
+      - name: Assert the Vike app still builds with vike() loaded
+        if: matrix.example == 'vike'
+        run: pnpm --filter ./examples/vike run vike:build
 
       - name: Build book
         run: pnpm --filter ./examples/${{ matrix.example }} run story:build

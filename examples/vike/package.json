@@ -1,0 +1,26 @@
+{
+  "name": "poveste-example-vike",
+  "type": "module",
+  "version": "0.8.0",
+  "private": true,
+  "scripts": {
+    "vike:build": "vite build",
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview --port 4572",
+    "test": "playwright test",
+    "test:dev": "playwright test --ui",
+    "test:examples": "pnpm run story:build && pnpm run test"
+  },
+  "dependencies": {
+    "vike": "0.4.260",
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@poveste/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "poveste": "workspace:*",
+    "vite": "catalog:"
+  }
+}
