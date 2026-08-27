@@ -134,6 +134,57 @@ export default defineConfig({
 
 You can get the name of the plugins with `console.log(somePlugin().name)` or by looking at its source code ([example](https://github.com/ElMassimo/vite-plugin-full-reload/blob/bfabc4720a04b8c75d4d17f6f4876fdf822cad22/src/index.ts#L43)).
 
+`viteIgnorePlugins` matches exact names, so it suits one or two plugins you have identified. If a whole framework's runtime is the problem, see below.
+
+### When a framework plugin breaks your stories
+
+Poveste builds your book with your Vite config, plugins included. That is what makes it a drop-in, and it is almost always what you want — your components get compiled exactly as your app compiles them.
+
+Occasionally a plugin ships a client runtime that asserts on markup it expects to have injected into the page. Your book's `index.html` is Poveste's, so the assertion fails and every story shows the error instead of your component. Vike is the case we know of:
+
+```
+[vike][Wrong Usage] Couldn't find #vike_globalContext
+(which Vike automatically injects in the HTML)
+```
+
+**Go by that symptom, not by the kind of framework.** Routing, SSR and page-file conventions are not the problem in themselves — SvelteKit is all three and needs none of this. Only reach for the workaround when you actually see a runtime error naming markup you did not write.
+
+When you do, leave that plugin out of the book. Poveste sets `process.env.POVESTE` while it runs, so one condition covers both `poveste dev` and `poveste build`:
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import vike from 'vike/plugin'
+import { defineConfig } from 'vite'
+
+// Poveste sets this; your app's own dev server and build do not.
+const buildingTheBook = !!process.env.POVESTE
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    ...(buildingTheBook ? [] : [vike()]),
+  ],
+})
+```
+
+Your app is untouched — it still gets Vike — and the book is built as a plain Vite + Vue app, which is all it needed to be.
+
+::: danger Remove only the plugin that is failing
+Your framework's plugin is usually also what compiles your components, and removing it takes the compiler with it. Dropping `sveltekit()` from the SvelteKit example turns a book of 58 stories into 58 collection failures:
+
+```
+Failed to parse source for import analysis because the content
+contains invalid JS syntax.
+```
+
+Nothing is left to compile `.svelte`. The same goes for `@vitejs/plugin-vue`, CSS pipelines, path aliases and icon plugins — your stories need them.
+:::
+
+::: tip Nuxt does not need this
+Nuxt is handled by [`@poveste/plugin-nuxt`](./plugins/official.md), which reads Nuxt's own Vite config and curates it for the story sandbox. Use that instead.
+:::
+
 ## Global JS and CSS
 
 Your components may be using globally defined CSS (like CSS frameworks) or JS (like stores or helpers). Poveste provides an easy way to inject anything into each story by linking a setup file.
