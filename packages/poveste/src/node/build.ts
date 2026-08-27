@@ -81,238 +81,258 @@ export async function build(ctx: Context) {
   )
   await server.pluginContainer.buildStart({})
 
-  const moduleLoader = useModuleLoader({
-    server,
-    throws: true,
-  })
-  const changeViteConfigCallbacks: ChangeViteConfigCallback[] = []
-  const buildEndCallbacks: BuildEndCallback[] = []
-  const previewStoryCallbacks: PreviewStoryCallback[] = []
-  for (const plugin of ctx.config.plugins) {
-    if (plugin.onBuild) {
-      const api = new BuildPluginApi(ctx, plugin, moduleLoader)
-      await plugin.onBuild(api)
-      changeViteConfigCallbacks.push(...api.changeViteConfigCallbacks)
-      buildEndCallbacks.push(...api.buildEndCallbacks)
-      previewStoryCallbacks.push(...api.previewStoryCallbacks)
+  // Everything from here is wrapped so the server is closed on the way out
+  // whichever way that is — it is the other handle that kept a failed build
+  // alive (#405). `serverClosed` keeps the existing order rather than moving the
+  // buildEnd callbacks either side of the close.
+  let serverClosed = false
+  try {
+    const moduleLoader = useModuleLoader({
+      server,
+      throws: true,
+    })
+    const changeViteConfigCallbacks: ChangeViteConfigCallback[] = []
+    const buildEndCallbacks: BuildEndCallback[] = []
+    const previewStoryCallbacks: PreviewStoryCallback[] = []
+    for (const plugin of ctx.config.plugins) {
+      if (plugin.onBuild) {
+        const api = new BuildPluginApi(ctx, plugin, moduleLoader)
+        await plugin.onBuild(api)
+        changeViteConfigCallbacks.push(...api.changeViteConfigCallbacks)
+        buildEndCallbacks.push(...api.buildEndCallbacks)
+        previewStoryCallbacks.push(...api.previewStoryCallbacks)
+      }
     }
-  }
 
-  // Collect story data
-  const { executeStoryFile, destroy: destroyCollectStories } = useCollectStories({
-    server,
-    throws: true,
-  }, ctx)
-  await Promise.all(ctx.storyFiles.map(storyFile => executeStoryFile(storyFile)))
-  await destroyCollectStories()
+    // Collect story data
+    const { executeStoryFile, destroy: destroyCollectStories } = useCollectStories({
+      server,
+      throws: true,
+    }, ctx)
+    // `throws: true`, so one bad story rejects here. Without the `finally` the
+    // teardown below never ran, eleven worker threads stayed alive, and the process
+    // hung instead of failing — the error was printed and then nothing (#405).
+    try {
+      await Promise.all(ctx.storyFiles.map(storyFile => executeStoryFile(storyFile)))
+    }
+    finally {
+      await destroyCollectStories()
+    }
 
-  const storyCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ? 1 : 0), 0)
-  const variantCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ?? 0), 0)
-  const emptyStoryCount = ctx.storyFiles.length - storyCount
+    const storyCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ? 1 : 0), 0)
+    const variantCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ?? 0), 0)
+    const emptyStoryCount = ctx.storyFiles.length - storyCount
 
-  const { viteConfig: buildViteConfigRaw } = await getViteConfigWithPlugins(false, ctx)
-  const buildViteConfig: ViteInlineConfig = mergeViteConfig(buildViteConfigRaw, {
-    mode: 'development',
-    build: {
-      lib: false,
-      rollupOptions: {
-        // Named, not an array. With an array the bundler derives `[name]` from the
-        // path, and `APP_PATH` is absolute — so any framework whose `entryFileNames`
-        // refuses a path-shaped `[name]` fails the build outright (#369, and
-        // histoire-dev/histoire#802 before it). The keys make `[name]` the key.
-        input: {
-          'bundle-main': join(APP_PATH, 'bundle-main.js'),
-          'bundle-sandbox': join(APP_PATH, 'bundle-sandbox.js'),
-        },
-        plugins: [
-          {
-            name: 'poveste-build-rollup-options-override',
-            enforce: 'post',
-            options(options) {
-              // Don't externalize
-              options.external = []
-            },
+    const { viteConfig: buildViteConfigRaw } = await getViteConfigWithPlugins(false, ctx)
+    const buildViteConfig: ViteInlineConfig = mergeViteConfig(buildViteConfigRaw, {
+      mode: 'development',
+      build: {
+        lib: false,
+        rollupOptions: {
+          // Named, not an array. With an array the bundler derives `[name]` from the
+          // path, and `APP_PATH` is absolute — so any framework whose `entryFileNames`
+          // refuses a path-shaped `[name]` fails the build outright (#369, and
+          // histoire-dev/histoire#802 before it). The keys make `[name]` the key.
+          input: {
+            'bundle-main': join(APP_PATH, 'bundle-main.js'),
+            'bundle-sandbox': join(APP_PATH, 'bundle-sandbox.js'),
           },
-        ],
-      },
-    },
-  })
-
-  // For @vite/plugin-vue: Always put our vite server
-  // Disable template inlining
-  // (so that we no longer need defineExpose)
-  // Nuxt: replaces the Nuxt vite dev server
-  buildViteConfig.plugins.push({
-    name: 'poveste-vue-plugin-override',
-    config(config) {
-      const vuePlugin = config.plugins.find((p: any) => p.name === 'vite:vue') as VitePlugin
-      if (vuePlugin) {
-        // @ts-expect-error vue plugin use function form
-        const original = vuePlugin.configureServer.bind(vuePlugin)
-        vuePlugin.configureServer = () => {
-          original({
-            ...server,
-            config: {
-              ...server.config,
-              server: {
-                ...server.config.server,
-                hmr: false,
+          plugins: [
+            {
+              name: 'poveste-build-rollup-options-override',
+              enforce: 'post',
+              options(options) {
+                // Don't externalize
+                options.external = []
               },
             },
-          })
-        }
-        // @ts-expect-error vue plugin use function form
-        vuePlugin.configureServer(server)
-      }
-    },
-  })
-
-  buildViteConfig.plugins.push({
-    name: 'poveste-build-config-override',
-    enforce: 'post',
-    config(config) {
-      // Don't externalize
-      config.build.rollupOptions.external = []
-
-      // Force chunk strategy
-      config.build.rollupOptions.output = {
-        manualChunks(id) {
-          // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
-          // virtual modules, so the node_modules routing below never sees them
-          // and their placement is left to the bundler — which parked
-          // `__vitePreload` inside the 10 MB `highlighter` chunk. Every chunk
-          // importing the helper then statically imported the whole highlighter,
-          // and the sandbox was back to evaluating it once per grid cell (#197),
-          // undoing exactly what `APP_ONLY_VENDORS` is for. Pin them somewhere
-          // harmless instead of leaving the choice to chunking heuristics.
-          if (id.replace(/^\0/, '').startsWith('vite/')) {
-            return 'app-runtime'
-          }
-
-          if (!id.includes('@poveste/app') && id.includes('node_modules')) {
-            if (APP_ONLY_VENDORS.some(test => test.test(id))) {
-              return 'highlighter'
-            }
-
-            for (const test of ctx.config.build?.excludeFromVendorsChunk ?? []) {
-              if ((
-                typeof test === 'string' && id.includes(test)
-              ) || (
-                test instanceof RegExp && test.test(id)
-              )) {
-                // Excluded from vendor chunk
-                return
-              }
-            }
-            return 'vendor'
-          }
+          ],
         },
-      }
+      },
+    })
 
-      // A framework that declares Vite environments gives each one its own
-      // `build.outDir`, and that wins over the top-level value for the environment's
-      // output — so the book was written to the framework's directory (Vike: `dist/client`)
-      // while poveste kept looking in `outDir` (#369). Only the client environment
-      // builds the book. Where no framework declared environments there is nothing to
-      // override, and where one did this puts the book back where poveste reads it.
-      if (config.environments?.client?.build) {
-        config.environments.client.build.outDir = ctx.config.outDir
-      }
+    // For @vite/plugin-vue: Always put our vite server
+    // Disable template inlining
+    // (so that we no longer need defineExpose)
+    // Nuxt: replaces the Nuxt vite dev server
+    buildViteConfig.plugins.push({
+      name: 'poveste-vue-plugin-override',
+      config(config) {
+        const vuePlugin = config.plugins.find((p: any) => p.name === 'vite:vue') as VitePlugin
+        if (vuePlugin) {
+          // @ts-expect-error vue plugin use function form
+          const original = vuePlugin.configureServer.bind(vuePlugin)
+          vuePlugin.configureServer = () => {
+            original({
+              ...server,
+              config: {
+                ...server.config,
+                server: {
+                  ...server.config.server,
+                  hmr: false,
+                },
+              },
+            })
+          }
+          // @ts-expect-error vue plugin use function form
+          vuePlugin.configureServer(server)
+        }
+      },
+    })
 
-      // Force vite build options
-      Object.assign(config.build, {
-        outDir: ctx.config.outDir,
-        emptyOutDir: true,
-        // Re-merged per-entry by entry-css-merger.
-        cssCodeSplit: true,
-        minify: false,
-        // Don't build in SSR mode
-        ssr: false,
-      })
+    buildViteConfig.plugins.push({
+      name: 'poveste-build-config-override',
+      enforce: 'post',
+      config(config) {
+        // Don't externalize
+        config.build.rollupOptions.external = []
 
-      config.define.__HST_COLLECT__ = false
-    },
-  })
+        // Force chunk strategy
+        config.build.rollupOptions.output = {
+          manualChunks(id) {
+            // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
+            // virtual modules, so the node_modules routing below never sees them
+            // and their placement is left to the bundler — which parked
+            // `__vitePreload` inside the 10 MB `highlighter` chunk. Every chunk
+            // importing the helper then statically imported the whole highlighter,
+            // and the sandbox was back to evaluating it once per grid cell (#197),
+            // undoing exactly what `APP_ONLY_VENDORS` is for. Pin them somewhere
+            // harmless instead of leaving the choice to chunking heuristics.
+            if (id.replace(/^\0/, '').startsWith('vite/')) {
+              return 'app-runtime'
+            }
 
-  const isolate = ctx.config.isolateStyles !== false
-  buildViteConfig.plugins.push(userCssScopePlugin({ enabled: isolate }))
-  buildViteConfig.plugins.push(chromeCssScopePlugin({ enabled: isolate }))
-  buildViteConfig.plugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
+            if (!id.includes('@poveste/app') && id.includes('node_modules')) {
+              if (APP_ONLY_VENDORS.some(test => test.test(id))) {
+                return 'highlighter'
+              }
 
-  for (const cb of changeViteConfigCallbacks) {
-    console.log('vite config hook', cb)
-    await cb(buildViteConfig)
-  }
+              for (const test of ctx.config.build?.excludeFromVendorsChunk ?? []) {
+                if ((
+                  typeof test === 'string' && id.includes(test)
+                ) || (
+                  test instanceof RegExp && test.test(id)
+                )) {
+                  // Excluded from vendor chunk
+                  return
+                }
+              }
+              return 'vendor'
+            }
+          },
+        }
 
-  const results = await viteBuild(buildViteConfig)
-  const result = Array.isArray(results) ? results[0] : results as Rolldown.RolldownOutput
+        // A framework that declares Vite environments gives each one its own
+        // `build.outDir`, and that wins over the top-level value for the environment's
+        // output — so the book was written to the framework's directory (Vike: `dist/client`)
+        // while poveste kept looking in `outDir` (#369). Only the client environment
+        // builds the book. Where no framework declared environments there is nothing to
+        // override, and where one did this puts the book back where poveste reads it.
+        if (config.environments?.client?.build) {
+          config.environments.client.build.outDir = ctx.config.outDir
+        }
 
-  function findEntryCss(entryName: string) {
-    return result.output.find(
-      o => o.type === 'asset' && o.fileName === `${entryName}.css`,
-    )
-  }
-  const mainStyleOutput = findEntryCss('bundle-main')
-    ?? result.output.find(o => o.name === 'style.css' && o.type === 'asset')
-  const sandboxStyleOutput = findEntryCss('bundle-sandbox') ?? mainStyleOutput
+        // Force vite build options
+        Object.assign(config.build, {
+          outDir: ctx.config.outDir,
+          emptyOutDir: true,
+          // Re-merged per-entry by entry-css-merger.
+          cssCodeSplit: true,
+          minify: false,
+          // Don't build in SSR mode
+          ssr: false,
+        })
 
-  // Preload
-  const preloadOutputs = result.output.filter(o => PRELOAD_MODULES.includes(o.name) && o.type === 'chunk')
-  const preloadHtml = generateScriptLinks(preloadOutputs.map(o => o.fileName), 'preload', ctx)
+        config.define.__HST_COLLECT__ = false
+      },
+    })
 
-  // Prefetch
-  const prefetchOutputs = result.output.filter(o => PREFETCHED_MODULES.includes(o.name) && o.type === 'chunk')
-  const prefetchHtml = generateScriptLinks(prefetchOutputs.map(o => o.fileName), 'prefetch', ctx)
+    const isolate = ctx.config.isolateStyles !== false
+    buildViteConfig.plugins.push(userCssScopePlugin({ enabled: isolate }))
+    buildViteConfig.plugins.push(chromeCssScopePlugin({ enabled: isolate }))
+    buildViteConfig.plugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
 
-  // Index
-  const indexOutput = result.output.find(o => o.name === 'bundle-main' && o.type === 'chunk')
-  let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
-    HEAD: `${preloadHtml}${prefetchHtml}`,
-  }, ctx)
-  indexHtml = await applyHeadTransform(indexHtml, ctx.config.head)
-  await writeFile('index.html', indexHtml, ctx)
+    for (const cb of changeViteConfigCallbacks) {
+      console.log('vite config hook', cb)
+      await cb(buildViteConfig)
+    }
 
-  // Sandbox
-  const sandboxOutput = result.output.find(o => o.name === 'bundle-sandbox' && o.type === 'chunk')
-  let sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
-  sandboxHtml = await applyHeadTransform(sandboxHtml, ctx.config.head)
-  await writeFile('__sandbox.html', sandboxHtml, ctx)
+    const results = await viteBuild(buildViteConfig)
+    const result = Array.isArray(results) ? results[0] : results as Rolldown.RolldownOutput
 
-  await writeFile('poveste.json', JSON.stringify(getSerializedStoryData(ctx), null, 2), ctx)
+    function findEntryCss(entryName: string) {
+      return result.output.find(
+        o => o.type === 'asset' && o.fileName === `${entryName}.css`,
+      )
+    }
+    const mainStyleOutput = findEntryCss('bundle-main')
+      ?? result.output.find(o => o.name === 'style.css' && o.type === 'asset')
+    const sandboxStyleOutput = findEntryCss('bundle-sandbox') ?? mainStyleOutput
 
-  const duration = performance.now() - startTime
-  if (emptyStoryCount) {
-    console.warn(pc.yellow(`⚠️  ${emptyStoryCount} empty story file${emptyStoryCount === 1 ? '' : 's'}`))
-  }
-  console.log(pc.green(`✅ Built ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} (${variantCount} variant${variantCount === 1 ? '' : 's'}) in ${Math.round(duration / 1000 * 100) / 100}s`))
+    // Preload
+    const preloadOutputs = result.output.filter(o => PRELOAD_MODULES.includes(o.name) && o.type === 'chunk')
+    const preloadHtml = generateScriptLinks(preloadOutputs.map(o => o.fileName), 'preload', ctx)
 
-  // Render
-  if (previewStoryCallbacks.length) {
-    const { baseUrl, close } = await startPreview({}, ctx)
-    for (const storyFile of ctx.storyFiles) {
-      const story = storyFile.story
-      for (const variant of story.variants) {
-        const query = new URLSearchParams()
-        query.append('storyId', story.id)
-        query.append('variantId', variant.id)
-        const url = `${baseUrl}__sandbox.html?${query.toString()}`
-        for (const fn of previewStoryCallbacks) {
-          await fn({
-            file: storyFile.path,
-            story,
-            variant,
-            url,
-          })
+    // Prefetch
+    const prefetchOutputs = result.output.filter(o => PREFETCHED_MODULES.includes(o.name) && o.type === 'chunk')
+    const prefetchHtml = generateScriptLinks(prefetchOutputs.map(o => o.fileName), 'prefetch', ctx)
+
+    // Index
+    const indexOutput = result.output.find(o => o.name === 'bundle-main' && o.type === 'chunk')
+    let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
+      HEAD: `${preloadHtml}${prefetchHtml}`,
+    }, ctx)
+    indexHtml = await applyHeadTransform(indexHtml, ctx.config.head)
+    await writeFile('index.html', indexHtml, ctx)
+
+    // Sandbox
+    const sandboxOutput = result.output.find(o => o.name === 'bundle-sandbox' && o.type === 'chunk')
+    let sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
+    sandboxHtml = await applyHeadTransform(sandboxHtml, ctx.config.head)
+    await writeFile('__sandbox.html', sandboxHtml, ctx)
+
+    await writeFile('poveste.json', JSON.stringify(getSerializedStoryData(ctx), null, 2), ctx)
+
+    const duration = performance.now() - startTime
+    if (emptyStoryCount) {
+      console.warn(pc.yellow(`⚠️  ${emptyStoryCount} empty story file${emptyStoryCount === 1 ? '' : 's'}`))
+    }
+    console.log(pc.green(`✅ Built ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} (${variantCount} variant${variantCount === 1 ? '' : 's'}) in ${Math.round(duration / 1000 * 100) / 100}s`))
+
+    // Render
+    if (previewStoryCallbacks.length) {
+      const { baseUrl, close } = await startPreview({}, ctx)
+      for (const storyFile of ctx.storyFiles) {
+        const story = storyFile.story
+        for (const variant of story.variants) {
+          const query = new URLSearchParams()
+          query.append('storyId', story.id)
+          query.append('variantId', variant.id)
+          const url = `${baseUrl}__sandbox.html?${query.toString()}`
+          for (const fn of previewStoryCallbacks) {
+            await fn({
+              file: storyFile.path,
+              story,
+              variant,
+              url,
+            })
+          }
         }
       }
+      await close()
     }
-    await close()
+
+    await server.close()
+    serverClosed = true
+
+    for (const fn of buildEndCallbacks) {
+      await fn()
+    }
   }
-
-  await server.close()
-
-  for (const fn of buildEndCallbacks) {
-    await fn()
+  finally {
+    if (!serverClosed) {
+      await server.close()
+    }
   }
 }
 
