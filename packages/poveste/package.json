@@ -1,7 +1,7 @@
 {
   "name": "poveste",
   "type": "module",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Interactive component playgrounds for Vue, Svelte and Nuxt \u2014 a maintained, drop-in successor to histoire",
   "author": {
     "name": "Sorin Gitlan"
