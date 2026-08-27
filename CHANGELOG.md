@@ -4,6 +4,33 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.8.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.0...v0.8.1)
+
+**Three things that stopped a project working, and one that stopped a project building at all.**
+
+### 🩹 Fixes
+
+- **Poveste builds inside Vike** ([#369](https://github.com/poveste-dev/poveste/issues/369)). Two independent blockers, both reproduced from real tarballs on vike 0.4.264 and vite 8.2.2 before anything was changed. The app entries were passed to rollup as absolute paths, which cannot substitute into an `[name]` placeholder — they are named entries now. And a per-environment `build.outDir` supersedes the top-level one, so the book was written to a directory the framework's own config had already redirected; Poveste now writes to `environments.client.build.outDir` when a framework declares one. An `examples/vike` book and its CI job guard both. This is [histoire#802](https://github.com/histoire-dev/histoire/issues/802), reported by a Vike maintainer in July 2025 and open there since.
+- **`vue-i18n` no longer stops story collection** ([#284](https://github.com/poveste-dev/poveste/issues/284)). Its compile-time feature flags were undefined during collection, so a plain Vite + Vue project using it could not collect at all. Vite's `define` now applies to collection. The underlying resolution problem — collection resolving vue-i18n's bundler build and defeating its own self-heal — is tracked separately in [#365](https://github.com/poveste-dev/poveste/issues/365).
+- **`poveste dev` stops full-reloading when Vite discovers a dependency late** ([#282](https://github.com/poveste-dev/poveste/issues/282)). Stories and the setup file are scanned for dependencies up front, so the reload that used to drop your preview state mid-session does not happen.
+- **`@poveste/plugin-tailwind` declares the Tailwind it uses** ([#320](https://github.com/poveste-dev/poveste/issues/320)). It calls `__unstable__loadDesignSystem` at runtime and declared no relationship to `tailwindcss` at all — a peer dependency now, with a clear message when the installed version does not match.
+
+### 📖 Documentation
+
+- **What to do when a framework plugin breaks your stories** ([#369](https://github.com/poveste-dev/poveste/issues/369)) — a guide to running Poveste inside a Vite framework, and the Vike example that demonstrates it.
+- **The reference docs teach the current API** ([#292](https://github.com/poveste-dev/poveste/issues/292)). `process.env.POVESTE` and `--poveste-contrast-color` lead; the histoire spellings are labelled as the aliases they are. The README guard now checks that every line naming a deprecated alias also names its replacement.
+
+### 🏡 Chore
+
+- **Config resolution is tested, and the examples use the name the migration guide asks for** ([#336](https://github.com/poveste-dev/poveste/issues/336)). `poveste.config.ts` winning over `histoire.config.ts` in the same directory is the drop-in promise, and nothing asserted it. Six of seven examples still carried the legacy filename.
+- **`logo-wip.svg` is gone** ([#341](https://github.com/poveste-dev/poveste/issues/341)) — histoire's abandoned 2022 Inkscape sketch, tracked at the repository root and referenced by nothing.
+
+### Upgrading
+
+Nothing to do.
+
 ## v0.8.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.7.0...v0.8.0)
