@@ -38,6 +38,25 @@ describe('section', () => {
 })
 
 describe('tsBlocks', () => {
+  it('ignores a block that is an illustration rather than a file', () => {
+    const page = [
+      '### Quasar',
+      '',
+      '```ts',
+      '// poveste.config.ts',
+      'export default {}',
+      '```',
+      '',
+      '```ts',
+      'app.use(Something)',
+      '```',
+    ].join('\n')
+
+    // Without this, adding an example to the page would shift every file it is
+    // matched against by one.
+    expect(tsBlocks(section(`\n${page}`, '### Quasar')!)).toEqual(['export default {}\n'])
+  })
+
   it('drops the path comment, which labels the block rather than belonging to it', () => {
     expect(tsBlocks(section(PAGE, '### Quasar')!)).toEqual([
       'export default {}\n',

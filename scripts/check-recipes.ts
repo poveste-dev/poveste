@@ -46,11 +46,14 @@ export function section(markdown: string, heading: string): string | undefined {
   return end === -1 ? rest : rest.slice(0, end)
 }
 
-// The first line of a published block names the file it belongs in; it is a label
-// for the reader, not part of the recipe.
+// A block whose first line is a `// path/to/file` comment is a file the reader is
+// told to create, and is compared. A block without one is an illustration — a
+// fragment showing how to call something — and is not a file to match.
 export function tsBlocks(markdown: string): string[] {
   return [...markdown.matchAll(/```ts\n([\s\S]*?)```/g)]
-    .map(match => match[1].split('\n').slice(1).join('\n'))
+    .map(match => match[1].split('\n'))
+    .filter(lines => /^\/\/ [\w./-]+\.\w+$/.test(lines[0] ?? ''))
+    .map(lines => lines.slice(1).join('\n'))
 }
 
 function main(): void {

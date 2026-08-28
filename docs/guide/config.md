@@ -254,10 +254,32 @@ ReferenceError: __QUASAR_VERSION__ is not defined
     at node_modules/quasar/src/vue-plugin.js
 ```
 
-::: warning What this recipe covers
-Checked against Quasar 2.27 and `@quasar/app-vite` 3.8, on a project using Quasar's SPA mode — which is all `getTestingConfig()` returns.
+#### Boot files do not run, and nothing tells you
 
-Not checked: app extensions, boot files, components that need the router or a store, and customised Sass variables. If you use those and hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues) — the recipe is meant to grow.
+Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute. A component that reads something a boot file set finds it missing, and this fails quietly: the build succeeds, no error panel appears, the value is simply undefined.
+
+App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements — again with no error.
+
+Run the ones your stories need from the setup file:
+
+```ts
+import greeting from './boot/greeting'
+// An app extension's boot file comes from its package:
+import qcalendar from '@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js'
+
+export const setupVue3 = defineSetupVue3(({ app }) => {
+  app.use(Quasar, {})
+  qcalendar({ app })
+  greeting({ app })
+})
+```
+
+Only `app` is available — a story has no router, no store and no SSR context — so a boot file that needs those has to be split or guarded.
+
+::: warning What this recipe covers
+Checked against Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension. All of it works with the config above; the boot files need the wiring shown here.
+
+Quasar's SPA mode only, which is all `getTestingConfig()` returns. Not checked: components that need the router or a store at mount time. If you hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues) — the recipe is meant to grow.
 :::
 
 You will see a few `App •` lines from Quasar's CLI in Poveste's output while it reads the config. They are expected.
