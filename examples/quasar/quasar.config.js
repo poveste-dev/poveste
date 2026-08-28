@@ -2,7 +2,7 @@
 // docs/guide/config.md keeps working, not to be a Quasar app.
 export default function () {
   return {
-    boot: [],
+    boot: ['greeting'],
     css: [],
     extras: [],
     build: { vueRouterMode: 'hash' },

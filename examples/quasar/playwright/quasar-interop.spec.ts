@@ -16,6 +16,10 @@ import { expect, test } from '@playwright/test'
  *
  * Remove either and the book stops building, so a broken recipe is a red job
  * rather than a page that quietly stopped being true.
+ *
+ * The setup file also runs the app's boot file, because nothing else does. That
+ * one fails quietly instead — the build succeeds and the value is just missing —
+ * so it needs an assertion rather than a build.
  */
 
 // Absence is only worth asserting once the page has stopped working.
@@ -41,6 +45,18 @@ test.describe('poveste in a Quasar project', () => {
 
     await settle(page)
     await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
+  })
+
+  test('runs a boot file, which nothing else in a story would', async ({ page }) => {
+    await page.goto('/story/src-components-bootgreeting-story-vue')
+
+    const banner = page.getByTestId('preview-iframe').contentFrame().locator('.q-banner')
+
+    await expect(banner).toBeVisible()
+    // Drop the `greeting({ app })` line from the setup file and this reads
+    // "NO BOOT FILE RAN" — with a green build and no error panel, which is why
+    // the docs give it a heading.
+    await expect(banner).toHaveText('from a boot file')
   })
 
   test('leaves no framework runtime complaining in the console', async ({ page }) => {

@@ -232,10 +232,14 @@ Quasar also has to be installed into the story app, the same way you install it 
 // src/poveste.setup.ts
 import { defineSetupVue3 } from '@poveste/plugin-vue'
 import { Quasar } from 'quasar'
+import greeting from './boot/greeting'
 import 'quasar/src/css/index.sass'
 
 export const setupVue3 = defineSetupVue3(({ app }) => {
   app.use(Quasar, {})
+  // Your app's boot files go here — they do not run otherwise. Drop this line
+  // and its import if you have none; see below for why they matter.
+  greeting({ app })
 })
 ```
 
@@ -260,19 +264,7 @@ Poveste renders your components in its own app, so Quasar's boot files — which
 
 App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements — again with no error.
 
-Run the ones your stories need from the setup file:
-
-```ts
-// An app extension's boot file comes from its package:
-import qcalendar from '@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js'
-import greeting from './boot/greeting'
-
-export const setupVue3 = defineSetupVue3(({ app }) => {
-  app.use(Quasar, {})
-  qcalendar({ app })
-  greeting({ app })
-})
-```
+Run the ones your stories need from the setup file, as the config above does with `greeting`. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and called the same way.
 
 Only `app` is available — a story has no router, no store and no SSR context — so a boot file that needs those has to be split or guarded.
 
