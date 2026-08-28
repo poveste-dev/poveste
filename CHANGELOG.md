@@ -4,6 +4,35 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.10.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.9.0...v0.10.0)
+
+**The front door finally says what this is.**
+
+Poveste's home page was histoire's, string for string — same headline, same tagline, same six feature bullets in the same order — and the framework chooser named three of the five frameworks that have an example book and a CI job behind them. A project that has shipped every day for a month was describing itself with the copy it inherited on day one.
+
+### 🚀 Enhancements
+
+- **Plugins can clean up after a build that failed** ([#434](https://github.com/poveste-dev/poveste/issues/434)). `onBuild` now receives an `onCleanup` alongside its api, the same shape `onDev` has always had, and those callbacks run however the build ended. `onBuildEnd` keeps its meaning — *the build ended well* — because running it on failure would fire the screenshot and percy publish steps after a failed build. A plugin holding a framework instance, a watcher or a server had nowhere to release it when the build threw; now it does. `@poveste/plugin-nuxt` moves `nuxt.close()` onto the new channel and awaits it, which it was not doing at any of its three call sites.
+
+### 📖 Documentation
+
+- **The home page describes this project** ([#291](https://github.com/poveste-dev/poveste/issues/291), [#390](https://github.com/poveste-dev/poveste/issues/390)). New headline, new tagline, six feature bullets that are only true of poveste, and a second action pointing at the migration guide rather than at an inherited page. `new.md` is no longer an indexed orphan.
+- **Every framework is named** ([#403](https://github.com/poveste-dev/poveste/issues/403)). The chooser listed three; Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar each have an example book that is built and end-to-end tested on every commit, and each now appears. The repository description and topics were corrected at the same time.
+
+### ✅ Tests
+
+- **The broken-component guard can see a leak again** ([#433](https://github.com/poveste-dev/poveste/issues/433)). It asserted on a timeout and cited two defects, and the forced exit added in 0.8.2 made that branch unreachable — a build that leaks and one that does not both exited the same way. `POVESTE_NO_FORCE_EXIT` skips the forced exit for that step alone and prints the handles still holding the loop open, so a re-leak is detectable again and the failure names what to close.
+
+### Upgrading
+
+**Nothing to do.**
+
+If you write a poveste plugin, `onBuild(api)` still typechecks — the new `onCleanup` is a second parameter you can ignore. If your plugin holds a resource, move its release from `onBuildEnd` to `onCleanup`, which is the only one that runs when a build fails.
+
+**On the version.** The commit that adds `onCleanup` is labelled `fix`, and this is a minor release rather than a patch. The change adds a parameter to an exported signature in `@poveste/shared`, so plugin authors gain a capability they did not have — additive, not breaking. The commit type is what usually picks the number; where it is wrong, the number is still picked from what actually changed.
+
 ## v0.9.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.2...v0.9.0)
