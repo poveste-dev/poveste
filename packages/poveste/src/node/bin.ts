@@ -17,17 +17,21 @@ process.env.POVESTE = 'true'
 // and take it away, which Vike does — and a failed build then ran forever with
 // its error already printed (#405).
 //
-// So failure is reported and exited here, deliberately. `exitCode` alone is not
-// enough — teardown does not get every handle back, and after a failed build a
-// `Timeout` and three `MessagePort`s are still open, so waiting for an empty
-// event loop is what hung in the first place. But exiting on the same tick as
-// the error would truncate it: writes to a piped stderr are asynchronous, and a
-// framed compiler error is long.
+// So failure is reported here, the exit code set, and the process forced out if
+// it does not leave on its own. Closing the collection ports (#426) was not
+// enough on its own: a failed build still hangs in the nuxt4 and sveltekit books,
+// holding `FSEventWrap` and `FSReqCallback` handles — watchers nothing closes on
+// the error path. And `dev` and `preview` hold a listening server by design, so
+// for them no amount of leak-fixing would ever let the loop drain.
 //
-// So both: the exit code is set immediately, and the hard exit is a timer that
-// does not itself hold the loop open. A process with nothing leaked exits on its
-// own, flushing normally; one that leaked is cut loose a moment later, by which
-// time the error has been written.
+// The timer is unref'd, so it never fires for a process that ends by itself and
+// costs nothing when there is nothing to force. It is 500ms rather than
+// immediate because exiting on the same tick as `console.error` truncates it:
+// writes to a piped stderr are asynchronous, and a framed compiler error is long.
+//
+// It does mean a leak reads as a clean failure from the outside, so it hides the
+// class of bug #426 was. Removing it again needs those watcher handles closed
+// first, and a guard that measures the resource list rather than the exit code.
 function run(command: () => Promise<unknown>): Promise<void> {
   return command().then(() => undefined, (error) => {
     console.error(error)

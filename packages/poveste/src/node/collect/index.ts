@@ -105,18 +105,23 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   }
 
   async function executeStoryFile(storyFile: ServerStoryFile) {
+    // The channel belongs to this execution, and nothing used to close it. On a
+    // build that fails, the executions still in flight are abandoned mid-run and
+    // their main-thread ports stay open and listening — enough live handles to
+    // keep the process alive with nothing left to do (#426).
+    let channel: ReturnType<typeof createChannel> | undefined
     try {
-      const { workerPort } = createChannel()
+      channel = createChannel()
       const payload: Payload = {
         root: server.config.root,
         base: server.config.base,
         storyFile,
-        port: workerPort,
+        port: channel.workerPort,
         defineGlobals,
       }
       const { storyData } = await threadPool.run(payload, {
         transferList: [
-          workerPort,
+          channel.workerPort,
         ],
       }) as ReturnData
       if (storyData.length === 0) {
@@ -154,6 +159,9 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       if (options.throws) {
         throw e
       }
+    }
+    finally {
+      channel?.port.close()
     }
   }
 
