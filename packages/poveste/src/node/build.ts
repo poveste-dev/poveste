@@ -78,10 +78,6 @@ export async function build(ctx: Context) {
   )
   await server.pluginContainer.buildStart({})
 
-  // Everything from here is wrapped so the server is closed on the way out
-  // whichever way that is — it is the other handle that kept a failed build
-  // alive (#405). `serverClosed` keeps the existing order rather than moving the
-  // buildEnd callbacks either side of the close.
   // Cleanup a plugin registers runs however this ends. `onBuildEnd` cannot be that
   // channel: "the build ended" and "the build ended well" are different events, and
   // plugins publish results from the latter (#434).
@@ -90,6 +86,10 @@ export async function build(ctx: Context) {
     cleanupCallbacks.push(cb)
   }
 
+  // Everything from here is wrapped so the server is closed on the way out
+  // whichever way that is — it is the other handle that kept a failed build
+  // alive (#405). `serverClosed` keeps the existing order rather than moving the
+  // buildEnd callbacks either side of the close.
   let serverClosed = false
   try {
     const moduleLoader = useModuleLoader({
