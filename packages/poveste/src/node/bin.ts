@@ -30,8 +30,13 @@ process.env.POVESTE = 'true'
 // writes to a piped stderr are asynchronous, and a framed compiler error is long.
 //
 // It does mean a leak reads as a clean failure from the outside, so it hides the
-// class of bug #426 was. Removing it again needs those watcher handles closed
-// first, and a guard that measures the resource list rather than the exit code.
+// class of bug #426 was. `POVESTE_NO_FORCE_EXIT` below is how that stays visible
+// without removing it — CI sets it for one step, where a leak is a hang again.
+//
+// Asserting on the reported handle list instead was tried and does not work: a
+// clean failed build leaves transient ones (`Immediate`, `FSReqCallback`), and the
+// allowance needed to go green has to include `FSReqCallback` — most of what the
+// sveltekit leak shows as. Whether the loop drains is the question (#433).
 /**
  * A build asked to prove it drains: the forced exit below is skipped and what is
  * still holding the loop open is printed.

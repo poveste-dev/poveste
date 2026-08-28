@@ -161,6 +161,16 @@ jobs:
             tail -20 "$RUNNER_TEMP/broken-build.log"
             exit 1
           fi
+          # The flag above is what makes this guard able to see a leak. If it ever
+          # stops reaching the build, the forced exit comes back, a leak exits 1
+          # like a clean failure, and everything below passes while covering
+          # nothing — which is the state #433 was filed about. Under the flag even
+          # a clean failure reports its handles, so its absence means the
+          # measurement did not happen.
+          if ! grep -aq POVESTE_ACTIVE_HANDLES "$RUNNER_TEMP/broken-build.log"; then
+            echo "::error::POVESTE_NO_FORCE_EXIT did not reach the build — this guard measured nothing (#433)"
+            exit 1
+          fi
           echo "A broken component exits $code and the process ends on its own"
 
       - name: Build book
