@@ -111,7 +111,13 @@ export interface Plugin {
   /**
    * Use this hook to do processing during production build.
    */
-  onBuild?: (api: PluginApiBuild) => Awaitable<void>
+  /**
+   * `onCleanup` runs however the build ends, including when it fails. Anything a
+   * plugin opened belongs there rather than in `onBuildEnd`, which only runs when
+   * the build succeeded — a plugin holding a framework instance or a watcher kept
+   * a failed build's process alive on that difference (#434).
+   */
+  onBuild?: (api: PluginApiBuild, onCleanup: (cb: () => Awaitable<void>) => void) => Awaitable<void>
   /**
    * Use this hook to do processing when preview is started.
    */

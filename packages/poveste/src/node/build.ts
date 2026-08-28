@@ -1,8 +1,4 @@
-import type {
-  BuildEndCallback,
-  ChangeViteConfigCallback,
-  PreviewStoryCallback,
-} from '@poveste/shared'
+import type { Awaitable, BuildEndCallback, ChangeViteConfigCallback, PreviewStoryCallback } from '@poveste/shared'
 import type {
   Rolldown,
   InlineConfig as ViteInlineConfig,
@@ -82,6 +78,14 @@ export async function build(ctx: Context) {
   )
   await server.pluginContainer.buildStart({})
 
+  // Cleanup a plugin registers runs however this ends. `onBuildEnd` cannot be that
+  // channel: "the build ended" and "the build ended well" are different events, and
+  // plugins publish results from the latter (#434).
+  const cleanupCallbacks: (() => Awaitable<void>)[] = []
+  const onCleanup = (cb: () => Awaitable<void>) => {
+    cleanupCallbacks.push(cb)
+  }
+
   // Everything from here is wrapped so the server is closed on the way out
   // whichever way that is — it is the other handle that kept a failed build
   // alive (#405). `serverClosed` keeps the existing order rather than moving the
@@ -98,7 +102,7 @@ export async function build(ctx: Context) {
     for (const plugin of ctx.config.plugins) {
       if (plugin.onBuild) {
         const api = new BuildPluginApi(ctx, plugin, moduleLoader)
-        await plugin.onBuild(api)
+        await plugin.onBuild(api, onCleanup)
         changeViteConfigCallbacks.push(...api.changeViteConfigCallbacks)
         buildEndCallbacks.push(...api.buildEndCallbacks)
         previewStoryCallbacks.push(...api.previewStoryCallbacks)
@@ -342,6 +346,9 @@ export async function build(ctx: Context) {
   finally {
     if (!serverClosed) {
       await wrapLogError('server.close', () => server.close())
+    }
+    for (const cb of cleanupCallbacks) {
+      await wrapLogError('plugin.onBuild.onCleanup', () => cb())
     }
   }
 }

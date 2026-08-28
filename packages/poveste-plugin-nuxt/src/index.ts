@@ -4,6 +4,7 @@ import type { UserConfig as ViteConfig } from 'vite'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import replace from '@rollup/plugin-replace'
+import { onPovesteCleanup } from 'poveste'
 
 const ignorePlugins = [
   'nuxt:vite-node-server',
@@ -54,6 +55,17 @@ export function wrapPluginsForTolerantBoot(source: string): string {
 
 export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
   let nuxt: Nuxt
+  let closed = false
+
+  // Reachable from several places now, and Nuxt is not asked to close twice.
+  async function closeNuxt() {
+    if (closed) {
+      return
+    }
+    closed = true
+    await nuxt?.close()
+  }
+
   return {
     name: '@poveste/plugin-nuxt',
 
@@ -61,7 +73,11 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
       const nuxtViteConfig = await useNuxtViteConfig([...DEFAULT_EXCLUDED_PLUGINS, ...(options.excludePlugins ?? [])])
       const { viteConfig } = nuxtViteConfig
 
-      nuxt = nuxtViteConfig.nuxt // We save it to close it later
+      nuxt = nuxtViteConfig.nuxt
+      // Registered here rather than in a command hook: this instance exists from
+      // config resolution onwards, and a failure before those hooks run left it
+      // going with nothing to close it (#434).
+      onPovesteCleanup(closeNuxt)
       const plugins = viteConfig.plugins.filter((p: any) => !ignorePlugins.includes(p?.name))
       return {
         vite: {
@@ -132,19 +148,17 @@ export async function setupVue3 () {
     },
 
     onDev(api, onCleanup) {
-      onCleanup(async () => {
-        nuxt?.close()
-      })
+      onCleanup(closeNuxt)
     },
 
-    onBuild(api) {
-      api.onBuildEnd(() => {
-        nuxt?.close()
-      })
+    onBuild(api, onCleanup) {
+      // Not `onBuildEnd`: that only runs when the build succeeded, so anything
+      // this instance holds outlived every build that failed (#434).
+      onCleanup(closeNuxt)
     },
 
-    onPreview() {
-      nuxt?.close()
+    async onPreview() {
+      await closeNuxt()
     },
   }
 }
