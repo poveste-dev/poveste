@@ -4,8 +4,8 @@ titleTemplate: Component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar
 
 hero:
   name: Poveste
-  text: Component stories, still maintained
-  tagline: A drop-in successor to histoire — same stories, same config, actively developed.
+  text: Component stories for five frameworks
+  tagline: A drop-in fork of histoire — same stories, same config, actively developed.
   image:
     src: /logo.svg
     alt: Poveste logo
