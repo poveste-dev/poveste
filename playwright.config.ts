@@ -43,6 +43,13 @@ const ALL_EXAMPLES: Example[] = [
     dev: { port: 4671, specs: ['**/style-isolation.spec.ts'] },
   },
   {
+    name: 'quasar',
+    port: 4573,
+    // Same reason as vike: the contract is a runtime one, and dev and build
+    // reach the sandbox by different paths.
+    dev: { port: 4673, specs: ['**/quasar-interop.spec.ts'] },
+  },
+  {
     name: 'vike',
     port: 4572,
     // The failure this example guards is a runtime one, and dev and build reach

@@ -74,6 +74,11 @@ jobs:
       - name: Check the example harness wiring
         run: pnpm run test:example-wiring
 
+      # A published recipe and the example that guards it are one thing; the
+      # example is a copy, and a copy drifts (#436).
+      - name: Check the published recipes
+        run: pnpm run test:recipes
+
       - name: Test the release scripts
         run: pnpm run test:scripts
 

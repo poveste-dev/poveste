@@ -1,0 +1,27 @@
+{
+  "name": "poveste-example-quasar",
+  "type": "module",
+  "version": "0.8.2",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview --port 4573",
+    "test": "playwright test",
+    "test:dev": "playwright test --ui",
+    "test:examples": "pnpm run story:build && pnpm run test"
+  },
+  "dependencies": {
+    "quasar": "^2.27.0",
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@poveste/plugin-quasar": "workspace:*",
+    "@poveste/plugin-vue": "workspace:*",
+    "@quasar/app-vite": "^3.8.1",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "poveste": "workspace:*",
+    "vite": "catalog:"
+  }
+}

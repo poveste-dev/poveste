@@ -187,6 +187,56 @@ Nothing is left to compile `.svelte`. The same goes for `@vitejs/plugin-vue`, CS
 Nuxt is handled by [`@poveste/plugin-nuxt`](./plugins/official.md), which reads Nuxt's own Vite config and curates it for the story sandbox. Use that instead.
 :::
 
+### Quasar
+
+Sometimes the problem is the other way round: nothing to remove, but a config you have to fetch. Quasar builds its Vite config asynchronously and hands it over through an entrypoint meant for tooling, so [`@poveste/plugin-quasar`](./plugins/official.md) does the fetching and the two adjustments a book needs.
+
+```sh
+npm i -D @poveste/plugin-quasar
+```
+
+```ts
+// poveste.config.ts
+import { HstQuasar } from '@poveste/plugin-quasar'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), HstQuasar()],
+  setupFile: '/src/poveste.setup.ts',
+})
+```
+
+Quasar also has to be installed into the story app, the same way it is installed into yours:
+
+```ts
+// src/poveste.setup.ts
+import { setupQuasar } from '@poveste/plugin-quasar/setup'
+import { defineSetupVue3 } from '@poveste/plugin-vue'
+import greeting from './boot/greeting'
+
+export const setupVue3 = defineSetupVue3(setupQuasar({
+  // Your app's boot files. They do not run otherwise — see below.
+  boot: [greeting],
+}))
+```
+
+#### Boot files do not run, and nothing tells you
+
+Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute on their own. A component that reads something a boot file set finds it missing, and this fails quietly: the build succeeds, no error panel appears, the value is simply undefined.
+
+App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements — again with no error.
+
+That is what `setupQuasar({ boot })` is for. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and listed alongside your own.
+
+Only `app` is passed to them: a story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
+
+::: warning What this is checked against
+Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension.
+
+Quasar's SPA mode only, which is all the entrypoint returns. Not checked: components that need the router or a store at mount time. If you hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues).
+:::
+
 ## Global JS and CSS
 
 Your components may be using globally defined CSS (like CSS frameworks) or JS (like stores or helpers). Poveste provides an easy way to inject anything into each story by linking a setup file.
