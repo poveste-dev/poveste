@@ -187,6 +187,81 @@ Nothing is left to compile `.svelte`. The same goes for `@vitejs/plugin-vue`, CS
 Nuxt is handled by [`@poveste/plugin-nuxt`](./plugins/official.md), which reads Nuxt's own Vite config and curates it for the story sandbox. Use that instead.
 :::
 
+### Quasar
+
+Sometimes the problem is the other way round: nothing to remove, but a config you have to fetch. Quasar builds its Vite config asynchronously and only hands it over through a dedicated entrypoint, and a plugin's `defaultConfig` hook can be async — so a few lines in your own config are enough, and there is no `@poveste/plugin-quasar` to install.
+
+```ts
+// poveste.config.ts
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+function HstQuasar() {
+  return {
+    name: 'quasar',
+    async defaultConfig() {
+      const { getTestingConfig } = await import('@quasar/app-vite/testing')
+      const viteConfig = await getTestingConfig()
+      return {
+        vite: {
+          // Quasar's own plugin defines `__QUASAR_VERSION__` while transforming
+          // its source, so the source has to be transformed and not externalised.
+          ssr: { noExternal: [/quasar/] },
+          define: { ...viteConfig.define },
+          resolve: {
+            alias: viteConfig.resolve?.alias,
+            extensions: viteConfig.resolve?.extensions,
+            dedupe: viteConfig.resolve?.dedupe,
+          },
+          plugins: viteConfig.plugins,
+        },
+      }
+    },
+  }
+}
+
+export default defineConfig({
+  plugins: [HstVue(), HstQuasar()],
+  setupFile: '/src/poveste.setup.ts',
+})
+```
+
+Quasar also has to be installed into the story app, the same way you install it into your own:
+
+```ts
+// src/poveste.setup.ts
+import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { Quasar } from 'quasar'
+import 'quasar/src/css/index.sass'
+
+export const setupVue3 = defineSetupVue3(({ app }) => {
+  app.use(Quasar, {})
+})
+```
+
+Two details in that config are load-bearing, and both fail in ways that do not point back at them.
+
+**Pass Quasar's plugins through unchanged.** The section above is about dropping a framework's plugins; do not do it here. Quasar needs none of them removed, and removing its Vue plugin — reasonable, since `@poveste/plugin-vue` supplies one — stops the build before it starts:
+
+```
+Error: [Quasar] In your Vite config file, please add the Quasar plugin **after** the Vue one
+```
+
+**`ssr.noExternal` is what makes story collection work.** Without it, collection loads Quasar's source through Node rather than Vite, so the version constant its plugin would have written is never written:
+
+```
+ReferenceError: __QUASAR_VERSION__ is not defined
+    at node_modules/quasar/src/vue-plugin.js
+```
+
+::: warning What this recipe covers
+Checked against Quasar 2.27 and `@quasar/app-vite` 3.8, on a project using Quasar's SPA mode — which is all `getTestingConfig()` returns.
+
+Not checked: app extensions, boot files, components that need the router or a store, and customised Sass variables. If you use those and hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues) — the recipe is meant to grow.
+:::
+
+You will see a few `App •` lines from Quasar's CLI in Poveste's output while it reads the config. They are expected.
+
 ## Global JS and CSS
 
 Your components may be using globally defined CSS (like CSS frameworks) or JS (like stores or helpers). Poveste provides an easy way to inject anything into each story by linking a setup file.
