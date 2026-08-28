@@ -30,7 +30,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 </p>
 
 - ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
-- 🧩 Vue 3, Nuxt 4, Svelte 5 and SvelteKit, each proven by its own example suite in CI
+- 🧩 Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar, each proven by its own example suite in CI
 - 🪟 Collects on Windows, macOS and Linux — all three run in CI
 - 📚 Stories and variants, with source examples generated from what you wrote
 - 🚀 Grids stay responsive at a thousand variants, and built books render offline
