@@ -189,36 +189,17 @@ Nuxt is handled by [`@poveste/plugin-nuxt`](./plugins/official.md), which reads 
 
 ### Quasar
 
-Sometimes the problem is the other way round: nothing to remove, but a config you have to fetch. Quasar builds its Vite config asynchronously and only hands it over through a dedicated entrypoint, and a plugin's `defaultConfig` hook can be async — so a few lines in your own config are enough, and there is no `@poveste/plugin-quasar` to install.
+Sometimes the problem is the other way round: nothing to remove, but a config you have to fetch. Quasar builds its Vite config asynchronously and hands it over through an entrypoint meant for tooling, so [`@poveste/plugin-quasar`](./plugins/official.md) does the fetching and the two adjustments a book needs.
+
+```sh
+npm i -D @poveste/plugin-quasar
+```
 
 ```ts
 // poveste.config.ts
+import { HstQuasar } from '@poveste/plugin-quasar'
 import { HstVue } from '@poveste/plugin-vue'
 import { defineConfig } from 'poveste'
-
-function HstQuasar() {
-  return {
-    name: 'quasar',
-    async defaultConfig() {
-      const { getTestingConfig } = await import('@quasar/app-vite/testing')
-      const viteConfig = await getTestingConfig()
-      return {
-        vite: {
-          // Quasar's own plugin defines `__QUASAR_VERSION__` while transforming
-          // its source, so the source has to be transformed and not externalised.
-          ssr: { noExternal: [/quasar/] },
-          define: { ...viteConfig.define },
-          resolve: {
-            alias: viteConfig.resolve?.alias,
-            extensions: viteConfig.resolve?.extensions,
-            dedupe: viteConfig.resolve?.dedupe,
-          },
-          plugins: viteConfig.plugins,
-        },
-      }
-    },
-  }
-}
 
 export default defineConfig({
   plugins: [HstVue(), HstQuasar()],
@@ -226,55 +207,35 @@ export default defineConfig({
 })
 ```
 
-Quasar also has to be installed into the story app, the same way you install it into your own:
+Quasar also has to be installed into the story app, the same way it is installed into yours:
 
 ```ts
 // src/poveste.setup.ts
+import { setupQuasar } from '@poveste/plugin-quasar/setup'
 import { defineSetupVue3 } from '@poveste/plugin-vue'
-import { Quasar } from 'quasar'
 import greeting from './boot/greeting'
-import 'quasar/src/css/index.sass'
 
-export const setupVue3 = defineSetupVue3(({ app }) => {
-  app.use(Quasar, {})
-  // Your app's boot files go here — they do not run otherwise. Drop this line
-  // and its import if you have none; see below for why they matter.
-  greeting({ app })
-})
-```
-
-Two details in that config are load-bearing, and both fail in ways that do not point back at them.
-
-**Pass Quasar's plugins through unchanged.** The section above is about dropping a framework's plugins; do not do it here. Quasar needs none of them removed, and removing its Vue plugin — reasonable, since `@poveste/plugin-vue` supplies one — stops the build before it starts:
-
-```
-Error: [Quasar] In your Vite config file, please add the Quasar plugin **after** the Vue one
-```
-
-**`ssr.noExternal` is what makes story collection work.** Without it, collection loads Quasar's source through Node rather than Vite, so the version constant its plugin would have written is never written:
-
-```
-ReferenceError: __QUASAR_VERSION__ is not defined
-    at node_modules/quasar/src/vue-plugin.js
+export const setupVue3 = defineSetupVue3(setupQuasar({
+  // Your app's boot files. They do not run otherwise — see below.
+  boot: [greeting],
+}))
 ```
 
 #### Boot files do not run, and nothing tells you
 
-Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute. A component that reads something a boot file set finds it missing, and this fails quietly: the build succeeds, no error panel appears, the value is simply undefined.
+Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute on their own. A component that reads something a boot file set finds it missing, and this fails quietly: the build succeeds, no error panel appears, the value is simply undefined.
 
 App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements — again with no error.
 
-Run the ones your stories need from the setup file, as the config above does with `greeting`. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and called the same way.
+That is what `setupQuasar({ boot })` is for. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and listed alongside your own.
 
-Only `app` is available — a story has no router, no store and no SSR context — so a boot file that needs those has to be split or guarded.
+Only `app` is passed to them: a story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
 
-::: warning What this recipe covers
-Checked against Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension. All of it works with the config above; the boot files need the wiring shown here.
+::: warning What this is checked against
+Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension.
 
-Quasar's SPA mode only, which is all `getTestingConfig()` returns. Not checked: components that need the router or a store at mount time. If you hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues) — the recipe is meant to grow.
+Quasar's SPA mode only, which is all the entrypoint returns. Not checked: components that need the router or a store at mount time. If you hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues).
 :::
-
-You will see a few `App •` lines from Quasar's CLI in Poveste's output while it reads the config. They are expected.
 
 ## Global JS and CSS
 

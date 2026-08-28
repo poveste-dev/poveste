@@ -2,19 +2,18 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 /*
- * The guard on the Quasar recipe in docs/guide/config.md (#436).
+ * The guard on `@poveste/plugin-quasar` and the recipe that documents it (#436).
  *
- * Quasar's Vite config is only available asynchronously, through
- * `@quasar/app-vite/testing`. Pulling it in takes two things that are not
- * guessable and that this book's `poveste.config.ts` — copied from the docs —
- * is here to keep true:
+ * Quasar's Vite config is only available asynchronously, through an entrypoint
+ * meant for tooling. Fetching it takes two adjustments that are not guessable,
+ * and the plugin makes both:
  *
- *   - Quasar's plugins are passed through unchanged. Dropping its Vue plugin
- *     fails config resolution outright.
- *   - `ssr.noExternal: [/quasar/]`, or collection loads Quasar's source through
- *     Node and `__QUASAR_VERSION__` is never written.
+ *   - Quasar's plugins pass through unchanged. Dropping its Vue plugin as a
+ *     duplicate fails config resolution outright.
+ *   - Quasar stays transformed rather than externalised, or collection loads its
+ *     source through Node and `__QUASAR_VERSION__` is never written.
  *
- * Remove either and the book stops building, so a broken recipe is a red job
+ * Break either and the book stops building, so a broken plugin is a red job
  * rather than a page that quietly stopped being true.
  *
  * The setup file also runs the app's boot file, because nothing else does. That

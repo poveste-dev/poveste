@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@poveste/plugin-quasar": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@quasar/app-vite": "^3.8.1",
     "@vitejs/plugin-vue": "^6.0.0",
