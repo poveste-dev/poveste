@@ -32,10 +32,35 @@ process.env.POVESTE = 'true'
 // It does mean a leak reads as a clean failure from the outside, so it hides the
 // class of bug #426 was. Removing it again needs those watcher handles closed
 // first, and a guard that measures the resource list rather than the exit code.
+/**
+ * A build asked to prove it drains: the forced exit below is skipped and what is
+ * still holding the loop open is printed.
+ *
+ * The exit code cannot carry that on its own. Forcing the exit makes a process
+ * that leaks look exactly like one that does not, which is what left the CI
+ * guard's hang branch unreachable and the #426 class of defect undetectable
+ * (#433). Under this flag a leak is a hang again, which is measurable, and the
+ * handle list says what to go and close.
+ *
+ * For CI, not for users — a leak should not be the difference between a build
+ * that ends and one that does not.
+ */
+function proveItDrains(): boolean {
+  return !!process.env.POVESTE_NO_FORCE_EXIT
+}
+
 function run(command: () => Promise<unknown>): Promise<void> {
   return command().then(() => undefined, (error) => {
     console.error(error)
     process.exitCode = 1
+
+    if (proveItDrains()) {
+      setImmediate(() => {
+        console.error(`POVESTE_ACTIVE_HANDLES: ${JSON.stringify(process.getActiveResourcesInfo())}`)
+      })
+      return
+    }
+
     setTimeout(() => process.exit(1), 500).unref()
   })
 }
