@@ -1,7 +1,7 @@
 import type { Plugin } from '@poveste/shared'
 import { existsSync } from 'node:fs'
-import { dirname, join, parse } from 'node:path'
 import process from 'node:process'
+import { dirname, join, parse } from 'pathe'
 
 /**
  * Quasar builds its Vite config asynchronously and hands it over through one
@@ -75,7 +75,12 @@ export async function resolveTestingConfig(
 export function findQuasarProject(from: string, exists: (path: string) => boolean = existsSync): string | undefined {
   const names = ['quasar.config.js', 'quasar.config.mjs', 'quasar.config.cjs', 'quasar.config.ts']
   let dir = from
-  const { root } = parse(from)
+  let { root } = parse(from)
+
+  // On Windows this is `C:` and needs the trailing slash to terminate the walk.
+  if (root[1] === ':' && root[2] === undefined) {
+    root += '/'
+  }
 
   while (true) {
     if (names.some(name => exists(join(dir, name)))) {

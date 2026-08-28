@@ -100,6 +100,12 @@ describe('findQuasarProject', () => {
     // Better than letting Quasar resolve nothing and exit the process over it.
     expect(findQuasarProject('/somewhere/else', exists)).toBeUndefined()
   })
+
+  it('stops at a Windows drive root rather than walking forever', () => {
+    // `parse('C:/x').root` is the drive, and a walk that never reaches it does
+    // not end. This runs on posix too, which is the point of using pathe.
+    expect(findQuasarProject('C:/projects/app', () => false)).toBeUndefined()
+  })
 })
 
 describe('withoutProcessExit', () => {
