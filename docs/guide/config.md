@@ -263,9 +263,9 @@ App extensions are the same problem wearing a different hat. An extension regist
 Run the ones your stories need from the setup file:
 
 ```ts
-import greeting from './boot/greeting'
 // An app extension's boot file comes from its package:
 import qcalendar from '@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js'
+import greeting from './boot/greeting'
 
 export const setupVue3 = defineSetupVue3(({ app }) => {
   app.use(Quasar, {})
