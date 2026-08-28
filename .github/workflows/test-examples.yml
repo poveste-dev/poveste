@@ -139,16 +139,21 @@ jobs:
         working-directory: ./examples/${{ matrix.example }}
         env:
           COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || 'src/components/InjectDemo.vue' }}
+          # Skips the forced exit in bin.ts, so a build that leaks hangs again and
+          # `timeout` can see it. With the forced exit, a leak is indistinguishable
+          # from a clean failure and this guard covers nothing (#433).
+          POVESTE_NO_FORCE_EXIT: '1'
         run: |
           cp "$COMPONENT" "$RUNNER_TEMP/component.bak"
           printf '<script setup lang="ts">\ndefineProps<{ label: string }>(\n</script>\n' > "$COMPONENT"
           set +e
-          timeout 180 pnpm run story:build > "$RUNNER_TEMP/broken-build.log" 2>&1
+          timeout 90 pnpm run story:build > "$RUNNER_TEMP/broken-build.log" 2>&1
           code=$?
           set -e
           cp "$RUNNER_TEMP/component.bak" "$COMPONENT"
           if [ "$code" -eq 124 ]; then
-            echo "::error::poveste build hung on a broken component instead of failing (#405, #426)"
+            echo "::error::a failed build never ended — something is still holding the event loop open (#426, #434)"
+            grep -a POVESTE_ACTIVE_HANDLES "$RUNNER_TEMP/broken-build.log" | tail -1
             exit 1
           fi
           if [ "$code" -eq 0 ]; then
@@ -156,7 +161,17 @@ jobs:
             tail -20 "$RUNNER_TEMP/broken-build.log"
             exit 1
           fi
-          echo "A broken component exits $code, as it must"
+          # The flag above is what makes this guard able to see a leak. If it ever
+          # stops reaching the build, the forced exit comes back, a leak exits 1
+          # like a clean failure, and everything below passes while covering
+          # nothing — which is the state #433 was filed about. Under the flag even
+          # a clean failure reports its handles, so its absence means the
+          # measurement did not happen.
+          if ! grep -aq POVESTE_ACTIVE_HANDLES "$RUNNER_TEMP/broken-build.log"; then
+            echo "::error::POVESTE_NO_FORCE_EXIT did not reach the build — this guard measured nothing (#433)"
+            exit 1
+          fi
+          echo "A broken component exits $code and the process ends on its own"
 
       - name: Build book
         run: pnpm --filter ./examples/${{ matrix.example }} run story:build
