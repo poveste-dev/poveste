@@ -4,6 +4,28 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.9.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.2...v0.9.0)
+
+**Quasar, four years after histoire's users first asked for it.**
+
+[histoire#105](https://github.com/histoire-dev/histoire/issues/105) has been open since June 2022 — eighteen comments, around ten people, two further discussions that got no reply. Every attempt in that thread hits the same wall: Quasar's Vite configuration can only be obtained asynchronously, and there was no way to await it. Poveste has awaited plugin config since before the fork, so the wall was never here. Nobody had checked.
+
+### 🚀 Enhancements
+
+- **`@poveste/plugin-quasar` — Quasar 2 books that work** ([#436](https://github.com/poveste-dev/poveste/issues/436), [#430](https://github.com/poveste-dev/poveste/issues/430)). `HstQuasar()` pulls Quasar's async Vite config and makes the two adjustments a story context needs: Quasar's plugins are passed through whole, because `@quasar/vite-plugin` asserts that Vue's plugin precedes it, and `quasar` stays transformed rather than externalised. `setupQuasar({ boot })` installs Quasar into the story app and runs your boot files — **name them, or an app extension's components are missing from a book that builds successfully and reports nothing**, since boot files never run in a story and neither `getTestingConfig()` nor `QuasarConfigFile` will tell the plugin what they are. Proven against a real `npm init quasar` app with layouts, router, SCSS variables, a boot file and `@quasar/qcalendar` installed as a genuine app extension, and guarded by an `examples/quasar` book with its own CI job.
+
+### 🩹 Fixes
+
+- **A failed build no longer leaves collection ports open** ([#426](https://github.com/poveste-dev/poveste/issues/426)). Story collection opened a `MessageChannel` per story file and closed neither end. On a successful build the pool teardown hid it; on a failure the in-flight channels were orphaned and still listening, holding the process open with nothing left to do. The channel's lifetime is now the execution that created it. Nothing visible changes — `poveste build` already exited on failure — but it is the leak that made the exit have to be forced. The remaining handles are tracked in [#434](https://github.com/poveste-dev/poveste/issues/434).
+
+### Upgrading
+
+**Nothing to do**, unless you use Quasar.
+
+If you do: `@poveste/plugin-quasar` is a new optional package, peered on `quasar@^2.24.0`, `@quasar/app-vite@^3.8.0` and `vue@^3.5.26`. Add `HstQuasar()` to `plugins` and `setupQuasar({ boot })` to your setup file — [the guide](https://poveste.dev/guide/config.html) has the full shape. List every boot file your app relies on; a missing one is silent.
+
 ## v0.8.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.8.1...v0.8.2)
