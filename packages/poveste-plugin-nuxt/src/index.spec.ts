@@ -97,7 +97,7 @@ describe('__povesteTolerant', () => {
   })
 })
 
-describe('HstNuxt teardown', () => {
+describe('the HstNuxt teardown', () => {
   function callOnBuild() {
     const plugin = HstNuxt()
     const api = { onBuildEnd: vi.fn(), changeViteConfig: vi.fn(), onPreviewStory: vi.fn() }
