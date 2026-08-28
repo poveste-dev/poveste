@@ -35,15 +35,19 @@ const RECIPES: Recipe[] = [
   },
 ]
 
-// From the heading to the next one at the same level or above.
+// From the heading to the next one at the same level or above. Matched line by
+// line rather than on a surrounding newline, so a heading that opens a file is
+// found too — otherwise it reads as a recipe that has been renamed.
 export function section(markdown: string, heading: string): string | undefined {
-  const start = markdown.indexOf(`\n${heading}\n`)
+  const lines = markdown.split('\n')
+  const start = lines.indexOf(heading)
   if (start === -1) {
     return undefined
   }
-  const rest = markdown.slice(start + heading.length + 2)
-  const end = rest.search(/\n#{1,3} /)
-  return end === -1 ? rest : rest.slice(0, end)
+
+  const rest = lines.slice(start + 1)
+  const end = rest.findIndex(line => /^#{1,3} /.test(line))
+  return (end === -1 ? rest : rest.slice(0, end)).join('\n')
 }
 
 // A block whose first line is a `// path/to/file` comment is a file the reader is

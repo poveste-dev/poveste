@@ -30,6 +30,12 @@ describe('section', () => {
     expect(section(PAGE, '### Quasar')).not.toContain('not part of the recipe')
   })
 
+  it('finds a heading that opens the file', () => {
+    // `RECIPES` is built to grow; a recipe on its own page can start at line 1,
+    // and reading that as "renamed" is a failure with no defect behind it.
+    expect(section('### Quasar\n\n- notes', '### Quasar')).toBe('\n- notes')
+  })
+
   it('has nothing when the heading was renamed', () => {
     // Treated as a problem by the caller: a recipe that moved is one nothing
     // guards any more.
@@ -54,7 +60,7 @@ describe('tsBlocks', () => {
 
     // Without this, adding an example to the page would shift every file it is
     // matched against by one.
-    expect(tsBlocks(section(`\n${page}`, '### Quasar')!)).toEqual(['export default {}\n'])
+    expect(tsBlocks(section(page, '### Quasar')!)).toEqual(['export default {}\n'])
   })
 
   it('drops the path comment, which labels the block rather than belonging to it', () => {

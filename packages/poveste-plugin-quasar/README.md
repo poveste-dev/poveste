@@ -53,5 +53,15 @@ context, so one that needs those has to be split or guarded.
 Needs `@quasar/app-vite@^3.8.0` and `quasar@^2.24.0`. Quasar's SPA config is what
 the entrypoint returns, so that is what a book is built with.
 
+The setup helper imports Quasar's stylesheet, which is Sass, so the project needs
+a Sass compiler for Vite to use — `sass` or `sass-embedded`. Quasar projects have
+one already; a project that reaches Quasar another way may not, and Vite says so
+with `Preprocessor dependency "sass" not found`.
+
+Quasar reports a project it will not build by exiting the process rather than
+raising an error. That is caught while its config is being read, so a missing
+`index.html` or a rejected `quasar.config` fails as a Poveste error naming this
+plugin instead of taking the CLI down with no explanation.
+
 [Configuration](https://poveste.dev/reference/config.html) ·
 [Quasar recipe](https://poveste.dev/guide/config.html)
