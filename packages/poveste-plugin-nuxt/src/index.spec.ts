@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain runtime module, no types
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
-import { isPluginExcluded, wrapPluginsForTolerantBoot } from './index'
+import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot } from './index'
 
 const I18N_DEFAULT = /[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/
 
@@ -94,5 +94,32 @@ describe('__povesteTolerant', () => {
     const entry = { some: 'object' }
 
     expect(__povesteTolerant(entry)).toBe(entry)
+  })
+})
+
+describe('HstNuxt teardown', () => {
+  function callOnBuild() {
+    const plugin = HstNuxt()
+    const api = { onBuildEnd: vi.fn(), changeViteConfig: vi.fn(), onPreviewStory: vi.fn() }
+    const cleanups: (() => unknown)[] = []
+
+    plugin.onBuild!(api as never, cb => cleanups.push(cb))
+
+    return { api, cleanups }
+  }
+
+  it('registers its teardown as cleanup, which runs however the build ends', () => {
+    expect(callOnBuild().cleanups).toHaveLength(1)
+  })
+
+  it('does not register it as a build-end callback', () => {
+    // `onBuildEnd` only runs when the build succeeded, so Nuxt was left running
+    // after every build that failed — around a hundred watcher handles (#434).
+    expect(callOnBuild().api.onBuildEnd).not.toHaveBeenCalled()
+  })
+
+  it('awaits the close rather than leaving it floating', async () => {
+    // Not awaited, a successful build could finish before Nuxt had shut down.
+    await expect(callOnBuild().cleanups[0]()).resolves.toBeUndefined()
   })
 })

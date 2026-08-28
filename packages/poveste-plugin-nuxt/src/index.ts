@@ -133,18 +133,20 @@ export async function setupVue3 () {
 
     onDev(api, onCleanup) {
       onCleanup(async () => {
-        nuxt?.close()
+        await nuxt?.close()
       })
     },
 
-    onBuild(api) {
-      api.onBuildEnd(() => {
-        nuxt?.close()
+    onBuild(api, onCleanup) {
+      // Not `onBuildEnd`: that only runs when the build succeeded, so anything
+      // this instance holds outlived every build that failed (#434).
+      onCleanup(async () => {
+        await nuxt?.close()
       })
     },
 
-    onPreview() {
-      nuxt?.close()
+    async onPreview() {
+      await nuxt?.close()
     },
   }
 }
