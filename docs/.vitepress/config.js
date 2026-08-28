@@ -8,17 +8,17 @@ const deploy = [process.env.BRANCH, process.env.COMMIT_REF?.slice(0, 7), process
 
 module.exports = {
   title: 'Poveste',
-  description: 'Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire',
+  description: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a maintained, drop-in successor to histoire',
 
   sitemap: {
     hostname: 'https://poveste.dev',
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-    ['meta', { property: 'og:title', content: 'Poveste — interactive component playgrounds for Vue, Svelte and Nuxt' }],
+    ['meta', { property: 'og:title', content: 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar' }],
     ['meta', { property: 'og:site_name', content: 'Poveste' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:description', content: 'Interactive component playgrounds for Vue, Svelte and Nuxt — a maintained, drop-in successor to histoire' }],
+    ['meta', { property: 'og:description', content: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a maintained, drop-in successor to histoire' }],
     ['meta', { property: 'og:url', content: 'https://poveste.dev/' }],
     ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],

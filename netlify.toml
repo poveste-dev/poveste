@@ -53,6 +53,20 @@ NODE_VERSION = "24"
 #
 # Order matters — Netlify takes the FIRST matching rule, so nothing broader may be
 # added above these.
+# `/new` was an unlinked duplicate of the four StackBlitz boxes on
+# `guide/getting-started`, deleted in #390. It was serving 200 and sitemapped, so
+# it has whatever inbound links an indexed page collects — they go to the page
+# that already held the same content.
+[[redirects]]
+from = "/new"
+to = "/guide/getting-started.html"
+status = 301
+
+[[redirects]]
+from = "/new.html"
+to = "/guide/getting-started.html"
+status = 301
+
 [[redirects]]
 from = "/guide/vue3/*"
 to = "/guide/vue/:splat"
