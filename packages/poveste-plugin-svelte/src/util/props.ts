@@ -7,47 +7,65 @@ import { parse } from 'svelte/compiler'
 
 type Node = any
 
-const STYLE_BLOCK = /<style[\s\S]*?<\/style>/gi
-const TYPE_IMPORT = /\bimport\s+type\b(?:(?!\bfrom\b)[\s\S])+?\bfrom\s*['"][^'"]+['"]\s*;?/g
+// Poveste injects this into every story file; no user sets it.
+const INJECTED = 'Hst'
 
-// Svelte's parser reads raw source, so two shapes that compile fine in the real
-// pipeline throw here: a preprocessed `<style lang="scss">`, and `import type
-// { Hst }` beside `export let Hst: Hst`, which reads as a duplicate declaration.
-// Neither is needed to find props.
-export function parseable(source: string): string {
-  return source.replace(STYLE_BLOCK, '').replace(TYPE_IMPORT, '')
+const SCRIPT_BLOCK = /<script[^>]*>[\s\S]*?<\/script>/gi
+// Line-anchored, so a mention inside a comment or a string cannot start a match
+// and swallow the statements after it.
+const TYPE_IMPORT = /^[ \t]*import\s+type\b[^;]+?\bfrom[ \t]*(['"])[^'"]*\1(?:[ \t]*;)?[ \t]*$/gm
+const IMPORT_BRACES = /\bimport\s*\{([^}]*)\}/g
+
+// Only the script blocks are parsed: props live nowhere else, a preprocessed
+// `<style>` never reaches the parser to throw, and markup is most of the cost.
+// Type-only imports still have to go, in both spellings — `import type { Hst }`
+// beside `export let Hst: Hst` reads as a duplicate declaration.
+function parseable(source: string): string {
+  return (source.match(SCRIPT_BLOCK) ?? [])
+    .join('\n')
+    .replace(TYPE_IMPORT, '')
+    .replace(IMPORT_BRACES, (_, specifiers: string) => {
+      const kept = specifiers.split(',').map(s => s.trim()).filter(s => s && !/^type\s/.test(s))
+      return `import { ${kept.join(', ')} }`
+    })
 }
-
-// Poveste injects `Hst` into every story file. It is the plugin's own API
-// object, not something a user sets, and every `.story.svelte` declares it.
-const INJECTED = new Set(['Hst'])
 
 function nameOf(typeName: Node | undefined): string | undefined {
   return typeName?.name ?? typeName?.right?.name
 }
 
-// A snippet is slot content and a function is called by the component. No
-// control can author either, and handing one to HstJson replaces it with a
-// plain object the component then renders or invokes.
-export function isUndrivable(node: Node | undefined): boolean {
+function withoutNullish(types: Node[]): Node[] {
+  return types.filter((m: Node) => m.type !== 'TSUndefinedKeyword' && m.type !== 'TSNullKeyword')
+}
+
+// A snippet is slot content, so no control can author one and HstJson would
+// replace the markup with a JSON blob. Function props are kept: Vue's auto-props
+// lists them, and the panel is also the only place a story documents what a
+// component accepts.
+function isSnippet(node: Node | undefined): boolean {
   if (!node) {
     return false
   }
-  if (node.type === 'TSUnionType') {
-    return node.types.some((member: Node) => isUndrivable(member))
-  }
   if (node.type === 'TSParenthesizedType') {
-    return isUndrivable(node.typeAnnotation)
+    return isSnippet(node.typeAnnotation)
   }
-  return node.type === 'TSFunctionType' || nameOf(node.typeName) === 'Snippet'
+  if (node.type === 'TSUnionType') {
+    const real = withoutNullish(node.types)
+    return real.length > 0 && real.every((m: Node) => isSnippet(m))
+  }
+  return nameOf(node.typeName) === 'Snippet'
 }
 
-export function acceptsUndefined(node: Node | undefined): boolean {
+// Only `undefined` makes a prop omittable; `string | null` still has to be passed.
+function acceptsUndefined(node: Node | undefined): boolean {
+  if (node?.type === 'TSParenthesizedType') {
+    return acceptsUndefined(node.typeAnnotation)
+  }
   return node?.type === 'TSUnionType'
-    && node.types.some((m: Node) => m.type === 'TSUndefinedKeyword' || m.type === 'TSNullKeyword')
+    && node.types.some((m: Node) => m.type === 'TSUndefinedKeyword')
 }
 
-export function typesFromAnnotation(node: Node | undefined): string[] | undefined {
+function typesFromAnnotation(node: Node | undefined): string[] | undefined {
   if (!node) {
     return undefined
   }
@@ -61,18 +79,12 @@ export function typesFromAnnotation(node: Node | undefined): string[] | undefine
     case 'TSTypeOperator':
     case 'TSParenthesizedType': return typesFromAnnotation(node.typeAnnotation)
     case 'TSTypeLiteral': return ['object']
-    case 'TSLiteralType': return typesFromLiteral(node.literal)
+    case 'TSLiteralType': return [typeName(literalValue(node.literal))]
     case 'TSUnionType': return unionTypes(node)
     case 'TSTypeReference':
       return ['Array', 'ReadonlyArray'].includes(nameOf(node.typeName) ?? '') ? ['array'] : ['unknown']
     default: return ['unknown']
   }
-}
-
-function typesFromLiteral(literal: Node): string[] {
-  // A negative literal type is a UnaryExpression wrapping the number.
-  const value = literal?.type === 'UnaryExpression' ? literal.argument?.value : literal?.value
-  return [typeName(value)]
 }
 
 function typeName(value: unknown): string {
@@ -84,29 +96,82 @@ function typeName(value: unknown): string {
   }
 }
 
-// Nullish members describe absence, not a control. `unknown` sorts last because
-// the panel reads `types[0]`, so a concrete type has to win however it was typed.
+// `unknown` sorts last because the panel reads `types[0]`, so a concrete type
+// wins however the union was written.
 function unionTypes(node: Node): string[] {
-  const members: string[] = node.types
-    .filter((m: Node) => m.type !== 'TSUndefinedKeyword' && m.type !== 'TSNullKeyword')
+  const members: string[] = withoutNullish(node.types)
     .flatMap((m: Node): string[] => typesFromAnnotation(m) ?? [])
 
   return [...new Set(members)].sort((a, b) => Number(a === 'unknown') - Number(b === 'unknown'))
 }
 
-// `export let x = 1` is a prop; `export const` and `export function` are
-// read-only accessors, and `export { a as b }` renames one.
-function legacyProps(body: Node[]): PropDefinition[] {
-  const props: PropDefinition[] = []
+function typesFromValue(value: unknown): string[] | undefined {
+  const name = typeName(value)
+  return name === 'unknown' ? undefined : [name]
+}
+
+// The one place a definition is built, so the injected name and the snippet
+// filter cannot be reached around.
+function propDef(name: string, annotation: Node | undefined, init: Node | undefined, optional: boolean): PropDefinition | undefined {
+  if (name === INJECTED || isSnippet(annotation)) {
+    return undefined
+  }
+  const value = literalValue(init)
+  return {
+    name,
+    types: typesFromAnnotation(annotation) ?? typesFromValue(value),
+    required: !optional && init == null && !acceptsUndefined(annotation),
+    default: value,
+  }
+}
+
+interface Binding { kind: string, annotation?: Node, init?: Node }
+
+function localBindings(body: Node[]): Map<string, Binding> {
+  const found = new Map<string, Binding>()
 
   for (const node of body) {
-    if (node.type !== 'ExportNamedDeclaration') {
+    const declaration = node.type === 'ExportNamedDeclaration' ? node.declaration : node
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const declarator of declaration.declarations) {
+        if (declarator.id.type === 'Identifier') {
+          found.set(declarator.id.name, {
+            kind: declaration.kind,
+            annotation: declarator.id.typeAnnotation?.typeAnnotation,
+            init: declarator.init,
+          })
+        }
+      }
+    }
+    if (declaration?.type === 'FunctionDeclaration' && declaration.id) {
+      found.set(declaration.id.name, { kind: 'function' })
+    }
+  }
+
+  return found
+}
+
+// `export let x = 1` is a prop, and so is `export { x as y }` when `x` is a
+// `let`. `export const`, `export function`, a re-export and a type-only export
+// are not.
+function legacyProps(body: Node[]): PropDefinition[] {
+  const props: PropDefinition[] = []
+  const locals = localBindings(body)
+
+  for (const node of body) {
+    if (node.type !== 'ExportNamedDeclaration' || node.exportKind === 'type' || node.source) {
       continue
     }
 
     if (!node.declaration && node.specifiers?.length) {
       for (const specifier of node.specifiers) {
-        props.push({ name: specifier.exported?.name ?? specifier.local?.name, required: false })
+        const local = locals.get(specifier.local?.name)
+        const def = local?.kind === 'let'
+          ? propDef(specifier.exported?.name, local.annotation, local.init, false)
+          : undefined
+        if (def) {
+          props.push(def)
+        }
       }
       continue
     }
@@ -119,34 +184,17 @@ function legacyProps(body: Node[]): PropDefinition[] {
       if (declarator.id.type !== 'Identifier') {
         continue
       }
-      const annotation = declarator.id.typeAnnotation?.typeAnnotation
-      if (isUndrivable(annotation) || INJECTED.has(declarator.id.name)) {
-        continue
+      const def = propDef(declarator.id.name, declarator.id.typeAnnotation?.typeAnnotation, declarator.init, false)
+      if (def) {
+        props.push(def)
       }
-      const value = literalValue(declarator.init)
-      props.push({
-        name: declarator.id.name,
-        types: typesFromAnnotation(annotation) ?? typesFromValue(value),
-        required: !declarator.init && !acceptsUndefined(annotation),
-        default: value,
-      })
     }
   }
 
   return props
 }
 
-// Without an annotation the initialiser is the only evidence of a type, and it
-// is enough to pick a control for a plain-JS component.
-function typesFromValue(value: unknown): string[] | undefined {
-  if (value == null) {
-    return undefined
-  }
-  const name = typeName(value)
-  return name === 'unknown' ? undefined : [name]
-}
-
-function runesProps(body: Node[], declared: Map<string, Node[]>): PropDefinition[] {
+function runesProps(body: Node[], declared: Map<string, Node>): PropDefinition[] {
   const declarator = body
     .filter((node: Node) => node.type === 'VariableDeclaration')
     .flatMap((node: Node) => node.declarations)
@@ -155,63 +203,84 @@ function runesProps(body: Node[], declared: Map<string, Node[]>): PropDefinition
   return declarator ? fromDeclarator(declarator, declared) : []
 }
 
-function declaredTypes(body: Node[]): Map<string, Node[]> {
-  const found = new Map<string, Node[]>()
+function declaredTypes(body: Node[]): Map<string, Node> {
+  const found = new Map<string, Node>()
 
   for (const node of body) {
     const declaration = node.type === 'ExportNamedDeclaration' ? node.declaration : node
     if (declaration?.type === 'TSInterfaceDeclaration') {
-      found.set(declaration.id.name, declaration.body.body)
+      found.set(declaration.id.name, { type: 'TSTypeLiteral', members: declaration.body.body })
     }
-    if (declaration?.type === 'TSTypeAliasDeclaration' && declaration.typeAnnotation?.type === 'TSTypeLiteral') {
-      found.set(declaration.id.name, declaration.typeAnnotation.members)
+    if (declaration?.type === 'TSTypeAliasDeclaration') {
+      found.set(declaration.id.name, declaration.typeAnnotation)
     }
   }
 
   return found
 }
 
+// An alias may be an intersection of literals and other declared names, which is
+// how a component extends HTML attributes without writing an interface.
+function membersOf(node: Node | undefined, declared: Map<string, Node>, depth = 0): Node[] | undefined {
+  if (!node || depth > 4) {
+    return undefined
+  }
+  if (node.type === 'TSTypeLiteral') {
+    return node.members
+  }
+  if (node.type === 'TSTypeReference') {
+    return membersOf(declared.get(nameOf(node.typeName) ?? ''), declared, depth + 1)
+  }
+  if (node.type === 'TSIntersectionType') {
+    const parts = node.types.flatMap((t: Node) => membersOf(t, declared, depth + 1) ?? [])
+    return parts.length > 0 ? parts : undefined
+  }
+  return undefined
+}
+
 // The annotation and the destructuring each know something the other does not:
 // the annotation carries types and optionality, the destructuring carries
 // defaults and every prop an `extends` clause hides. Merge rather than choose.
-function fromDeclarator(declarator: Node, declared: Map<string, Node[]>): PropDefinition[] {
+function fromDeclarator(declarator: Node, declared: Map<string, Node>): PropDefinition[] {
   const destructured = destructuredDefaults(declarator.id)
-  const annotation = declarator.id.typeAnnotation?.typeAnnotation
-  const members = annotation?.type === 'TSTypeReference'
-    ? declared.get(nameOf(annotation.typeName) ?? '')
-    : annotation?.type === 'TSTypeLiteral'
-      ? annotation.members
-      : undefined
+  const members = membersOf(declarator.id.typeAnnotation?.typeAnnotation, declared)
 
   const defs: PropDefinition[] = []
   const seen = new Set<string>()
 
   for (const member of members ?? []) {
-    if (member.type !== 'TSPropertySignature' || member.key?.type !== 'Identifier') {
+    if (member.key?.type !== 'Identifier') {
       continue
     }
-    const memberType = member.typeAnnotation?.typeAnnotation
+    // Marked seen before the kind check, so a method signature is not re-added
+    // as a typeless prop by the loop below.
     seen.add(member.key.name)
-    if (isUndrivable(memberType) || INJECTED.has(member.key.name)) {
+    if (member.type !== 'TSPropertySignature') {
       continue
     }
-    const value = literalValue(destructured.get(member.key.name))
-    defs.push({
-      name: member.key.name,
-      types: typesFromAnnotation(memberType) ?? typesFromValue(value),
-      required: !member.optional && destructured.get(member.key.name) === undefined && !acceptsUndefined(memberType),
-      default: value,
-    })
+    const def = propDef(
+      member.key.name,
+      member.typeAnnotation?.typeAnnotation,
+      destructured.get(member.key.name),
+      member.optional,
+    )
+    if (def) {
+      defs.push(def)
+    }
   }
 
   for (const [name, init] of destructured) {
     // `children` is the default snippet in runes mode; with no annotation to
     // read, the name is the only thing that says so.
-    if (seen.has(name) || name === 'children' || INJECTED.has(name)) {
+    if (seen.has(name) || name === 'children') {
       continue
     }
-    const value = literalValue(init)
-    defs.push({ name, types: typesFromValue(value), required: false, default: value })
+    // With no annotation at all the destructuring is the only signal, so infer
+    // as legacy mode does; with one, an inherited prop's optionality is unknown.
+    const def = propDef(name, undefined, init, members !== undefined)
+    if (def) {
+      defs.push(def)
+    }
   }
 
   return defs
@@ -237,8 +306,8 @@ function destructuredDefaults(id: Node): Map<string, Node | undefined> {
   return found
 }
 
-// Only values a control can hold. `$bindable('x')` is the canonical way to
-// default a bindable prop, and the value it wraps is one node deeper.
+// Only values a control can hold and JSON can carry. `$bindable('x')` is the
+// canonical way to default a bindable prop, and its value is one node deeper.
 function literalValue(node: Node | undefined): any {
   if (!node) {
     return undefined
@@ -246,8 +315,9 @@ function literalValue(node: Node | undefined): any {
   if (node.type === 'CallExpression' && node.callee?.name === '$bindable') {
     return literalValue(node.arguments?.[0])
   }
-  if (node.type === 'UnaryExpression' && node.operator === '-' && node.argument?.type === 'Literal') {
-    return -node.argument.value
+  if (node.type === 'UnaryExpression' && node.operator === '-') {
+    const inner = literalValue(node.argument)
+    return typeof inner === 'number' ? -inner : undefined
   }
   if (node.type !== 'Literal') {
     return undefined
@@ -257,8 +327,8 @@ function literalValue(node: Node | undefined): any {
 
 /**
  * The props a component declares, or `undefined` when the source could not be
- * read — which is not the same as a component with no props, and a caller
- * deciding whether to show a panel has to tell them apart.
+ * read — which a caller deciding whether to show a panel has to tell apart from
+ * a component that has none.
  */
 export function extractPropDefs(source: string): PropDefinition[] | undefined {
   let ast: Node
@@ -271,7 +341,7 @@ export function extractPropDefs(source: string): PropDefinition[] | undefined {
 
   // Types may be declared in the module script; props never are.
   const body = ast.instance?.content?.body ?? []
-  const types = declaredTypes([...(ast.module?.content?.body ?? []), ...body])
-  const runes = runesProps(body, types)
+  const declared = declaredTypes([...(ast.module?.content?.body ?? []), ...body])
+  const runes = runesProps(body, declared)
   return runes.length > 0 ? runes : legacyProps(body)
 }

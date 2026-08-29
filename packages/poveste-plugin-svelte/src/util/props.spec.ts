@@ -29,9 +29,20 @@ describe('extractPropDefs, legacy mode', () => {
 
   it('reads the renaming export form, which is also a prop', () => {
     // `export { internal as external }` compiles to the same `$.prop` call as
-    // `export let external`, so the panel has to offer it.
-    expect(propsOf('let internal = 1\n  export { internal as external }'))
-      .toEqual([{ name: 'external', required: false }])
+    // `export let external`, so the panel has to offer it — with the type and
+    // default of the binding it renames.
+    expect(propsOf(`let internal: string = 'x'\n  export { internal as external }`))
+      .toEqual([{ name: 'external', types: ['string'], required: false, default: 'x' }])
+  })
+
+  it('does not invent props from exports that are not props', () => {
+    // The compiler emits a prop only for an exported `let`. Everything here is a
+    // type export, a re-export, an accessor, a snippet or the injected name.
+    expect(propsOf('interface Foo { a: string }\n  export type { Foo }')).toEqual([])
+    expect(propsOf(`export { default as Y } from './z'`)).toEqual([])
+    expect(propsOf('const version = 1\n  function focus() {}\n  export { version, focus }')).toEqual([])
+    expect(propsOf('let s: Snippet\n  export { s as header }')).toEqual([])
+    expect(propsOf('let Hst = 1\n  export { Hst }')).toEqual([])
   })
 
   it('ignores export const and export function, which are not props', () => {
@@ -101,6 +112,16 @@ describe('extractPropDefs, runes mode', () => {
     ])
   })
 
+  it('resolves an intersection alias, the same as the extends spelling', () => {
+    expect(propsOf(`
+  interface Base { size?: number }
+  type Props = Base & { label: string }
+  let { label, size }: Props = $props()`)).toEqual([
+      { name: 'size', types: ['number'], required: false, default: undefined },
+      { name: 'label', types: ['string'], required: true, default: undefined },
+    ])
+  })
+
   it('keeps every prop when the interface adds nothing of its own', () => {
     expect(propsOf(`
   interface Props extends HTMLButtonAttributes {}
@@ -109,9 +130,11 @@ describe('extractPropDefs, runes mode', () => {
   })
 
   it('falls back to the destructuring when there is no annotation', () => {
+    // With no annotation the destructuring is the only signal, so `count` reads
+    // required exactly as `export let count` does.
     expect(propsOf(`let { label = 'hi', count } = $props()`)).toEqual([
       { name: 'label', types: ['string'], required: false, default: 'hi' },
-      { name: 'count', types: undefined, required: false, default: undefined },
+      { name: 'count', types: undefined, required: true, default: undefined },
     ])
   })
 
@@ -120,6 +143,11 @@ describe('extractPropDefs, runes mode', () => {
   interface Props { count: number }
   let { count = 0 }: Props = $props()`))
       .toEqual({ name: 'count', types: ['number'], required: false, default: 0 })
+  })
+
+  it('does not re-add a method signature as a typeless prop', () => {
+    expect(propNames(`interface Props { onclick(): void, label: string }\n  let { onclick, label }: Props = $props()`))
+      .toEqual(['label'])
   })
 
   it('ignores a computed key, which names a local variable and not a prop', () => {
@@ -205,17 +233,28 @@ describe('extractPropDefs, props no control can drive', () => {
     expect(propNames('let { title, children } = $props()')).toEqual(['title'])
   })
 
-  it('drops a function prop, which a JSON control would replace with an object', () => {
-    // The component calls it — `onmyevent?.({ a, b })` — so writing an object
-    // into that control turns the next interaction into a TypeError.
-    expect(propNames('export let onmyevent: ((value: string) => void) | undefined')).toEqual([])
+  it('keeps a function prop, however its type is spelled', () => {
+    // Vue's auto-props lists function props too, and the panel is the only place
+    // a story documents what a component accepts. Dropping them would hide a
+    // prop rather than show an unhelpful control, and would do it inconsistently
+    // — an imported handler type is indistinguishable from any other reference.
+    expect(propNames('export let onmyevent: ((value: string) => void) | undefined')).toEqual(['onmyevent'])
+    expect(propNames('export let onclick: MouseEventHandler | undefined')).toEqual(['onclick'])
     expect(propNames(`interface Props { onclick?: () => void, label: string }\n  let { onclick, label }: Props = $props()`))
-      .toEqual(['label'])
+      .toEqual(['onclick', 'label'])
   })
 
-  it('treats an un-initialised prop annotated with undefined or null as optional', () => {
+  it('keeps a union with one drivable member, and types it from that member', () => {
+    expect(firstProp('export let value: string | (() => void)'))
+      .toMatchObject({ name: 'value', types: ['string', 'unknown'] })
+  })
+
+  it('treats undefined as optional and null as still required', () => {
+    // TypeScript requires the caller to pass a `string | null`; only `undefined`
+    // in the union, or an initialiser, makes a prop omittable.
     expect(firstProp('export let a: string | undefined')).toMatchObject({ name: 'a', required: false })
-    expect(firstProp('export let b: string | null')).toMatchObject({ name: 'b', required: false })
+    expect(firstProp('export let b: string | null')).toMatchObject({ name: 'b', required: true })
+    expect(firstProp('export let c: (string | undefined)')).toMatchObject({ name: 'c', required: false })
   })
 })
 
@@ -242,29 +281,44 @@ describe('extractPropDefs, defaults', () => {
     expect(defaultOf('() => {}')).toMatchObject({ name: 'value', default: undefined })
     expect(defaultOf('makeIt()')).toMatchObject({ name: 'value', default: undefined })
     expect(defaultOf('1n')).toMatchObject({ name: 'value', default: undefined })
+    expect(defaultOf('-1n')).toMatchObject({ name: 'value', default: undefined })
     expect(defaultOf('/re/')).toMatchObject({ name: 'value', default: undefined })
+    // `-'x'` is NaN, which JSON turns into null.
+    expect(defaultOf(`-'x'`)).toMatchObject({ name: 'value', default: undefined })
   })
 })
 
 describe('extractPropDefs, source it has to survive', () => {
   it('reads a component whose styles need a preprocessor', () => {
-    // `svelte/compiler` parses raw source, so SCSS is a parse error even though
-    // the component compiles. The props are in the script either way.
+    // Only the script is parsed, so a preprocessed `<style>` never reaches the
+    // parser to throw.
     const scss = `<script lang="ts">\n  export let msg: string = 'hi'\n</script>\n<h1>{msg}</h1>\n<style lang="scss">\n// a comment\n$c: red;\nh1 { color: $c }\n</style>`
 
     expect(extractPropDefs(scss))
       .toEqual([{ name: 'msg', types: ['string'], required: false, default: 'hi' }])
   })
 
-  it('reads a story file, whose type import shadows its own prop', () => {
-    // `import type { Hst }` beside `export let Hst: Hst` reads as a duplicate
-    // declaration to the raw parser, and 102 of this repo's own components are
-    // that shape.
-    const story = `<script lang="ts">\n  import type { Hst } from '@poveste/plugin-svelte'\n\n  export let Hst: Hst\n</script>\n<div />`
+  it('leaves markup and script strings alone', () => {
+    // A `<style>` in a string, and an element whose name merely starts with
+    // `style`, are content rather than structure.
+    const tricky = `<style-guide />\n<script lang="ts">\n  export let a: number = 1\n  const open = '<style>'\n  export let b: number = 2\n</script>\n<style>h1 { color: red }</style>`
 
-    // And `Hst` itself is not a prop — poveste injects it, every story file
-    // declares it, and no user sets it.
-    expect(extractPropDefs(story)).toEqual([])
+    expect(extractPropDefs(tricky)?.map(p => p.name)).toEqual(['a', 'b'])
+  })
+
+  it('reads a story file whose type import shadows its own prop, in both spellings', () => {
+    const statement = `<script lang="ts">\n  import type { Hst } from '@poveste/plugin-svelte'\n\n  export let Hst: Hst\n  export let a: number = 1\n</script>\n<div />`
+    const inline = `<script lang="ts">\n  import { type Hst, logEvent } from '@poveste/plugin-svelte'\n\n  export let Hst: Hst\n  export let a: number = 1\n</script>\n<div />`
+    const expected = [{ name: 'a', types: ['number'], required: false, default: 1 }]
+
+    expect(extractPropDefs(statement)).toEqual(expected)
+    expect(extractPropDefs(inline)).toEqual(expected)
+  })
+
+  it('does not let a mention of import type in a comment eat the next line', () => {
+    const source = `<script lang="ts">\n  export let a: number = 1 // prefer import type here\n  import { helper } from './helper'\n  export let b: number = 2\n</script>\n<div />`
+
+    expect(extractPropDefs(source)?.map(p => p.name)).toEqual(['a', 'b'])
   })
 
   it('returns an empty list for a component with no props', () => {
