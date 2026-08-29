@@ -1,6 +1,5 @@
-// Reads a component's declared props out of its source, because a compiled
-// Svelte component keeps no record of what it accepts the way a Vue vnode does
-// (#233).
+// A compiled Svelte component keeps no record of what it accepts, the way a Vue
+// vnode does, so the source is the only place its props still exist (#233).
 
 import type { PropDefinition } from '@poveste/shared'
 import { parse } from 'svelte/compiler'
@@ -11,15 +10,13 @@ type Node = any
 const INJECTED = 'Hst'
 
 const SCRIPT_BLOCK = /<script[^>]*>[\s\S]*?<\/script>/gi
-// Line-anchored, so a mention inside a comment or a string cannot start a match
-// and swallow the statements after it.
+// Line-anchored: a mention in a comment must not start a match.
 const TYPE_IMPORT = /^[ \t]*import\s+type\b[^;]+?\bfrom[ \t]*(['"])[^'"]*\1(?:[ \t]*;)?[ \t]*$/gm
 const IMPORT_BRACES = /\bimport\s*\{([^}]*)\}/g
 
-// Only the script blocks are parsed: props live nowhere else, a preprocessed
-// `<style>` never reaches the parser to throw, and markup is most of the cost.
-// Type-only imports still have to go, in both spellings — `import type { Hst }`
-// beside `export let Hst: Hst` reads as a duplicate declaration.
+// Script blocks only: props live nowhere else, and a preprocessed `<style>`
+// never reaches the parser to throw. Type-only imports still go, both spellings
+// — `import type { Hst }` beside `export let Hst: Hst` reads as a redeclaration.
 function parseable(source: string): string {
   return (source.match(SCRIPT_BLOCK) ?? [])
     .join('\n')
@@ -38,10 +35,8 @@ function withoutNullish(types: Node[]): Node[] {
   return types.filter((m: Node) => m.type !== 'TSUndefinedKeyword' && m.type !== 'TSNullKeyword')
 }
 
-// A snippet is slot content, so no control can author one and HstJson would
-// replace the markup with a JSON blob. Function props are kept: Vue's auto-props
-// lists them, and the panel is also the only place a story documents what a
-// component accepts.
+// Slot content, which no control can author. Function props are kept — Vue's
+// auto-props lists them too.
 function isSnippet(node: Node | undefined): boolean {
   if (!node) {
     return false
@@ -110,8 +105,7 @@ function typesFromValue(value: unknown): string[] | undefined {
   return name === 'unknown' ? undefined : [name]
 }
 
-// The one place a definition is built, so the injected name and the snippet
-// filter cannot be reached around.
+// The only place a definition is built, so the filters cannot be bypassed.
 function propDef(name: string, annotation: Node | undefined, init: Node | undefined, optional: boolean): PropDefinition | undefined {
   if (name === INJECTED || isSnippet(annotation)) {
     return undefined
@@ -151,9 +145,8 @@ function localBindings(body: Node[]): Map<string, Binding> {
   return found
 }
 
-// `export let x = 1` is a prop, and so is `export { x as y }` when `x` is a
-// `let`. `export const`, `export function`, a re-export and a type-only export
-// are not.
+// `export let x` is a prop, and `export { x as y }` when `x` is a `let`. An
+// accessor, a re-export and a type-only export are not.
 function legacyProps(body: Node[]): PropDefinition[] {
   const props: PropDefinition[] = []
   const locals = localBindings(body)
@@ -219,8 +212,7 @@ function declaredTypes(body: Node[]): Map<string, Node> {
   return found
 }
 
-// An alias may be an intersection of literals and other declared names, which is
-// how a component extends HTML attributes without writing an interface.
+// An alias may intersect literals and other declared names.
 function membersOf(node: Node | undefined, declared: Map<string, Node>, depth = 0): Node[] | undefined {
   if (!node || depth > 4) {
     return undefined
@@ -252,8 +244,7 @@ function fromDeclarator(declarator: Node, declared: Map<string, Node>): PropDefi
     if (member.key?.type !== 'Identifier') {
       continue
     }
-    // Marked seen before the kind check, so a method signature is not re-added
-    // as a typeless prop by the loop below.
+    // Seen before the kind check, so a method signature is not re-added below.
     seen.add(member.key.name)
     if (member.type !== 'TSPropertySignature') {
       continue
@@ -275,8 +266,8 @@ function fromDeclarator(declarator: Node, declared: Map<string, Node>): PropDefi
     if (seen.has(name) || name === 'children') {
       continue
     }
-    // With no annotation at all the destructuring is the only signal, so infer
-    // as legacy mode does; with one, an inherited prop's optionality is unknown.
+    // Unannotated, the destructuring is the only signal; annotated, an
+    // inherited prop's optionality is unknowable.
     const def = propDef(name, undefined, init, members !== undefined)
     if (def) {
       defs.push(def)
@@ -306,8 +297,8 @@ function destructuredDefaults(id: Node): Map<string, Node | undefined> {
   return found
 }
 
-// Only values a control can hold and JSON can carry. `$bindable('x')` is the
-// canonical way to default a bindable prop, and its value is one node deeper.
+// Only what a control can hold and JSON can carry. A `$bindable` default is one
+// node deeper.
 function literalValue(node: Node | undefined): any {
   if (!node) {
     return undefined
@@ -325,11 +316,7 @@ function literalValue(node: Node | undefined): any {
   return typeof node.value === 'bigint' || node.value instanceof RegExp ? undefined : node.value
 }
 
-/**
- * The props a component declares, or `undefined` when the source could not be
- * read — which a caller deciding whether to show a panel has to tell apart from
- * a component that has none.
- */
+/** The props declared, or `undefined` when the source could not be read. */
 export function extractPropDefs(source: string): PropDefinition[] | undefined {
   let ast: Node
   try {
