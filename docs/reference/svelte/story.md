@@ -12,6 +12,29 @@ Title of the story.
 </Hst.Story>
 ```
 
+## `id`
+
+Id of the story used in the URL. By default, the id is automatically generated from the file path. Setting an id manually will ensure the URL parameter doesn't change with the order of the variants in the story.
+
+```svelte
+<Hst.Story id="my-story">
+  Hello world
+</Hst.Story>
+```
+
+## `layout`
+
+Layout of the story. Object with the following properties:
+  - `type`: `'single'` or `'grid'`
+  - with `type: 'single'` you can specify:
+    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
+  - with `type: 'grid'` you can specify:
+    - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+  - with either type:
+    - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
+
+[Learn more](../../guide/svelte/stories.md#layout)
+
 ## `initState`
 
 A function returning the initial state for the variant. Poveste owns this state, and passes it
@@ -43,28 +66,35 @@ with a controls slot and no `initState` logs an error saying so. See
 [State & Controls](../../guide/svelte/controls.md) and, if you are coming from histoire,
 [the migration note](../../guide/migration-from-histoire.md#svelte-story-state-moves-to-initstate).
 
-## `id`
+## `setupApp`
 
-Id of the story used in the URL. By default, the id is automatically generated from the file path. Setting an id manually will ensure the URL parameter doesn't change with the order of the variants in the story.
+A function to configure the Svelte app, called after the global setup hook with the same argument.
+
+It receives a payload object with the following properties:
+
+- `app`: The mounted story component instance.
+- `story`: The story object.
+- `variant`: The variant object.
 
 ```svelte
-<Hst.Story id="my-story">
-  Hello world
+<script>
+  export let Hst
+
+  function setupApp({ variant }) {
+    document.body.dataset.variant = variant.title
+  }
+</script>
+
+<Hst.Story title="Story setup" {setupApp}>
+  <MyComponent />
 </Hst.Story>
 ```
 
-## `layout`
+::: warning Not inherited by explicit variants
+In Vue, a `setup-app` on `<Story>` gives every `<Variant>` a default. In Svelte it does not: a `setupApp` here reaches only the implicit variant of a story that declares no `<Hst.Variant>` children — as the example above does. As soon as you write explicit variants, put [`setupApp`](./variant.md#setupapp) on each variant that needs it.
+:::
 
-Layout of the story. Object with the following properties:
-  - `type`: `'single'` or `'grid'`
-  - with `type: 'single'` you can specify:
-    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
-  - with `type: 'grid'` you can specify:
-    - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
-  - with either type:
-    - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
-
-[Learn more](../../guide/svelte/stories.md#layout)
+[Learn more](../../guide/svelte/app-setup.md#local-setup)
 
 ## `group`
 
@@ -98,6 +128,22 @@ The icon color.
 </Hst.Story>
 ```
 
+## `docsOnly`
+
+This story will only render a documentation page — no preview, no controls, no variants.
+
+Write the content in a sibling markdown file. Svelte has no `<docs>` block; a story file named `MarkdownLinks.story.svelte` takes its documentation from `MarkdownLinks.story.md` next to it.
+
+```svelte
+<script>
+  export let Hst
+</script>
+
+<Hst.Story group="top" docsOnly icon="carbon:bookmark" />
+```
+
+A story file that renders nothing else is the whole component. If the page has no story to attach to at all, you can drop the `.svelte` file entirely and leave just the `.story.md` — see [Documentation](../../guide/svelte/docs.md).
+
 ## `source`
 
 The copyable source code of the story.
@@ -109,7 +155,7 @@ The copyable source code of the story.
   const source = `<h1>Toto</h1>
 
 <input
-  v-model.number="count"
+  bind:value={count}
   type="number"
 >`
 </script>
@@ -121,13 +167,17 @@ The copyable source code of the story.
 
 ## `responsiveDisabled`
 
-Disables the responsive menu, preview resize handles and makes the preview laways fit the available space.
+Disables the responsive menu, preview resize handles and makes the preview always fit the available space.
 
 ```svelte
 <Hst.Story responsiveDisabled>
   <!-- ... -->
 </Hst.Story>
 ```
+
+::: warning Not inherited by explicit variants
+Like [`setupApp`](#setupapp), this reaches only the implicit variant of a story that declares no `<Hst.Variant>` children. Write it on [each variant](./variant.md#responsivedisabled) instead once the story has explicit ones. Tracked in [#466](https://github.com/poveste-dev/poveste/issues/466).
+:::
 
 ## `autoPropsDisabled`
 
