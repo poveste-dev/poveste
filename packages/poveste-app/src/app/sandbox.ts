@@ -14,6 +14,7 @@ import { mapFile } from './util/mapping'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
 import { createStateBridge } from './util/state-bridge.js'
 import { toRawDeep } from './util/state.js'
+import { isBenignResizeObserverEvent } from './util/uncaught.js'
 
 const query = parseQuery(window.location.search)
 
@@ -65,7 +66,11 @@ if (window.parent && window.parent !== window) {
 function reportUncaught(error: unknown) {
   reportStoryError(error, { storyId: storyId.value, variantId: variantId.value })
 }
-window.addEventListener('error', event => reportUncaught(event.error ?? event.message))
+window.addEventListener('error', (event) => {
+  if (!isBenignResizeObserverEvent(event)) {
+    reportUncaught(event.error ?? event.message)
+  }
+})
 window.addEventListener('unhandledrejection', event => reportUncaught(event.reason))
 
 // The story preview has its own color scheme, independent from the app chrome.
