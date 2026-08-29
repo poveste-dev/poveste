@@ -131,13 +131,15 @@ Disables the responsive menu, preview resize handles and makes the preview laway
 
 ## `autoPropsDisabled`
 
-Disables the automatic detection of props of the components in the story.
+Accepted, and does nothing. Automatic prop detection is a Vue-only feature, so there is nothing here for it to disable.
 
-```svelte
-<Hst.Story autoPropsDisabled>
-  <!-- ... -->
-</Hst.Story>
-```
+::: warning Auto-props does not run for Svelte stories
+Vue's auto-props works by reading the props off the vnodes a variant is about to render, and writing control values back into that same tree before it mounts. Svelte has no equivalent step — a Svelte component renders straight to the DOM — so Poveste never sees a tree it could read props from or push values into.
+
+This prop exists on `Hst.Story` for parity with the Vue API and for stories ported from Vue. Setting it changes nothing, and nothing warns you — which is why this page says so plainly.
+
+To give a Svelte story controls, write a [`controls` slot](#slot-controls), or return state from [`initState`](#initstate) and let Poveste build the controls from it. Progress on real Svelte controls is tracked in [#233](https://github.com/poveste-dev/poveste/issues/233).
+:::
 
 ## Slot: `controls`
 
