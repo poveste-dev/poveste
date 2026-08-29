@@ -175,6 +175,10 @@ Disables the responsive menu, preview resize handles and makes the preview alway
 </Hst.Story>
 ```
 
+::: warning Not inherited by explicit variants
+Like [`setupApp`](#setupapp), this reaches only the implicit variant of a story that declares no `<Hst.Variant>` children. Write it on [each variant](./variant.md#responsivedisabled) instead once the story has explicit ones. Tracked in [#466](https://github.com/poveste-dev/poveste/issues/466).
+:::
+
 ## `autoPropsDisabled`
 
 Accepted, and does nothing. Automatic prop detection is a Vue-only feature, so there is nothing here for it to disable.
