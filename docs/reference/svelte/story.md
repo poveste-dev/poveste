@@ -12,6 +12,29 @@ Title of the story.
 </Hst.Story>
 ```
 
+## `id`
+
+Id of the story used in the URL. By default, the id is automatically generated from the file path. Setting an id manually will ensure the URL parameter doesn't change with the order of the variants in the story.
+
+```svelte
+<Hst.Story id="my-story">
+  Hello world
+</Hst.Story>
+```
+
+## `layout`
+
+Layout of the story. Object with the following properties:
+  - `type`: `'single'` or `'grid'`
+  - with `type: 'single'` you can specify:
+    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
+  - with `type: 'grid'` you can specify:
+    - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+  - with either type:
+    - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
+
+[Learn more](../../guide/svelte/stories.md#layout)
+
 ## `initState`
 
 A function returning the initial state for the variant. Poveste owns this state, and passes it
@@ -42,29 +65,6 @@ variable exists twice and a control writes to a different copy than your markup 
 with a controls slot and no `initState` logs an error saying so. See
 [State & Controls](../../guide/svelte/controls.md) and, if you are coming from histoire,
 [the migration note](../../guide/migration-from-histoire.md#svelte-story-state-moves-to-initstate).
-
-## `id`
-
-Id of the story used in the URL. By default, the id is automatically generated from the file path. Setting an id manually will ensure the URL parameter doesn't change with the order of the variants in the story.
-
-```svelte
-<Hst.Story id="my-story">
-  Hello world
-</Hst.Story>
-```
-
-## `layout`
-
-Layout of the story. Object with the following properties:
-  - `type`: `'single'` or `'grid'`
-  - with `type: 'single'` you can specify:
-    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
-  - with `type: 'grid'` you can specify:
-    - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
-  - with either type:
-    - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
-
-[Learn more](../../guide/svelte/stories.md#layout)
 
 ## `group`
 
