@@ -155,7 +155,7 @@ The copyable source code of the story.
   const source = `<h1>Toto</h1>
 
 <input
-  v-model.number="count"
+  bind:value={count}
   type="number"
 >`
 </script>
@@ -167,7 +167,7 @@ The copyable source code of the story.
 
 ## `responsiveDisabled`
 
-Disables the responsive menu, preview resize handles and makes the preview laways fit the available space.
+Disables the responsive menu, preview resize handles and makes the preview always fit the available space.
 
 ```svelte
 <Hst.Story responsiveDisabled>

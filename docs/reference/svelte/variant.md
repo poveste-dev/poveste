@@ -148,7 +148,7 @@ The copyable source code of the variant.
 
 ## `responsiveDisabled`
 
-Disables the responsive menu, preview resize handles and makes the preview laways fit the available space.
+Disables the responsive menu, preview resize handles and makes the preview always fit the available space.
 
 ```svelte
 <Hst.Story>
