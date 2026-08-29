@@ -33,3 +33,34 @@ test.describe('story collection in a SvelteKit app', () => {
     expect(stories.filter(story => story.title === 'Counter')).toHaveLength(1)
   })
 })
+
+/*
+ * Kit keeps its static assets in `static/`, and it is `vite-plugin-sveltekit-compile`
+ * that tells Vite so — the one plugin poveste drops through `viteIgnorePlugins`.
+ * Nothing put the value back, so this book served none of its own assets and
+ * answered every one of them with the SPA index page at status 200 (#463).
+ *
+ * A 200 is why nothing noticed: the suite was green while the Lottie story
+ * fetched HTML, and lottie-web's own error for that reads like a bug in lottie.
+ * So the content type is the assertion, not the status.
+ */
+test.describe('static assets in a SvelteKit book', () => {
+  test('serves what is in static/, not the index page', async ({ request }) => {
+    const response = await request.get('/lottie-data.json')
+
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('application/json')
+    await expect(response.json()).resolves.toHaveProperty('v')
+  })
+
+  test('renders the story that reads one without an uncaught error', async ({ page }) => {
+    const uncaught: string[] = []
+    page.on('pageerror', error => uncaught.push(error.message))
+
+    await page.goto('/story/src-lib-stories-lottieanimation-story-svelte')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    await expect(page.getByTestId('preview-iframe').contentFrame().locator('.lottie svg')).toBeVisible()
+
+    expect(uncaught).toEqual([])
+  })
+})

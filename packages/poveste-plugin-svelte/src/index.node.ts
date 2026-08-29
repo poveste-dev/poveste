@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'pathe'
 import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
+import { svelteKitAssetsDir } from './util/kit-assets.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
 
@@ -11,8 +12,9 @@ export function HstSvelte(): Plugin {
   return {
     name: '@poveste/plugin-svelte',
 
-    defaultConfig() {
+    async defaultConfig() {
       const svelteClientAliases = getSvelteClientAliases()
+      const publicDir = await svelteKitAssetsDir(process.cwd())
 
       return {
         supportMatch: [
@@ -35,20 +37,13 @@ export function HstSvelte(): Plugin {
         viteIgnorePlugins: [
           'vite-plugin-sveltekit-compile',
         ],
-        vite: svelteClientAliases.length
-          ? {
-              plugins: [
-                disableStoryComponentHmr(),
-              ],
-              resolve: {
-                alias: svelteClientAliases,
-              },
-            }
-          : {
-              plugins: [
-                disableStoryComponentHmr(),
-              ],
-            },
+        vite: {
+          plugins: [
+            disableStoryComponentHmr(),
+          ],
+          ...svelteClientAliases.length ? { resolve: { alias: svelteClientAliases } } : {},
+          ...publicDir ? { publicDir } : {},
+        },
       }
     },
 
