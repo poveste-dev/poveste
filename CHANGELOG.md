@@ -4,6 +4,32 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.11.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.10.0...v0.11.0)
+
+**Your components were fine. The grid was wrong about them.**
+
+### 🩹 Fixes
+
+- **A grid no longer reports working components as crashed** ([#468](https://github.com/poveste-dev/poveste/issues/468)). Clicking a variant in a grid layout replaced up to ten neighbouring cells with *"This component threw while rendering — ResizeObserver loop completed with undelivered notifications."* Nothing had thrown. That message is the browser saying it deferred a resize callback to the next frame; it arrives as an `error` event with `event.error === null`, and the sandbox's `event.error ?? event.message` fallback turned the bare string into a reported story crash. Selecting a variant resizes the cells, so a normal interaction produced ten simultaneous false failures — and the console stayed empty, because the error boundary had already swallowed it. A component that genuinely throws that text is still reported.
+- **A SvelteKit book serves its static assets** ([#463](https://github.com/poveste-dev/poveste/issues/463)). Vite's `publicDir` defaults to `public/` and SvelteKit's convention is `static/`, and nothing reconciled them — so every asset a SvelteKit story referenced was missing, in `poveste dev` and in the built book. Worse than missing: the request returned the SPA index page at **status 200**, so a fetch succeeded and handed back HTML.
+
+### 🚀 Enhancements
+
+- **Svelte components' declared props can be read from source** ([#233](https://github.com/poveste-dev/poveste/issues/233)). Vue gets this at runtime — a vnode carries `type.props` — but a Svelte component compiles to a function that keeps no record of what it accepts, so the props exist only in the source. Both authoring styles are read through Svelte's own compiler AST, with no new dependency, into the same `PropDefinition[]` vocabulary the controls panel already switches on. **Nothing is wired up yet and the controls panel is unchanged**; the story-facing API is still to be decided. This is the half that had to exist whatever shape that takes.
+
+### 📖 Documentation
+
+- **The Svelte guide stops promising auto-props** ([#233](https://github.com/poveste-dev/poveste/issues/233)). Auto-props were documented as a Svelte feature and have never worked there — the controls panel is empty for every Svelte story. The documentation now says so, ahead of the fix rather than after it.
+- **The Svelte reference matches Vue's** ([#464](https://github.com/poveste-dev/poveste/pull/464)), in order and in coverage, and `setupApp` and `docsOnly` are documented rather than left to be discovered.
+
+### Upgrading
+
+**Nothing to do.**
+
+If you write Svelte stories, the controls panel is still empty — that is [#233](https://github.com/poveste-dev/poveste/issues/233), which stays open. What changed is that the documentation no longer tells you otherwise.
+
 ## v0.10.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.9.0...v0.10.0)
