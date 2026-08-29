@@ -69,6 +69,36 @@ with a controls slot and no `initState` logs an error saying so. See
 [State & Controls](../../guide/svelte/controls.md) and, if you are coming from histoire,
 [the migration note](../../guide/migration-from-histoire.md#svelte-story-state-moves-to-initstate).
 
+## `setupApp`
+
+A function to configure the Svelte app for this variant, called after the global setup hook with the same argument.
+
+It receives a payload object with the following properties:
+
+- `app`: The mounted story component instance.
+- `story`: The story object.
+- `variant`: The variant object.
+
+```svelte
+<script>
+  export let Hst
+
+  function setupApp({ variant }) {
+    document.body.dataset.variant = variant.title
+  }
+</script>
+
+<Hst.Story title="Story setup">
+  <Hst.Variant title="Local setup" {setupApp}>
+    <MyComponent />
+  </Hst.Variant>
+</Hst.Story>
+```
+
+Put it on every variant that needs it. Unlike Vue, a `setupApp` on [`Hst.Story`](./story.md#setupapp) is not inherited by explicit variants.
+
+[Learn more](../../guide/svelte/app-setup.md#local-setup)
+
 ## `icon`
 
 An [Iconify id](https://icones.js.org/) to customize the variant icon in the UI.

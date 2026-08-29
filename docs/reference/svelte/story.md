@@ -66,6 +66,36 @@ with a controls slot and no `initState` logs an error saying so. See
 [State & Controls](../../guide/svelte/controls.md) and, if you are coming from histoire,
 [the migration note](../../guide/migration-from-histoire.md#svelte-story-state-moves-to-initstate).
 
+## `setupApp`
+
+A function to configure the Svelte app, called after the global setup hook with the same argument.
+
+It receives a payload object with the following properties:
+
+- `app`: The mounted story component instance.
+- `story`: The story object.
+- `variant`: The variant object.
+
+```svelte
+<script>
+  export let Hst
+
+  function setupApp({ variant }) {
+    document.body.dataset.variant = variant.title
+  }
+</script>
+
+<Hst.Story title="Story setup" {setupApp}>
+  <MyComponent />
+</Hst.Story>
+```
+
+::: warning Not inherited by explicit variants
+In Vue, a `setup-app` on `<Story>` gives every `<Variant>` a default. In Svelte it does not: a `setupApp` here reaches only the implicit variant of a story that declares no `<Hst.Variant>` children — as the example above does. As soon as you write explicit variants, put [`setupApp`](./variant.md#setupapp) on each variant that needs it.
+:::
+
+[Learn more](../../guide/svelte/app-setup.md#local-setup)
+
 ## `group`
 
 The id of a group to include the story in.
@@ -97,6 +127,22 @@ The icon color.
   Hello world
 </Hst.Story>
 ```
+
+## `docsOnly`
+
+This story will only render a documentation page — no preview, no controls, no variants.
+
+Write the content in a sibling markdown file. Svelte has no `<docs>` block; a story file named `MarkdownLinks.story.svelte` takes its documentation from `MarkdownLinks.story.md` next to it.
+
+```svelte
+<script>
+  export let Hst
+</script>
+
+<Hst.Story group="top" docsOnly icon="carbon:bookmark" />
+```
+
+A story file that renders nothing else is the whole component. If the page has no story to attach to at all, you can drop the `.svelte` file entirely and leave just the `.story.md` — see [Documentation](../../guide/svelte/docs.md).
 
 ## `source`
 
