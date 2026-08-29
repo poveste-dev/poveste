@@ -215,6 +215,8 @@ export default defineConfig({
 })
 ```
 
+`autoPropsDisabled` only affects Vue stories. Automatic prop detection never runs for Svelte or vanilla stories, so setting it here changes nothing for them — see [`autoPropsDisabled` on `Hst.Story`](./svelte/story.md#autopropsdisabled).
+
 ## `responsivePresets`
 
 `Array`

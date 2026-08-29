@@ -130,15 +130,9 @@ Disables the responsive menu, preview resize handles and makes the preview laway
 
 ## `autoPropsDisabled`
 
-Disables the automatic detection of props of the components in the story.
+Accepted, and does nothing — the same as [`autoPropsDisabled` on `Hst.Story`](./story.md#autopropsdisabled). Automatic prop detection is a Vue-only feature, so there is nothing here for it to disable.
 
-```svelte
-<Hst.Story>
-  <Hst.Variant autoPropsDisabled>
-    <!-- ... -->
-  </Hst.Variant>
-</Hst.Story>
-```
+Give a Svelte variant controls with a [`controls` slot](#slot-controls) or [`initState`](#initstate) instead.
 
 ## Slot: `default`
 
