@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { openStory } from './support.js'
 
@@ -60,5 +61,54 @@ test.describe('a story whose component throws', () => {
 
     // Selecting the healthy variant must not inherit its sibling's error.
     await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
+  })
+})
+
+/*
+ * Resizing is not throwing (#468).
+ *
+ * A ResizeObserver loop notification reaches `window.onerror` with a null
+ * `error`, and the sandbox reported it as the rendering story's crash — so
+ * selecting a variant in a grid made ten healthy cells claim to have thrown.
+ * Same cry-wolf failure the assertions above guard against, arriving from the
+ * chrome rather than a story.
+ *
+ * The notification cannot be provoked on demand — a headless run produced none
+ * on the built book or on `poveste dev` — so it is dispatched into a real
+ * sandbox realm instead. The single preview, not the grid: one realm, no pooling
+ * to make "which iframe" ambiguous, and the claim does not depend on the layout.
+ *
+ * The second test is what keeps the first honest: dispatching into a listener
+ * that had been removed would pass the first one for the wrong reason.
+ */
+const NOTIFICATION = 'ResizeObserver loop completed with undelivered notifications.'
+
+async function dispatchIntoSandbox(page: Page, real: boolean) {
+  const sandbox = page.frames().find(frame => frame.url().includes(`storyId=${THROWING}`))
+  expect(sandbox, 'the story is not rendering in a sandbox realm').toBeTruthy()
+
+  await sandbox!.evaluate(({ message, withError }) => {
+    window.dispatchEvent(new ErrorEvent('error', { message, error: withError ? new Error(message) : null }))
+  }, { message: NOTIFICATION, withError: real })
+}
+
+test.describe('a ResizeObserver loop notification in a sandbox', () => {
+  test('is not reported as the story throwing', async ({ page }) => {
+    await openStory(page, THROWING, '?variantId=healthy')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+
+    await dispatchIntoSandbox(page, false)
+
+    await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
+    await expect(page.locator('[data-testid="variant-error-marker"]')).toHaveCount(0)
+  })
+
+  test('is still reported when a component throws that text itself', async ({ page }) => {
+    await openStory(page, THROWING, '?variantId=healthy')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+
+    await dispatchIntoSandbox(page, true)
+
+    await expect(page.locator('[data-testid="story-error"]')).toBeVisible()
   })
 })
