@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "exclude": [
     "src/client",
-    "src/collect"
+    "src/collect",
+    "src/**/*.spec.ts"
   ]
 }
