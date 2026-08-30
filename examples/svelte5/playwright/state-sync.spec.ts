@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test'
 
+// The story's own controls, not the ones auto-props adds for a component's
+// declared props (#233). Both render in this panel, and `BaseButton` declares
+// `disabled` itself, so an unqualified checkbox now matches two.
+const AUTHORED = '[role="checkbox"]:not(.poveste-controls-component-prop-item)'
+
 test.describe('state sync', () => {
   test('writes a control change back into the story state', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
@@ -7,7 +12,7 @@ test.describe('state sync', () => {
 
     await expect(controls.locator('pre')).toContainText('"disabled": false')
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED).click()
     await expect(controls.locator('pre')).toContainText('"disabled": true')
   })
 
@@ -35,7 +40,7 @@ test.describe('state sync', () => {
 
     await expect(iframe.locator('button')).not.toHaveClass(/disabled/)
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED).click()
     await expect(controls.locator('pre')).toContainText('"disabled": true')
     await expect(iframe.locator('button')).toHaveClass(/disabled/)
 
@@ -68,7 +73,7 @@ test.describe('missing initState', () => {
     })
 
     await page.goto('/story/src-unmigratedstate-story-svelte?variantId=_default')
-    await expect(page.getByTestId('story-controls').locator('[role="checkbox"]')).toBeVisible()
+    await expect(page.getByTestId('story-controls').locator(AUTHORED)).toBeVisible()
 
     const warning = errors.find(text => text.includes('[poveste]'))
     expect(warning, 'expected a [poveste] console error naming the missing initState').toBeTruthy()
@@ -88,7 +93,7 @@ test.describe('source panel', () => {
 
     await expect(source).toContainText('<BaseButton>Click me !</BaseButton>')
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED).click()
     await expect(source).toContainText('<BaseButton disabled>Click me !</BaseButton>')
   })
 })

@@ -53,6 +53,7 @@
   "types": "./dist/index.node.d.ts",
   "files": [
     "assets",
+    "auto-props.d.ts",
     "client.d.ts",
     "collect.d.ts",
     "dist"
