@@ -35,7 +35,9 @@ export default defineConfig({
     {
       command: 'pnpm run story:preview',
       url: `http://localhost:${PREVIEW_PORT}`,
-      reuseExistingServer: !process.env.CI,
+      // Never reused, even locally: a preview server serves the build it started
+      // with and does not notice a rebuild underneath it (#477).
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
