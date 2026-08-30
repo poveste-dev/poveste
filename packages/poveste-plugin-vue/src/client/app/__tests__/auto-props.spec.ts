@@ -18,10 +18,12 @@ describe('the type a value implies', () => {
   })
 
   // Nothing to go on, and guessing would pick a control the prop cannot hold.
+  // A factory default arrives here as the function it is, which is why nothing
+  // upstream has to strip it first.
   it.each([
     ['null', null],
     ['undefined', undefined],
-    ['a function', () => {}],
+    ['a factory default', () => []],
   ])('declines to guess from %s', (_, value) => {
     expect(inferredType(value)).toBe('unknown')
   })

@@ -67,11 +67,10 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
           // type-only `defineProps`, leaving `props: { label: {} }` — so the
           // panel offered a JSON editor for a string (#490). Defaults survive
           // erasure and the passed value is still there, and either is enough to
-          // pick a control. A factory default is left alone rather than called.
+          // pick a control. A factory default reaches `inferredType` as the
+          // function it is, and is declined there with everything else untyped.
           if (types.every(type => type === 'unknown')) {
-            const evidence = passedValue(vnode, key)
-              ?? (typeof prop.default === 'function' ? undefined : prop.default)
-            const inferred = inferredType(evidence)
+            const inferred = inferredType(passedValue(vnode, key) ?? prop.default)
             if (inferred !== 'unknown') {
               types = [inferred]
             }
