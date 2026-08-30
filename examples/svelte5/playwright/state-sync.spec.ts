@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { AUTHORED_CHECKBOX } from './support.js'
 
 test.describe('state sync', () => {
   test('writes a control change back into the story state', async ({ page }) => {
@@ -7,7 +8,7 @@ test.describe('state sync', () => {
 
     await expect(controls.locator('pre')).toContainText('"disabled": false')
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED_CHECKBOX).click()
     await expect(controls.locator('pre')).toContainText('"disabled": true')
   })
 
@@ -35,7 +36,7 @@ test.describe('state sync', () => {
 
     await expect(iframe.locator('button')).not.toHaveClass(/disabled/)
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED_CHECKBOX).click()
     await expect(controls.locator('pre')).toContainText('"disabled": true')
     await expect(iframe.locator('button')).toHaveClass(/disabled/)
 
@@ -68,7 +69,7 @@ test.describe('missing initState', () => {
     })
 
     await page.goto('/story/src-unmigratedstate-story-svelte?variantId=_default')
-    await expect(page.getByTestId('story-controls').locator('[role="checkbox"]')).toBeVisible()
+    await expect(page.getByTestId('story-controls').locator(AUTHORED_CHECKBOX)).toBeVisible()
 
     const warning = errors.find(text => text.includes('[poveste]'))
     expect(warning, 'expected a [poveste] console error naming the missing initState').toBeTruthy()
@@ -88,7 +89,7 @@ test.describe('source panel', () => {
 
     await expect(source).toContainText('<BaseButton>Click me !</BaseButton>')
 
-    await controls.locator('[role="checkbox"]').click()
+    await controls.locator(AUTHORED_CHECKBOX).click()
     await expect(source).toContainText('<BaseButton disabled>Click me !</BaseButton>')
   })
 })

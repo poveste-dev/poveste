@@ -41,6 +41,10 @@
       "types": "./dist/collect/index.d.ts",
       "default": "./dist/collect/index.js"
     },
+    "./auto-props": {
+      "types": "./dist/client/auto-props.d.ts",
+      "default": "./dist/client/auto-props.js"
+    },
     ".": "./dist/index.node.js",
     "./*": "./*"
   },
@@ -49,6 +53,7 @@
   "types": "./dist/index.node.d.ts",
   "files": [
     "assets",
+    "auto-props.d.ts",
     "client.d.ts",
     "collect.d.ts",
     "dist"

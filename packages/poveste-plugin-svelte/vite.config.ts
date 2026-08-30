@@ -80,6 +80,10 @@ export default defineConfig({
 
       input: [
         'src/client/index.ts',
+        // Its own entry, not reached from `client/index`: a story file imports it
+        // directly, and pulling the mount/render graph in with it would put Vue
+        // in front of every story that has a prop (#233).
+        'src/client/auto-props.ts',
         'src/collect/index.ts',
       ],
 

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { AUTHORED_CHECKBOX } from './support.js'
 
 test.describe('story render', () => {
   test('renders the iframe story content', async ({ page }) => {
@@ -27,7 +28,7 @@ test.describe('controls render', () => {
   test('shows the controls for a variant with default props', async ({ page }) => {
     await page.goto('/story/src-basebutton-story-svelte?variantId=_default')
     const controls = page.getByTestId('story-controls')
-    await expect(controls.getByRole('checkbox', { name: 'Disabled' })).toBeVisible()
+    await expect(controls.getByRole('checkbox', { name: 'Disabled', exact: true })).toBeVisible()
     await expect(controls.getByText('Size', { exact: true })).toBeVisible()
     await expect(controls).not.toContainText('Click me!')
   })
@@ -36,12 +37,12 @@ test.describe('controls render', () => {
     const controls = page.getByTestId('story-controls')
 
     await page.goto('/story/src-sharecontrols-story-svelte?variantId=src-sharecontrols-story-svelte-0')
-    await expect(controls.getByText('Disabled')).toBeVisible()
-    await expect(controls.locator('[role="checkbox"]')).toBeVisible()
+    await expect(controls.getByText('Disabled', { exact: true })).toBeVisible()
+    await expect(controls.locator(AUTHORED_CHECKBOX)).toBeVisible()
 
     await page.goto('/story/src-sharecontrols-story-svelte?variantId=src-sharecontrols-story-svelte-1')
-    await expect(controls.getByText('Disabled')).toBeVisible()
-    await expect(controls.locator('[role="checkbox"]')).toBeVisible()
+    await expect(controls.getByText('Disabled', { exact: true })).toBeVisible()
+    await expect(controls.locator(AUTHORED_CHECKBOX)).toBeVisible()
   })
 
   test('renders per-variant controls slots independently', async ({ page }) => {
@@ -50,11 +51,11 @@ test.describe('controls render', () => {
     await page.goto('/story/src-controlsvariant-story-svelte?variantId=src-controlsvariant-story-svelte-0')
     await expect(controls.getByText('Content 1')).toBeVisible()
     await expect(controls.getByText('Disabled 1')).toBeVisible()
-    await expect(controls.locator('[role="checkbox"]')).toBeVisible()
+    await expect(controls.locator(AUTHORED_CHECKBOX)).toBeVisible()
 
     await page.goto('/story/src-controlsvariant-story-svelte?variantId=src-controlsvariant-story-svelte-1')
     await expect(controls.getByText('Content 2')).toBeVisible()
     await expect(controls.getByText('Disabled 2')).toBeVisible()
-    await expect(controls.locator('[role="checkbox"]')).toBeVisible()
+    await expect(controls.locator(AUTHORED_CHECKBOX)).toBeVisible()
   })
 })

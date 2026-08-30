@@ -10,16 +10,21 @@ function initState() {
 
 <template>
   <Story
+    id="conformance-auto-props"
     title="Auto State & Props"
     :layout="{
       type: 'grid',
       width: 200,
     }"
   >
-    <Variant title="Naked">
+    <Variant
+      id="naked"
+      title="Naked"
+    >
       <AutoStateProps />
     </Variant>
     <Variant
+      id="state"
       title="State"
       :init-state="initState"
     >
