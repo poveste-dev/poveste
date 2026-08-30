@@ -1,6 +1,6 @@
 # Migrating from Histoire
 
-**poveste** is a community-maintained, **drop-in successor** to
+**poveste** is a community-maintained, **drop-in fork** of
 [histoire](https://github.com/histoire-dev/histoire). It keeps the same
 `<Story>` / `<Variant>` API, the same `.story.*` file convention, and the same
 configuration format — so for Vue and Nuxt, migrating is a matter of swapping dependencies.

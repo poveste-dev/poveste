@@ -27,6 +27,12 @@ describe('instructsWithHistoire', () => {
     expect(instructsWithHistoire('Coming from histoire? Swap the dependency and add the plugin')).toEqual([])
   })
 
+  // The word the project frames itself with, since #487 stopped it saying
+  // "successor" about a project that is still shipping.
+  it('allows the fork framing', () => {
+    expect(instructsWithHistoire('This fork keeps the plugin you add in histoire working')).toEqual([])
+  })
+
   it('allows the supported histoire.config.* filename', () => {
     expect(instructsWithHistoire('Add nothing: your histoire.config.ts keeps working')).toEqual([])
   })

@@ -3,7 +3,7 @@
 > Fast and beautiful interactive component playgrounds
 
 Poveste builds a browsable *book* of stories from your components, powered by
-[Vite](https://vite.dev). It is a community-maintained successor to
+[Vite](https://vite.dev). It is a community-maintained fork of
 [histoire](https://github.com/histoire-dev/histoire).
 
 ## Install
