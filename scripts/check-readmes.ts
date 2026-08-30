@@ -123,7 +123,7 @@ export function instructsWithHistoire(markdown: string): string[] {
     /\bhistoire\.config\b/i,
     /\b(?:from|to|of|than|versus|vs\.?)\s+histoire\b/i,
     /\bhistoire\b[^.!?\n]{1,40}\b(?:keeps? working|still works?|unchanged|no longer|used to|was called)\b/i,
-    /\b(?:migrat\w*|successor|formerly|previously|forked|legacy|histoire-era)\b/i,
+    /\b(?:migrat\w*|successor|formerly|previously|fork\w*|legacy|histoire-era)\b/i,
   ]
 
   return withoutFences(markdown)

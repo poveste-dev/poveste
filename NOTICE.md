@@ -11,7 +11,7 @@ name, `poveste` (Romanian for "story"), maintained by Sorin Gitlan
 
 ## Relationship to histoire
 
-- poveste aims to be a **drop-in successor**: existing histoire projects should be
+- poveste aims to be a **drop-in fork**: existing histoire projects should be
   able to migrate by changing dependencies, with the `<Story>` / `<Variant>` API,
   the `.story.*` file convention, and the `histoire.config.*` file continuing to
   work.
