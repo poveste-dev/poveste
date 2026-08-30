@@ -212,7 +212,9 @@ Set `autoPropsDisabled` to stop this for every variant in the story:
 ::: tip How it works, and what it needs
 Vue reads props off the vnodes a variant is about to render. A Svelte component renders straight to the DOM, so there is no such tree — Poveste reads the props out of the component's own source when the book is built, and gives each component in a variant the values its controls hold ([#233](https://github.com/poveste-dev/poveste/issues/233)).
 
-That means it covers components the story imports and renders directly. A component behind `{#if}` or `{#each}`, or one reached through `<svelte:component>`, is left alone: which component renders is only known once the story runs, and a control pointed at the wrong one is worse than no control.
+That means it covers components the story imports and renders directly. A component behind `{#if}` or `{#each}`, or one reached through `<svelte:component>`, is skipped — which component renders is only known once the story runs, and a control pointed at the wrong one is worse than no control. The variant's other components keep their controls.
+
+A story that declares a **variant** inside `{#if}`, `{#each}` or `{#await}` gets no auto-props at all. Those variants are registered in an order nothing can predict before the story runs, so the whole story is left alone rather than risk driving the wrong one.
 :::
 
 ## Slot: `controls`

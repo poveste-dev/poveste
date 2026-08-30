@@ -1,3 +1,4 @@
+import { parse } from 'svelte/compiler'
 import { describe, expect, it } from 'vitest'
 import { transformStoryAutoProps } from './auto-props'
 
@@ -73,7 +74,117 @@ describe('a story whose variant renders a component with props', () => {
 
     const result = await transformStoryAutoProps(source, propsOf())
 
-    expect(result).toContain(`[[{"name":"Button","index":0,"props":[{"name":"name","types":["string"],"default":"world"}]}]]`)
+    expect(result).toContain(`{"name":"Button","props":[{"name":"name","types":["string"],"default":"world"}]}`)
+    expect(result).toContain('[{...__pvtAutoPropDefs[0],index:0}]')
+  })
+
+  // A hundred-variant story carried a hundred copies of the same prop table.
+  it('serialises a component used by several variants once', async () => {
+    const source = story(`<Hst.Story>
+  <Hst.Variant><Button /></Hst.Variant>
+  <Hst.Variant><Button /></Hst.Variant>
+  <Hst.Variant><Button /></Hst.Variant>
+</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result!.match(/"types":\["string"\]/g)).toHaveLength(1)
+    expect(result!.match(/__pvtAutoPropDefs\[0\]/g)).toHaveLength(3)
+  })
+
+  it('numbers variants the same whether or not a wrapper stands between them', async () => {
+    const wrapped = story(`<Hst.Story>
+  <div>
+    <Hst.Variant title="A"><Button /></Hst.Variant>
+    <Hst.Variant title="B"><Button /></Hst.Variant>
+  </div>
+</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(wrapped, propsOf())
+
+    expect(result).toContain('$__pvtAutoProps[0][0]')
+    expect(result).toContain('$__pvtAutoProps[1][0]')
+  })
+
+  it('reaches variants declared inside a story-level snippet', async () => {
+    const source = story(`<Hst.Story>
+  {#snippet children()}
+    <Hst.Variant title="A"><Button /></Hst.Variant>
+    <Hst.Variant title="B"><Button /></Hst.Variant>
+  {/snippet}
+</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result).toContain('$__pvtAutoProps[0][0]')
+    expect(result).toContain('$__pvtAutoProps[1][0]')
+  })
+
+  it('keeps the other components when one of them is conditional', async () => {
+    const source = story(`<Hst.Story>
+  <Hst.Variant title="A"><Button /></Hst.Variant>
+  <Hst.Variant title="B">{#if shown}<Button />{/if}</Hst.Variant>
+</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result).toContain('$__pvtAutoProps[0][0]')
+    expect(result).not.toContain('$__pvtAutoProps[1]')
+  })
+
+  it('escapes a default that would close the script block it lands in', async () => {
+    const source = story(`<Hst.Story>\n  <Hst.Variant>\n    <Button />\n  </Hst.Variant>\n</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(source, async () => [{ name: 'html', default: '</script>' }])
+
+    expect(result).not.toContain('</script>\\"')
+    expect(() => parse(result!, { modern: true })).not.toThrow()
+  })
+
+  it('survives a trailing comment on the type import above the component one', async () => {
+    const source = `<script lang="ts">
+  import type { Hst } from '@poveste/plugin-svelte' // the harness
+  import Button from './Button.svelte'
+
+  export let Hst: Hst
+</script>
+
+<Hst.Story><Hst.Variant><Button /></Hst.Variant></Hst.Story>`
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result).toContain('$__pvtAutoProps[0][0]')
+  })
+
+  it('survives an aliased inline type import', async () => {
+    const source = `<script lang="ts">
+  import { type Hst as H } from '@poveste/plugin-svelte'
+  import Button from './Button.svelte'
+
+  export let Hst: H
+</script>
+
+<Hst.Story><Hst.Variant><Button /></Hst.Variant></Hst.Story>`
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result).toContain('$__pvtAutoProps[0][0]')
+  })
+
+  // Vue scans only the default slot; a control widget is chrome, not preview.
+  it('leaves the components that build the controls panel alone', async () => {
+    const source = story(`<Hst.Story>
+  <Hst.Variant>
+    <Button />
+    {#snippet controls()}
+      <Button />
+    {/snippet}
+  </Hst.Variant>
+</Hst.Story>`)
+
+    const result = await transformStoryAutoProps(source, propsOf())
+
+    expect(result!.match(/\$__pvtAutoProps\[0\]\[\d\]/g)).toEqual(['$__pvtAutoProps[0][0]'])
   })
 })
 
@@ -146,13 +257,35 @@ describe('a story auto-props must not touch', () => {
 </Hst.Story>`))
   })
 
-  it('is left alone when the component it renders is conditional', async () => {
+  it('is left alone when its only component is conditional', async () => {
     await untouched(story(`<Hst.Story>
   <Hst.Variant>
     {#if shown}
       <Button />
     {/if}
   </Hst.Variant>
+</Hst.Story>`))
+  })
+
+  // A variant a block produces is registered at runtime in an order no static
+  // pass can predict, so the whole story is abandoned rather than misnumbered.
+  it('is left alone when a variant hides in an await branch', async () => {
+    await untouched(story(`<Hst.Story>
+  {#await ready then value}
+    <Hst.Variant title="B"><Button /></Hst.Variant>
+  {/await}
+  <Hst.Variant title="A"><Button /></Hst.Variant>
+</Hst.Story>`))
+  })
+
+  it('is left alone when a variant hides in an each fallback', async () => {
+    await untouched(story(`<Hst.Story>
+  {#each items as item}
+    <p>{item}</p>
+  {:else}
+    <Hst.Variant title="empty"><Button /></Hst.Variant>
+  {/each}
+  <Hst.Variant title="real"><Button /></Hst.Variant>
 </Hst.Story>`))
   })
 

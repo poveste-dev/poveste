@@ -23,10 +23,11 @@ test.describe('story render', () => {
   })
 })
 
-// The story's own controls, not the ones auto-props adds for a component's
-// declared props (#233). Both render in this panel, and `BaseButton` declares
-// `disabled` itself, so an unqualified checkbox now matches two.
-const AUTHORED = '[role="checkbox"]:not(.poveste-controls-component-prop-item)'
+// Everything except the auto-props group (#233), which adds a control for each
+// declared prop — `BaseButton` declares `disabled` itself, so an unqualified
+// checkbox matches two. Excluding the group rather than the prop-item class,
+// which state-derived controls share.
+const AUTHORED = '[role="checkbox"]:not(.poveste-controls-component-props *)'
 
 test.describe('controls render', () => {
   test('shows the controls for a variant with default props', async ({ page }) => {

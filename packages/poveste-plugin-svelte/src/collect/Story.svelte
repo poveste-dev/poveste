@@ -8,7 +8,7 @@
   export let icon = null
   export let iconColor = null
   export let docsOnly = false
-  export let autoPropsDisabled = false
+  export let autoPropsDisabled = null
   export let initState = null
 
   const addStory = getContext('__pvtAddStory')
@@ -23,8 +23,8 @@
     iconColor,
     docsOnly,
     // Collected rather than inherited down: `MountStory` forwards story props
-    // only to an implicit variant (#466), and turning auto-props off has to work
-    // on a story that lists its variants.
+    // only to an implicit variant (#466). Left undefined when unset, or the
+    // collector's `??=` merge could never apply `defaultStoryProps`.
     autoPropsDisabled,
     variants: [],
   }

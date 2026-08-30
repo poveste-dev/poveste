@@ -6,43 +6,36 @@ export type PropsOf = (specifier: string) => Promise<PropDefinition[] | undefine
 
 const RUNTIME = '@poveste/plugin-svelte/auto-props'
 const HOLDER = '__pvtAutoProps'
+const TABLE = '__pvtAutoPropDefs'
+const HST = 'Hst'
 
-// Erased for parsing only, and replaced by spaces rather than removed so every
-// offset still points at the same character of the original source.
-//
-// `import type { Hst }` beside `export let Hst: Hst` is a duplicate declaration
-// to the parser, and that is the shape of every TypeScript story here. Without
-// this the transform parses only after something else has already stripped the
-// types, which is an ordering accident rather than a contract.
-const TYPE_IMPORT = /^[ \t]*import\s+type\b[^;]+?\bfrom[ \t]*(['"])[^'"]*\1(?:[ \t]*;)?[ \t]*$/gm
+// Line-anchored and newline-free: `[^;\n]` stops a match running past its own
+// line into the next import. A trailing line comment is tolerated because one
+// was enough to blank the import below it.
+const TYPE_IMPORT = /^[ \t]*import\s+type\b[^;\n]+?\bfrom[ \t]*(['"])[^'"\n]*\1(?:[ \t]*;)?[ \t]*(?:\/\/[^\n]*)?$/gm
 const IMPORT_BRACES = /\bimport\s*\{[^}]*\}/g
-const INLINE_TYPE = /\btype\s+[A-Za-z_$][\w$]*\s*,?/g
+const INLINE_TYPE = /\btype\s+[A-Za-z_$][\w$]*(?:\s+as\s+[A-Za-z_$][\w$]*)?\s*,?/g
 
-function blank(match: string): string {
-  return ' '.repeat(match.length)
-}
-
+// Blanked rather than removed, so every offset still points at the same
+// character. `import type { Hst }` beside `export let Hst: Hst` is a duplicate
+// declaration to the parser, and that is the shape of every TypeScript story.
 export function parseable(code: string): string {
   return code
     .replace(TYPE_IMPORT, blank)
     .replace(IMPORT_BRACES, braces => braces.replace(INLINE_TYPE, blank))
 }
 
+function blank(match: string): string {
+  return ' '.repeat(match.length)
+}
+
 interface Node { type: string, start: number, end: number, [key: string]: any }
 interface Target { node: Node, variant: number, index: number, specifier: string }
 
 /**
- * Gives a Svelte story the auto-props Vue gets for free.
- *
- * Vue reads props off the vnodes a variant is about to render and writes control
- * values back into that same tree. Svelte renders straight to the DOM, so there
- * is no tree to read or write — the equivalent has to happen before the compiler
- * runs: every component a variant renders takes a spread of the values the
- * controls hold, and the props they offer are read out of the component's own
- * source (#233).
- *
- * Returns undefined when there is nothing to do, which is the common case — a
- * story that renders no component with props is left byte-for-byte alone.
+ * Gives a Svelte story the auto-props Vue reads off its vnodes: every component
+ * a variant renders takes a spread of the values its controls hold, and the
+ * props on offer come from the component's own source (#233).
  */
 export async function transformStoryAutoProps(code: string, propsOf: PropsOf): Promise<string | undefined> {
   let ast: any
@@ -77,7 +70,7 @@ export async function transformStoryAutoProps(code: string, propsOf: PropsOf): P
 }
 
 // Default imports of `.svelte` files, which is the only shape a component can
-// arrive in. A named or namespace import is something else.
+// arrive in.
 function importedComponents(body: Node[]): Map<string, string> {
   const found = new Map<string, string>()
   for (const node of body) {
@@ -94,40 +87,47 @@ function importedComponents(body: Node[]): Map<string, string> {
 }
 
 /**
- * Every imported component a variant renders, numbered within its variant —
- * which is how `_hPropState` is keyed, so the numbering is a contract with the
- * controls panel rather than a detail.
+ * Every component a variant renders, numbered within its variant — which is how
+ * `_hPropState` is keyed, so the numbering is a contract with the panel.
  *
- * Undefined means "do not touch this story": a variant produced by a block
- * cannot be numbered statically, and a wrong number would drive the wrong
- * component.
+ * Undefined means "do not touch this story": a variant produced by a block is
+ * registered at runtime in an order no static pass can predict.
  */
 function collectTargets(fragment: Node, imported: Map<string, string>): Target[] | undefined {
   const story = findStory(fragment)
-  if (!story) {
+  if (!story || blockWrapsAVariant(story.fragment)) {
     return undefined
   }
 
-  const variants = story.fragment?.nodes?.filter((node: Node) => isHst(node, 'Variant')) ?? []
-  if (blockWrapsAVariant(story.fragment, imported)) {
-    return undefined
-  }
-
-  // A story with no explicit variants renders its own children as the implicit
-  // `_default` variant, which is variant zero either way.
-  const scopes: Node[] = variants.length > 0 ? variants : [story]
+  // At any depth and in document order, matching how `collect/Variant.svelte`
+  // registers them — a plain wrapper element around the variants must not
+  // renumber them. A story with none renders its own children as variant zero.
+  const variants: Node[] = []
+  walk(story.fragment, (node) => {
+    if (isHst(node, 'Variant')) {
+      variants.push(node)
+    }
+  })
+  const scopes = variants.length > 0 ? variants : [story]
 
   const targets: Target[] = []
   scopes.forEach((scope, variant) => {
     let index = 0
-    walk(scope.fragment, (node) => {
-      if (node.type !== 'Component' || isHst(node)) {
-        return
+    walk(scope.fragment, (node, ancestors) => {
+      // The controls snippet builds the panel rather than the preview, and Vue
+      // scans only the default slot. A component in a block is skipped on its
+      // own; the variant's other components keep their numbering.
+      if (isControls(node)) {
+        return false
+      }
+      if (node.type !== 'Component' || insideBlock(ancestors)) {
+        return undefined
       }
       const specifier = imported.get(node.name)
       if (specifier) {
         targets.push({ node, variant, index: index++, specifier })
       }
+      return undefined
     })
   })
   return targets
@@ -143,25 +143,38 @@ function findStory(fragment: Node): Node | undefined {
   return found
 }
 
-// A variant inside `{#each}` or `{#if}` is one the numbering cannot account for.
-function blockWrapsAVariant(fragment: Node, imported: Map<string, string>): boolean {
+function blockWrapsAVariant(fragment: Node): boolean {
   let wrapped = false
   walk(fragment, (node, ancestors) => {
-    if (!isHst(node, 'Variant') && !(node.type === 'Component' && imported.has(node.name))) {
-      return
-    }
-    if (ancestors.some(ancestor => ancestor.type.endsWith('Block') && ancestor.type !== 'SnippetBlock')) {
+    if (isHst(node, 'Variant') && insideBlock(ancestors)) {
       wrapped = true
     }
   })
   return wrapped
 }
 
-function isHst(node: Node, member?: string): boolean {
-  return node.type === 'Component' && (member ? node.name === `Hst.${member}` : node.name?.startsWith('Hst.'))
+function insideBlock(ancestors: Node[]): boolean {
+  return ancestors.some(ancestor => ancestor.type.endsWith('Block') && ancestor.type !== 'SnippetBlock')
 }
 
-function walk(node: any, visit: (node: Node, ancestors: Node[]) => void, ancestors: Node[] = []): void {
+function isControls(node: Node): boolean {
+  if (node.type === 'SnippetBlock') {
+    return node.expression?.name === 'controls'
+  }
+  return (node.attributes ?? []).some((attribute: Node) =>
+    attribute.name === 'slot' && attribute.value?.[0]?.data === 'controls')
+}
+
+function isHst(node: Node, member?: string): boolean {
+  return node.type === 'Component' && (member ? node.name === `${HST}.${member}` : node.name?.startsWith(`${HST}.`))
+}
+
+// `visit` returns false to leave a subtree alone. `then`/`catch`/`pending` and
+// `fallback` are branches a variant can hide in, so the guard above has to see
+// them.
+const CHILD_KEYS = ['fragment', 'nodes', 'children', 'body', 'consequent', 'alternate', 'pending', 'then', 'catch', 'fallback']
+
+function walk(node: any, visit: (node: Node, ancestors: Node[]) => boolean | void, ancestors: Node[] = []): void {
   if (!node || typeof node !== 'object') {
     return
   }
@@ -170,10 +183,12 @@ function walk(node: any, visit: (node: Node, ancestors: Node[]) => void, ancesto
     return
   }
   if (typeof node.type === 'string') {
-    visit(node, ancestors)
+    if (visit(node, ancestors) === false) {
+      return
+    }
     ancestors = [...ancestors, node]
   }
-  for (const key of ['fragment', 'nodes', 'children', 'body', 'consequent', 'alternate']) {
+  for (const key of CHILD_KEYS) {
     if (node[key]) walk(node[key], visit, ancestors)
   }
 }
@@ -186,26 +201,21 @@ async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropCo
     }
   }
 
-  const defs: AutoPropComponentDefinition[][] = []
+  const size = targets.reduce((max, target) => Math.max(max, target.variant + 1), 0)
+  const defs: AutoPropComponentDefinition[][] = Array.from({ length: size }, () => [])
   for (const target of targets) {
-    defs[target.variant] ??= []
     const props = await sources.get(target.specifier)
     if (props?.length) {
       defs[target.variant].push({ name: target.node.name, index: target.index, props })
     }
   }
-  for (let variant = 0; variant < defs.length; variant++) {
-    defs[variant] ??= []
-  }
   return defs
 }
 
 /**
- * Edits back to front, so an earlier insertion cannot move a later offset.
- *
- * The spread goes after the last attribute: last wins in Svelte, so a prop the
- * story binds itself keeps winning until the reader touches that control — the
- * same precedence Vue's write-into-the-vnode gives.
+ * Edits back to front, so an earlier insertion cannot move a later offset. The
+ * spread goes after the last attribute: last wins in Svelte, so a prop the story
+ * binds keeps winning until the reader touches that control.
  */
 function splice(code: string, scriptStart: number, targets: Target[], defs: AutoPropComponentDefinition[][]): string {
   const driven = new Set(defs.flatMap((perVariant, variant) => perVariant.map(def => `${variant}:${def.index}`)))
@@ -217,20 +227,42 @@ function splice(code: string, scriptStart: number, targets: Target[], defs: Auto
       text: ` {...$${HOLDER}[${target.variant}][${target.index}]}`,
     }))
 
-  // One line, and it lands at the end of the `<script>` line where no user code
-  // is. Nothing the story wrote moves to a different line, so a compile error
-  // still points at the line the author is looking at and the transform needs no
-  // source map to stay honest.
-  edits.push({
-    at: scriptStart,
-    text: `import { autoProps as __pvtCreateAutoProps } from '${RUNTIME}';const ${HOLDER} = __pvtCreateAutoProps(${JSON.stringify(defs)});`,
-  })
+  // One line, landing at the end of the `<script>` line where no user code is,
+  // so nothing the story wrote moves and no source map is needed.
+  edits.push({ at: scriptStart, text: preamble(defs) })
 
   let result = code
   for (const edit of edits.sort((a, b) => b.at - a.at)) {
     result = result.slice(0, edit.at) + edit.text + result.slice(edit.at)
   }
   return result
+}
+
+// A component used by several variants is serialised once and referenced, or a
+// hundred-variant story carries a hundred copies of its prop table.
+function preamble(defs: AutoPropComponentDefinition[][]): string {
+  const table: string[] = []
+  const entries = defs.map(perVariant => perVariant.map((def) => {
+    const serialised = literal({ name: def.name, props: def.props })
+    let slot = table.indexOf(serialised)
+    if (slot < 0) {
+      slot = table.push(serialised) - 1
+    }
+    return `{...${TABLE}[${slot}],index:${def.index}}`
+  }))
+
+  return `import { autoProps as __pvtCreateAutoProps } from '${RUNTIME}';`
+    + `const ${TABLE} = [${table.join(',')}];`
+    + `const ${HOLDER} = __pvtCreateAutoProps([${entries.map(perVariant => `[${perVariant.join(',')}]`).join(',')}]);`
+}
+
+// `</script>` in a prop default would close the block this lands in, and a raw
+// line separator is not valid everywhere a string literal is.
+function literal(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003C')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
 }
 
 function attributesEnd(code: string, node: Node): number {
