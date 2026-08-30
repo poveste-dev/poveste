@@ -181,14 +181,38 @@ Like [`setupApp`](#setupapp), this reaches only the implicit variant of a story 
 
 ## `autoPropsDisabled`
 
-Accepted, and does nothing. Automatic prop detection is a Vue-only feature, so there is nothing here for it to disable.
+Turns off automatic prop detection for the story.
 
-::: warning Auto-props does not run for Svelte stories
-Vue's auto-props works by reading the props off the vnodes a variant is about to render, and writing control values back into that same tree before it mounts. Svelte has no equivalent step — a Svelte component renders straight to the DOM — so Poveste never sees a tree it could read props from or push values into.
+Poveste reads the props a component declares and builds a control for each one, so a variant that renders a component needs nothing written for it to be adjustable:
 
-This prop exists on `Hst.Story` for parity with the Vue API and for stories ported from Vue. Setting it changes nothing, and nothing warns you — which is why this page says so plainly.
+```svelte
+<Hst.Variant title="Naked">
+  <Button />
+</Hst.Variant>
+```
 
-To give a Svelte story controls, write a [`controls` slot](#slot-controls), or return state from [`initState`](#initstate) and let Poveste build the controls from it. Progress on real Svelte controls is tracked in [#233](https://github.com/poveste-dev/poveste/issues/233).
+The controls panel lists `Button`'s props, and editing one re-renders the component with the new value. A prop the story binds itself keeps its own value until that control is used:
+
+```svelte
+<Hst.Variant title="State" {initState}>
+  {#snippet children({ state })}
+    <Button label={state.label} />
+  {/snippet}
+</Hst.Variant>
+```
+
+Set `autoPropsDisabled` to stop this for every variant in the story:
+
+```svelte
+<Hst.Story autoPropsDisabled>
+  <!-- ... -->
+</Hst.Story>
+```
+
+::: tip How it works, and what it needs
+Vue reads props off the vnodes a variant is about to render. A Svelte component renders straight to the DOM, so there is no such tree — Poveste reads the props out of the component's own source when the book is built, and gives each component in a variant the values its controls hold ([#233](https://github.com/poveste-dev/poveste/issues/233)).
+
+That means it covers components the story imports and renders directly. A component behind `{#if}` or `{#each}`, or one reached through `<svelte:component>`, is left alone: which component renders is only known once the story runs, and a control pointed at the wrong one is worse than no control.
 :::
 
 ## Slot: `controls`

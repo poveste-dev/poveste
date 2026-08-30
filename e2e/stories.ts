@@ -24,6 +24,7 @@ export interface SharedStory {
 }
 
 export const SHARED_STORIES: SharedStory[] = [
+  { id: 'conformance-auto-props', title: 'Auto State & Props' },
   { id: 'conformance-button', title: 'Button' },
   { id: 'conformance-concurrent-state', title: 'Concurrent state' },
   { id: 'conformance-contrast', title: 'Contrast' },
@@ -54,14 +55,15 @@ export const SHARED_STORIES: SharedStory[] = [
  * carry fewer, which is how vue3 ended up as the only book exercising the
  * chrome.
  *
- * Five of vue3's stories are still absent, and four of them wait on the plugin:
- * `Auto State & Props` needs auto-props (#233), the two `WrapperMetaOn…` stories
- * need `addWrapper` (#232), and `Story setup` needs setup hooks that run before
- * the story mounts and an app to register things on (#234). `Tailwind` is the
- * odd one out — it is generated from design-system config rather than being a
- * story file at all. They go in here as they land.
+ * Four of vue3's stories are still absent, and three of them wait on the plugin:
+ * the two `WrapperMetaOn…` stories need `addWrapper` (#232), and `Story setup`
+ * needs setup hooks that run before the story mounts and an app to register
+ * things on (#234). `Tailwind` is the odd one out — it is generated from
+ * design-system config rather than being a story file at all. They go in here as
+ * they land.
  */
 export const SHARED_STORY_TITLES: string[] = [
+  'Auto State & Props',
   'BaseButton',
   'Button',
   'Code gen',

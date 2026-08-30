@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'pathe'
 import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
+import { svelteAutoProps } from './util/auto-props-vite.js'
 import { svelteKitAssetsDir } from './util/kit-assets.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
@@ -39,6 +40,7 @@ export function HstSvelte(): Plugin {
         ],
         vite: {
           plugins: [
+            svelteAutoProps(),
             disableStoryComponentHmr(),
           ],
           ...svelteClientAliases.length ? { resolve: { alias: svelteClientAliases } } : {},
