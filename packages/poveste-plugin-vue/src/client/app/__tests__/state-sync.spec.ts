@@ -1,3 +1,4 @@
+import { autoPropsStateKeys } from '@poveste/shared'
 import { nextTick as bundledNextTick, reactive as bundledReactive } from '@poveste/vendors/vue'
 import { describe, expect, it } from 'vitest'
 import { nextTick, reactive, watch } from 'vue'
@@ -17,10 +18,10 @@ async function settle() {
   }
 }
 
-function setup(initial: Record<string, any>) {
+function setup(initial: Record<string, any>, omit: string[] = []) {
   const bundled = bundledReactive(structuredClone(initial))
   const external = reactive(structuredClone(initial))
-  const sync = syncStateBundledAndExternal(bundled, external)
+  const sync = syncStateBundledAndExternal(bundled, external, omit)
   return { bundled, external, sync }
 }
 
@@ -335,6 +336,51 @@ describe('syncStateBundledAndExternal', () => {
       await settle()
       expect(bundled.count).toBe(i)
     }
+
+    sync.stop()
+  })
+})
+
+/*
+ * A variant's state is synced with the story's implicit state, which every
+ * variant shares — so anything that crosses reaches all of them. `_hPropState`
+ * is keyed by a component's index within one variant, so it must not (#473).
+ */
+describe('keys the sync is told to omit', () => {
+  it('does not carry an auto-props edit to the other side', async () => {
+    const { bundled, external, sync } = setup({ _hPropState: {}, label: 'a' }, autoPropsStateKeys)
+    await settle()
+
+    external._hPropState = { 0: { name: 'Bender' } }
+    await settle()
+
+    expect(bundled._hPropState).toEqual({})
+
+    sync.stop()
+  })
+
+  it('goes on carrying everything else', async () => {
+    const { bundled, external, sync } = setup({ _hPropState: {}, label: 'a' }, autoPropsStateKeys)
+    await settle()
+
+    external.label = 'edited'
+    await settle()
+
+    expect(bundled.label).toBe('edited')
+
+    sync.stop()
+  })
+
+  // The reason the sync exists: a variant with no `initState` picks up the
+  // story's own state, and omitting the bookkeeping must not cost that.
+  it('still carries a key the story owns', async () => {
+    const { bundled, external, sync } = setup({}, autoPropsStateKeys)
+    await settle()
+
+    bundled.fromStory = 'yes'
+    await settle()
+
+    expect(external.fromStory).toBe('yes')
 
     sync.stop()
   })

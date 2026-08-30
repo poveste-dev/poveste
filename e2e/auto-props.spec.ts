@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { openStory } from './support.js'
 
 // Shared because the plugins reach it differently (#233) and the panel must not
-// be able to tell. Isolation is not asserted: Vue leaks it, Svelte does not (#473).
+// be able to tell.
 const STORY = 'conformance-auto-props'
 
 function cell(page: Page, title: string) {
@@ -49,5 +49,19 @@ test.describe('auto-props', () => {
     await control(page, 'AutoStateProps', 'name').locator('input').fill('Leela')
 
     await expect(rendered(page, 'State')).toContainText('Hello Leela!')
+  })
+
+  // `_hPropState` is keyed by a component's index within one variant, so it
+  // cannot mean anything in another. Vue used to carry it to every variant
+  // through the story's implicit state (#473).
+  test('drives only the variant whose control was used', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=naked')
+    await expect(rendered(page, 'Naked')).toContainText('Hello world!')
+    await expect(rendered(page, 'State')).toContainText('Hello Fry!')
+
+    await control(page, 'AutoStateProps', 'name').locator('input').fill('Bender')
+
+    await expect(rendered(page, 'Naked')).toContainText('Hello Bender!')
+    await expect(rendered(page, 'State')).toContainText('Hello Fry!')
   })
 })

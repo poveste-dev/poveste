@@ -1,6 +1,6 @@
 import type { Variant } from '@poveste/shared'
 import type { ComputedRef, PropType } from 'vue'
-import { applyState } from '@poveste/shared'
+import { applyState, autoPropsStateKeys } from '@poveste/shared'
 import { computed, defineComponent, getCurrentInstance, inject, onBeforeUnmount, useAttrs } from 'vue'
 import { syncVariantAutoProps } from './auto-props.js'
 import { useRenderContext } from './render-context.js'
@@ -84,7 +84,7 @@ export default defineComponent({
     }
 
     if (renderContext?.mode !== 'render' && mountVariant.value && implicitState) {
-      mountStateSync = syncStateBundledAndExternal(mountVariant.value.state, implicitState())
+      mountStateSync = syncStateBundledAndExternal(mountVariant.value.state, implicitState(), autoPropsStateKeys)
     }
 
     function updateVariant(variant: Variant) {
@@ -162,7 +162,7 @@ export default defineComponent({
         && renderContext.currentVariant?.id === variant.id
 
       if (shouldSync && !renderStateSync) {
-        renderStateSync = syncStateBundledAndExternal(variant.state, implicitState())
+        renderStateSync = syncStateBundledAndExternal(variant.state, implicitState(), autoPropsStateKeys)
       }
       else if (!shouldSync && renderStateSync) {
         renderStateSync.stop()

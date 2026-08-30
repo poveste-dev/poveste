@@ -84,12 +84,26 @@ function _toRawObject(obj: Record<any, any>, target: Record<any, any>, seen = ne
   })
 }
 
+// Kept out of the baseline rather than out of the write, so the far side is
+// never told these changed and an echo cannot carry them back.
+function without(state: Record<string, any>, omit: string[]): Record<string, any> {
+  if (!omit.length) {
+    return state
+  }
+  const kept = { ...state }
+  for (const key of omit) {
+    delete kept[key]
+  }
+  return kept
+}
+
 /**
  * Synchronize states between the bundled and external/user versions of Vue
  * @param bundledState Reactive state created with the bundled Vue
  * @param externalState Reactive state created with the external/user Vue
+ * @param omit Keys neither side may learn from the other
  */
-export function syncStateBundledAndExternal(bundledState, externalState) {
+export function syncStateBundledAndExternal(bundledState, externalState, omit: string[] = []) {
   // Each side is asked only for what *it* changed, and that is all that crosses.
   //
   // Both watchers used to mirror the whole of their side. That works while the
@@ -109,7 +123,7 @@ export function syncStateBundledAndExternal(bundledState, externalState) {
 
   const _stop = _watch(() => bundledState, (value) => {
     if (value == null) return
-    const changes = baseline.take(_toRawDeep(value))
+    const changes = baseline.take(without(_toRawDeep(value), omit))
     if (changes) applyState(externalState, changes)
   }, {
     deep: true,
@@ -118,7 +132,7 @@ export function syncStateBundledAndExternal(bundledState, externalState) {
 
   const stop = watch(() => externalState, (value) => {
     if (value == null) return
-    const changes = baseline.take(toRawDeep(value))
+    const changes = baseline.take(without(toRawDeep(value), omit))
     if (changes) applyState(bundledState, changes)
   }, {
     deep: true,
