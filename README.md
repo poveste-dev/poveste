@@ -29,6 +29,11 @@ Say it however you like — we answer to "po-VEST" too. 🙂
   </a>
 </p>
 
+<p align="center">
+  <a href="https://poveste.dev/quasar-demo.webm"><b>▶ Watch a Quasar app's components — and its boot files — running inside a book</b></a><br>
+  <sub>The one thing histoire has not shipped in four years. Recorded on every run by <code>pnpm run record:quasar</code>.</sub>
+</p>
+
 - ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
 - 🧩 Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar, each proven by its own example suite in CI
 - 🪟 Collects on Windows, macOS and Linux — all three run in CI

@@ -39,6 +39,7 @@
     "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run test:example-wiring && pnpm run test:recipes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
+    "record:quasar": "playwright test --config media/playwright.config.ts && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/convert-demo.ts",
     "docs:serve": "vitepress serve docs",
     "update": "pnpm --recursive update --latest"
   },

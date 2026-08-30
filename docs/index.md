@@ -82,6 +82,14 @@ ratio and the boxes would otherwise be ragged. -->
   </a>
 </div>
 
+## Quasar, running inside a book
+
+<!-- Attributes on one line: markdown-it ends the HTML block at a line break it
+does not expect, and Vue then reports the closing tag as invalid. -->
+<video src="/quasar-demo.webm" autoplay loop muted playsinline class="w-full max-w-4xl mx-auto rounded-lg border border-black/10 dark:border-white/10"></video>
+
+A Quasar app's own components, its props read straight off the component, and the boot file that has to run for an app extension to appear at all — the one thing histoire has not shipped in four years. Re-recorded by `pnpm run record:quasar`, so it cannot go stale quietly.
+
 <style lang="postcss" scoped>
 /* v4: @apply in a scoped <style> needs the theme referenced explicitly. */
 @reference "./.vitepress/theme/style/index.pcss";

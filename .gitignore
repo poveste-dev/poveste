@@ -9,3 +9,8 @@ playwright-results.json
 bench/sandbox.cpuprofile
 .DS_Store
 .eslintcache
+
+# Playwright's working files for the demo recorder; the recording itself is
+# committed at docs/public/quasar-demo.webm.
+media/.playwright
+media/*.mp4
