@@ -143,7 +143,12 @@ export default defineConfig({
     {
       command: `pnpm --filter ./examples/${example.name} run story:preview`,
       url: `http://localhost:${example.port}`,
-      reuseExistingServer: !process.env.CI,
+      // Never reused, even locally. A preview server serves `.poveste/dist` as
+      // it stood when it started and does not notice a rebuild underneath it, so
+      // reuse means a run can pass against the build before the change — or fail
+      // against it, which is worse, because the fix you reach for is a timeout
+      // (#477). Refusing the port costs 0.7s a run and says so out loud.
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     ...example.dev
@@ -152,6 +157,9 @@ export default defineConfig({
           // dev server would come up on its default port instead.
           command: `pnpm --filter ./examples/${example.name} exec poveste dev --port ${example.dev.port}`,
           url: `http://localhost:${example.dev.port}`,
+          // Still reused locally: a dev server re-transforms from source on
+          // request, so it does not go stale the same way, and it costs ~30s to
+          // boot against the preview server's 0.7s.
           reuseExistingServer: !process.env.CI,
           timeout: 180_000,
         }]
