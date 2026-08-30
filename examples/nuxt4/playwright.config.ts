@@ -18,8 +18,8 @@ export default defineConfig({
   webServer: {
     command: 'pnpm run story:preview',
     url: 'http://localhost:4568',
-      // Never reused, even locally: a preview server serves the build it started
-      // with and does not notice a rebuild underneath it (#477).
+    // Never reused, even locally: a preview server serves the build it started
+    // with and does not notice a rebuild underneath it (#477).
     reuseExistingServer: false,
     timeout: 120_000,
   },
