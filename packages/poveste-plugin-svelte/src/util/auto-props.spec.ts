@@ -300,6 +300,13 @@ describe('a story auto-props must not touch', () => {
     await untouched(`<Hst.Story>\n  <Hst.Variant />\n</Hst.Story>`)
   })
 
+  it('is left alone when it has already been transformed', async () => {
+    const source = story(`<Hst.Story>\n  <Hst.Variant>\n    <Button />\n  </Hst.Variant>\n</Hst.Story>`)
+    const once = await transformStoryAutoProps(source, propsOf())
+
+    expect(await transformStoryAutoProps(once!, propsOf())).toBeUndefined()
+  })
+
   it('is left alone when the source does not parse', async () => {
     await untouched(`<script>` + `\n  import Button from './Button.svelte'\n</script>\n<Hst.Story>`)
   })

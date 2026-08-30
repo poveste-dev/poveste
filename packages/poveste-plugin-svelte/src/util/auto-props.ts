@@ -38,6 +38,12 @@ interface Target { node: Node, variant: number, index: number, specifier: string
  * props on offer come from the component's own source (#233).
  */
 export async function transformStoryAutoProps(code: string, propsOf: PropsOf): Promise<string | undefined> {
+  // Applied twice — a plugin registered twice, or output fed back in — the
+  // second preamble redeclares the first and nothing compiles.
+  if (code.includes(RUNTIME)) {
+    return undefined
+  }
+
   let ast: any
   try {
     ast = parse(parseable(code), { modern: true })
