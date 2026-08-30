@@ -9,16 +9,15 @@ const HOLDER = '__pvtAutoProps'
 const TABLE = '__pvtAutoPropDefs'
 const HST = 'Hst'
 
-// Line-anchored and newline-free: `[^;\n]` stops a match running past its own
-// line into the next import. A trailing line comment is tolerated because one
-// was enough to blank the import below it.
+// Line-anchored and newline-free, or a match runs past its own line and blanks
+// the import below it. A trailing line comment is tolerated for the same reason.
 const TYPE_IMPORT = /^[ \t]*import\s+type\b[^;\n]+?\bfrom[ \t]*(['"])[^'"\n]*\1(?:[ \t]*;)?[ \t]*(?:\/\/[^\n]*)?$/gm
 const IMPORT_BRACES = /\bimport\s*\{[^}]*\}/g
 const INLINE_TYPE = /\btype\s+[A-Za-z_$][\w$]*(?:\s+as\s+[A-Za-z_$][\w$]*)?\s*,?/g
 
 // Blanked rather than removed, so every offset still points at the same
-// character. `import type { Hst }` beside `export let Hst: Hst` is a duplicate
-// declaration to the parser, and that is the shape of every TypeScript story.
+// character. `import type { Hst }` beside `export let Hst: Hst` reads as a
+// duplicate declaration.
 export function parseable(code: string): string {
   return code
     .replace(TYPE_IMPORT, blank)
@@ -33,13 +32,11 @@ interface Node { type: string, start: number, end: number, [key: string]: any }
 interface Target { node: Node, variant: number, index: number, specifier: string }
 
 /**
- * Gives a Svelte story the auto-props Vue reads off its vnodes: every component
- * a variant renders takes a spread of the values its controls hold, and the
- * props on offer come from the component's own source (#233).
+ * Every component a variant renders takes a spread of the values its controls
+ * hold; the props on offer come from the component's own source (#233).
  */
 export async function transformStoryAutoProps(code: string, propsOf: PropsOf): Promise<string | undefined> {
-  // Applied twice — a plugin registered twice, or output fed back in — the
-  // second preamble redeclares the first and nothing compiles.
+  // Applied twice, the second preamble redeclares the first.
   if (code.includes(RUNTIME)) {
     return undefined
   }
@@ -75,8 +72,7 @@ export async function transformStoryAutoProps(code: string, propsOf: PropsOf): P
   return splice(code, instance.content.start, targets, defs)
 }
 
-// Default imports of `.svelte` files, which is the only shape a component can
-// arrive in.
+// The only shape a component can arrive in.
 function importedComponents(body: Node[]): Map<string, string> {
   const found = new Map<string, string>()
   for (const node of body) {
@@ -93,11 +89,9 @@ function importedComponents(body: Node[]): Map<string, string> {
 }
 
 /**
- * Every component a variant renders, numbered within its variant — which is how
- * `_hPropState` is keyed, so the numbering is a contract with the panel.
- *
- * Undefined means "do not touch this story": a variant produced by a block is
- * registered at runtime in an order no static pass can predict.
+ * Numbered within its variant, which is how `_hPropState` is keyed. Undefined
+ * means "do not touch this story": a variant a block produces is registered in
+ * an order no static pass can predict.
  */
 function collectTargets(fragment: Node, imported: Map<string, string>): Target[] | undefined {
   const story = findStory(fragment)
@@ -106,8 +100,7 @@ function collectTargets(fragment: Node, imported: Map<string, string>): Target[]
   }
 
   // At any depth and in document order, matching how `collect/Variant.svelte`
-  // registers them — a plain wrapper element around the variants must not
-  // renumber them. A story with none renders its own children as variant zero.
+  // registers them. A story with none renders its children as variant zero.
   const variants: Node[] = []
   walk(story.fragment, (node) => {
     if (isHst(node, 'Variant')) {
@@ -120,9 +113,8 @@ function collectTargets(fragment: Node, imported: Map<string, string>): Target[]
   scopes.forEach((scope, variant) => {
     let index = 0
     walk(scope.fragment, (node, ancestors) => {
-      // The controls snippet builds the panel rather than the preview, and Vue
-      // scans only the default slot. A component in a block is skipped on its
-      // own; the variant's other components keep their numbering.
+      // The controls snippet builds the panel, not the preview. A component in
+      // a block is skipped on its own.
       if (isControls(node)) {
         return false
       }
@@ -175,9 +167,7 @@ function isHst(node: Node, member?: string): boolean {
   return node.type === 'Component' && (member ? node.name === `${HST}.${member}` : node.name?.startsWith(`${HST}.`))
 }
 
-// `visit` returns false to leave a subtree alone. `then`/`catch`/`pending` and
-// `fallback` are branches a variant can hide in, so the guard above has to see
-// them.
+// `then`/`catch`/`pending` and `fallback` are branches a variant can hide in.
 const CHILD_KEYS = ['fragment', 'nodes', 'children', 'body', 'consequent', 'alternate', 'pending', 'then', 'catch', 'fallback']
 
 function walk(node: any, visit: (node: Node, ancestors: Node[]) => boolean | void, ancestors: Node[] = []): void {
@@ -219,9 +209,9 @@ async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropCo
 }
 
 /**
- * Edits back to front, so an earlier insertion cannot move a later offset. The
- * spread goes after the last attribute: last wins in Svelte, so a prop the story
- * binds keeps winning until the reader touches that control.
+ * Back to front, so an earlier insertion cannot move a later offset. The spread
+ * goes after the last attribute: last wins, so a prop the story binds keeps
+ * winning until the reader touches that control.
  */
 function splice(code: string, scriptStart: number, targets: Target[], defs: AutoPropComponentDefinition[][]): string {
   const driven = new Set(defs.flatMap((perVariant, variant) => perVariant.map(def => `${variant}:${def.index}`)))
@@ -233,8 +223,7 @@ function splice(code: string, scriptStart: number, targets: Target[], defs: Auto
       text: ` {...$${HOLDER}[${target.variant}][${target.index}]}`,
     }))
 
-  // One line, landing at the end of the `<script>` line where no user code is,
-  // so nothing the story wrote moves and no source map is needed.
+  // One line, at the end of the `<script>` line, so nothing the story wrote moves.
   edits.push({ at: scriptStart, text: preamble(defs) })
 
   let result = code
@@ -244,8 +233,8 @@ function splice(code: string, scriptStart: number, targets: Target[], defs: Auto
   return result
 }
 
-// A component used by several variants is serialised once and referenced, or a
-// hundred-variant story carries a hundred copies of its prop table.
+// Serialised once and referenced, or a hundred-variant story carries a hundred
+// copies of the same prop table.
 function preamble(defs: AutoPropComponentDefinition[][]): string {
   const table: string[] = []
   const entries = defs.map(perVariant => perVariant.map((def) => {
@@ -262,8 +251,7 @@ function preamble(defs: AutoPropComponentDefinition[][]): string {
     + `const ${HOLDER} = __pvtCreateAutoProps([${entries.map(perVariant => `[${perVariant.join(',')}]`).join(',')}]);`
 }
 
-// `</script>` in a prop default would close the block this lands in, and a raw
-// line separator is not valid everywhere a string literal is.
+// `</script>` in a default would close the block this lands in.
 function literal(value: unknown): string {
   return JSON.stringify(value)
     .replace(/</g, '\\u003C')
