@@ -29,6 +29,12 @@ test.describe('auto-props', () => {
 
     await expect(rendered(page, 'Naked')).toContainText('Hello world!')
     await expect(control(page, 'AutoStateProps', 'name')).toBeVisible()
+
+    // A text field, not the JSON editor a prop of unknown type falls back to.
+    // Vue erases the types it infers from a type-only `defineProps` in a
+    // production build, so this only ever failed in the built book (#490).
+    // Bounded: `poveste-textarea` contains the same substring.
+    await expect(control(page, 'AutoStateProps', 'name')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
   })
 
   test('drives the component from that control', async ({ page }) => {

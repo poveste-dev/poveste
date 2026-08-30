@@ -57,26 +57,24 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
               ? [prop]
               : [prop.type]
 
-          types = rawTypes.map((type) => {
-            switch (type) {
-              case String:
-                return 'string'
-              case Number:
-                return 'number'
-              case Boolean:
-                return 'boolean'
-              case Object:
-                return 'object'
-              case Array:
-                return 'array'
-              default:
-                return 'unknown'
-            }
-          })
+          types = rawTypes.map(declaredType)
 
           defaultValue = typeof prop.default === 'function'
             ? prop.default.toString()
             : prop.default
+
+          // A production build erases the runtime types Vue infers from a
+          // type-only `defineProps`, leaving `props: { label: {} }` — so the
+          // panel offered a JSON editor for a string (#490). Defaults survive
+          // erasure and the passed value is still there, and either is enough to
+          // pick a control. A factory default reaches `inferredType` as the
+          // function it is, and is declined there with everything else untyped.
+          if (types.every(type => type === 'unknown')) {
+            const inferred = inferredType(passedValue(vnode, key) ?? prop.default)
+            if (inferred !== 'unknown') {
+              types = [inferred]
+            }
+          }
         }
 
         propDefs.push({
@@ -113,6 +111,52 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
       visitVNodes(vnode.children, externalState, traversalState, result)
     }
   }
+}
+
+function declaredType(type: unknown): string {
+  switch (type) {
+    case String:
+      return 'string'
+    case Number:
+      return 'number'
+    case Boolean:
+      return 'boolean'
+    case Object:
+      return 'object'
+    case Array:
+      return 'array'
+    default:
+      return 'unknown'
+  }
+}
+
+/** What the value itself says, when the declaration no longer says anything. */
+export function inferredType(value: unknown): string {
+  if (Array.isArray(value)) {
+    return 'array'
+  }
+  switch (typeof value) {
+    case 'string':
+      return 'string'
+    case 'number':
+      return 'number'
+    case 'boolean':
+      return 'boolean'
+    case 'object':
+      return value === null ? 'unknown' : 'object'
+    default:
+      return 'unknown'
+  }
+}
+
+// `vnode.type.props` is keyed as declared and `vnode.props` as authored, so a
+// multi-word prop written `my-label` is not found under `myLabel`.
+export function passedValue(vnode: any, key: string): unknown {
+  const props = vnode.props
+  if (!props) {
+    return undefined
+  }
+  return key in props ? props[key] : props[key.replace(/\B([A-Z])/g, '-$1').toLowerCase()]
 }
 
 function normalizeVNodes(vnodes: any) {
