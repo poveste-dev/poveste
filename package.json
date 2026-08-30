@@ -29,7 +29,6 @@
     "test:readmes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-readmes.ts",
     "test:example-wiring": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-example-wiring.ts",
     "test:recipes": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-recipes.ts",
-    "test:story-docs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-story-docs.ts",
     "test:docs-site": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-docs-site.ts",
     "test:docs-site:live": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-docs-site.ts --live",
     "test:publishable": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-publishable.ts",

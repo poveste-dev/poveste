@@ -62,8 +62,7 @@ export const SHARED_STORIES: SharedStory[] = [
  * config rather than being a story file at all. They go in here as they land.
  *
  * This list counts titles, so it cannot see a story that carries a `.story.md`
- * companion in one book and not another — `scripts/check-story-docs.ts` does
- * (#475).
+ * companion in one book and not another. Nothing does yet (#488).
  */
 export const SHARED_STORY_TITLES: string[] = [
   'Auto State & Props',

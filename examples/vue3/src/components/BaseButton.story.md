@@ -1,7 +1,11 @@
 # BaseButton
 
 ```vue
-<BaseButton @click="onClick">
+<BaseButton
+  :disabled="disabled"
+  :color="color"
+  :size="size"
+>
   Click me
 </BaseButton>
 ```

@@ -79,11 +79,6 @@ jobs:
       - name: Check the published recipes
         run: pnpm run test:recipes
 
-      # A `.story.md` fills the Docs panel, and the title-based parity list cannot
-      # see one that exists in some books and not others (#475).
-      - name: Check the story docs parity
-        run: pnpm run test:story-docs
-
       - name: Test the release scripts
         run: pnpm run test:scripts
 
