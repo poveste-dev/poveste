@@ -355,12 +355,11 @@ export async function build(ctx: Context) {
 
 function generateBaseHtml(head: string, body: string, ctx: Context) {
   return `<!DOCTYPE html>
-<html>
+<html lang="${ctx.config.theme.lang ?? 'en'}">
 <head>
   <title>${ctx.config.theme.title}</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="">
   <style>html,body{margin:0;padding:0}</style>
   ${head}
 </head>

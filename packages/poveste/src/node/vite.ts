@@ -244,12 +244,11 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           res.statusCode = 200
           let html = `
 <!DOCTYPE html>
-<html>
+<html lang="${ctx.config.theme?.lang ?? 'en'}">
 <head>
   <title></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="">
 </head>
 <body>
   <div id="app"></div>
@@ -284,13 +283,12 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
 
             let html = `
 <!DOCTYPE html>
-<html>
+<html lang="${ctx.config.theme?.lang ?? 'en'}">
   <head>
     <title></title>
     <link rel="icon" href=""/>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="description" content="">
     ${ctx.config.theme?.favicon ? `<link rel="icon" type="${lookupMime(ctx.config.theme.favicon)}" href="${server.config.base}${ctx.config.theme.favicon}"/>` : ''}
     <style>html,body{margin:0;padding:0}</style>
   </head>
