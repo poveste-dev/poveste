@@ -4,7 +4,8 @@
   "version": "0.11.0",
   "description": "Poveste plugin to take screenshots for visual regression testing",
   "author": {
-    "name": "Sorin Gitlan"
+    "name": "Sorin Gitlan",
+    "url": "https://x.com/50rayn"
   },
   "license": "MIT",
   "homepage": "https://poveste.dev",

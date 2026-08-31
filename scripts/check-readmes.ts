@@ -52,6 +52,8 @@ const MIN_LENGTH = 120
 export const ALLOWED_HOSTS = new Set([
   'github.com',
   'poveste.dev',
+  // The project's only social channel, and a personal handle on purpose (#482).
+  'x.com',
   'www.npmjs.com',
   'npmx.dev',
   'vite.dev',

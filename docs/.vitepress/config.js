@@ -67,7 +67,7 @@ module.exports = {
     },
 
     footer: {
-      message: 'Released under the MIT License.',
+      message: 'Released under the MIT License. <a href="https://x.com/50rayn">Updates on X</a>.',
       copyright: 'Copyright © 2022-present Guillaume Chau & poveste contributors',
     },
 
@@ -137,6 +137,9 @@ module.exports = {
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/poveste-dev/poveste' },
+      // A personal handle rather than a project one, deliberately: a maintainer
+      // people can follow beats a logo with no followers (#482).
+      { icon: 'x', link: 'https://x.com/50rayn', ariaLabel: 'Updates on X' },
     ],
 
     sidebar: {
