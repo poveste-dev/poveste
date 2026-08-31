@@ -20,14 +20,24 @@ const omitKeys = ['_hPropDefs']
 
 const defaultState = toPresetState(props.variant.state, omitKeys)
 
+/*
+ * `writeDefaults: false`: these are keyed per variant, so writing the default on
+ * mount persisted "no presets, default selected" for every variant merely
+ * browsed. Nothing prunes them, and a renamed variant orphans its keys forever
+ * because no code path can match them again (#326).
+ */
 const selectedOption = useStorage<string>(
   `_poveste-presets/${saveId.value}/selected`,
   DEFAULT_ID,
+  undefined,
+  { writeDefaults: false },
 )
 
 const presetStates = useStorage<Map<string, { state: Record<string, unknown>, label: string }>>(
   `_poveste-presets/${saveId.value}/states`,
   new Map(),
+  undefined,
+  { writeDefaults: false },
 )
 
 const presetsOptions = computed(() => {
@@ -176,6 +186,7 @@ onClickOutside(select, stopEditing)
     </div>
     <Icon
       v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
+      data-testid="preset-save"
       :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
       class="cursor-pointer w-4 h-4 hover:text-primary-500 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
       :class="[
@@ -185,6 +196,7 @@ onClickOutside(select, stopEditing)
     />
     <Icon
       v-tooltip="'Create new preset'"
+      data-testid="preset-create"
       icon="carbon:add-alt"
       class="cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
       @click="createPreset()"
