@@ -25,7 +25,6 @@
    its utility classes live in a package v4 never scans. */
 @source "../../../../poveste/src/node/markdown.ts";
 
-/* TODO(#36): port the v3 typography theme() customization to v4 CSS. */
 @plugin '@tailwindcss/typography';
 
 /* Chrome dark mode. Deliberately a distinct class from the story-side
@@ -181,7 +180,7 @@
 /*
  * Typography (@tailwindcss/typography) customization — ported from the v3
  * `theme.extend.typography` JS config to CSS. Unlayered so it overrides the
- * plugin's layered defaults. Needs a visual pass on the docs/markdown pages.
+ * plugin's layered defaults.
  */
 .prose {
   --tw-prose-invert-quote-borders: var(--color-gray-800);
@@ -207,7 +206,7 @@
       }
     }
 
-    &:is(h1, h2, h3, h4, th) {
+    &:is(h1, h2, h3, h4) {
       margin-bottom: 0.75rem;
 
       &:not(:first-child) {
