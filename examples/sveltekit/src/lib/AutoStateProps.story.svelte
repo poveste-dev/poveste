@@ -2,6 +2,7 @@
   import type { Hst } from '@poveste/plugin-svelte'
   import AutoStateProps from './AutoStateProps.svelte'
   import DeclaredProps from './DeclaredProps.svelte'
+  import OptionsProps from './OptionsProps.svelte'
   import ShorthandProps from './ShorthandProps.svelte'
 
   export let Hst: Hst
@@ -27,5 +28,8 @@
   </Hst.Variant>
   <Hst.Variant id="shorthand" title="Shorthand">
     <ShorthandProps greeting="hi" />
+  </Hst.Variant>
+  <Hst.Variant id="options" title="Options">
+    <OptionsProps />
   </Hst.Variant>
 </Hst.Story>

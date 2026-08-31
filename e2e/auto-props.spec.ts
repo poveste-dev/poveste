@@ -93,4 +93,14 @@ test.describe('auto-props', () => {
     await expect(control(page, 'ShorthandProps', 'greeting')).toBeVisible()
     await expect(control(page, 'ShorthandProps', 'greeting')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
   })
+
+  // Props declared outside the modern setup spelling: Vue's Options API, which
+  // is the one declaration a production build cannot erase, and an untyped
+  // Svelte component, whose types come from its defaults.
+  test('shapes controls for props declared the older way', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=options')
+
+    await expect(control(page, 'OptionsProps', 'label')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+    await expect(control(page, 'OptionsProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
+  })
 })
