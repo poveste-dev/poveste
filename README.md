@@ -22,7 +22,8 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 
 [Read the Documentation](https://poveste.dev) |
 [Discussions board](https://github.com/poveste-dev/poveste/discussions) |
-[Updates on X](https://x.com/50rayn)
+[Bluesky](https://bsky.app/profile/poveste.dev) |
+[X](https://x.com/50rayn)
 
 <p align="center">
   <a href="https://poveste.dev">
