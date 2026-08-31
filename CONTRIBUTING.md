@@ -41,6 +41,21 @@ This mono-repo contains the following packages:
 | [@poveste/shared](./packages/poveste-shared) | Shared utilities |
 | [@poveste/vendors](./packages/poveste-vendors) | Pre-bundled dependencies |
 
+## Documenting a framework
+
+Vue is the reference set. A framework plugin's docs are expected to cover the same ground, and `docs/guide/vue/` is the list to check against:
+
+`getting-started` · `stories` · `controls` · `events` · `app-setup` · `docs` · `hierarchy` · `wrapper`
+
+Plus worked examples under `docs/examples/<framework>/`, mirroring `docs/examples/vue/`.
+
+Two rules make that a policy rather than a ratio that emerged:
+
+- **A page may be shorter, but not thinner.** Svelte's `stories` is longer than Vue's because `initState` needs more explaining; that is fine. A page covering the same ground in half the space is the case to look at.
+- **An unsupported feature gets a page saying so, not no page.** `docs/guide/svelte/wrapper.md` is the shape: name what is missing, link the issue, and say what to do instead. A missing entry in the sidebar is indistinguishable from a feature the reader failed to find.
+
+This exists because Svelte reached roughly half of Vue's documentation before anybody measured it, and React and Svelte's successors would have inherited that as the target.
+
 ## Local dev setup
 
 1. Install dependencies with [pnpm](https://pnpm.io/):
