@@ -70,4 +70,17 @@ test.describe('auto-props', () => {
     await expect(rendered(page, 'Naked')).toContainText('Hello Bender!')
     await expect(rendered(page, 'State')).toContainText('Hello Fry!')
   })
+
+  // The runtime `defineProps` spelling, whose declared types survive a build and
+  // which nothing exercised once #492 moved the other component to the type-only
+  // form (#493). Three types, because a switch that answered `string` to
+  // everything would pass on one.
+  test('shapes each control from the type the component declares', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=declared')
+    await expect(control(page, 'DeclaredProps', 'label')).toBeVisible()
+
+    await expect(control(page, 'DeclaredProps', 'label')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+    await expect(control(page, 'DeclaredProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
+    await expect(control(page, 'DeclaredProps', 'enabled')).toHaveClass(/(^|\s)poveste-checkbox(\s|$)/)
+  })
 })

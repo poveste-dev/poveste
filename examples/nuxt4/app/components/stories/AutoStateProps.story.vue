@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import AutoStateProps from './AutoStateProps.vue'
+import DeclaredProps from './DeclaredProps.vue'
 
 function initState() {
   return {
@@ -31,6 +32,12 @@ function initState() {
       <template #default="{ state }">
         <AutoStateProps :name="state.name" />
       </template>
+    </Variant>
+    <Variant
+      id="declared"
+      title="Declared"
+    >
+      <DeclaredProps />
     </Variant>
   </Story>
 </template>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Hst } from '@poveste/plugin-svelte'
   import AutoStateProps from './AutoStateProps.svelte'
+  import DeclaredProps from './DeclaredProps.svelte'
 
   export let Hst: Hst
 
@@ -19,5 +20,8 @@
     {#snippet children({ state })}
       <AutoStateProps name={state.name} />
     {/snippet}
+  </Hst.Variant>
+  <Hst.Variant id="declared" title="Declared">
+    <DeclaredProps />
   </Hst.Variant>
 </Hst.Story>
