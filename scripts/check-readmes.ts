@@ -52,7 +52,10 @@ const MIN_LENGTH = 120
 export const ALLOWED_HOSTS = new Set([
   'github.com',
   'poveste.dev',
-  // The project's only social channel, and a personal handle on purpose (#482).
+  // Two channels: `bsky.app` is the project's own handle, verified by the
+  // `_atproto` record on poveste.dev; `x.com` is a personal one on purpose,
+  // because a maintainer people can follow beats a logo with no followers (#482).
+  'bsky.app',
   'x.com',
   'www.npmjs.com',
   'npmx.dev',
