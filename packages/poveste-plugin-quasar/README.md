@@ -2,9 +2,16 @@
 
 Builds a Poveste book inside a Quasar project.
 
+```bash
+pnpm add -D poveste @poveste/plugin-vue @poveste/plugin-quasar
+```
+
+Add both plugins in poveste config:
+
 ```ts
 import { HstQuasar } from '@poveste/plugin-quasar'
 import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [

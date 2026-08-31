@@ -87,6 +87,69 @@ export const DEPRECATED_ALIASES: Array<{ deprecated: string, canonical: string }
 
 export interface AliasTaughtAlone { line: number, deprecated: string, canonical: string }
 
+/**
+ * A framework plugin is the first thing a reader installs, so its install line
+ * has to name `poveste` too — whether the bare form resolves depends on the
+ * reader's `auto-install-peers`, which a README must not lean on (#389).
+ *
+ * Add-ons like `plugin-percy` are exempt by construction: they declare no
+ * framework peer, because they are added to a project that already has one.
+ */
+const FRAMEWORK_PEERS = new Set(['vue', 'nuxt', 'svelte', 'quasar'])
+
+// Every spelling the READMEs actually use: `pnpm i -D`, `pnpm add -D`, `npm
+// install`, `yarn add`, `bun add`.
+//
+// A source rather than a regex: a shared `/g` regex carries `lastIndex` between
+// calls, so each use compiles its own.
+const INSTALL_LINE = String.raw`^(?:pnpm|npm|yarn|bun)\s+(?:add|i|install)\b[^\n]*`
+
+function installLines(markdown: string): string[] {
+  return markdown.match(new RegExp(INSTALL_LINE, 'gm')) ?? []
+}
+
+export function installLineProblems(pkg: string, markdown: string, peers: Record<string, string>): string[] {
+  if (!Object.keys(peers).some(name => FRAMEWORK_PEERS.has(name))) {
+    return []
+  }
+
+  // Every install line, not just the first: a plugin may document more than one
+  // (Svelte and SvelteKit differ), and the second is as copyable as the first.
+  return installLines(markdown)
+    .filter(install => !/(?<![\w/@-])poveste(?![\w-])/.test(install))
+    .map(install => `packages/${pkg}/README.md installs a framework plugin without poveste: ${install.trim()}`)
+}
+
+/**
+ * A README whose only guidance is a config snippet leaves the reader with
+ * nothing to run. `plugin-tailwind` and `plugin-quasar` both shipped that way.
+ */
+export function missingInstallLine(pkg: string, markdown: string): string[] {
+  const showsConfig = /```(?:ts|js)\n[\s\S]*?defineConfig\(/.test(markdown)
+  const installs = installLines(markdown).length > 0
+
+  return showsConfig && !installs
+    ? [`packages/${pkg}/README.md shows a config snippet but never says how to install the package`]
+    : []
+}
+
+/**
+ * The same shape as the "no `histoire` in a code fence" rule, applied to whether
+ * the fence actually runs: readers copy fences, and one calling `defineConfig`
+ * without importing it throws on the first line they paste.
+ */
+export function unrunnableFences(where: string, markdown: string): string[] {
+  const problems: string[] = []
+
+  for (const [, body] of markdown.matchAll(/```(?:ts|js)\n([\s\S]*?)```/g)) {
+    if (/\bdefineConfig\(/.test(body) && !/import\s*\{[^}]*\bdefineConfig\b[^}]*\}\s*from/.test(body)) {
+      problems.push(`${where} has a code block calling defineConfig without importing it — readers copy this`)
+    }
+  }
+
+  return problems
+}
+
 // Per line, not per file. Checking the file as a whole let a page mention the
 // canonical name once in prose and still hand the reader a code sample built on
 // the alias — which is the sample they copy, and the thing #292 exists about.
@@ -200,6 +263,11 @@ async function main(): Promise<void> {
       continue
     }
     pages.push({ label: manifest.name, path: readmePath })
+
+    const readme = await readFile(readmePath, 'utf8')
+    problems.push(...installLineProblems(entry, readme, manifest.peerDependencies ?? {}))
+    problems.push(...missingInstallLine(entry, readme))
+    problems.push(...unrunnableFences(relative(ROOT, readmePath), readme))
   }
 
   // Not npm pages, but they are what a contributor opens to find out how to run

@@ -3,7 +3,7 @@
 Requires `nuxt@^4.5.0` — the first Nuxt whose `@nuxt/vite-builder` runs on Vite 8.
 
 ```bash
-pnpm add -D @poveste/plugin-nuxt
+pnpm add -D poveste @poveste/plugin-vue @poveste/plugin-nuxt
 ```
 
 Add the plugin in poveste config:

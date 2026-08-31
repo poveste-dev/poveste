@@ -126,6 +126,24 @@ export function tableProblems(table: Table, expected: Expectation[]): string[] {
  * page, and one more hand-written copy of a peer range. Any `name@range` in a
  * package README that names one of that package's own peers must match it.
  */
+/**
+ * A package README that states a Node requirement must state the one its own
+ * manifest declares.
+ *
+ * `poveste`'s page said `>=26` while its engines allowed `^22.22.2 || ^24.15.0 ||
+ * >=26.0.0`, so the most-read npm page turned away two majors that a CI job
+ * installs the published tarballs on (#389). A range narrower than what is
+ * supported breaks nobody, which is why nothing caught it — it only costs users.
+ */
+export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
+  const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
+  if (!claimed || !engines || claimed === engines) {
+    return []
+  }
+
+  return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
+}
+
 export function readmeRangeProblems(pkg: string, readme: string, peers: Record<string, string>): string[] {
   const problems: string[] = []
 
@@ -158,6 +176,7 @@ async function main(): Promise<void> {
     }
 
     problems.push(...readmeRangeProblems(entry, readme, manifest.peerDependencies ?? {}))
+    problems.push(...nodeClaimProblems(entry, readme, manifest.engines?.node))
   }
 
   if (problems.length > 0) {

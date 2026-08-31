@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { aliasesTaughtAlone, externalHosts, instructsWithHistoire, referencedWorkflows } from './check-readmes.ts'
+import { aliasesTaughtAlone, externalHosts, installLineProblems, instructsWithHistoire, missingInstallLine, referencedWorkflows, unrunnableFences } from './check-readmes.ts'
 
 // The heuristics below are the whole guard. Each case here is one that got
 // past an earlier version of it, so a regression is a defect shipping again
@@ -113,5 +113,101 @@ describe('aliasesTaughtAlone', () => {
     const row = '| `--histoire-contrast-color` CSS var | still set (alongside `--poveste-contrast-color`) |'
 
     expect(aliasesTaughtAlone(row)).toEqual([])
+  })
+})
+
+describe('installLineProblems', () => {
+  const nuxtPeers = { '@poveste/plugin-vue': 'workspace:^', 'nuxt': '^4.5.0', 'poveste': 'workspace:^' }
+
+  it('catches a framework plugin installed without poveste', () => {
+    expect(installLineProblems('poveste-plugin-nuxt', 'pnpm add -D @poveste/plugin-nuxt', nuxtPeers))
+      .toEqual(['packages/poveste-plugin-nuxt/README.md installs a framework plugin without poveste: pnpm add -D @poveste/plugin-nuxt'])
+  })
+
+  it('is satisfied once poveste is named', () => {
+    expect(installLineProblems('p', 'pnpm add -D poveste @poveste/plugin-nuxt', nuxtPeers)).toEqual([])
+  })
+
+  // `@poveste/plugin-nuxt` contains the string "poveste" — the scoped name must
+  // not be mistaken for the core package.
+  it('does not accept a scoped package as the core one', () => {
+    expect(installLineProblems('p', 'pnpm add -D @poveste/plugin-nuxt', nuxtPeers)).toHaveLength(1)
+  })
+
+  // plugin-percy and plugin-screenshot are add-ons for a project that already
+  // has poveste, so omitting it there is deliberate.
+  it('exempts an add-on with no framework peer', () => {
+    expect(installLineProblems('poveste-plugin-percy', 'pnpm add -D @poveste/plugin-percy', { poveste: 'workspace:^' })).toEqual([])
+  })
+
+  // Only the first install line used to be checked, so a second bare one shipped
+  // the very defect #389 fixed in plugin-nuxt.
+  it('checks every install line, not just the first', () => {
+    const readme = [
+      '```bash',
+      'pnpm add -D poveste @poveste/plugin-svelte   # Svelte',
+      'pnpm add -D @poveste/plugin-svelte           # SvelteKit',
+      '```',
+    ].join('\n')
+
+    expect(installLineProblems('poveste-plugin-svelte', readme, { svelte: '^5' })).toEqual([
+      'packages/poveste-plugin-svelte/README.md installs a framework plugin without poveste: pnpm add -D @poveste/plugin-svelte           # SvelteKit',
+    ])
+  })
+
+  it('reads the `pnpm i -D` spelling the core README uses', () => {
+    expect(installLineProblems('p', 'pnpm i -D poveste @poveste/plugin-vue', { vue: '^3' })).toEqual([])
+  })
+})
+
+describe('missingInstallLine', () => {
+  it('catches a README whose only guidance is a config snippet', () => {
+    const readme = '# x\n\n```ts\nexport default defineConfig({})\n```'
+
+    expect(missingInstallLine('poveste-plugin-tailwind', readme))
+      .toEqual(['packages/poveste-plugin-tailwind/README.md shows a config snippet but never says how to install the package'])
+  })
+
+  it('is satisfied by any install spelling, in any fence', () => {
+    const readme = '```shell\npnpm i -D poveste\n```\n\n```ts\nexport default defineConfig({})\n```'
+
+    expect(missingInstallLine('p', readme)).toEqual([])
+  })
+
+  it('says nothing about a README with no config snippet at all', () => {
+    expect(missingInstallLine('p', '# x\n\nProse only.')).toEqual([])
+  })
+})
+
+describe('unrunnableFences', () => {
+  it('catches defineConfig used without being imported', () => {
+    const readme = [
+      '```ts',
+      `import { HstTailwind } from '@poveste/plugin-tailwind'`,
+      '',
+      'export default defineConfig({})',
+      '```',
+    ].join('\n')
+
+    expect(unrunnableFences('packages/p/README.md', readme))
+      .toEqual(['packages/p/README.md has a code block calling defineConfig without importing it — readers copy this'])
+  })
+
+  it('is satisfied when the import is there, whatever else it imports', () => {
+    const readme = [
+      '```ts',
+      `import { HstVue } from '@poveste/plugin-vue'`,
+      `import { defineConfig } from 'poveste'`,
+      '',
+      'export default defineConfig({})',
+      '```',
+    ].join('\n')
+
+    expect(unrunnableFences('p', readme)).toEqual([])
+  })
+
+  // A fence that only mentions the name in prose or a different call is fine.
+  it('ignores a fence that never calls defineConfig', () => {
+    expect(unrunnableFences('p', '```ts\nexport default { plugins: [] }\n```')).toEqual([])
   })
 })
