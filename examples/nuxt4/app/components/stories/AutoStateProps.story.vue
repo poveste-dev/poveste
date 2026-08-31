@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import AutoStateProps from './AutoStateProps.vue'
+import DeclaredProps from './DeclaredProps.vue'
+import OptionsProps from './OptionsProps.vue'
+import ShorthandProps from './ShorthandProps.vue'
 
 function initState() {
   return {
@@ -31,6 +34,24 @@ function initState() {
       <template #default="{ state }">
         <AutoStateProps :name="state.name" />
       </template>
+    </Variant>
+    <Variant
+      id="declared"
+      title="Declared"
+    >
+      <DeclaredProps />
+    </Variant>
+    <Variant
+      id="shorthand"
+      title="Shorthand"
+    >
+      <ShorthandProps greeting="hi" />
+    </Variant>
+    <Variant
+      id="options"
+      title="Options"
+    >
+      <OptionsProps />
     </Variant>
   </Story>
 </template>

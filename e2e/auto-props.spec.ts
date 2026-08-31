@@ -70,4 +70,51 @@ test.describe('auto-props', () => {
     await expect(rendered(page, 'Naked')).toContainText('Hello Bender!')
     await expect(rendered(page, 'State')).toContainText('Hello Fry!')
   })
+
+  // The runtime `defineProps` spelling, whose declared types survive a build and
+  // which nothing exercised once #492 moved the other component to the type-only
+  // form (#493). Three types, because a switch that answered `string` to
+  // everything would pass on one.
+  test('shapes each control from the type the component declares', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=declared')
+    await expect(control(page, 'DeclaredProps', 'label')).toBeVisible()
+
+    await expect(control(page, 'DeclaredProps', 'label')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+    await expect(control(page, 'DeclaredProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
+    await expect(control(page, 'DeclaredProps', 'enabled')).toHaveClass(/(^|\s)poveste-checkbox(\s|$)/)
+  })
+
+  // The spelling each framework keeps for the case with the least to go on:
+  // Vue's array form declares no types at all, and Svelte's runes `$props()` is
+  // the branch of the extractor no book reached before (#493, #498).
+  test('names a prop the component declared without a type, and shapes it', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=shorthand')
+
+    await expect(control(page, 'ShorthandProps', 'greeting')).toBeVisible()
+    await expect(control(page, 'ShorthandProps', 'greeting')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+
+    // Driving it, not just its shape. #498 was two faults: the prop was named
+    // `0`, and the value was therefore written under a key the component has no
+    // prop to receive. A control that looks right and reaches nothing would pass
+    // every assertion above.
+    await expect(rendered(page, 'Shorthand')).toContainText('hi')
+    await control(page, 'ShorthandProps', 'greeting').locator('input').fill('driven')
+    await expect(rendered(page, 'Shorthand')).toContainText('driven')
+  })
+
+  // Props declared outside the modern setup spelling: Vue's Options API, which
+  // is the one declaration a production build cannot erase, and an untyped
+  // Svelte component, whose types come from its defaults.
+  test('shapes controls for props declared the older way', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=options')
+
+    await expect(control(page, 'OptionsProps', 'label')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+    await expect(control(page, 'OptionsProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
+
+    // A number control writes back differently from a text one, so it is worth
+    // driving one of each rather than trusting the class.
+    await expect(rendered(page, 'Options')).toContainText('options/2')
+    await control(page, 'OptionsProps', 'count').locator('input').fill('7')
+    await expect(rendered(page, 'Options')).toContainText('options/7')
+  })
 })
