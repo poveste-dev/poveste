@@ -62,7 +62,7 @@ This exists because Svelte reached roughly half of Vue's documentation before an
 1. Install dependencies with [pnpm](https://pnpm.io/):
 
 ```sh
-node corepack enable
+corepack enable
 pnpm i
 ```
 
@@ -156,7 +156,7 @@ pnpm run test:dev
 
 ### StackBlitz starters
 
-The three "Try it live" starters in `docs/.vitepress/theme/starters.ts` install with npm from the public registry, so nothing in the suites above covers them — this workspace's `peerDependencyRules` let an example install where npm would fail with `ERESOLVE`. To resolve them for real:
+The "Try it live" starters in `docs/.vitepress/theme/starters.ts`, one per framework in its `Framework` union, install with npm from the public registry. Nothing in the suites above covers them: this workspace's `peerDependencyRules` let an example install where npm would fail with `ERESOLVE`. To resolve them for real:
 
 ```sh
 # Root of the mono-repo — needs network
