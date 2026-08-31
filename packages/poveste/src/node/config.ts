@@ -50,6 +50,7 @@ export function getDefaultConfig(): PovesteConfig {
       defaultColorScheme: 'auto',
       storeColorScheme: true,
       darkClass: 'dark',
+      lang: 'en',
     },
     responsivePresets: [
       {

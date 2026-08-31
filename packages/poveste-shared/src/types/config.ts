@@ -152,6 +152,18 @@ export interface PovesteConfig {
      * Class added to the story preview when dark mode is enabled.
      */
     darkClass?: string
+    /**
+     * Language of the book, emitted as `<html lang>` on the shell and the
+     * sandbox.
+     *
+     * `html-has-lang` is WCAG 3.1.1 Level A: without it a screen reader falls
+     * back to the user agent's locale and may read the page in the wrong
+     * language. Defaults to `'en'`, because leaving it unset would keep that
+     * failure for everyone who does not read a changelog.
+     *
+     * @default 'en'
+     */
+    lang?: string
   }
   /**
    * Setup file exporting a default function executed when setting up each story preview.
