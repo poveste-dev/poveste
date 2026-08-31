@@ -9,6 +9,7 @@ Welcome! We are really excited that you are interested in contributing to Povest
 Contributing doesn't necessarily mean you need to write code and open Pull Requests. There are many other ways you can help the project!
 
 - Try the [latest version](https://github.com/poveste-dev/poveste/releases) of Poveste and [report bugs](https://github.com/poveste-dev/poveste/issues/new?assignees=&labels=to+triage&template=bug-report.yml).
+- Found a security problem? Don't use that form — [report it privately](./SECURITY.md) instead.
 - Discuss your ideas with the community on the [discussion board](https://github.com/poveste-dev/poveste/discussions).
 - Answer to other people's questions.
 - Report typos or issues of the docs.
