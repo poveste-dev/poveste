@@ -1,94 +1,68 @@
-## Git Commit Message Convention
+# Commit message convention
 
-> This is adapted from [Angular's commit convention](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular).
-
-### TL;DR:
-
-Messages must be matched by the following regex:
-
-<!-- prettier-ignore -->
-```js
-/^(revert: )?(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?!?: .{1,50}/
-```
-
-These are the [conventional commit types](https://github.com/commitizen/conventional-commit-types), which is also the set the `Check PR title` workflow enforces on every pull request title. Anything outside it fails a required check, so the two lists have to stay in step.
-
-#### Examples
-
-Appears under "Features" header, `dev` subheader:
-
-```
-feat(dev): add 'comments' option
-```
-
-Appears under "Bug Fixes" header, `dev` subheader, with a link to issue #28:
-
-```
-fix(dev): fix dev error
-
-close #28
-```
-
-Appears under "Performance Improvements" header, and under "Breaking Changes" with the breaking change explanation:
-
-```
-perf(build): remove 'foo' option
-
-BREAKING CHANGE: The 'foo' option has been removed.
-```
-
-The following commit and commit `667ecc1` do not appear in the changelog if they are under the same release. If not, the revert commit appears under the "Reverts" header.
-
-```
-revert: feat(compiler): add 'comments' option
-
-This reverts commit 667ecc1654a317a13331b17617d973392f415f02.
-```
-
-### Full Message Format
-
-A commit message consists of a **header**, **body** and **footer**. The header has a **type**, **scope** and **subject**:
+Poveste uses [Conventional Commits](https://www.conventionalcommits.org). This document describes what this project actually does with them, which is not quite what the specification's usual tooling does.
 
 ```
 <type>(<scope>): <subject>
-<BLANK LINE>
+
 <body>
-<BLANK LINE>
+
 <footer>
 ```
 
-The **header** is mandatory and the **scope** of the header is optional.
+The header is required. The scope is optional.
 
-### Revert
+## Types
 
-If the commit reverts a previous commit, it should begin with `revert: `, followed by the header of the reverted commit. In the body, it should say: `This reverts commit <hash>.`, where the hash is the SHA of the commit being reverted.
+`feat` · `fix` · `docs` · `style` · `refactor` · `perf` · `test` · `build` · `ci` · `chore` · `revert`
 
-### Type
+That set comes from [`conventional-commit-types`](https://github.com/commitizen/conventional-commit-types), which is the default list used by `amannn/action-semantic-pull-request`. [`pr-title.yml`](./workflows/pr-title.yml) runs that action with no `types` input, so the default is what the required check enforces — nothing here needs to be kept in step with it by hand.
 
-If the prefix is `feat`, `fix` or `perf`, it will appear in the changelog. However, if there is any [BREAKING CHANGE](#footer), the commit will always appear in the changelog.
+A pull request is squashed on merge, so **its title becomes the commit subject**. The check runs on the title for that reason.
 
-Other prefixes are up to your discretion. Suggested prefixes are `docs`, `chore`, `style`, `refactor`, and `test` for non-changelog related tasks.
+## The subject
 
-### Scope
+- imperative, present tense — "change", not "changed" or "changes"
+- no capital first letter
+- no full stop at the end
+- **long enough to stand on its own**
 
-The scope could be anything specifying the place of the commit change. For example `dev`, `build`, `workflow`, `cli` etc...
+There is no length limit, and there never really was one here. The subject is the release-note line a stranger reads in their inbox, so it has to carry the change by itself:
 
-### Subject
+```
+fix(plugin-nuxt): build into .nuxt/poveste so a story build leaves the host untouched
+```
 
-The subject contains a succinct description of the change:
+Ninety characters, and every one of them is doing work. Cut to fifty it would say "build into .nuxt/poveste" and tell nobody why that matters. The median subject on `main` is around seventy characters and the longest is a hundred and nine; that is the convention, not a series of violations of one.
 
-- use the imperative, present tense: "change" not "changed" nor "changes"
-- don't capitalize the first letter
-- no dot (.) at the end
+### Never start a subject with a bare `@word`
 
-### Body
+Release bodies are built from commit subjects, so `@layer` or `@scope` at the start becomes a real @-mention of whichever stranger owns that GitHub handle. Write "the layer API" or `` `@layer` `` in backticks instead.
 
-Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes".
-The body should include the motivation for the change and contrast this with previous behavior.
+### Don't write a closing keyword you don't mean
 
-### Footer
+GitHub matches `close`, `fix` and `resolve` before an issue number and ignores the words around them, so **"this does not close #75" closes #75** — which is how that issue got closed. Reference without a keyword: `see #75`, `related to #75`.
 
-The footer should contain any information about **Breaking Changes** and is also the place to
-reference GitHub issues that this commit **Closes**.
+## Body and footer
 
-**Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
+Same voice as the subject. The body is for motivation and contrast with the previous behaviour — *why*, not *what*; the diff already says what.
+
+The footer carries breaking changes and issue references. A breaking change starts with `BREAKING CHANGE:` on its own line.
+
+Hard-wrap commit bodies normally. The one-line-per-paragraph rule this project uses for markdown does not apply here — `git log` does no reflowing.
+
+## How this reaches a release
+
+Two things read these commits, and only one of them is a tool.
+
+**changelogithub** generates a commit list that is appended to the release body. Its groups are the ones in [`CHANGELOG.md`](../CHANGELOG.md) — 🚀 Enhancements, 🩹 Fixes, 📖 Documentation, ✅ Tests, 🤖 CI, 🏡 Chore, 🚨 Breaking Changes. There is no "Features" heading, no per-scope subheading, and no rule that only `feat`/`fix`/`perf` appear: `docs` and `chore` entries are in every recent release.
+
+**A person** writes the `CHANGELOG.md` section by hand before the tag, and that section is what the release body leads with. Nothing generates it and nothing can — it is where "what changed" becomes "what you have to do about it". [`CONTRIBUTING.md`](../CONTRIBUTING.md#changelogmd) has the procedure.
+
+So a type does not decide whether a change is in the notes. A person does, by asking whether a consumer can see it.
+
+## Reverts
+
+A commit that undoes another starts with `revert: ` followed by the reverted header, and says `This reverts commit <hash>.` in the body.
+
+`revert` is also a valid type, so `revert(app): …` passes the title check too. Prefer the `revert: ` form, because it keeps the original subject visible in the log.

@@ -195,7 +195,7 @@ Nothing writes `CHANGELOG.md` automatically, and nothing can: it is the release 
 
 So add the new section by hand as part of release prep, before `pnpm run release`:
 
-1. Draft the entries from `git log v<previous>..HEAD --format='%s'`, grouping them as `🚨 Breaking Changes` / `🚀 Enhancements` / `🩹 Fixes` / `🏡 Chore` and skipping anything invisible to a consumer.
+1. Draft the entries from `git log v<previous>..HEAD --format='%s'`, grouping them the way changelogithub does — `🚨 Breaking Changes` / `🚀 Enhancements` / `🩹 Fixes` / `📖 Documentation` / `✅ Tests` / `🤖 CI` / `🏡 Chore` — and skipping anything invisible to a consumer. Only the groups you actually need.
 2. Add a `[compare changes]` link against the previous tag.
 3. Reference PRs as `#N` where there is one, and a short commit SHA otherwise.
 
@@ -250,7 +250,7 @@ A rule of thumb for when the commit list alone would leave a reader stuck, and t
 
 - Make sure tests pass!
 
-- Commit messages must follow the [commit message convention](./.github/commit-convention.md) so that changelogs can be automatically generated.<!-- Commit messages are automatically validated before commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [yorkie](https://github.com/yyx990803/yorkie)). -->
+- Commit messages must follow the [commit message convention](./.github/commit-convention.md). The PR title is checked against it by a required workflow, and becomes the squashed commit subject and the release-note line.
 
 <!--
 - No need to worry about code style as long as you have installed the dev dependencies - modified files are automatically formatted with ESLint on commit (by invoking [Git Hooks](https://git-scm.com/docs/githooks) via [yorkie](https://github.com/yyx990803/yorkie)).
