@@ -16,22 +16,27 @@
 // (#303).
 //
 // No network, no install: it reads files and compares strings.
+//
+// The comparison lives in exported pure functions and the I/O and the exit live
+// in `main()` behind the import guard at the bottom, so importing the helpers
+// for a test does not run the whole check and cannot reach `process.exit(1)` and
+// kill the runner (#388).
 
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PACKAGES = join(ROOT, 'packages')
 
-interface Expectation {
+export interface Expectation {
   label: string
   expected: string
   source: string
 }
 
-interface Table {
+export interface Table {
   file: string
   rows: Map<string, string>
 }
@@ -67,7 +72,7 @@ async function expectations(): Promise<Expectation[]> {
 }
 
 // `| [Svelte](https://svelte.dev)* | `^5.46.4` | proven by … |` → Svelte, ^5.46.4
-function parseTable(file: string, markdown: string): Table {
+export function parseTable(file: string, markdown: string): Table {
   const rows = new Map<string, string>()
 
   for (const line of markdown.split('\n')) {
@@ -96,14 +101,10 @@ function parseTable(file: string, markdown: string): Table {
 
 const TABLES = ['README.md', 'docs/guide/getting-started.md']
 
-const [expected, tables] = await Promise.all([
-  expectations(),
-  Promise.all(TABLES.map(async file => parseTable(file, await readFile(join(ROOT, file), 'utf8')))),
-])
+/** Every way one documented table can disagree with the declared ranges. */
+export function tableProblems(table: Table, expected: Expectation[]): string[] {
+  const problems: string[] = []
 
-const problems: string[] = []
-
-for (const table of tables) {
   for (const { label, expected: range, source } of expected) {
     const documented = table.rows.get(label)
 
@@ -116,40 +117,63 @@ for (const table of tables) {
       problems.push(`${table.file} says ${label} ${documented}, but ${source} says ${range}`)
     }
   }
+
+  return problems
 }
 
-// Each plugin's README states its own floor — the most useful fact on its npm
-// page, and one more hand-written copy of a peer range. Any `name@range` in a
-// package README that names one of that package's own peers must match it.
-for (const entry of await readdir(PACKAGES)) {
-  const readmePath = join(PACKAGES, entry, 'README.md')
-
-  let readme: string
-  let manifest: any
-  try {
-    manifest = JSON.parse(await readFile(join(PACKAGES, entry, 'package.json'), 'utf8'))
-    readme = await readFile(readmePath, 'utf8')
-  }
-  catch {
-    continue
-  }
-
-  const peers = manifest.peerDependencies ?? {}
+/**
+ * Each plugin's README states its own floor — the most useful fact on its npm
+ * page, and one more hand-written copy of a peer range. Any `name@range` in a
+ * package README that names one of that package's own peers must match it.
+ */
+export function readmeRangeProblems(pkg: string, readme: string, peers: Record<string, string>): string[] {
+  const problems: string[] = []
 
   for (const [, name, range] of readme.matchAll(/`(@?[\w./-]+)@([^`]+)`/g)) {
     if (peers[name] && peers[name] !== range) {
-      problems.push(`packages/${entry}/README.md says ${name}@${range}, but its own peerDependencies say ${peers[name]}`)
+      problems.push(`packages/${pkg}/README.md says ${name}@${range}, but its own peerDependencies say ${peers[name]}`)
     }
   }
+
+  return problems
 }
 
-if (problems.length > 0) {
-  console.error('❌ Version tables disagree with what the packages declare:\n')
-  for (const problem of problems) {
-    console.error(`  • ${problem}`)
+async function main(): Promise<void> {
+  const [expected, tables] = await Promise.all([
+    expectations(),
+    Promise.all(TABLES.map(async file => parseTable(file, await readFile(join(ROOT, file), 'utf8')))),
+  ])
+
+  const problems = tables.flatMap(table => tableProblems(table, expected))
+
+  for (const entry of await readdir(PACKAGES)) {
+    let readme: string
+    let manifest: any
+    try {
+      manifest = JSON.parse(await readFile(join(PACKAGES, entry, 'package.json'), 'utf8'))
+      readme = await readFile(join(PACKAGES, entry, 'README.md'), 'utf8')
+    }
+    catch {
+      continue
+    }
+
+    problems.push(...readmeRangeProblems(entry, readme, manifest.peerDependencies ?? {}))
   }
-  console.error('\nThe declared range is the truth. Fix the table, or fix the range and the CI job behind it.')
-  process.exit(1)
+
+  if (problems.length > 0) {
+    console.error('❌ Version tables disagree with what the packages declare:\n')
+    for (const problem of problems) {
+      console.error(`  • ${problem}`)
+    }
+    console.error('\nThe declared range is the truth. Fix the table, or fix the range and the CI job behind it.')
+    process.exit(1)
+  }
+
+  console.log(`✅ ${TABLES.join(' and ')} match the declared ranges (${expected.length} rows each), as do the package READMEs`)
 }
 
-console.log(`✅ ${TABLES.join(' and ')} match the declared ranges (${expected.length} rows each), as do the package READMEs`)
+// Guarded, so importing the helpers above for a test does not run the whole
+// check — and cannot reach the `process.exit(1)` above and kill the runner.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  await main()
+}
