@@ -1,13 +1,17 @@
 // Resolves every "Try it live" StackBlitz starter against the real npm
 // registry.
 //
-// The starters install with npm inside a WebContainer; this workspace installs
-// with pnpm, and `pnpm-workspace.yaml` sets `peerDependencyRules
-// .allowedVersions.vite: ^8.0.0`. That override lets an example depend on a
-// plugin whose declared peer range stops at Vite 7 and install anyway. npm has
-// no such override and fails outright with ERESOLVE — so a fully green CI is
-// compatible with all three starters being uninstallable. That is #73, which
-// only surfaced because someone filed it by hand.
+// The starters install with npm inside a WebContainer, and this workspace
+// installs with pnpm, which used to be told to accept Vite 8 for plugins whose
+// declared peer range stopped short of it. npm has no such override and fails
+// outright with ERESOLVE — so a fully green CI was compatible with all three
+// starters being uninstallable. That is #73, which only surfaced because
+// somebody filed it by hand.
+//
+// That override is gone (#424): the plugins were raised to versions that admit
+// Vite 8 honestly. This check is now a regression guard rather than
+// compensation for a known divergence, and it is the thing that would notice
+// the two package managers parting company again.
 //
 // `npm install --dry-run` performs the full resolution and exits non-zero on
 // ERESOLVE, so it is enough — nothing is downloaded or built. The manifests

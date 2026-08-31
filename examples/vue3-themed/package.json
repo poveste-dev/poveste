@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@poveste/plugin-vue": "workspace:*",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.0",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }
