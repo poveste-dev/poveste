@@ -92,6 +92,14 @@ test.describe('auto-props', () => {
 
     await expect(control(page, 'ShorthandProps', 'greeting')).toBeVisible()
     await expect(control(page, 'ShorthandProps', 'greeting')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+
+    // Driving it, not just its shape. #498 was two faults: the prop was named
+    // `0`, and the value was therefore written under a key the component has no
+    // prop to receive. A control that looks right and reaches nothing would pass
+    // every assertion above.
+    await expect(rendered(page, 'Shorthand')).toContainText('hi')
+    await control(page, 'ShorthandProps', 'greeting').locator('input').fill('driven')
+    await expect(rendered(page, 'Shorthand')).toContainText('driven')
   })
 
   // Props declared outside the modern setup spelling: Vue's Options API, which
@@ -102,5 +110,11 @@ test.describe('auto-props', () => {
 
     await expect(control(page, 'OptionsProps', 'label')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
     await expect(control(page, 'OptionsProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
+
+    // A number control writes back differently from a text one, so it is worth
+    // driving one of each rather than trusting the class.
+    await expect(rendered(page, 'Options')).toContainText('options/2')
+    await control(page, 'OptionsProps', 'count').locator('input').fill('7')
+    await expect(rendered(page, 'Options')).toContainText('options/7')
   })
 })
