@@ -142,14 +142,25 @@ export function sitemapLocations(xml: string): string[] {
   return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
 }
 
+/**
+ * The address a built page is served and indexed at.
+ *
+ * Netlify answers both `/foo` and `/foo.html`, and `cleanUrls` picks the first —
+ * so that is what the sitemap lists and what the canonical claims (#502). Only a
+ * whole `index.html` segment is an index; `myindex.html` is a page in its own
+ * right.
+ */
+export function pageUrlPath(page: string): string {
+  return page.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')
+}
+
 // VitePress renders one file per page and generates the sitemap from the same
-// build, so these agree exactly or something silently stopped. Only a whole
-// `index.html` segment is an index — `myindex.html` is a page in its own right.
+// build, so these agree exactly or something silently stopped.
 export function sitemapGaps(builtPages: string[], listed: string[]): { missing: string[], extra: string[] } {
   const expected = new Set(
     builtPages
       .filter(page => page !== '/404.html')
-      .map(page => page.replace(/(^|\/)index\.html$/, '$1')),
+      .map(pageUrlPath),
   )
   const present = new Set(listed)
 
@@ -164,7 +175,7 @@ export function sitemapGaps(builtPages: string[], listed: string[]): { missing: 
 export const HOSTNAME_DECLARATIONS = [
   'robots.txt Sitemap:',
   'config sitemap.hostname',
-  'config og:url',
+  'config SITE',
   'config og:image',
 ] as const
 
@@ -180,7 +191,9 @@ export function declaredOrigins(robots: string, config: string): Declaration[] {
 
   push('robots.txt Sitemap:', robots.match(/^\s*Sitemap:\s*(\S+)/im)?.[1])
   push('config sitemap.hostname', config.match(/hostname:\s*['"]([^'"]+)['"]/)?.[1])
-  for (const property of ['og:url', 'og:image']) {
+  // `og:url` is per page now, built from this constant rather than declared once.
+  push('config SITE', config.match(/const SITE\s*=\s*['"]([^'"]+)['"]/)?.[1])
+  for (const property of ['og:image']) {
     push(`config ${property}`, config.match(new RegExp(`property:\\s*['"]${property}['"],\\s*content:\\s*['"]([^'"]+)['"]`))?.[1])
   }
 
@@ -194,6 +207,55 @@ function absoluteOrigin(url: string): string | undefined {
   catch {
     return undefined
   }
+}
+
+export interface BuiltPage { path: string, html: string }
+
+/**
+ * Every page states its own address, and no two state the same one.
+ *
+ * The origin check above reads `og:url` from the config and asserts its
+ * hostname. That was true and blind: one declaration, emitted verbatim on all 37
+ * pages, so every page named the home page as its address and Google indexed one
+ * of them (#502). Only the built output shows that, which is why this reads it.
+ */
+export function selfDeclarationProblems(pages: BuiltPage[]): string[] {
+  const problems: string[] = []
+  const claimants = new Map<string, string[]>()
+
+  for (const { path, html } of pages) {
+    const expected = pageUrlPath(path)
+    const canonical = html.match(/<link[^>]+rel="canonical"[^>]*href="([^"]*)"/)?.[1]
+    const ogUrl = html.match(/<meta[^>]+property="og:url"[^>]*content="([^"]*)"/)?.[1]
+
+    if (canonical === undefined) {
+      problems.push(`${path} has no <link rel="canonical">, so nothing says which of its two urls counts`)
+    }
+    else if (absoluteOrigin(canonical) === undefined) {
+      problems.push(`${path} declares a canonical that is not an absolute url: ${canonical}`)
+    }
+    else if (new URL(canonical).pathname !== expected) {
+      problems.push(`${path} declares ${new URL(canonical).pathname} as its canonical, not ${expected}`)
+    }
+
+    if (ogUrl === undefined) {
+      problems.push(`${path} has no og:url`)
+    }
+    else {
+      if (canonical !== undefined && ogUrl !== canonical) {
+        problems.push(`${path} declares og:url ${ogUrl} and canonical ${canonical}`)
+      }
+      claimants.set(ogUrl, [...(claimants.get(ogUrl) ?? []), path])
+    }
+  }
+
+  for (const [url, pages] of claimants) {
+    if (pages.length > 1) {
+      problems.push(`${pages.length} pages declare og:url ${url}: ${pages.sort().slice(0, 3).join(', ')}${pages.length > 3 ? ', …' : ''}`)
+    }
+  }
+
+  return problems.sort()
 }
 
 async function builtEntries(dist: string): Promise<Built> {
@@ -262,6 +324,12 @@ function checkBuild(problems: string[], built: Built | undefined): void {
       listed.push(path)
     }
   }
+
+  problems.push(...selfDeclarationProblems(
+    built.pages
+      .filter(page => page !== '/404.html')
+      .map(page => ({ path: page, html: readFileSync(join(DIST, page.slice(1)), 'utf8') })),
+  ))
 
   const { missing, extra } = sitemapGaps(built.pages, listed)
   for (const page of missing) {

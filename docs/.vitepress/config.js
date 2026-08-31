@@ -6,6 +6,19 @@ const deploy = [process.env.BRANCH, process.env.COMMIT_REF?.slice(0, 7), process
   .filter(Boolean)
   .join(' ')
 
+const SITE = 'https://poveste.dev'
+// The home page is `layout: home` and carries no title of its own, so this is
+// what it falls back to — and `||`, not `??`, because what it has is empty.
+const CARD_TITLE = 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar'
+
+// `index.md` is the directory itself; everything else drops the extension. This
+// is the shape `cleanUrls` links to, so the canonical matches what the site
+// actually offers rather than the `.html` twin Netlify also answers on.
+function pageUrl(relativePath) {
+  const path = relativePath.replace(/\.md$/, '').replace(/(^|\/)index$/, '$1')
+  return `${SITE}/${path}`
+}
+
 module.exports = {
   title: 'Poveste',
   description: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.',
@@ -15,11 +28,9 @@ module.exports = {
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
-    ['meta', { property: 'og:title', content: 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar' }],
     ['meta', { property: 'og:site_name', content: 'Poveste' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:description', content: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.' }],
-    ['meta', { property: 'og:url', content: 'https://poveste.dev/' }],
     ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
@@ -27,6 +38,23 @@ module.exports = {
     ['link', { rel: 'stylesheet', href: 'https://fonts.bunny.net/css?family=fira-sans:400,400i,600,600i' }],
     ...(deploy ? [['meta', { name: 'poveste:deploy', content: deploy }]] : []),
   ],
+
+  // Every page served at two addresses with nothing saying which counted, and a
+  // single `og:url` naming the home page on all 37 of them — so Google indexed
+  // one (#502). Both are per page now, from one source.
+  transformPageData(pageData) {
+    const url = pageUrl(pageData.relativePath)
+    pageData.frontmatter.head ??= []
+    pageData.frontmatter.head.push(
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:url', content: url }],
+      ['meta', { property: 'og:title', content: pageData.frontmatter.title || pageData.title || CARD_TITLE }],
+    )
+  },
+
+  // Links without `.html`, so what the site offers and what the canonical claims
+  // are the same string.
+  cleanUrls: true,
 
   lastUpdated: true,
 

@@ -4,10 +4,12 @@ import {
   deployMarker,
   liveTarget,
   missingRedirectTargets,
+  pageUrlPath,
   parseRedirects,
   parseRedirectsFile,
   robotsProblems,
   rulesBelowCatchAll,
+  selfDeclarationProblems,
   sitemapGaps,
   sitemapLocations,
   unsafeCatchAlls,
@@ -167,33 +169,42 @@ describe('robotsProblems', () => {
   })
 })
 
+// The sitemap lists the clean shape since #502, so the comparison is against the
+// url a page is served at rather than the file it was built to.
 describe('sitemapGaps', () => {
   const built = ['/index.html', '/guide/index.html', '/guide/css.html', '/404.html']
 
   it('reports a built page the sitemap does not list', () => {
     const { missing } = sitemapGaps(built, ['/', '/guide/'])
 
-    expect(missing).toEqual(['/guide/css.html'])
+    expect(missing).toEqual(['/guide/css'])
   })
 
   it('reports a listed URL the build does not contain', () => {
-    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css.html', '/guide/gone.html'])
+    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css', '/guide/gone'])
 
-    expect(extra).toEqual(['/guide/gone.html'])
+    expect(extra).toEqual(['/guide/gone'])
   })
 
   it('reports the 404 page as extra, since advertising it invites indexing', () => {
-    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css.html', '/404.html'])
+    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css', '/404.html'])
 
     expect(extra).toEqual(['/404.html'])
   })
 
   it('accepts a sitemap that matches the build page for page', () => {
-    expect(sitemapGaps(built, ['/', '/guide/', '/guide/css.html'])).toEqual({ missing: [], extra: [] })
+    expect(sitemapGaps(built, ['/', '/guide/', '/guide/css'])).toEqual({ missing: [], extra: [] })
+  })
+
+  // The `.html` twin Netlify still answers on is not what the sitemap lists.
+  it('reports the extensioned shape as extra', () => {
+    const { extra } = sitemapGaps(built, ['/', '/guide/', '/guide/css.html'])
+
+    expect(extra).toEqual(['/guide/css.html'])
   })
 
   it('treats a page merely ending in index.html as a page, not an index', () => {
-    expect(sitemapGaps(['/guide/myindex.html'], ['/guide/myindex.html'])).toEqual({ missing: [], extra: [] })
+    expect(sitemapGaps(['/guide/myindex.html'], ['/guide/myindex'])).toEqual({ missing: [], extra: [] })
   })
 })
 
@@ -208,9 +219,9 @@ describe('sitemapLocations', () => {
 describe('declaredOrigins', () => {
   const robots = 'User-agent: *\n\nSitemap: https://poveste.dev/sitemap.xml\n'
   const config = `
+    const SITE = 'https://poveste.dev'
     sitemap: { hostname: 'https://poveste.dev' },
     head: [
-      ['meta', { property: 'og:url', content: 'https://poveste.dev/' }],
       ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
       ['link', { rel: 'canonical', href: 'https://github.com/poveste-dev/poveste' }],
     ],
@@ -220,7 +231,7 @@ describe('declaredOrigins', () => {
     expect(declaredOrigins(robots, config).map(d => d.where)).toEqual([
       'robots.txt Sitemap:',
       'config sitemap.hostname',
-      'config og:url',
+      'config SITE',
       'config og:image',
     ])
   })
@@ -232,9 +243,9 @@ describe('declaredOrigins', () => {
   })
 
   it('finds a declaration written with double quotes', () => {
-    const doubled = config.replace(`property: 'og:url', content: 'https://poveste.dev/'`, `property: "og:url", content: "https://poveste.dev/"`)
+    const doubled = config.replace(`property: 'og:image', content: 'https://poveste.dev/opengraph.png'`, `property: "og:image", content: "https://poveste.dev/opengraph.png"`)
 
-    expect(declaredOrigins(robots, doubled).map(d => d.where)).toContain('config og:url')
+    expect(declaredOrigins(robots, doubled).map(d => d.where)).toContain('config og:image')
   })
 
   it('reports a relative url as having no origin instead of throwing', () => {
@@ -318,5 +329,65 @@ describe('deployMarker', () => {
 
   it('returns nothing for a deploy made before the marker shipped', () => {
     expect(deployMarker('<head><title>Poveste</title></head>')).toBeUndefined()
+  })
+})
+
+function page(path: string, canonical?: string, ogUrl = canonical) {
+  return {
+    path,
+    html: [
+      canonical && `<link rel="canonical" href="${canonical}">`,
+      ogUrl && `<meta property="og:url" content="${ogUrl}">`,
+    ].filter(Boolean).join(''),
+  }
+}
+
+describe('the address a built page is served at', () => {
+  it.each([
+    ['/index.html', '/'],
+    ['/guide/index.html', '/guide/'],
+    ['/guide/getting-started.html', '/guide/getting-started'],
+    // Only a whole segment is an index.
+    ['/myindex.html', '/myindex'],
+  ])('reads %s as %s', (built, url) => {
+    expect(pageUrlPath(built)).toBe(url)
+  })
+})
+
+describe('pages declaring their own address', () => {
+  it('says nothing when each page states its own', () => {
+    expect(selfDeclarationProblems([
+      page('/index.html', 'https://poveste.dev/'),
+      page('/guide/getting-started.html', 'https://poveste.dev/guide/getting-started'),
+    ])).toEqual([])
+  })
+
+  // The defect itself: one `og:url` in the config, emitted on all 37 pages.
+  it('reports pages that all claim the same address', () => {
+    const problems = selfDeclarationProblems([
+      page('/index.html', 'https://poveste.dev/'),
+      page('/a.html', 'https://poveste.dev/'),
+      page('/b.html', 'https://poveste.dev/'),
+    ])
+
+    expect(problems.some(p => p.includes('3 pages declare og:url https://poveste.dev/'))).toBe(true)
+  })
+
+  it('reports a page with no canonical', () => {
+    expect(selfDeclarationProblems([page('/a.html', undefined, 'https://poveste.dev/a')]))
+      .toEqual(['/a.html has no <link rel="canonical">, so nothing says which of its two urls counts'])
+  })
+
+  it('reports a canonical that names a different page', () => {
+    expect(selfDeclarationProblems([page('/a.html', 'https://poveste.dev/b')]))
+      .toEqual(['/a.html declares /b as its canonical, not /a'])
+  })
+
+  it('reports og:url and canonical disagreeing', () => {
+    const problems = selfDeclarationProblems([
+      page('/a.html', 'https://poveste.dev/a', 'https://poveste.dev/elsewhere'),
+    ])
+
+    expect(problems).toContain('/a.html declares og:url https://poveste.dev/elsewhere and canonical https://poveste.dev/a')
   })
 })
