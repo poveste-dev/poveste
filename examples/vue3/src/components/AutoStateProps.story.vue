@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import AutoStateProps from './AutoStateProps.vue'
 import DeclaredProps from './DeclaredProps.vue'
+import ShorthandProps from './ShorthandProps.vue'
 
 function initState() {
   return {
@@ -38,6 +39,12 @@ function initState() {
       title="Declared"
     >
       <DeclaredProps />
+    </Variant>
+    <Variant
+      id="shorthand"
+      title="Shorthand"
+    >
+      <ShorthandProps greeting="hi" />
     </Variant>
   </Story>
 </template>

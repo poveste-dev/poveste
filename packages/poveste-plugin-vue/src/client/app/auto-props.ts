@@ -45,8 +45,13 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
       const index = traversalState.index++
       const propDefs: PropDefinition[] = []
 
-      for (const key in vnode.type.props) {
-        const prop = vnode.type.props[key]
+      // `for…in` over the array form yields index strings, so every control was
+      // named `0` and the prop's own name never appeared (#498).
+      const declared = vnode.type.props
+      const names = Array.isArray(declared) ? declared : Object.keys(declared ?? {})
+
+      for (const key of names) {
+        const prop = Array.isArray(declared) ? undefined : declared[key]
         let types
         let defaultValue
 
@@ -62,18 +67,18 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
           defaultValue = typeof prop.default === 'function'
             ? prop.default.toString()
             : prop.default
+        }
 
-          // A production build erases the runtime types Vue infers from a
-          // type-only `defineProps`, leaving `props: { label: {} }` — so the
-          // panel offered a JSON editor for a string (#490). Defaults survive
-          // erasure and the passed value is still there, and either is enough to
-          // pick a control. A factory default reaches `inferredType` as the
-          // function it is, and is declined there with everything else untyped.
-          if (types.every(type => type === 'unknown')) {
-            const inferred = inferredType(passedValue(vnode, key) ?? prop.default)
-            if (inferred !== 'unknown') {
-              types = [inferred]
-            }
+        // A production build erases the runtime types Vue infers from a
+        // type-only `defineProps`, leaving `props: { label: {} }` (#490), and
+        // the array form declares none to begin with (#498). Defaults survive
+        // erasure and the passed value is still there, and either is enough to
+        // pick a control. A factory default reaches `inferredType` as the
+        // function it is, and is declined there with everything else untyped.
+        if (!types || types.every(type => type === 'unknown')) {
+          const inferred = inferredType(passedValue(vnode, key) ?? prop?.default)
+          if (inferred !== 'unknown') {
+            types = [inferred]
           }
         }
 

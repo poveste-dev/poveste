@@ -83,4 +83,14 @@ test.describe('auto-props', () => {
     await expect(control(page, 'DeclaredProps', 'count')).toHaveClass(/(^|\s)poveste-number(\s|$)/)
     await expect(control(page, 'DeclaredProps', 'enabled')).toHaveClass(/(^|\s)poveste-checkbox(\s|$)/)
   })
+
+  // The spelling each framework keeps for the case with the least to go on:
+  // Vue's array form declares no types at all, and Svelte's runes `$props()` is
+  // the branch of the extractor no book reached before (#493, #498).
+  test('names a prop the component declared without a type, and shapes it', async ({ page }) => {
+    await openStory(page, STORY, '?variantId=shorthand')
+
+    await expect(control(page, 'ShorthandProps', 'greeting')).toBeVisible()
+    await expect(control(page, 'ShorthandProps', 'greeting')).toHaveClass(/(^|\s)poveste-text(\s|$)/)
+  })
 })
