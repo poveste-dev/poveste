@@ -31,10 +31,11 @@ This mono-repo contains the following packages:
 | [poveste](./packages/poveste) | Main package |
 | [@poveste/app](./packages/poveste-app) | Pre-bundled UI |
 | [@poveste/controls](./packages/poveste-controls) | Builtin controls components |
-| [@poveste/controls-stories](./packages/poveste-controls-stories) | Stories for builtin controls |
+| [@poveste/controls-stories](./packages/poveste-controls-stories) | Stories for builtin controls — **not published** |
 | [@poveste/plugin-vue](./packages/poveste-plugin-vue) | Vue 3 integration |
 | [@poveste/plugin-nuxt](./packages/poveste-plugin-nuxt) | Nuxt 4 integration |
 | [@poveste/plugin-svelte](./packages/poveste-plugin-svelte) | Svelte 5 and SvelteKit integration |
+| [@poveste/plugin-quasar](./packages/poveste-plugin-quasar) | Quasar integration |
 | [@poveste/plugin-tailwind](./packages/poveste-plugin-tailwind) | Renders a Tailwind design system as a story |
 | [@poveste/plugin-percy](./packages/poveste-plugin-percy) | Visual regression testing with Percy |
 | [@poveste/plugin-screenshot](./packages/poveste-plugin-screenshot) | Visual regression testing with simple screenshots |
