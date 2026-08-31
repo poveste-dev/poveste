@@ -14,16 +14,20 @@
 // on purpose (vue3-percy, vue3-screenshot, vue3-themed, vue3-vuetify), which is
 // #337's subject, so "is a directory under examples/" cannot be the truth here.
 //
+// It also holds `ai/AGENTS.md` to the same lists. A guide that names the wrong books
+// is worse than no guide, and its table is the one part of it a machine can read.
+//
 // No network, no build: it reads the workflow text and imports the configs, so it
 // checks the config the harness actually resolves rather than how it is written.
 
-import { readFile, stat } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const WORKFLOW = '.github/workflows/test-examples.yml'
+const GUIDE = 'ai/AGENTS.md'
 
 export interface Ports {
   preview?: number
@@ -111,6 +115,18 @@ export function duplicatePorts(ports: (number | undefined)[]): number[] {
   return [...repeated]
 }
 
+/**
+ * The two lists of examples `AGENTS.md` states, read back out of its table.
+ *
+ * Only the names in backticks are read, so the prose in each row is free to
+ * change without touching this.
+ */
+export function guideExamples(markdown: string): { reference: string[], fixtures: string[] } {
+  const cell = (label: string) => markdown.match(new RegExp(`^\\| \\*\\*${label}\\*\\* \\|(.*)$`, 'm'))?.[1] ?? ''
+  const names = (row: string) => [...row.matchAll(/`([\w.-]+)`/g)].map(match => match[1])
+  return { reference: names(cell('Reference books')), fixtures: names(cell('Fixtures')) }
+}
+
 export function onlyInFirst(a: string[], b: string[]): string[] {
   return a.filter(name => !b.includes(name))
 }
@@ -153,6 +169,45 @@ async function main(): Promise<void> {
     problems.push(`playwright.config.ts defines "${name}", which ${WORKFLOW} never runs — nothing tests it in CI`)
   }
 
+  // A book carries the conformance set exactly when the root config gives it a
+  // `:conformance` project, so the guide is checked against that rather than
+  // against a second hand-kept list.
+  // Read rather than crash: the guide has moved once already, and "it is not
+  // there" should read as a problem like the others rather than a stack trace.
+  const guide = await exists(GUIDE) ? await readFile(join(ROOT, GUIDE), 'utf8') : ''
+  if (guide === '') {
+    problems.push(`${GUIDE} is missing — the guide the example table lives in has moved or gone`)
+  }
+  const { reference, fixtures } = guideExamples(guide)
+  const conformance = exampleNames(
+    (root.projects ?? [])
+      .map((project: { name: string }) => project.name)
+      .filter((name: string) => name.endsWith(':conformance')),
+  )
+
+  if (reference.length === 0 && fixtures.length === 0) {
+    problems.push(`${GUIDE} has no example table to read — the shape this check reads has changed`)
+  }
+
+  for (const name of onlyInFirst(reference, conformance)) {
+    problems.push(`${GUIDE} calls "${name}" a reference book, but playwright.config.ts gives it no conformance project`)
+  }
+  for (const name of onlyInFirst(conformance, reference)) {
+    problems.push(`"${name}" carries the conformance set, but ${GUIDE} does not list it as a reference book`)
+  }
+
+  const directories = (await readdir(join(ROOT, 'examples'), { withFileTypes: true }))
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
+  const listed = [...reference, ...fixtures]
+
+  for (const name of onlyInFirst(listed, directories)) {
+    problems.push(`${GUIDE} lists example "${name}", which does not exist`)
+  }
+  for (const name of onlyInFirst(directories, listed)) {
+    problems.push(`examples/${name} exists, but ${GUIDE} does not say what it is for`)
+  }
+
   for (const port of duplicatePorts([...rootPorts.values()].flatMap(ports => [ports.preview, ports.dev]))) {
     problems.push(`playwright.config.ts starts two servers on port ${port} — one book would be tested twice and the other not at all`)
   }
@@ -193,7 +248,7 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  console.log(`✅ ${configured.length} examples wired the same way in ${WORKFLOW}, playwright.config.ts and their own package.json`)
+  console.log(`✅ ${configured.length} examples wired the same way in ${WORKFLOW}, playwright.config.ts and their own package.json, and all ${listed.length} described in ${GUIDE}`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

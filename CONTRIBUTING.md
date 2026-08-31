@@ -2,6 +2,8 @@
 
 Welcome! We are really excited that you are interested in contributing to Poveste. Before submitting your contribution, please make sure to take a moment and read through the following guide:
 
+> Working on Poveste with an AI coding assistant? [`ai/AGENTS.md`](./ai/AGENTS.md) carries the conventions this guide does not — which branch to target, the conformance contract, and which commands cover less than their name suggests — and `ai/skills/` holds the step-by-step procedures.
+
 ## Means of Contributing
 
 Contributing doesn't necessarily mean you need to write code and open Pull Requests. There are many other ways you can help the project!
@@ -223,7 +225,7 @@ A rule of thumb for when the commit list alone would leave a reader stuck, and t
 
 ## Pull Request Guidelines
 
-- Checkout a topic branch from a base branch, e.g. `main`, and merge back against that branch.
+- Open pull requests against **`next`**, not `main`. `next` is the integration branch and reaches `main` as a fast-forward when a release is cut, so it is kept rebased rather than merged.
 
 - If adding a new feature:
 
