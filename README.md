@@ -21,7 +21,9 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 [![Example suites](https://github.com/poveste-dev/poveste/actions/workflows/test-examples.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test-examples.yml)
 
 [Read the Documentation](https://poveste.dev) |
-[Discussions board](https://github.com/poveste-dev/poveste/discussions)
+[Discussions board](https://github.com/poveste-dev/poveste/discussions) |
+[Bluesky](https://bsky.app/profile/poveste.dev) |
+[X](https://x.com/50rayn)
 
 <p align="center">
   <a href="https://poveste.dev">
