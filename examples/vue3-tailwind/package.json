@@ -18,7 +18,7 @@
     "@playwright/test": "^1.62.1",
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/postcss": "catalog:",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.0",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }

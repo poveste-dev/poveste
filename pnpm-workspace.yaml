@@ -7,7 +7,6 @@ allowBuilds:
   esbuild: true
   puppeteer: true
   svelte-preprocess: true
-  unrs-resolver: true
   vue-demi: true
 catalog:
   '@vueuse/core': ^14.4.0
@@ -32,7 +31,6 @@ peerDependencyRules:
     eslint: '*'
     eslint-plugin-promise: '*'
     eslint-plugin-vue: '*'
-    vite: ^8.0.0
     vue: '*'
 
 # `@poveste/plugin-svelte` declares SvelteKit only as an optional peer and never

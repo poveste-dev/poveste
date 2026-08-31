@@ -68,7 +68,7 @@
     "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "^22.10.1",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.0",
     "@vue/runtime-dom": "^3.5.26",
     "@vue/test-utils": "^2.4.6",
     "@vueuse/core": "catalog:",

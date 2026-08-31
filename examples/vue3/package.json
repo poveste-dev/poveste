@@ -24,7 +24,7 @@
     "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@poveste/vendors": "workspace:*",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "^6.0.0",
     "nodemon": "^3.1.7",
     "poveste": "workspace:*",
     "sass": "^1.82.0",
