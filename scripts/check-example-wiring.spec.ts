@@ -3,6 +3,7 @@ import {
   asServers,
   duplicatePorts,
   exampleNames,
+  guideExamples,
   matrixExamples,
   onlyInFirst,
   portFromCommand,
@@ -117,5 +118,33 @@ describe('asServers', () => {
 
   it('has no servers when a config declares none', () => {
     expect(asServers(undefined)).toEqual([])
+  })
+})
+
+describe('guideExamples', () => {
+  const table = [
+    '| | |',
+    '| --- | --- |',
+    '| **Reference books** | `vue3`, `nuxt4`, `svelte5`, `sveltekit` — carry the full conformance set |',
+    '| **Fixtures** | `quasar`, `vike`, `vue3-tailwind` — each exists for one narrow thing |',
+  ].join('\n')
+
+  it('reads both lists out of the guide table', () => {
+    expect(guideExamples(table)).toEqual({
+      reference: ['vue3', 'nuxt4', 'svelte5', 'sveltekit'],
+      fixtures: ['quasar', 'vike', 'vue3-tailwind'],
+    })
+  })
+
+  it('ignores the prose beside the names, so a row can be reworded freely', () => {
+    const reworded = table.replace('carry the full conformance set', 'carry every conformance story')
+
+    expect(guideExamples(reworded).reference).toEqual(['vue3', 'nuxt4', 'svelte5', 'sveltekit'])
+  })
+
+  // Reported as a problem rather than passing vacuously: a renamed heading would
+  // otherwise turn the guard off without failing anything.
+  it('finds nothing when the table is gone', () => {
+    expect(guideExamples('# Poveste\n\nNo table here.')).toEqual({ reference: [], fixtures: [] })
   })
 })
