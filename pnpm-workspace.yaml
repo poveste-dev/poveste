@@ -34,3 +34,15 @@ peerDependencyRules:
     eslint-plugin-vue: '*'
     vite: ^8.0.0
     vue: '*'
+
+# `@poveste/plugin-svelte` declares SvelteKit only as an optional peer and never
+# imports it, but pnpm's `auto-install-peers` resolves that range anyway and
+# recorded 2.55.0 in the lockfile. The advisories are matched against the
+# lockfile, so a second copy there keeps six of them open however new the
+# examples are (#495).
+#
+# An override rather than raising the peer floor: `^2.53.0` is a published
+# compatibility claim, and nothing in the plugin needs 2.70 — narrowing it would
+# tell every user on 2.53–2.69 they are unsupported to fix a lockfile entry.
+overrides:
+  '@sveltejs/kit': ^2.70.2
