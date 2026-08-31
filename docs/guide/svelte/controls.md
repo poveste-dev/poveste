@@ -145,6 +145,86 @@ The source panel shows the `source` prop. Because props are evaluated in your `<
 </Hst.Story>
 ```
 
+## Automatic controls
+
+Poveste reads the props a component declares and builds a control for each one,
+so a variant that renders a component needs nothing written for it to be
+adjustable:
+
+```svelte
+<Hst.Variant title="Naked">
+  <MyButton />
+</Hst.Variant>
+```
+
+The panel lists `MyButton`'s props, and editing one re-renders it. A prop the
+story binds itself keeps its own value until you touch that control.
+
+Set [`autoPropsDisabled`](../../reference/svelte/story.md#autopropsdisabled) to
+turn this off for a story or a variant.
+
+Unlike Vue, which reads props off the rendered component, Poveste reads a Svelte
+component's props **out of its source** when the book is built — Svelte has no
+runtime prop metadata to reflect over. That is why the table below is about what
+can be seen in the file.
+
+### What it can read
+
+| declaration | control |
+| --- | --- |
+| `export let label: string = 'x'` | from the type |
+| `export let label: string` | from the type |
+| `export let label = 'x'` | from the default |
+| `let { label }: { label: string } = $props()` | from the type |
+| `let { label }: Props = $props()`, `Props` declared in the same file | from the type |
+| `let { label = 'x' } = $props()` | from the default |
+| `let { label = $bindable('x') } = $props()` | from the default |
+| `let { label }: Props = $props()`, `Props` **imported** | nothing — see below |
+
+### An imported type is not followed
+
+Props typed by an `interface` or `type` **imported from another file** produce no
+controls, because the reader only resolves types declared in the component it is
+reading:
+
+```svelte
+<script lang="ts">
+  import type { Props } from './types' // not followed
+
+  const { label }: Props = $props()
+</script>
+
+{label}
+```
+
+This is a real limitation rather than something you did wrong, and it is tracked
+in [#501](https://github.com/poveste-dev/poveste/issues/501). Until it is fixed,
+declaring the type in the component, or giving the prop a default, gets the
+controls back.
+
+### When you get a JSON editor instead
+
+A prop with **no type, no default and nothing passed by the story** gets the JSON
+editor. That is deliberate rather than a gap: with nothing to go on, guessing
+would pick a control the prop cannot hold, and a text field on a prop that wants
+an object invites you to type something the component will reject.
+
+The fix is to give it something to read — a default on the prop, or a value in
+the story:
+
+A default the reader can see:
+
+```
+let { label }: Props = $props()        // no control
+let { label = 'Click me' } = $props()  // text field
+```
+
+Or a value in the story:
+
+```svelte
+<MyButton label="Click me" />
+```
+
 ## Builtin controls
 
 To build a control panel a bit more easily, Poveste provides builtin controls with design that

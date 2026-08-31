@@ -205,6 +205,68 @@ You can also share the same default controls for all variants by putting the slo
 
 A variant can then override the slot if needed.
 
+## Automatic controls
+
+Poveste reads the props a component declares and builds a control for each one,
+so a variant that renders a component needs nothing written for it to be
+adjustable:
+
+```vue
+<Variant title="Naked">
+  <MyButton />
+</Variant>
+```
+
+The panel lists `MyButton`'s props, and editing one re-renders it. A prop the
+story binds itself keeps its own value until you touch that control.
+
+Set [`autoPropsDisabled`](../../reference/vue/story.md#autopropsdisabled) to turn
+this off for a story or a variant.
+
+### What it can read
+
+Every way Vue lets you declare a prop, and what each produces in a **built**
+book:
+
+| declaration | control |
+| --- | --- |
+| `props: { label: { type: String } }` (Options API) | from the type |
+| `defineProps({ label: { type: String } })` | from the type |
+| `defineProps({ label: String })` | from the type |
+| `defineProps(['label'])` | from the value the story passes |
+| `defineProps<{ label?: string }>()` | from the default or the passed value |
+| `defineProps<Props>()`, interface local or imported | from the default or the passed value |
+
+The type-only rows are worth understanding, because they are the idiom the Vue
+docs lead with. A production build **erases** the runtime types Vue infers from
+`defineProps<T>()` — they exist for development-time validation — so in a built
+book there is no declared type left to read. Poveste falls back on the default,
+or on the value the story passes, which covers the ordinary case. It is only when
+there is neither that you see the JSON editor.
+
+### When you get a JSON editor instead
+
+A prop with **no type, no default and nothing passed by the story** gets the JSON
+editor. That is deliberate rather than a gap: with nothing to go on, guessing
+would pick a control the prop cannot hold, and a text field on a prop that wants
+an object invites you to type something the component will reject.
+
+The fix is to give it something to read — a default on the prop, or a value in
+the story:
+
+A default the reader can see:
+
+```
+defineProps<{ label?: string }>()                                       // no control
+withDefaults(defineProps<{ label?: string }>(), { label: 'Click me' })  // text field
+```
+
+Or a value in the story:
+
+```vue
+<MyButton label="Click me" />
+```
+
 ## Builtin controls
 
 To build a control panel a bit more easily, Poveste provides builtin controls with design that fits the rest of the UI.
