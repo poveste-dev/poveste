@@ -1,7 +1,7 @@
 node_modules/
 dist/
 poveste-dist/
-.poveste/dist/
+.poveste/
 .idea
 **/test-results/
 **/playwright-report/

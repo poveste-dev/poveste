@@ -39,6 +39,20 @@ const defaultOptions: ScreenshotPluginOptions = {
   presets: [],
 }
 
+/**
+ * The file one capture is written to.
+ *
+ * A variant with no explicit `id` is given `${story.id}-${n}`, so naming the
+ * file `${story.id}-${variant.id}` repeated the story id in full. The story id
+ * still has to be there for the named case: `default` and `one` are only unique
+ * within their own story.
+ */
+export function screenshotFileName(storyId: string, variantId: string, width: number, height: number): string {
+  const prefix = `${storyId}-`
+  const variant = variantId.startsWith(prefix) ? variantId.slice(prefix.length) : variantId
+  return `${storyId}-${variant}-${width}x${height}.png`
+}
+
 export function HstScreenshot(options: ScreenshotPluginOptions = {}): Plugin {
   const finalOptions: ScreenshotPluginOptions = defu(options, defaultOptions)
   if (!finalOptions.presets.length) {
@@ -81,7 +95,7 @@ export function HstScreenshot(options: ScreenshotPluginOptions = {}): Plugin {
             fullPage: true,
             launchOptions,
           }
-          await captureWebsite.file(url, path.join(finalOptions.saveFolder, `${story.id}-${variant.id}-${preset.width}x${preset.height}.png`), captureWebsiteFileOptions)
+          await captureWebsite.file(url, path.join(finalOptions.saveFolder, screenshotFileName(story.id, variant.id, preset.width, preset.height)), captureWebsiteFileOptions)
         }
       })
     },

@@ -48,7 +48,9 @@
   },
   "scripts": {
     "build": "rimraf dist && tsc -d",
-    "watch": "tsc -d -w --sourceMap"
+    "watch": "tsc -d -w --sourceMap",
+    "test": "vitest run",
+    "test:dev": "vitest"
   },
   "peerDependencies": {
     "poveste": "workspace:^"
@@ -62,6 +64,7 @@
   "devDependencies": {
     "@types/node": "^22.10.1",
     "poveste": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
