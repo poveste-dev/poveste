@@ -211,3 +211,62 @@ describe('unrunnableFences', () => {
     expect(unrunnableFences('p', '```ts\nexport default { plugins: [] }\n```')).toEqual([])
   })
 })
+
+describe('aliasesTaughtAlone in a diff fence', () => {
+  const rename = [
+    '```diff',
+    '- port: process.env.HISTOIRE ? 6006 : 3000,',
+    '+ port: process.env.POVESTE ? 6006 : 3000,',
+    '```',
+  ].join('\n')
+
+  // A `-` line names the old spelling by construction, so the line cannot be the
+  // unit here. This is the established style on the migration guide (#358).
+  it('accepts a diff block that shows the rename', () => {
+    expect(aliasesTaughtAlone(rename)).toEqual([])
+  })
+
+  // The fence is not a blanket exemption — a removal that never introduces the
+  // canonical spelling is still teaching the alias alone.
+  it('still flags a diff block that only ever names the alias', () => {
+    const removal = ['```diff', '- port: process.env.HISTOIRE ? 6006 : 3000,', '+ port: 3000,', '```'].join('\n')
+
+    expect(aliasesTaughtAlone(removal)).toEqual([
+      { line: 1, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+
+  // The defect this whole check exists for (#292) has to keep failing.
+  it('still flags a ts sample built on the alias', () => {
+    const sample = ['```ts', 'export default { port: process.env.HISTOIRE }', '```'].join('\n')
+
+    expect(aliasesTaughtAlone(sample)).toEqual([
+      { line: 2, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+
+  it('still flags prose outside any fence', () => {
+    expect(aliasesTaughtAlone('Set process.env.HISTOIRE to pick the port.')).toHaveLength(1)
+  })
+
+  it('reports a bad diff block once, at the fence, not once per line', () => {
+    const twice = [
+      '```diff',
+      '- a: process.env.HISTOIRE,',
+      '- b: process.env.HISTOIRE,',
+      '```',
+    ].join('\n')
+
+    expect(aliasesTaughtAlone(twice)).toEqual([
+      { line: 1, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+
+  it('keeps counting lines correctly after a fence closes', () => {
+    const doc = [rename, '', 'Then set process.env.HISTOIRE by hand.'].join('\n')
+
+    expect(aliasesTaughtAlone(doc)).toEqual([
+      { line: 6, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+})
