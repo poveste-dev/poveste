@@ -50,6 +50,45 @@ export function publishablePackages(): Pkg[] {
   return packages.sort((a, b) => a.name.localeCompare(b.name))
 }
 
+/**
+ * CONTRIBUTING's package table is the only place in the repo that states what
+ * the published surface is, so anything wanting that list has to use it or
+ * restate it. It listed a private package and omitted a published one, and the
+ * count still read twelve, which is why nothing looked off (#510).
+ *
+ * `published` is every non-private package; `listed` is what the table names.
+ */
+export function packageTableProblems(markdown: string, published: string[], all: string[]): string[] {
+  const listed = [...markdown.matchAll(/^\|\s*\[(@?[\w./-]+)\]\(\.\/packages\//gm)].map(match => match[1])
+  if (listed.length === 0) {
+    return ['CONTRIBUTING.md has no package table to read — the shape this check reads has changed']
+  }
+
+  const problems: string[] = []
+  const notPublished = new Set(all.filter(name => !published.includes(name)))
+
+  for (const name of published) {
+    if (!listed.includes(name)) {
+      problems.push(`CONTRIBUTING.md's package table omits ${name}, which is published`)
+    }
+  }
+
+  for (const name of listed) {
+    if (!all.includes(name)) {
+      problems.push(`CONTRIBUTING.md's package table lists ${name}, which is not a package in this repo`)
+      continue
+    }
+    // A private package may be listed — a contributor still meets it — but the
+    // table must not imply it ships.
+    const row = markdown.split('\n').find(line => line.includes(`[${name}](./packages/`)) ?? ''
+    if (notPublished.has(name) && !/not published/i.test(row)) {
+      problems.push(`CONTRIBUTING.md's package table lists ${name} without marking it "not published"`)
+    }
+  }
+
+  return problems
+}
+
 // `true` if the package exists on the registry, else the reason it does not.
 export function registryStatus(name: string): true | string {
   let lastError = ''
@@ -235,7 +274,22 @@ function describeError(err: any): string {
 function main(): void {
   const offline = process.argv.includes('--offline')
   const packages = publishablePackages()
-  const problems: string[] = []
+
+  const allNames: string[] = []
+  for (const entry of readdirSync(PACKAGES)) {
+    try {
+      const manifest = JSON.parse(readFileSync(join(PACKAGES, entry, 'package.json'), 'utf8'))
+      if (manifest.name) {
+        allNames.push(manifest.name)
+      }
+    }
+    catch {}
+  }
+  const problems: string[] = packageTableProblems(
+    readFileSync(join(ROOT, 'CONTRIBUTING.md'), 'utf8'),
+    packages.map(pkg => pkg.name),
+    allNames,
+  )
   const skippedEntrypoints: string[] = []
 
   for (const pkg of packages) {

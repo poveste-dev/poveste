@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyFilesEntries, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, workspaceProtocolDeps } from './check-publishable.ts'
+import { emptyFilesEntries, packageTableProblems, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, workspaceProtocolDeps } from './check-publishable.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -172,5 +172,53 @@ describe('unsupportedFilesEntries', () => {
 
   it('passes plain paths', () => {
     expect(unsupportedFilesEntries(['dist', 'bin.mjs'])).toEqual([])
+  })
+})
+
+describe('packageTableProblems', () => {
+  const row = (name: string, note = '') => `| [${name}](./packages/${name.replace('@poveste/', 'poveste-')}) | Something${note} |`
+  const all = ['poveste', '@poveste/plugin-quasar', '@poveste/controls-stories']
+  const published = ['poveste', '@poveste/plugin-quasar']
+
+  it('catches a published package the table omits', () => {
+    const table = [row('poveste'), row('@poveste/controls-stories', ' — **not published**')].join('\n')
+
+    expect(packageTableProblems(table, published, all)).toEqual([
+      'CONTRIBUTING.md\'s package table omits @poveste/plugin-quasar, which is published',
+    ])
+  })
+
+  // A private package may be listed — a contributor still meets it — but the
+  // table must not imply it ships.
+  it('catches a private package listed without the marker', () => {
+    const table = [row('poveste'), row('@poveste/plugin-quasar'), row('@poveste/controls-stories')].join('\n')
+
+    expect(packageTableProblems(table, published, all)).toEqual([
+      `CONTRIBUTING.md's package table lists @poveste/controls-stories without marking it "not published"`,
+    ])
+  })
+
+  it('accepts a table that is right', () => {
+    const table = [
+      row('poveste'),
+      row('@poveste/plugin-quasar'),
+      row('@poveste/controls-stories', ' — **not published**'),
+    ].join('\n')
+
+    expect(packageTableProblems(table, published, all)).toEqual([])
+  })
+
+  it('catches a row naming a package that does not exist', () => {
+    const table = [row('poveste'), row('@poveste/plugin-quasar'), row('@poveste/plugin-solid')].join('\n')
+
+    expect(packageTableProblems(table, published, all)).toContainEqual(
+      'CONTRIBUTING.md\'s package table lists @poveste/plugin-solid, which is not a package in this repo',
+    )
+  })
+
+  // Reported rather than passing vacuously: a reformatted table would otherwise
+  // switch the guard off without failing anything.
+  it('reports a table that has gone missing', () => {
+    expect(packageTableProblems('# Contributing\n\nNo table.', published, all)).toHaveLength(1)
   })
 })
