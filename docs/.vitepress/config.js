@@ -291,6 +291,10 @@ module.exports = {
               link: '/guide/svelte/docs',
             },
             {
+              text: 'Wrapper',
+              link: '/guide/svelte/wrapper',
+            },
+            {
               text: 'Hierarchy',
               link: '/guide/svelte/hierarchy',
             },
@@ -377,6 +381,24 @@ module.exports = {
             {
               text: 'Controlled stories',
               link: '/examples/vue/controlled-stories',
+            },
+          ],
+        },
+        {
+          text: 'Svelte examples',
+          collapsed: false,
+          items: [
+            {
+              text: 'Single stories',
+              link: '/examples/svelte/single-stories',
+            },
+            {
+              text: 'Story with variants',
+              link: '/examples/svelte/variant-stories',
+            },
+            {
+              text: 'Controlled stories',
+              link: '/examples/svelte/controlled-stories',
             },
           ],
         },
