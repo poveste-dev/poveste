@@ -86,6 +86,18 @@ covered too, by a release-gating smoke test that packs the real tarballs, instal
 a throwaway project with `npm install` — no workspace symlinks — and runs a real
 `poveste build`. **Yarn** is not tested; it is expected to work and reports are welcome.
 
+**Bun** works from `1.4.0`, as both the installer and the runtime — `bun install` then
+`bun --bun run story:build` builds a book. Earlier releases do not, and the reason is the
+version Bun reports rather than anything Poveste does: `process.versions.node` is `22.6.0`
+on 1.2.x and `24.3.0` throughout 1.3.x, and neither satisfies the `engines.node` above.
+Below that floor a story build hangs during collection instead of failing — Bun's worker
+pool never returns, which is [oven-sh/bun#3787](https://github.com/oven-sh/bun/issues/3787),
+open since 2023 against histoire.
+
+`bun install` does not enforce `engines`, so nothing warns you. That is why the floor is
+written here rather than only in the manifest. Bun is not in CI, so like Yarn and macOS it
+is expected to work rather than vouched for.
+
 ### Operating systems
 
 **Linux** is the best-tested path — every workflow runs on `ubuntu-latest`. **Windows** is
