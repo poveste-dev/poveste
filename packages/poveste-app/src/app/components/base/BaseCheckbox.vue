@@ -34,6 +34,7 @@ watch(path, () => {
   <div
     role="checkbox"
     tabindex="0"
+    :aria-checked="modelValue"
     class="poveste-base-checkbox flex items-center gap-2 select-none px-4 py-3 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-700"
     @click="toggle()"
     @keydown.enter.prevent="toggle()"

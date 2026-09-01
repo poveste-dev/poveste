@@ -322,6 +322,7 @@ function onIframeLoad() {
       }"
       :style="previewStyle(isResponsiveEnabled, finalWidth, finalHeight)"
       data-testid="preview-iframe"
+      :title="`Preview of ${story.title} — ${variant.title}`"
       @load="onIframeLoad()"
     />
 

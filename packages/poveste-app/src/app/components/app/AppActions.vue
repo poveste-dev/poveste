@@ -35,6 +35,7 @@ const themeIcon = computed(() => {
 
     <TopBarChipItem
       v-tooltip="makeTooltip('Search', ({ isMac }) => isMac ? 'meta+k' : 'ctrl+k')"
+      aria-label="Search stories"
       data-testid="search-btn"
       @click="$emit('search')"
     >
@@ -47,6 +48,7 @@ const themeIcon = computed(() => {
     <TopBarChipItem
       v-if="!povesteConfig.theme.hideColorSchemeSwitch"
       v-tooltip="makeTooltip('Toggle dark mode', ({ isMac }) => isMac ? 'meta+shift+d' : 'ctrl+shift+d')"
+      aria-label="Toggle dark mode"
       @click="toggleDark()"
     >
       <Icon

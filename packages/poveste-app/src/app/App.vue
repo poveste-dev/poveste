@@ -111,6 +111,9 @@ const layoutStore = useLayoutStore()
 
 <template>
   <div class="poveste-app-root h-full">
+    <!-- The book is a page and axe's page-level rules apply to it, unlike the
+         sandbox, which renders one isolated component (#310). -->
+
     <div
       v-if="storyStore.currentStory"
       class="poveste-app hidden"
@@ -144,7 +147,9 @@ const layoutStore = useLayoutStore()
           :tree="tree"
           :stories="stories"
         />
-        <RouterView class="grow" />
+        <main class="grow flex flex-col min-h-0">
+          <RouterView class="grow" />
+        </main>
       </div>
 
       <BaseSplitPane
@@ -158,34 +163,48 @@ const layoutStore = useLayoutStore()
         <template #first>
           <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
             <AppHeader class="flex-none" />
-            <StoryList
-              :tree="tree"
-              :stories="stories"
-              class="flex-1"
-            />
+            <nav
+              aria-label="Stories"
+              class="flex-1 flex flex-col min-h-0"
+            >
+              <StoryList
+                :tree="tree"
+                :stories="stories"
+                class="flex-1"
+              />
+            </nav>
           </div>
         </template>
 
         <template #last>
-          <div class="flex flex-col h-full">
+          <main class="flex flex-col h-full">
             <TopBar
               @layout="isLayoutOpen = true"
               @search="isSearchOpen = true"
             />
             <RouterView class="flex-1 min-h-0" />
-          </div>
+          </main>
         </template>
       </BaseSplitPane>
-      <div
-        v-else
-        class="h-full flex flex-col"
-      >
-        <TopBar
-          @layout="isLayoutOpen = true"
-          @search="isSearchOpen = true"
-        />
-        <RouterView class="flex-1 min-h-0" />
-      </div>
+      <template v-else>
+        <!--
+          The story list is hidden in this layout, and `AppHeader` went with it —
+          taking the page's only `h1` and its banner. A heading has to exist in
+          every layout, and it has to sit inside a landmark, so this branch
+          carries its own (#310).
+        -->
+        <header class="sr-only">
+          <h1>{{ povesteConfig.theme?.title ?? 'Poveste' }}</h1>
+        </header>
+
+        <main class="h-full flex flex-col">
+          <TopBar
+            @layout="isLayoutOpen = true"
+            @search="isSearchOpen = true"
+          />
+          <RouterView class="flex-1 min-h-0" />
+        </main>
+      </template>
 
       <LayoutModal
         v-if="!isMobile"

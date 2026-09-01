@@ -11,6 +11,7 @@ defineProps<{
 
 <template>
   <TopBarChipItem
+    aria-label="Open story in editor"
     v-tooltip="tooltip"
     target="_blank"
     class="poveste-toolbar-open-in-editor"
