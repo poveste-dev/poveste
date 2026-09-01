@@ -280,6 +280,19 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
   }
 })
 
+/** Print every problem, then stop before anything consumes the value. */
+function reportConfigProblems(config: unknown, configFile: string): void {
+  const problems = configProblems(config, configFile)
+  if (problems.length === 0) {
+    return
+  }
+
+  for (const problem of problems) {
+    console.error(pc.red(problem))
+  }
+  throw new Error(`Invalid Poveste config: ${problems.length} problem${problems.length === 1 ? '' : 's'} above.`)
+}
+
 export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMode, configFile: string): Promise<PovesteConfig> {
   let result: Partial<PovesteConfig>
   const resolvedConfigFile = resolveConfigFile(cwd, configFile)
@@ -289,19 +302,22 @@ export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMod
     // Before the merge, so the message quotes what the user actually wrote
     // rather than a value defaults supplied, and before anything consumes it —
     // the whole point is not reaching `pathe` with a number (#324).
-    const problems = configProblems(result, path.relative(cwd, resolvedConfigFile) || resolvedConfigFile)
-    if (problems.length > 0) {
-      for (const problem of problems) {
-        console.error(pc.red(problem))
-      }
-      throw new Error(`Invalid Poveste config: ${problems.length} problem${problems.length === 1 ? '' : 's'} above.`)
-    }
+    reportConfigProblems(result, path.relative(cwd, resolvedConfigFile) || resolvedConfigFile)
   }
   const viteConfig = await resolveViteConfig({}, 'serve')
   // The `histoire` key is our own deprecation, and reading it is the whole
   // point — it is what makes poveste drop-in for an existing histoire config.
   // eslint-disable-next-line ts/no-deprecated
   const vitePovesteConfig = (viteConfig.poveste ?? viteConfig.histoire ?? {}) as PovesteConfig
+
+  // The other place a config is written, and validating only `poveste.config.ts`
+  // left it out: `examples/svelte5` and `examples/sveltekit` have no such file
+  // and configure poveste entirely under this key, so half the reference books
+  // took the unvalidated path (#324).
+  reportConfigProblems(
+    vitePovesteConfig,
+    viteConfig.configFile ? path.relative(cwd, viteConfig.configFile) : 'the vite config',
+  )
 
   const preUserConfig = mergeConfig(result, vitePovesteConfig)
   const processedDefaultConfig = await processDefaultConfig(getDefaultConfig(), preUserConfig, mode, cwd)
