@@ -17,6 +17,7 @@ import {
 } from 'vite'
 import { vanillaSupport } from './builtin-plugins/vanilla-support/plugin.js'
 import { defaultColors } from './colors.js'
+import { configProblems } from './config-validation.js'
 import { findUp } from './util/find-up.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -179,8 +180,21 @@ export async function loadConfigFile(configFile: string): Promise<Partial<Povest
     }
     return result
   }
-  catch (e) {
+  catch (e: any) {
     console.error(pc.red(`Error while loading ${configFile}`))
+
+    const missing = e?.code === 'ERR_MODULE_NOT_FOUND' || e?.code === 'MODULE_NOT_FOUND'
+      ? (String(e.message).match(/Cannot find module '([^']+)'/) ?? [])[1]
+      : undefined
+
+    if (missing && !process.env.DEBUG) {
+      // The stack is all module-loader and jiti frames, which diagnose neither
+      // an uninstalled package nor a typo (#324). `DEBUG=1` keeps it.
+      console.error(pc.red(`Cannot find module '${missing}'`))
+      console.error(pc.dim('Is it installed, and is the name spelt correctly? Run with DEBUG=1 for the full stack.'))
+      throw new Error(`Cannot find module '${missing}' imported from ${configFile}`)
+    }
+
     throw e
   }
 }
@@ -271,6 +285,17 @@ export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMod
   const resolvedConfigFile = resolveConfigFile(cwd, configFile)
   if (resolvedConfigFile) {
     result = await loadConfigFile(resolvedConfigFile)
+
+    // Before the merge, so the message quotes what the user actually wrote
+    // rather than a value defaults supplied, and before anything consumes it —
+    // the whole point is not reaching `pathe` with a number (#324).
+    const problems = configProblems(result, path.relative(cwd, resolvedConfigFile) || resolvedConfigFile)
+    if (problems.length > 0) {
+      for (const problem of problems) {
+        console.error(pc.red(problem))
+      }
+      throw new Error(`Invalid Poveste config: ${problems.length} problem${problems.length === 1 ? '' : 's'} above.`)
+    }
   }
   const viteConfig = await resolveViteConfig({}, 'serve')
   // The `histoire` key is our own deprecation, and reading it is the whole
