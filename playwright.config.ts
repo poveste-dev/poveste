@@ -17,7 +17,22 @@ interface Example {
   name: string
   port: number
   /** Specs that also run against `poveste dev` (#108). `shared` are in `e2e/`. */
-  dev?: { port: number, specs?: string[], shared?: string[] }
+  dev?: {
+    port: number
+    specs?: string[]
+    shared?: string[]
+    /**
+     * Specs that cannot pass against the built book, so they run in the dev
+     * project *only*.
+     *
+     * `specs` adds a dev project; it does not subtract from the base one, which
+     * has no `testIgnore` and so runs its whole `testDir`. The four specs that
+     * predate this survive the double run because they assert things true in
+     * both modes. A hot-reload spec cannot: static output, no watcher, nothing
+     * to reload (#370).
+     */
+    devOnly?: string[]
+  }
   /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
   conformance?: boolean
 }
@@ -27,7 +42,7 @@ const ALL_EXAMPLES: Example[] = [
     name: 'vue3',
     port: 4567,
     conformance: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
   { name: 'nuxt4', port: 4568, conformance: true },
   {
@@ -109,6 +124,7 @@ export default defineConfig({
     {
       name: example.name,
       testDir: `./examples/${example.name}/playwright`,
+      ...example.dev?.devOnly ? { testIgnore: example.dev.devOnly } : {},
       use: chrome(`http://localhost:${example.port}`),
     },
     ...example.conformance

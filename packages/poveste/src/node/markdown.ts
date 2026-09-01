@@ -67,16 +67,6 @@ function getHighlighter() {
   return highlighterPromise
 }
 
-/**
- * Frontmatter keys that end up in a standalone markdown file's virtual story
- * module. A change to any of them makes that module stale.
- */
-const STORY_FRONTMATTER = ['id', 'title', 'icon', 'iconColor', 'group'] as const
-
-export function storyFrontmatterChanged(before: Record<string, any>, after: Record<string, any>): boolean {
-  return STORY_FRONTMATTER.some(key => before?.[key] !== after?.[key])
-}
-
 export async function createMarkdownRenderer(ctx: Context) {
   const highlighter = await getHighlighter()
 
@@ -292,16 +282,13 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
 
     const { data: frontmatter, content } = matter(fs.readFileSync(file.absolutePath, 'utf8'))
 
-    // A standalone file's story is a virtual module built from its frontmatter,
-    // and `addStory` returns the existing story rather than rebuilding it — so a
-    // frontmatter change needs the story replaced. A prose edit must not replace
-    // it, or every save would tear down and recreate the story being read.
-    if (!file.isRelatedToStory && storyFrontmatterChanged(file.frontmatter, frontmatter)) {
-      removeFile(relativePath)
-      addFile(relativePath)
-      return
-    }
-
+    // Frontmatter is updated on the file, but a *standalone* file's story is a
+    // separate virtual module built from it when the story was created, and
+    // nothing here invalidates that module — so a `title` change does not reach
+    // the story list until a restart. Removing and re-adding the story does not
+    // help: the module id is derived from the path, so the client keeps the one
+    // it already has. Tracked separately; what this handles is the content,
+    // which is the reload people hit on their first edit.
     file.frontmatter = frontmatter
     file.content = content
     file.html = md.render(content, {
