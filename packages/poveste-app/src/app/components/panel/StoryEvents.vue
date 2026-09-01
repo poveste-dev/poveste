@@ -12,6 +12,8 @@ const hasEvents = computed(() => eventsStore.events.length)
 onMounted(resetUnseen)
 watch(() => eventsStore.unseen, resetUnseen)
 
+const eventsElement = ref<HTMLDivElement>()
+
 async function resetUnseen() {
   if (eventsStore.unseen > 0) {
     eventsStore.unseen = 0
@@ -19,8 +21,6 @@ async function resetUnseen() {
   await nextTick()
   eventsElement.value.scrollTo({ top: eventsElement.value.scrollHeight })
 }
-
-const eventsElement = ref<HTMLDivElement>()
 </script>
 
 <template>
