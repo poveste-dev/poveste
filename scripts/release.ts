@@ -5,13 +5,14 @@
 // maintainer's private `salvage/…` tag (#457). Nothing on CI can catch it: the
 // push happens locally, before a tag ever reaches GitHub.
 //
-// So bumpp runs with `--no-push` and the push is spelled out here. The release
-// says what it pushed, and a stray local tag stays local.
+// So bumpp runs with `--no-push` — belt and braces alongside `push: false` in
+// bump.config.ts — and the push is spelled out here. The release says what it
+// pushed, and a stray local tag stays local.
 //
 // It also takes the release type as a positional argument rather than leaving it
 // to land on the end of a script string as bumpp's trailing `--release` value.
-// That arrangement worked, but it broke in ways that read as bumpp being
-// interactive — see the note in CONTRIBUTING.md about `--`.
+// That arrangement worked, but only while nothing was ever appended after it,
+// and it failed by dropping to an interactive prompt rather than saying so.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
