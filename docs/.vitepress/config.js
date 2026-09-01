@@ -116,6 +116,10 @@ module.exports = {
                 link: '/guide/css',
               },
               {
+                text: 'Deployment',
+                link: '/guide/deployment',
+              },
+              {
                 text: 'Plugins',
                 link: '/guide/plugins/official',
               },
@@ -338,6 +342,10 @@ module.exports = {
             {
               text: 'Styles & CSS',
               link: '/guide/css',
+            },
+            {
+              text: 'Deployment',
+              link: '/guide/deployment',
             },
           ],
         },
