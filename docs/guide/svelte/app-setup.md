@@ -93,6 +93,99 @@ a `setupApp` on `<Hst.Story>` reaches only the implicit variant of a story that 
 variant that needs it.
 :::
 
+## Examples
+
+### Shared state
+
+A Svelte store is an ordinary module, so a story imports it and nothing has to be registered:
+
+```ts
+// lib-store.ts
+import { writable } from 'svelte/store'
+
+export const myValue = writable(10)
+```
+
+```svelte
+<!-- Store.svelte -->
+<script lang="ts">
+  import { myValue } from '../lib-store.js'
+</script>
+
+<button onclick={() => myValue.update(value => value + 1)}>+1</button>
+<span>{$myValue}</span>
+```
+
+```svelte
+<!-- Store.story.svelte -->
+<script lang="ts">
+  import type { Hst } from '@poveste/plugin-svelte'
+  import Store from './Store.svelte'
+
+  export let Hst: Hst
+</script>
+
+<Hst.Story title="Store">
+  <Store />
+</Hst.Story>
+```
+
+This is where Svelte is shorter than Vue rather than less capable: the [Vue page](../vue/app-setup.md#pinia)
+registers Pinia in the setup file with `app.use()`, because a Pinia store needs an application
+instance to attach to. A Svelte store does not, so there is no setup step to show.
+
+The store is module state, so it is **shared across every story in the book** and survives
+navigation between them. Give each story a fresh store if that matters — export a factory
+rather than an instance, and call it in the story.
+
+### Providing context
+
+`setContext` is the closest thing to Vue's `app.provide()`, and the two differ in a way that
+decides where you put it. `app.provide()` is called on the application, so the Vue setup hook
+can supply it. Svelte's context is set by a *parent component* during initialisation, and this
+plugin's hook runs after the component is mounted — so a global hook cannot provide it.
+
+Set it from the story instead, in a wrapper component:
+
+```svelte
+<!-- ThemeProvider.svelte -->
+<script lang="ts">
+  import { setContext } from 'svelte'
+
+  export let theme = 'dark'
+
+  setContext('theme', theme)
+</script>
+
+<slot />
+```
+
+```svelte
+<!-- MyComponent.story.svelte -->
+<script lang="ts">
+  import type { Hst } from '@poveste/plugin-svelte'
+  import MyComponent from './MyComponent.svelte'
+  import ThemeProvider from './ThemeProvider.svelte'
+
+  export let Hst: Hst
+</script>
+
+<Hst.Story title="With context">
+  <ThemeProvider theme="dark">
+    <MyComponent />
+  </ThemeProvider>
+</Hst.Story>
+```
+
+A component calling `getContext('theme')` with no provider above it gets `undefined`, which
+usually surfaces further down as a property read on undefined rather than as a missing-context
+error — so if a component works in your app and not in its story, this is the first thing to
+check.
+
+The same shape covers anything a component needs at construction. It is also what to reach for
+until [`addWrapper`](./wrapper.md) exists, since there is no way to apply it to every story at
+once.
+
 ## SvelteKit
 
 The setup file is configured the same way, under the `poveste` key of your Vite config — see
