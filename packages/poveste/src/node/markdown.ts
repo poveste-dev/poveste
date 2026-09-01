@@ -30,6 +30,27 @@ function notifyMarkdownListChange() {
 }
 
 /**
+ * One markdown file's *content* changed, as distinct from the list of files
+ * changing.
+ *
+ * The rendered html reaches the client as its own virtual module,
+ * `virtual:md:<id>`, so invalidating the list module is not enough to repaint an
+ * open docs pane — the list is the same, and only that file's module is stale
+ * (#370). The module already carries the `import.meta.hot.accept` half.
+ */
+const onMarkdownFileChangeHandlers: ((file: ServerMarkdownFile) => unknown)[] = []
+
+export function onMarkdownFileChange(handler: (file: ServerMarkdownFile) => unknown) {
+  onMarkdownFileChangeHandlers.push(handler)
+}
+
+function notifyMarkdownFileChange(file: ServerMarkdownFile) {
+  for (const handler of onMarkdownFileChangeHandlers) {
+    handler(file)
+  }
+}
+
+/**
  * Shared between the markdown Vite plugin and the markdown file watcher, which
  * both build a renderer — a `poveste build` reaches this three times. The
  * themes and langs are constant, and each instance eagerly loads every bundled
@@ -44,6 +65,16 @@ function getHighlighter() {
   })
 
   return highlighterPromise
+}
+
+/**
+ * Frontmatter keys that end up in a standalone markdown file's virtual story
+ * module. A change to any of them makes that module stale.
+ */
+const STORY_FRONTMATTER = ['id', 'title', 'icon', 'iconColor', 'group'] as const
+
+export function storyFrontmatterChanged(before: Record<string, any>, after: Record<string, any>): boolean {
+  return STORY_FRONTMATTER.some(key => before?.[key] !== after?.[key])
 }
 
 export async function createMarkdownRenderer(ctx: Context) {
@@ -242,6 +273,48 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     }
   }
 
+  /**
+   * Chokidar emits `change` for an edit to an existing file, and nothing
+   * handled it: `addFile` is the only path that reads and renders markdown, and
+   * it ran on `add` alone, so an edit was watched, delivered and dropped (#370).
+   *
+   * Story files get away with the same two-handler shape because they travel
+   * through Vite's module graph and Vite updates them. Markdown does not —
+   * `addFile` reads and renders in Node, outside the graph.
+   */
+  function updateFile(relativePath: string) {
+    const file = ctx.markdownFiles.find(file => file.relativePath === relativePath)
+    if (!file) {
+      // Not tracked yet — a file that did not match when it was added, say.
+      addFile(relativePath)
+      return
+    }
+
+    const { data: frontmatter, content } = matter(fs.readFileSync(file.absolutePath, 'utf8'))
+
+    // A standalone file's story is a virtual module built from its frontmatter,
+    // and `addStory` returns the existing story rather than rebuilding it — so a
+    // frontmatter change needs the story replaced. A prose edit must not replace
+    // it, or every save would tear down and recreate the story being read.
+    if (!file.isRelatedToStory && storyFrontmatterChanged(file.frontmatter, frontmatter)) {
+      removeFile(relativePath)
+      addFile(relativePath)
+      return
+    }
+
+    file.frontmatter = frontmatter
+    file.content = content
+    file.html = md.render(content, {
+      file: file.absolutePath,
+    })
+
+    notifyMarkdownFileChange(file)
+    if (file.storyFile) {
+      notifyStoryChange(file.storyFile)
+    }
+    notifyMarkdownListChange()
+  }
+
   async function stop() {
     await watcher.close()
   }
@@ -249,6 +322,9 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
   watcher
     .on('add', (relativePath) => {
       addFile(relativePath)
+    })
+    .on('change', (relativePath) => {
+      updateFile(relativePath)
     })
     .on('unlink', (relativePath) => {
       removeFile(relativePath)

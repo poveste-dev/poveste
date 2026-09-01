@@ -6,7 +6,7 @@ import { createServer as createViteServer, mergeConfig as mergeViteConfig } from
 import { useCollectStories } from './collect/index.js'
 import { hmrPortFor } from './commands/port.js'
 import { useModuleLoader } from './load.js'
-import { createMarkdownFilesWatcher, onMarkdownListChange } from './markdown.js'
+import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
 import { onStoryChange, onStoryListChange, watchStories } from './stories.js'
 import { wrapLogError } from './util/log.js'
@@ -236,6 +236,12 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
 
   onMarkdownListChange(() => {
     invalidateModule(VirtualFiles.RESOLVED_MARKDOWN_FILES)
+  })
+
+  // The list module is unchanged when a file is merely edited — the stale one is
+  // that file's own module, which is what carries the rendered html (#370).
+  onMarkdownFileChange((file) => {
+    invalidateModule(`/__resolved__virtual:md:${file.id}`)
   })
 
   async function close() {
