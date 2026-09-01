@@ -121,10 +121,14 @@ export function duplicatePorts(ports: (number | undefined)[]): number[] {
  * Only the names in backticks are read, so the prose in each row is free to
  * change without touching this.
  */
-export function guideExamples(markdown: string): { reference: string[], fixtures: string[] } {
+export function guideExamples(markdown: string): { reference: string[], conformance: string[], fixtures: string[] } {
   const cell = (label: string) => markdown.match(new RegExp(`^\\| \\*\\*${label}\\*\\* \\|(.*)$`, 'm'))?.[1] ?? ''
   const names = (row: string) => [...row.matchAll(/`([\w.-]+)`/g)].map(match => match[1])
-  return { reference: names(cell('Reference books')), fixtures: names(cell('Fixtures')) }
+  return {
+    reference: names(cell('Reference books')),
+    conformance: names(cell('Conformance books')),
+    fixtures: names(cell('Fixtures')),
+  }
 }
 
 export function onlyInFirst(a: string[], b: string[]): string[] {
@@ -172,13 +176,19 @@ async function main(): Promise<void> {
   // A book carries the conformance set exactly when the root config gives it a
   // `:conformance` project, so the guide is checked against that rather than
   // against a second hand-kept list.
+  //
+  // Reference and conformance are two claims, not one (#499): the guide's first
+  // two rows are both conformance books, and only the first is also a mirror of
+  // the reference book. Both rows are read here, because what the config knows
+  // is "has a conformance project".
   // Read rather than crash: the guide has moved once already, and "it is not
   // there" should read as a problem like the others rather than a stack trace.
   const guide = await exists(GUIDE) ? await readFile(join(ROOT, GUIDE), 'utf8') : ''
   if (guide === '') {
     problems.push(`${GUIDE} is missing — the guide the example table lives in has moved or gone`)
   }
-  const { reference, fixtures } = guideExamples(guide)
+  const { reference, conformance: conformanceOnly, fixtures } = guideExamples(guide)
+  const guideConformance = [...reference, ...conformanceOnly]
   const conformance = exampleNames(
     (root.projects ?? [])
       .map((project: { name: string }) => project.name)
@@ -189,17 +199,17 @@ async function main(): Promise<void> {
     problems.push(`${GUIDE} has no example table to read — the shape this check reads has changed`)
   }
 
-  for (const name of onlyInFirst(reference, conformance)) {
-    problems.push(`${GUIDE} calls "${name}" a reference book, but playwright.config.ts gives it no conformance project`)
+  for (const name of onlyInFirst(guideConformance, conformance)) {
+    problems.push(`${GUIDE} says "${name}" carries the conformance set, but playwright.config.ts gives it no conformance project`)
   }
-  for (const name of onlyInFirst(conformance, reference)) {
-    problems.push(`"${name}" carries the conformance set, but ${GUIDE} does not list it as a reference book`)
+  for (const name of onlyInFirst(conformance, guideConformance)) {
+    problems.push(`"${name}" carries the conformance set, but ${GUIDE} lists it as neither a reference book nor a conformance book`)
   }
 
   const directories = (await readdir(join(ROOT, 'examples'), { withFileTypes: true }))
     .filter(entry => entry.isDirectory())
     .map(entry => entry.name)
-  const listed = [...reference, ...fixtures]
+  const listed = [...guideConformance, ...fixtures]
 
   for (const name of onlyInFirst(listed, directories)) {
     problems.push(`${GUIDE} lists example "${name}", which does not exist`)

@@ -35,6 +35,23 @@ interface Example {
   }
   /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
   conformance?: boolean
+  /**
+   * Also carries the reference book's full story set, not only the conformance
+   * one.
+   *
+   * These are separate claims and were one flag. `SHARED_STORY_TITLES` is 54
+   * names — the reference book's demo content, `BaseButton`, `Code gen`,
+   * `Color Button` — while the conformance contract is the 17 ids in
+   * `SHARED_STORIES`. Requiring both would price onboarding a framework at 54
+   * stories instead of 17, which #371 (React) and #61 (Solid) would each pay on
+   * the way in (#499).
+   */
+  reference?: boolean
+  /**
+   * Known to boot a sandbox over the CSS budget, so `sandbox-payload` is skipped
+   * for it rather than the budget being raised for everyone (#542).
+   */
+  overSandboxCssBudget?: boolean
 }
 
 const ALL_EXAMPLES: Example[] = [
@@ -42,16 +59,18 @@ const ALL_EXAMPLES: Example[] = [
     name: 'vue3',
     port: 4567,
     conformance: true,
+    reference: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
-  { name: 'nuxt4', port: 4568, conformance: true },
+  { name: 'nuxt4', port: 4568, conformance: true, reference: true },
   {
     name: 'svelte5',
     port: 4569,
     conformance: true,
+    reference: true,
     dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts'] },
   },
-  { name: 'sveltekit', port: 4570, conformance: true },
+  { name: 'sveltekit', port: 4570, conformance: true, reference: true },
   {
     name: 'vue3-tailwind',
     port: 4571,
@@ -60,6 +79,11 @@ const ALL_EXAMPLES: Example[] = [
   {
     name: 'quasar',
     port: 4573,
+    // The one framework poveste has and histoire does not, and it ran none of
+    // the 19 shared specs — classified with vike, which is an interop guard for
+    // a framework we do not support (#499).
+    conformance: true,
+    overSandboxCssBudget: true,
     // Same reason as vike: the contract is a runtime one, and dev and build
     // reach the sandbox by different paths.
     dev: { port: 4673, specs: ['**/quasar-interop.spec.ts'] },
@@ -131,6 +155,7 @@ export default defineConfig({
       ? [{
           name: `${example.name}:conformance`,
           testDir: './e2e',
+          metadata: { reference: Boolean(example.reference), overSandboxCssBudget: Boolean(example.overSandboxCssBudget) },
           use: chrome(`http://localhost:${example.port}`),
         }]
       : [],
