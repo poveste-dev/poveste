@@ -5,5 +5,7 @@ throw new Error('component blew up on purpose')
 </script>
 
 <template>
-  <div class="conformance-throws-never">never</div>
+  <div class="conformance-throws-never">
+    never
+  </div>
 </template>
