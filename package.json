@@ -36,11 +36,13 @@
     "test:packaging": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-publishable.ts --offline",
     "test:scripts": "vitest run scripts",
     "release": "pnpm run release:check && bumpp --yes --release",
-    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run test:example-wiring && pnpm run test:recipes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run lint && pnpm run test:versions && pnpm run test:readmes && pnpm run test:example-wiring && pnpm run test:mirrors && pnpm run test:recipes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
-    "update": "pnpm --recursive update --latest"
+    "update": "pnpm --recursive update --latest",
+    "test:mirrors": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-mirrored-conformance.ts",
+    "sync:conformance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-conformance.ts"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",

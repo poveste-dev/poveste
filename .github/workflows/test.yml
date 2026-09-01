@@ -74,6 +74,9 @@ jobs:
       - name: Check the example harness wiring
         run: pnpm run test:example-wiring
 
+      - name: Check mirrored conformance sets
+        run: pnpm run test:mirrors
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes
