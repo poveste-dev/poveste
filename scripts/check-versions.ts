@@ -122,10 +122,137 @@ export function tableProblems(table: Table, expected: Expectation[]): string[] {
 }
 
 /**
- * Each plugin's README states its own floor — the most useful fact on its npm
- * page, and one more hand-written copy of a peer range. Any `name@range` in a
- * package README that names one of that package's own peers must match it.
+ * The CI check names the workflows actually produce, with the example matrix
+ * expanded: the matrix job in test-examples.yml is seven real checks, one per
+ * example, not the one literal name the workflow file spells.
  */
+export function jobNames(workflows: string[]): Set<string> {
+  const names = new Set<string>()
+
+  for (const yaml of workflows) {
+    for (const [, job] of jobKeyNames(yaml)) {
+      const key = job.match(/\$\{\{\s*matrix\.(\w+)\s*\}\}/)?.[1]
+      if (!key) {
+        names.add(job)
+        continue
+      }
+
+      // Expand with the values of the matrix variable the name actually uses,
+      // not whichever list happens to appear first in the file.
+      for (const value of matrixValues(yaml, key)) {
+        names.add(job.replace(new RegExp(`\\$\\{\\{\\s*matrix\\.${key}\\s*\\}\\}`), value))
+      }
+    }
+  }
+
+  return names
+}
+
+/** The values of one matrix variable, e.g. `example: [vue3, nuxt4]`. */
+function matrixValues(yaml: string, key: string): string[] {
+  const list = yaml.match(new RegExp(String.raw`^[^\S\n]*${key}:[^\S\n]*\[([^\]]*)\]`, 'm'))?.[1] ?? ''
+  return list.split(',').map(value => value.trim()).filter(Boolean)
+}
+
+/**
+ * The `name:` of each job, and nothing else called `name:`.
+ *
+ * Matching every indented `name:` also collected `with: name:` from
+ * upload-artifact steps, so `packages-dist` and `playwright-traces-vue3` entered
+ * the set of real CI checks and a docs row citing one of them would have passed.
+ * A job's keys sit one level under its id, which is one level under `jobs:`, so
+ * that depth is what identifies them — read from the file rather than assumed,
+ * because nothing fixes a workflow's indentation at two spaces.
+ */
+function* jobKeyNames(yaml: string): Generator<[number, string]> {
+  const lines = yaml.split('\n')
+  let inJobs = false
+  let idIndent: number | undefined
+  let keyIndent: number | undefined
+
+  for (const [index, line] of lines.entries()) {
+    if (line.startsWith('jobs:')) {
+      inJobs = true
+      idIndent = undefined
+      keyIndent = undefined
+      continue
+    }
+
+    const trimmed = line.trim()
+    if (!inJobs || !trimmed || trimmed.startsWith('#')) {
+      continue
+    }
+
+    const indent = line.length - line.trimStart().length
+    if (indent === 0) {
+      inJobs = false
+      continue
+    }
+
+    idIndent ??= indent
+    if (indent === idIndent) {
+      // A job id: its own keys set the depth, which the next line establishes.
+      keyIndent = undefined
+      continue
+    }
+
+    keyIndent ??= indent
+    if (indent !== keyIndent) {
+      continue
+    }
+
+    const name = trimmed.match(/^name:[^\S\n]*(\S.*)$/)?.[1]
+    if (name) {
+      yield [index, name.trim().replace(/^['"]|['"]$/g, '')]
+    }
+  }
+}
+
+/**
+ * The supported-versions table's whole argument is that each range is proven by
+ * something a reader can go and look at. Four of its five named jobs had been
+ * deleted by #217, which collapsed the per-framework workflows into one matrix,
+ * and the SvelteKit row credited a `svelte-check` run that exists as a script
+ * and in no workflow at all (#392).
+ *
+ * Backticked tokens containing `/` are paths, not job names, so they are skipped.
+ */
+export function citedJobProblems(file: string, markdown: string, jobs: Set<string>): string[] {
+  const problems: string[] = []
+  const cells = (line: string) => line.split(/(?<!\\)\|/).slice(1, -1).map(cell => cell.trim())
+  let evidenceColumn: number | undefined
+
+  for (const line of markdown.split('\n')) {
+    if (!line.startsWith('|')) {
+      // A blank line ends the table, so a later one cannot inherit its columns.
+      evidenceColumn = undefined
+      continue
+    }
+
+    const row = cells(line)
+    const header = row.findIndex(cell => /^proven by$/i.test(cell))
+    if (header !== -1) {
+      evidenceColumn = header
+      continue
+    }
+
+    const evidence = evidenceColumn === undefined ? undefined : row[evidenceColumn]
+    if (!evidence) {
+      continue
+    }
+
+    for (const [, cited] of evidence.matchAll(/`([^`]+)`/g)) {
+      // Backticked tokens with a slash are paths, not job names.
+      if (cited.includes('/') || jobs.has(cited)) {
+        continue
+      }
+      problems.push(`${file} says ${cited} proves a range, but no CI job has that name`)
+    }
+  }
+
+  return problems
+}
+
 /**
  * A package README that states a Node requirement must state the one its own
  * manifest declares.
@@ -144,6 +271,11 @@ export function nodeClaimProblems(pkg: string, readme: string, engines: string |
   return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
 }
 
+/**
+ * Each plugin's README states its own floor — the most useful fact on its npm
+ * page, and one more hand-written copy of a peer range. Any `name@range` in a
+ * package README that names one of that package's own peers must match it.
+ */
 export function readmeRangeProblems(pkg: string, readme: string, peers: Record<string, string>): string[] {
   const problems: string[] = []
 
@@ -163,6 +295,17 @@ async function main(): Promise<void> {
   ])
 
   const problems = tables.flatMap(table => tableProblems(table, expected))
+
+  const workflowDir = join(ROOT, '.github', 'workflows')
+  const workflows = await Promise.all(
+    (await readdir(workflowDir))
+      .filter(name => /\.ya?ml$/.test(name))
+      .map(name => readFile(join(workflowDir, name), 'utf8')),
+  )
+  const jobs = jobNames(workflows)
+  for (const file of TABLES) {
+    problems.push(...citedJobProblems(file, await readFile(join(ROOT, file), 'utf8'), jobs))
+  }
 
   for (const entry of await readdir(PACKAGES)) {
     let readme: string
