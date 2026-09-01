@@ -279,6 +279,23 @@ const {
   selectPrevious,
 } = useSelection(results)
 
+// Announced to a screen reader on every change: the count when a search returns
+// something, and which result is focused as the arrows move. Both are silent
+// otherwise — arrowing only changes styling.
+const resultsAnnouncement = computed(() => {
+  if (!rateLimitedSearch.value) {
+    return ''
+  }
+  if (!results.value.length) {
+    return 'No results'
+  }
+
+  const count = `${results.value.length} result${results.value.length === 1 ? '' : 's'}`
+  const current = results.value[selectedIndex.value]
+
+  return current ? `${count}. ${current.title}, ${selectedIndex.value + 1} of ${results.value.length}` : count
+})
+
 // Activation
 
 const router = useRouter()
@@ -321,6 +338,13 @@ onKeyboardShortcut(['enter'], () => {
     <input
       ref="input"
       v-model="searchInputText"
+      type="search"
+      role="combobox"
+      aria-label="Search for stories and variants"
+      aria-autocomplete="list"
+      :aria-expanded="results.length > 0"
+      :aria-controls="results.length ? 'poveste-search-results' : undefined"
+      :aria-activedescendant="results.length ? `poveste-search-option-${selectedIndex}` : undefined"
       placeholder="Search for stories, variants..."
       class="bg-transparent w-full flex-1 pl-0 pr-6 py-4 outline-none"
       @keydown.down.prevent="selectNext()"
@@ -338,14 +362,32 @@ onKeyboardShortcut(['enter'], () => {
 
   <div
     v-else-if="results.length"
+    id="poveste-search-results"
+    role="listbox"
+    aria-label="Search results"
     class="max-h-[400px] overflow-y-auto rounded-b-lg"
   >
     <SearchItem
       v-for="(result, index) of results"
+      :id="`poveste-search-option-${index}`"
       :key="result.id"
       :result="result"
       :selected="index === selectedIndex"
       @close="close()"
     />
+  </div>
+
+  <!--
+    Arrowing through results was a purely visual state change: `selectedIndex`
+    drove styling and nothing else, so a screen reader announced nothing on
+    typing, nothing on arrowing, and nothing on selecting (#311). The count is
+    what tells you the search did anything at all.
+  -->
+  <div
+    class="sr-only"
+    aria-live="polite"
+    role="status"
+  >
+    {{ resultsAnnouncement }}
   </div>
 </template>
