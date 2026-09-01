@@ -36,6 +36,21 @@ test.describe('the search combobox', () => {
     await expect(page.locator(`#${active}`)).toHaveAttribute('aria-selected', 'true')
   })
 
+  // `aria-controls` named the listbox unconditionally, but the listbox only
+  // exists when there are results — so any query that matched nothing left the
+  // combobox pointing at an id that was not in the document.
+  test('does not reference a listbox that is not there', async ({ page }) => {
+    await openStory(page, STORY)
+    await page.getByTestId('search-btn').click()
+
+    const input = page.getByRole('combobox', { name: /search for stories/i })
+    await input.fill('zzzzz-no-such-story-zzzzz')
+
+    await expect(page.getByRole('listbox')).toHaveCount(0)
+    await expect(input).toHaveAttribute('aria-expanded', 'false')
+    await expect(input).not.toHaveAttribute('aria-controls', /./)
+  })
+
   test('announces the result count', async ({ page }) => {
     await openStory(page, STORY)
     await page.getByTestId('search-btn').click()
