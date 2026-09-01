@@ -2,6 +2,13 @@
 // registry never recorded, and v0.7.0 went green without @poveste/plugin-vue
 // (#327). Every other release check runs on the tarballs before they are sent;
 // this one asks the registry what actually arrived.
+//
+// It asks two things, because a tarball on the registry is not a release anyone
+// installs. `latest` is what the starters and the install instructions resolve
+// (`docs/.vitepress/theme/starters.ts`), and nothing read it after #419 pinned
+// the starter check by version — so a publish that uploaded every tarball and
+// moved no tag went green while every reader still got the previous release
+// (#427).
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -12,8 +19,15 @@ import { publishablePackages } from './check-publishable.ts'
 
 interface Release { name: string, version: string }
 
-// 'present', 'missing', or the reason the answer is unknown.
+// 'present', 'missing', `untagged:<version latest points at>`, or the reason the
+// answer is unknown.
 export type Probe = (name: string, version: string) => string
+
+// `latest` is not supposed to move for a prerelease, and `gh release create
+// --prerelease` marks those (#408), so asserting it would fail a healthy one.
+export function isPrerelease(version: string): boolean {
+  return version.includes('-')
+}
 
 function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
@@ -51,9 +65,7 @@ export function unpublishedReleases(
         continue
       }
       unresolved.push(release)
-      problems.push(`${release.name}@${release.version} ${result === 'missing'
-        ? 'is not on the registry'
-        : `could not be verified: ${result}`}`)
+      problems.push(`${release.name}@${release.version} ${problemFor(result)}`)
     }
     pending = unresolved
   }
@@ -61,12 +73,28 @@ export function unpublishedReleases(
   return problems
 }
 
+export function problemFor(result: string): string {
+  if (result === 'missing') {
+    return 'is not on the registry'
+  }
+  if (result.startsWith('untagged:')) {
+    return `is on the registry, but the latest dist-tag still points at ${result.slice('untagged:'.length)}`
+  }
+  return `could not be verified: ${result}`
+}
+
 // `--prefer-online` is load-bearing, not a tweak: the registry serves packuments
 // with `max-age=300`, and the pre-publish preflight has already cached every one
 // of them. Without revalidation this reads a five-minute-old view of the
-// registry and calls a version that just published missing (#327).
+// registry and calls a version that just published missing (#327). The tag read
+// below needs it for the same reason, and more sharply — during propagation the
+// cached packument still names the previous release as `latest`.
 export function probeArgs(name: string, version: string): string[] {
   return ['view', `${name}@${version}`, 'version', '--prefer-online']
+}
+
+export function tagArgs(name: string): string[] {
+  return ['view', name, 'dist-tags.latest', '--prefer-online']
 }
 
 function npmProbe(name: string, version: string): string {
@@ -75,7 +103,18 @@ function npmProbe(name: string, version: string): string {
       stdio: ['ignore', 'pipe', 'pipe'],
     })).trim()
     // A silent success is not a confirmation.
-    return out ? 'present' : 'missing'
+    if (!out) {
+      return 'missing'
+    }
+    if (isPrerelease(version)) {
+      return 'present'
+    }
+    const tag = String(execFileSync('npm', tagArgs(name), {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })).trim()
+    // Reported as pending rather than failed, so the existing backoff absorbs
+    // tag propagation the same way it absorbs a tarball's.
+    return tag === version ? 'present' : `untagged:${tag || 'nothing'}`
   }
   catch (err: any) {
     const stderr = String(err.stderr ?? '')
@@ -94,7 +133,7 @@ function main(): void {
 
   const problems = unpublishedReleases(releases, npmProbe)
   if (problems.length > 0) {
-    console.error(`::error::${problems.length} of ${releases.length} packages did not reach npm`)
+    console.error(`::error::${problems.length} of ${releases.length} packages are not released at their version`)
     for (const problem of problems) {
       console.error(`  • ${problem}`)
     }
@@ -105,7 +144,7 @@ function main(): void {
     process.exit(1)
   }
 
-  console.log(`✅ All ${releases.length} packages reached the registry at their released version`)
+  console.log(`✅ All ${releases.length} packages are on the registry with latest pointing at their released version`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
