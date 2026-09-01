@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { backoffMs, isPrerelease, probeArgs, problemFor, tagArgs, unpublishedReleases } from './check-published.ts'
+import { backoffMs, probeArgs, problemFor, tagArgs, unpublishedReleases } from './check-published.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -187,15 +187,29 @@ describe('problemFor', () => {
   })
 })
 
-describe('isPrerelease', () => {
-  // `latest` is not meant to move for these, so asserting it would fail a
-  // healthy prerelease (#408).
-  it('recognises the versions latest is not expected to follow', () => {
-    expect(isPrerelease('0.12.0-beta.1')).toBe(true)
-    expect(isPrerelease('0.12.0-rc.0')).toBe(true)
-  })
+describe('a prerelease', () => {
+  // Not exempt, though #427 suggested it should be: `release.yml` publishes
+  // with no `--tag`, and npm defaults to `latest` whatever the semver says, so
+  // the tag does move here and the assertion describes what actually happens.
+  it('is held to the same tag assertion as any other release', () => {
+    const problems = unpublishedReleases(
+      [{ name: 'poveste', version: '0.12.0-beta.1' }],
+      () => 'untagged:0.11.0',
+      options(),
+    )
 
-  it('leaves a normal release subject to the tag assertion', () => {
-    expect(isPrerelease('0.12.0')).toBe(false)
+    expect(problems).toEqual([
+      'poveste@0.12.0-beta.1 is on the registry, but the latest dist-tag still points at 0.11.0',
+    ])
+  })
+})
+
+describe('problemFor, on a tag that could not be read', () => {
+  // The shared catch used to attribute a failed tag read to the version probe
+  // and report a published package as missing, which sends whoever is
+  // recovering to re-run the publish — the one move this file warns against.
+  it('does not read as a missing tarball', () => {
+    expect(problemFor('the latest dist-tag could not be read: npm error code E500'))
+      .toBe('could not be verified: the latest dist-tag could not be read: npm error code E500')
   })
 })

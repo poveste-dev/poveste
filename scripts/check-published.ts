@@ -9,6 +9,13 @@
 // the starter check by version — so a publish that uploaded every tarball and
 // moved no tag went green while every reader still got the previous release
 // (#427).
+//
+// The tag is asserted for every release, prereleases included. #427 suggested
+// exempting them on the grounds that `latest` should not follow a prerelease,
+// but `release.yml` publishes with `pnpm -r publish` and no `--tag`, and npm
+// defaults every publish to `latest` regardless of semver. So `latest` does move
+// for a prerelease here, and asserting it describes what this repository
+// actually does. Whether it *should* is a separate question (#553).
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -22,12 +29,6 @@ interface Release { name: string, version: string }
 // 'present', 'missing', `untagged:<version latest points at>`, or the reason the
 // answer is unknown.
 export type Probe = (name: string, version: string) => string
-
-// `latest` is not supposed to move for a prerelease, and `gh release create
-// --prerelease` marks those (#408), so asserting it would fail a healthy one.
-export function isPrerelease(version: string): boolean {
-  return version.includes('-')
-}
 
 function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
@@ -97,32 +98,43 @@ export function tagArgs(name: string): string[] {
   return ['view', name, 'dist-tags.latest', '--prefer-online']
 }
 
-function npmProbe(name: string, version: string): string {
+interface View { out: string, notFound?: boolean, error?: string }
+
+// One `npm view`, with its own error handling. The two reads below fail for
+// different reasons and need different diagnoses: a shared catch reported a tag
+// that could not be read as a tarball that never published, and sends whoever
+// is recovering to re-run the publish — which the message below says not to do.
+function npmView(args: string[]): View {
   try {
-    const out = String(execFileSync('npm', probeArgs(name, version), {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })).trim()
-    // A silent success is not a confirmation.
-    if (!out) {
-      return 'missing'
-    }
-    if (isPrerelease(version)) {
-      return 'present'
-    }
-    const tag = String(execFileSync('npm', tagArgs(name), {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })).trim()
-    // Reported as pending rather than failed, so the existing backoff absorbs
-    // tag propagation the same way it absorbs a tarball's.
-    return tag === version ? 'present' : `untagged:${tag || 'nothing'}`
+    return { out: String(execFileSync('npm', args, { stdio: ['ignore', 'pipe', 'pipe'] })).trim() }
   }
   catch (err: any) {
     const stderr = String(err.stderr ?? '')
-    if (/E404/.test(stderr)) {
-      return 'missing'
+    return {
+      out: '',
+      notFound: /E404/.test(stderr),
+      error: stderr.split('\n').find((line: string) => line.includes('npm error'))?.trim() || err.message,
     }
-    return stderr.split('\n').find((line: string) => line.includes('npm error'))?.trim() || err.message
   }
+}
+
+function npmProbe(name: string, version: string): string {
+  const published = npmView(probeArgs(name, version))
+  if (published.error) {
+    return published.notFound ? 'missing' : published.error
+  }
+  // A silent success is not a confirmation.
+  if (!published.out) {
+    return 'missing'
+  }
+
+  const tagged = npmView(tagArgs(name))
+  if (tagged.error) {
+    return `the latest dist-tag could not be read: ${tagged.error}`
+  }
+  // Reported as pending rather than failed, so the existing backoff absorbs tag
+  // propagation the same way it absorbs a tarball's.
+  return tagged.out === version ? 'present' : `untagged:${tagged.out || 'nothing'}`
 }
 
 function main(): void {
