@@ -12,6 +12,9 @@ const emit = defineEmits({
   'update:modelValue': (_newValue: boolean) => true,
 })
 
+// Off until the first toggle, so the tick does not animate itself in on mount.
+const animationEnabled = ref(false)
+
 function toggle() {
   emit('update:modelValue', !props.modelValue)
   animationEnabled.value = true
@@ -23,7 +26,6 @@ const path = ref<SVGPathElement>()
 const dasharray = ref(0)
 const progress = computed(() => props.modelValue ? 1 : 0)
 const dashoffset = computed(() => (1 - progress.value) * dasharray.value)
-const animationEnabled = ref(false)
 
 watch(path, () => {
   dasharray.value = path.value.getTotalLength?.() ?? 21.21

@@ -41,6 +41,8 @@ function addWindowListener(event: string, listener: (event: any) => unknown) {
   }
 }
 
+const previewWrapper = ref<HTMLDivElement>()
+
 function useDragger(el: Ref<HTMLDivElement>, value: Ref<number>, min: number, max: number, axis: 'x' | 'y') {
   function onMouseDown(event: MouseEvent) {
     event.preventDefault()
@@ -109,7 +111,6 @@ const responsiveHeight = computed({
 const horizontalDragger = ref<HTMLDivElement>()
 const verticalDragger = ref<HTMLDivElement>()
 const cornerDragger = ref<HTMLDivElement>()
-const previewWrapper = ref<HTMLDivElement>()
 
 useDragger(horizontalDragger, responsiveWidth, 32, 20000, 'x')
 useDragger(verticalDragger, responsiveHeight, 32, 20000, 'y')

@@ -8,8 +8,8 @@ const settings = usePreviewSettingsStore().currentSettings
 
 <template>
   <TopBarChipItem
-    aria-label="Toggle text direction"
     v-tooltip="`Switch to text direction ${settings.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right'}`"
+    aria-label="Toggle text direction"
     class="poveste-toolbar-text-direction"
     @click="settings.textDirection = settings.textDirection === 'ltr' ? 'rtl' : 'ltr'"
   >
