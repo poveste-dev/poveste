@@ -3,8 +3,15 @@
 Renders a project's Tailwind design system — colours, spacing, typography — as a
 story in its book.
 
+```bash
+pnpm add -D poveste @poveste/plugin-tailwind
+```
+
+Add the plugin in poveste config:
+
 ```ts
 import { HstTailwind } from '@poveste/plugin-tailwind'
+import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [
