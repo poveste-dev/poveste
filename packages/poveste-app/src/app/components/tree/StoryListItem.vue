@@ -69,6 +69,8 @@ useScrollOnActive(isActive, el)
       <span
         v-if="!story.docsOnly"
         class="opacity-40 text-sm"
+        :aria-label="`${story.variants.length} ${story.variants.length === 1 ? 'variant' : 'variants'}`"
+        role="note"
       >
         {{ story.variants.length }}
       </span>

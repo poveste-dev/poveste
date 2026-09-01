@@ -39,6 +39,8 @@ function action() {
 <template>
   <div
     ref="el"
+    role="option"
+    :aria-selected="selected"
     class="poveste-search-item"
     data-testid="search-item"
     :data-selected="selected ? '' : undefined"
