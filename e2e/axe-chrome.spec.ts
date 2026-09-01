@@ -67,3 +67,44 @@ test('the book chrome has no axe violations', async ({ page }) => {
 
   expect(detail).toEqual([])
 })
+
+/*
+ * The default layout was the only state the check above visited, and the `h1`
+ * and banner both lived in `AppHeader` — which this layout does not render. So
+ * the fix passed while hiding the story list still produced a page with no
+ * heading and no banner. A rule engine only reports on the state you put in
+ * front of it.
+ */
+test('the book chrome has no axe violations with the story list hidden', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('_poveste-layout-v1', JSON.stringify({
+      storyListVisible: false,
+      storyOptionsVisible: true,
+      storyOptionsPlacement: 'right',
+    }))
+  })
+
+  // Not `openStory`: it waits for a story-list item, and this layout has none.
+  await page.goto(`/story/${STORY}?variantId=default`)
+  await expect(page.locator('.poveste-toolbar-title')).toBeVisible()
+  await expect(page.getByTestId('preview-iframe')).toBeVisible()
+  await expect(page.locator('[data-testid="story-list-item"]')).toHaveCount(0)
+
+  const results = await page.evaluate(
+    async ({ rules, axe }) => {
+      const script = document.createElement('script')
+      script.textContent = axe
+      document.head.append(script)
+      return (window as any).axe.run(document, { rules })
+    },
+    { rules: EXCLUDED_RULES, axe: AXE },
+  )
+
+  const detail = results.violations.flatMap((violation: any) =>
+    violation.nodes.map((node: any) =>
+      `${violation.id} :: ${node.target[0]} :: ${(node.failureSummary ?? '').split('\n')[1]?.trim()}`,
+    ),
+  )
+
+  expect(detail).toEqual([])
+})

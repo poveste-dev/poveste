@@ -186,16 +186,25 @@ const layoutStore = useLayoutStore()
           </main>
         </template>
       </BaseSplitPane>
-      <main
-        v-else
-        class="h-full flex flex-col"
-      >
-        <TopBar
-          @layout="isLayoutOpen = true"
-          @search="isSearchOpen = true"
-        />
-        <RouterView class="flex-1 min-h-0" />
-      </main>
+      <template v-else>
+        <!--
+          The story list is hidden in this layout, and `AppHeader` went with it —
+          taking the page's only `h1` and its banner. A heading has to exist in
+          every layout, and it has to sit inside a landmark, so this branch
+          carries its own (#310).
+        -->
+        <header class="sr-only">
+          <h1>{{ povesteConfig.theme?.title ?? 'Poveste' }}</h1>
+        </header>
+
+        <main class="h-full flex flex-col">
+          <TopBar
+            @layout="isLayoutOpen = true"
+            @search="isSearchOpen = true"
+          />
+          <RouterView class="flex-1 min-h-0" />
+        </main>
+      </template>
 
       <LayoutModal
         v-if="!isMobile"
