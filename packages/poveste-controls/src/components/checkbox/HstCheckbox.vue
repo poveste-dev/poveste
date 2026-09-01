@@ -40,8 +40,10 @@ const isTrue = computed(() => {
 
 <template>
   <HstWrapper
+    tag="div"
     role="checkbox"
     tabindex="0"
+    :aria-checked="isTrue"
     class="poveste-checkbox cursor-pointer items-center"
     :title="title"
     @click="toggle()"

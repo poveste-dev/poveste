@@ -20,6 +20,7 @@ const sandboxUrl = computed(() => {
     v-tooltip="'Open variant in new tab'"
     :href="sandboxUrl"
     target="_blank"
+    aria-label="Open variant in new tab"
     class="poveste-toolbar-new-tab"
   >
     <Icon
