@@ -1,6 +1,7 @@
 <script>
   import { watch as _watch } from '@poveste/vendors/vue'
   import { getContext, onDestroy } from 'svelte'
+  import { shouldWarnAboutMissingInitState } from '../util/init-state-warning.js'
 
   const story = getContext('__pvtStory')
   const currentVariant = getContext('__pvtVariant')
@@ -27,9 +28,13 @@
     currentVariant.state = { ...currentVariant.state, ...initState() }
   }
 
-  // Controls mount only — see the note in RenderStory: the two mounts do not share
-  // a realm for iframe layouts, so this is what keeps it to one warning.
-  if (!initState && shouldRender && slotName === 'controls' && $$slots.controls && !currentVariant.__pvtStateWarned) {
+  if (shouldRender && shouldWarnAboutMissingInitState({
+    hasInitState: Boolean(initState),
+    seeded: Boolean(currentVariant.__pvtStateSeeded),
+    slotName,
+    hasControlsSlot: Boolean($$slots.controls),
+    alreadyWarned: Boolean(currentVariant.__pvtStateWarned),
+  })) {
     currentVariant.__pvtStateWarned = true
     console.error([
       `[poveste] Variant "${variant?.title ?? variant?.id}" has a controls slot but no \`initState\`.`,
