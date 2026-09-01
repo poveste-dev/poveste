@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { strayTags } from './check-local-tags.ts'
-import { tagFor, validateType } from './release.ts'
+import { selectReleaseTag, validateType } from './release.ts'
 
 describe('validateType', () => {
   it('accepts the release keywords', () => {
@@ -22,9 +22,28 @@ describe('validateType', () => {
   })
 })
 
-describe('tagFor', () => {
-  it('names the tag the release workflow triggers on', () => {
-    expect(tagFor('0.12.0')).toBe('v0.12.0')
+describe('selectReleaseTag', () => {
+  it('takes the tag bumpp put on the release commit', () => {
+    expect(selectReleaseTag(['v0.12.0'], '0.12.0')).toBe('v0.12.0')
+  })
+
+  // Rather than rebuilding `v${version}`, which duplicates `tag: 'v%s'` in
+  // bump.config.ts and pushes a non-existent ref the day that one is edited.
+  it('does not assume the v prefix', () => {
+    expect(selectReleaseTag(['release-0.12.0'], '0.12.0')).toBe('release-0.12.0')
+  })
+
+  it('ignores the empty string git prints when no tag points at HEAD', () => {
+    expect(() => selectReleaseTag([''], '0.12.0')).toThrow(/no tag points at the release commit/)
+  })
+
+  it('picks the one naming the released version when an older tag shares the commit', () => {
+    expect(selectReleaseTag(['v0.11.0', 'v0.12.0'], '0.12.0')).toBe('v0.12.0')
+  })
+
+  it('refuses to guess when two tags both name the version', () => {
+    expect(() => selectReleaseTag(['v0.12.0', 'release-0.12.0'], '0.12.0'))
+      .toThrow(/more than one tag points at the release commit/)
   })
 })
 

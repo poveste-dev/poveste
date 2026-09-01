@@ -16,8 +16,11 @@
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import process from 'node:process'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 export const RELEASE_TYPES = ['patch', 'minor', 'major', 'prerelease', 'prepatch', 'preminor', 'premajor']
 
@@ -32,12 +35,33 @@ export function validateType(type: string | undefined): string {
   return type
 }
 
-export function tagFor(version: string): string {
-  return `v${version}`
+/**
+ * The tag bumpp just created, read from the commit rather than rebuilt from a
+ * template. `tag: 'v%s'` lives in bump.config.ts, and a second copy of it here
+ * would push a ref that does not exist the day someone edits that one — after
+ * the release commit is already public.
+ */
+export function selectReleaseTag(tagsAtHead: string[], version: string): string {
+  const tags = tagsAtHead.filter(Boolean)
+  if (tags.length === 0) {
+    throw new Error(`no tag points at the release commit for ${version} — check \`tag\` in bump.config.ts`)
+  }
+  if (tags.length === 1) {
+    return tags[0]
+  }
+  const naming = tags.filter(tag => tag.includes(version))
+  if (naming.length === 1) {
+    return naming[0]
+  }
+  throw new Error(`more than one tag points at the release commit (${tags.join(', ')}) — push the right one by hand`)
 }
 
 function run(command: string, args: string[]) {
-  execFileSync(command, args, { stdio: 'inherit' })
+  execFileSync(command, args, { stdio: 'inherit', cwd: ROOT })
+}
+
+function capture(command: string, args: string[]): string {
+  return String(execFileSync(command, args, { stdio: ['ignore', 'pipe', 'pipe'], cwd: ROOT })).trim()
 }
 
 function main() {
@@ -45,8 +69,8 @@ function main() {
 
   run('pnpm', ['exec', 'bumpp', '--yes', '--no-push', '--release', type])
 
-  const { version } = JSON.parse(readFileSync('package.json', 'utf8'))
-  const tag = tagFor(version)
+  const { version } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
+  const tag = selectReleaseTag(capture('git', ['tag', '--points-at', 'HEAD']).split('\n'), version)
 
   run('git', ['push'])
   run('git', ['push', 'origin', `refs/tags/${tag}`])

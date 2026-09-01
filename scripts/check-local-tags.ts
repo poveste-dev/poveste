@@ -49,5 +49,14 @@ function main() {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  try {
+    main()
+  }
+  catch (error: any) {
+    // Never fails the release. This runs second in `release:check`, ahead of
+    // every real gate, and a check that only ever advises must not be the thing
+    // that stops a release — `git tag` exits non-zero for a dubious-ownership
+    // checkout or a missing git, neither of which says anything about the tags.
+    console.warn(`⚠️  Could not read local tags: ${error.message}`)
+  }
 }
