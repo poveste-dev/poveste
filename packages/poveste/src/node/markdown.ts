@@ -30,6 +30,27 @@ function notifyMarkdownListChange() {
 }
 
 /**
+ * One markdown file's *content* changed, as distinct from the list of files
+ * changing.
+ *
+ * The rendered html reaches the client as its own virtual module,
+ * `virtual:md:<id>`, so invalidating the list module is not enough to repaint an
+ * open docs pane — the list is the same, and only that file's module is stale
+ * (#370). The module already carries the `import.meta.hot.accept` half.
+ */
+const onMarkdownFileChangeHandlers: ((file: ServerMarkdownFile) => unknown)[] = []
+
+export function onMarkdownFileChange(handler: (file: ServerMarkdownFile) => unknown) {
+  onMarkdownFileChangeHandlers.push(handler)
+}
+
+function notifyMarkdownFileChange(file: ServerMarkdownFile) {
+  for (const handler of onMarkdownFileChangeHandlers) {
+    handler(file)
+  }
+}
+
+/**
  * Shared between the markdown Vite plugin and the markdown file watcher, which
  * both build a renderer — a `poveste build` reaches this three times. The
  * themes and langs are constant, and each instance eagerly loads every bundled
@@ -242,6 +263,45 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     }
   }
 
+  /**
+   * Chokidar emits `change` for an edit to an existing file, and nothing
+   * handled it: `addFile` is the only path that reads and renders markdown, and
+   * it ran on `add` alone, so an edit was watched, delivered and dropped (#370).
+   *
+   * Story files get away with the same two-handler shape because they travel
+   * through Vite's module graph and Vite updates them. Markdown does not —
+   * `addFile` reads and renders in Node, outside the graph.
+   */
+  function updateFile(relativePath: string) {
+    const file = ctx.markdownFiles.find(file => file.relativePath === relativePath)
+    if (!file) {
+      // Not tracked yet — a file that did not match when it was added, say.
+      addFile(relativePath)
+      return
+    }
+
+    const { data: frontmatter, content } = matter(fs.readFileSync(file.absolutePath, 'utf8'))
+
+    // Frontmatter is updated on the file, but a *standalone* file's story is a
+    // separate virtual module built from it when the story was created, and
+    // nothing here invalidates that module — so a `title` change does not reach
+    // the story list until a restart. Removing and re-adding the story does not
+    // help: the module id is derived from the path, so the client keeps the one
+    // it already has. Tracked separately; what this handles is the content,
+    // which is the reload people hit on their first edit.
+    file.frontmatter = frontmatter
+    file.content = content
+    file.html = md.render(content, {
+      file: file.absolutePath,
+    })
+
+    notifyMarkdownFileChange(file)
+    if (file.storyFile) {
+      notifyStoryChange(file.storyFile)
+    }
+    notifyMarkdownListChange()
+  }
+
   async function stop() {
     await watcher.close()
   }
@@ -249,6 +309,9 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
   watcher
     .on('add', (relativePath) => {
       addFile(relativePath)
+    })
+    .on('change', (relativePath) => {
+      updateFile(relativePath)
     })
     .on('unlink', (relativePath) => {
       removeFile(relativePath)
