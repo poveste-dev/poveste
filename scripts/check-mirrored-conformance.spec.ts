@@ -42,6 +42,16 @@ describe('compareMirror', () => {
     expect(compareMirror(source, mirror, exceptions, 'examples/sveltekit/src/lib/conformance')).toHaveLength(1)
   })
 
+  // A fixture in a subdirectory is part of the set a story imports. Comparing
+  // only the top level left it invisible: the check said "identical", the sync
+  // copied nothing, and the mirrored books failed at build on a missing import.
+  it('compares nested files by their path under the set', () => {
+    const withNested = new Map(source).set('fixtures/Thing.vue', 'x')
+
+    expect(compareMirror(withNested, source)).toEqual([{ file: 'fixtures/Thing.vue', reason: 'missing' }])
+    expect(compareMirror(source, withNested)).toEqual([{ file: 'fixtures/Thing.vue', reason: 'extra' }])
+  })
+
   it('reports every drifted file rather than only the first', () => {
     const mirror = new Map([['Button.story.vue', 'x'], ['Grid.story.vue', 'y']])
 

@@ -54,10 +54,25 @@ export interface MirrorProblem {
   reason: 'differs' | 'missing' | 'extra'
 }
 
-function filesIn(dir: string): string[] {
+/**
+ * Every file under a conformance directory, nested ones included, as paths
+ * relative to it.
+ *
+ * Top-level only would let a subdirectory through invisibly: a fixture added at
+ * `conformance/fixtures/Thing.vue` and imported by a story would leave this
+ * check reporting "identical", the sync copying nothing, and the mirrored books
+ * failing at build on a missing import — the confusing red in a book you did not
+ * touch that this exists to replace.
+ */
+function filesIn(dir: string, prefix = ''): string[] {
   return readdirSync(dir, { withFileTypes: true })
-    .filter(entry => entry.isFile())
-    .map(entry => entry.name)
+    .flatMap((entry) => {
+      const name = prefix ? `${prefix}/${entry.name}` : entry.name
+      if (entry.isDirectory()) {
+        return filesIn(join(dir, entry.name), name)
+      }
+      return entry.isFile() ? [name] : []
+    })
     .sort()
 }
 

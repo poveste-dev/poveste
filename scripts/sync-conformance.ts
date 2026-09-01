@@ -11,7 +11,7 @@
 // So the copy stays, and is generated rather than authored. Adding a host is
 // listing it in MIRRORS and running this, not writing 20 files again.
 
-import { copyFileSync, readdirSync, rmSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -19,25 +19,40 @@ import { MIRRORS } from './check-mirrored-conformance.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
+/** Every file under `dir`, nested included, relative to it. */
+function filesUnder(dir: string, prefix = ''): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const name = prefix ? `${prefix}/${entry.name}` : entry.name
+    if (entry.isDirectory()) {
+      return filesUnder(join(dir, entry.name), name)
+    }
+    return entry.isFile() ? [name] : []
+  })
+}
+
 function main(): void {
   let written = 0
 
   for (const { source, mirror } of MIRRORS) {
     const sourceDir = join(ROOT, source)
     const mirrorDir = join(ROOT, mirror)
-    const sourceFiles = readdirSync(sourceDir, { withFileTypes: true }).filter(entry => entry.isFile()).map(entry => entry.name)
+    // Nested too: a story's fixtures may sit in a subdirectory, and copying only
+    // the top level would mirror the story without what it imports.
+    const sourceFiles = filesUnder(sourceDir)
 
     // Remove first: a story deleted from the source has to leave the mirror too,
     // or the mirror keeps a story the shared list no longer knows about.
-    for (const entry of readdirSync(mirrorDir, { withFileTypes: true })) {
-      if (entry.isFile() && !sourceFiles.includes(entry.name)) {
-        rmSync(join(mirrorDir, entry.name))
-        console.log(`  removed ${mirror}/${entry.name}`)
+    for (const name of filesUnder(mirrorDir)) {
+      if (!sourceFiles.includes(name)) {
+        rmSync(join(mirrorDir, name))
+        console.log(`  removed ${mirror}/${name}`)
       }
     }
 
     for (const name of sourceFiles) {
-      copyFileSync(join(sourceDir, name), join(mirrorDir, name))
+      const target = join(mirrorDir, name)
+      mkdirSync(dirname(target), { recursive: true })
+      copyFileSync(join(sourceDir, name), target)
       written++
     }
     console.log(`  ${source} → ${mirror} (${sourceFiles.length} files)`)
