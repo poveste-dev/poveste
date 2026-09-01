@@ -150,18 +150,85 @@ export function unrunnableFences(where: string, markdown: string): string[] {
   return problems
 }
 
+/**
+ * Which lines belong to a ```diff fence, and where each such fence starts.
+ *
+ * A removed line names the old spelling *by construction* — that is what a `-`
+ * line is — so the unit for a diff block is the block, not the line (#358). Any
+ * other fence stays per-line: a `ts` sample built on an alias is exactly the
+ * defect this exists for, and #292 is what it cost.
+ */
+function diffFenceOf(lines: string[]): Array<number | undefined> {
+  const owner: Array<number | undefined> = Array.from({ length: lines.length })
+  let start: number | undefined
+  let inDiff = false
+
+  lines.forEach((line, index) => {
+    if (!line.trimStart().startsWith('```')) {
+      if (inDiff) {
+        owner[index] = start
+      }
+      return
+    }
+
+    if (inDiff) {
+      owner[index] = start
+      inDiff = false
+      start = undefined
+      return
+    }
+
+    if (/^`{3,}\s*diff\b/.test(line.trim())) {
+      inDiff = true
+      start = index
+      owner[index] = start
+    }
+  })
+
+  return owner
+}
+
 // Per line, not per file. Checking the file as a whole let a page mention the
 // canonical name once in prose and still hand the reader a code sample built on
 // the alias — which is the sample they copy, and the thing #292 exists about.
+//
+// The one exception is a ```diff fence, where the unit is the fence. See
+// `diffFenceOf` above: this is the third shape of this check, and the reasoning
+// for each is worth keeping.
 export function aliasesTaughtAlone(content: string): AliasTaughtAlone[] {
   const lines = content.split('\n')
+  const owner = diffFenceOf(lines)
   const found: AliasTaughtAlone[] = []
 
+  const fenceText = new Map<number, string>()
+  owner.forEach((fence, index) => {
+    if (fence !== undefined) {
+      fenceText.set(fence, `${fenceText.get(fence) ?? ''}\n${lines[index]}`)
+    }
+  })
+
   for (const { deprecated, canonical } of DEPRECATED_ALIASES) {
+    const reported = new Set<number>()
+
     lines.forEach((line, index) => {
-      if (line.includes(deprecated) && !line.includes(canonical)) {
-        found.push({ line: index + 1, deprecated, canonical })
+      if (!line.includes(deprecated) || line.includes(canonical)) {
+        return
       }
+
+      const fence = owner[index]
+      if (fence !== undefined) {
+        // A diff block that shows the rename names both spellings across its
+        // `-` and `+` lines, which is the established style on the migration
+        // guide. One that only ever names the alias is still a defect.
+        if (fenceText.get(fence)?.includes(canonical) || reported.has(fence)) {
+          return
+        }
+        reported.add(fence)
+        found.push({ line: fence + 1, deprecated, canonical })
+        return
+      }
+
+      found.push({ line: index + 1, deprecated, canonical })
     })
   }
 
