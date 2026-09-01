@@ -30,6 +30,11 @@ const highlighter = shallowRef<Highlighter>()
 const dynamicSourceCode = ref('')
 const error = ref<string>(null)
 
+// Above the watch that assigns it: the callback is async but runs immediately,
+// and a story whose `slots()` throws reaches the auto-switch below before its
+// first `await` — with the declaration underneath, that path hits the TDZ.
+const displayedSource = ref<'dynamic' | 'static'>('dynamic')
+
 watch(() => [props.variant, generateSourceCodeFn.value], async () => {
   if (!generateSourceCodeFn.value) return
   error.value = null
@@ -74,8 +79,6 @@ watch(() => [props.story, props.story?.file?.source], async () => {
 }, {
   immediate: true,
 })
-
-const displayedSource = ref<'dynamic' | 'static'>('dynamic')
 
 const displayedSourceCode = computed(() => {
   if (displayedSource.value === 'dynamic') {
