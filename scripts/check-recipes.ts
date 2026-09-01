@@ -6,7 +6,20 @@
 //
 // That only holds while the example runs the *published* config. It is a copy, and
 // a copy drifts: edit the page and the guard silently starts covering something
-// else. So the files are compared, byte for byte.
+// else.
+//
+// Every published line must still be in the example, in order. It was byte-for-byte
+// until an example had to carry configuration the recipe must not publish: Quasar's
+// book declares the custom background preset the conformance contract requires, and
+// putting that on the page would hand a reader a test fixture as setup guidance
+// (#499). Layering it into a `vite.config.ts` instead was tried and is not available
+// — Quasar owns that file, and adding one breaks its own interop path.
+//
+// What this no longer notices is an example carrying config the recipe does not
+// mention, which is now a legitimate state. Drift in the other direction — a
+// published line the example has stopped running — still fails, and that is the
+// direction the guard exists for. #540 is where the general shape of "conformance
+// config is not user documentation" belongs.
 //
 // No network, no build: it reads two files and a markdown fence.
 
@@ -60,6 +73,34 @@ export function tsBlocks(markdown: string): string[] {
     .map(lines => lines.slice(1).join('\n'))
 }
 
+/**
+ * Published lines the example no longer runs, in order.
+ *
+ * Order matters: a recipe whose lines all appear but shuffled is not the recipe
+ * that was published, and imports moving below the config they configure is
+ * exactly the kind of "still contains the words" that would pass a set check.
+ * Blank lines are ignored — they carry no instruction.
+ */
+export function missingLines(published: string, actual: string): string[] {
+  const actualLines = actual.split('\n').map(line => line.trimEnd())
+  const missing: string[] = []
+  let cursor = 0
+
+  for (const line of published.split('\n').map(l => l.trimEnd())) {
+    if (!line.trim()) {
+      continue
+    }
+    const at = actualLines.indexOf(line, cursor)
+    if (at === -1) {
+      missing.push(line)
+      continue
+    }
+    cursor = at + 1
+  }
+
+  return missing
+}
+
 function main(): void {
   const problems: string[] = []
 
@@ -78,8 +119,9 @@ function main(): void {
 
     blocks.forEach((block, index) => {
       const file = recipe.files[index]
-      if (readFileSync(join(ROOT, file), 'utf8') !== block) {
-        problems.push(`${file} is not what "${recipe.heading}" publishes — the example guards a recipe nobody is being given`)
+      const missing = missingLines(block, readFileSync(join(ROOT, file), 'utf8'))
+      if (missing.length > 0) {
+        problems.push(`${file} no longer runs what "${recipe.heading}" publishes — the example guards a recipe nobody is being given. Missing: ${missing.map(line => JSON.stringify(line)).join(', ')}`)
       }
     })
   }

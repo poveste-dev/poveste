@@ -36,6 +36,7 @@ export interface Mirror {
 
 export const MIRRORS: Mirror[] = [
   { source: 'examples/vue3/src/conformance', mirror: 'examples/nuxt4/app/components/conformance' },
+  { source: 'examples/vue3/src/conformance', mirror: 'examples/quasar/src/conformance' },
   { source: 'examples/svelte5/src/conformance', mirror: 'examples/sveltekit/src/lib/conformance' },
 ]
 

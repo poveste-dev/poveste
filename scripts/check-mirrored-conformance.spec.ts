@@ -61,10 +61,19 @@ describe('compareMirror', () => {
 
 describe('mIRRORS', () => {
   // A moved directory would otherwise make the check quietly compare nothing.
-  it('names both pairs, source first', () => {
+  it('names every pair, source first', () => {
     expect(MIRRORS.map(m => `${m.source} -> ${m.mirror}`)).toEqual([
       'examples/vue3/src/conformance -> examples/nuxt4/app/components/conformance',
+      'examples/vue3/src/conformance -> examples/quasar/src/conformance',
       'examples/svelte5/src/conformance -> examples/sveltekit/src/lib/conformance',
     ])
+  })
+
+  // One source can feed several mirrors — quasar inherits the Vue set that
+  // nuxt4 already mirrors, which is what stopped it being written a third time.
+  it('allows one source to feed more than one mirror', () => {
+    const sources = MIRRORS.map(m => m.source)
+
+    expect(new Set(sources).size).toBeLessThan(sources.length)
   })
 })

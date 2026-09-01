@@ -126,13 +126,15 @@ describe('guideExamples', () => {
     '| | |',
     '| --- | --- |',
     '| **Reference books** | `vue3`, `nuxt4`, `svelte5`, `sveltekit` — carry the full conformance set |',
-    '| **Fixtures** | `quasar`, `vike`, `vue3-tailwind` — each exists for one narrow thing |',
+    '| **Conformance books** | `quasar` — the conformance set only |',
+    '| **Fixtures** | `vike`, `vue3-tailwind` — each exists for one narrow thing |',
   ].join('\n')
 
   it('reads both lists out of the guide table', () => {
     expect(guideExamples(table)).toEqual({
       reference: ['vue3', 'nuxt4', 'svelte5', 'sveltekit'],
-      fixtures: ['quasar', 'vike', 'vue3-tailwind'],
+      conformance: ['quasar'],
+      fixtures: ['vike', 'vue3-tailwind'],
     })
   })
 
@@ -145,6 +147,6 @@ describe('guideExamples', () => {
   // Reported as a problem rather than passing vacuously: a renamed heading would
   // otherwise turn the guard off without failing anything.
   it('finds nothing when the table is gone', () => {
-    expect(guideExamples('# Poveste\n\nNo table here.')).toEqual({ reference: [], fixtures: [] })
+    expect(guideExamples('# Poveste\n\nNo table here.')).toEqual({ reference: [], conformance: [], fixtures: [] })
   })
 })

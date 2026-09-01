@@ -19,7 +19,19 @@ async function bookStories(request: { get: (url: string) => Promise<any> }) {
 }
 
 test.describe('shared story list', () => {
-  test('carries every shared story', async ({ request }) => {
+  /*
+   * Two different claims, and they were one flag.
+   *
+   * Every conformance book carries the 17 ids in `SHARED_STORIES` — that is the
+   * contract the shared specs drive. Only a *reference* book also carries the
+   * full 54-title set, which is this book's demo content: `BaseButton`,
+   * `Code gen`, `Color Button`. Requiring both of every conformance book would
+   * price onboarding a framework at 54 stories rather than 17, on a repo with
+   * React and Solid requested (#499).
+   */
+  test('carries every shared story', async ({ request }, testInfo) => {
+    test.skip(!testInfo.project.metadata?.reference, 'a conformance book that is not a mirror of the reference book')
+
     const stories = await bookStories(request)
     const titles = new Set(stories.map(story => story.title))
 
