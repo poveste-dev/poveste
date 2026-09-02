@@ -27,13 +27,15 @@ Everything else in a release can be re-run. This cannot.
 
 ## The invocation
 
-The type is a **positional** argument — pnpm appends it where it becomes the value of bumpp's trailing `--release`:
+The type is a **positional** argument, read by `scripts/release.ts` and validated before anything runs:
 
 ```bash
 pnpm run release patch
 ```
 
-Do **not** write `pnpm run release -- --release patch`. bumpp treats everything after `--` as file arguments, reads the type as a filename, and drops to an interactive prompt.
+A type it does not recognise fails immediately by name. It used to reach bumpp by landing at the very end of a script string as the value of a trailing `--release`, which held only while nothing was ever appended after it and failed as an interactive prompt when something was (#457).
+
+That script is also what pushes. bumpp runs with `--no-push`, because its own push is `git push --tags` — every tag on the machine, not the one it just made, which is how cutting v0.10.0 also published a maintainer's private `salvage/…` tag. `release:check` runs `test:tags` first and lists local tags outside `v<version>`; it warns rather than fails, since a tag on unmerged work can be the only reference keeping that commit alive.
 
 Cut the release on the Node version in `.node-version`. The gate only means something on the Node that publishes.
 
@@ -53,7 +55,7 @@ A commit list alone leaves a reader stuck whenever something is deprecated, rena
 
 ## If the workflow fails
 
-`release.yml` waits for `test.yml` to be green on the tagged commit before building. bumpp pushes the bump straight to `main`, bypassing branch protection, so it is the one published commit no required check ever cleared — that wait is the substitute. If it is red, re-run `test.yml`; once green, re-run the release job. Nothing is published in the meantime.
+`release.yml` waits for `test.yml` to be green on the tagged commit before building. The bump goes straight to `main`, bypassing branch protection, so it is the one published commit no required check ever cleared — that wait is the substitute. If it is red, re-run `test.yml`; once green, re-run the release job. Nothing is published in the meantime.
 
 The release is created as a **draft** and published only after the packages are verified on npm, because publishing is what sends the email. If the run fails before that, the draft stays unpublished and the last step says so.
 

@@ -167,14 +167,16 @@ It runs nightly rather than on every PR, because the usual way it breaks is the 
 
 ## Releasing
 
-Releases are cut from `main` with [bumpp](https://github.com/antfu-collective/bumpp), which bumps every workspace `package.json` in lockstep, commits, tags `v<version>` and pushes. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
+Releases are cut from `main` by [`scripts/release.ts`](./scripts/release.ts), which runs [bumpp](https://github.com/antfu-collective/bumpp) to bump every workspace `package.json` in lockstep, commit and tag `v<version>`, then pushes the commit and that one tag. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
 
 ```sh
 # Root of the mono-repo
 pnpm run release patch   # or: minor, major
 ```
 
-The version type is a positional argument — pnpm appends it to the end of the script, where it becomes the value of bumpp's trailing `--release` flag. Don't write `pnpm run release -- --release patch`: bumpp treats everything after `--` as file arguments, so the type is read as a filename and it drops to an interactive prompt.
+The version type is a positional argument, read by the script rather than by bumpp. It used to land at the end of a script string as the value of bumpp's trailing `--release` flag, which worked but failed as an interactive prompt whenever anything was appended after it (#457).
+
+bumpp runs with `--no-push`, because its own push is `git push --tags` — every tag on the machine, not the one it just made. That is how cutting v0.10.0 also published a maintainer's private `salvage/…` tag. Nothing on CI can catch it: the push happens here, before a tag reaches GitHub. `release:check` also runs `pnpm run test:tags`, which lists local tags outside `v<version>`; it warns rather than fails, since a tag on unmerged work can be the only reference keeping that commit alive.
 
 Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. A milestone names the release its issues are aimed at, not a guarantee of what ships in it — issues can slip to a later version, so the milestone and the actual release can disagree.
 
