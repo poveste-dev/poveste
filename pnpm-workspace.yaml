@@ -52,9 +52,12 @@ overrides:
   # Caret rather than `>=`: an unbounded floor resolved `basic-ftp` to 6.2.1 and
   # `js-yaml` to 5.4.1, a major bump wearing a security fix's clothes.
   #
-  # `picomatch` belongs here and is deliberately absent: taking its fix empties
-  # the `exports` map `@poveste/vendors` builds from a glob, and every downstream
-  # import stops resolving (#560).
+  # Two Group A advisories are absent on purpose. `picomatch`'s fix empties the
+  # `exports` map `@poveste/vendors` builds from a glob, and every downstream
+  # import stops resolving (#560). `extract-zip` has no patched version and no
+  # parent bump escapes it: it arrives under `capture-website`, whose own latest
+  # still caps puppeteer at 24, and `@puppeteer/browsers` only dropped the
+  # dependency at 3.0.0, which puppeteer 25 is the first to pull.
   js-yaml@^3: ^3.15.1
   js-yaml@^4: ^4.3.1
   basic-ftp: ^5.3.1
