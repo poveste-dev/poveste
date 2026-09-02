@@ -177,13 +177,17 @@ Sort by that, not by severity. The resolution path is the evidence; a critical i
 | Reached only through a `peerDependency` | the consumer, at the version they install — a bump here changes nothing for them |
 | Never in a production tree | nobody, though it is still worth keeping current |
 
-### Two things that look like the answer and are not
+### Three things that look like the answer and are not
 
 **`pnpm-lock.yaml` lists resolved peers under an importer's `dependencies`.** `packages/poveste-plugin-svelte` shows `@sveltejs/kit` there and `packages/poveste-plugin-nuxt` shows `nuxt`, and both are `peerDependencies` in `package.json`. Seed a walk from the lockfile and every Nuxt and SvelteKit transitive lands in the wrong group.
 
 **`pnpm list --prod` inside a workspace package follows `workspace:` links across the whole graph.** Run it in each package and you get the same connected tree every time, which reads as every package depending on everything.
 
-So: seed from each published `package.json`'s **`dependencies`** — not `peerDependencies`, not `devDependencies` — resolve `link:` entries to the sibling importer and seed from its `dependencies` in turn, then walk `snapshots` in the lockfile. Dependabot's own `scope` field is not a shortcut either; it has called `svelte` development and `js-cookie` runtime in the same scan.
+**A snapshot's `optionalDependencies` is where pnpm files resolved optional *peers*.** `vite` marks `sass`, `esbuild`, `terser` and six others optional in `peerDependenciesMeta`; this workspace resolves `sass` because it is a devDependency here, and a consumer installing poveste gets neither it nor anything under it. Fold that key into the walk and `immutable` arrives in Group A behind a convincing `vite › sass › immutable`, which no consumer has.
+
+So: seed from each published `package.json`'s **`dependencies`** — not `peerDependencies`, not `devDependencies` — resolve `link:` entries to the sibling importer and seed from its `dependencies` in turn, then walk **`dependencies` only** through the lockfile's `snapshots`. Dependabot's own `scope` field is not a shortcut either; it has called `svelte` development and `js-cookie` runtime in the same scan.
+
+The one gap in that rule: a package's *genuine* `optionalDependencies` are installed by default and do ship, and skipping the key skips those too. No published package here declares any, so the rule is currently exact — revisit it the first time one does, because a real optional dependency and a resolved optional peer sit under the same name.
 
 ### A peer's peer is still a peer
 
