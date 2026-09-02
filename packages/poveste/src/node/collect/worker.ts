@@ -34,16 +34,29 @@ let _rpc: ReturnType<typeof createBirpc<{
   resolveId: ResolveIdFunction
 }>>
 
+// A virtual module is cached under the id the plugin resolved it to, not the one
+// it was asked for, so both forms have to go.
+function invalidate(file: string) {
+  _moduleCache.delete(file)
+  _moduleCache.delete(`\0${file}`)
+}
+
 // Cleanup module cache
 parentPort.on('message', (message) => {
   if (message?.kind === 'hst:invalidate') {
-    _moduleCache.delete(message.file)
+    invalidate(message.file)
   }
 })
 
 export default async (payload: Payload): Promise<ReturnData> => {
   const startTime = performance.now()
   process.env.HST_COLLECT = 'true'
+
+  // Here rather than broadcast from the main thread: the pool dispatches tasks
+  // on a different port from `broadcastMessage`, and nothing orders the two, so
+  // a busy worker could start the task first and read its own stale cache. A
+  // story being re-executed is being re-read by definition (#557).
+  invalidate(payload.storyFile.moduleId)
 
   // Before any module runs: an externalised dep reads these at import time.
   for (const [key, value] of Object.entries(payload.defineGlobals ?? {})) {

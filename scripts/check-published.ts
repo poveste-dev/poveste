@@ -4,18 +4,12 @@
 // this one asks the registry what actually arrived.
 //
 // It asks two things, because a tarball on the registry is not a release anyone
-// installs. `latest` is what the starters and the install instructions resolve
-// (`docs/.vitepress/theme/starters.ts`), and nothing read it after #419 pinned
-// the starter check by version — so a publish that uploaded every tarball and
-// moved no tag went green while every reader still got the previous release
-// (#427).
+// installs: `latest` is what the starters and the install instructions resolve,
+// and nothing read it after #419 pinned the starter check by version (#427).
 //
-// The tag is asserted for every release, prereleases included. #427 suggested
-// exempting them on the grounds that `latest` should not follow a prerelease,
-// but `release.yml` publishes with `pnpm -r publish` and no `--tag`, and npm
-// defaults every publish to `latest` regardless of semver. So `latest` does move
-// for a prerelease here, and asserting it describes what this repository
-// actually does. Whether it *should* is a separate question (#553).
+// Prereleases are not exempt. `release.yml` publishes with no `--tag` and npm
+// defaults to `latest` whatever the semver says, so the tag does move for one
+// here — whether it should is #553.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -100,10 +94,9 @@ export function tagArgs(name: string): string[] {
 
 interface View { out: string, notFound?: boolean, error?: string }
 
-// One `npm view`, with its own error handling. The two reads below fail for
-// different reasons and need different diagnoses: a shared catch reported a tag
-// that could not be read as a tarball that never published, and sends whoever
-// is recovering to re-run the publish — which the message below says not to do.
+// One `npm view`, with its own error handling: a shared catch reported a tag
+// that could not be read as a tarball that never published, which sends whoever
+// is recovering to re-run the publish — the one move this file warns against.
 function npmView(args: string[]): View {
   try {
     return { out: String(execFileSync('npm', args, { stdio: ['ignore', 'pipe', 'pipe'] })).trim() }

@@ -1,17 +1,11 @@
-// Asserts that every top-level `PovesteConfig` key has a reference entry.
+// Asserts that every top-level `PovesteConfig` key has a reference entry (#152).
 //
-// 1.0 is a promise that the config file will not break without a major, and that
-// promise cannot be made about a surface nobody wrote down: there is nothing to
-// hold ourselves to, and no way for a reader to tell a supported key from an
-// accident of the type definition (#152).
+// 1.0 promises the config file will not break without a major, and that promise
+// cannot be made about a surface nobody wrote down.
 //
-// Four keys had drifted out of the docs by the time this was written, and the
-// issue reporting it named three of them plus a nested one — which is the point.
-// A list of gaps maintained by hand is a snapshot of the day it was written.
-//
-// Deprecated and plugin-only keys still need an entry. "Documented" is not the
-// same as "recommended", and an omission reads as an oversight rather than as a
-// decision — so a key we do not intend books to set is documented saying so.
+// Deprecated and plugin-only keys still need an entry: an omission reads as an
+// oversight rather than as a decision, so a key books should not set is
+// documented saying so.
 
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -26,11 +20,9 @@ export const REFERENCE = 'docs/reference/config.md'
 /**
  * The source with comments and string contents blanked out, line structure kept.
  *
- * Depth counting used to run over the raw text, and a single unbalanced brace in
- * a JSDoc — `` Use `{` to open a brace expansion `` reads perfectly naturally —
- * desynchronised it for the rest of the interface. Keys after it were skipped,
- * and a key added last with such a comment made the whole check report success
- * while going undocumented, which is the one thing it exists to prevent.
+ * A single unbalanced brace in a JSDoc — `` Use `{` to open a brace expansion ``
+ * reads perfectly naturally — otherwise desynchronises the depth count, and a
+ * key declared after it is skipped rather than reported as undocumented.
  */
 export function codeOnly(source: string): string {
   let out = ''
@@ -73,13 +65,10 @@ export interface ParsedConfig {
 }
 
 /**
- * `PovesteConfig`, by delimiter depth rather than a TypeScript parse.
- *
- * `tree`, `theme`, `viteNodeTransformMode` and `build` are inline object
- * literals whose own keys are not top-level config, and this file is the only
- * input, so a compiler pass would cost a dependency to answer a question
- * counting delimiters answers — provided it counts only the ones that are code,
- * which is what `codeOnly` is for.
+ * `PovesteConfig`, by delimiter depth rather than a TypeScript parse: one file
+ * is the only input, so a compiler pass would cost a dependency to answer a
+ * question counting delimiters answers. Depth is what keeps the keys of `theme`
+ * and the other inline literals from being read as top-level config.
  */
 export function parseConfig(source: string): ParsedConfig {
   const body = /export interface PovesteConfig \{\n(.*?)\n\}/s.exec(codeOnly(source))?.[1]
@@ -140,9 +129,9 @@ export function undocumentedKeys(source: string, markdown: string): string[] {
  * key and an orphan, and reporting only the first gets the entry edited in place
  * with the old one left behind.
  *
- * Sub-keys are checked in this direction only. Documenting every field of
- * `theme` is not the contract; documenting one that no longer exists still tells
- * a reader to set an option the build ignores.
+ * Sub-keys are checked in this direction only: documenting every field of
+ * `theme` is not the contract, but documenting one that no longer exists still
+ * tells a reader to set an option the build ignores.
  */
 export function staleEntries(source: string, markdown: string): string[] {
   const { keys, nested } = parseConfig(source)
