@@ -38,6 +38,10 @@ let _rpc: ReturnType<typeof createBirpc<{
 parentPort.on('message', (message) => {
   if (message?.kind === 'hst:invalidate') {
     _moduleCache.delete(message.file)
+    // A virtual story is resolved by the plugin, so the runner caches it under
+    // the rollup-style `\0` id rather than the one it was asked for. Deleting
+    // only the plain form never matched, and the entry survived (#557).
+    _moduleCache.delete(`\0${message.file}`)
   }
 })
 
