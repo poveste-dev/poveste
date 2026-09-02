@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { backoffMs, probeArgs, unpublishedReleases } from './check-published.ts'
+import { backoffMs, probeArgs, problemFor, tagArgs, unpublishedReleases } from './check-published.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -132,5 +132,84 @@ describe('probeArgs', () => {
     expect(probeArgs('@poveste/plugin-vue', '0.7.0')).toEqual(
       ['view', '@poveste/plugin-vue@0.7.0', 'version', '--prefer-online'],
     )
+  })
+})
+
+// The gate this half exists for: every tarball lands, no tag moves, and the
+// release goes green while `starters.ts` — which asks for `latest` — still
+// hands every reader the previous version (#427).
+describe('the latest dist-tag', () => {
+  it('reports a version that published but was never tagged', () => {
+    const probe = (name: string) => (name === 'poveste' ? 'untagged:0.6.1' : 'present')
+
+    const problems = unpublishedReleases(RELEASES, probe, options())
+
+    expect(problems).toEqual([
+      'poveste@0.7.0 is on the registry, but the latest dist-tag still points at 0.6.1',
+    ])
+  })
+
+  it('accepts a tag that only advances on a later attempt', () => {
+    // Tag propagation, not a defect — the same backoff that absorbs a tarball's.
+    const probe = vi.fn()
+      .mockReturnValueOnce('untagged:0.6.1')
+      .mockReturnValue('present')
+
+    expect(unpublishedReleases(RELEASES, probe, options())).toEqual([])
+  })
+
+  it('says so when a package has no latest tag at all', () => {
+    const problems = unpublishedReleases([RELEASES[0]], () => 'untagged:nothing', options())
+
+    expect(problems).toEqual([
+      'poveste@0.7.0 is on the registry, but the latest dist-tag still points at nothing',
+    ])
+  })
+
+  it('asks the registry for the tag, with revalidation', () => {
+    expect(tagArgs('@poveste/plugin-vue')).toEqual([
+      'view',
+      '@poveste/plugin-vue',
+      'dist-tags.latest',
+      '--prefer-online',
+    ])
+  })
+})
+
+describe('problemFor', () => {
+  it('keeps a missing tarball and an unmoved tag distinguishable', () => {
+    expect(problemFor('missing')).toBe('is not on the registry')
+    expect(problemFor('untagged:0.6.1')).toBe('is on the registry, but the latest dist-tag still points at 0.6.1')
+  })
+
+  it('passes an unknown answer through as the reason', () => {
+    expect(problemFor('npm error code E500')).toBe('could not be verified: npm error code E500')
+  })
+})
+
+describe('a prerelease', () => {
+  // Not exempt, though #427 suggested it should be: `release.yml` publishes
+  // with no `--tag`, and npm defaults to `latest` whatever the semver says, so
+  // the tag does move here and the assertion describes what actually happens.
+  it('is held to the same tag assertion as any other release', () => {
+    const problems = unpublishedReleases(
+      [{ name: 'poveste', version: '0.12.0-beta.1' }],
+      () => 'untagged:0.11.0',
+      options(),
+    )
+
+    expect(problems).toEqual([
+      'poveste@0.12.0-beta.1 is on the registry, but the latest dist-tag still points at 0.11.0',
+    ])
+  })
+})
+
+describe('problemFor, on a tag that could not be read', () => {
+  // The shared catch used to attribute a failed tag read to the version probe
+  // and report a published package as missing, which sends whoever is
+  // recovering to re-run the publish — the one move this file warns against.
+  it('does not read as a missing tarball', () => {
+    expect(problemFor('the latest dist-tag could not be read: npm error code E500'))
+      .toBe('could not be verified: the latest dist-tag could not be read: npm error code E500')
   })
 })
