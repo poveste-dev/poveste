@@ -177,6 +177,22 @@ export async function createMarkdownPlugins(ctx: Context) {
   return plugins
 }
 
+/**
+ * The story a standalone `.story.md` gets: no sibling story file, so its story
+ * is derived from frontmatter rather than collected from source.
+ */
+function derivedStoryCode(frontmatter: Record<string, any>): string {
+  return `export default ${JSON.stringify({
+    id: frontmatter.id,
+    title: frontmatter.title,
+    icon: frontmatter.icon ?? 'carbon:document-blank',
+    iconColor: frontmatter.iconColor,
+    group: frontmatter.group,
+    docsOnly: true,
+    variants: [],
+  })}`
+}
+
 export async function createMarkdownFilesWatcher(ctx: Context) {
   const md = await createMarkdownRendererWithPlugins(ctx)
 
@@ -222,15 +238,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
 
     if (!isRelatedToStory) {
       const storyRelativePath = relativePath.replace(/\.md$/, '.js')
-      const storyFile = addStory(storyRelativePath, `export default ${JSON.stringify({
-        id: frontmatter.id,
-        title: frontmatter.title,
-        icon: frontmatter.icon ?? 'carbon:document-blank',
-        iconColor: frontmatter.iconColor,
-        group: frontmatter.group,
-        docsOnly: true,
-        variants: [],
-      })}`)
+      const storyFile = addStory(storyRelativePath, derivedStoryCode(frontmatter))
       file.storyFile = storyFile
       storyFile.markdownFile = file
       notifyStoryChange(storyFile)
@@ -282,15 +290,18 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
 
     const { data: frontmatter, content } = matter(fs.readFileSync(file.absolutePath, 'utf8'))
 
-    // Frontmatter is updated on the file, but a *standalone* file's story is a
-    // separate virtual module built from it when the story was created, and
-    // nothing here invalidates that module — so a `title` change does not reach
-    // the story list until a restart. Removing and re-adding the story does not
-    // help: the module id is derived from the path, so the client keeps the one
-    // it already has. Tracked separately; what this handles is the content,
-    // which is the reload people hit on their first edit.
     file.frontmatter = frontmatter
     file.content = content
+
+    // A standalone file's story is a virtual module built from its frontmatter
+    // when the story was created, so a renamed title lives in `moduleCode` and
+    // not in anything read again from disk. Rewritten in place rather than by
+    // removing and re-adding the story: `moduleId` is derived from the path, so
+    // a re-added story carries the id the client already imported and nothing
+    // would tell it to look again (#539).
+    if (!file.isRelatedToStory && file.storyFile) {
+      file.storyFile.moduleCode = derivedStoryCode(frontmatter)
+    }
     file.html = md.render(content, {
       file: file.absolutePath,
     })

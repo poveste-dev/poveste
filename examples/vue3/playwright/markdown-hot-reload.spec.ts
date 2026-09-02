@@ -46,4 +46,22 @@ test.describe('editing a markdown file', () => {
       await expect(page.getByText('EDITED-BY-SPEC')).toBeVisible({ timeout: 2_000 })
     }).toPass({ timeout: 20_000 })
   })
+
+  // The other half, split out of #370 as #539. A standalone file's story is a
+  // virtual module built from frontmatter when the story is created, so the
+  // rendered content reloading says nothing about the title: that lives in the
+  // story module's code and is not re-read from disk.
+  test('renames the story when frontmatter changes, without a restart', async ({ page }) => {
+    await page.goto(STORY)
+    const listItem = page.locator('[data-testid="story-list-item"]', { hasText: 'MarkdownFile' })
+    await expect(listItem).toBeVisible()
+
+    // Same retried-arrange as above, for the same reason: the edit has to be
+    // delivered before the assertion means anything.
+    await expect(async () => {
+      writeFileSync(MARKDOWN, `---\ntitle: RENAMED-BY-SPEC\n---\n\n${original}`)
+      await expect(page.locator('[data-testid="story-list-item"]', { hasText: 'RENAMED-BY-SPEC' }))
+        .toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
+  })
 })
