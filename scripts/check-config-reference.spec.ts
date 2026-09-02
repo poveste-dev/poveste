@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configKeys, documentedKeys, staleEntries, undocumentedKeys } from './check-config-reference.ts'
+import { codeOnly, configKeys, documentedKeys, parseConfig, staleEntries, undocumentedKeys } from './check-config-reference.ts'
 
 const SOURCE = `
 export interface PovesteConfig {
@@ -116,5 +116,85 @@ describe('staleEntries', () => {
 
   it('does not mistake a documented sub-key for a stale entry', () => {
     expect(staleEntries(SOURCE, REFERENCE)).not.toContain('build.excludeFromVendorsChunk')
+  })
+})
+
+describe('codeOnly', () => {
+  // The defect this exists for: one unbalanced brace in a JSDoc desynchronised
+  // depth counting, and a key added after it went unreported — the check
+  // reported success while the thing it guards was broken.
+  it('blanks a brace inside a block comment', () => {
+    expect(codeOnly('/** Use `{` here */\na?: string')).toBe('                   \na?: string')
+  })
+
+  it('blanks a brace inside a line comment', () => {
+    expect(codeOnly('// a { here\nb?: string')).toBe('           \nb?: string')
+  })
+
+  it('blanks a brace inside a string literal', () => {
+    expect(codeOnly(`a?: '{'`)).toBe(`a?: ' '`)
+  })
+
+  it('keeps line structure, so key positions are unchanged', () => {
+    const source = '/**\n * one\n */\na?: string'
+
+    expect(codeOnly(source).split('\n')).toHaveLength(4)
+  })
+
+  it('leaves real code alone', () => {
+    expect(codeOnly('theme?: {\n  title?: string\n}')).toBe('theme?: {\n  title?: string\n}')
+  })
+})
+
+describe('parseConfig', () => {
+  const withComment = SOURCE.replace('  build?: {', '  /** Globs use `{` for expansion. */\n  build?: {')
+
+  it('is not thrown off by a brace in a comment', () => {
+    expect(parseConfig(withComment).keys).toEqual(configKeys(SOURCE))
+  })
+
+  it('reads the fields of an inline object literal', () => {
+    expect(parseConfig(SOURCE).nested.get('build')).toEqual(['excludeFromVendorsChunk'])
+    expect(parseConfig(SOURCE).nested.get('theme')).toEqual(['title', 'colors'])
+  })
+
+  // Parentheses were untracked, so a parameter on its own line sat at depth 0
+  // and was reported as a config key.
+  it('does not mistake a function-type parameter for a key', () => {
+    const source = `
+export interface PovesteConfig {
+  markdown?: (
+    md: MarkdownIt,
+  ) => MarkdownIt
+  outDir?: string
+}
+`
+    expect(parseConfig(source).keys).toEqual(['markdown', 'outDir'])
+  })
+
+  it('refuses to report a partial answer when the delimiters do not balance', () => {
+    const source = 'export interface PovesteConfig {\n  a?: { b: 1\n  c?: string\n}'
+
+    expect(() => parseConfig(source)).toThrow(/unbalanced delimiters/)
+  })
+})
+
+describe('staleEntries, for a documented sub-key', () => {
+  // Sub-key headings were skipped entirely, so the reference could go on
+  // describing an option the build had stopped reading.
+  it('names one whose field no longer exists', () => {
+    const source = SOURCE.replace('excludeFromVendorsChunk?:', 'excludeFromVendors?:')
+
+    expect(staleEntries(source, REFERENCE)).toEqual(['build.excludeFromVendorsChunk'])
+  })
+
+  it('names one whose parent key no longer exists', () => {
+    const source = SOURCE.replace('  build?: {', '  bundle?: {')
+
+    expect(staleEntries(source, REFERENCE)).toEqual(['build', 'build.excludeFromVendorsChunk'])
+  })
+
+  it('is silent while the field is still there', () => {
+    expect(staleEntries(SOURCE, REFERENCE)).toEqual([])
   })
 })
