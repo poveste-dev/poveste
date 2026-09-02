@@ -44,3 +44,21 @@ peerDependencyRules:
 # tell every user on 2.53–2.69 they are unsupported to fix a lockfile entry.
 overrides:
   '@sveltejs/kit': ^2.70.2
+  # Group A of #455 — advisories that reach a consumer through a published
+  # package's `dependencies`. All transitive, so there is no manifest to bump,
+  # and every parent range already admits the fixed version; these pin the floor
+  # so a fresh resolution cannot drift back under it.
+  #
+  # Caret rather than `>=`: an unbounded floor resolved `basic-ftp` to 6.2.1 and
+  # `js-yaml` to 5.4.1, a major bump wearing a security fix's clothes.
+  #
+  # Two Group A advisories are absent on purpose. `picomatch`'s fix empties the
+  # `exports` map `@poveste/vendors` builds from a glob, and every downstream
+  # import stops resolving (#560). `extract-zip` has no patched version and no
+  # parent bump escapes it: it arrives under `capture-website`, whose own latest
+  # still caps puppeteer at 24, and `@puppeteer/browsers` only dropped the
+  # dependency at 3.0.0, which puppeteer 25 is the first to pull.
+  js-yaml@^3: ^3.15.1
+  js-yaml@^4: ^4.3.1
+  basic-ftp: ^5.3.1
+  ip-address: ^10.3.1
