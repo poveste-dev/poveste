@@ -101,8 +101,20 @@ jobs:
       # Tokenless publish via npm Trusted Publishing (OIDC) — needs `id-token: write`
       # above and a Trusted Publisher configured per package on npmjs.com (which
       # requires each package to have been published once already).
+      #
+      # `--tag` is not optional here. npm defaults every publish to `latest`
+      # whatever the semver says, so a prerelease would move it on all twelve
+      # packages and hand a beta to every `npm i poveste` and every StackBlitz
+      # starter, which resolve the tag (#553). The same `*-*` test marks the
+      # GitHub release prerelease a few steps above.
       - name: Publish to npm
-        run: pnpm -r publish --provenance --access public --no-git-checks
+        run: |
+          case "$GITHUB_REF_NAME" in
+            *-*) tag=next ;;
+            *)   tag=latest ;;
+          esac
+          echo "Publishing to the '$tag' dist-tag"
+          pnpm -r publish --provenance --access public --no-git-checks --tag "$tag"
 
       # `pnpm -r publish` logged "✅ Published" for a package the registry never
       # recorded, and the run went green — v0.7.0 shipped without

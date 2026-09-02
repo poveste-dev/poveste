@@ -7,9 +7,15 @@
 // installs: `latest` is what the starters and the install instructions resolve,
 // and nothing read it after #419 pinned the starter check by version (#427).
 //
-// Prereleases are not exempt. `release.yml` publishes with no `--tag` and npm
-// defaults to `latest` whatever the semver says, so the tag does move for one
-// here — whether it should is #553.
+// Which tag depends on the version. `release.yml` publishes a prerelease to
+// `next` and everything else to `latest` (#553), so that is what is asserted.
+//
+// Prereleases were briefly held to `latest` on purpose, and the reason is worth
+// keeping: before #553 the publish passed no `--tag` at all, npm defaulted every
+// one to `latest`, and exempting them would have skipped the check in the case
+// where a wrong `latest` does the most damage. The exemption is correct now
+// because the publish makes it correct, not because `latest` was never supposed
+// to follow a prerelease.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -73,7 +79,8 @@ export function problemFor(result: string): string {
     return 'is not on the registry'
   }
   if (result.startsWith('untagged:')) {
-    return `is on the registry, but the latest dist-tag still points at ${result.slice('untagged:'.length)}`
+    const [tag, points] = result.slice('untagged:'.length).split(':')
+    return `is on the registry, but the ${tag} dist-tag still points at ${points}`
   }
   return `could not be verified: ${result}`
 }
@@ -88,8 +95,13 @@ export function probeArgs(name: string, version: string): string[] {
   return ['view', `${name}@${version}`, 'version', '--prefer-online']
 }
 
-export function tagArgs(name: string): string[] {
-  return ['view', name, 'dist-tags.latest', '--prefer-online']
+/** The tag `release.yml` publishes this version to. */
+export function tagFor(version: string): string {
+  return version.includes('-') ? 'next' : 'latest'
+}
+
+export function tagArgs(name: string, version: string): string[] {
+  return ['view', name, `dist-tags.${tagFor(version)}`, '--prefer-online']
 }
 
 interface View { out: string, notFound?: boolean, error?: string }
@@ -121,13 +133,13 @@ function npmProbe(name: string, version: string): string {
     return 'missing'
   }
 
-  const tagged = npmView(tagArgs(name))
+  const tagged = npmView(tagArgs(name, version))
   if (tagged.error) {
     return `the latest dist-tag could not be read: ${tagged.error}`
   }
   // Reported as pending rather than failed, so the existing backoff absorbs tag
   // propagation the same way it absorbs a tarball's.
-  return tagged.out === version ? 'present' : `untagged:${tagged.out || 'nothing'}`
+  return tagged.out === version ? 'present' : `untagged:${tagFor(version)}:${tagged.out || 'nothing'}`
 }
 
 function main(): void {
@@ -149,7 +161,7 @@ function main(): void {
     process.exit(1)
   }
 
-  console.log(`✅ All ${releases.length} packages are on the registry with latest pointing at their released version`)
+  console.log(`✅ All ${releases.length} packages are on the registry with ${tagFor(releases[0].version)} pointing at their released version`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
