@@ -31,15 +31,15 @@ jobs:
     timeout-minutes: 15
     name: Unit tests and smoke
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 26
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v6.0.10
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -47,7 +47,7 @@ jobs:
           echo "pnpm_cache_dir=$(pnpm store path)" >> "$GITHUB_OUTPUT"
 
       - name: Cache pnpm modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
           key: pnpm-v1-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -127,13 +127,13 @@ jobs:
     timeout-minutes: 20
     name: Collection (windows)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v6.0.10
 
       - name: Install node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: pnpm
@@ -162,12 +162,12 @@ jobs:
     timeout-minutes: 15
     name: Node floor
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4.0.0
+      - uses: pnpm/action-setup@v6.0.10
 
       - name: Install node (release toolchain)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -180,7 +180,7 @@ jobs:
 
       # The lowest version `engines.node` admits. Bump both together.
       - name: Switch to the declared minimum
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22.22.2
 

@@ -24,11 +24,11 @@ jobs:
     timeout-minutes: 15
     name: Build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4.0.0
+      - uses: pnpm/action-setup@v6.0.10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: pnpm
@@ -39,7 +39,7 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages-dist
           path: packages/*/dist
@@ -67,11 +67,11 @@ jobs:
         example: [vue3, nuxt4, svelte5, sveltekit, vue3-tailwind, vike, quasar]
     name: Example e2e (${{ matrix.example }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4.0.0
+      - uses: pnpm/action-setup@v6.0.10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: pnpm
@@ -79,7 +79,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: packages-dist
           path: packages
@@ -90,7 +90,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
@@ -200,7 +200,7 @@ jobs:
       # and that gate skips the upload — discarding the trace in the one case
       # nobody can reproduce on demand (#75). `test-results` is empty unless
       # something retried, hence `ignore` rather than `error`.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-traces-${{ matrix.example }}
