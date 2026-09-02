@@ -43,7 +43,7 @@ export default defineConfig({
 
 ## `storyMatch`
 
-`string[]` - Default: `['**/*.story.vue']`
+`string[]` - Default: `['**/*.story.vue', '**/*.story.svelte']`
 
 Glob patterns for story files to include.
 
@@ -67,6 +67,35 @@ Glob patterns to ignore files while searching for story files. Patterns you set 
 export default defineConfig({
   storyIgnored: [
     '**/fixtures/**',
+  ],
+})
+```
+
+## `supportMatch`
+
+`SupportMatchPattern[]` - Default: `[]`
+
+Which support plugin renders a story, once [`storyMatch`](#storymatch) has decided it is one. The two are separate globs: `storyMatch` is *what is a story*, `supportMatch` is *who renders it*. Each entry is `{ id, patterns, pluginIds }`, where `patterns` are matched against the absolute path.
+
+Plugins contribute the defaults, and they match on extension rather than on the `.story.` infix:
+
+| `id` | `patterns` | `pluginIds` | From |
+| --- | --- | --- | --- |
+| `vue` | `**/*.vue` | `vue3` | `@poveste/plugin-vue` |
+| `svelte` | `**/*.svelte` | `svelte4` | `@poveste/plugin-svelte` |
+| `vanilla` | `**/*.js` | `vanilla` | built in |
+
+Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry, which is what you want only if you are pointing at a plugin nothing else claims.
+
+A story matching `storyMatch` and no `supportMatch` entry fails collection with `No support plugin found for file …`. That is the reason to set this key — TypeScript stories, for instance, since the built-in entry claims `**/*.js` alone.
+
+```ts
+export default defineConfig({
+  storyMatch: ['**/*.story.ts'],
+  supportMatch: [
+    // Same `id` as the built-in entry, so this extends it rather than
+    // competing with it.
+    { id: 'vanilla', patterns: ['**/*.ts'], pluginIds: ['vanilla'] },
   ],
 })
 ```
@@ -216,6 +245,22 @@ export default defineConfig({
 ```
 
 `autoPropsDisabled` applies to Vue and Svelte stories. Automatic prop detection does not run for vanilla stories, so setting it here changes nothing for them.
+
+## `setupCode`
+
+`string[]` - Default: none
+
+Setup modules injected into the story sandbox as source, for plugins that have to generate code rather than point at a file. `@poveste/plugin-nuxt` uses it to import the app's CSS and call `setupNuxtApp` with the resolved runtime config, neither of which exists as a file a book could name.
+
+**Set by plugins, not by books.** Use [`setupFile`](#setupfile) instead — it takes a path, runs in both the app and the sandbox, and is the supported surface. Entries are concatenated rather than replaced, so a book assigning this does not remove what a plugin added.
+
+## `sandboxDarkClass`
+
+`string` - Default: none - **Deprecated**
+
+Class added to the story preview's html root in dark mode. Superseded by [`theme.darkClass`](#theme), which applies to every render path — inline, iframe and grid — rather than only the sandbox.
+
+Still honoured where it is set, and emitted alongside `theme.darkClass` rather than instead of it, so a book that set both gets both classes. A book setting only `theme.darkClass` gets that one class everywhere ([#126](https://github.com/poveste-dev/poveste/issues/126)). Nothing needs doing on upgrade unless you set this key; if you did, move the value to `theme.darkClass` and delete it.
 
 ## `responsivePresets`
 
@@ -497,5 +542,25 @@ Number of maximum threads used to collect stories (both for development and buil
 ```ts
 export default defineConfig({
   collectMaxThreads: 4,
+})
+```
+
+## `build`
+
+`Object`
+
+Build-time options, applying to `poveste build` only.
+
+### `build.excludeFromVendorsChunk`
+
+`(string | RegExp)[]` - Default: `[]`
+
+Dependencies to keep out of the single `vendors` chunk that everything in `node_modules` is bundled into by default. Use it for a dependency large enough that loading it with the first story costs more than fetching it separately.
+
+```ts
+export default defineConfig({
+  build: {
+    excludeFromVendorsChunk: ['lottie-web', /^@my-org\//],
+  },
 })
 ```

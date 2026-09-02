@@ -68,6 +68,12 @@ jobs:
       - name: Check the npm package pages
         run: pnpm run test:readmes
 
+      # On the PR that adds a config key, not at release time: a gate that only
+      # runs in `release:check` blocks the release on a docs task instead of the
+      # change that introduced it (#152).
+      - name: Check the config reference
+        run: pnpm run test:config-reference
+
       # The example harness is three lists that have to agree, and nothing compared
       # them until a job died on its own unknown-name guard before running a test
       # (#384). Cheap and needs nothing built.
