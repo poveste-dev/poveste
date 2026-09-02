@@ -293,12 +293,10 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     file.frontmatter = frontmatter
     file.content = content
 
-    // A standalone file's story is a virtual module built from its frontmatter
-    // when the story was created, so a renamed title lives in `moduleCode` and
-    // not in anything read again from disk. Rewritten in place rather than by
-    // removing and re-adding the story: `moduleId` is derived from the path, so
-    // a re-added story carries the id the client already imported and nothing
-    // would tell it to look again (#539).
+    // Rewritten in place rather than by removing and re-adding the story:
+    // `moduleId` is derived from the path, so a re-added story carries the id
+    // the client already imported and nothing would tell it to look again
+    // (#539).
     if (!file.isRelatedToStory && file.storyFile) {
       file.storyFile.moduleCode = derivedStoryCode(frontmatter)
     }

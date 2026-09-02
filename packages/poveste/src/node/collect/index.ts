@@ -105,18 +105,6 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   }
 
   async function executeStoryFile(storyFile: ServerStoryFile) {
-    // Workers are pooled and their module cache outlives a collection, so a
-    // second execution reuses whatever the first one loaded. The `change`
-    // broadcast above only names paths the watcher saw, and a virtual story's
-    // module id is not one of them — a standalone `.story.md` is watched as
-    // `…/Foo.story.md` while its story is `virtual:story:…/Foo.story.js`, so
-    // editing its frontmatter left the worker serving the old title until the
-    // server restarted (#557).
-    //
-    // Re-executing a story file means reading it again by definition, so its own
-    // module is invalidated here rather than only when a watcher names it.
-    threadPool.broadcastMessage({ kind: 'hst:invalidate', file: storyFile.moduleId })
-
     // The channel belongs to this execution, and nothing used to close it. On a
     // build that fails, the executions still in flight are abandoned mid-run and
     // their main-thread ports stay open and listening — enough live handles to

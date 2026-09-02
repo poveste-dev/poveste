@@ -1,18 +1,9 @@
 // Cuts a release: bumps the versions, then pushes the commit and exactly one tag.
 //
-// bumpp's own push is `git push` followed by `git push --tags`, which publishes
-// every tag on the machine. That is how cutting v0.10.0 also published a
-// maintainer's private `salvage/…` tag (#457). Nothing on CI can catch it: the
-// push happens locally, before a tag ever reaches GitHub.
-//
-// So bumpp runs with `--no-push` — belt and braces alongside `push: false` in
-// bump.config.ts — and the push is spelled out here. The release says what it
-// pushed, and a stray local tag stays local.
-//
-// It also takes the release type as a positional argument rather than leaving it
-// to land on the end of a script string as bumpp's trailing `--release` value.
-// That arrangement worked, but only while nothing was ever appended after it,
-// and it failed by dropping to an interactive prompt rather than saying so.
+// bumpp's own push is `git push --tags` — every tag on the machine, not the one
+// it just made — so it runs with `--no-push` and the push is spelled out here
+// (#457). Nothing on CI can catch that: the push happens locally, before a tag
+// ever reaches GitHub.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -36,10 +27,9 @@ export function validateType(type: string | undefined): string {
 }
 
 /**
- * The tag bumpp just created, read from the commit rather than rebuilt from a
- * template. `tag: 'v%s'` lives in bump.config.ts, and a second copy of it here
- * would push a ref that does not exist the day someone edits that one — after
- * the release commit is already public.
+ * The tag bumpp just created, read from the commit rather than rebuilt from the
+ * `tag: 'v%s'` template in bump.config.ts — a second copy of that would push a
+ * ref that does not exist the day someone edits the first.
  */
 export function selectReleaseTag(tagsAtHead: string[], version: string): string {
   const tags = tagsAtHead.filter(Boolean)

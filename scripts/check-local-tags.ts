@@ -1,18 +1,8 @@
-// Reports local tags a release has no business publishing.
+// Reports local tags a release has no business publishing (#457).
 //
-// bumpp pushes with `git push --tags`, which is every tag on the machine rather
-// than the one it just made. Cutting v0.10.0 published
-// `salvage/amazing-cerf-61cd4c` — a private tag parked on a maintainer's
-// worktree — alongside it (#457).
-//
-// `scripts/release.ts` now pushes `v<version>` by name, so a stray tag can no
-// longer ride along. This is the other half: a machine that cuts releases and
-// accumulates untracked tags is the condition that made the leak possible, and
-// those tags are invisible until something publishes them.
-//
-// It warns rather than fails. The tag from #457 is still the only reference
-// keeping `66550fae` alive, so deleting it destroys the commit — a release must
-// not be blocked by a tag we have deliberately decided to keep.
+// Warns rather than fails, deliberately: a tag on unmerged work can be the only
+// reference keeping that commit alive, so a release must not be blocked by one
+// we have decided to keep.
 
 import { execFileSync } from 'node:child_process'
 import process from 'node:process'
@@ -53,10 +43,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     main()
   }
   catch (error: any) {
-    // Never fails the release. This runs second in `release:check`, ahead of
-    // every real gate, and a check that only ever advises must not be the thing
-    // that stops a release — `git tag` exits non-zero for a dubious-ownership
-    // checkout or a missing git, neither of which says anything about the tags.
+    // `git tag` exits non-zero for a dubious-ownership checkout or a missing
+    // git, neither of which says anything about the tags.
     console.warn(`⚠️  Could not read local tags: ${error.message}`)
   }
 }
