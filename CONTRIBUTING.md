@@ -165,6 +165,34 @@ pnpm run test:starters
 
 It runs nightly rather than on every PR, because the usual way it breaks is the registry moving underneath a file nobody touched. Edit the versions in `starters.ts` only; the check reads the same manifests the launcher ships.
 
+## Dependency advisories
+
+An advisory matters to a consumer only if the package reaches their `node_modules`. That is one question — **does a published package declare it, or something that leads to it, in `dependencies`?** — and neither GitHub nor pnpm answers it for you.
+
+Sort by that, not by severity. The resolution path is the evidence; a critical in a dev-only tool is a lower priority than a medium a consumer installs.
+
+| | who fixes it |
+| --- | --- |
+| Reached through a published package's `dependencies` | us, by bumping a parent or adding an override |
+| Reached only through a `peerDependency` | the consumer, at the version they install — a bump here changes nothing for them |
+| Never in a production tree | nobody, though it is still worth keeping current |
+
+### Two things that look like the answer and are not
+
+**`pnpm-lock.yaml` lists resolved peers under an importer's `dependencies`.** `packages/poveste-plugin-svelte` shows `@sveltejs/kit` there and `packages/poveste-plugin-nuxt` shows `nuxt`, and both are `peerDependencies` in `package.json`. Seed a walk from the lockfile and every Nuxt and SvelteKit transitive lands in the wrong group.
+
+**`pnpm list --prod` inside a workspace package follows `workspace:` links across the whole graph.** Run it in each package and you get the same connected tree every time, which reads as every package depending on everything.
+
+So: seed from each published `package.json`'s **`dependencies`** — not `peerDependencies`, not `devDependencies` — resolve `link:` entries to the sibling importer and seed from its `dependencies` in turn, then walk `snapshots` in the lockfile. Dependabot's own `scope` field is not a shortcut either; it has called `svelte` development and `js-cookie` runtime in the same scan.
+
+### A peer's peer is still a peer
+
+`vite` is a `peerDependency` of `poveste`, which reads as the consumer's problem — but `vite-node` is a real dependency of `poveste`, and `vite` is a real dependency *of `vite-node`*. It ships. Check what the intermediate package declares rather than stopping at the first peer you meet.
+
+### Zero is not the target
+
+Most of these are transitive dev-tooling advisories about denial of service in a build step. Chasing the count produces churn that trains everyone to ignore the inbox the real one arrives in. A small, current, honestly-triaged list is worth more than an empty one, so dismiss what is genuinely not ours with a reason recorded, and leave what is.
+
 ## Releasing
 
 Releases are cut from `main` by [`scripts/release.ts`](./scripts/release.ts), which runs [bumpp](https://github.com/antfu-collective/bumpp) to bump every workspace `package.json` in lockstep, commit and tag `v<version>`, then pushes the commit and that one tag. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
