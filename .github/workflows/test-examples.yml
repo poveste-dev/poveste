@@ -40,6 +40,9 @@ jobs:
           # the diff below one command. Two deep is the least that has a parent.
           fetch-depth: 2
 
+      - name: PROBE — force this job to fail
+        run: exit 1
+
       - name: Work out what changed
         id: filter
         env:
