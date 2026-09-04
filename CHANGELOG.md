@@ -2998,3 +2998,5 @@ export const setupVue3 = defineSetupVue3(({ app }) => {
 
 
 
+
+<!-- #334 gating probe: this branch and PR are throwaway. -->
