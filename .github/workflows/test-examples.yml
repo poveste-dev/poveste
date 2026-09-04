@@ -107,9 +107,8 @@ jobs:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub's 360-minute default in silence.
     timeout-minutes: 20
-    # No `if:` of its own — a job whose dependency is skipped is skipped too, and
-    # reports that way, so gating `build` alone takes all seven of these with it.
-    needs: build
+    needs: [changes, build]
+    if: needs.changes.outputs.examples == 'true'
     # One job per example, so a red check names the framework on its own. The
     # shared `e2e/` suite runs in every one of them against that framework's
     # book — the whole point of a conformance suite is that a chrome regression
