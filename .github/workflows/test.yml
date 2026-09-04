@@ -25,6 +25,79 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Which of the expensive jobs below this push actually needs.
+  #
+  # Filtering has to happen HERE, per job, and never with `paths:` on the
+  # workflow. `main` requires 8 checks and 7 of them live in this file and
+  # test-examples.yml; a workflow filtered out by `paths:` never runs, so its
+  # checks are never *created* and sit pending forever — a PR requiring them can
+  # never merge. A job skipped by `if:` is created, reports skipped, and
+  # satisfies the requirement. `starters.yml` filters at the workflow level and
+  # is right to: it carries no required check (#334).
+  #
+  # `git diff` rather than a paths-filter action. This is the workflow that gates
+  # every merge, and a third-party action here would be one more thing to keep
+  # off a stale major (#308) and to answer for on an advisory (#455), to save
+  # about ten lines of shell.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Changed paths
+    outputs:
+      windows: ${{ steps.filter.outputs.windows }}
+      nodefloor: ${{ steps.filter.outputs.nodefloor }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # On a pull request this checks out the merge commit, whose first
+          # parent is the base branch tip — which is what makes the diff below a
+          # single command. Two commits deep is the least that has a parent.
+          fetch-depth: 2
+
+      - name: Work out what changed
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Only a pull request has a base to compare against. A push to `main`
+          # or `next` is a tree no run has seen (#396) and a dispatch was asked
+          # for, so both run everything.
+          if [ "$EVENT_NAME" != 'pull_request' ]; then
+            everything=true
+          elif ! changed=$(git diff --name-only HEAD^1 HEAD 2>/dev/null) || [ -z "$changed" ]; then
+            # A diff that cannot be computed must never quietly skip a suite, so
+            # the fallback is to run more rather than less.
+            echo "::warning::could not work out what changed — running every job"
+            everything=true
+          else
+            everything=false
+            echo "Changed files:"
+            printf '  %s\n' $changed
+          fi
+
+          matches() {
+            [ "$everything" = true ] && return 0
+            printf '%s\n' "$changed" | grep -qE "$1"
+          }
+
+          # Story collection is the code that breaks on Windows — the globs, the
+          # vite-node module graph, path handling through packages/poveste/src/node
+          # (#156). Nothing under docs/ can move it.
+          WINDOWS='^(packages/|scripts/|pnpm-lock\.yaml$|\.github/workflows/test\.yml$)'
+          # A claim about the published tarballs, so what the manifests declare
+          # and what packs them is the whole of it (#303).
+          NODEFLOOR='^(.*/)?package\.json$|^(\.node-version|pnpm-lock\.yaml|scripts/smoke-test\.sh)$|^\.github/workflows/test\.yml$'
+
+          for name in windows nodefloor; do
+            case $name in
+              windows) pattern=$WINDOWS ;;
+              nodefloor) pattern=$NODEFLOOR ;;
+            esac
+            if matches "$pattern"; then value=true; else value=false; fi
+            echo "$name=$value" >> "$GITHUB_OUTPUT"
+            echo "$name: $value"
+          done
+
   build-and-test:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub\'s 360-minute default in silence.
@@ -123,6 +196,8 @@ jobs:
   # book build cover the class of path bug; the Playwright example suites, which
   # are costly and already flaky under parallelism (#75), stay Linux-only.
   collection-windows:
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     timeout-minutes: 20
     name: Collection (windows)
@@ -158,6 +233,8 @@ jobs:
   # real book on the minimum the manifests declare. Without this the floor is a
   # sentence — `>=26` was asserted for exactly that reason and was never real (#303).
   minimum-node:
+    needs: changes
+    if: needs.changes.outputs.nodefloor == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Node floor

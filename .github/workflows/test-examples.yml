@@ -16,10 +16,64 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Whether this push can move an example book at all.
+  #
+  # Per job, never `paths:` on the workflow. Five of `main`'s 8 required checks
+  # are the matrix below and a sixth is `Build`; a workflow filtered out by
+  # `paths:` never runs, so those checks are never *created* and sit pending
+  # forever. A job skipped by `if:` is created, reports skipped, and satisfies
+  # the requirement — which is the whole mechanism this depends on (#334).
+  #
+  # `git diff` rather than a paths-filter action, for the same reason as
+  # `test.yml`: this gates every merge, and ten lines of shell owe nothing to
+  # #308 or #455.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Changed paths (examples)
+    outputs:
+      examples: ${{ steps.filter.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The merge commit's first parent is the base tip, which is what makes
+          # the diff below one command. Two deep is the least that has a parent.
+          fetch-depth: 2
+
+      - name: Work out what changed
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != 'pull_request' ]; then
+            everything=true
+          elif ! changed=$(git diff --name-only HEAD^1 HEAD 2>/dev/null) || [ -z "$changed" ]; then
+            echo "::warning::could not work out what changed — running every job"
+            everything=true
+          else
+            everything=false
+            echo "Changed files:"
+            printf '  %s\n' $changed
+          fi
+
+          # The books are built from `packages/`, live in `examples/`, and are
+          # driven by the shared suite in `e2e/` through `playwright.config.ts`.
+          PATTERN='^(packages/|examples/|e2e/|playwright\.config\.ts$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+
+          if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
+            value=true
+          else
+            value=false
+          fi
+          echo "examples=$value" >> "$GITHUB_OUTPUT"
+          echo "examples: $value"
+
   # Built once and handed to every example, so all of them are tested against
   # the same bytes. Five jobs each running their own `pnpm run build` would also
   # work, but then "it fails only on svelte5" has one more explanation in it.
   build:
+    needs: changes
+    if: needs.changes.outputs.examples == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Build
@@ -53,6 +107,8 @@ jobs:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub's 360-minute default in silence.
     timeout-minutes: 20
+    # No `if:` of its own — a job whose dependency is skipped is skipped too, and
+    # reports that way, so gating `build` alone takes all seven of these with it.
     needs: build
     # One job per example, so a red check names the framework on its own. The
     # shared `e2e/` suite runs in every one of them against that framework's
