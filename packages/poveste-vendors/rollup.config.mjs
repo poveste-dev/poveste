@@ -51,6 +51,25 @@ export default defineConfig({
           }
           const pkgExports = {}
           const files = globbySync('./dist/client/*.d.ts', { cwd: __dirname })
+
+          // The export map below is written into this package's own checked-in
+          // package.json, and an empty glob writes an empty one — no error, a
+          // dirty tree, and every named subpath silently stops resolving for
+          // every downstream package. It happened: `globby` resolves through
+          // `picomatch`, and 2.3.2 stopped matching this pattern (#560).
+          //
+          // `entries` is what rollup just built, so it is the honest expectation.
+          const expected = entries.map(entry => path.basename(entry, '.ts'))
+          const built = files.map(file => path.basename(file, '.d.ts'))
+          const missing = expected.filter(name => !built.includes(name))
+          if (missing.length > 0) {
+            throw new Error(
+              `dist/client is missing ${missing.length} of ${expected.length} shim declarations: ${missing.join(', ')}.\n`
+              + `Found ${built.length} (${built.join(', ') || 'none'}) from ${files.length} matched files.\n`
+              + 'Writing package.json exports from this would drop those subpaths and break every import of them.',
+            )
+          }
+
           for (const file of files) {
             // Retrieve imports from dts
             {
@@ -96,7 +115,10 @@ export * from '${filepath}'\n`.replace(/\n/g, process.platform === 'win32' ? '\r
           fs.writeJsonSync('./package.json', pkg, { spaces: 2 })
         }
         catch (e) {
+          // Rethrow: this step rewrites a checked-in manifest, so a swallowed
+          // failure leaves the tree half-written and the build reporting success.
           console.error(e)
+          throw e
         }
       },
     },
