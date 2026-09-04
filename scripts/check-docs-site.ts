@@ -14,6 +14,7 @@
 //   5. robots.txt is a real robots.txt               — #288
 //   6. the sitemap lists the built pages, and only those
 //   7. the hostname is declared everywhere it should be, and agrees
+//   8. one <title> per page, and none inside an <svg> — #571
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -250,6 +251,55 @@ function absoluteOrigin(url: string): string | undefined {
 export interface BuiltPage { path: string, html: string }
 
 /**
+ * The document's own title, with any inside an `<svg>` removed first.
+ *
+ * `<title>` is valid inside an `<svg>`, where it is the element's accessible
+ * name and not the document's — a conforming parser scopes it to the SVG
+ * namespace. Not every consumer does: three inline social icons put three
+ * `<title>Bluesky</title>` on every page, and Bing reported the 7-character one
+ * as the page title (#571).
+ */
+export function documentTitles(html: string): string[] {
+  const outside = html.replace(/<svg\b[\s\S]*?<\/svg>/gi, '')
+  return [...outside.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => match[1].trim())
+}
+
+export function svgTitles(html: string): string[] {
+  return [...html.matchAll(/<svg\b[\s\S]*?<\/svg>/gi)]
+    .flatMap(svg => [...svg[0].matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => match[1].trim()))
+}
+
+/**
+ * One title per page, and nothing competing with it.
+ *
+ * An icon inside a labelled link needs no name of its own — the anchor's
+ * `aria-label` is what assistive technology reads, and VitePress's own social
+ * icons carry none for that reason. So a `<title>` in an `<svg>` here is a
+ * second name for one control at best, and a second document title at worst.
+ */
+export function titleProblems(pages: BuiltPage[]): string[] {
+  const problems: string[] = []
+
+  for (const { path, html } of pages) {
+    const titles = documentTitles(html)
+    if (titles.length === 0) {
+      problems.push(`${path} has no <title>`)
+    }
+    else if (titles.length > 1) {
+      problems.push(`${path} has ${titles.length} document titles: ${titles.map(title => `"${title}"`).join(', ')}`)
+    }
+
+    const inSvg = svgTitles(html)
+    if (inSvg.length > 0) {
+      const named = [...new Set(inSvg)].map(title => `"${title}"`).join(', ')
+      problems.push(`${path} has ${inSvg.length} <title> inside an <svg> (${named}) — an icon in a labelled link is decorative, so mark it aria-hidden instead`)
+    }
+  }
+
+  return problems.sort()
+}
+
+/**
  * Every page states its own address, and no two state the same one.
  *
  * The origin check above reads `og:url` from the config and asserts its
@@ -363,11 +413,12 @@ function checkBuild(problems: string[], built: Built | undefined): void {
     }
   }
 
-  problems.push(...selfDeclarationProblems(
-    built.pages
-      .filter(page => page !== '/404.html')
-      .map(page => ({ path: page, html: readFileSync(join(DIST, page.slice(1)), 'utf8') })),
-  ))
+  const pages = built.pages.map(page => ({ path: page, html: readFileSync(join(DIST, page.slice(1)), 'utf8') }))
+
+  // 404.html has no canonical to check — it is not a page anyone should reach by
+  // name — but it renders the same nav and footer, so it carries the same titles.
+  problems.push(...selfDeclarationProblems(pages.filter(page => page.path !== '/404.html')))
+  problems.push(...titleProblems(pages))
 
   const { missing, extra } = sitemapGaps(built.pages, listed)
   for (const page of missing) {
