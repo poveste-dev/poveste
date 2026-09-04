@@ -4,6 +4,25 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.12.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.1...v0.12.2)
+
+**The supported-frameworks table stops being wrong in both directions.**
+
+### 🩹 Fixes
+
+- **Auto-Docs is no longer advertised** ([#154](https://github.com/poveste-dev/poveste/issues/154)). The table marked it 🏗️ for Vue, Nuxt, Svelte and SvelteKit; nothing implements it for any framework, and the marker was inherited from histoire, where it has meant "in progress" since 2022. It reads `-` now, and the note says the approach is still an open question rather than work underway.
+- **Quasar is named among the supported frameworks** ([#154](https://github.com/poveste-dev/poveste/issues/154)). `@poveste/plugin-quasar` shipped in 0.11.0 and became a conformance book in 0.12.0, and the one table a reader checks did not mention it. Omitting a framework that works is the same defect as advertising one that does not.
+
+### 🤖 CI
+
+- **A pull request only runs the jobs its changes need** ([#334](https://github.com/poveste-dev/poveste/issues/334)). A one-line documentation change ran eleven jobs. Gating is per-job rather than per-workflow, because a workflow filtered out by `paths:` never creates its required checks and a PR needing them can never merge — and a push, or a diff that cannot be computed, still runs everything.
+
+### Upgrading
+
+**Nothing to do.** As with 0.12.1, this changes nothing you install — a documentation correction reaches poveste.dev only when a release moves `main`.
+
 ## v0.12.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.0...v0.12.1)
