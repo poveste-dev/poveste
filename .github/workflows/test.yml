@@ -72,7 +72,7 @@ jobs:
           else
             everything=false
             echo "Changed files:"
-            printf '  %s\n' $changed
+            printf '%s\n' "$changed" | sed 's/^/  /'
           fi
 
           matches() {
@@ -197,7 +197,9 @@ jobs:
   # are costly and already flaky under parallelism (#75), stay Linux-only.
   collection-windows:
     needs: changes
-    if: needs.changes.outputs.windows == 'true'
+    # Against `false` rather than `true`, matching test-examples.yml: an output
+    # that was never written must mean run, never skip.
+    if: needs.changes.outputs.windows != 'false'
     runs-on: windows-latest
     timeout-minutes: 20
     name: Collection (windows)
@@ -234,7 +236,7 @@ jobs:
   # sentence — `>=26` was asserted for exactly that reason and was never real (#303).
   minimum-node:
     needs: changes
-    if: needs.changes.outputs.nodefloor == 'true'
+    if: needs.changes.outputs.nodefloor != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Node floor

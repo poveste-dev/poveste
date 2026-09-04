@@ -53,12 +53,16 @@ jobs:
           else
             everything=false
             echo "Changed files:"
-            printf '  %s\n' $changed
+            printf '%s\n' "$changed" | sed 's/^/  /'
           fi
 
           # The books are built from `packages/`, live in `examples/`, and are
           # driven by the shared suite in `e2e/` through `playwright.config.ts`.
-          PATTERN='^(packages/|examples/|e2e/|playwright\.config\.ts$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+          # The root manifest and `.github/scripts/` are here because the matrix
+          # job runs what they define — `test:e2e` is a root script and
+          # `annotate-flaky.mjs` is a step — so a change to either alters what
+          # these jobs do, and would otherwise skip the only suite that runs it.
+          PATTERN='^(packages/|examples/|e2e/|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
 
           if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
             value=true
@@ -73,7 +77,7 @@ jobs:
   # work, but then "it fails only on svelte5" has one more explanation in it.
   build:
     needs: changes
-    if: needs.changes.outputs.examples == 'true'
+    if: needs.changes.outputs.examples != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Build
@@ -119,7 +123,14 @@ jobs:
     # skipping is the ordinary case here and must not take this with it.
     if: ${{ !cancelled() && needs.build.result != 'failure' }}
     env:
-      RUN: ${{ needs.changes.outputs.examples }}
+      # Compared against `false`, not `true`. An output that was never written
+      # is indistinguishable from one that says no, and this job runs even when
+      # `changes` failed — a status-check function in the `if` above suppresses
+      # the implicit `success()`. Read the other way round, a five-second
+      # bookkeeping job falling over would dispatch seven runners that skip
+      # every step and report success, taking five required checks green with
+      # nothing built and nothing tested. Absent has to mean run.
+      RUN: ${{ needs.changes.outputs.examples != 'false' }}
     # One job per example, so a red check names the framework on its own. The
     # shared `e2e/` suite runs in every one of them against that framework's
     # book — the whole point of a conformance suite is that a chrome regression
