@@ -59,12 +59,12 @@ NODE_VERSION = "24"
 # that already held the same content.
 [[redirects]]
 from = "/new"
-to = "/guide/getting-started.html"
+to = "/guide/getting-started"
 status = 301
 
 [[redirects]]
 from = "/new.html"
-to = "/guide/getting-started.html"
+to = "/guide/getting-started"
 status = 301
 
 [[redirects]]
