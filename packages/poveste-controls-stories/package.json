@@ -1,7 +1,7 @@
 {
   "name": "@poveste/controls-stories",
   "type": "module",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "description": "Stories for the prebuilt controls components",
   "author": {
