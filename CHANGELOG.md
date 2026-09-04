@@ -4,6 +4,47 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.12.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.11.0...v0.12.0)
+
+**The Svelte controls panel is no longer empty.**
+
+### 🚀 Enhancements
+
+- **Svelte controls are built from a component's declared props** ([#233](https://github.com/poveste-dev/poveste/issues/233)). v0.11.0 shipped the half that reads them and said plainly that nothing was wired up; this is the wiring. A Svelte story needs no binding and no `initState` — the panel lists the component's props, and editing one re-renders it, the same as Vue.
+- **Quasar is held to the conformance suite** ([#499](https://github.com/poveste-dev/poveste/issues/499)). `@poveste/plugin-quasar` shipped in v0.11.0; what is new is the proof. A Quasar book now runs the same shared specs as `vue3`, `nuxt4`, `svelte5` and `sveltekit` — 94 passing — so Quasar support is a tested claim rather than a plugin that existed.
+
+### 🩹 Fixes
+
+- **Every book you publish declares a language** ([#299](https://github.com/poveste-dev/poveste/issues/299)). The book shell and the sandbox both shipped without `<html lang>`, which is a WCAG Level A failure in the artifact *your* readers open, with no workaround available to you.
+- **The book chrome passes axe** ([#310](https://github.com/poveste-dev/poveste/issues/310), [#311](https://github.com/poveste-dev/poveste/issues/311)). Ten violations, seven of them serious, including 2.3:1 contrast. Search and the story list also gained the ARIA patterns they never had: arrow-key selection, and results a screen reader announces.
+- **A built book stops handing a JSON editor to a string prop** ([#490](https://github.com/poveste-dev/poveste/issues/490)). A production build erases the prop's declared type, so the control fell back to raw JSON — visible only in the built book, never in dev.
+- **An auto-props control edits its own variant** ([#473](https://github.com/poveste-dev/poveste/issues/473)), rather than every variant of the story.
+- **A prop declared in the array form is named** ([#496](https://github.com/poveste-dev/poveste/pull/496)), across the spellings a component can use.
+- **Editing a markdown story reloads it** ([#370](https://github.com/poveste-dev/poveste/issues/370)) — the watcher handled `add` and `unlink` and dropped `change`, so an edit did nothing until the server restarted. A frontmatter title change now lands too ([#539](https://github.com/poveste-dev/poveste/issues/539)).
+- **A config value of the wrong type names the option** ([#324](https://github.com/poveste-dev/poveste/issues/324)). `outDir: 42` reported `TypeError: input.replace is not a function` from inside a dependency, naming neither the key nor the file.
+- **The Svelte controls diagnostic stops firing on stories that work** ([#462](https://github.com/poveste-dev/poveste/issues/462)).
+- **Browsing variants stops writing preset defaults** into state you never set ([#326](https://github.com/poveste-dev/poveste/issues/326)).
+- **The screenshot plugin stops doubling its output name** ([#353](https://github.com/poveste-dev/poveste/issues/353)).
+- **The first setup command in the README runs** ([#393](https://github.com/poveste-dev/poveste/issues/393)). It read `node corepack enable`, which is not a command — a module-not-found stack trace as the repo's first impression.
+
+### 📖 Documentation
+
+- **A deployment guide** ([#166](https://github.com/poveste-dev/poveste/issues/166)) — what `poveste build` emits, base paths, SPA fallback versus `routerMode: 'hash'`, and configs for Netlify, Vercel, GitHub Pages and a plain static host.
+- **Four config keys that existed in the types and on no page** ([#152](https://github.com/poveste-dev/poveste/issues/152)): `supportMatch`, `setupCode`, `sandboxDarkClass` and `pluginIds`.
+- **What auto-props can and cannot read** ([#505](https://github.com/poveste-dev/poveste/pull/505)), now that Svelte has them.
+
+### Upgrading
+
+**Nothing to do.** No breaking changes, no config migration.
+
+Two things worth knowing rather than acting on.
+
+**If you write Svelte stories, the controls panel will now populate on its own.** Hand-written controls are unaffected. There is not yet a way to turn the automatic ones off for Svelte — `autoPropsDisabled` is accepted and does nothing, which is [#460](https://github.com/poveste-dev/poveste/issues/460).
+
+**If you run poveste under Bun, the floor is 1.4.0** ([#366](https://github.com/poveste-dev/poveste/issues/366)). This is not new in this release, only newly written down: every Bun 1.3 release reports `process.versions.node` as 24.3.0, which poveste's own `engines.node` excludes, so the whole 1.3 line fails rather than warns.
+
 ## v0.11.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.10.0...v0.11.0)
