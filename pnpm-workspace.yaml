@@ -52,13 +52,19 @@ overrides:
   # Caret rather than `>=`: an unbounded floor resolved `basic-ftp` to 6.2.1 and
   # `js-yaml` to 5.4.1, a major bump wearing a security fix's clothes.
   #
-  # Two Group A advisories are absent on purpose. `picomatch`'s fix empties the
-  # `exports` map `@poveste/vendors` builds from a glob, and every downstream
-  # import stops resolving (#560). `extract-zip` has no patched version and no
-  # parent bump escapes it: it arrives under `capture-website`, whose own latest
+  # `extract-zip` is absent on purpose: it has no patched version and no parent
+  # bump escapes it (#569). It arrives under `capture-website`, whose own latest
   # still caps puppeteer at 24, and `@puppeteer/browsers` only dropped the
   # dependency at 3.0.0, which puppeteer 25 is the first to pull.
   js-yaml@^3: ^3.15.1
   js-yaml@^4: ^4.3.1
   basic-ftp: ^5.3.1
   ip-address: ^10.3.1
+  # `picomatch@2` is what `@rollup/pluginutils@4.2.1` filters through, and that
+  # is the filter `rollup-plugin-typescript2` asks whether to emit a declaration
+  # for. Under 2.3.2 it answered no for every file, so `dist/client` came out
+  # with no `.d.ts` at all and the vendors export map was written from an empty
+  # glob (#560) — which is why this bump waited for the guard in #566 to make
+  # that state fail rather than commit. `picomatch@4` is unaffected and separate.
+  picomatch@^2: ^2.3.2
+  '@humanfs/node': ^0.16.8

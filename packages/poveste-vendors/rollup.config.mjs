@@ -21,6 +21,11 @@ export default defineConfig({
     commonjs(),
     ts({
       check: false,
+      // Spelled out rather than left to the plugin's default `*.ts+(|x)`, which
+      // is an extglob with an empty alternative and stopped being parsed as one
+      // in picomatch 2.3.2 — it compiles to a literal `\.ts\+\(\|x\)`, matches
+      // no file, and the plugin emits no declarations at all (#560, #572).
+      include: ['*.ts', '**/*.ts', '*.tsx', '**/*.tsx', '**/*.cts', '**/*.mts'],
       tsconfigOverride: {
         compilerOptions: {
           rootDir: 'src/client',
