@@ -159,10 +159,11 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
-| [Vue →](./vue/getting-started.md) | ✅ | ✅ | 🏗️ |
-| [Nuxt →](./vue/getting-started.md#nuxt) | ✅ | ✅ | 🏗️ |
-| [Svelte →](./svelte/getting-started.md) | ✅ | - | 🏗️ |
-| [SvelteKit →](./svelte/getting-started.md#sveltekit) | ✅ | - | 🏗️ |
+| [Vue →](./vue/getting-started.md) | ✅ | ✅ | - |
+| [Nuxt →](./vue/getting-started.md#nuxt) | ✅ | ✅ | - |
+| [Quasar →](./config.md#quasar) | ✅ | ✅ | - |
+| [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
+| [SvelteKit →](./svelte/getting-started.md#sveltekit) | ✅ | - | - |
 | Solid | - | - | - |
 | Angular | - | - | - |
 | React | - ([Alternative](https://www.ladle.dev)) | - | - |
@@ -175,7 +176,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
-*<u>*Auto-Docs*</u>: Generates documentation and controls automatically by analyzing the imported components.
+*<u>*Auto-Docs*</u>: Generating documentation and controls by analysing the imported components. **Not implemented, for any framework.** It is on the roadmap rather than in progress — the approach is still an open question ([#154](https://github.com/poveste-dev/poveste/issues/154)), so this column reads `-` everywhere until something exists behind it.
 
 ## Community
 
