@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   declaredOrigins,
   deployMarker,
+  documentTitles,
   liveTarget,
   missingRedirectTargets,
   pageUrlPath,
@@ -14,6 +15,8 @@ import {
   sitemapGaps,
   sitemapLocations,
   staleHtmlTargets,
+  svgTitles,
+  titleProblems,
   unsafeCatchAlls,
 } from './check-docs-site.ts'
 
@@ -461,5 +464,80 @@ describe('pages declaring their own address', () => {
     ])
 
     expect(problems).toContain('/a.html declares og:url https://poveste.dev/elsewhere and canonical https://poveste.dev/a')
+  })
+})
+
+// The nav, the mobile nav and the footer each render the social links, which is
+// why one icon produced three titles rather than one (#571).
+const ICON = '<a class="VPSocialLink" href="https://bsky.app/profile/poveste.dev" aria-label="Poveste on Bluesky"><svg role="img" viewBox="0 0 24 24"><title>Bluesky</title><path d="M12 10.8"/></svg></a>'
+const DECORATIVE = '<a class="VPSocialLink" href="https://bsky.app/profile/poveste.dev" aria-label="Poveste on Bluesky"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 10.8"/></svg></a>'
+
+function titled(body: string): string {
+  return `<!DOCTYPE html><html><head><title>Getting started with Poveste | Poveste</title></head><body>${body}</body></html>`
+}
+
+describe('documentTitles', () => {
+  it('reads the one title in the head', () => {
+    expect(documentTitles(titled(''))).toEqual(['Getting started with Poveste | Poveste'])
+  })
+
+  // Valid markup: inside an <svg> the element is the icon's accessible name, not
+  // the document's, and a conforming parser scopes it to the SVG namespace.
+  it('does not count a title belonging to an svg', () => {
+    expect(documentTitles(titled(ICON))).toEqual(['Getting started with Poveste | Poveste'])
+  })
+
+  it('reports a page that declares no title at all', () => {
+    expect(documentTitles('<html><head></head><body></body></html>')).toEqual([])
+  })
+})
+
+describe('svgTitles', () => {
+  it('finds one per rendered icon, which is why three appeared per page', () => {
+    expect(svgTitles(titled(ICON + ICON + ICON))).toEqual(['Bluesky', 'Bluesky', 'Bluesky'])
+  })
+
+  it('is silent once the icon is marked decorative', () => {
+    expect(svgTitles(titled(DECORATIVE))).toEqual([])
+  })
+
+  it('does not mistake the document title for one', () => {
+    expect(svgTitles(titled(''))).toEqual([])
+  })
+})
+
+describe('titleProblems', () => {
+  // The state that shipped: four <title> per page, three of them the icon's, and
+  // Bing reporting the 7-character one as the page title (#571).
+  it('names the icon titles and says what to do instead', () => {
+    const problems = titleProblems([{ path: '/guide/getting-started.html', html: titled(ICON + ICON + ICON) }])
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toMatch(/3 <title> inside an <svg> \("Bluesky"\)/)
+    expect(problems[0]).toMatch(/aria-hidden/)
+  })
+
+  it('is silent on the page as it is now built', () => {
+    expect(titleProblems([{ path: '/guide/getting-started.html', html: titled(DECORATIVE) }])).toEqual([])
+  })
+
+  it('flags a second document title, which is the failure the svg one imitated', () => {
+    const html = titled('').replace('</body>', '<title>Bluesky</title></body>')
+
+    expect(titleProblems([{ path: '/index.html', html }])[0]).toMatch(/2 document titles/)
+  })
+
+  it('flags a page with no title', () => {
+    expect(titleProblems([{ path: '/index.html', html: '<html><head></head><body></body></html>' }])[0])
+      .toMatch(/has no <title>/)
+  })
+
+  it('checks every page, not just the first', () => {
+    const problems = titleProblems([
+      { path: '/index.html', html: titled(DECORATIVE) },
+      { path: '/guide/getting-started.html', html: titled(ICON) },
+    ])
+
+    expect(problems.map(problem => problem.split(' ')[0])).toEqual(['/guide/getting-started.html'])
   })
 })
