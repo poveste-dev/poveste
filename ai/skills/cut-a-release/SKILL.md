@@ -19,11 +19,23 @@ Everything else in a release can be re-run. This cannot.
 
 ## Order
 
-1. **Merge `next` into `main`** — a fast-forward. That is why `next` is kept rebased.
+1. **Rebase `next` onto `main` if they have diverged, then fast-forward `main` to it.** After every release `main` is exactly one commit ahead — bumpp's version bump goes there and nowhere else — so the *second* release in a cycle always needs the rebase first. `git merge --ff-only` fails with *"Not possible to fast-forward"* when you skip it. The rebase rewrites `next`, so pushing it needs `--force-with-lease`; `next` is unprotected, `main` is not.
 2. **Write the `CHANGELOG.md` section by hand.** Nothing generates it and nothing can. Draft from `git log v<previous>..HEAD --format='%s'`, group as changelogithub does (🚨 Breaking Changes / 🚀 Enhancements / 🩹 Fixes / 📖 Documentation / ✅ Tests / 🤖 CI / 🏡 Chore), skip anything a consumer cannot see, and add the `[compare changes]` link.
 3. **Check what will actually be published:** `node scripts/check-changelog.ts v<version>`.
 4. **Pick the type from the commits, not the milestone** — a `feat` in the range means `minor`, otherwise `patch`. A milestone names the release its issues aim at, not what shipped; issues slip.
 5. `pnpm run release patch` (or `minor`).
+
+## `next` is behind by one commit the moment a release lands
+
+This is the step that is easy to miss, because it is invisible until the second release in a cycle.
+
+`scripts/release.ts` bumps 26 manifests, commits and tags **on `main`**. `next` never receives that commit, so it still says the previous version. One release and nobody notices; two, and `git merge --ff-only origin/next` refuses.
+
+Rebasing replays the new work on top of the bump, which is why the branch model rebases `next` rather than merging it — a merge would put the bump *behind* the new commits and the fast-forward would still be impossible.
+
+**Write the CHANGELOG section on `next`, not on `main`.** Committing it straight to `main` diverges the branches again the moment it lands, and the next release pays for it.
+
+**Anything reading the version from a manifest reads the old one on `next`.** `docs/.vitepress/config.js` takes `softwareVersion` from `packages/poveste/package.json` for its JSON-LD, and on `next` before a rebase that is the *previous* release — correct-looking in review, wrong in the artifact. Build after the rebase, or check the number against the tag rather than the branch.
 
 ## The invocation
 
