@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { backoffMs, probeArgs, problemFor, tagArgs, unpublishedReleases } from './check-published.ts'
+import { backoffMs, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './check-published.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -140,7 +140,7 @@ describe('probeArgs', () => {
 // hands every reader the previous version (#427).
 describe('the latest dist-tag', () => {
   it('reports a version that published but was never tagged', () => {
-    const probe = (name: string) => (name === 'poveste' ? 'untagged:0.6.1' : 'present')
+    const probe = (name: string) => (name === 'poveste' ? 'untagged:latest:0.6.1' : 'present')
 
     const problems = unpublishedReleases(RELEASES, probe, options())
 
@@ -152,14 +152,14 @@ describe('the latest dist-tag', () => {
   it('accepts a tag that only advances on a later attempt', () => {
     // Tag propagation, not a defect — the same backoff that absorbs a tarball's.
     const probe = vi.fn()
-      .mockReturnValueOnce('untagged:0.6.1')
+      .mockReturnValueOnce('untagged:latest:0.6.1')
       .mockReturnValue('present')
 
     expect(unpublishedReleases(RELEASES, probe, options())).toEqual([])
   })
 
   it('says so when a package has no latest tag at all', () => {
-    const problems = unpublishedReleases([RELEASES[0]], () => 'untagged:nothing', options())
+    const problems = unpublishedReleases([RELEASES[0]], () => 'untagged:latest:nothing', options())
 
     expect(problems).toEqual([
       'poveste@0.7.0 is on the registry, but the latest dist-tag still points at nothing',
@@ -167,7 +167,7 @@ describe('the latest dist-tag', () => {
   })
 
   it('asks the registry for the tag, with revalidation', () => {
-    expect(tagArgs('@poveste/plugin-vue')).toEqual([
+    expect(tagArgs('@poveste/plugin-vue', '0.12.0')).toEqual([
       'view',
       '@poveste/plugin-vue',
       'dist-tags.latest',
@@ -179,7 +179,7 @@ describe('the latest dist-tag', () => {
 describe('problemFor', () => {
   it('keeps a missing tarball and an unmoved tag distinguishable', () => {
     expect(problemFor('missing')).toBe('is not on the registry')
-    expect(problemFor('untagged:0.6.1')).toBe('is on the registry, but the latest dist-tag still points at 0.6.1')
+    expect(problemFor('untagged:latest:0.6.1')).toBe('is on the registry, but the latest dist-tag still points at 0.6.1')
   })
 
   it('passes an unknown answer through as the reason', () => {
@@ -187,19 +187,31 @@ describe('problemFor', () => {
   })
 })
 
+describe('tagFor', () => {
+  // `release.yml` publishes a prerelease to `next` so it cannot move `latest`
+  // out from under `npm i poveste` (#553). The check asserts the same tag the
+  // publish used, or it is testing a different release than the one that ran.
+  it('sends a prerelease to next', () => {
+    expect(tagFor('0.12.0-beta.1')).toBe('next')
+    expect(tagArgs('poveste', '0.12.0-rc.0')[2]).toBe('dist-tags.next')
+  })
+
+  it('sends everything else to latest', () => {
+    expect(tagFor('0.12.0')).toBe('latest')
+    expect(tagArgs('poveste', '0.12.0')[2]).toBe('dist-tags.latest')
+  })
+})
+
 describe('a prerelease', () => {
-  // Not exempt, though #427 suggested it should be: `release.yml` publishes
-  // with no `--tag`, and npm defaults to `latest` whatever the semver says, so
-  // the tag does move here and the assertion describes what actually happens.
-  it('is held to the same tag assertion as any other release', () => {
+  it('is held to its own tag, and the message names which', () => {
     const problems = unpublishedReleases(
       [{ name: 'poveste', version: '0.12.0-beta.1' }],
-      () => 'untagged:0.11.0',
+      () => 'untagged:next:0.11.0-beta.9',
       options(),
     )
 
     expect(problems).toEqual([
-      'poveste@0.12.0-beta.1 is on the registry, but the latest dist-tag still points at 0.11.0',
+      'poveste@0.12.0-beta.1 is on the registry, but the next dist-tag still points at 0.11.0-beta.9',
     ])
   })
 })
