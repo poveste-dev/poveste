@@ -10,9 +10,10 @@
 //   1. no catch-all that answers a miss with success — #343
 //   2. nothing sits below a catch-all                — Netlify takes the first match
 //   3. every redirect target was built               — a rename turns old links into 404s
-//   4. robots.txt is a real robots.txt               — #288
-//   5. the sitemap lists the built pages, and only those
-//   6. the hostname is declared everywhere it should be, and agrees
+//   4. no redirect target keeps the retired .html shape — #575
+//   5. robots.txt is a real robots.txt               — #288
+//   6. the sitemap lists the built pages, and only those
+//   7. the hostname is declared everywhere it should be, and agrees
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -85,6 +86,20 @@ export function rulesBelowCatchAll(redirects: Redirect[]): Redirect[] {
   return first === -1 ? [] : redirects.slice(first + 1)
 }
 
+/**
+ * How Netlify resolves a path against the publish directory.
+ *
+ * A url is not a file path, and `cleanUrls` is the whole reason: VitePress still
+ * writes `guide/getting-started.html`, and the address it tells the world is
+ * `/guide/getting-started`. Netlify tries the literal file, then `.html`, then a
+ * directory index. Resolving only the literal path made a correct redirect look
+ * broken (#575) — the check disagreed with the server it is describing.
+ */
+export function resolvesInBuild(target: string, built: Set<string>): boolean {
+  const path = target.replace(/\/$/, '') || '/'
+  return built.has(path) || built.has(`${path}.html`) || built.has(`${path === '/' ? '' : path}/index.html`)
+}
+
 // `:splat` targets name a directory; everything else names a file. Targets that
 // leave the site — an absolute url — are nothing this can resolve.
 export function missingRedirectTargets(redirects: Redirect[], built: Set<string>): Redirect[] {
@@ -96,7 +111,30 @@ export function missingRedirectTargets(redirects: Redirect[], built: Set<string>
     if (/^[a-z][\w+.-]*:\/\//i.test(target) || target.startsWith('//')) {
       return false
     }
-    return !built.has(target.replace(/:splat$/, '').replace(/\/$/, '') || '/')
+    if (target.endsWith(':splat')) {
+      return !built.has(target.replace(/:splat$/, '').replace(/\/$/, '') || '/')
+    }
+    return !resolvesInBuild(target, built)
+  })
+}
+
+/**
+ * Redirect targets still naming the `.html` shape `cleanUrls` retired.
+ *
+ * These resolve, which is why they survived the assertion above: `/new` served a
+ * 301 to `/guide/getting-started.html`, which answered 200 and then declared a
+ * canonical pointing somewhere else (#575). An inbound link paid for a hop to
+ * reach a page disclaiming its own address.
+ *
+ * Only the site's own paths — an off-site target's shape is its owner's business.
+ */
+export function staleHtmlTargets(redirects: Redirect[]): Redirect[] {
+  return redirects.filter((redirect) => {
+    const target = redirect.to.replace(/[#?].*$/, '')
+    if (/^[a-z][\w+.-]*:\/\//i.test(target) || target.startsWith('//')) {
+      return false
+    }
+    return target.endsWith('.html')
   })
 }
 
@@ -378,6 +416,9 @@ function checkConfig(problems: string[], built: Built | undefined): void {
       for (const redirect of missingRedirectTargets(redirects, built.paths)) {
         problems.push(`${file}: \`${redirect.from}\` redirects to \`${redirect.to}\`, which the build does not contain`)
       }
+    }
+    for (const redirect of staleHtmlTargets(redirects)) {
+      problems.push(`${file}: \`${redirect.from}\` redirects to \`${redirect.to}\`, which canonicalises to \`${redirect.to.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')}\` — send the link there directly`)
     }
   }
 

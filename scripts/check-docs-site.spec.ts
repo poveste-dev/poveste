@@ -7,11 +7,13 @@ import {
   pageUrlPath,
   parseRedirects,
   parseRedirectsFile,
+  resolvesInBuild,
   robotsProblems,
   rulesBelowCatchAll,
   selfDeclarationProblems,
   sitemapGaps,
   sitemapLocations,
+  staleHtmlTargets,
   unsafeCatchAlls,
 } from './check-docs-site.ts'
 
@@ -148,6 +150,76 @@ describe('missingRedirectTargets', () => {
     const redirects = parseRedirects('[[redirects]]\nfrom = "/sveltekit"\nto = "/guide/vue/stories.html#sveltekit"\nstatus = 301\n')
 
     expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+
+  // The clean url is the address the site publishes and the one a redirect
+  // should send a link to; the file on disk keeps its extension. Resolving only
+  // the literal path reported the fix for #575 as a broken target.
+  it('accepts a clean url whose page is on disk as .html', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/new"\nto = "/guide/vue/stories"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built)).toEqual([])
+  })
+
+  it('accepts a clean url served by a directory index', () => {
+    const withIndex = new Set([...built, '/guide/nuxt/index.html'])
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/nuxt"\nto = "/guide/nuxt"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, withIndex)).toEqual([])
+  })
+
+  it('still flags a clean url with no page behind it under any spelling', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/gone"\nto = "/guide/deleted"\nstatus = 301\n')
+
+    expect(missingRedirectTargets(redirects, built).map(r => r.to)).toEqual(['/guide/deleted'])
+  })
+})
+
+describe('resolvesInBuild', () => {
+  const built = new Set(['/', '/guide/vue/stories.html', '/guide/nuxt/index.html'])
+
+  it('resolves a path that is a file', () => {
+    expect(resolvesInBuild('/guide/vue/stories.html', built)).toBe(true)
+  })
+
+  it('resolves a clean url by adding the extension, the way Netlify serves it', () => {
+    expect(resolvesInBuild('/guide/vue/stories', built)).toBe(true)
+  })
+
+  it('resolves a clean url by its directory index', () => {
+    expect(resolvesInBuild('/guide/nuxt', built)).toBe(true)
+  })
+
+  it('does not invent a page for a path with nothing behind it', () => {
+    expect(resolvesInBuild('/guide/deleted', built)).toBe(false)
+  })
+})
+
+describe('staleHtmlTargets', () => {
+  // The defect: the target answered 200 and then declared a different canonical,
+  // so the assertion above had nothing to say about it (#575).
+  it('flags a target still naming the retired .html shape', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/new"\nto = "/guide/getting-started.html"\nstatus = 301\n')
+
+    expect(staleHtmlTargets(redirects).map(r => r.from)).toEqual(['/new'])
+  })
+
+  it('is silent once the target is the clean url', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/new"\nto = "/guide/getting-started"\nstatus = 301\n')
+
+    expect(staleHtmlTargets(redirects)).toEqual([])
+  })
+
+  it('says nothing about a .html page on someone else\'s site', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/rfc"\nto = "https://example.org/spec.html"\nstatus = 301\n')
+
+    expect(staleHtmlTargets(redirects)).toEqual([])
+  })
+
+  it('leaves a splat target alone, since it names a directory', () => {
+    const redirects = parseRedirects('[[redirects]]\nfrom = "/guide/vue3/*"\nto = "/guide/vue/:splat"\nstatus = 301\n')
+
+    expect(staleHtmlTargets(redirects)).toEqual([])
   })
 })
 
