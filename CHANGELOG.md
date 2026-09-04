@@ -4,6 +4,25 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.12.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.0...v0.12.1)
+
+**Nothing here changes what you install.** This release exists because poveste.dev only updates when a release moves `main`, and four corrections to it were sitting behind that.
+
+### 🩹 Fixes
+
+- **`/new` no longer lands on a page that disclaims itself** ([#575](https://github.com/poveste-dev/poveste/issues/575)). `cleanUrls` shipped in 0.12.0 and made the extensionless path canonical, but two redirects still pointed at the `.html` shape — so an inbound link cost a hop and arrived somewhere whose own `<link rel="canonical">` named a different address.
+- **Every page served four `<title>` elements** ([#571](https://github.com/poveste-dev/poveste/issues/571)); three were the Bluesky icon's, and Bing reported the seven-character one as the page title. The icon is now marked decorative and the link keeps its accessible name, rather than the name being deleted along with the duplicates.
+- **The home page states what poveste is in JSON-LD** ([#573](https://github.com/poveste-dev/poveste/issues/573)) — the structured-data half of #502, which did not ship with the rest of it.
+- **Two development-scope advisories taken** ([#455](https://github.com/poveste-dev/poveste/issues/455)): `picomatch` and `@humanfs/node`. Neither reaches an installed package; both are here so the list stays at zero-or-explained.
+
+### Upgrading
+
+**Nothing to do**, and nothing to gain by hurrying — 0.12.0 and 0.12.1 install identically.
+
+The version moved because the documentation site deploys from `main`, so a docs correction cannot reach a reader without one. If you are already on 0.12.0 you have every code change this release contains.
+
 ## v0.12.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.11.0...v0.12.0)
