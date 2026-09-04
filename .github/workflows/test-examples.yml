@@ -16,10 +16,68 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Whether this push can move an example book at all.
+  #
+  # Per job, never `paths:` on the workflow. Five of `main`'s 8 required checks
+  # are the matrix below and a sixth is `Build`; a workflow filtered out by
+  # `paths:` never runs, so those checks are never *created* and sit pending
+  # forever. A job skipped by `if:` is created, reports skipped, and satisfies
+  # the requirement — which is the whole mechanism this depends on (#334).
+  #
+  # `git diff` rather than a paths-filter action, for the same reason as
+  # `test.yml`: this gates every merge, and ten lines of shell owe nothing to
+  # #308 or #455.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Changed paths (examples)
+    outputs:
+      examples: ${{ steps.filter.outputs.examples }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The merge commit's first parent is the base tip, which is what makes
+          # the diff below one command. Two deep is the least that has a parent.
+          fetch-depth: 2
+
+      - name: Work out what changed
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != 'pull_request' ]; then
+            everything=true
+          elif ! changed=$(git diff --name-only HEAD^1 HEAD 2>/dev/null) || [ -z "$changed" ]; then
+            echo "::warning::could not work out what changed — running every job"
+            everything=true
+          else
+            everything=false
+            echo "Changed files:"
+            printf '%s\n' "$changed" | sed 's/^/  /'
+          fi
+
+          # The books are built from `packages/`, live in `examples/`, and are
+          # driven by the shared suite in `e2e/` through `playwright.config.ts`.
+          # The root manifest and `.github/scripts/` are here because the matrix
+          # job runs what they define — `test:e2e` is a root script and
+          # `annotate-flaky.mjs` is a step — so a change to either alters what
+          # these jobs do, and would otherwise skip the only suite that runs it.
+          PATTERN='^(packages/|examples/|e2e/|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+
+          if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
+            value=true
+          else
+            value=false
+          fi
+          echo "examples=$value" >> "$GITHUB_OUTPUT"
+          echo "examples: $value"
+
   # Built once and handed to every example, so all of them are tested against
   # the same bytes. Five jobs each running their own `pnpm run build` would also
   # work, but then "it fails only on svelte5" has one more explanation in it.
   build:
+    needs: changes
+    if: needs.changes.outputs.examples != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Build
@@ -53,7 +111,26 @@ jobs:
     runs-on: ubuntu-latest
     # A wedged job otherwise burns GitHub's 360-minute default in silence.
     timeout-minutes: 20
-    needs: build
+    needs: [changes, build]
+    # This job is dispatched even when there is nothing to test, and every step
+    # inside it is gated instead. A matrix job that never starts never expands
+    # its matrix, so `Example e2e (vue3)` and its four required siblings would
+    # never be *created* — the same permanent-pending deadlock `paths:` causes,
+    # reached through `needs:`. Measured on a docs-only PR: the skipped job
+    # reported once, as the literal `Example e2e (${{ matrix.example }})`.
+    #
+    # `needs.build.result != 'failure'` rather than `success()`, because `build`
+    # skipping is the ordinary case here and must not take this with it.
+    if: ${{ !cancelled() && needs.build.result != 'failure' }}
+    env:
+      # Compared against `false`, not `true`. An output that was never written
+      # is indistinguishable from one that says no, and this job runs even when
+      # `changes` failed — a status-check function in the `if` above suppresses
+      # the implicit `success()`. Read the other way round, a five-second
+      # bookkeeping job falling over would dispatch seven runners that skip
+      # every step and report success, taking five required checks green with
+      # nothing built and nothing tested. Absent has to mean run.
+      RUN: ${{ needs.changes.outputs.examples != 'false' }}
     # One job per example, so a red check names the framework on its own. The
     # shared `e2e/` suite runs in every one of them against that framework's
     # book — the whole point of a conformance suite is that a chrome regression
@@ -68,27 +145,34 @@ jobs:
     name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v7
+        if: env.RUN == 'true'
 
       - uses: pnpm/action-setup@v6.0.10
+        if: env.RUN == 'true'
 
       - uses: actions/setup-node@v7
+        if: env.RUN == 'true'
         with:
           node-version: 26
           cache: pnpm
 
       - name: Install dependencies
+        if: env.RUN == 'true'
         run: pnpm install
 
       - uses: actions/download-artifact@v7
+        if: env.RUN == 'true'
         with:
           name: packages-dist
           path: packages
 
       - name: Resolve Playwright version
+        if: env.RUN == 'true'
         id: playwright
         run: echo "version=$(pnpm exec playwright --version | sed 's/Version //')" >> "$GITHUB_OUTPUT"
 
       - name: Cache Playwright browsers
+        if: env.RUN == 'true'
         id: playwright-cache
         uses: actions/cache@v6
         with:
@@ -96,7 +180,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
       - name: Install Playwright browser
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ env.RUN == 'true' && (steps.playwright-cache.outputs.cache-hit != 'true') }}
         run: pnpm exec playwright install chromium
 
       # Best-effort: `install-deps` shells out to apt, which blocks on a lock or
@@ -104,14 +188,14 @@ jobs:
       # every job that skipped this step passed — so it must not fail the build.
       # A genuinely missing library still surfaces, loudly, at browser launch.
       - name: Install Playwright system deps
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ env.RUN == 'true' && (steps.playwright-cache.outputs.cache-hit != 'true') }}
         run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
 
       # Lives here rather than in the nuxt4 example's own suite because
       # plugin-nuxt has no test infrastructure, and this is the only job that
       # builds a Nuxt book (#223).
       - name: Assert the host .nuxt is untouched by a story build
-        if: matrix.example == 'nuxt4'
+        if: ${{ env.RUN == 'true' && (matrix.example == 'nuxt4') }}
         working-directory: ./examples/nuxt4
         run: pnpm run test:build-dir
 
@@ -121,7 +205,7 @@ jobs:
       # still builds. Without `vike()` there is no `index.html` for Vite to enter
       # from, so this step fails loudly (#369).
       - name: Assert the Vike app still builds with vike() loaded
-        if: matrix.example == 'vike'
+        if: ${{ env.RUN == 'true' && (matrix.example == 'vike') }}
         run: pnpm --filter ./examples/vike run vike:build
 
       # Two books, two different regressions, and each passes while the other's
@@ -135,7 +219,7 @@ jobs:
       # that are not closed then keep the process alive with nothing left to do
       # (#426). Measured: with the leak restored, vue3 hangs here and vike does not.
       - name: Assert a broken component fails the book build
-        if: matrix.example == 'vike' || matrix.example == 'vue3'
+        if: ${{ env.RUN == 'true' && (matrix.example == 'vike' || matrix.example == 'vue3') }}
         working-directory: ./examples/${{ matrix.example }}
         env:
           COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || 'src/components/InjectDemo.vue' }}
@@ -174,12 +258,14 @@ jobs:
           echo "A broken component exits $code and the process ends on its own"
 
       - name: Build book
+        if: env.RUN == 'true'
         run: pnpm --filter ./examples/${{ matrix.example }} run story:build
 
       # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
       # config starts, so this job boots one preview server rather than five.
       # See the config for why that is not just `--project`.
       - name: Run tests
+        if: env.RUN == 'true'
         env:
           POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
         run: pnpm run test:e2e
@@ -188,7 +274,7 @@ jobs:
       # happened. A warning, never a failure: a flake is worth reading, not
       # worth blocking a merge on (#75).
       - name: Flag flaky tests
-        if: ${{ !cancelled() }}
+        if: ${{ env.RUN == 'true' && (!cancelled()) }}
         run: node .github/scripts/annotate-flaky.mjs playwright-results.json ${{ matrix.example }}
 
       # `test-results`, not `playwright-report`: the reporters are `list` and
@@ -201,7 +287,7 @@ jobs:
       # nobody can reproduce on demand (#75). `test-results` is empty unless
       # something retried, hence `ignore` rather than `error`.
       - uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
+        if: ${{ env.RUN == 'true' && (!cancelled()) }}
         with:
           name: playwright-traces-${{ matrix.example }}
           path: |
