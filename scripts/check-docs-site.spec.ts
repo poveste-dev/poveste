@@ -15,6 +15,7 @@ import {
   sitemapGaps,
   sitemapLocations,
   staleHtmlTargets,
+  structuredDataProblems,
   svgTitles,
   titleProblems,
   unsafeCatchAlls,
@@ -539,5 +540,66 @@ describe('titleProblems', () => {
     ])
 
     expect(problems.map(problem => problem.split(' ')[0])).toEqual(['/guide/getting-started.html'])
+  })
+})
+
+const LD = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  'name': 'Poveste',
+  'description': 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar',
+  'softwareVersion': '0.12.0',
+  'codeRepository': 'https://github.com/poveste-dev/poveste',
+}
+
+function home(block?: string): string {
+  const script = block === undefined ? '' : `<script type="application/ld+json">${block}</script>`
+  return `<!DOCTYPE html><html><head><title>Poveste</title>${script}</head><body></body></html>`
+}
+
+describe('structuredDataProblems', () => {
+  it('accepts the block the home page builds', () => {
+    expect(structuredDataProblems(home(JSON.stringify(LD)), '0.12.0')).toEqual([])
+  })
+
+  // The state before #573: Bing reported "No Markup found".
+  it('reports a page with no block at all', () => {
+    expect(structuredDataProblems(home(), '0.12.0')[0]).toMatch(/carries no ld\+json block/)
+  })
+
+  // The reason a grep for `application/ld+json` proves nothing: a broken block
+  // is ignored in silence and reads identically in the page source.
+  it('reports a block that does not parse, which greps as a success', () => {
+    expect(structuredDataProblems(home('{"@context": "https://schema.org",}'), '0.12.0')[0])
+      .toMatch(/does not parse/)
+  })
+
+  it('reports a second block rather than picking one', () => {
+    const html = home(JSON.stringify(LD)).replace('</head>', '<script type="application/ld+json">{}</script></head>')
+
+    expect(structuredDataProblems(html, '0.12.0')[0]).toMatch(/2 ld\+json blocks/)
+  })
+
+  // softwareVersion is read from the manifest for exactly this reason: it is the
+  // one field that goes stale on its own, and nothing else would notice.
+  it('reports a version that no longer matches the package', () => {
+    expect(structuredDataProblems(home(JSON.stringify(LD)), '0.13.0')[0])
+      .toMatch(/says version 0\.12\.0, and the package is 0\.13\.0/)
+  })
+
+  it('names every field the block is missing, so one run says what to add', () => {
+    const problems = structuredDataProblems(home('{"@context": "https://schema.org", "@type": "SoftwareApplication"}'), '0.12.0')
+
+    expect(problems).toEqual([
+      'the home page\'s ld+json states no `name`',
+      'the home page\'s ld+json states no `description`',
+      'the home page\'s ld+json states no `softwareVersion`',
+      'the home page\'s ld+json states no `codeRepository`',
+    ])
+  })
+
+  it('treats an empty field as absent, since it states nothing either', () => {
+    expect(structuredDataProblems(home(JSON.stringify({ ...LD, name: '' })), '0.12.0'))
+      .toEqual(['the home page\'s ld+json states no `name`'])
   })
 })

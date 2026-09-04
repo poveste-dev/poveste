@@ -10,6 +10,7 @@ const SITE = 'https://poveste.dev'
 // The home page is `layout: home` and carries no title of its own, so this is
 // what it falls back to — and `||`, not `??`, because what it has is empty.
 const CARD_TITLE = 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar'
+const DESCRIPTION = 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.'
 
 // `index.md` is the directory itself; everything else drops the extension. This
 // is the shape `cleanUrls` links to, so the canonical matches what the site
@@ -19,9 +20,36 @@ function pageUrl(relativePath) {
   return `${SITE}/${path}`
 }
 
+// From the published package rather than a literal: `softwareVersion` is the one
+// field here that goes out of date on its own, and a hardcoded version is a lie
+// nobody notices — bumpp moves every manifest in lockstep, so this cannot drift.
+const { version } = require('../../packages/poveste/package.json')
+
+// Home page only. A `SoftwareApplication` on every guide page claims each guide
+// is a separate application, which is worse than saying nothing (#573).
+//
+// Deliberately small. The value is being quotable by the surfaces that answer
+// questions rather than list links, and every field here is one the repo already
+// knows — no breadcrumbs, no FAQPage, no author or organization markup, because
+// "fields worth stating" is what turns ten lines into a research project.
+const STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  'name': 'Poveste',
+  'description': DESCRIPTION,
+  'applicationCategory': 'DeveloperApplication',
+  'operatingSystem': 'Cross-platform',
+  'softwareVersion': version,
+  'license': 'https://github.com/poveste-dev/poveste/blob/main/LICENSE',
+  'codeRepository': 'https://github.com/poveste-dev/poveste',
+  'url': SITE,
+  // Some consumers read a missing price as unknown rather than as free.
+  'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+}
+
 module.exports = {
   title: 'Poveste',
-  description: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.',
+  description: DESCRIPTION,
 
   sitemap: {
     hostname: 'https://poveste.dev',
@@ -30,7 +58,7 @@ module.exports = {
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['meta', { property: 'og:site_name', content: 'Poveste' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:description', content: 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.' }],
+    ['meta', { property: 'og:description', content: DESCRIPTION }],
     ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
@@ -50,6 +78,12 @@ module.exports = {
       ['meta', { property: 'og:url', content: url }],
       ['meta', { property: 'og:title', content: pageData.frontmatter.title || pageData.title || CARD_TITLE }],
     )
+
+    if (pageData.relativePath === 'index.md') {
+      pageData.frontmatter.head.push(
+        ['script', { type: 'application/ld+json' }, JSON.stringify(STRUCTURED_DATA)],
+      )
+    }
   },
 
   // Links without `.html`, so what the site offers and what the canonical claims

@@ -15,6 +15,7 @@
 //   6. the sitemap lists the built pages, and only those
 //   7. the hostname is declared everywhere it should be, and agrees
 //   8. one <title> per page, and none inside an <svg> — #571
+//   9. the home page carries one parseable ld+json block — #573
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -300,6 +301,46 @@ export function titleProblems(pages: BuiltPage[]): string[] {
 }
 
 /**
+ * The home page's structured data, parsed rather than matched.
+ *
+ * A malformed `ld+json` block is ignored in silence and looks identical to a
+ * correct one in the page source, so `grep` proves nothing (#573). Only the
+ * fields the page would be useless without are required: the rest of the block
+ * is free to grow.
+ */
+export const REQUIRED_LD_FIELDS = ['@context', '@type', 'name', 'description', 'softwareVersion', 'codeRepository'] as const
+
+export function structuredDataProblems(html: string, version: string): string[] {
+  const blocks = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1])
+
+  if (blocks.length === 0) {
+    return ['the home page carries no ld+json block, so nothing states what this software is']
+  }
+  if (blocks.length > 1) {
+    return [`the home page carries ${blocks.length} ld+json blocks — one describes the site, several describe an argument`]
+  }
+
+  let data: Record<string, unknown>
+  try {
+    data = JSON.parse(blocks[0])
+  }
+  catch (error: any) {
+    return [`the home page's ld+json does not parse (${error.message}) — a malformed block is ignored in silence`]
+  }
+
+  const problems = REQUIRED_LD_FIELDS
+    .filter(field => data[field] === undefined || data[field] === '')
+    .map(field => `the home page's ld+json states no \`${field}\``)
+
+  // The one field that rots on its own, which is why it is read from a manifest.
+  if (data.softwareVersion !== undefined && data.softwareVersion !== version) {
+    problems.push(`the home page's ld+json says version ${String(data.softwareVersion)}, and the package is ${version}`)
+  }
+
+  return problems
+}
+
+/**
  * Every page states its own address, and no two state the same one.
  *
  * The origin check above reads `og:url` from the config and asserts its
@@ -419,6 +460,11 @@ function checkBuild(problems: string[], built: Built | undefined): void {
   // name — but it renders the same nav and footer, so it carries the same titles.
   problems.push(...selfDeclarationProblems(pages.filter(page => page.path !== '/404.html')))
   problems.push(...titleProblems(pages))
+
+  if (built.paths.has('/index.html')) {
+    const { version } = JSON.parse(readFileSync(join(ROOT, 'packages', 'poveste', 'package.json'), 'utf8'))
+    problems.push(...structuredDataProblems(readFileSync(join(DIST, 'index.html'), 'utf8'), version))
+  }
 
   const { missing, extra } = sitemapGaps(built.pages, listed)
   for (const page of missing) {
