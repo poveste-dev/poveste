@@ -261,6 +261,14 @@ jobs:
         if: env.RUN == 'true'
         run: pnpm --filter ./examples/${{ matrix.example }} run story:build
 
+      # One book is enough to catch a chunk re-inflating, and this is the job
+      # that already has one built. Nothing else reads the built output, which
+      # is how 10 MB of unrequested grammars shipped for the life of the
+      # project (#304).
+      - name: Check the built book's size
+        if: ${{ env.RUN == 'true' && (matrix.example == 'vue3') }}
+        run: pnpm run test:bundle-size
+
       # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
       # config starts, so this job boots one preview server rather than five.
       # See the config for why that is not just `--project`.
