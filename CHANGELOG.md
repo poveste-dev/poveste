@@ -4,6 +4,26 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.12.3
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.2...v0.12.3)
+
+**The npm page stops contradicting itself about Quasar.**
+
+### 🩹 Fixes
+
+- **The package page and its own description now agree** ([#154](https://github.com/poveste-dev/poveste/issues/154)). npm renders `package.json`'s description directly above the README, and since 0.12.0 the description has named five frameworks and said Quasar support is the thing histoire does not ship — while the README below it said *community-maintained fork of histoire* and listed install lines for three. Quasar appeared nowhere in it. #487 corrected the description and never reached the README body.
+- **The package page has a screenshot** ([#154](https://github.com/poveste-dev/poveste/issues/154)). It had no image at all. npm strips relative paths, so it is absolute against `main` rather than the docs site, whose asset paths are not permanent in the way the npm page is.
+
+### 🤖 CI
+
+- **The conformance contract's config half is checked** ([#540](https://github.com/poveste-dev/poveste/issues/540)). A book could carry every shared story and still fail eighteen specs, because part of the contract lives in each book's config rather than in its stories, and nothing held the four declarations to each other.
+- **The scattered conformance stories moved into the conformance directories** ([#541](https://github.com/poveste-dev/poveste/issues/541)), so the mirror guard compares the whole set rather than the part that happened to live where it was looking.
+
+### Upgrading
+
+**Nothing to do.** As with 0.12.1 and 0.12.2, nothing here changes what you install — a package page only updates when a release republishes it.
+
 ## v0.12.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.1...v0.12.2)
