@@ -176,7 +176,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
-*<u>*Auto-Docs*</u>: Generating documentation and controls by analysing the imported components. **Not implemented, for any framework.** It is on the roadmap rather than in progress — the approach is still an open question ([#154](https://github.com/poveste-dev/poveste/issues/154)), so this column reads `-` everywhere until something exists behind it.
+*<u>*Auto-Docs*</u>: Generating documentation and controls by analysing the imported components. **Not implemented, for any framework.** It is on the roadmap rather than in progress — the approach is still an open question ([#159](https://github.com/poveste-dev/poveste/issues/159)), so this column reads `-` everywhere until something exists behind it.
 
 ## Community
 
