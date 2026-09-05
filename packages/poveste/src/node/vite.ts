@@ -23,16 +23,17 @@ import {
   userCssScopePlugin,
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
+import { viteCommand, viteMode } from './util/vite-mode.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
 
 export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Context) {
   if (ctx.config.vite) {
-    const command = ctx.mode === 'dev' ? 'serve' : 'build'
+    const command = viteCommand(ctx.mode)
     const overrides = typeof ctx.config.vite === 'function'
       ? await ctx.config.vite(viteConfig as ViteConfig, {
-          mode: ctx.mode,
+          mode: viteMode(ctx.mode),
           command,
         })
       : ctx.config.vite
@@ -70,7 +71,7 @@ export interface ViteConfigWithPlugins {
 }
 
 export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context): Promise<ViteConfigWithPlugins> {
-  const userViteConfigFile = await loadViteConfigFromFile({ command: ctx.mode === 'dev' ? 'serve' : 'build', mode: ctx.mode })
+  const userViteConfigFile = await loadViteConfigFromFile({ command: viteCommand(ctx.mode), mode: viteMode(ctx.mode) })
   const userViteConfig = mergeViteConfig(userViteConfigFile?.config ?? {}, { server: { port: 6006 } })
 
   const inlineConfig = await mergePovesteViteConfig(userViteConfig, ctx)
