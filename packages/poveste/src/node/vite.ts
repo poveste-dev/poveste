@@ -1,4 +1,3 @@
-import type { ConfigMode } from '@poveste/shared'
 import type {
   InlineConfig,
   UserConfig as ViteConfig,
@@ -24,34 +23,17 @@ import {
   userCssScopePlugin,
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
+import { viteCommand, viteMode } from './util/vite-mode.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
 
-/**
- * poveste's `ConfigMode` in the vocabulary Vite's own API speaks.
- *
- * The two are different axes with overlapping words. poveste's is `'dev' |
- * 'build'` and names its own commands; Vite's is a free-form string that
- * conventionally reads `'development' | 'production'`, and selects the `.env`
- * file among other things. Handing one straight to the other means a user
- * config written the standard way — `mode === 'production' ? … : …` — takes
- * neither branch, because `'build'` is not a value it tests for (#349).
- *
- * Only for calls into Vite. The `vite(config, { mode })` hook poveste exposes
- * documents `mode` as `'dev' | 'build'` and keeps it: that one is poveste's
- * own vocabulary and is what its users have written against.
- */
-export function viteMode(mode: ConfigMode): 'development' | 'production' {
-  return mode === 'dev' ? 'development' : 'production'
-}
-
 export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Context) {
   if (ctx.config.vite) {
-    const command = ctx.mode === 'dev' ? 'serve' : 'build'
+    const command = viteCommand(ctx.mode)
     const overrides = typeof ctx.config.vite === 'function'
       ? await ctx.config.vite(viteConfig as ViteConfig, {
-          mode: ctx.mode,
+          mode: viteMode(ctx.mode),
           command,
         })
       : ctx.config.vite
@@ -89,7 +71,7 @@ export interface ViteConfigWithPlugins {
 }
 
 export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context): Promise<ViteConfigWithPlugins> {
-  const userViteConfigFile = await loadViteConfigFromFile({ command: ctx.mode === 'dev' ? 'serve' : 'build', mode: viteMode(ctx.mode) })
+  const userViteConfigFile = await loadViteConfigFromFile({ command: viteCommand(ctx.mode), mode: viteMode(ctx.mode) })
   const userViteConfig = mergeViteConfig(userViteConfigFile?.config ?? {}, { server: { port: 6006 } })
 
   const inlineConfig = await mergePovesteViteConfig(userViteConfig, ctx)
