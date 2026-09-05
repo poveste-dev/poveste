@@ -10,6 +10,7 @@ import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange 
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
 import { onStoryChange, onStoryListChange, watchStories } from './stories.js'
 import { wrapLogError } from './util/log.js'
+import { viteMode } from './util/vite-mode.js'
 import * as VirtualFiles from './virtual/index.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
@@ -57,6 +58,9 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
 
     const server = await createViteServer(
       mergeViteConfig(viteConfig, {
+        // Vite's default for a server, said out loud so the three places that
+        // choose a mode read the same way (#349).
+        mode: viteMode(ctx.mode),
         optimizeDeps: { include: viteConfig.optimizeDeps?.include ?? [], noDiscovery: collecting },
       }),
     )

@@ -9,6 +9,7 @@ import type {
 import type { ResolvedConfig } from 'vite'
 import { resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
+import { viteCommand } from './util/vite-mode.js'
 import { mergePovesteViteConfig } from './vite.js'
 
 export interface Context {
@@ -29,7 +30,7 @@ export interface CreateContextOptions {
 
 export async function createContext(options: CreateContextOptions): Promise<Context> {
   const config = await resolveConfig(process.cwd(), options.mode, options.configFile)
-  const command = options.mode === 'dev' ? 'serve' : 'build'
+  const command = viteCommand(options.mode)
   const viteConfig = await resolveViteConfig({}, command)
 
   const supportPlugins = config.plugins.map(p => p.supportPlugin).filter(Boolean)
