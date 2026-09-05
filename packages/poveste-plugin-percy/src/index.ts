@@ -102,12 +102,26 @@ export function HstPercy(options: PercyPluginOptions = {}): Plugin {
         return
       }
 
-      const puppeteer = await import('puppeteer')
+      // An optional peer as of #455, so it is absent on a perfectly valid
+      // install — this only runs once Percy is enabled, and by then the
+      // difference between "not installed" and "broken" is worth saying.
+      let puppeteer: typeof import('puppeteer')
+      let puppeteerPkg: { name: string, version: string }
+      try {
+        puppeteer = await import('puppeteer')
+        puppeteerPkg = require('puppeteer/package.json')
+      }
+      catch (error: any) {
+        if (error?.code === 'ERR_MODULE_NOT_FOUND' || error?.code === 'MODULE_NOT_FOUND') {
+          throw new Error('@poveste/plugin-percy needs `puppeteer` to take snapshots, and it is a peer dependency you install yourself. Run `npm i -D puppeteer` (or the pnpm/yarn equivalent), or unset PERCY_TOKEN to build without Percy.')
+        }
+        throw error
+      }
+
       const browser = await puppeteer.launch()
 
       // Collect client and env info
       const sdkPkg = require(path.join(__dirname, '../package.json'))
-      const puppeteerPkg = require('puppeteer/package.json')
       const CLIENT_INFO = `${sdkPkg.name}/${sdkPkg.version}`
       const ENV_INFO = `${puppeteerPkg.name}/${puppeteerPkg.version}`
 
