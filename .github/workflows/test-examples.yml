@@ -58,11 +58,12 @@ jobs:
 
           # The books are built from `packages/`, live in `examples/`, and are
           # driven by the shared suite in `e2e/` through `playwright.config.ts`.
-          # The root manifest and `.github/scripts/` are here because the matrix
-          # job runs what they define — `test:e2e` is a root script and
-          # `annotate-flaky.mjs` is a step — so a change to either alters what
-          # these jobs do, and would otherwise skip the only suite that runs it.
-          PATTERN='^(packages/|examples/|e2e/|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+          # The root manifest, `scripts/` and `.github/scripts/` are here because
+          # the matrix job runs what they define — `test:e2e` is a root script,
+          # `annotate-flaky.mjs` and `check-bundle-size.ts` are steps — so a
+          # change to any of them alters what these jobs do, and would otherwise
+          # skip the only suite that runs it.
+          PATTERN='^(packages/|examples/|e2e/|scripts/|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
 
           if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
             value=true
@@ -269,6 +270,12 @@ jobs:
         env:
           POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
         run: pnpm run test:e2e
+
+      # After the tests, so a size regression never pre-empts the e2e result —
+      # both are worth seeing in one run, and they fail for unrelated reasons.
+      - name: Check the built book's size
+        if: ${{ env.RUN == 'true' && matrix.example == 'vue3' && !cancelled() }}
+        run: pnpm run test:bundle-size
 
       # Retries make a flake green, so this is the only thing that says one
       # happened. A warning, never a failure: a flake is worth reading, not
