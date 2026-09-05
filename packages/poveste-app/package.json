@@ -46,7 +46,6 @@
     "watch": "concurrently \"vite build --watch\" \"pnpm run build:css --watch\" \"node ./scripts/watchAndCopy.mjs\""
   },
   "dependencies": {
-    "@fontsource/noto-sans-display": "^5.3.0",
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
@@ -54,6 +53,7 @@
     "shiki": "^3.0.0"
   },
   "devDependencies": {
+    "@fontsource/noto-sans-display": "^5.3.0",
     "@iconify-json/carbon": "^1.2.25",
     "@iconify-json/fluent": "1.2.56",
     "@iconify-json/mdi": "^1.2.3",
