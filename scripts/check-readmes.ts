@@ -57,6 +57,10 @@ export const ALLOWED_HOSTS = new Set([
   // because a maintainer people can follow beats a logo with no followers (#482).
   'bsky.app',
   'x.com',
+  // npm strips relative image paths, so the package page needs an absolute one.
+  // `raw.githubusercontent.com` on `main` rather than poveste.dev, because the
+  // npm README is permanent and the docs site's asset paths are not (#154).
+  'raw.githubusercontent.com',
   'www.npmjs.com',
   'npmx.dev',
   'vite.dev',
