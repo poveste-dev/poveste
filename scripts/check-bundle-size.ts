@@ -11,8 +11,8 @@
 // and not on the ordinary drift of a dependency bump. A limit that cries wolf
 // gets raised without being read.
 
-import { readdirSync, statSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { dirname, join, relative, sep } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -30,12 +30,16 @@ export interface Limit {
 /**
  * Set from measured output with room above it, not from a target.
  *
- * `highlighter` was 9960 KB before `shiki/core`; 3000 KB fails a return to the
- * barrel import while leaving room for a grammar or two to be added on purpose.
+ * Measured at 4990 KB total, `highlighter` 1343 and `vendor` 1840. Each ceiling
+ * leaves room for ordinary growth and fails on the order-of-magnitude kind:
+ * `highlighter` was 9960 KB before `shiki/core`, and a whole-book ceiling on
+ * its own would not have noticed, because one chunk doubling is small against
+ * a total set loosely enough never to fire.
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: '', max: 9000, because: 'the whole book, which a user uploads and their host serves' },
+  { prefix: 'vendor', max: 2500, because: 'a dependency inlined into the shared chunk rather than split out of it' },
+  { prefix: '', max: 6500, because: 'the whole book, which a user uploads and their host serves' },
 ]
 
 export interface Chunk { name: string, kb: number }
@@ -67,20 +71,66 @@ export function overLimit(chunks: Chunk[], limits: Limit[]): string[] {
   })
 }
 
-export const BOOK = 'examples/vue3/.poveste/dist'
+export const EXAMPLE = 'examples/vue3'
+
+export const HIGHLIGHTER = 'packages/poveste-app/src/app/util/highlighter.ts'
+
+/**
+ * The regression, caught at its source rather than by its weight.
+ *
+ * A byte ceiling needs a built book, so it cannot run in `release:check` or
+ * `test:scripts` — and the thing it guards is one import line. This reads the
+ * file, so it fails in milliseconds and everywhere.
+ */
+export function barrelImport(source: string): string | undefined {
+  const barrel = /^\s*import\s[^\n]*\sfrom\s+'shiki'/m.exec(source)
+  return barrel ? barrel[0].trim() : undefined
+}
+
+/**
+ * The built book, found rather than assumed.
+ *
+ * `outDir` is a whole relative path — `.poveste/dist` by default — not a parent
+ * that `dist` hangs off, so nothing can be derived from its shape. A book is
+ * therefore identified by what it is: an `index.html` beside an `assets/`
+ * directory.
+ */
+export function findBook(example: string): string | undefined {
+  if (!existsSync(example)) {
+    return undefined
+  }
+  return readdirSync(example, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.name === 'index.html' && !entry.parentPath.includes(`${sep}node_modules${sep}`))
+    .map(entry => entry.parentPath)
+    .find(dir => existsSync(join(dir, 'assets')))
+}
 
 function main(): void {
-  const dist = join(ROOT, BOOK)
-  let chunks: Chunk[]
+  let book: string | undefined
   try {
-    chunks = chunksIn(dist)
+    book = findBook(join(ROOT, EXAMPLE))
   }
-  catch {
-    console.error(`::error::${BOOK} is not built — run \`pnpm --filter ./examples/vue3 run story:build\` first`)
+  catch (error: any) {
+    // Narrow: a directory that cannot be read is not the same as one with no
+    // book in it, and reporting both as "run story:build" sends the reader
+    // after a command that already worked.
+    console.error(`::error::could not read ${EXAMPLE}: ${error.message}`)
     process.exit(1)
   }
 
+  if (book === undefined) {
+    console.error(`::error::no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`)
+    process.exit(1)
+  }
+
+  const chunks = chunksIn(book)
+
   const problems = overLimit(chunks, LIMITS)
+
+  const barrel = barrelImport(readFileSync(join(ROOT, HIGHLIGHTER), 'utf8'))
+  if (barrel !== undefined) {
+    problems.push(`${HIGHLIGHTER} has \`${barrel}\` — the full-bundle entry, which ships every grammar and theme (#304)`)
+  }
   if (problems.length > 0) {
     console.error('::error::A built book is over its size ceiling\n')
     for (const problem of problems) {
@@ -92,7 +142,7 @@ function main(): void {
 
   const total = chunks.reduce((sum, chunk) => sum + chunk.kb, 0)
   const largest = [...chunks].sort((a, b) => b.kb - a.kb)[0]
-  console.log(`✅ ${BOOK} is ${total} KB, largest chunk ${largest.name} at ${largest.kb} KB`)
+  console.log(`✅ ${relative(ROOT, book)} is ${total} KB, largest chunk ${largest.name} at ${largest.kb} KB`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

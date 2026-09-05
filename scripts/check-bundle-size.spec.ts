@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LIMITS, overLimit } from './check-bundle-size.ts'
+import { barrelImport, LIMITS, overLimit } from './check-bundle-size.ts'
 
 const LIMIT = [{ prefix: 'highlighter', max: 3000, because: 'a barrel import' }]
 
@@ -48,5 +48,24 @@ describe('the ceilings themselves', () => {
 
   it('keeps the highlighter ceiling below what the barrel import shipped', () => {
     expect(LIMITS.find(limit => limit.prefix === 'highlighter')!.max).toBeLessThan(9960)
+  })
+})
+
+describe('barrelImport', () => {
+  it('is silent on the fine-grained entry', () => {
+    expect(barrelImport('import { createHighlighterCore } from \'shiki/core\'')).toBeUndefined()
+  })
+
+  // The regression itself, caught at its source rather than by its weight.
+  it('names the barrel import', () => {
+    expect(barrelImport('import { createHighlighter } from \'shiki\'')).toBe('import { createHighlighter } from \'shiki\'')
+  })
+
+  it('sees a type-only import of the barrel, which pulls it just the same', () => {
+    expect(barrelImport('import type { Highlighter } from \'shiki\'')).toBeDefined()
+  })
+
+  it('does not fire on a subpath that merely starts with the name', () => {
+    expect(barrelImport('import { x } from \'shikiji\'')).toBeUndefined()
   })
 })

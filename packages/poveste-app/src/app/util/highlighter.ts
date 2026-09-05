@@ -13,16 +13,9 @@ import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
 let highlighterPromise: Promise<HighlighterCore> | undefined
 
 /**
- * `shiki/core` rather than `shiki`, and every grammar and theme named.
- *
- * `createHighlighter` is Shiki's full-bundle entry: importing it statically
- * pulls in every grammar and every theme whatever the options ask for, so every
- * book shipped COBOL and Wolfram in a 10 MB chunk to highlight two languages
- * (#304). This form ships what is listed and nothing else.
- *
- * The imports are dynamic on purpose — that is the interface, and it is what
- * lets the bundler see each grammar as its own module rather than as a member
- * of one barrel.
+ * `shiki/core`, not `shiki`: the latter is the full-bundle entry and ships every
+ * grammar and theme whatever the options ask for — 10 MB a book (#304). The
+ * dynamic imports are the interface, not a lazy-loading choice.
  */
 export function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
