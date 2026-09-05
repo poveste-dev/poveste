@@ -30,7 +30,7 @@ import {
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
 import { wrapLogError } from './util/log.js'
-import { getViteConfigWithPlugins } from './vite.js'
+import { getViteConfigWithPlugins, viteMode } from './vite.js'
 
 const PRELOAD_MODULES = [
   'vendor',
@@ -133,7 +133,12 @@ export async function build(ctx: Context) {
 
     const { viteConfig: buildViteConfigRaw } = await getViteConfigWithPlugins(false, ctx)
     const buildViteConfig: ViteInlineConfig = mergeViteConfig(buildViteConfigRaw, {
-      mode: 'development',
+      // Not `'development'`, which this said from histoire in 2022 with no
+      // comment and no test. `NODE_ENV` is already production here, so the book
+      // was a production build — but `mode` is a separate axis, and Vite reads
+      // `.env.development` from it. A user's `VITE_*` variable was baked into a
+      // published book with its development value, silently (#349).
+      mode: viteMode(ctx.mode),
       build: {
         lib: false,
         rollupOptions: {
