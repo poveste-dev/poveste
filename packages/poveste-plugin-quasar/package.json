@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-quasar",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Poveste plugin that builds a book inside a Quasar project",
   "author": {
     "name": "Sorin Gitlan",

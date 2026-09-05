@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-screenshot",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Poveste plugin to take screenshots for visual regression testing",
   "author": {
     "name": "Sorin Gitlan",

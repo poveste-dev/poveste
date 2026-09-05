@@ -1,7 +1,7 @@
 {
   "name": "@poveste/app",
   "type": "module",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "Pre-bundled UI for Poveste",
   "author": {
     "name": "Sorin Gitlan",
