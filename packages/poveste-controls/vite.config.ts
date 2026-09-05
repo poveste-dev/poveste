@@ -36,6 +36,13 @@ export default defineConfig({
       external: [
         /@poveste/,
       ],
+      output: {
+        // A single-entry lib build inlines dynamic imports by default, which
+        // flattens `HstJson` back into `index.es.js` and leaves a book's
+        // bundler nothing to split on (#374).
+        inlineDynamicImports: false,
+        chunkFileNames: '[name].es.js',
+      },
     },
   },
 
