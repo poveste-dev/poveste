@@ -11,8 +11,8 @@
 // and not on the ordinary drift of a dependency bump. A limit that cries wolf
 // gets raised without being read.
 
-import { readdirSync, statSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { dirname, join, relative } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -30,12 +30,16 @@ export interface Limit {
 /**
  * Set from measured output with room above it, not from a target.
  *
- * `highlighter` was 9960 KB before `shiki/core`; 3000 KB fails a return to the
- * barrel import while leaving room for a grammar or two to be added on purpose.
+ * Measured at 4990 KB total, `highlighter` 1343 and `vendor` 1840. Each ceiling
+ * leaves room for ordinary growth and fails on the order-of-magnitude kind:
+ * `highlighter` was 9960 KB before `shiki/core`, and a whole-book ceiling on
+ * its own would not have noticed, because one chunk doubling is small against
+ * a total set loosely enough never to fire.
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: '', max: 9000, because: 'the whole book, which a user uploads and their host serves' },
+  { prefix: 'vendor', max: 2500, because: 'a dependency inlined into the shared chunk rather than split out of it' },
+  { prefix: '', max: 6500, because: 'the whole book, which a user uploads and their host serves' },
 ]
 
 export interface Chunk { name: string, kb: number }
@@ -67,18 +71,29 @@ export function overLimit(chunks: Chunk[], limits: Limit[]): string[] {
   })
 }
 
-export const BOOK = 'examples/vue3/.poveste/dist'
+export const EXAMPLE = 'examples/vue3'
+
+/**
+ * The built book, found rather than assumed.
+ *
+ * `outDir` is a config key — `examples/vue3/poveste.config.ts` carries a
+ * commented-out `hdist` override — so a hardcoded path would report "not built"
+ * about a book that had just been built somewhere else.
+ */
+export function findBook(example: string): string | undefined {
+  return readdirSync(example, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => join(example, entry.name, 'dist'))
+    .find(dist => existsSync(join(dist, 'index.html')))
+}
 
 function main(): void {
-  const dist = join(ROOT, BOOK)
-  let chunks: Chunk[]
-  try {
-    chunks = chunksIn(dist)
-  }
-  catch {
-    console.error(`::error::${BOOK} is not built — run \`pnpm --filter ./examples/vue3 run story:build\` first`)
+  const book = findBook(join(ROOT, EXAMPLE))
+  if (book === undefined) {
+    console.error(`::error::no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`)
     process.exit(1)
   }
+  const chunks = chunksIn(book)
 
   const problems = overLimit(chunks, LIMITS)
   if (problems.length > 0) {
@@ -92,7 +107,7 @@ function main(): void {
 
   const total = chunks.reduce((sum, chunk) => sum + chunk.kb, 0)
   const largest = [...chunks].sort((a, b) => b.kb - a.kb)[0]
-  console.log(`✅ ${BOOK} is ${total} KB, largest chunk ${largest.name} at ${largest.kb} KB`)
+  console.log(`✅ ${relative(ROOT, book)} is ${total} KB, largest chunk ${largest.name} at ${largest.kb} KB`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
