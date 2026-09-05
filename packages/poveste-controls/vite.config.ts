@@ -36,6 +36,11 @@ export default defineConfig({
       external: [
         /@poveste/,
       ],
+      output: {
+        // Hashed: the chunk namespace is flat, so two modules sharing a
+        // basename — or one called `index` — would otherwise contend.
+        chunkFileNames: '[name]-[hash].es.js',
+      },
     },
   },
 
