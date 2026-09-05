@@ -9,6 +9,7 @@ import type {
 import type { ResolvedConfig } from 'vite'
 import { resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
+import { viteCommand, viteMode } from './util/vite-mode.js'
 import { mergePovesteViteConfig } from './vite.js'
 
 export interface Context {
@@ -29,8 +30,12 @@ export interface CreateContextOptions {
 
 export async function createContext(options: CreateContextOptions): Promise<Context> {
   const config = await resolveConfig(process.cwd(), options.mode, options.configFile)
-  const command = options.mode === 'dev' ? 'serve' : 'build'
-  const viteConfig = await resolveViteConfig({}, command)
+  const command = viteCommand(options.mode)
+  // The mode as well as the command: `resolveConfig` defaults to
+  // `'development'` whatever the command, and `base` from this resolution is
+  // what the hand-written index.html uses while the bundle uses the build's.
+  // A user config setting `base` by mode would otherwise disagree with itself.
+  const viteConfig = await resolveViteConfig({}, command, viteMode(options.mode))
 
   const supportPlugins = config.plugins.map(p => p.supportPlugin).filter(Boolean)
 

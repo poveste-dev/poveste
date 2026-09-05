@@ -30,6 +30,7 @@ import {
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
 import { wrapLogError } from './util/log.js'
+import { viteMode } from './util/vite-mode.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
 const PRELOAD_MODULES = [
@@ -73,6 +74,10 @@ export async function build(ctx: Context) {
   const { viteConfig } = await getViteConfigWithPlugins(true, ctx)
   const server = await createViteServer(
     mergeViteConfig(viteConfig, {
+      // Same mode as the build below: `createServer` defaults to `development`,
+      // which would put one `.env` file in poveste.json and the other in the
+      // bundle built from it.
+      mode: viteMode(ctx.mode),
       optimizeDeps: { include: [], noDiscovery: true },
     }),
   )
@@ -133,7 +138,9 @@ export async function build(ctx: Context) {
 
     const { viteConfig: buildViteConfigRaw } = await getViteConfigWithPlugins(false, ctx)
     const buildViteConfig: ViteInlineConfig = mergeViteConfig(buildViteConfigRaw, {
-      mode: 'development',
+      // Vite picks the `.env` file from `mode`, not from NODE_ENV — this said
+      // `'development'` from histoire until #349.
+      mode: viteMode(ctx.mode),
       build: {
         lib: false,
         rollupOptions: {
