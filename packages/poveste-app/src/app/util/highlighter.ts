@@ -1,5 +1,6 @@
-import type { Highlighter } from 'shiki'
-import { createHighlighter } from 'shiki'
+import type { HighlighterCore } from 'shiki/core'
+import { createHighlighterCore } from 'shiki/core'
+import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
 
 /**
  * Shiki is meant to be used as a singleton: each instance carries its own WASM
@@ -9,18 +10,24 @@ import { createHighlighter } from 'shiki'
  *
  * The langs and themes are fixed, so one shared instance is always correct.
  */
-let highlighterPromise: Promise<Highlighter> | undefined
+let highlighterPromise: Promise<HighlighterCore> | undefined
 
-export function getHighlighter(): Promise<Highlighter> {
-  highlighterPromise ??= createHighlighter({
+/**
+ * `shiki/core`, not `shiki`: the latter is the full-bundle entry and ships every
+ * grammar and theme whatever the options ask for — 10 MB a book (#304). The
+ * dynamic imports are the interface, not a lazy-loading choice.
+ */
+export function getHighlighter(): Promise<HighlighterCore> {
+  highlighterPromise ??= createHighlighterCore({
     langs: [
-      'html',
-      'jsx',
+      import('shiki/langs/html.mjs'),
+      import('shiki/langs/jsx.mjs'),
     ],
     themes: [
-      'github-light',
-      'github-dark',
+      import('shiki/themes/github-light.mjs'),
+      import('shiki/themes/github-dark.mjs'),
     ],
+    engine: createOnigurumaEngine(import('shiki/wasm')),
   }).catch((e) => {
     // Don't let a cached rejection disable highlighting for the rest of the
     // session — drop it so the next mount can try again.

@@ -58,11 +58,12 @@ jobs:
 
           # The books are built from `packages/`, live in `examples/`, and are
           # driven by the shared suite in `e2e/` through `playwright.config.ts`.
-          # The root manifest and `.github/scripts/` are here because the matrix
-          # job runs what they define — `test:e2e` is a root script and
-          # `annotate-flaky.mjs` is a step — so a change to either alters what
-          # these jobs do, and would otherwise skip the only suite that runs it.
-          PATTERN='^(packages/|examples/|e2e/|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+          # The root manifest and the two scripts these jobs run are here
+          # because a change to any of them alters what the jobs do, and would
+          # otherwise skip the only suite that runs it. Named rather than the
+          # whole of `scripts/`: the other thirty would each trigger five book
+          # builds and a Playwright run to serve one step that reads one file.
+          PATTERN='^(packages/|examples/|e2e/|scripts/check-bundle-size\.ts$|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
 
           if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
             value=true
@@ -269,6 +270,14 @@ jobs:
         env:
           POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
         run: pnpm run test:e2e
+
+      # After the tests, so a size regression does not pre-empt the e2e result.
+      # No `!cancelled()`: a status function would suppress the implicit
+      # `success()` and run this after a failed book build, reporting "no built
+      # book" on top of the error that is already the reason.
+      - name: Check the built book's size
+        if: env.RUN == 'true' && matrix.example == 'vue3'
+        run: pnpm run test:bundle-size
 
       # Retries make a flake green, so this is the only thing that says one
       # happened. A warning, never a failure: a flake is worth reading, not

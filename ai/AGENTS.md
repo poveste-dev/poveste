@@ -56,6 +56,7 @@ The middle row is the distinction to keep: a book can carry the conformance cont
 | `pnpm test:examples` | `examples/vue**` only; `test:examples:all` is the whole set |
 | `pnpm test:smoke` | a publish gate, deliberately **not** in `pnpm test` — it needs a completed build, and it is what catches "works in the workspace, broken for consumers" |
 | `pnpm test:e2e` | per-example, selected by `POVESTE_E2E_EXAMPLE=vue3,svelte5`; an unknown name fails the config before any test runs |
+| `pnpm test:bundle-size` | ceilings on one built book, plus a source check for the `shiki` barrel — needs `examples/vue3` built, so it reports "no built book" rather than a size when run cold |
 
 The e2e suite serves built books. A preview server left running from an earlier run will be reused and will serve **stale output**, so a fix appears not to work, or a broken build appears to pass. Kill stray servers before trusting a local e2e result.
 

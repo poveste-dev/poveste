@@ -45,6 +45,7 @@
     "update": "pnpm --recursive update --latest",
     "test:mirrors": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-mirrored-conformance.ts",
     "test:conformance-config": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-conformance-config.ts",
+    "test:bundle-size": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-bundle-size.ts",
     "sync:conformance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-conformance.ts"
   },
   "devDependencies": {

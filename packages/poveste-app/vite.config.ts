@@ -56,8 +56,12 @@ export default defineConfig({
       external: [
         /\$poveste/,
         /@poveste/,
+        // Each dependency and its subpaths. Bare names alone left `shiki/core`
+        // unmatched, so it was resolved and inlined as a path into the build
+        // machine's pnpm store (#304).
         // eslint-disable-next-line ts/no-require-imports
-        ...Object.keys(require('./package.json').dependencies),
+        ...Object.keys(require('./package.json').dependencies)
+          .map(name => new RegExp(`^${RegExp.escape(name)}(/|$)`)),
       ],
 
       input: [
