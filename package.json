@@ -38,12 +38,13 @@
     "test:scripts": "vitest run scripts",
     "test:tags": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-local-tags.ts",
     "release": "pnpm run release:check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release.ts",
-    "release:check": "pnpm run lint && pnpm run test:tags && pnpm run test:versions && pnpm run test:readmes && pnpm run test:config-reference && pnpm run test:example-wiring && pnpm run test:mirrors && pnpm run test:recipes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run lint && pnpm run test:tags && pnpm run test:versions && pnpm run test:readmes && pnpm run test:config-reference && pnpm run test:example-wiring && pnpm run test:mirrors && pnpm run test:conformance-config && pnpm run test:recipes && pnpm run build && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
     "update": "pnpm --recursive update --latest",
     "test:mirrors": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-mirrored-conformance.ts",
+    "test:conformance-config": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-conformance-config.ts",
     "sync:conformance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-conformance.ts"
   },
   "devDependencies": {

@@ -156,6 +156,11 @@ jobs:
       - name: Check mirrored conformance sets
         run: pnpm run test:mirrors
 
+      # The other half of the contract: a book can carry every shared story and
+      # still fail 18 specs on a preset it did not declare (#540).
+      - name: Check the conformance config
+        run: pnpm run test:conformance-config
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes

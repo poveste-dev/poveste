@@ -30,6 +30,8 @@ A story that proves a behaviour goes in **all four** reference books — `vue3`,
 
 The ids are explicit rather than derived from paths, because each framework lays its files out differently and a path-derived id cannot be addressed by one shared spec.
 
+**The contract is not only stories.** A conformance book also declares the background presets the shared specs assert — the five `getDefaultConfig()` defaults plus the `Custom gray` sixth, and `defaultBackgroundColor: 'transparent'`. Spread `getDefaultConfig().backgroundPresets` or list the six literally; `examples/quasar` does the latter because its published recipe already owns the import line. A book that carries all 17 stories and skips this fails 18 specs on a preset count, which is how promoting Quasar spent a session (#540). `scripts/check-conformance-config.ts` fails on it in seconds instead, and covers a new book automatically — it reads the `:conformance` projects in `playwright.config.ts`, the same source of truth as the wiring check.
+
 ## What the examples are for
 
 Eleven directories, two kinds, not interchangeable:
