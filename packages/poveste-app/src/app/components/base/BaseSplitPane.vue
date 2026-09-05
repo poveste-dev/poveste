@@ -48,6 +48,19 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+
+  /**
+   * Whether the first pane exists at all.
+   *
+   * Dropping it here rather than at the call site keeps the `last` slot at one
+   * position in the tree, so a layout that sometimes has nothing to put beside
+   * its content does not remount that content when it gains or loses the pane
+   * (#328).
+   */
+  showFirst: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits({
@@ -109,13 +122,18 @@ const boundSplit = computed(() => {
   }
 })
 
+const axis = computed(() => props.orientation === 'landscape' ? 'width' : 'height')
+
 const leftStyle = computed(() => ({
-  [props.orientation === 'landscape' ? 'width' : 'height']: props.fixed ? `${boundSplit.value}px` : `${boundSplit.value}%`,
+  [axis.value]: props.fixed ? `${boundSplit.value}px` : `${boundSplit.value}%`,
 }))
 
-const rightStyle = computed(() => ({
-  [props.orientation === 'landscape' ? 'width' : 'height']: props.fixed ? null : `${100 - boundSplit.value}%`,
-}))
+const rightStyle = computed(() => {
+  if (!props.showFirst) {
+    return { [axis.value]: '100%' }
+  }
+  return { [axis.value]: props.fixed ? null : `${100 - boundSplit.value}%` }
+})
 
 const dragging = ref(false)
 let startPosition = 0
@@ -179,6 +197,7 @@ onUnmounted(() => {
     }"
   >
     <div
+      v-if="showFirst"
       class="relative top-0 left-0 z-20"
       :class="{
         'pointer-events-none': dragging,

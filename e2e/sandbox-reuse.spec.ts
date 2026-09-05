@@ -33,6 +33,16 @@ function taggedDocuments(page: Page) {
   })
 }
 
+/** Click a story in the sidebar, expanding the folder it sits in if needed. */
+async function openStoryInApp(page: Page, title: string) {
+  const item = page.locator('[data-testid="story-list-item"]').filter({ has: page.getByText(title, { exact: true }) })
+  if (!await item.isVisible()) {
+    await page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: 'Conformance' }).click()
+  }
+  await item.click()
+  await expect(page.locator('.poveste-toolbar-title')).toContainText(title)
+}
+
 async function scrollOneViewport(page: Page) {
   await page.evaluate((selector) => {
     const scroller = document.querySelector(selector)
@@ -99,18 +109,45 @@ test.describe('sandbox reuse', () => {
     expect(await taggedDocuments(page), 'some cell should have been handed a new variant').toBeLessThan(tagged)
   })
 
+  test('a sidebar click retargets the single preview instead of loading a new document', async ({ page }) => {
+    // The path a reader actually spends their time on, and the one realm reuse
+    // used to miss entirely (#328): the preview sat under a `v-if` on the
+    // variant, and a story change nulls that variant between its two route
+    // changes, so the component was destroyed before it could retarget.
+    await openStory(page, 'conformance-button')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    await tagDocuments(page)
+    expect(await taggedDocuments(page)).toBe(1)
+
+    await openStoryInApp(page, 'Contrast')
+    await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')).toBeVisible()
+
+    expect(await taggedDocuments(page), 'the preview kept its document across the story change').toBe(1)
+  })
+
+  test('a story with no variant selected shows nothing rather than the previous story', async ({ page }) => {
+    // The preview outliving the variant is what makes the retarget above
+    // possible, and it is also how it goes wrong: a story that auto-selects
+    // nothing would otherwise leave the story the reader just left on screen.
+    await openStory(page, 'conformance-button')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    await tagDocuments(page)
+
+    await openStoryInApp(page, 'Wrapper')
+    await expect(page.getByTestId('preview-iframe'), 'the previous story is not left on screen').not.toBeVisible()
+
+    await page.locator('[data-testid="story-variant-list-item"]').first().click()
+    await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-wrapper-text')).toBeVisible()
+    expect(await taggedDocuments(page), 'the realm survived the detour through no variant').toBe(1)
+  })
+
   test('a cell handed another story shows that story, not the last one', async ({ page }) => {
     await openGrid(page, 'conformance-huge-grid', 'conformance-huge-grid-button')
 
     // Same variant ids (`v1`…), another story: a slot must not take the id for
     // the variant it already shows. In-app navigation, so the pool survives;
     // the folder starts collapsed in a fresh profile.
-    const item = page.locator('[data-testid="story-list-item"]').filter({ hasText: 'Isolated grid' })
-    if (!await item.isVisible()) {
-      await page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: 'Conformance' }).click()
-    }
-    await item.click()
-    await expect(page.locator('.poveste-toolbar-title')).toContainText('Isolated grid')
+    await openStoryInApp(page, 'Isolated grid')
     await expect.poll(() => mismatchedCells(page, 'conformance-isolated-grid-button'), { timeout: 15_000 }).toEqual([])
     await expect(page.getByTestId('preview-iframe').filter({ visible: true }).first()).toBeVisible()
   })

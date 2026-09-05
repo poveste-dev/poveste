@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Story, Variant } from '../../types'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
 import { previewDarkClasses, usePreviewDark } from '../../util/color-scheme'
@@ -17,6 +17,13 @@ const props = defineProps<{
 const storyStore = useStoryStore()
 
 storyStore.setPreviewReady(props.variant, false)
+
+// This component now outlives a story change (#328), so the flag has to be
+// cleared per variant rather than once at setup — a variant opened a second
+// time would otherwise still be reported ready while its story remounts.
+watch(() => props.variant, (variant) => {
+  storyStore.setPreviewReady(variant, false)
+})
 
 function onReady() {
   storyStore.setPreviewReady(props.variant, true)
