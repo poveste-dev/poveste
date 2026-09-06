@@ -1,4 +1,5 @@
 import type { Context } from '../context.js'
+import { jsIdentifier } from './codegen.js'
 
 export const ID_SEPARATOR = '__-__'
 
@@ -33,7 +34,7 @@ export function getSetupFnGroups(ctx: Context) {
  * in every consumer build.
  */
 export function declareEmptySetupFns(ctx: Context) {
-  return getSetupFnNames(ctx).map(fnName => `export const ${fnName} = undefined`).join('\n')
+  return getSetupFnNames(ctx).map(fnName => `export const ${jsIdentifier(fnName, `support plugin setupFn '${fnName}'`)} = undefined`).join('\n')
 }
 
 export const PLUGINS_HAVE_DEV = [
