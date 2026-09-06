@@ -3,6 +3,7 @@ import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 import { useStoryStore } from '../../stores/story'
 import { isMobile } from '../../util/responsive'
+import { autoSelectsVariant } from '../../util/variant'
 import BaseSplitPane from '../base/BaseSplitPane.vue'
 import StoryVariantListItem from './StoryVariantListItem.vue'
 import StoryVariantSingleView from './StoryVariantSingleView.vue'
@@ -16,15 +17,22 @@ const storyStore = useStoryStore()
 const hasSingleVariant = computed(() => (storyStore.currentStory?.variants.length === 1))
 
 const variant = computed(() => storyStore.currentVariant ?? null)
+
+// The preview area exists while a variant is showing or on its way. Dropping it
+// the moment the variant goes null would unmount the preview across the two-step
+// route change, which is the whole thing #328 is about; keeping it when no
+// variant is coming leaves an empty box and, on mobile, a divider under the
+// picker. Same predicate the view below releases its held pair on.
+const showsPreview = computed(() => !!variant.value || autoSelectsVariant(storyStore.currentStory))
 </script>
 
 <template>
   <div
     v-if="isMobile"
-    class="poveste-story-variant-single divide-y divide-gray-100 dark:divide-gray-800 h-full flex flex-col"
+    class="divide-y divide-gray-100 dark:divide-gray-800 h-full flex flex-col"
   >
     <a
-      v-if="!hasSingleVariant"
+      v-if="!hasSingleVariant || !variant"
       class="px-6 h-12 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer flex gap-2 flex-wrap w-full items-center flex-none"
       @click="$emit('openVariantMenu')"
     >
@@ -48,7 +56,10 @@ const variant = computed(() => storyStore.currentVariant ?? null)
         class="w-5 h-5 shrink-0 ml-auto"
       />
     </a>
-    <div class="p-2 h-full">
+    <div
+      v-if="showsPreview"
+      class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
+    >
       <StoryVariantSingleView
         :variant="variant"
         :story="storyStore.currentStory"
@@ -64,7 +75,6 @@ const variant = computed(() => storyStore.currentVariant ?? null)
   -->
   <BaseSplitPane
     v-else
-    class="poveste-story-variant-single"
     save-id="story-single-main-split"
     :min="5"
     :max="40"
@@ -74,14 +84,17 @@ const variant = computed(() => storyStore.currentVariant ?? null)
     <template #first>
       <div class="h-full overflow-y-auto">
         <StoryVariantListItem
-          v-for="(v, index) of storyStore.currentStory.variants"
+          v-for="(v, index) of storyStore.currentStory?.variants ?? []"
           :key="index"
           :variant="v"
         />
       </div>
     </template>
     <template #last>
-      <div class="p-2 h-full __poveste-pane-shadow-from-right">
+      <div
+        v-if="showsPreview"
+        class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
+      >
         <StoryVariantSingleView
           :variant="variant"
           :story="storyStore.currentStory"

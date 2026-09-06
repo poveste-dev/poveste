@@ -3,7 +3,7 @@ import { reportStoryError } from '@poveste/shared'
 import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
 import { files, onUpdate } from 'virtual:$poveste-stories'
-import { computed, createApp, h, onMounted, ref, watch } from 'vue'
+import { computed, createApp, h, onMounted, ref, watch, watchEffect } from 'vue'
 import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
@@ -11,6 +11,7 @@ import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
 import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
+import { occupant } from './util/occupant.js'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
 import { createStateBridge } from './util/state-bridge.js'
 import { toRawDeep } from './util/state.js'
@@ -23,6 +24,13 @@ const query = parseQuery(window.location.search)
 // variant instead of being torn down for a new document (#240).
 const storyId = ref(typeof query.storyId === 'string' ? query.storyId : null)
 const variantId = ref(typeof query.variantId === 'string' ? query.variantId : null)
+
+// Kept in step so `logEvent` can name the occupant it is speaking for; it posts
+// from the story's own code and cannot see these refs.
+watchEffect(() => {
+  occupant.storyId = storyId.value
+  occupant.variantId = variantId.value
+})
 
 // `files` is `[]` until the dev server's first collect lands. The app's iframe
 // never sees that — it mounts after — but a sandbox opened on its own does, and

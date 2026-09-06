@@ -129,10 +129,11 @@ const leftStyle = computed(() => ({
 }))
 
 const rightStyle = computed(() => {
-  if (!props.showFirst) {
-    return { [axis.value]: '100%' }
+  if (props.fixed) {
+    // `flex-1` sizes this pane, and a width would lose to it anyway.
+    return { [axis.value]: null }
   }
-  return { [axis.value]: props.fixed ? null : `${100 - boundSplit.value}%` }
+  return { [axis.value]: props.showFirst ? `${100 - boundSplit.value}%` : '100%' }
 })
 
 const dragging = ref(false)

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { openStory } from './support.js'
+import { openStory, openStoryInApp } from './support.js'
 
 /*
  * Sandbox realm reuse (#240), on every framework. A grid cell that scrolls into
@@ -31,16 +31,6 @@ function taggedDocuments(page: Page) {
     const frames = [...document.querySelectorAll<HTMLIFrameElement>('[data-testid="preview-iframe"]')]
     return frames.filter(el => el.contentDocument?.documentElement?.hasAttribute('data-reuse-tag')).length
   })
-}
-
-/** Click a story in the sidebar, expanding the folder it sits in if needed. */
-async function openStoryInApp(page: Page, title: string) {
-  const item = page.locator('[data-testid="story-list-item"]').filter({ has: page.getByText(title, { exact: true }) })
-  if (!await item.isVisible()) {
-    await page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: 'Conformance' }).click()
-  }
-  await item.click()
-  await expect(page.locator('.poveste-toolbar-title')).toContainText(title)
 }
 
 async function scrollOneViewport(page: Page) {
@@ -109,15 +99,20 @@ test.describe('sandbox reuse', () => {
     expect(await taggedDocuments(page), 'some cell should have been handed a new variant').toBeLessThan(tagged)
   })
 
+  /** Open a single-layout story and tag the document its realm is holding. */
+  async function openTagged(page: Page, id: string) {
+    await openStory(page, id)
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    await tagDocuments(page)
+    expect(await taggedDocuments(page), 'the document was tagged').toBe(1)
+  }
+
   test('a sidebar click retargets the single preview instead of loading a new document', async ({ page }) => {
     // The path a reader actually spends their time on, and the one realm reuse
     // used to miss entirely (#328): the preview sat under a `v-if` on the
     // variant, and a story change nulls that variant between its two route
     // changes, so the component was destroyed before it could retarget.
-    await openStory(page, 'conformance-button')
-    await expect(page.getByTestId('preview-iframe')).toBeVisible()
-    await tagDocuments(page)
-    expect(await taggedDocuments(page)).toBe(1)
+    await openTagged(page, 'conformance-button')
 
     await openStoryInApp(page, 'Contrast')
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-contrast')).toBeVisible()
@@ -125,20 +120,27 @@ test.describe('sandbox reuse', () => {
     expect(await taggedDocuments(page), 'the preview kept its document across the story change').toBe(1)
   })
 
-  test('a story with no variant selected shows nothing rather than the previous story', async ({ page }) => {
+  test('a story that selects no variant lets the previous realm go', async ({ page }) => {
     // The preview outliving the variant is what makes the retarget above
-    // possible, and it is also how it goes wrong: a story that auto-selects
-    // nothing would otherwise leave the story the reader just left on screen.
-    await openStory(page, 'conformance-button')
-    await expect(page.getByTestId('preview-iframe')).toBeVisible()
-    await tagDocuments(page)
+    // possible, and it is also how it goes wrong. Holding it is right for the
+    // gap between a story change and the variant that follows it; it is wrong
+    // once no variant is coming, because then the realm the reader has left
+    // would keep running — timers, media and all — behind a hidden iframe for
+    // as long as they stay on the variant list.
+    await openTagged(page, 'conformance-button')
 
     await openStoryInApp(page, 'Wrapper')
-    await expect(page.getByTestId('preview-iframe'), 'the previous story is not left on screen').not.toBeVisible()
+    await expect(
+      page.getByTestId('preview-iframe'),
+      'the story the reader left is neither shown nor left running',
+    ).toHaveCount(0)
 
     await page.locator('[data-testid="story-variant-list-item"]').first().click()
+    // Host-side as well as in-frame: a locator inside `contentFrame()` is
+    // evaluated in the sandbox document and would pass while the iframe itself
+    // stayed hidden in the page.
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-wrapper-text')).toBeVisible()
-    expect(await taggedDocuments(page), 'the realm survived the detour through no variant').toBe(1)
   })
 
   test('a cell handed another story shows that story, not the last one', async ({ page }) => {

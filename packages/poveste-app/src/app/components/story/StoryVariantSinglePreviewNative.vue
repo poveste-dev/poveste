@@ -16,13 +16,17 @@ const props = defineProps<{
 
 const storyStore = useStoryStore()
 
-storyStore.setPreviewReady(props.variant, false)
-
-// This component now outlives a story change (#328), so the flag has to be
-// cleared per variant rather than once at setup — a variant opened a second
-// time would otherwise still be reported ready while its story remounts.
-watch(() => props.variant, (variant) => {
+// This component now outlives a story change (#328), so the flag is cleared per
+// variant rather than once at setup. Both ends, as `StoryVariantGridItem` does
+// for the same reason: the one arriving has not rendered yet, and the one
+// leaving is no longer rendered anywhere.
+watch(() => props.variant, (variant, previous) => {
+  if (previous) {
+    storyStore.setPreviewReady(previous, false)
+  }
   storyStore.setPreviewReady(variant, false)
+}, {
+  immediate: true,
 })
 
 function onReady() {

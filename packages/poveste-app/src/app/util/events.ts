@@ -1,4 +1,5 @@
 import { EVENT_SEND } from './const'
+import { occupant } from './occupant'
 
 export async function logEvent(name: string, argument) {
   const event = {
@@ -9,6 +10,8 @@ export async function logEvent(name: string, argument) {
     window.parent?.postMessage({
       type: EVENT_SEND,
       event,
+      storyId: occupant.storyId,
+      variantId: occupant.variantId,
     })
   }
   else {
