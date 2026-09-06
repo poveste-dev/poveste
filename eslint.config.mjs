@@ -31,6 +31,11 @@ export default antfu({
     'antfu/if-newline': 'off',
     'antfu/no-import-dist': 'off',
     'node/prefer-global/process': 'off',
+    // The published packages accept a Node floor below the one this repo
+    // develops on, and the CI job for that is path-filtered to manifests — so
+    // a builtin newer than the floor reaches a release green. This reads
+    // `engines.node` and fails at the call site instead (#608).
+    'node/no-unsupported-features/es-builtins': 'error',
     'no-console': 'warn',
     // Warn, not error: every remaining hit is a `ref`/`computed` referenced
     // from a closure defined above it, which is legal and common in
