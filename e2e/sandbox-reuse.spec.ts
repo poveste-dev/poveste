@@ -191,6 +191,38 @@ test.describe('sandbox reuse', () => {
     })
   }
 
+  test('a resize across the mobile breakpoint keeps the realm it is showing', async ({ page }) => {
+    /*
+     * `isMobile` is a live media query, and the mobile and desktop chromes used
+     * to be sibling branches that each carried the preview — so crossing 640px
+     * rebuilt it and booted a cold document (#600).
+     *
+     * The document tag is the proof that no reload happened. The global beside
+     * it is the proof that nothing *about the realm* was lost: host-side variant
+     * state is synced back into a fresh sandbox, so state alone would survive a
+     * cold boot and prove nothing. A global set inside the realm would not.
+     */
+    await openStory(page, 'conformance-button')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    await tagDocuments(page)
+    await page.evaluate(() => {
+      const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-iframe"]')
+      ;(frame.contentWindow as unknown as Record<string, string>).__realmProbe = 'kept'
+    })
+
+    const realmProbe = () => page.evaluate(() => {
+      const frame = document.querySelector<HTMLIFrameElement>('[data-testid="preview-iframe"]')
+      return (frame?.contentWindow as unknown as Record<string, string>)?.__realmProbe ?? null
+    })
+
+    for (const width of [375, 1280]) {
+      await page.setViewportSize({ width, height: 800 })
+      await expect(page.getByTestId('preview-iframe')).toBeVisible()
+      expect(await taggedDocuments(page), `the document survived ${width}px`).toBe(1)
+      expect(await realmProbe(), `the realm survived ${width}px`).toBe('kept')
+    }
+  })
+
   test('a cell handed another story shows that story, not the last one', async ({ page }) => {
     await openGrid(page, 'conformance-huge-grid', 'conformance-huge-grid-button')
 

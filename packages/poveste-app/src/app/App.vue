@@ -141,52 +141,55 @@ const storyListVisible = computed(() => !!layoutStore.settings.storyListVisible)
       }"
     >
       <div
-        v-if="isMobile"
-        class="h-full flex flex-col divide-y divide-gray-100 dark:divide-gray-800"
+        class="h-full flex flex-col"
+        :class="{ 'divide-y divide-gray-100 dark:divide-gray-800': isMobile }"
       >
-        <div class="flex items-center gap-2 pr-4">
-          <AppHeader class="flex-1" />
-          <AppActions
-            class="flex-none"
-            @layout="isLayoutOpen = true"
-            @search="isSearchOpen = true"
+        <!--
+          The mobile chrome is a sibling of `main`, not a child: `AppHeader`
+          carries the page's banner and its only `h1`, and a `header` inside
+          `main` is neither (#310).
+        -->
+        <template v-if="isMobile">
+          <div class="flex items-center gap-2 pr-4">
+            <AppHeader class="flex-1" />
+            <AppActions
+              class="flex-none"
+              @layout="isLayoutOpen = true"
+              @search="isSearchOpen = true"
+            />
+          </div>
+          <Breadcrumb
+            :tree="tree"
+            :stories="stories"
           />
-        </div>
-        <Breadcrumb
-          :tree="tree"
-          :stories="stories"
-        />
-        <main class="grow flex flex-col min-h-0">
-          <RouterView class="grow" />
-        </main>
-      </div>
+        </template>
 
-      <template v-else>
         <!--
           With the story list hidden `AppHeader` goes with it, taking the page's
           only `h1` and its banner. A heading has to exist in every layout, and
           it has to sit inside a landmark, so this stands in for it (#310).
         -->
         <header
-          v-if="!storyListVisible"
+          v-else-if="!storyListVisible"
           class="sr-only"
         >
           <h1>{{ povesteConfig.theme?.title ?? 'Poveste' }}</h1>
         </header>
 
         <!--
-          One split pane whether or not the story list is showing. Two branches
-          each carrying their own `RouterView` moved the whole view in the tree
-          when the list was toggled, cold-booting the sandbox under it — the same
-          remount #328 removed from sidebar clicks (#596).
+          One split pane for every layout, mobile included. Each chrome used to
+          be a branch carrying its own `RouterView`, so switching between them
+          moved the routed view in the tree and cold-booted the sandbox under
+          it. The settings toggles were #596; `isMobile` is a live media query,
+          so this one fired on a window resize (#600).
         -->
         <BaseSplitPane
           save-id="main-horiz"
           :min="5"
           :max="50"
           :default-split="15"
-          :show-first="storyListVisible"
-          class="h-full"
+          :show-first="!isMobile && storyListVisible"
+          class="flex-1 min-h-0"
         >
           <template #first>
             <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
@@ -207,6 +210,7 @@ const storyListVisible = computed(() => !!layoutStore.settings.storyListVisible)
           <template #last>
             <main class="flex flex-col h-full">
               <TopBar
+                v-if="!isMobile"
                 @layout="isLayoutOpen = true"
                 @search="isSearchOpen = true"
               />
@@ -214,7 +218,7 @@ const storyListVisible = computed(() => !!layoutStore.settings.storyListVisible)
             </main>
           </template>
         </BaseSplitPane>
-      </template>
+      </div>
 
       <LayoutModal
         v-if="!isMobile"
