@@ -4,8 +4,9 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLayoutStore } from '../../stores/layout'
 import { useStoryStore } from '../../stores/story'
-
 import { isMobile } from '../../util/responsive'
+
+import { autoSelectsVariant } from '../../util/variant'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import BaseSplitPane from '../base/BaseSplitPane.vue'
 import StoryDocs from '../panel/StoryDocs.vue'
@@ -37,15 +38,9 @@ watch(() => storyStore.currentVariant, (value) => {
 })
 
 watch(() => [storyStore.currentStory, storyStore.currentVariant], () => {
-  if (!storyStore.currentVariant) {
-    if (storyStore.currentStory?.lastSelectedVariant) {
-      setVariant(storyStore.currentStory.lastSelectedVariant.id)
-      return
-    }
-
-    if (storyStore.currentStory?.variants.length === 1) {
-      setVariant(storyStore.currentStory.variants[0].id)
-    }
+  if (!storyStore.currentVariant && autoSelectsVariant(storyStore.currentStory)) {
+    const variant = storyStore.currentStory.lastSelectedVariant ?? storyStore.currentStory.variants[0]
+    setVariant(variant.id)
   }
 }, {
   immediate: true,

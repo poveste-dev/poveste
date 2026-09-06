@@ -110,6 +110,7 @@ useEventListener(window, 'message', (event) => {
       updateVariantState(event.data.state)
       break
     case EVENT_SEND:
+      if (!fromCurrentOccupant(event.data)) break
       logEvent(event.data.event)
       break
     case SANDBOX_READY:
@@ -198,6 +199,9 @@ const isIframeLoaded = ref(false)
 let retargets = 0
 // The story whose document the realm holds — booted or retargeted into it.
 let servedStory = props.story
+// Its variant, kept so the one being replaced can have its `previewReady`
+// cleared: it is no longer rendered anywhere once the realm moves on.
+let servedVariant = props.variant
 
 let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
@@ -222,6 +226,10 @@ watch(sandboxUrl, (url) => {
   // A new occupant has agreed to nothing, so neither has this end. Kept as a
   // new bridge rather than a reset so there is one way to be in that state.
   bridge = createStateBridge(postState)
+  if (servedVariant && servedVariant !== props.variant) {
+    storyStore.setPreviewReady(servedVariant, false)
+  }
+  servedVariant = props.variant
   storyStore.setPreviewReady(props.variant, false)
 
   const reuse = props.story.layout?.isolate !== true && servedStory.layout?.isolate !== true

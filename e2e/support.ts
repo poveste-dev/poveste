@@ -66,6 +66,33 @@ export async function openDocs(page: Page, storyId: string) {
  * framework's example. Since these specs run against four books at once, the
  * same mistake is four confusing failures.
  */
+/**
+ * Open a story by clicking it in the sidebar, so the app navigates rather than
+ * reloading — the sandbox realm survives an in-app navigation and does not
+ * survive a `page.goto`, which is the whole difference some specs are about.
+ *
+ * Stories live under a folder that starts collapsed in a fresh profile, so it is
+ * expanded first if the row is not there. Resolving on the toolbar title means
+ * the *story* has changed; it does not mean the preview has caught up, since the
+ * variant lands one route change later. Assert on what the preview renders
+ * rather than treating this as a preview-ready gate.
+ */
+export async function openStoryInApp(page: Page, title: string, folder = 'Conformance') {
+  const item = page.locator('[data-testid="story-list-item"]').filter({ has: page.getByText(title, { exact: true }) })
+
+  // `count()`, not `isVisible()`: the latter is a single-shot read that also
+  // returns false for zero matches, and the folder click is a toggle — so a
+  // mistimed read would collapse an already-open folder and the failure would
+  // land on the story instead of on the folder.
+  if (await item.count() === 0) {
+    await page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: folder }).first().click()
+    await expect(item, `story "${title}" is not in this book`).toBeVisible()
+  }
+
+  await item.click()
+  await expect(page.locator('.poveste-toolbar-title')).toContainText(title)
+}
+
 export async function openStory(page: Page, id: string, query = '') {
   await page.goto(`/story/${id}${query}`)
 
