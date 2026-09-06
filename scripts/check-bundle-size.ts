@@ -30,11 +30,16 @@ export interface Limit {
 /**
  * Set from measured output with room above it, not from a target.
  *
- * Measured at 4990 KB total, `highlighter` 1343 and `vendor` 1840. Each ceiling
- * leaves room for ordinary growth and fails on the order-of-magnitude kind:
- * `highlighter` was 9960 KB before `shiki/core`, and a whole-book ceiling on
- * its own would not have noticed, because one chunk doubling is small against
- * a total set loosely enough never to fire.
+ * Each ceiling leaves room for ordinary growth and fails on the
+ * order-of-magnitude kind: `highlighter` was 9957 KB before `shiki/core`, and a
+ * whole-book ceiling on its own would not have noticed, because one chunk
+ * doubling is small against a total set loosely enough never to fire.
+ *
+ * What a book weighs *now* is not recorded here. It used to be, and it went
+ * stale from a change in another package — #374 moved CodeMirror out of
+ * `vendor`, and nothing in this file could notice (#601). A run prints every
+ * measurement below, so the live numbers are one command away and there is
+ * nothing here to quote instead.
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
@@ -53,13 +58,22 @@ export function chunksIn(dir: string): Chunk[] {
     }))
 }
 
+export function totalKb(chunks: Chunk[]): number {
+  return chunks.reduce((sum, chunk) => sum + chunk.kb, 0)
+}
+
+/** The chunks a ceiling covers. `overLimit` and `measurements` must agree. */
+export function matching(chunks: Chunk[], limit: Limit): Chunk[] {
+  return chunks.filter(chunk => chunk.name.startsWith(limit.prefix))
+}
+
 export function overLimit(chunks: Chunk[], limits: Limit[]): string[] {
   return limits.flatMap((limit) => {
     if (limit.prefix === '') {
-      const total = chunks.reduce((sum, chunk) => sum + chunk.kb, 0)
+      const total = totalKb(chunks)
       return total > limit.max ? [`the build is ${total} KB, over its ${limit.max} KB ceiling — ${limit.because}`] : []
     }
-    const matched = chunks.filter(chunk => chunk.name.startsWith(limit.prefix))
+    const matched = matching(chunks, limit)
     if (matched.length === 0) {
       // A renamed chunk silently stops being checked, which is the failure this
       // whole file exists to prevent — so an unmatched prefix is a problem.
@@ -69,6 +83,43 @@ export function overLimit(chunks: Chunk[], limits: Limit[]): string[] {
       .filter(chunk => chunk.kb > limit.max)
       .map(chunk => `${chunk.name} is ${chunk.kb} KB, over its ${limit.max} KB ceiling — ${limit.because}`)
   })
+}
+
+/**
+ * What each ceiling is holding, and the largest chunk no ceiling covers.
+ *
+ * One line per chunk, never a list against a shared limit: `overLimit` applies
+ * a prefix ceiling to each chunk separately, so a joined line would read as a
+ * sum of something nothing sums.
+ *
+ * The unprefixed line is the part that is easy to leave out. Every ceiling here
+ * is either a named prefix or the whole book, so a chunk between the two — big,
+ * but not big enough to move a 6500 KB total — is checked by nothing and, if
+ * this printed only the ceilings, named by nothing either (#601).
+ */
+export function measurements(chunks: Chunk[], limits: Limit[]): string[] {
+  const lines = limits.flatMap((limit) => {
+    if (limit.prefix === '') {
+      return [`whole book ${totalKb(chunks)} KB / ${limit.max} KB`]
+    }
+    return matching(chunks, limit).map(chunk => `${chunk.name} ${chunk.kb} KB / ${limit.max} KB`)
+  })
+
+  // The whole-book ceiling has an empty prefix and so matches everything —
+  // count only the named ones, or nothing is ever uncovered.
+  const covered = new Set(
+    limits
+      .filter(limit => limit.prefix !== '')
+      .flatMap(limit => matching(chunks, limit).map(chunk => chunk.name)),
+  )
+  const largest = chunks
+    .filter(chunk => !covered.has(chunk.name))
+    .sort((a, b) => b.kb - a.kb)[0]
+  if (largest) {
+    lines.push(`largest chunk under no ceiling: ${largest.name} ${largest.kb} KB`)
+  }
+
+  return lines
 }
 
 export const EXAMPLE = 'examples/vue3'
@@ -131,6 +182,10 @@ function main(): void {
   if (barrel !== undefined) {
     problems.push(`${HIGHLIGHTER} has \`${barrel}\` — the full-bundle entry, which ships every grammar and theme (#304)`)
   }
+  for (const line of measurements(chunks, LIMITS)) {
+    console.log(`  ${line}`)
+  }
+
   if (problems.length > 0) {
     console.error('::error::A built book is over its size ceiling\n')
     for (const problem of problems) {
@@ -140,9 +195,7 @@ function main(): void {
     process.exit(1)
   }
 
-  const total = chunks.reduce((sum, chunk) => sum + chunk.kb, 0)
-  const largest = [...chunks].sort((a, b) => b.kb - a.kb)[0]
-  console.log(`✅ ${relative(ROOT, book)} is ${total} KB, largest chunk ${largest.name} at ${largest.kb} KB`)
+  console.log(`✅ ${relative(ROOT, book)} is within every ceiling`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
