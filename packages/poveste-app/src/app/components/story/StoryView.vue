@@ -95,9 +95,12 @@ function scrollDocsToTop() {
     <template v-else-if="isMobile">
       <StoryViewer />
     </template>
-    <template v-else-if="!effectiveStoryOptionsVisible">
-      <StoryViewer />
-    </template>
+    <!--
+      One split pane whether or not the options pane is showing. Hiding it used
+      to mean rendering `StoryViewer` from a different branch, which moved it in
+      the tree and cold-booted the sandbox under it — the same remount #328
+      removed from sidebar clicks (#596).
+    -->
     <BaseSplitPane
       v-else
       :save-id="`story-main-${placement}`"
@@ -106,6 +109,7 @@ function scrollDocsToTop() {
       :max="95"
       :default-split="splitDefaultSplit"
       :show-divider="false"
+      :show-last="effectiveStoryOptionsVisible"
       class="h-full"
     >
       <template #first>

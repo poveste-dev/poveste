@@ -52,12 +52,21 @@ const props = defineProps({
   /**
    * Whether the first pane exists at all.
    *
-   * Dropping it here rather than at the call site keeps the `last` slot at one
+   * Dropping it here rather than at the call site keeps the other slot at one
    * position in the tree, so a layout that sometimes has nothing to put beside
    * its content does not remount that content when it gains or loses the pane
-   * (#328).
+   * (#328). A `v-if` inside this component leaves a comment placeholder, so the
+   * surviving pane keeps its index and Vue patches it rather than rebuilding it;
+   * a `v-if` at the call site, choosing between a pane and a bare element, is
+   * what does not.
    */
   showFirst: {
+    type: Boolean,
+    default: true,
+  },
+
+  /** The same for the last pane — see `showFirst` (#596). */
+  showLast: {
     type: Boolean,
     default: true,
   },
@@ -124,9 +133,12 @@ const boundSplit = computed(() => {
 
 const axis = computed(() => props.orientation === 'landscape' ? 'width' : 'height')
 
-const leftStyle = computed(() => ({
-  [axis.value]: props.fixed ? `${boundSplit.value}px` : `${boundSplit.value}%`,
-}))
+const leftStyle = computed(() => {
+  if (props.fixed) {
+    return { [axis.value]: `${boundSplit.value}px` }
+  }
+  return { [axis.value]: props.showLast ? `${boundSplit.value}%` : '100%' }
+})
 
 const rightStyle = computed(() => {
   if (props.fixed) {
@@ -202,7 +214,7 @@ onUnmounted(() => {
       class="relative top-0 left-0 z-20"
       :class="{
         'pointer-events-none': dragging,
-        'border-r border-gray-300/30 dark:border-gray-800': orientation === 'landscape' && showDivider,
+        'border-r border-gray-300/30 dark:border-gray-800': orientation === 'landscape' && showDivider && showLast,
         'flex-none': fixed,
       }"
       :style="leftStyle"
@@ -210,6 +222,7 @@ onUnmounted(() => {
       <slot name="first" />
 
       <div
+        v-if="showLast"
         class="dragger absolute z-100 hover:bg-primary-500/50 transition-colors duration-150 delay-150"
         :class="{
           'top-0 bottom-0 cursor-ew-resize': orientation === 'landscape',
@@ -221,6 +234,7 @@ onUnmounted(() => {
       />
     </div>
     <div
+      v-if="showLast"
       class="relative bottom-0 right-0"
       :class="{
         'pointer-events-none': dragging,

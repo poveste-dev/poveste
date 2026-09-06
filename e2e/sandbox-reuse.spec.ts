@@ -143,6 +143,33 @@ test.describe('sandbox reuse', () => {
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-wrapper-text')).toBeVisible()
   })
 
+  test('toggling the story list keeps the preview it is standing beside', async ({ page }) => {
+    // The list and the view used to live in two branches that each carried
+    // their own `RouterView`, so hiding the list moved the whole view in the
+    // tree and cold-booted the sandbox under it (#596).
+    await openTagged(page, 'conformance-button')
+
+    await page.getByTestId('layout-btn').click()
+    await page.getByTestId('layout-toggle-story-list').click()
+    await page.getByTestId('layout-modal-close').click()
+    await expect(page.getByTestId('story-list-item')).toHaveCount(0)
+
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    expect(await taggedDocuments(page), 'the preview kept its document across the toggle').toBe(1)
+  })
+
+  test('toggling the story options pane keeps the preview beside it', async ({ page }) => {
+    await openTagged(page, 'conformance-button')
+
+    await page.getByTestId('layout-btn').click()
+    await page.getByTestId('layout-toggle-story-options').click()
+    await page.getByTestId('layout-modal-close').click()
+    await expect(page.getByTestId('story-side-panel')).toHaveCount(0)
+
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+    expect(await taggedDocuments(page), 'the preview kept its document across the toggle').toBe(1)
+  })
+
   test('a cell handed another story shows that story, not the last one', async ({ page }) => {
     await openGrid(page, 'conformance-huge-grid', 'conformance-huge-grid-button')
 

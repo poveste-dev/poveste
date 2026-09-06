@@ -152,58 +152,59 @@ const layoutStore = useLayoutStore()
         </main>
       </div>
 
-      <BaseSplitPane
-        v-else-if="layoutStore.settings.storyListVisible"
-        save-id="main-horiz"
-        :min="5"
-        :max="50"
-        :default-split="15"
-        class="h-full"
-      >
-        <template #first>
-          <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
-            <AppHeader class="flex-none" />
-            <nav
-              aria-label="Stories"
-              class="flex-1 flex flex-col min-h-0"
-            >
-              <StoryList
-                :tree="tree"
-                :stories="stories"
-                class="flex-1"
-              />
-            </nav>
-          </div>
-        </template>
-
-        <template #last>
-          <main class="flex flex-col h-full">
-            <TopBar
-              @layout="isLayoutOpen = true"
-              @search="isSearchOpen = true"
-            />
-            <RouterView class="flex-1 min-h-0" />
-          </main>
-        </template>
-      </BaseSplitPane>
       <template v-else>
         <!--
-          The story list is hidden in this layout, and `AppHeader` went with it —
-          taking the page's only `h1` and its banner. A heading has to exist in
-          every layout, and it has to sit inside a landmark, so this branch
-          carries its own (#310).
+          With the story list hidden `AppHeader` goes with it, taking the page's
+          only `h1` and its banner. A heading has to exist in every layout, and
+          it has to sit inside a landmark, so this stands in for it (#310).
         -->
-        <header class="sr-only">
+        <header
+          v-if="!layoutStore.settings.storyListVisible"
+          class="sr-only"
+        >
           <h1>{{ povesteConfig.theme?.title ?? 'Poveste' }}</h1>
         </header>
 
-        <main class="h-full flex flex-col">
-          <TopBar
-            @layout="isLayoutOpen = true"
-            @search="isSearchOpen = true"
-          />
-          <RouterView class="flex-1 min-h-0" />
-        </main>
+        <!--
+          One split pane whether or not the story list is showing. Two branches
+          each carrying their own `RouterView` moved the whole view in the tree
+          when the list was toggled, cold-booting the sandbox under it — the same
+          remount #328 removed from sidebar clicks (#596).
+        -->
+        <BaseSplitPane
+          save-id="main-horiz"
+          :min="5"
+          :max="50"
+          :default-split="15"
+          :show-first="layoutStore.settings.storyListVisible"
+          class="h-full"
+        >
+          <template #first>
+            <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
+              <AppHeader class="flex-none" />
+              <nav
+                aria-label="Stories"
+                class="flex-1 flex flex-col min-h-0"
+              >
+                <StoryList
+                  :tree="tree"
+                  :stories="stories"
+                  class="flex-1"
+                />
+              </nav>
+            </div>
+          </template>
+
+          <template #last>
+            <main class="flex flex-col h-full">
+              <TopBar
+                @layout="isLayoutOpen = true"
+                @search="isSearchOpen = true"
+              />
+              <RouterView class="flex-1 min-h-0" />
+            </main>
+          </template>
+        </BaseSplitPane>
       </template>
 
       <LayoutModal
