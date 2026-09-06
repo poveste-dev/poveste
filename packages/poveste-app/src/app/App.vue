@@ -107,6 +107,15 @@ onMounted(() => {
 
 const commandStore = useCommandStore()
 const layoutStore = useLayoutStore()
+
+/*
+ * Coerced once, because the pane prop and the heading below have to be exact
+ * complements. A stored settings object written before a key existed leaves it
+ * `undefined`, which a Boolean prop reads as its `true` default while `!` reads
+ * as `false` — so both the real header and its stand-in rendered, giving the
+ * page two `h1`s and two banners (#596).
+ */
+const storyListVisible = computed(() => !!layoutStore.settings.storyListVisible)
 </script>
 
 <template>
@@ -159,7 +168,7 @@ const layoutStore = useLayoutStore()
           it has to sit inside a landmark, so this stands in for it (#310).
         -->
         <header
-          v-if="!layoutStore.settings.storyListVisible"
+          v-if="!storyListVisible"
           class="sr-only"
         >
           <h1>{{ povesteConfig.theme?.title ?? 'Poveste' }}</h1>
@@ -176,7 +185,7 @@ const layoutStore = useLayoutStore()
           :min="5"
           :max="50"
           :default-split="15"
-          :show-first="layoutStore.settings.storyListVisible"
+          :show-first="storyListVisible"
           class="h-full"
         >
           <template #first>

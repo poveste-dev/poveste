@@ -93,6 +93,17 @@ export async function openStoryInApp(page: Page, title: string, folder = 'Confor
   await expect(page.locator('.poveste-toolbar-title')).toContainText(title)
 }
 
+/**
+ * Flip one layout setting through the modal the reader uses, rather than by
+ * seeding storage — the point of most of these tests is what happens *during*
+ * the toggle, which a reload does not exercise.
+ */
+export async function toggleLayout(page: Page, setting: 'story-list' | 'story-options') {
+  await page.getByTestId('layout-btn').click()
+  await page.getByTestId(`layout-toggle-${setting}`).click()
+  await page.getByTestId('layout-modal-close').click()
+}
+
 export async function openStory(page: Page, id: string, query = '') {
   await page.goto(`/story/${id}${query}`)
 
