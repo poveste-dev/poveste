@@ -6,6 +6,7 @@ import type { Payload, ReturnData } from './worker.js'
 import { cpus } from 'node:os'
 import { MessageChannel } from 'node:worker_threads'
 import Tinypool from '@akryum/tinypool'
+import { escapeRegExp } from '@poveste/shared'
 import { createBirpc } from 'birpc'
 import path, { relative } from 'pathe'
 import pc from 'picocolors'
@@ -42,7 +43,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         // @TODO temporary fix for https://github.com/histoire-dev/histoire/issues/409
         /vite\w*\/dist\/client\/(client|env).mjs/,
         ...ctx.config.viteNodeInlineDeps ?? [],
-        new RegExp(path.resolve(TEMP_PATH, 'plugins')),
+        new RegExp(escapeRegExp(path.resolve(TEMP_PATH, 'plugins'))),
       ],
       fallbackCJS: true,
     },

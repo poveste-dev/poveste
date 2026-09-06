@@ -84,9 +84,12 @@ jobs:
           # vite-node module graph, path handling through packages/poveste/src/node
           # (#156). Nothing under docs/ can move it.
           WINDOWS='^(packages/|scripts/|pnpm-lock\.yaml$|\.github/workflows/test\.yml$)'
-          # A claim about the published tarballs, so what the manifests declare
-          # and what packs them is the whole of it (#303).
-          NODEFLOOR='^(.*/)?package\.json$|^(\.node-version|pnpm-lock\.yaml|scripts/smoke-test\.sh)$|^\.github/workflows/test\.yml$'
+          # A claim about the published tarballs — so the manifests, what packs
+          # them (#303), and the source that ends up inside them. Source was
+          # missing, and it is the half that carries a builtin newer than the
+          # floor: `test:smoke` packs and builds a book on the minimum, so a
+          # too-new call on the build path fails there and nowhere else (#608).
+          NODEFLOOR='^(.*/)?package\.json$|^(\.node-version|pnpm-lock\.yaml|scripts/smoke-test\.sh)$|^\.github/workflows/test\.yml$|^packages/[^/]+/src/.*$'
 
           for name in windows nodefloor; do
             case $name in
