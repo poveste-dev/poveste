@@ -18,7 +18,9 @@ test.describe('layout customization', () => {
   })
 
   test('toggles the story list', async ({ page }) => {
-    await expect(page.locator('.poveste-base-split-pane').first()).toBeVisible()
+    // The list itself, not the split pane around it: since #596 the pane is
+    // there in both layouts, so it no longer says whether the list is.
+    await expect(page.getByTestId('story-list-item').first()).toBeVisible()
     await page.getByTestId('layout-btn').click()
     await page.getByTestId('layout-toggle-story-list').click()
     await page.getByTestId('layout-modal-close').click()
