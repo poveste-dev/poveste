@@ -1,3 +1,4 @@
+import { escapeRegExp } from '@poveste/shared'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import fs from 'fs-extra'
 import { globbySync } from 'globby'
@@ -71,8 +72,8 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       external: [
-        ...Object.keys(pkg.dependencies).map(dep => new RegExp(`^${dep}(\\/?)`)),
-        ...Object.keys(pkg.peerDependencies).map(dep => new RegExp(`^${dep}(\\/?)`)),
+        ...Object.keys(pkg.dependencies).map(dep => new RegExp(`^${escapeRegExp(dep)}(\\/?)`)),
+        ...Object.keys(pkg.peerDependencies).map(dep => new RegExp(`^${escapeRegExp(dep)}(\\/?)`)),
         /^node:/,
         /^virtual:/,
         /^\$/, // Virtual modules

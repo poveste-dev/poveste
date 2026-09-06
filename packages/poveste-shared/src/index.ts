@@ -1,4 +1,5 @@
 export * from './codegen/index.js'
+export * from './escape-regexp.js'
 export * from './setup.js'
 export * from './state.js'
 export * from './story-error.js'
