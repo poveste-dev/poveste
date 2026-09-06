@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barrelImport, LIMITS, overLimit } from './check-bundle-size.ts'
+import { barrelImport, LIMITS, measurements, overLimit } from './check-bundle-size.ts'
 
 const LIMIT = [{ prefix: 'highlighter', max: 3000, because: 'a barrel import' }]
 
@@ -8,7 +8,7 @@ describe('overLimit', () => {
     expect(overLimit([{ name: 'highlighter-abc.js', kb: 1346 }], LIMIT)).toEqual([])
   })
 
-  // The regression this exists for: 9960 KB of grammars nobody asked for.
+  // The regression this exists for: 9957 KB of grammars nobody asked for.
   it('names a chunk over its ceiling and why', () => {
     const problems = overLimit([{ name: 'highlighter-abc.js', kb: 9960 }], LIMIT)
 
@@ -48,6 +48,55 @@ describe('the ceilings themselves', () => {
 
   it('keeps the highlighter ceiling below what the barrel import shipped', () => {
     expect(LIMITS.find(limit => limit.prefix === 'highlighter')!.max).toBeLessThan(9960)
+  })
+})
+
+describe('measurements', () => {
+  const chunks = [
+    { name: 'highlighter-abc.js', kb: 1344 },
+    { name: 'vendor-def.js', kb: 1413 },
+    { name: 'other-ghi.js', kb: 200 },
+  ]
+
+  // The point of printing these is that nobody has to quote a comment to find
+  // out what the book weighs, so every ceiling has to report, not just a
+  // failing one (#601).
+  it('reports every ceiling', () => {
+    const lines = measurements(chunks, LIMITS)
+
+    expect(lines).toContain('highlighter-abc.js 1344 KB / 3000 KB')
+    expect(lines).toContain('vendor-def.js 1413 KB / 2500 KB')
+    expect(lines).toContain('whole book 2957 KB / 6500 KB')
+  })
+
+  it('totals the whole book for the ceiling that has no prefix', () => {
+    expect(measurements(chunks, LIMITS)).toContain('whole book 2957 KB / 6500 KB')
+  })
+
+  // `overLimit` applies a prefix ceiling per chunk, so a joined line would read
+  // as a sum of something nothing sums.
+  it('gives each matched chunk its own line', () => {
+    const split = [
+      { name: 'vendor-a.js', kb: 1400 },
+      { name: 'vendor-b.js', kb: 1300 },
+    ]
+
+    expect(measurements(split, [LIMITS[1]])).toEqual([
+      'vendor-a.js 1400 KB / 2500 KB',
+      'vendor-b.js 1300 KB / 2500 KB',
+    ])
+  })
+
+  // The gap the ceilings leave: too small to move the whole-book total, covered
+  // by no prefix, and invisible if this printed only the ceilings.
+  it('names the largest chunk no ceiling covers', () => {
+    expect(measurements(chunks, LIMITS).at(-1)).toBe('largest chunk under no ceiling: other-ghi.js 200 KB')
+  })
+
+  it('says nothing about uncovered chunks when every chunk is covered', () => {
+    const covered = [{ name: 'highlighter-abc.js', kb: 10 }, { name: 'vendor-def.js', kb: 10 }]
+
+    expect(measurements(covered, LIMITS).some(line => line.includes('under no ceiling'))).toBe(false)
   })
 })
 
