@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { openStory, openStoryInApp } from './support.js'
+import { openStory, openStoryInApp, toggleLayout } from './support.js'
 
 /*
  * Sandbox realm reuse (#240), on every framework. A grid cell that scrolls into
@@ -31,6 +31,16 @@ function taggedDocuments(page: Page) {
     const frames = [...document.querySelectorAll<HTMLIFrameElement>('[data-testid="preview-iframe"]')]
     return frames.filter(el => el.contentDocument?.documentElement?.hasAttribute('data-reuse-tag')).length
   })
+}
+
+/**
+ * The preview area's width, to tell "the pane went" from "the preview grew".
+ *
+ * The viewer rather than the iframe: a responsive width pins the iframe to the
+ * size the reader picked, so it does not follow the pane it sits in.
+ */
+function previewWidth(page: Page) {
+  return page.locator('.poveste-story-viewer').first().boundingBox().then(box => box?.width ?? 0)
 }
 
 async function scrollOneViewport(page: Page) {
@@ -142,6 +152,44 @@ test.describe('sandbox reuse', () => {
     await expect(page.getByTestId('preview-iframe')).toBeVisible()
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-wrapper-text')).toBeVisible()
   })
+
+  /*
+   * Hiding either pane used to swap template branches, which moved the preview
+   * in the tree and cold-booted its document (#596). Each case asserts three
+   * things, because any one of them alone can pass on a toggle that did nothing:
+   * the pane really went, the document survived, and the preview grew into the
+   * space — the last being the whole visual payload of `showFirst`/`showLast`
+   * and invisible to a document check.
+   */
+  const TOGGLES = [
+    { setting: 'story-list' as const, pane: 'story-list-item' },
+    { setting: 'story-options' as const, pane: 'story-side-panel' },
+  ]
+
+  for (const { setting, pane } of TOGGLES) {
+    test(`toggling ${setting} keeps the preview it is standing beside`, async ({ page }) => {
+      await openTagged(page, 'conformance-button')
+      // Before, not just after: `story-side-panel` only carries its test id once
+      // the variant is ready, so a bare `toHaveCount(0)` afterwards is satisfied
+      // by a panel that had not rendered yet.
+      await expect(page.getByTestId(pane).first()).toBeVisible()
+      const before = await previewWidth(page)
+
+      await toggleLayout(page, setting)
+      await expect(page.getByTestId(pane)).toHaveCount(0)
+      await expect(page.getByTestId('preview-iframe')).toBeVisible()
+      expect(await taggedDocuments(page), 'the preview kept its document').toBe(1)
+      await expect
+        .poll(() => previewWidth(page), { message: 'the preview grew into the space' })
+        .toBeGreaterThan(before)
+
+      // Back again: showing a pane is the direction where the surviving one has
+      // to be patched around a re-inserted sibling.
+      await toggleLayout(page, setting)
+      await expect(page.getByTestId(pane).first()).toBeVisible()
+      expect(await taggedDocuments(page), 'and kept it on the way back').toBe(1)
+    })
+  }
 
   test('a cell handed another story shows that story, not the last one', async ({ page }) => {
     await openGrid(page, 'conformance-huge-grid', 'conformance-huge-grid-button')

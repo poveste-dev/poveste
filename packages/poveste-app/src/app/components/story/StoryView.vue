@@ -16,8 +16,11 @@ import StoryViewer from './StoryViewer.vue'
 const storyStore = useStoryStore()
 const layoutStore = useLayoutStore()
 
+// Coerced: a settings object stored before a key existed leaves it `undefined`,
+// which the pane's Boolean prop would read as its `true` default — the inverse
+// of what the branch this replaced did with the same value (#596).
 const effectiveStoryOptionsVisible = computed(() =>
-  storyStore.currentStory?.meta?.storyOptions ?? layoutStore.settings.storyOptionsVisible,
+  !!(storyStore.currentStory?.meta?.storyOptions ?? layoutStore.settings.storyOptionsVisible),
 )
 
 const placement = computed(() => layoutStore.settings.storyOptionsPlacement)
@@ -92,12 +95,13 @@ function scrollDocsToTop() {
         @scroll-top="scrollDocsToTop()"
       />
     </div>
-    <template v-else-if="isMobile">
-      <StoryViewer />
-    </template>
-    <template v-else-if="!effectiveStoryOptionsVisible">
-      <StoryViewer />
-    </template>
+    <!--
+      One split pane whether or not the options pane is showing, and whether or
+      not the viewport is mobile — both used to render `StoryViewer` from a
+      different branch, which moved it in the tree and cold-booted the sandbox
+      under it. `isMobile` is a live media query, so that one fired on a resize
+      (#596).
+    -->
     <BaseSplitPane
       v-else
       :save-id="`story-main-${placement}`"
@@ -106,6 +110,7 @@ function scrollDocsToTop() {
       :max="95"
       :default-split="splitDefaultSplit"
       :show-divider="false"
+      :show-last="!isMobile && effectiveStoryOptionsVisible"
       class="h-full"
     >
       <template #first>
