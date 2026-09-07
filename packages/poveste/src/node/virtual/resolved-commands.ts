@@ -1,5 +1,6 @@
 import type { PluginCommand } from '@poveste/shared'
 import type { Context } from '../context.js'
+import { jsIdentifier, jsString } from './codegen.js'
 
 const serializedFields: Readonly<(keyof PluginCommand)[]> = ['id', 'label', 'prompts', 'icon', 'searchText'] as const
 
@@ -30,10 +31,10 @@ function getCommandFields(command: PluginCommand, imports: string[]) {
   if (command.clientSetupFile) {
     const importedVar = `__setup${imports.length}__`
     if (typeof command.clientSetupFile === 'string') {
-      imports.push(`import ${importedVar} from '${command.clientSetupFile}'`)
+      imports.push(`import ${importedVar} from ${jsString(command.clientSetupFile)}`)
     }
     else {
-      imports.push(`import { ${command.clientSetupFile.importName} as ${importedVar} } from '${command.clientSetupFile.file}'`)
+      imports.push(`import { ${jsIdentifier(command.clientSetupFile.importName, `clientSetupFile.importName '${command.clientSetupFile.importName}'`)} as ${importedVar} } from ${jsString(command.clientSetupFile.file)}`)
     }
     fields.push(`...${importedVar}`)
   }
