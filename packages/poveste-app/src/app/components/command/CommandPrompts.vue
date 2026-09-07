@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { ClientCommand } from '@poveste/shared'
+import type { Component } from 'vue'
 import { nextTick, onMounted, reactive, ref } from 'vue'
 import { executeCommand, getCommandContext } from '../../util/commands.js'
 import BaseButton from '../base/BaseButton.vue'
@@ -67,8 +68,15 @@ onMounted(() => {
       {{ command.label }}
     </div>
 
+    <!--
+      `promptTypes[prompt.type]` resolves to the component whose `prompt` prop
+      is that member of the union, but nothing states the correlation and the
+      checker cannot infer it. Splitting this into `v-if` branches per type is
+      what makes it checkable; that is a refactor of untested UI, so it waits
+      for coverage rather than riding along with the type gate (#441).
+    -->
     <component
-      :is="promptTypes[prompt.type]"
+      :is="promptTypes[prompt.type] as Component"
       v-for="(prompt, index) of command.prompts"
       :key="prompt.field"
       ref="promptComps"

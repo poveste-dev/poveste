@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Highlighter } from 'shiki'
+import type { HighlighterCore } from 'shiki/core'
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon } from '@poveste/controls'
@@ -25,7 +25,7 @@ watchEffect(async () => {
   }
 })
 
-const highlighter = shallowRef<Highlighter>()
+const highlighter = shallowRef<HighlighterCore>()
 
 const dynamicSourceCode = ref('')
 const error = ref<string>(null)

@@ -211,6 +211,14 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # After `build`, not beside `lint`: @poveste/app imports @poveste/shared
+      # and @poveste/controls, which are not in its tsconfig `paths` and resolve
+      # through the workspace symlink to `dist/*.d.ts`. Run cold, every named
+      # import in the package fails to resolve and it reports hundreds of
+      # errors that say nothing about the source (#441).
+      - name: Type-check the app
+        run: pnpm --filter @poveste/app run typecheck
+
       # The offline half of the release preflight. Here too, not just at release:
       # there the same failure lands after the bump is already on `main` (#302).
       - name: Check the published package surface

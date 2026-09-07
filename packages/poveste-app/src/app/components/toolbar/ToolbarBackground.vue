@@ -109,10 +109,3 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets.length
     </template>
   </VDropdown>
 </template>
-
-<style scoped>
-.bind-preview-bg {
-  background-color: v-bind('settings.backgroundColor');
-  color: v-bind('contrastColor');
-}
-</style>

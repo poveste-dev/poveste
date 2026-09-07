@@ -60,7 +60,7 @@ watchEffect(() => {
     -->
     <template v-if="shown">
       <StoryVariantSinglePreviewNative
-        v-if="shown.story.layout?.iframe === false"
+        v-if="shown.story.layout?.type === 'single' && shown.story.layout.iframe === false"
         :story="shown.story"
         :variant="shown.variant"
       />
