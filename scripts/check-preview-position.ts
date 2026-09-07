@@ -62,10 +62,35 @@ export const STABLE = [
 
 interface Branch { tag: string, condition: string | null }
 
+/** One spelling for a component, so `<story-viewer>` and `StoryViewer` meet. */
+export function canonical(name: string): string {
+  return name.replace(/-/g, '').toLowerCase()
+}
+
+/**
+ * The operand chains in a condition, with literals dropped.
+ *
+ * `currentStory && !isMobile` is two operands, not one string mentioning
+ * something per-story. Splitting first is what stops a live flag riding into a
+ * stable condition on the back of a `&&`.
+ */
+export function operandsOf(condition: string): string[] {
+  return condition
+    .replace(/'[^']*'|"[^"]*"|`[^`]*`/g, ' ')
+    .split(/[^\w.$?[\]]+/)
+    .map(operand => operand.replace(/[?[\].]+$/, ''))
+    .filter(operand =>
+      operand !== ''
+      && !/^\d/.test(operand)
+      && !['true', 'false', 'null', 'undefined', 'as'].includes(operand))
+}
+
 export function isStable(condition: string | null): boolean {
   // `v-else` states no condition; it inherits the negation of its siblings.
   if (condition === null) return true
-  return STABLE.some(marker => marker.test(condition))
+  // Every operand, not any: one per-story property does not make its
+  // neighbours safe.
+  return operandsOf(condition).every(operand => STABLE.some(marker => marker.test(operand)))
 }
 
 /** Sibling `v-if` / `v-else-if` / `v-else` runs, with the tags each branch contains. */
@@ -76,7 +101,7 @@ export function groupsIn(source: string): { branches: Branch[], tags: Set<string
   const tagsUnder = (node: any, into: Set<string>): Set<string> => {
     for (const child of node.children ?? []) {
       if (child.type !== 1) continue
-      into.add(child.tag)
+      into.add(canonical(child.tag))
       tagsUnder(child, into)
     }
     return into
@@ -98,7 +123,7 @@ export function groupsIn(source: string): { branches: Branch[], tags: Set<string
 
       if (directive && open) {
         open.branches.push({ tag: child.tag, condition: directive.exp?.content ?? null })
-        open.tags.push(tagsUnder(child, new Set([child.tag])))
+        open.tags.push(tagsUnder(child, new Set([canonical(child.tag)])))
       }
 
       walk(child)
@@ -113,12 +138,12 @@ export function groupsIn(source: string): { branches: Branch[], tags: Set<string
 export function previewReaching(files: { file: string, source: string }[]): Set<string> {
   const uses = new Map<string, Set<string>>()
   for (const { file, source } of files) {
-    const name = file.split('/').pop()!.replace(/\.vue$/, '')
+    const name = canonical(file.split('/').pop()!.replace(/\.vue$/, ''))
     const tags = new Set<string>()
     const collect = (node: any): void => {
       for (const child of node?.children ?? []) {
         if (child.type !== 1) continue
-        tags.add(child.tag)
+        tags.add(canonical(child.tag))
         collect(child)
       }
     }
@@ -126,7 +151,7 @@ export function previewReaching(files: { file: string, source: string }[]): Set<
     uses.set(name, tags)
   }
 
-  const reaching = new Set(PREVIEW_ROOTS)
+  const reaching = new Set(PREVIEW_ROOTS.map(canonical))
   for (let changed = true; changed;) {
     changed = false
     for (const [name, tags] of uses) {
@@ -175,7 +200,7 @@ function main(): void {
   }
 
   const reaching = previewReaching(files)
-  if (reaching.size <= PREVIEW_ROOTS.length) {
+  if (reaching.size <= new Set(PREVIEW_ROOTS.map(canonical)).size) {
     console.error('::error::nothing reaches the preview — this check stopped matching')
     process.exit(1)
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupsIn, isStable, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
+import { canonical, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
 
 const wrap = (template: string) => `<template>${template}</template>`
 
@@ -80,14 +80,14 @@ describe('reaching the preview', () => {
     ]
 
     const reaching = previewReaching(files)
-    expect(reaching.has('Middle')).toBe(true)
-    expect(reaching.has('Outer')).toBe(true)
+    expect(reaching.has(canonical('Middle'))).toBe(true)
+    expect(reaching.has(canonical('Outer'))).toBe(true)
   })
 
   it('does not follow a component that never reaches it', () => {
     const files = [{ file: 'Sidebar.vue', source: wrap('<nav><a /></nav>') }]
 
-    expect(previewReaching(files).has('Sidebar')).toBe(false)
+    expect(previewReaching(files).has(canonical('Sidebar'))).toBe(false)
   })
 
   // #595 lived below the router: the file carrying the branches has no
@@ -139,5 +139,61 @@ describe('the STABLE skip-list', () => {
     expect(isStable('storyStore.currentStory.layout.type === \'grid\'')).toBe(true)
     expect(isStable('shown.story.layout?.iframe === false')).toBe(true)
     expect(isStable('storyStore.currentStory.docsOnly')).toBe(true)
+  })
+})
+
+// A condition is stable only if *every* operand is. Asking whether it mentions
+// something per-story lets a live flag ride in on the back of a `&&`, which is
+// #600 wearing a per-story condition as cover.
+describe('a compound condition', () => {
+  it('is unstable when one operand is a live flag', () => {
+    expect(isStable('currentStory && !isMobile')).toBe(false)
+    expect(isStable('shown.story.layout || isMobile')).toBe(false)
+  })
+
+  it('fails the group rather than passing on the per-story half', () => {
+    const files = [{
+      file: 'X.vue',
+      source: wrap('<div v-if="currentStory && !isMobile"><RouterView /></div><div v-else><RouterView /></div>'),
+    }]
+
+    expect(problemsIn(files)).toHaveLength(1)
+  })
+
+  it('stays stable when every operand is per-story', () => {
+    expect(isStable('storyStore.currentStory || storyStore.currentVariant')).toBe(true)
+    expect(isStable('storyStore.currentStory && !storyStore.currentStory.docsOnly')).toBe(true)
+    expect(isStable('shown.story.layout?.type === \'single\' && shown.story.layout.iframe === false')).toBe(true)
+  })
+
+  it('drops literals rather than treating them as operands', () => {
+    expect(operandsOf('layout.type === \'grid\'')).toEqual(['layout.type'])
+    expect(operandsOf('depth > 0 && story')).toEqual(['depth', 'story'])
+  })
+})
+
+// PREVIEW_ROOTS already listed `RouterView` and `router-view`, so the kebab
+// spelling was anticipated in one place and not in reachability.
+describe('a component used in kebab-case', () => {
+  it('still reaches the preview', () => {
+    const files = [
+      { file: 'Outer.vue', source: wrap('<story-viewer />') },
+      { file: 'StoryViewer.vue', source: wrap('<StoryVariantSinglePreviewNative />') },
+    ]
+
+    expect(previewReaching(files).has(canonical('Outer'))).toBe(true)
+  })
+
+  it('fails a group that switches it on a live flag', () => {
+    const files = [
+      { file: 'App.vue', source: wrap('<div v-if="isMobile"><story-viewer /></div><div v-else><story-viewer /></div>') },
+      { file: 'StoryViewer.vue', source: wrap('<StoryVariantSinglePreviewNative />') },
+    ]
+
+    expect(problemsIn(files)).toHaveLength(1)
+  })
+
+  it('gives the two spellings one name', () => {
+    expect(canonical('story-viewer')).toBe(canonical('StoryViewer'))
   })
 })
