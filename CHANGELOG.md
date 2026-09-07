@@ -4,6 +4,40 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.13.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.3...v0.13.0)
+
+**A built book falls from 13.3 MB to 4.9 MB, and clicking through the sidebar stops rebooting the preview.**
+
+This is what the *What a book weighs* milestone was for. Every number below is the same book — `examples/vue3` — built before and after the work and measured by the bytes a host serves, and `scripts/check-bundle-size.ts` now holds ceilings on the chunks that regressed most easily.
+
+### 🚨 Breaking Changes
+
+- **`puppeteer` is now a peer dependency of `@poveste/plugin-percy`** ([#565](https://github.com/poveste-dev/poveste/pull/565)). Install it alongside the plugin — `npm i -D puppeteer` — or Percy builds fail with a message saying so. It was a runtime dependency, so adding Percy support downloaded a browser and pulled a proxy and archive stack into the install, including for the projects that had the plugin and never ran Percy — and puppeteer's postinstall can fail outright, taking the whole install down with it, for reasons that have nothing to do with poveste. Every other integration here is already peer-shaped. It is declared optional, because a book with the plugin installed and Percy disabled is a valid install that never touches it — which is why the missing case is now reachable at runtime and named rather than failing obscurely (#324).
+
+### 🚀 Enhancements
+
+- **The syntax highlighter ships the two grammars the source pane asks for, not every one** ([#304](https://github.com/poveste-dev/poveste/issues/304)). Importing from the `shiki` barrel pulled every language and every theme into the bundle: `highlighter-*.js` alone was 9,957 KB of a 13.3 MB book. Importing from `shiki/core` and registering only what is used brings that chunk to 1,343 KB. A 3,000 KB ceiling now guards it, because nothing else looks.
+- **The font family is vendored instead of depended on** ([#306](https://github.com/poveste-dev/poveste/issues/306)). Every install pulled a 5.9 MB package in order to ship 108 KB of it. The seven files a book actually serves are vendored now.
+- **The JSON control loads on demand** ([#374](https://github.com/poveste-dev/poveste/issues/374)). CodeMirror was 427 KB in every book, for one control that most books never render. It came out of the shared `vendor` chunk, which falls from 1,840 KB to 1,412 KB.
+- **A sidebar click reuses the preview instead of cold-booting it** ([#328](https://github.com/poveste-dev/poveste/issues/328)). Realm reuse applied to variant navigation but never to story→story, so every click in the sidebar destroyed the sandbox and built a new one — a 210–340 ms cold boot per click.
+- **Toggling the story list or the options pane reuses it too** ([#596](https://github.com/poveste-dev/poveste/issues/596)). Same cost, same structural cause: the preview's ancestor was rendered from two different branches and switched between, so Vue rebuilt the subtree rather than patching it.
+
+### 🩹 Fixes
+
+- **A built book reads `.env.production`** ([#349](https://github.com/poveste-dev/poveste/issues/349)). `build.ts` handed Vite `mode: 'development'`, so production env files were ignored and `import.meta.env.PROD` was `false` in a book that had been built for production.
+
+### 📖 Documentation
+
+- **Why a built book is not minified** ([#329](https://github.com/poveste-dev/poveste/issues/329)). Minifying was tried and measured, and it breaks a headline feature: the source pane prints story code by reading functions back at runtime, and `Function.prototype.toString()` returns the minified body, so `@click="onClick"` renders as `@click="i(e){console.log"`. `build.ts` now says that next to the flag, rather than leaving `minify: false` looking like something nobody got round to.
+
+### Upgrading
+
+**If you use `@poveste/plugin-percy`, run `npm i -D puppeteer`.** That is the only action in this release. Upgrading will not bring `puppeteer` along any more, and Percy builds fail without it — with a message that says so, rather than obscurely. The accepted range is `^23.10.1 || ^24.0.0 || ^25.0.0`, so whatever you already have is likely fine.
+
+**Everything else is an install.** No configuration changed, no API changed, and stories and config files that worked on 0.12.x work here. Rebuild your book to get the size reduction — it is a build-time change, so an existing built book keeps its old weight until you rebuild it.
+
 ## v0.12.3
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.2...v0.12.3)
