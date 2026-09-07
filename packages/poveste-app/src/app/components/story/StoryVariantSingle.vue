@@ -27,59 +27,19 @@ const showsPreview = computed(() => !!variant.value || autoSelectsVariant(storyS
 </script>
 
 <template>
-  <div
-    v-if="isMobile"
-    class="divide-y divide-gray-100 dark:divide-gray-800 h-full flex flex-col"
-  >
-    <a
-      v-if="!hasSingleVariant || !variant"
-      class="px-6 h-12 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer flex gap-2 flex-wrap w-full items-center flex-none"
-      @click="$emit('openVariantMenu')"
-    >
-      <template v-if="variant">
-        <Icon
-          :icon="variant.icon ?? 'carbon:cube'"
-          class="w-5 h-5 flex-none"
-          :class="{
-            'text-gray-500': !variant.iconColor,
-            'bind-icon-color': variant.iconColor,
-          }"
-        />
-        {{ variant.title }}
-      </template>
-      <template v-else>
-        Select a variant...
-      </template>
-
-      <Icon
-        icon="carbon:chevron-sort"
-        class="w-5 h-5 shrink-0 ml-auto"
-      />
-    </a>
-    <div
-      v-if="showsPreview"
-      class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
-    >
-      <StoryVariantSingleView
-        :variant="variant"
-        :story="storyStore.currentStory"
-      />
-    </div>
-  </div>
-
   <!--
-    One split pane whether or not there is a list to put in it. A story with a
-    single variant hides the first pane instead of taking a different branch, so
-    the preview stays at one position in the tree and survives the move between
-    a one-variant story and a many-variant one (#328).
+    One split pane for every layout. The variant list, the mobile picker row and
+    the bare single-variant view used to be three branches each carrying their
+    own `StoryVariantSingleView`, so moving between them rebuilt the preview and
+    cold-booted its sandbox. `isMobile` is a live media query, so that happened
+    on a window resize (#600); the single/many-variant half was #328.
   -->
   <BaseSplitPane
-    v-else
     save-id="story-single-main-split"
     :min="5"
     :max="40"
     :default-split="17"
-    :show-first="!hasSingleVariant"
+    :show-first="!isMobile && !hasSingleVariant"
   >
     <template #first>
       <div class="h-full overflow-y-auto">
@@ -92,13 +52,45 @@ const showsPreview = computed(() => !!variant.value || autoSelectsVariant(storyS
     </template>
     <template #last>
       <div
-        v-if="showsPreview"
-        class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
+        class="h-full flex flex-col"
+        :class="{ 'divide-y divide-gray-100 dark:divide-gray-800': isMobile }"
       >
-        <StoryVariantSingleView
-          :variant="variant"
-          :story="storyStore.currentStory"
-        />
+        <!-- Mobile has no room for the list beside the preview, so the variant
+             it is showing opens a full-screen overlay instead. -->
+        <a
+          v-if="isMobile && (!hasSingleVariant || !variant)"
+          class="px-6 h-12 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer flex gap-2 flex-wrap w-full items-center flex-none"
+          @click="$emit('openVariantMenu')"
+        >
+          <template v-if="variant">
+            <Icon
+              :icon="variant.icon ?? 'carbon:cube'"
+              class="w-5 h-5 flex-none"
+              :class="{
+                'text-gray-500': !variant.iconColor,
+                'bind-icon-color': variant.iconColor,
+              }"
+            />
+            {{ variant.title }}
+          </template>
+          <template v-else>
+            Select a variant...
+          </template>
+
+          <Icon
+            icon="carbon:chevron-sort"
+            class="w-5 h-5 shrink-0 ml-auto"
+          />
+        </a>
+        <div
+          v-if="showsPreview"
+          class="poveste-story-variant-single p-2 h-full __poveste-pane-shadow-from-right"
+        >
+          <StoryVariantSingleView
+            :variant="variant"
+            :story="storyStore.currentStory"
+          />
+        </div>
       </div>
     </template>
   </BaseSplitPane>
