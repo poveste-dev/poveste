@@ -262,6 +262,18 @@ jobs:
         if: env.RUN == 'true'
         run: pnpm --filter ./examples/${{ matrix.example }} run story:build
 
+      # The book is not the app. This job was green for months while the
+      # SvelteKit app the example demonstrates did not compile, because building
+      # the book never touches it — a reviewer who clones and runs the obvious
+      # command finds that before they find anything else (#618).
+      #
+      # Same shape as the vike assertion above, which #369 added for the same
+      # reason. Those two are the whole set: every other example is a book wired
+      # into a framework's toolchain and has no app of its own to build.
+      - name: Assert the SvelteKit app still builds
+        if: ${{ env.RUN == 'true' && (matrix.example == 'sveltekit') }}
+        run: pnpm --filter ./examples/sveltekit run sk:build
+
       # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
       # config starts, so this job boots one preview server rather than five.
       # See the config for why that is not just `--project`.

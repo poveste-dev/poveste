@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types'
-  import { enhance } from '$lib/form'
+  import { enhance } from '$app/forms'
   import { flip } from 'svelte/animate'
   import { scale } from 'svelte/transition'
 
@@ -17,13 +17,9 @@
 
   <form
     class="new"
-    action="/todos"
+    action="?/create"
     method="post"
-    use:enhance={{
-      result: async ({ form }) => {
-        form.reset()
-      },
-    }}
+    use:enhance
   >
     <input name="text" aria-label="Add todo" placeholder="+ tap to add a todo" />
   </form>
@@ -36,12 +32,12 @@
       animate:flip={{ duration: 200 }}
     >
       <form
-        action="/todos?_method=PATCH"
+        action="?/edit"
         method="post"
-        use:enhance={{
-          pending: ({ data }) => {
-            todo.done = !!data.get('done')
-          },
+        use:enhance={() => {
+          // Optimistic: flip it now, and let the reload that follows confirm it.
+          todo.done = !todo.done
+          return ({ update }) => update()
         }}
       >
         <input type="hidden" name="uid" value={todo.uid} />
@@ -49,17 +45,18 @@
         <button class="toggle" aria-label="Mark todo as {todo.done ? 'not done' : 'done'}"></button>
       </form>
 
-      <form class="text" action="/todos?_method=PATCH" method="post" use:enhance>
+      <form class="text" action="?/edit" method="post" use:enhance>
         <input type="hidden" name="uid" value={todo.uid} />
         <input aria-label="Edit todo" type="text" name="text" value={todo.text} />
         <button class="save" aria-label="Save todo"></button>
       </form>
 
       <form
-        action="/todos?_method=DELETE"
+        action="?/delete"
         method="post"
-        use:enhance={{
-          pending: () => (todo.pending_delete = true),
+        use:enhance={() => {
+          todo.pending_delete = true
+          return ({ update }) => update()
         }}
       >
         <input type="hidden" name="uid" value={todo.uid} />
