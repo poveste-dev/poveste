@@ -39,6 +39,7 @@
   },
   "scripts": {
     "build": "pnpm run icons && rimraf dist && vite build && pnpm run build:css && node ./scripts/copy.mjs",
+    "typecheck": "vue-tsc --noEmit",
     "build:css": "postcss src/app/style/main.pcss -o ./dist/style.css",
     "icons": "node ./scripts/icons.mjs",
     "test": "vitest run",
@@ -75,6 +76,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vue": "^3.5.26"
+    "vue": "^3.5.26",
+    "vue-tsc": "catalog:"
   }
 }

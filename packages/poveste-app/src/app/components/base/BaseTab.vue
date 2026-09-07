@@ -1,10 +1,20 @@
 <script lang="ts">
+import type { PropType } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { defineComponent } from 'vue'
 
 export default defineComponent({
   inheritAttrs: false,
 
   props: {
+    // Declared rather than passed through `$attrs`: with
+    // `inheritAttrs: false` the checker cannot see it there, and
+    // router-link requires it.
+    to: {
+      type: [String, Object] as PropType<RouteLocationRaw>,
+      required: true,
+    },
+
     exact: {
       type: Boolean,
       default: false,
@@ -21,6 +31,7 @@ export default defineComponent({
 <template>
   <router-link
     v-slot="{ isActive, isExactActive, href, navigate }"
+    :to="to"
     class="poveste-base-tab"
     v-bind="$attrs"
     custom
