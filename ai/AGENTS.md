@@ -2,7 +2,7 @@
 
 This file is the source of truth for AI agents working in this repo. It lives at `ai/AGENTS.md`; the root `AGENTS.md` and [`CLAUDE.md`](../CLAUDE.md) point here, so Claude, Codex and Cursor read one copy that cannot drift between them.
 
-Keep it short. Step-by-step procedures live in `ai/skills/`, invocable as `/add-conformance-story`, `/open-pr`, `/file-an-issue` and `/cut-a-release`.
+Keep it short. Step-by-step procedures live in `ai/skills/`, invocable as `/add-conformance-story`, `/open-pr`, `/file-an-issue`, `/cut-a-release` and `/hand-over-work`.
 
 This is not the contributor guide. [`CONTRIBUTING.md`](../CONTRIBUTING.md) covers setup, the package table, the test commands and the whole release procedure, and it is accurate — read it first. What follows is only what that file does not say and the repo does not reveal: the conventions that are real, unwritten, and have already caused wrong turns.
 
@@ -100,7 +100,7 @@ This repo is a fork of histoire, and inherited documentation drifts from it. Whe
 
 One thing that looks like drift and is not: `examples/nuxt4` still uses `histoire.config.ts`. The legacy filename is a supported feature with its own coverage in `config.spec.ts`, so renaming it as tidying removes the only example exercising it.
 
-The skills in `ai/skills/` cover the four procedures that are settled and span more than one file. There is deliberately no skill for adding a framework plugin: #375 is still the analysis, and a checklist for a procedure nobody has completed would be invention rather than documentation.
+The skills in `ai/skills/` cover the five procedures that are settled and span more than one file. There is deliberately no skill for adding a framework plugin: #375 is still the analysis, and a checklist for a procedure nobody has completed would be invention rather than documentation.
 
 ## Notes for agents
 
