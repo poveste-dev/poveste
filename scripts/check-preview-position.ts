@@ -35,7 +35,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 export const APP_SOURCE = 'packages/poveste-app/src'
 
 /**
- * Files permitted a second mount point.
+ * Files whose surplus mount points are forgiven — an entry lets that file hold
+ * more than one, not that the file stops being counted.
  *
  * Empty, and an entry is expensive: it says a layout choice may move the routed
  * view, which is the regression itself. #607 landed after #604 precisely so
@@ -44,12 +45,23 @@ export const APP_SOURCE = 'packages/poveste-app/src'
  */
 export const ALLOWLIST: readonly string[] = []
 
-/** Source with HTML, block and line comments removed. */
+const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/gi
+
+// Only inside `<script>`. A `//` in markup is a path, not a comment: an inline
+// `url(//cdn/x)` or a bare `a//b` in text would otherwise swallow the rest of
+// its line, and with it any `<RouterView>` that follows on it — an undercount,
+// which is the direction that hides the bug this checks for.
+function withoutJsComments(block: string): string {
+  return block
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:"'`\\])\/\/[^\n]*/g, '$1')
+}
+
+/** Source with HTML comments removed, and JS comments removed inside `<script>`. */
 export function withoutComments(source: string): string {
   return source
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:"'`])\/\/[^\n]*/g, '$1')
+    .replace(SCRIPT_BLOCK, withoutJsComments)
 }
 
 /** Opening `<RouterView>` / `<router-view>` tags outside comments. */
@@ -57,12 +69,19 @@ export function countMountPoints(source: string): number {
   return (withoutComments(source).match(/<(?:RouterView|router-view)[\s/>]/g) ?? []).length
 }
 
-export function problemsIn(files: { file: string, source: string }[]): string[] {
+export function problemsIn(
+  files: { file: string, source: string }[],
+  allowlist: readonly string[] = ALLOWLIST,
+): string[] {
   const mounts = files
     .map(({ file, source }) => ({ file, count: countMountPoints(source) }))
-    .filter(({ file, count }) => count > 0 && !ALLOWLIST.includes(file))
+    .filter(({ count }) => count > 0)
+    // An allowlisted file still holds the routed view; it is only forgiven the
+    // extras. Dropping it from the tally instead would report the check as
+    // broken the moment someone used the escape hatch as documented.
+    .map(entry => ({ ...entry, counts: allowlist.includes(entry.file) ? Math.min(entry.count, 1) : entry.count }))
 
-  const total = mounts.reduce((sum, { count }) => sum + count, 0)
+  const total = mounts.reduce((sum, { counts }) => sum + counts, 0)
   if (total === 1) {
     return []
   }
@@ -71,9 +90,7 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
     return ['no <RouterView> found — either it moved, or this check stopped matching']
   }
 
-  return mounts
-    .filter(({ count }) => count > 0)
-    .map(({ file, count }) => `${file} mounts the routed view ${count} time${count === 1 ? '' : 's'}`)
+  return mounts.map(({ file, count }) => `${file} mounts the routed view ${count} time${count === 1 ? '' : 's'}`)
 }
 
 function main(): void {

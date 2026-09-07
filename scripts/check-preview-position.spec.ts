@@ -76,6 +76,29 @@ describe('withoutComments', () => {
   })
 })
 
+// A `//` in markup is a path, not a comment. Treating it as one deletes the
+// rest of the line, and any mount point on that line goes with it — the check
+// then passes on the regression it exists to catch.
+describe('a double slash in markup', () => {
+  it('does not swallow a mount point after an inline url()', () => {
+    expect(countMountPoints('<template><i style="background:url(//c/x)" /><RouterView /></template>')).toBe(1)
+  })
+
+  it('does not swallow a mount point after a bare path in text', () => {
+    expect(countMountPoints('<template><span>a//b</span><RouterView /></template>')).toBe(1)
+  })
+
+  it('does not swallow a mount point after a protocol-relative src', () => {
+    expect(countMountPoints('<template><img src="//cdn.x/y.png" /><RouterView /></template>')).toBe(1)
+  })
+
+  it('still strips a line comment inside script', () => {
+    const source = '<script setup>\nconst a = 1 // <RouterView />\n</script>\n<template><RouterView /></template>'
+
+    expect(countMountPoints(source)).toBe(1)
+  })
+})
+
 describe('problemsIn', () => {
   it('accepts exactly one mount point across the package', () => {
     const files = [
@@ -117,5 +140,36 @@ describe('problemsIn', () => {
 
   it('starts with an empty allowlist, so every entry is an argued one', () => {
     expect(ALLOWLIST).toEqual([])
+  })
+})
+
+// An entry forgives a file its extras. Dropping the file from the tally instead
+// makes the documented escape hatch report the check as broken, and hides a
+// genuine second mount point elsewhere.
+describe('an allowlisted file', () => {
+  it('is forgiven its surplus rather than removed from the count', () => {
+    const files = [{ file: 'App.vue', source: '<RouterView /><RouterView />' }]
+
+    expect(problemsIn(files, ['App.vue'])).toEqual([])
+  })
+
+  it('does not make the check report itself broken', () => {
+    const files = [{ file: 'App.vue', source: '<RouterView /><RouterView />' }]
+
+    expect(problemsIn(files, ['App.vue'])).not.toContain(
+      'no <RouterView> found — either it moved, or this check stopped matching',
+    )
+  })
+
+  it('still fails when a second file mounts the routed view', () => {
+    const files = [
+      { file: 'App.vue', source: '<RouterView /><RouterView />' },
+      { file: 'B.vue', source: '<RouterView />' },
+    ]
+
+    expect(problemsIn(files, ['App.vue'])).toEqual([
+      'App.vue mounts the routed view 2 times',
+      'B.vue mounts the routed view 1 time',
+    ])
   })
 })
