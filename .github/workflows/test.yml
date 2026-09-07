@@ -44,8 +44,7 @@ jobs:
     timeout-minutes: 5
     name: Changed paths
     outputs:
-      windows: ${{ steps.filter.outputs.windows }}
-      nodefloor: ${{ steps.filter.outputs.nodefloor }}
+      code: ${{ steps.filter.outputs.code }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -75,31 +74,32 @@ jobs:
             printf '%s\n' "$changed" | sed 's/^/  /'
           fi
 
-          matches() {
-            [ "$everything" = true ] && return 0
-            printf '%s\n' "$changed" | grep -qE "$1"
-          }
+          # A skip-list, not a match-list. Both jobs below used to gate on an
+          # enumeration of what could affect them, and an enumeration is wrong
+          # silently in the direction that matters: a path nobody thought of is
+          # skipped without a word. Inverting it means an unclassified path runs
+          # the jobs, and being wrong here costs one CI run rather than the
+          # Node 24 builtin against a 22.22.2 floor that #608 nearly shipped.
+          #
+          # So this lists only what provably cannot change a build or a test
+          # result: prose, and the instructions agents read. Nothing here is
+          # imported by a package, read by a unit test, or packed into a
+          # tarball. Add a line only after checking that (#620).
+          INERT='^(docs/|ai/|\.claude/|\.codex/|\.cursor/|\.github/(ISSUE_TEMPLATE/|PULL_REQUEST_TEMPLATE\.md$|commit-convention\.md$)|[^/]+\.md$|LICENSE$|netlify\.toml$)'
 
-          # Story collection is the code that breaks on Windows — the globs, the
-          # vite-node module graph, path handling through packages/poveste/src/node
-          # (#156). Nothing under docs/ can move it.
-          WINDOWS='^(packages/|scripts/|pnpm-lock\.yaml$|\.github/workflows/test\.yml$)'
-          # A claim about the published tarballs — so the manifests, what packs
-          # them (#303), and the source that ends up inside them. Source was
-          # missing, and it is the half that carries a builtin newer than the
-          # floor: `test:smoke` packs and builds a book on the minimum, so a
-          # too-new call on the build path fails there and nowhere else (#608).
-          NODEFLOOR='^(.*/)?package\.json$|^(\.node-version|pnpm-lock\.yaml|scripts/smoke-test\.sh)$|^\.github/workflows/test\.yml$|^packages/[^/]+/src/.*$'
+          if [ "$everything" = true ]; then
+            code=true
+          elif forced=$(printf '%s\n' "$changed" | grep -vE "$INERT"); then
+            code=true
+            echo "Not inert, so the gated jobs run:"
+            printf '%s\n' "$forced" | sed 's/^/  /'
+          else
+            code=false
+            echo "Every changed path is prose or agent config — gated jobs skipped."
+          fi
 
-          for name in windows nodefloor; do
-            case $name in
-              windows) pattern=$WINDOWS ;;
-              nodefloor) pattern=$NODEFLOOR ;;
-            esac
-            if matches "$pattern"; then value=true; else value=false; fi
-            echo "$name=$value" >> "$GITHUB_OUTPUT"
-            echo "$name: $value"
-          done
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "code: $code"
 
   build-and-test:
     runs-on: ubuntu-latest
@@ -207,7 +207,7 @@ jobs:
     needs: changes
     # Against `false` rather than `true`, matching test-examples.yml: an output
     # that was never written must mean run, never skip.
-    if: needs.changes.outputs.windows != 'false'
+    if: needs.changes.outputs.code != 'false'
     runs-on: windows-latest
     timeout-minutes: 20
     name: Collection (windows)
@@ -244,7 +244,7 @@ jobs:
   # sentence — `>=26` was asserted for exactly that reason and was never real (#303).
   minimum-node:
     needs: changes
-    if: needs.changes.outputs.nodefloor != 'false'
+    if: needs.changes.outputs.code != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     name: Node floor
