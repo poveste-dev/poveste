@@ -18,6 +18,22 @@ Poveste is a tool to generate stories applications (or "books").
 
 [Learn more about Poveste here &raquo;](./index.md)
 
+## Installation
+
+A book is `poveste` plus the plugin for your framework. There is no single command that is right for all of them, so pick yours below — each guide has the exact packages, the config file they go in, and a first story.
+
+```shell
+npm i -D poveste @poveste/plugin-<framework>
+```
+
+- [Vue &rarr;](./vue/getting-started.md) — `poveste` and `@poveste/plugin-vue`
+- [Nuxt &rarr;](./vue/getting-started.md#nuxt) — the Vue packages, plus `@poveste/plugin-nuxt`
+- [Quasar &rarr;](./config.md#quasar) — the Vue packages, plus `@poveste/plugin-quasar`
+- [Svelte &rarr;](./svelte/getting-started.md) — `poveste` and `@poveste/plugin-svelte`
+- [SvelteKit &rarr;](./svelte/getting-started.md#sveltekit) — the same two as Svelte
+
+## Try it in a live editor
+
 <div class="demo-links-box border-green-200 dark:border-green-900">
   <img src="/vue.svg" alt="Vue logo" class="w-10 h-10 mt-3 object-contain" />
   <DemoLinks framework="vue" />
