@@ -18,8 +18,7 @@
     "test:examples": "pnpm run story:build && pnpm run test"
   },
   "dependencies": {
-    "@fontsource/fira-mono": "^5.1.0",
-    "cookie": "^1.0.2"
+    "@fontsource/fira-mono": "^5.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -27,7 +26,6 @@
     "@sveltejs/adapter-auto": "^7.0.1",
     "@sveltejs/kit": "^2.70.2",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "@types/cookie": "^1.0.0",
     "lottie-web": "^5.12.2",
     "poveste": "workspace:*",
     "sass": "^1.82.0",
