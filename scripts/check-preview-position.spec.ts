@@ -1,175 +1,143 @@
 import { describe, expect, it } from 'vitest'
-import { ALLOWLIST, countMountPoints, problemsIn, withoutComments } from './check-preview-position.ts'
+import { groupsIn, isStable, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
 
-// The comment #604 left in App.vue explains the regression using the word
-// `RouterView`. A check that greps the bare word fails on a correct tree,
-// tripping over the explanation of the thing it is checking — so this is the
-// case that has to hold, not an edge case.
-describe('a comment mentioning RouterView', () => {
-  it('is not counted as a mount point', () => {
-    const source = `
-      <template>
-        <!--
-          Each chrome used to be a branch carrying its own \`RouterView\`, so
-          switching between them moved the routed view in the tree (#600).
-        -->
-        <RouterView class="flex-1" />
-      </template>
-    `
+const wrap = (template: string) => `<template>${template}</template>`
 
-    expect(countMountPoints(source)).toBe(1)
+// The regression: a live layout flag with the preview in more than one branch.
+// This is #596 (settings toggles) and #600 (isMobile) in miniature.
+describe('a group switched on a live layout flag', () => {
+  it('fails when more than one branch renders the preview', () => {
+    const files = [{
+      file: 'App.vue',
+      source: wrap('<div v-if="isMobile"><RouterView /></div><div v-else><RouterView /></div>'),
+    }]
+
+    expect(problemsIn(files)).toEqual([
+      'App.vue: 2 branches of one group render the preview, switched on `isMobile`',
+    ])
   })
 
-  it('is not counted when it is a block comment in script', () => {
-    const source = `
-      <script setup>
-      /* The preview used to sit under a second <RouterView>, which is #596. */
-      </script>
-      <template><RouterView /></template>
-    `
-
-    expect(countMountPoints(source)).toBe(1)
-  })
-
-  it('is not counted when it is a line comment', () => {
-    const source = `
-      <script setup>
-      // do not add a second <RouterView> here
-      </script>
-      <template><RouterView /></template>
-    `
-
-    expect(countMountPoints(source)).toBe(1)
-  })
-})
-
-describe('counting mount points', () => {
-  it('counts a self-closing tag', () => {
-    expect(countMountPoints('<RouterView />')).toBe(1)
-  })
-
-  it('counts the kebab-case spelling', () => {
-    expect(countMountPoints('<router-view></router-view>')).toBe(1)
-  })
-
-  it('counts a tag carrying attributes', () => {
-    expect(countMountPoints('<RouterView class="flex-1 min-h-0" />')).toBe(1)
-  })
-
-  it('does not count a component whose name merely starts the same way', () => {
-    expect(countMountPoints('<RouterViewport />')).toBe(0)
-  })
-
-  it('counts each of two sibling branches', () => {
-    const source = `
-      <template v-if="isMobile"><RouterView /></template>
-      <template v-else><RouterView /></template>
-    `
-
-    expect(countMountPoints(source)).toBe(2)
-  })
-})
-
-describe('withoutComments', () => {
-  it('leaves a URL in a string intact', () => {
-    expect(withoutComments('const u = "https://poveste.dev"')).toContain('https://poveste.dev')
-  })
-})
-
-// A `//` in markup is a path, not a comment. Treating it as one deletes the
-// rest of the line, and any mount point on that line goes with it — the check
-// then passes on the regression it exists to catch.
-describe('a double slash in markup', () => {
-  it('does not swallow a mount point after an inline url()', () => {
-    expect(countMountPoints('<template><i style="background:url(//c/x)" /><RouterView /></template>')).toBe(1)
-  })
-
-  it('does not swallow a mount point after a bare path in text', () => {
-    expect(countMountPoints('<template><span>a//b</span><RouterView /></template>')).toBe(1)
-  })
-
-  it('does not swallow a mount point after a protocol-relative src', () => {
-    expect(countMountPoints('<template><img src="//cdn.x/y.png" /><RouterView /></template>')).toBe(1)
-  })
-
-  it('still strips a line comment inside script', () => {
-    const source = '<script setup>\nconst a = 1 // <RouterView />\n</script>\n<template><RouterView /></template>'
-
-    expect(countMountPoints(source)).toBe(1)
-  })
-})
-
-describe('problemsIn', () => {
-  it('accepts exactly one mount point across the package', () => {
-    const files = [
-      { file: 'a/App.vue', source: '<RouterView />' },
-      { file: 'a/Other.vue', source: '<div />' },
-    ]
+  it('passes when only one branch renders the preview', () => {
+    const files = [{
+      file: 'App.vue',
+      source: wrap('<div v-if="isMobile"><RouterView /></div><aside v-else>nothing</aside>'),
+    }]
 
     expect(problemsIn(files)).toEqual([])
   })
 
-  // The shape of #596 and #600: a layout choice expressed as sibling branches
-  // that both carry the routed view. App.vue held 3 before #596 and 2 before
-  // #600, and each flip rebuilt the preview under a cold sandbox.
-  it('names the file when one component mounts it twice', () => {
-    const files = [{ file: 'a/App.vue', source: '<RouterView /><RouterView />' }]
+  // The property that makes the skip-list safe: a condition nobody has
+  // classified fails, rather than being assumed harmless.
+  it('fails on a condition nobody has classified', () => {
+    const files = [{
+      file: 'App.vue',
+      source: wrap('<div v-if="isCompactChrome"><RouterView /></div><div v-else><RouterView /></div>'),
+    }]
 
-    expect(problemsIn(files)).toEqual(['a/App.vue mounts the routed view 2 times'])
-  })
-
-  it('names both files when the second mount point is elsewhere', () => {
-    const files = [
-      { file: 'a/App.vue', source: '<RouterView />' },
-      { file: 'a/Mobile.vue', source: '<RouterView />' },
-    ]
-
-    expect(problemsIn(files)).toEqual([
-      'a/App.vue mounts the routed view 1 time',
-      'a/Mobile.vue mounts the routed view 1 time',
-    ])
-  })
-
-  // A check that silently stops matching is worse than no check, which is the
-  // failure `check-bundle-size.ts` guards against by treating an unmatched
-  // prefix as a problem rather than as nothing to do.
-  it('fails when it finds no mount point at all', () => {
-    expect(problemsIn([{ file: 'a/App.vue', source: '<div />' }]))
-      .toEqual(['no <RouterView> found — either it moved, or this check stopped matching'])
-  })
-
-  it('starts with an empty allowlist, so every entry is an argued one', () => {
-    expect(ALLOWLIST).toEqual([])
+    expect(problemsIn(files)).toHaveLength(1)
   })
 })
 
-// An entry forgives a file its extras. Dropping the file from the tally instead
-// makes the documented escape hatch report the check as broken, and hides a
-// genuine second mount point elsewhere.
-describe('an allowlisted file', () => {
-  it('is forgiven its surplus rather than removed from the count', () => {
-    const files = [{ file: 'App.vue', source: '<RouterView /><RouterView />' }]
+// The two groups on `next` that look like the regression and are not: their
+// conditions are properties of the story, so they cannot flip while the story
+// is stationary, and a story change rebuilds the preview anyway.
+describe('a group switched on the story being shown', () => {
+  it('passes with the preview in both branches', () => {
+    const files = [{
+      file: 'StoryViewer.vue',
+      source: wrap(
+        '<StoryVariantGrid v-if="storyStore.currentStory.layout.type === \'grid\'"><RouterView /></StoryVariantGrid>'
+        + '<StoryVariantSingle v-else><RouterView /></StoryVariantSingle>',
+      ),
+    }]
 
-    expect(problemsIn(files, ['App.vue'])).toEqual([])
+    expect(problemsIn(files)).toEqual([])
   })
 
-  it('does not make the check report itself broken', () => {
-    const files = [{ file: 'App.vue', source: '<RouterView /><RouterView />' }]
-
-    expect(problemsIn(files, ['App.vue'])).not.toContain(
-      'no <RouterView> found — either it moved, or this check stopped matching',
-    )
+  it('treats a bare v-else as stable, since it inherits its siblings', () => {
+    expect(isStable(null)).toBe(true)
   })
 
-  it('still fails when a second file mounts the routed view', () => {
+  it('rejects a group where only some conditions are stable', () => {
+    const files = [{
+      file: 'Mixed.vue',
+      source: wrap(
+        '<div v-if="currentStory.docsOnly"><RouterView /></div>'
+        + '<div v-else-if="isMobile"><RouterView /></div>'
+        + '<div v-else><RouterView /></div>',
+      ),
+    }]
+
+    expect(problemsIn(files)).toHaveLength(1)
+  })
+})
+
+describe('reaching the preview', () => {
+  it('follows a component that contains one that contains it', () => {
     const files = [
-      { file: 'App.vue', source: '<RouterView /><RouterView />' },
-      { file: 'B.vue', source: '<RouterView />' },
+      { file: 'Outer.vue', source: wrap('<Middle />') },
+      { file: 'Middle.vue', source: wrap('<StoryVariantSinglePreviewRemote />') },
     ]
 
-    expect(problemsIn(files, ['App.vue'])).toEqual([
-      'App.vue mounts the routed view 2 times',
-      'B.vue mounts the routed view 1 time',
-    ])
+    const reaching = previewReaching(files)
+    expect(reaching.has('Middle')).toBe(true)
+    expect(reaching.has('Outer')).toBe(true)
+  })
+
+  it('does not follow a component that never reaches it', () => {
+    const files = [{ file: 'Sidebar.vue', source: wrap('<nav><a /></nav>') }]
+
+    expect(previewReaching(files).has('Sidebar')).toBe(false)
+  })
+
+  // #595 lived below the router: the file carrying the branches has no
+  // `<RouterView>` at all, which is why counting mount points missed it.
+  it('flags a branch group that carries the preview without a RouterView', () => {
+    const files = [
+      { file: 'StoryView.vue', source: wrap(
+        '<template v-if="isMobile"><StoryViewer /></template>'
+        + '<template v-else><StoryViewer /></template>',
+      ) },
+      { file: 'StoryViewer.vue', source: wrap('<StoryVariantSinglePreviewNative />') },
+    ]
+
+    expect(problemsIn(files)).toHaveLength(1)
+  })
+})
+
+describe('groupsIn', () => {
+  it('reads a run of v-if / v-else-if / v-else as one group', () => {
+    const groups = groupsIn(wrap('<a v-if="x" /><b v-else-if="y" /><c v-else />'))
+
+    expect(groups).toHaveLength(1)
+    expect(groups[0].branches.map(b => b.tag)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('does not join two groups separated by an unconditional sibling', () => {
+    const groups = groupsIn(wrap('<a v-if="x" /><hr /><b v-if="y" />'))
+
+    expect(groups).toHaveLength(2)
+  })
+
+  it('finds a group nested inside another element', () => {
+    expect(groupsIn(wrap('<main><a v-if="x" /><b v-else /></main>'))).toHaveLength(1)
+  })
+})
+
+describe('the STABLE skip-list', () => {
+  it('entries are regexes, so a condition is matched rather than compared', () => {
+    expect(STABLE.every(entry => entry instanceof RegExp)).toBe(true)
+  })
+
+  it('does not classify a live layout flag as stable', () => {
+    expect(isStable('isMobile')).toBe(false)
+    expect(isStable('!effectiveStoryOptionsVisible')).toBe(false)
+    expect(isStable('layoutStore.settings.storyListVisible')).toBe(false)
+  })
+
+  it('classifies the story properties the legitimate groups switch on', () => {
+    expect(isStable('storyStore.currentStory.layout.type === \'grid\'')).toBe(true)
+    expect(isStable('shown.story.layout?.iframe === false')).toBe(true)
+    expect(isStable('storyStore.currentStory.docsOnly')).toBe(true)
   })
 })

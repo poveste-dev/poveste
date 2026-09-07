@@ -57,6 +57,7 @@
     "@poveste/vendors": "workspace:*",
     "@stackblitz/sdk": "^1.11.1",
     "@tailwindcss/postcss": "catalog:",
+    "@vue/compiler-sfc": "^3.5.41",
     "@vueuse/core": "catalog:",
     "axe-core": "^4.13.0",
     "bumpp": "^12.1.1",
