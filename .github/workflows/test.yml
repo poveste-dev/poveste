@@ -186,6 +186,11 @@ jobs:
       - name: Check the conformance config
         run: pnpm run test:conformance-config
 
+      # Four hand-found instances of one rule (#328, #595, #596, #600), none of
+      # which failed a test. This covers the router layer of it (#607).
+      - name: Check the preview is mounted once
+        run: pnpm run test:preview-position
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes
