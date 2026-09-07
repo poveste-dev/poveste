@@ -1,4 +1,4 @@
-import type { Action, PageServerLoad } from './$types'
+import type { Actions, PageServerLoad } from './$types'
 import { error } from '@sveltejs/kit'
 import { api } from './api'
 
@@ -11,7 +11,7 @@ interface Todo {
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
-  // locals.userid comes from src/hooks.js
+  // locals.userid comes from src/hooks.server.ts
   const response = await api('GET', `todos/${locals.userid}`)
 
   if (response.status === 404) {
@@ -31,25 +31,31 @@ export const load: PageServerLoad = async ({ locals }) => {
   throw error(response.status)
 }
 
-export const POST: Action = async ({ request, locals }) => {
-  const form = await request.formData()
+// Named actions, which a form reaches with `?/create`. SvelteKit reads only
+// `actions` from a `+page.server.ts`; the HTTP verbs this used to export belong
+// in a `+server.ts` and were never called here, because the `_method` override
+// that dispatched to them was removed in SvelteKit 2.
+export const actions: Actions = {
+  create: async ({ request, locals }) => {
+    const form = await request.formData()
 
-  await api('POST', `todos/${locals.userid}`, {
-    text: form.get('text'),
-  })
-}
+    await api('POST', `todos/${locals.userid}`, {
+      text: form.get('text'),
+    })
+  },
 
-export const PATCH: Action = async ({ request, locals }) => {
-  const form = await request.formData()
+  edit: async ({ request, locals }) => {
+    const form = await request.formData()
 
-  await api('PATCH', `todos/${locals.userid}/${form.get('uid')}`, {
-    text: form.has('text') ? form.get('text') : undefined,
-    done: form.has('done') ? !!form.get('done') : undefined,
-  })
-}
+    await api('PATCH', `todos/${locals.userid}/${form.get('uid')}`, {
+      text: form.has('text') ? form.get('text') : undefined,
+      done: form.has('done') ? !!form.get('done') : undefined,
+    })
+  },
 
-export const DELETE: Action = async ({ request, locals }) => {
-  const form = await request.formData()
+  delete: async ({ request, locals }) => {
+    const form = await request.formData()
 
-  await api('DELETE', `todos/${locals.userid}/${form.get('uid')}`)
+    await api('DELETE', `todos/${locals.userid}/${form.get('uid')}`)
+  },
 }
