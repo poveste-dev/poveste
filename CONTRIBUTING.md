@@ -129,30 +129,33 @@ pnpm run test
 
 ### Example projects tests
 
-Examples projects found in the `examples` can also have tests. To run them all:
+The example books are tested through the root Playwright config, which is what CI runs. It builds each book, serves it, and runs that book's own specs plus the shared conformance suite in `e2e/` against it.
 
 ```sh
-# Root of the mono-repo
-pnpm run test:examples
+# Root of the mono-repo — every book
+pnpm run test:e2e
 ```
 
-In an example project, you can run the following script if there are tests:
+`POVESTE_E2E_EXAMPLE` narrows it to one book, or several. This is the form worth using day to day: `webServer` is a top-level Playwright option, so `--project=svelte5` alone still boots every book's server, while this starts only the one you asked for.
 
 ```sh
-cd examples/vue3
-
-pnpm run test:examples
+POVESTE_E2E_EXAMPLE=vue3 pnpm run test:e2e
+POVESTE_E2E_EXAMPLE=vue3,svelte5 pnpm run test:e2e
 ```
 
-To develop new tests in an example project, you can use:
+Naming a book that does not exist fails the config before any test runs, rather than passing with an empty run.
+
+To develop new tests against a live dev server:
 
 ```sh
 cd examples/vue3
 
 pnpm run story:dev
-# In another terminal
-pnpm run test:dev
+# In another terminal, from the root
+POVESTE_E2E_EXAMPLE=vue3 pnpm run test:e2e --project=vue3:dev
 ```
+
+`pnpm run test:examples` is **not** the way to run these. It filters `./examples/vue**`, of which only `vue3` and `vue3-tailwind` define the script, so it covers two of the seven books that have tests and runs no conformance spec against any framework. See [#386](https://github.com/poveste-dev/poveste/issues/386).
 
 ### StackBlitz starters
 
