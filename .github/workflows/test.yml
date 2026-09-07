@@ -86,16 +86,38 @@ jobs:
           # imported by a package, read by a unit test, or packed into a
           # tarball. Add a line only after checking that (#620).
           INERT='^(docs/|ai/|\.claude/|\.codex/|\.cursor/|\.github/(ISSUE_TEMPLATE/|PULL_REQUEST_TEMPLATE\.md$|commit-convention\.md$)|[^/]+\.md$|LICENSE$|netlify\.toml$)'
+          # `docs` is a workspace package, so `docs/package.json` is a manifest
+          # `pnpm install` resolves — prose by path and not by content. No
+          # manifest is inert, wherever it sits.
+          MANIFEST='(^|/)package\.json$'
 
           if [ "$everything" = true ]; then
             code=true
-          elif forced=$(printf '%s\n' "$changed" | grep -vE "$INERT"); then
-            code=true
-            echo "Not inert, so the gated jobs run:"
-            printf '%s\n' "$forced" | sed 's/^/  /'
           else
-            code=false
-            echo "Every changed path is prose or agent config — gated jobs skipped."
+            # grep exits 1 for "selected nothing" and 2 for a bad pattern. Only
+            # the first means everything was inert; treating them alike would
+            # skip every job on a typo in the line above, which is the whole
+            # failure this gate was rewritten to stop. `|| status=$?` keeps the
+            # non-match case from tripping `set -e`.
+            unclassified=0
+            forced=$(printf '%s\n' "$changed" | grep -vE "$INERT") || unclassified=$?
+            manifests=0
+            changed_manifests=$(printf '%s\n' "$changed" | grep -E "$MANIFEST") || manifests=$?
+
+            if [ "$unclassified" -gt 1 ] || [ "$manifests" -gt 1 ]; then
+              echo "::warning::could not classify the changed paths — running every job"
+              code=true
+            else
+              runs=$(printf '%s\n%s\n' "$forced" "$changed_manifests" | sed '/^$/d' | sort -u)
+              if [ -n "$runs" ]; then
+                code=true
+                echo "Not inert, so the gated jobs run:"
+                printf '%s\n' "$runs" | sed 's/^/  /'
+              else
+                code=false
+                echo "Every changed path is prose or agent config — gated jobs skipped."
+              fi
+            fi
           fi
 
           echo "code=$code" >> "$GITHUB_OUTPUT"
