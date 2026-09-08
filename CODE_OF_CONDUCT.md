@@ -54,16 +54,23 @@ a project may be further defined and clarified by project maintainers.
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the [project team](https://github.com/orgs/poveste-dev/people). All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
+Poveste is maintained by one person, [@50rayn](https://github.com/50rayn). You
+are entitled to know that before you decide what to send: there is no committee
+behind this document, and a report reaches a single reader.
 
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported by contacting the maintainer through the contact details on that
+profile. All complaints will be reviewed and investigated and will result in a
+response that is deemed necessary and appropriate to the circumstances. The
+maintainer is obligated to maintain confidentiality with regard to the reporter
+of an incident. Further details of specific enforcement policies may be posted
+separately.
+
+If your report is about the maintainer, this project cannot be the one to review
+it, and a document that implied otherwise would be wasting your time. Report it
+to [GitHub Trust & Safety](https://support.github.com/contact/report-abuse)
+instead. They are independent of this project, they act on what they receive,
+and it costs nothing. You do not have to raise it here first.
 
 ## Attribution
 
