@@ -23,8 +23,16 @@ export function getHighlighter(): Promise<HighlighterCore> {
       import('shiki/langs/html.mjs'),
       import('shiki/langs/jsx.mjs'),
     ],
+    /*
+     * `github-light-high-contrast`, not `github-light`. The plain one paints
+     * keywords at 4.38:1 on the pane background, variables at 3.34 and tag
+     * names at 4.43 — three of its twelve token colours miss AA (#533). This is
+     * GitHub's own accessible build of the same theme, so code keeps reading the
+     * way it did, and the colours are maintained upstream rather than darkened
+     * by hand here.
+     */
     themes: [
-      import('shiki/themes/github-light.mjs'),
+      import('shiki/themes/github-light-high-contrast.mjs'),
       import('shiki/themes/github-dark.mjs'),
     ],
     engine: createOnigurumaEngine(import('shiki/wasm')),

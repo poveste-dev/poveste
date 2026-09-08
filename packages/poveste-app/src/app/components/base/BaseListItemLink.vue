@@ -53,7 +53,7 @@ export default defineComponent({
       :class="[
         $attrs.class,
         (isActive != null ? isActive : linkIsActive)
-          ? 'active bg-primary-500 hover:bg-primary-600 text-white dark:text-black'
+          ? 'active bg-primary-700 hover:bg-primary-800 dark:bg-primary-500 dark:hover:bg-primary-600 text-white dark:text-black'
           : 'hover:bg-primary-100 dark:hover:bg-primary-900',
       ]"
       @click="handleNavigate($event, navigate)"

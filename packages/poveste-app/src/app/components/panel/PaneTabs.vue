@@ -33,7 +33,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       :to="{ ...$route, query: { ...$route.query, tab: 'docs' } }"
       :matched="$route.query.tab === 'docs'"
       :class="{
-        'opacity-50': !renderedDoc,
+        'opacity-70': !renderedDoc,
       }"
     >
       Docs
@@ -42,7 +42,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
       :matched="$route.query.tab === 'events'"
       :class="{
-        'opacity-50': !hasEvents,
+        'opacity-70': !hasEvents,
       }"
     >
       Events
@@ -62,7 +62,7 @@ const hasEvents = computed(() => eventsStore.events.length)
         :to="{ ...$route, query: { ...$route.query, tab: 'docs' } }"
         :matched="$route.query.tab === 'docs'"
         :class="{
-          'opacity-50': !renderedDoc,
+          'opacity-70': !renderedDoc,
         }"
       >
         Docs
@@ -71,7 +71,7 @@ const hasEvents = computed(() => eventsStore.events.length)
         :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
         :matched="$route.query.tab === 'events'"
         :class="{
-          'opacity-50': !hasEvents,
+          'opacity-70': !hasEvents,
         }"
       >
         Events
