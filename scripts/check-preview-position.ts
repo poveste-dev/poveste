@@ -1,96 +1,193 @@
-// Asserts that the routed view is mounted in exactly one place.
+// Asserts that no layout choice can move the preview in the component tree.
 //
-// A layout choice must never be expressed as sibling template branches that
-// both contain the preview. When it is, flipping that choice moves the preview
-// in the component tree, Vue rebuilds it, and the sandbox realm underneath
-// boots a cold document — a performance regression with no crash, no wrong
-// pixel and no red test. It was found by hand four times: #328, #595, #596 and
-// #600, each time believing the previous one had closed it.
+// When a choice is expressed as sibling template branches that both contain the
+// preview, flipping it moves the preview, Vue rebuilds it, and the sandbox
+// realm underneath boots a cold document — a performance regression with no
+// crash, no wrong pixel and no red test. Found by hand four times (#328, #595,
+// #596, #600), each time believing the previous one had closed it.
 //
-// What this covers is the `App.vue` layer of that rule: a second `<RouterView>`
-// is how #596 and #600 expressed it, and #604 collapsed the chrome branches
-// that carried them.
+// The shape alone does not decide it, which is why this parses rather than
+// greps. Two sibling groups on `next` are legitimate: `StoryViewer` switches
+// grid against single, and `StoryVariantSingleView` native against remote.
+// Both put the preview in more than one branch, and both are fine, because
+// their conditions are properties of the story being shown — they cannot flip
+// while the story is stationary, and a story change rebuilds anyway.
 //
-// What it does NOT cover is worth stating, because a check that reads as
-// broader than it is buys false confidence. #595 lived below the router: its
-// fix changed the `<RouterView>` count by zero (3 before, 3 after), and
-// `StoryView.vue`, the file carrying the sibling branches, contains no
-// `<RouterView>` at all. Catching that shape needs the branch conditions
-// classified — per-story properties like `layout.iframe` are safe, live layout
-// flags like `isMobile` are not — which needs a real template parse rather than
-// this. See #607.
-//
-// Counting is done on source with comments removed. The comment #604 left in
-// `App.vue` explains the bug using the word `RouterView`, so a check that
-// greps the bare word fails on a correct tree, tripping over the explanation of
-// the thing it is checking.
+// So the rule is about the condition, not the branches: a group with the
+// preview in more than one branch fails unless every condition is stable under
+// a stationary story. Unclassified fails, which is the direction that matters —
+// `isMobile` (#600) and the settings toggles (#596) were both live flags nobody
+// had thought about.
 
 import { globSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { parse } from '@vue/compiler-sfc'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
 export const APP_SOURCE = 'packages/poveste-app/src'
 
+/** Components that are the preview, rather than merely containing it. */
+export const PREVIEW_ROOTS = [
+  'RouterView',
+  'router-view',
+  'StoryVariantSinglePreviewNative',
+  'StoryVariantSinglePreviewRemote',
+  'GenericRenderStory',
+]
+
 /**
- * Files whose surplus mount points are forgiven — an entry lets that file hold
- * more than one, not that the file stops being counted.
+ * Conditions that cannot change while the story does not.
  *
- * Empty, and an entry is expensive: it says a layout choice may move the routed
- * view, which is the regression itself. #607 landed after #604 precisely so
- * this could start empty — an allowlist naming known instances reads as
- * sanctioned rather than as debt.
+ * A skip-list, not an allowlist of files: a condition nobody has classified
+ * fails, so the next `isMobile` is caught because it is unknown rather than
+ * because someone remembered to list it. An entry is a claim that flipping this
+ * requires a story change — which rebuilds the preview anyway — and is wrong
+ * only in the direction of a silent regression, so it earns a reason.
  */
-export const ALLOWLIST: readonly string[] = []
+export const STABLE = [
+  // Properties of the story being shown.
+  /\bcurrentStory\b/,
+  /\bcurrentVariant\b/,
+  /\bdocsOnly\b/,
+  /\.layout\b/,
+  /\.story\b/,
+  /\bvariant\b/,
+  // `StoryVariantGridItem`: reads `story.layout.iframeGrid`, falling back to
+  // `povesteConfig.isolateStyles`, which is fixed for the session.
+  /\buseIframe\b/,
+]
 
-const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script>/gi
+interface Branch { tag: string, condition: string | null }
 
-// Only inside `<script>`. A `//` in markup is a path, not a comment: an inline
-// `url(//cdn/x)` or a bare `a//b` in text would otherwise swallow the rest of
-// its line, and with it any `<RouterView>` that follows on it — an undercount,
-// which is the direction that hides the bug this checks for.
-function withoutJsComments(block: string): string {
-  return block
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:"'`\\])\/\/[^\n]*/g, '$1')
+/** One spelling for a component, so `<story-viewer>` and `StoryViewer` meet. */
+export function canonical(name: string): string {
+  return name.replace(/-/g, '').toLowerCase()
 }
 
-/** Source with HTML comments removed, and JS comments removed inside `<script>`. */
-export function withoutComments(source: string): string {
-  return source
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(SCRIPT_BLOCK, withoutJsComments)
+/**
+ * The operand chains in a condition, with literals dropped.
+ *
+ * `currentStory && !isMobile` is two operands, not one string mentioning
+ * something per-story. Splitting first is what stops a live flag riding into a
+ * stable condition on the back of a `&&`.
+ */
+export function operandsOf(condition: string): string[] {
+  return condition
+    .replace(/'[^']*'|"[^"]*"|`[^`]*`/g, ' ')
+    .split(/[^\w.$?[\]]+/)
+    .map(operand => operand.replace(/[?[\].]+$/, ''))
+    .filter(operand =>
+      operand !== ''
+      && !/^\d/.test(operand)
+      && !['true', 'false', 'null', 'undefined', 'as'].includes(operand))
 }
 
-/** Opening `<RouterView>` / `<router-view>` tags outside comments. */
-export function countMountPoints(source: string): number {
-  return (withoutComments(source).match(/<(?:RouterView|router-view)[\s/>]/g) ?? []).length
+export function isStable(condition: string | null): boolean {
+  // `v-else` states no condition; it inherits the negation of its siblings.
+  if (condition === null) return true
+  // Every operand, not any: one per-story property does not make its
+  // neighbours safe.
+  return operandsOf(condition).every(operand => STABLE.some(marker => marker.test(operand)))
 }
 
-export function problemsIn(
-  files: { file: string, source: string }[],
-  allowlist: readonly string[] = ALLOWLIST,
-): string[] {
-  const mounts = files
-    .map(({ file, source }) => ({ file, count: countMountPoints(source) }))
-    .filter(({ count }) => count > 0)
-    // An allowlisted file still holds the routed view; it is only forgiven the
-    // extras. Dropping it from the tally instead would report the check as
-    // broken the moment someone used the escape hatch as documented.
-    .map(entry => ({ ...entry, counts: allowlist.includes(entry.file) ? Math.min(entry.count, 1) : entry.count }))
+/** Sibling `v-if` / `v-else-if` / `v-else` runs, with the tags each branch contains. */
+export function groupsIn(source: string): { branches: Branch[], tags: Set<string>[] }[] {
+  const { descriptor } = parse(source)
+  const found: { branches: Branch[], tags: Set<string>[] }[] = []
 
-  const total = mounts.reduce((sum, { counts }) => sum + counts, 0)
-  if (total === 1) {
-    return []
+  const tagsUnder = (node: any, into: Set<string>): Set<string> => {
+    for (const child of node.children ?? []) {
+      if (child.type !== 1) continue
+      into.add(canonical(child.tag))
+      tagsUnder(child, into)
+    }
+    return into
   }
 
-  if (total === 0) {
-    return ['no <RouterView> found — either it moved, or this check stopped matching']
+  const walk = (node: any): void => {
+    let open: { branches: Branch[], tags: Set<string>[] } | null = null
+    for (const child of (node?.children ?? []).filter((c: any) => c.type === 1)) {
+      const directive = (child.props ?? []).find((p: any) =>
+        p.type === 7 && ['if', 'else-if', 'else'].includes(p.name))
+
+      if (directive?.name === 'if') {
+        open = { branches: [], tags: [] }
+        found.push(open)
+      }
+      else if (!directive) {
+        open = null
+      }
+
+      if (directive && open) {
+        open.branches.push({ tag: child.tag, condition: directive.exp?.content ?? null })
+        open.tags.push(tagsUnder(child, new Set([canonical(child.tag)])))
+      }
+
+      walk(child)
+    }
   }
 
-  return mounts.map(({ file, count }) => `${file} mounts the routed view ${count} time${count === 1 ? '' : 's'}`)
+  walk(descriptor.template?.ast)
+  return found
+}
+
+/** Components that render the preview, directly or through another component. */
+export function previewReaching(files: { file: string, source: string }[]): Set<string> {
+  const uses = new Map<string, Set<string>>()
+  for (const { file, source } of files) {
+    const name = canonical(file.split('/').pop()!.replace(/\.vue$/, ''))
+    const tags = new Set<string>()
+    const collect = (node: any): void => {
+      for (const child of node?.children ?? []) {
+        if (child.type !== 1) continue
+        tags.add(canonical(child.tag))
+        collect(child)
+      }
+    }
+    collect(parse(source).descriptor.template?.ast)
+    uses.set(name, tags)
+  }
+
+  const reaching = new Set(PREVIEW_ROOTS.map(canonical))
+  for (let changed = true; changed;) {
+    changed = false
+    for (const [name, tags] of uses) {
+      if (reaching.has(name)) continue
+      if ([...tags].some(tag => reaching.has(tag))) {
+        reaching.add(name)
+        changed = true
+      }
+    }
+  }
+  return reaching
+}
+
+export function problemsIn(files: { file: string, source: string }[]): string[] {
+  const reaching = previewReaching(files)
+  const problems: string[] = []
+
+  for (const { file, source } of files) {
+    for (const group of groupsIn(source)) {
+      if (group.branches.length < 2) continue
+
+      const carrying = group.tags.filter(tags => [...tags].some(tag => reaching.has(tag)))
+      if (carrying.length < 2) continue
+
+      const unstable = group.branches.filter(branch => !isStable(branch.condition))
+      if (unstable.length === 0) continue
+
+      const conditions = unstable.map(branch => `\`${branch.condition}\``).join(', ')
+      problems.push(
+        `${file}: ${carrying.length} branches of one group render the preview, `
+        + `switched on ${conditions}`,
+      )
+    }
+  }
+
+  return problems
 }
 
 function main(): void {
@@ -102,19 +199,26 @@ function main(): void {
     process.exit(1)
   }
 
-  const problems = problemsIn(files)
-  if (problems.length > 0) {
-    console.error('::error::The routed view is mounted in more than one place\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nTwo mount points means a layout choice can move the preview in the tree,')
-    console.error('which rebuilds it and cold-boots the sandbox under it (#328, #596, #600).')
-    console.error('See the comment above the split pane in App.vue.')
+  const reaching = previewReaching(files)
+  if (reaching.size <= new Set(PREVIEW_ROOTS.map(canonical)).size) {
+    console.error('::error::nothing reaches the preview — this check stopped matching')
     process.exit(1)
   }
 
-  console.log(`✅ the routed view is mounted once across ${files.length} components in ${APP_SOURCE}`)
+  const problems = problemsIn(files)
+  if (problems.length > 0) {
+    console.error('::error::A layout choice can move the preview in the component tree\n')
+    for (const problem of problems) {
+      console.error(`  • ${problem}`)
+    }
+    console.error('\nMoving the preview rebuilds it and cold-boots the sandbox under it')
+    console.error('(#328, #595, #596, #600). Hoist it above the branches, or — if the')
+    console.error('condition really cannot flip while the story is stationary — add it')
+    console.error('to STABLE in scripts/check-preview-position.ts with the reason.')
+    process.exit(1)
+  }
+
+  console.log(`✅ no layout choice moves the preview across ${files.length} components in ${APP_SOURCE}`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

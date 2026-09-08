@@ -14,6 +14,12 @@ This is not the contributor guide. [`CONTRIBUTING.md`](../CONTRIBUTING.md) cover
 
 **Do not assume the working tree is yours.** Use `git worktree add` for a branch rather than switching the shared checkout, which may have a dev server or a build running against it.
 
+## One preview, whatever the layout
+
+A layout choice must never be expressed as sibling template branches that both contain the preview. Flipping it then moves the preview in the component tree, Vue rebuilds it, and the sandbox realm underneath boots a cold document — no crash, no wrong pixel, no red test. It was found by hand four times (#328, #595, #596, #600) before `scripts/check-preview-position.ts` started failing on it.
+
+The shape alone does not decide it. `StoryViewer` and `StoryVariantSingleView` both put the preview in more than one branch and are fine, because their conditions are properties of the story being shown and a story change rebuilds anyway. The condition is what matters: a live layout flag is the bug, a per-story property is not. The check knows the second kind from a skip-list, so a condition nobody has classified fails rather than being assumed harmless — add to `STABLE` with a reason, or hoist the preview above the branches.
+
 ## Branches
 
 Work targets **`next`**, not `main`. `next` is the integration branch; it reaches `main` at release time as a fast-forward, which is why it is rebased rather than merged.
