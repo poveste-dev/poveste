@@ -192,8 +192,10 @@ Nuxt is handled by [`@poveste/plugin-nuxt`](./plugins/official.md), which reads 
 Sometimes the problem is the other way round: nothing to remove, but a config you have to fetch. Quasar builds its Vite config asynchronously and hands it over through an entrypoint meant for tooling, so [`@poveste/plugin-quasar`](./plugins/official.md) does the fetching and the two adjustments a book needs.
 
 ```sh
-npm i -D @poveste/plugin-quasar
+npm i -D poveste @poveste/plugin-vue @poveste/plugin-quasar
 ```
+
+Three packages: Poveste itself, the Vue plugin every Vue-family book needs, and the Quasar one that sits on top of it.
 
 ```ts
 // poveste.config.ts
@@ -207,13 +209,13 @@ export default defineConfig({
 })
 ```
 
-Quasar also has to be installed into the story app, the same way it is installed into yours:
+Quasar also has to be installed into the story app, the same way it is installed into yours. The boot import below is an example of your own file — a fresh `npm init quasar` project has none, so start from `setupQuasar()` with no arguments and add yours once you have one:
 
 ```ts
 // src/poveste.setup.ts
 import { setupQuasar } from '@poveste/plugin-quasar/setup'
 import { defineSetupVue3 } from '@poveste/plugin-vue'
-import greeting from './boot/greeting'
+import greeting from './boot/greeting' // one of your own, from src/boot
 
 export const setupVue3 = defineSetupVue3(setupQuasar({
   // Your app's boot files. They do not run otherwise — see below.
