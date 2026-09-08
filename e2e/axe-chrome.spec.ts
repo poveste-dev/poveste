@@ -25,18 +25,20 @@ const AXE = readFileSync('node_modules/axe-core/axe.min.js', 'utf8')
 const STORY = 'conformance-button'
 
 /*
- * `color-contrast` is excluded, and it is the one exclusion here.
+ * Nothing is excluded, and `color-contrast` in particular is not.
  *
- * The contrast failure #310 measured — white on the brand green in the selected
- * story-list item — is fixed. What remains is six light-mode failures elsewhere:
- * the brand green as text on white (2.53:1), the inactive control tabs (3.35:1),
- * and two spans of shiki's syntax highlighting (4.43:1, against a 4.5 threshold).
+ * It was, for the six light-mode failures #533 lists — the brand green as text,
+ * the dimmed control tabs, and shiki's tag colour. All six are fixed, and the
+ * exclusion came out with them: an exclusion shaped exactly like the known
+ * failures is a guard with a hole where the bugs are, which is how the same
+ * defect kept being found by hand rather than by CI.
  *
- * Those are palette and theme choices rather than markup, and picking new colours
- * is a design decision with its own issue. Everything else this spec covers is
- * structural, which is why the rest is asserted at zero rather than baselined.
+ * It is also what holds two of those fixes in place. The theme patch in
+ * `app/util/highlighter.ts` reverts silently if a shiki upgrade restructures
+ * the theme, and the dimmed tabs are a computed opacity rather than a colour
+ * token — neither is visible in a diff, and both fail here.
  */
-const EXCLUDED_RULES = { 'color-contrast': { enabled: false } }
+const EXCLUDED_RULES = {}
 
 test('the book chrome has no axe violations', async ({ page }) => {
   await openStory(page, STORY, '?variantId=default')
@@ -50,6 +52,14 @@ test('the book chrome has no axe violations', async ({ page }) => {
     const root = document.querySelector('.poveste-app-root')?.nextElementSibling as HTMLElement | null
     return !root || Number.parseFloat(getComputedStyle(root).opacity) === 1
   })
+
+  // Contrast is a property of the settled UI. A half-transparent element
+  // composites against what is behind it, so axe run mid-transition reports a
+  // colour nothing ever renders — the source-mode labels cross-fade over 300ms
+  // and were caught at 2.01:1 on their way in. Ending transitions is what makes
+  // the measurement the one a reader sees; the fade wait cannot help, because
+  // these start when the panel does.
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important }' })
 
   await page.addScriptTag({ content: AXE })
   const results = await page.evaluate(
@@ -89,6 +99,14 @@ test('the book chrome has no axe violations with the story list hidden', async (
   await expect(page.locator('.poveste-toolbar-title')).toBeVisible()
   await expect(page.getByTestId('preview-iframe')).toBeVisible()
   await expect(page.locator('[data-testid="story-list-item"]')).toHaveCount(0)
+
+  // Contrast is a property of the settled UI. A half-transparent element
+  // composites against what is behind it, so axe run mid-transition reports a
+  // colour nothing ever renders — the source-mode labels cross-fade over 300ms
+  // and were caught at 2.01:1 on their way in. Ending transitions is what makes
+  // the measurement the one a reader sees; the fade wait cannot help, because
+  // these start when the panel does.
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important }' })
 
   const results = await page.evaluate(
     async ({ rules, axe }) => {

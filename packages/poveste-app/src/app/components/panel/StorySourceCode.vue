@@ -152,7 +152,7 @@ watch(sourceHtml, async () => {
           v-tooltip="!dynamicSourceCode ? 'Dynamic source code is not available' : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
           class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
-            displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-600 dark:text-primary-400',
+            displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-700 dark:text-primary-400',
             dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
           ]"
           @click="dynamicSourceCode && (displayedSource = 'dynamic')"
@@ -174,7 +174,7 @@ watch(sourceHtml, async () => {
           v-tooltip="!staticSourceCode ? 'Static source code is not available' : displayedSource !== 'static' ? 'Switch to static source' : null"
           class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-r transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
-            displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-600 dark:text-primary-400',
+            displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-700 dark:text-primary-400',
             staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
           ]"
           @click="staticSourceCode && (displayedSource = 'static')"

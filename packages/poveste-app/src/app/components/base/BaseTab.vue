@@ -41,7 +41,7 @@ export default defineComponent({
       :href="href"
       class="px-4 h-full inline-flex items-center hover:bg-primary-50 dark:hover:bg-primary-900 relative text-gray-900 dark:text-gray-100"
       :class="{
-        'text-primary-500 dark:text-primary-400': matched != null ? matched : (exact && isExactActive) || (!exact && isActive),
+        'text-primary-700 dark:text-primary-400': matched != null ? matched : (exact && isExactActive) || (!exact && isActive),
       }"
       @click="navigate"
     >
