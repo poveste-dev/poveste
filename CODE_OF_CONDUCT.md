@@ -69,8 +69,9 @@ separately.
 If your report is about the maintainer, this project cannot be the one to review
 it, and a document that implied otherwise would be wasting your time. Report it
 to [GitHub Trust & Safety](https://support.github.com/contact/report-abuse)
-instead. They are independent of this project, they act on what they receive,
-and it costs nothing. You do not have to raise it here first.
+instead. That route is independent of this project and free, and you do not have
+to raise it here first. It does require a GitHub account to open the form, which
+is worth knowing before you start.
 
 ## Attribution
 
