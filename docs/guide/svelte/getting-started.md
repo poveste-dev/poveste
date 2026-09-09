@@ -62,6 +62,36 @@ Svelte 4 is further out for the same reason: its last compatible plugin is v3, w
 Vite 5. No release pairs Svelte 4 with the Vite we require.
 :::
 
+### The Vite config
+
+Poveste builds through your project's own Vite config rather than one of its own, so a Svelte project also needs [`@sveltejs/vite-plugin-svelte`](https://www.npmjs.com/package/@sveltejs/vite-plugin-svelte). The block above explains which version to use; this is where it goes.
+
+That plugin and `@poveste/plugin-svelte` do different jobs: one teaches Vite to compile `.svelte` files, the other teaches Poveste to collect and render stories. Installing the second does not bring the first.
+
+If you are adding Poveste to an existing Svelte app you already have this. Starting from an empty project, without it the first build fails while reading your first component, and the error does not name the plugin you are missing.
+
+```shell
+pnpm i -D vite @sveltejs/vite-plugin-svelte
+# OR
+npm i -D vite @sveltejs/vite-plugin-svelte
+# OR
+yarn add -D vite @sveltejs/vite-plugin-svelte
+```
+
+```ts
+// vite.config.ts
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    svelte(),
+  ],
+})
+```
+
+SvelteKit already has this plugin and a `vite.config.ts` — see [SvelteKit](#sveltekit) below, which adds Poveste to the config you have rather than creating one.
+
 ## TypeScript stories
 
 If you write stories with `<script lang="ts">`, your `tsconfig.json` **must** set
