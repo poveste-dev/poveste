@@ -163,6 +163,9 @@ jobs:
       - name: Check the version tables
         run: pnpm run test:versions
 
+      - name: Check every published package declares a test script
+        run: pnpm run test:package-tests
+
       - name: Check the npm package pages
         run: pnpm run test:readmes
 
