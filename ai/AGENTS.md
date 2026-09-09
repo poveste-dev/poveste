@@ -40,7 +40,7 @@ The ids are explicit rather than derived from paths, because each framework lays
 
 ## What the examples are for
 
-Eleven directories, two kinds, not interchangeable:
+Eleven directories, three kinds, not interchangeable:
 
 | | |
 | --- | --- |
