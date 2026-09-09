@@ -58,7 +58,6 @@ module.exports = {
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['meta', { property: 'og:site_name', content: 'Poveste' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:description', content: DESCRIPTION }],
     ['meta', { property: 'og:image', content: 'https://poveste.dev/opengraph.png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
@@ -77,6 +76,12 @@ module.exports = {
       ['link', { rel: 'canonical', href: url }],
       ['meta', { property: 'og:url', content: url }],
       ['meta', { property: 'og:title', content: pageData.frontmatter.title || pageData.title || CARD_TITLE }],
+      // Same shape as `og:title`, and per page for the same reason: the static
+      // one described the whole site on all 42 URLs, so a result never contained
+      // the word that was searched for. VitePress already derives
+      // `meta[name=description]` from this frontmatter; `og:description` is the
+      // half it does not (#630).
+      ['meta', { property: 'og:description', content: pageData.frontmatter.description || DESCRIPTION }],
     )
 
     if (pageData.relativePath === 'index.md') {

@@ -1,3 +1,8 @@
+---
+title: 'Story — define a story in Vue'
+description: 'Every prop the Story component takes, including title, icon, layout and the source it shows, for stories written in Vue.'
+---
+
 # Story
 
 Create a story. Must be at the top level of the story file.

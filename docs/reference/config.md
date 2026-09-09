@@ -1,3 +1,8 @@
+---
+title: 'Configuration reference — every poveste.config.ts option'
+description: 'Every option poveste.config.ts accepts, what it defaults to, and the mistake each one exists to prevent.'
+---
+
 <script setup>
 const viteNodeInlineDepsError = `.../my-project/node_modules/.pnpm/some-library@1.0.0/lib/esm/index.js:3
 export function foo() {

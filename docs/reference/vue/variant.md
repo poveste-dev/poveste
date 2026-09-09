@@ -1,3 +1,8 @@
+---
+title: 'Variant — several variants of one Vue component'
+description: 'Use Variant to put a component in more than one state inside a single Vue story, each with its own title and controls.'
+---
+
 # Variant
 
 Create different sub stories around the same component by using the `<Variant>` tag multiple times inside the same `<Story>` tag.
