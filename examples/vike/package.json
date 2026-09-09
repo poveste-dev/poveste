@@ -7,10 +7,7 @@
     "vike:build": "vite build",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
-    "story:preview": "poveste preview --port 4572",
-    "test": "playwright test",
-    "test:dev": "playwright test --ui",
-    "test:examples": "pnpm run story:build && pnpm run test"
+    "story:preview": "poveste preview --port 4572"
   },
   "dependencies": {
     "vike": "0.4.260",

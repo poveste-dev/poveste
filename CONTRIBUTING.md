@@ -155,7 +155,7 @@ pnpm run story:dev
 POVESTE_E2E_EXAMPLE=vue3 pnpm run test:e2e --project=vue3:dev
 ```
 
-`pnpm run test:examples` is **not** the way to run these. It filters `./examples/vue**`, of which only `vue3` and `vue3-tailwind` define the script, so it covers two of the seven books that have tests and runs no conformance spec against any framework. See [#386](https://github.com/poveste-dev/poveste/issues/386).
+`pnpm run test:examples` and the per-example `pnpm test` are gone. They ran through a second Playwright config per example that CI never used, and the root one had already grown past it — the per-example configs declared no conformance project, so following them exercised no shared spec against any framework. See [#386](https://github.com/poveste-dev/poveste/issues/386).
 
 ### StackBlitz starters
 
