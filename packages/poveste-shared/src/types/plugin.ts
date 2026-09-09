@@ -17,6 +17,11 @@ import type {
   ServerVariant,
 } from './story.js'
 
+/**
+ * A framework's collection strategy: how a story file written for that framework
+ * is imported and mounted. `@poveste/plugin-vue` and `@poveste/plugin-svelte`
+ * each expose one, and `supportMatch` in the config decides which files it claims.
+ */
 export interface SupportPlugin {
   id: string
   moduleName: string
@@ -25,16 +30,38 @@ export interface SupportPlugin {
   importStoryComponent: (file: ServerStoryFile, index: number) => string
 }
 
+/**
+ * A {@link SupportPlugin} after Poveste has resolved it. Identical to the
+ * declared shape today; it exists so resolution can add fields without changing
+ * what a plugin author writes.
+ */
 export interface FinalSupportPlugin extends SupportPlugin {
   // For now, no additional properties
 }
 
+/**
+ * Loads a module through Vite, so a plugin can read a user's `.ts` or `.vue`
+ * file the way the collector does rather than reaching for `import`.
+ *
+ * `loadModule` resolves to `undefined` on an error it has already logged, so a
+ * caller that needs to fail has to check the result. `clearCache` invalidates
+ * Vite's module graph as well as the runner's, which is what makes a re-read
+ * after a file change return the new contents.
+ */
 export interface ModuleLoader {
   clearCache: () => void
   loadModule: (file: string) => Promise<any>
   destroy: () => void
 }
 
+/**
+ * What every plugin hook receives. `colors`, `path` and `fs` are Poveste's own
+ * picocolors, pathe and fs-extra, handed over so a plugin can use them without
+ * adding a second copy to the tree.
+ *
+ * Prefer `log`/`warn`/`error` over `console`: they prefix the plugin's name, so
+ * a line in a busy build says what printed it.
+ */
 export interface PluginApiBase {
   colors: typeof pc
   path: typeof path
@@ -53,14 +80,39 @@ export interface PluginApiBase {
   getConfig: () => PovesteConfig
 }
 
+/**
+ * {@link PluginApiBase} plus the file watcher, passed to `onDev`. Only the dev
+ * server has one — a build never watches.
+ */
 export interface PluginApiDev extends PluginApiBase {
   watcher: typeof chokidar
 }
 
+/**
+ * Mutates the Vite config Poveste is about to build with. Registered through
+ * `changeViteConfig`, and run once, before the build starts.
+ */
 export type ChangeViteConfigCallback = (config: ViteInlineConfig) => Awaitable<void>
+/**
+ * Runs after a build **succeeds**. A build that fails never reaches it, which is
+ * why anything that must be released belongs in `onCleanup` instead (#434).
+ */
 export type BuildEndCallback = () => Awaitable<void>
+/**
+ * Runs once per variant **after** the build has finished, against a preview
+ * server started for the purpose, with the URL that variant is served from.
+ * This is the hook a screenshot or visual-diff plugin uses.
+ *
+ * Registering one is what makes the build start that server at all, so a plugin
+ * that registers unconditionally adds a preview boot to every build.
+ */
 export type PreviewStoryCallback = (payload: { file: string, story: ServerStory, variant: ServerVariant, url: string }) => Awaitable<void>
 
+/**
+ * {@link PluginApiBase} plus the build hooks, passed to `onBuild`. The three
+ * arrays are the registered callbacks; the three functions are how a plugin adds
+ * to them.
+ */
 export interface PluginApiBuild extends PluginApiBase {
   changeViteConfigCallbacks: ChangeViteConfigCallback[]
   buildEndCallbacks: BuildEndCallback[]
@@ -71,18 +123,30 @@ export interface PluginApiBuild extends PluginApiBase {
   onPreviewStory: (cb: PreviewStoryCallback) => void
 }
 
+/**
+ * {@link PluginApiBase} plus the event that triggered the hook, passed to
+ * `onDevEvent`. `payload` is whatever the client sent to `sendEvent`, unvalidated.
+ */
 export interface PluginApiDevEvent extends PluginApiBase {
   event: string
   payload: any
 }
 
+/**
+ * A Poveste plugin: a name and whichever hooks it needs. Listed in `plugins` in
+ * `poveste.config.ts`, and every hook is optional.
+ *
+ * The hooks below run in the order they are declared — `defaultConfig`, `config`
+ * and `configResolved` while the config settles, then `onDev`, `onBuild` or
+ * `onPreview` depending on the command.
+ */
 export interface Plugin {
   /**
    * Name of the plugin
    */
   name: string
   /**
-   * Modify histoire default config. The hook can either mutate the passed config or
+   * Modify Poveste's default config. The hook can either mutate the passed config or
    * return a partial config object that will be deeply merged into the existing
    * config. User config will have higher priority than default config.
    *
@@ -91,7 +155,7 @@ export interface Plugin {
    */
   defaultConfig?: (defaultConfig: PovesteConfig, mode: ConfigMode) => Partial<PovesteConfig> | null | void | Promise<Partial<PovesteConfig> | null | void>
   /**
-   * Modify histoire config. The hook can either mutate the passed config or
+   * Modify the Poveste config. The hook can either mutate the passed config or
    * return a partial config object that will be deeply merged into the existing
    * config.
    *
@@ -100,7 +164,7 @@ export interface Plugin {
    */
   config?: (config: PovesteConfig, mode: ConfigMode) => Partial<PovesteConfig> | null | void | Promise<Partial<PovesteConfig> | null | void>
   /**
-   * Use this hook to read and store the final resolved histoire config.
+   * Use this hook to read and store the final resolved Poveste config.
    */
   configResolved?: (config: PovesteConfig) => Awaitable<void>
   /**
@@ -110,8 +174,7 @@ export interface Plugin {
   onDev?: (api: PluginApiDev, onCleanup: (cb: () => Awaitable<void>) => void) => Awaitable<void>
   /**
    * Use this hook to do processing during production build.
-   */
-  /**
+   *
    * `onCleanup` runs however the build ends, including when it fails. Anything a
    * plugin opened belongs there rather than in `onBuildEnd`, which only runs when
    * the build succeeded — a plugin holding a framework instance or a watcher kept
