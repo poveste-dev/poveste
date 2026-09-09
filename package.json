@@ -17,8 +17,6 @@
     "watch": "pnpm run build && pnpm run -r --parallel --filter \"./packages/**\" watch",
     "test": "pnpm run -r --parallel --filter \"./packages/**\" test",
     "test:dev": "pnpm run -r --parallel --filter \"./packages/**\" test:dev",
-    "test:examples": "pnpm run -r --workspace-concurrency 1 --filter \"./examples/vue**\"  test:examples",
-    "test:examples:all": "pnpm run -r --workspace-concurrency 1 --filter \"./examples/**\" test:examples",
     "test:e2e": "playwright test",
     "bench": "node bench/run.mjs",
     "story:build:e2e": "pnpm --filter ./examples/vue3 --filter ./examples/vue3-tailwind --filter ./examples/nuxt4 --filter ./examples/svelte5 --filter ./examples/sveltekit run story:build",

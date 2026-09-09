@@ -7,10 +7,7 @@
     "story:dev": "poveste dev",
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4569",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test": "playwright test",
-    "test:dev": "playwright test --ui",
-    "test:examples": "pnpm run story:build && pnpm run test"
+    "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
     "svelte": "^5.55.0"

@@ -7,7 +7,7 @@
 //
 // The ports are the same shape of problem. Each example states its preview port
 // three times — the root config's `webServer`, `story:preview` in its package.json,
-// and its own playwright config — and a disagreement is a Playwright run waiting
+// and the root playwright config — and a disagreement is a Playwright run waiting
 // two minutes for a server that came up somewhere else.
 //
 // What this does not cover: an example directory named in neither list. Four exist
@@ -234,18 +234,6 @@ async function main(): Promise<void> {
 
     if (declared !== ports.preview) {
       problems.push(`examples/${name} previews on port ${declared}, but playwright.config.ts waits on ${ports.preview}`)
-    }
-
-    if (!await exists(`examples/${name}/playwright.config.ts`)) {
-      continue
-    }
-
-    const local = portsOf(asServers((await importDefault(`examples/${name}/playwright.config.ts`)).webServer))
-    if (local.preview !== ports.preview) {
-      problems.push(`examples/${name}/playwright.config.ts previews on port ${local.preview}, but playwright.config.ts uses ${ports.preview}`)
-    }
-    if (ports.dev !== undefined && local.dev !== ports.dev) {
-      problems.push(`examples/${name}/playwright.config.ts runs dev on port ${local.dev}, but playwright.config.ts uses ${ports.dev}`)
     }
   }
 
