@@ -4,6 +4,43 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.13.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.13.0...v0.13.1)
+
+**The chrome passes contrast in light mode, and the page the Get Started button lands on finally tells you what to install.**
+
+Almost everything below is a gate that reported success over something it never ran. CI was green over a SvelteKit app that did not compile, two path filters skipped silently, one package's source had never been type-checked, and the accessibility suite excluded the one rule that would have caught the contrast failures in the chrome. Each of those is now enforced rather than remembered.
+
+It is a `patch` because nothing in the range is a `feat`. The milestone this work was scoped under is called *the gates that do not gate*; the version comes from the commits, which is why a release full of correctness work does not become a minor.
+
+### 🩹 Fixes
+
+- **Light mode passes contrast, and the rule that proves it is no longer excluded** ([#533](https://github.com/poveste-dev/poveste/issues/533)). Six failures in the chrome: the active control tab at 2.53:1, the inactive tabs at 3.35, the overlay label at 2.90, and syntax highlighting at 4.43 against a 4.5 threshold. Green text on light backgrounds now uses `primary-700` — `600` is not enough anywhere — and the source pane uses `github-light-high-contrast`, GitHub's own accessible build of the same theme, rather than tokens darkened by hand here. Three of that theme's twelve token colours were failing, not the two the audit first reported. `e2e/axe-chrome.spec.ts` had `color-contrast` switched off with a comment saying so; it is on, and it settles the page before measuring, because a label caught mid-cross-fade reports a colour nothing ever renders.
+- **Resizing the window no longer reboots the preview** ([#600](https://github.com/poveste-dev/poveste/issues/600)). Mobile and desktop were sibling template branches each carrying their own routed view, so crossing 640px moved the preview in the component tree and the sandbox underneath it booted a cold document. Every layout renders from one split pane now. The same shape had already been found and fixed three times before this one, so `scripts/check-preview-position.ts` now fails on it instead of it being caught by someone who happened to know the history ([#607](https://github.com/poveste-dev/poveste/issues/607)).
+- **`@poveste/app` is type-checked, and the three latent defects that found are fixed** ([#441](https://github.com/poveste-dev/poveste/issues/441)). Every other package type-checks as part of its build; this one is built by Vite, which strips types without checking them, so its 75 `.vue` files had never been compiled by anything. Eleven errors — among them a story-tree cast that narrowed to nothing, leaving the discriminator that picks a folder over a leaf unchecked.
+- **Generated modules quote values that need quoting** ([#609](https://github.com/poveste-dev/poveste/issues/609)). Support-plugin ids were interpolated raw into generated source, beside values that were already escaped properly. An id containing a quote produced a module that did not parse.
+- **A vendor alias matches the name it was given, not a pattern** ([#608](https://github.com/poveste-dev/poveste/issues/608)). Where a regex is built from a package name we did not choose, the name is now matched literally.
+
+### 📖 Documentation
+
+- **Getting started says what to install** ([#634](https://github.com/poveste-dev/poveste/issues/634)). The landing page's primary button went to a page with no install command anywhere on it — the instructions were behind the arrows in a table 86% of the way down. There is an install section above the tables now, routing to each framework's guide, and it sits above the fold rather than merely existing.
+- **The Quasar recipe installs what it imports** ([#637](https://github.com/poveste-dev/poveste/issues/637)). It installed one package and, three lines later, imported from three. It also opened with a boot-file import that exists in this repository and not in a reader's fresh project; that line now says so.
+- **Every page has a title and a description of its own** ([#630](https://github.com/poveste-dev/poveste/issues/630)). All 42 URLs served the same site-wide description, because no page had ever set one, and 30 distinct titles covered 42 pages. The reference pages are the ones that ranked and were never clicked — `Story | Poveste` tells a searcher nothing — so they now say what they are while keeping the API name a reader might search for.
+- **The Code of Conduct stops promising an appeal body this project does not have** ([#603](https://github.com/poveste-dev/poveste/issues/603)). It routed reports to a "project team" of one person and offered escalation to *other members of the project's leadership*, of whom there are none. It now says the project is maintained by one person and points a report about the maintainer at GitHub Trust & Safety, which is independent of this project. `SECURITY.md` is unchanged and remains the only channel for a vulnerability.
+- **CONTRIBUTING names a command that runs the tests** ([#386](https://github.com/poveste-dev/poveste/issues/386)). It offered `pnpm run test:examples` as *"run them all"*; that filtered to two of the seven books with tests and ran no conformance spec against any framework.
+
+### 🏡 Chore
+
+- **CI enforces what it already runs.** `Collection (windows)` and `Node floor` ran on every pull request and blocked nothing — the minutes were spent and only the enforcement was missing (#396). The two hand-maintained path filters deciding when they run are now a skip-list that fails open, so an unclassified path runs every job rather than silently skipping one (#620). The SvelteKit example's own application is built in CI, which it never was while the job that appeared to cover it built only the book (#618).
+- **The per-example Playwright configs are gone** ([#386](https://github.com/poveste-dev/poveste/issues/386)). Seven configs that CI never ran, one of which had drifted to name a spec that had moved. The root config is the one CI uses and now the only one there is.
+
+### Upgrading
+
+**Nothing to do.** No API changed, no configuration changed, and nothing was deprecated. Stories and config files that worked on `0.13.0` work here unchanged.
+
+Rebuild your book to pick up the contrast fixes — they are in the chrome, so an existing built book keeps the old colours until it is rebuilt. If you have pinned a syntax theme of your own, this release does not touch it.
+
 ## v0.13.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.12.3...v0.13.0)
