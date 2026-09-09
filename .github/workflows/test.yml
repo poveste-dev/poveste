@@ -217,6 +217,12 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Reports, never fails on the number — see the header of the script for
+      # why a threshold here would be red on the day it landed. It needs the
+      # emitted declarations, so it cannot move up beside the manifest checks.
+      - name: Report documented-export coverage
+        run: pnpm run test:doc-coverage
+
       # After `build`, not beside `lint`: @poveste/app imports @poveste/shared
       # and @poveste/controls, which are not in its tsconfig `paths` and resolve
       # through the workspace symlink to `dist/*.d.ts`. Run cold, every named

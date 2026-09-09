@@ -86,7 +86,7 @@ export interface PovesteConfig {
     groups?: TreeGroupConfig[]
   }
   /**
-   * Customize the look of the histoire book.
+   * Customize the look of the book.
    */
   theme: {
     /**
