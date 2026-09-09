@@ -1,3 +1,9 @@
+# Every pnpm setting belongs in this file, including the ones `.npmrc` used to
+# hold. pnpm 11 reads none of them from there: `shamefully-hoist=true` in a root
+# `.npmrc` leaves this workspace's root `node_modules` at its 21 declared
+# devDependencies, while `shamefullyHoist: true` here takes it to 1003 (#665).
+# npm still reads that file and warns about the pnpm keys in it, which by then
+# was the only effect they had.
 packages:
   - 'packages/*'
   - 'examples/*'
