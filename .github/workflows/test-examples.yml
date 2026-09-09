@@ -63,7 +63,11 @@ jobs:
           # otherwise skip the only suite that runs it. Named rather than the
           # whole of `scripts/`: the other thirty would each trigger five book
           # builds and a Playwright run to serve one step that reads one file.
-          PATTERN='^(packages/|examples/|e2e/|scripts/check-bundle-size\.ts$|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+          #
+          # `bench/` for the same reason, from the other direction: the smoke
+          # job below is the only thing that runs it, so a bench-only edit is
+          # the one change that would reach nothing able to check it.
+          PATTERN='^(packages/|examples/|e2e/|bench/|scripts/check-bundle-size\.ts$|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
 
           if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
             value=true
@@ -395,3 +399,73 @@ jobs:
                --filter ./examples/vue3-vuetify \
                --filter @poveste/controls-stories \
                run story:build
+
+  # `bench/` is the instrument behind this project's performance claims — the
+  # #197 before/after, #328, #595, and the re-measurement that closed #331 not
+  # planned — and nothing ran it (#666). Same argument as `unbuilt-books` above
+  # and the fixture builds in #337: a thing exercised by nothing can stop
+  # working without anyone learning, except here it surfaces mid-argument about
+  # a regression, which is the worst moment to find the baseline unreproducible.
+  #
+  # A smoke run, not a benchmark. One book, one size, one run, and the numbers
+  # are read for existence only — a shared runner's timings are noise, and
+  # asserting them would be a flaky test of a performance measurement.
+  #
+  # No baseline is committed for the same reason. `--json` exists to diff two
+  # runs on one machine; a number measured here would invite comparison against
+  # the README's, which is an M3 Pro.
+  #
+  # `timeout-minutes` is sized for the failure, not the pass. A healthy run is
+  # about a minute after the book build; a bench that measures nothing spends
+  # 5 × 60s in `measureSandbox`'s `waitForFunction` before reporting, because a
+  # story that is not in the book never becomes ready.
+  bench:
+    needs: [changes, build]
+    if: needs.changes.outputs.examples != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Bench smoke
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: packages-dist
+          path: packages
+
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | sed 's/Version //')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install chromium
+
+      # Best-effort for the same reason as the e2e job above: the runner image
+      # already ships Playwright's libraries, and a missing one surfaces loudly
+      # at browser launch rather than quietly here.
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
+
+      # `run.mjs` builds the book with POVESTE_BENCH=1, serves it, measures and
+      # kills the server; `smoke.mjs` is what fails when it measured nothing.
+      - name: Run the bench once and assert it measured something
+        run: pnpm run bench:smoke
