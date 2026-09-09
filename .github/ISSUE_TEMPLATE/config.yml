@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Questions & Discussions
-    url: https://github.com/poveste-dev/poveste/discussions
-    about: Use GitHub discussions for message-board style questions and discussions.
+  - name: 💬 Questions & Discussions
+    url: https://github.com/poveste-dev/poveste/discussions/new?category=q-a
+    about: Ask anything that is not a concrete bug. The form asks for your version and what you tried, which is usually the difference between an answer and a round trip.

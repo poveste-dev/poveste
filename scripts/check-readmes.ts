@@ -353,10 +353,17 @@ async function main(): Promise<void> {
 
   // The issue templates are not READMEs, but they are the pages a first-time
   // visitor is sent to, and #296 lived in one of them.
+  //
+  // The discussion forms are the same population. `blank_issues_enabled: false`
+  // makes Discussions the only route out of the three issue forms, so the Q&A
+  // form is the page reached by everyone who does not have a concrete bug — the
+  // largest first-time audience of the four (#407).
   const GITHUB_DIR = join(ROOT, '.github')
-  for (const entry of await readdir(join(GITHUB_DIR, 'ISSUE_TEMPLATE')).catch(() => [])) {
-    if (/\.ya?ml$/.test(entry)) {
-      pages.push({ label: `.github/ISSUE_TEMPLATE/${entry}`, path: join(GITHUB_DIR, 'ISSUE_TEMPLATE', entry) })
+  for (const dir of ['ISSUE_TEMPLATE', 'DISCUSSION_TEMPLATE']) {
+    for (const entry of await readdir(join(GITHUB_DIR, dir)).catch(() => [])) {
+      if (/\.ya?ml$/.test(entry)) {
+        pages.push({ label: `.github/${dir}/${entry}`, path: join(GITHUB_DIR, dir, entry) })
+      }
     }
   }
 

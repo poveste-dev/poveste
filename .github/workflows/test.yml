@@ -85,7 +85,7 @@ jobs:
           # result: prose, and the instructions agents read. Nothing here is
           # imported by a package, read by a unit test, or packed into a
           # tarball. Add a line only after checking that (#620).
-          INERT='^(docs/|ai/|\.claude/|\.codex/|\.cursor/|\.github/(ISSUE_TEMPLATE/|PULL_REQUEST_TEMPLATE\.md$|commit-convention\.md$)|[^/]+\.md$|LICENSE$|netlify\.toml$)'
+          INERT='^(docs/|ai/|\.claude/|\.codex/|\.cursor/|\.github/(ISSUE_TEMPLATE/|DISCUSSION_TEMPLATE/|PULL_REQUEST_TEMPLATE\.md$|commit-convention\.md$)|[^/]+\.md$|LICENSE$|netlify\.toml$)'
           # `docs` is a workspace package, so `docs/package.json` is a manifest
           # `pnpm install` resolves — prose by path and not by content. No
           # manifest is inert, wherever it sits.
