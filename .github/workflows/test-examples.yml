@@ -316,3 +316,48 @@ jobs:
             playwright-results.json
           if-no-files-found: ignore
           retention-days: 7
+
+  # The four fixtures no e2e job builds. They are installed on every
+  # `pnpm install` and exercised by nothing, so nothing would say when one of
+  # them stops building — #337 measured that they all still do, which is a
+  # state worth keeping rather than rediscovering. One build each is cheap
+  # beside a Playwright run, and there are no specs to run against them.
+  #
+  # Not in the matrix above: `check-example-wiring.ts` reads the first
+  # `example:` list in this file to check it against `playwright.config.ts`,
+  # and a second one would be a list it silently does not read.
+  fixtures:
+    needs: [changes, build]
+    if: needs.changes.outputs.examples != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Fixture builds
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: packages-dist
+          path: packages
+
+      # `vue3-screenshot` is missing on purpose. Its build shells out to
+      # `capture-website`, which wants a Chrome this runner does not have —
+      # `Could not find Chrome (ver. 131.0.6778.204)`. That is a real gap and
+      # not one to close by bolting a browser install onto a job about listing
+      # fixtures, so it is #654 rather than a fifth commit here.
+      - name: Build the fixtures no e2e job covers
+        run: |
+          pnpm --filter ./examples/vue3-percy \
+               --filter ./examples/vue3-themed \
+               --filter ./examples/vue3-vuetify \
+               run story:build
