@@ -122,12 +122,16 @@ module.exports = {
                 link: '/guide/vue/getting-started',
               },
               {
+                text: 'Nuxt',
+                link: '/guide/nuxt/getting-started',
+              },
+              {
                 text: 'Svelte',
                 link: '/guide/svelte/getting-started',
               },
               {
                 text: 'SvelteKit',
-                link: '/guide/svelte/getting-started#sveltekit',
+                link: '/guide/sveltekit/getting-started',
               },
             ],
           },
@@ -318,7 +322,7 @@ module.exports = {
             },
             {
               text: 'SvelteKit',
-              link: '/guide/svelte/getting-started#sveltekit',
+              link: '/guide/sveltekit/getting-started',
             },
             {
               text: 'Stories',

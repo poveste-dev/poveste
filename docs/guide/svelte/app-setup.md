@@ -194,7 +194,7 @@ once.
 ## SvelteKit
 
 The setup file is configured the same way, under the `poveste` key of your Vite config — see
-[SvelteKit](./getting-started.md#sveltekit):
+[SvelteKit](../sveltekit/getting-started.md):
 
 ```ts
 export default defineConfig({

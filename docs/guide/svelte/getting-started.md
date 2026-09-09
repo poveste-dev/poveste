@@ -143,59 +143,26 @@ You can specify additional CLI options like `--port`. For a full list of CLI opt
 
 ## SvelteKit
 
+<div class="demo-links-box border-red-200 dark:border-red-900">
+  <img src="/svelte.svg" alt="SvelteKit logo" class="w-10 h-10 mt-3 object-contain" />
+  <DemoLinks framework="sveltekit" />
+</div>
+
 Poveste supports SvelteKit through the same `@poveste/plugin-svelte` package — there is no
 separate SvelteKit plugin to install.
 
-::: info Supported versions
+The difference is where the configuration goes. SvelteKit already owns `vite.config.ts`, so
+the tidier option is the `poveste` key of that file rather than a standalone
+`poveste.config.ts`; Poveste reads both and merges them. Nothing about `svelte.config.js` or
+your adapter changes.
+
 `@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0` as an **optional** peer — enforced
 when Kit is installed, ignored when it is not, since the same package serves plain Svelte.
+`2.53.0` is the first SvelteKit release to peer Vite 8.
 
-`2.53.0` is the first SvelteKit release to peer Vite 8 and `@sveltejs/vite-plugin-svelte@^7`,
-and v7 is in turn the first plugin major to peer Vite 8, which Poveste requires. CI runs
-ahead of the floor: `examples/sveltekit` pins `^2.55.0`.
-
-That example is the most thoroughly checked one we have: build, Playwright, and
-`svelte-check` on every pull request.
-:::
-
-A standalone `poveste.config.ts` works exactly as it does above — Poveste reads it and the
-`poveste` key of your Vite config and merges the two. Since SvelteKit already owns
-`vite.config.ts`, keeping everything in one file is usually the tidier option, and it is what
-`examples/sveltekit` does:
-
-```ts
-/// <reference types="poveste" />
-
-import { HstSvelte } from '@poveste/plugin-svelte'
-import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  plugins: [
-    sveltekit(),
-  ],
-  poveste: {
-    plugins: [
-      HstSvelte(),
-    ],
-    setupFile: './src/poveste.setup.ts',
-  },
-})
-```
-
-Importing `@poveste/plugin-svelte` is already enough to type the `poveste` key — poveste
-augments Vite's config type, and importing any poveste package pulls that augmentation into
-your program. The `/// <reference types="poveste" />` line makes it explicit, and is what you
-need in a config that sets the `poveste` key without importing a poveste package.
-
-If TypeScript does report the key as unknown, that reference is the fix. Do not reach for
-`as any` on the config object: Vite genuinely checks it for unknown keys, so a cast throws
-away that checking for everything inside — including the Poveste options you came for.
-
-Nothing else needs changing. `svelte.config.js` and your adapter stay as they are, and
-`@poveste/plugin-svelte` already excludes SvelteKit's compile plugin from the stories build,
-so you do not need to configure `viteIgnorePlugins` yourself.
-
+The full setup, including the `poveste` key typing and what not to reach for when TypeScript
+complains, now lives on its own page:
+**[Getting started with SvelteKit](../sveltekit/getting-started.md)**.
 ## Configuration
 
 Learn more about configuring Poveste [here](../config.md).
