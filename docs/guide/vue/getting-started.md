@@ -50,6 +50,37 @@ export default defineConfig({
 })
 ```
 
+### The Vite config
+
+Poveste builds through your project's own Vite config rather than one of its own, so a Vue project also needs [`@vitejs/plugin-vue`](https://www.npmjs.com/package/@vitejs/plugin-vue). That is a different package from `@poveste/plugin-vue`, doing a different job: one teaches Vite to compile `.vue` files, the other teaches Poveste to collect and render stories. Installing the second does not bring the first.
+
+If you are adding Poveste to an existing Vue app you already have this, and there is nothing to do here. Starting from an empty project, without it the first build fails on the first component it reads:
+
+```
+Failed to parse source for import analysis…
+Install @vitejs/plugin-vue to handle .vue files.
+```
+
+```shell
+pnpm i -D vite @vitejs/plugin-vue
+# OR
+npm i -D vite @vitejs/plugin-vue
+# OR
+yarn add -D vite @vitejs/plugin-vue
+```
+
+```ts
+// vite.config.ts
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+  ],
+})
+```
+
 ## Command Line Interface
 
 Poveste provides the following commands:
