@@ -1,0 +1,31 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions belong here rather than in the issue tracker, and this is the form the bug report sends you to when you are not sure yet whether you have found a bug.
+
+        Worth thirty seconds first: [search the existing discussions](https://github.com/poveste-dev/poveste/discussions?discussions_q=) and the [docs](https://poveste.dev/guide/).
+
+        Two required fields, and a third only if you have it. They are here because almost every answer turns on the version and on what the config looks like, and asking afterwards costs a day per round trip.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The `poveste` version, plus the framework plugin if the question involves one. `npm ls poveste` prints both.
+      placeholder: poveste 0.13.1, @poveste/plugin-vue 0.13.1
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do, and what happens instead
+      description: Include the part of `poveste.config.ts` or the story that is involved, and any error exactly as it was printed rather than described.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Somewhere to look, if you have one
+      description: 'A StackBlitz — the "Try it live" buttons on [Getting started](https://poveste.dev/guide/getting-started.html) open a runnable Vue, Nuxt or Svelte book — or a repository. Not required, because a question is not a bug report and needing a reproduction to ask is the thing this form exists to avoid. If the answer turns out to be a bug, this is what turns the discussion into an issue without starting over.'
+    validations:
+      required: false
