@@ -54,14 +54,14 @@ export interface PreviewSettings {
    *
    * @default 720
    */
-  responsiveWidth: number
+  responsiveWidth: number | null
   /**
    * Height of the responsive preview, in pixels. `null` sizes it to the
    * available space.
    *
    * @default null
    */
-  responsiveHeight: number
+  responsiveHeight: number | null
   /**
    * Swap `responsiveWidth` and `responsiveHeight`, to preview a size in
    * landscape without editing both values.
