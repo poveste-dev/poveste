@@ -1,3 +1,8 @@
+---
+title: 'Events in Vue — see what a component emits'
+description: 'Log the events a Vue component emits and inspect their payloads in the Events pane.'
+---
+
 # Events
 
 Poveste can display a list of events emitted from your story. To register new events, use the `logEvent` function from `poveste/client`.

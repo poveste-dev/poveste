@@ -1,3 +1,8 @@
+---
+title: 'Stories with variants in Vue'
+description: 'Show one Vue component in several states, each variant with its own title and controls.'
+---
+
 # Story with variants
 
 These patterns let you create several variants of your component to visualize several state of your component.

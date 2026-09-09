@@ -1,3 +1,8 @@
+---
+title: 'How to write stories in Vue'
+description: 'The shape of a Vue story file, where Poveste looks for one, and how a story becomes an entry in the book.'
+---
+
 # How to write stories?
 
 Stories are vue files ending with `.story.vue`. You just need to use the `<Story>` tag at the root of your template.

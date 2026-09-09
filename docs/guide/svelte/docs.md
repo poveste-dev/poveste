@@ -1,3 +1,8 @@
+---
+title: 'Documentation in Svelte — markdown beside a story'
+description: 'Write markdown documentation alongside a Svelte story so the book explains the component as well as showing it.'
+---
+
 # Documentation
 
 ## Markdown

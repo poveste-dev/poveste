@@ -1,3 +1,8 @@
+---
+title: 'Plugin development — build a Poveste plugin'
+description: 'Write a plugin that teaches Poveste to collect and render stories for another framework or tool.'
+---
+
 # Plugin development
 
 ::: warning

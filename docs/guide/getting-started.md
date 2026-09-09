@@ -1,3 +1,8 @@
+---
+title: 'Getting started — install Poveste and build a book'
+description: 'Install Poveste alongside your framework plugin, point it at your stories and serve your first component book.'
+---
+
 <script setup>
 function playAudio () {
   document.querySelector('#poveste-audio').play()

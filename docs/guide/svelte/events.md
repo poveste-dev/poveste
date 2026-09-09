@@ -1,3 +1,8 @@
+---
+title: 'Events in Svelte — see what a component emits'
+description: 'Log the events a Svelte component emits and inspect their payloads in the Events pane.'
+---
+
 # Events
 
 Poveste can display a list of events emitted from your story. To register new events, use the `logEvent` function from `poveste/client`.

@@ -1,3 +1,8 @@
+---
+title: 'Getting started with Vue — install the plugin and write a story'
+description: 'Install Poveste and the Vue plugin, add the config, and write your first story.'
+---
+
 <script setup>
 function playAudio () {
   document.querySelector('#poveste-audio').play()

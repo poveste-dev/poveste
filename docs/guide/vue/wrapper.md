@@ -1,3 +1,8 @@
+---
+title: 'Wrapper in Vue — render markup around every story'
+description: 'Use addWrapper to put a provider, a theme or a layout around every Vue story in the book.'
+---
+
 # Wrapper
 
 A Wrapper allows you to render things around the displayed story/variant.

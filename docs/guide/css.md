@@ -1,3 +1,8 @@
+---
+title: 'Styles and CSS isolation — how your CSS reaches a story'
+description: 'How Poveste isolates story styles from its own chrome, and what to do when your application CSS needs to reach a component.'
+---
+
 # Styles & CSS isolation
 
 By default, Poveste isolates its own UI ("chrome") from the CSS imported via your `poveste.setup.ts`, and keeps your CSS from leaking into chrome. Most of the time you don't need to do anything.

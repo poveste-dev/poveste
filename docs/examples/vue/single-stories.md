@@ -1,3 +1,8 @@
+---
+title: 'Single stories in Vue — one component, one story'
+description: 'The simplest kind of Vue story, with one component rendered on its own and no variants.'
+---
+
 # Single stories
 
 Here are some pattern examples to test your component without any variant. This is the simplest way to get you started.

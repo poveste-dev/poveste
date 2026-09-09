@@ -1,3 +1,8 @@
+---
+title: 'Official plugins — Vue, Nuxt, Svelte, Quasar, Tailwind and more'
+description: 'The plugins Poveste publishes, what each one is for, and which you need for your framework.'
+---
+
 # Official Plugins
 
 - [@poveste/plugin-vue](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-vue): Vue 3 (support plugin)

@@ -1,3 +1,8 @@
+---
+title: 'Configuring Poveste — where the config lives and what it changes'
+description: 'How Poveste finds its configuration, which file to put it in, and the options you are most likely to reach for first.'
+---
+
 # Configuring Poveste
 
 To customize your experience, you can configure several parts of Poveste.
