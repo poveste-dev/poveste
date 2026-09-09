@@ -326,12 +326,12 @@ jobs:
   # Not in the matrix above: `check-example-wiring.ts` reads the first
   # `example:` list in this file to check it against `playwright.config.ts`,
   # and a second one would be a list it silently does not read.
-  fixtures:
+  unbuilt-books:
     needs: [changes, build]
     if: needs.changes.outputs.examples != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    name: Fixture builds
+    name: Unbuilt books
     steps:
       - uses: actions/checkout@v7
 
@@ -350,14 +350,23 @@ jobs:
           name: packages-dist
           path: packages
 
-      # `vue3-screenshot` is missing on purpose. Its build shells out to
+      # Two populations, one property: no other job builds them, so nothing
+      # would say when one stops building.
+      #
+      # Three are example fixtures in no e2e matrix (#337). The fourth is not a
+      # fixture at all — `@poveste/controls-stories` is a private package whose
+      # book is the only exercise the seven builtin controls have anywhere
+      # (#672), which is why this job is named for the property rather than for
+      # `examples/`.
+      #
+      # `vue3-screenshot` is missing on purpose: its build shells out to
       # `capture-website`, which wants a Chrome this runner does not have —
-      # `Could not find Chrome (ver. 131.0.6778.204)`. That is a real gap and
-      # not one to close by bolting a browser install onto a job about listing
-      # fixtures, so it is #654 rather than a fifth commit here.
-      - name: Build the fixtures no e2e job covers
+      # `Could not find Chrome (ver. 131.0.6778.204)`. Closing that means a
+      # browser install, so it is #654 rather than a line here.
+      - name: Build the books nothing else builds
         run: |
           pnpm --filter ./examples/vue3-percy \
                --filter ./examples/vue3-themed \
                --filter ./examples/vue3-vuetify \
+               --filter @poveste/controls-stories \
                run story:build

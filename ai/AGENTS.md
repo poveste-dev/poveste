@@ -52,7 +52,7 @@ Eleven directories, three kinds, not interchangeable:
 
 The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is 17 ids and is the contract; `SHARED_STORY_TITLES` is 54 names and is this book's demo content. Requiring both of every new framework would price onboarding at 54 stories rather than 17.
 
-`scripts/check-example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Fixture builds` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue3-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654).
+`scripts/check-example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue3-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
 
 ## Commands that do less than their name
 
