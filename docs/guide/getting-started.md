@@ -73,6 +73,8 @@ is wider than the CI job behind it, the range is the bug.
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `Example e2e (nuxt4)` — builds that book and runs Playwright against it |
 | [Svelte](https://svelte.dev) | `^5.46.4` | `Example e2e (svelte5)` — builds that book and runs Playwright against it |
 | [SvelteKit](https://svelte.dev/docs/kit)* | `^2.53.0` | `Example e2e (sveltekit)` — builds that book and runs Playwright against it |
+| [Quasar](https://quasar.dev) | `^2.24.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
+| [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's
@@ -83,6 +85,10 @@ The same chain sets the exact Svelte number. Vite 8 forces
 `@sveltejs/vite-plugin-svelte@^7` — the first major to peer it — and v7 in turn requires
 `svelte@^5.46.4`. Svelte `5.0`–`5.46.3` therefore cannot be assembled into a working Poveste
 project at all, which is why the range starts where it does rather than at `^5.0.0`.
+
+Quasar takes two rows because a Quasar project installs two things: the framework and the
+build tool that drives it. `@poveste/plugin-quasar` peers both, and `examples/quasar` is a
+conformance book, so one job proves the pair.
 
 \* **SvelteKit is declared as an _optional_ peer.** `@poveste/plugin-svelte` drives plain
 Svelte and SvelteKit alike, so a plain-Svelte project has no `@sveltejs/kit` installed and a
