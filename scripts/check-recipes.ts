@@ -39,8 +39,8 @@ interface Recipe {
 
 const RECIPES: Recipe[] = [
   {
-    doc: 'docs/guide/config.md',
-    heading: '### Quasar',
+    doc: 'docs/guide/quasar/getting-started.md',
+    heading: '## Configuration',
     files: [
       'examples/quasar/poveste.config.ts',
       'examples/quasar/src/poveste.setup.ts',

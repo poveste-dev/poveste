@@ -133,6 +133,10 @@ module.exports = {
                 text: 'SvelteKit',
                 link: '/guide/sveltekit/getting-started',
               },
+              {
+                text: 'Quasar',
+                link: '/guide/quasar/getting-started',
+              },
             ],
           },
           {
