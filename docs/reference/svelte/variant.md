@@ -1,3 +1,8 @@
+---
+title: 'Hst.Variant — several variants of one Svelte component'
+description: 'Use Hst.Variant to put a component in more than one state inside a single Svelte story, each with its own title and controls.'
+---
+
 # Hst.Variant
 
 Create different sub stories around the same component by using the `<Hst.Variant>` tag multiple times inside the same `<Hst.Story>` tag.

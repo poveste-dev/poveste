@@ -1,3 +1,8 @@
+---
+title: 'Hst.Story — define a story in Svelte'
+description: 'Every prop the Hst.Story tag takes, including title, icon, layout and the source it shows, for stories written in Svelte.'
+---
+
 # Hst.Story
 
 Create a story. Must be at the top level of the story file.

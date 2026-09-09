@@ -1,3 +1,8 @@
+---
+title: 'Client API — helpers you call from inside a story'
+description: 'Log events to the Events pane, set story state and reach the controls from inside a story file, through the poveste/client module.'
+---
+
 # Client API Reference
 
 You can access various APIs meant to be used inside stories from the `poveste/client` module.
