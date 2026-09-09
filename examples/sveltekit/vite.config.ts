@@ -13,7 +13,7 @@ export default defineConfig({
     plugins: [
       HstSvelte(),
     ],
-    setupFile: './src/poveste.setup.ts',
+    setupFile: '/src/poveste.setup.ts',
     // Identical to the other tier-1 examples: the shared toolbar spec asserts one
     // case per preset (#89).
     backgroundPresets: [
