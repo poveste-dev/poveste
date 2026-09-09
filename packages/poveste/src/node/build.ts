@@ -16,6 +16,7 @@ import {
   build as viteBuild,
 } from 'vite'
 import { APP_PATH } from './alias.js'
+import { buildCounts } from './build-counts.js'
 import { getSerializedStoryData } from './build-serialize.js'
 import { useCollectStories } from './collect/index.js'
 import { useModuleLoader } from './load.js'
@@ -132,9 +133,7 @@ export async function build(ctx: Context) {
       await wrapLogError('destroyCollectStories', () => destroyCollectStories())
     }
 
-    const storyCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ? 1 : 0), 0)
-    const variantCount = ctx.storyFiles.reduce((sum, file) => sum + (file.story?.variants.length ?? 0), 0)
-    const emptyStoryCount = ctx.storyFiles.length - storyCount
+    const { stories: storyCount, variants: variantCount, docs: docsCount, empty } = buildCounts(ctx.storyFiles)
 
     const { viteConfig: buildViteConfigRaw } = await getViteConfigWithPlugins(false, ctx)
     const buildViteConfig: ViteInlineConfig = mergeViteConfig(buildViteConfigRaw, {
@@ -313,10 +312,11 @@ export async function build(ctx: Context) {
     await writeFile('poveste.json', JSON.stringify(getSerializedStoryData(ctx), null, 2), ctx)
 
     const duration = performance.now() - startTime
-    if (emptyStoryCount) {
-      console.warn(pc.yellow(`⚠️  ${emptyStoryCount} empty story file${emptyStoryCount === 1 ? '' : 's'}`))
+    if (empty.length) {
+      console.warn(pc.yellow(`⚠️  ${empty.length} empty story file${empty.length === 1 ? '' : 's'}: ${empty.join(', ')}`))
     }
-    console.log(pc.green(`✅ Built ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} (${variantCount} variant${variantCount === 1 ? '' : 's'}) in ${Math.round(duration / 1000 * 100) / 100}s`))
+    const docsNote = docsCount ? ` and ${docsCount} document${docsCount === 1 ? '' : 's'}` : ''
+    console.log(pc.green(`✅ Built ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} (${variantCount} variant${variantCount === 1 ? '' : 's'})${docsNote} in ${Math.round(duration / 1000 * 100) / 100}s`))
 
     // Render
     if (previewStoryCallbacks.length) {
