@@ -350,10 +350,14 @@ jobs:
           name: packages-dist
           path: packages
 
+      # `vue3-screenshot` is missing on purpose. Its build shells out to
+      # `capture-website`, which wants a Chrome this runner does not have —
+      # `Could not find Chrome (ver. 131.0.6778.204)`. That is a real gap and
+      # not one to close by bolting a browser install onto a job about listing
+      # fixtures, so it is #654 rather than a fifth commit here.
       - name: Build the fixtures no e2e job covers
         run: |
           pnpm --filter ./examples/vue3-percy \
-               --filter ./examples/vue3-screenshot \
                --filter ./examples/vue3-themed \
                --filter ./examples/vue3-vuetify \
                run story:build
