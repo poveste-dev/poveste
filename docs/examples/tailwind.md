@@ -1,3 +1,8 @@
+---
+title: 'Tailwind CSS with Poveste — an example book'
+description: 'An example book that builds a consumer Tailwind stylesheet and renders stories against it.'
+---
+
 # Tailwind CSS example
 
 In this example, we will see how to add Tailwind CSS to the stories.

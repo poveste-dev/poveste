@@ -1,3 +1,8 @@
+---
+title: 'Story hierarchy in Vue — group stories into folders'
+description: 'Control how the story explorer tree is built, and put a Vue story in a specific folder or subfolder.'
+---
+
 # Hierarchy
 
 You can customize the story explorer tree.

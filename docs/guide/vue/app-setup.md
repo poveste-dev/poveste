@@ -1,3 +1,8 @@
+---
+title: 'App setup in Vue — plugins and global state for stories'
+description: 'Define a setup function so the Vue app that renders your stories has the plugins, stores and globals your components expect.'
+---
+
 # App setup
 
 ## Global setup

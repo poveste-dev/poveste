@@ -1,4 +1,6 @@
 ---
+title: 'Why Poveste — a maintained drop-in fork of histoire'
+description: 'What Poveste is, how it differs from histoire, and why the fork exists.'
 sidebarDepth: 2
 ---
 

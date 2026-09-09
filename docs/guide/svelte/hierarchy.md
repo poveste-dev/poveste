@@ -1,3 +1,8 @@
+---
+title: 'Story hierarchy in Svelte — group stories into folders'
+description: 'Control how the story explorer tree is built, and put a Svelte story in a specific folder or subfolder.'
+---
+
 # Hierarchy
 
 You can customize the story explorer tree.

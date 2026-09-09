@@ -1,3 +1,8 @@
+---
+title: 'Deployment — publish a built book as a static site'
+description: 'Build a component book and deploy it to Netlify, Vercel, GitHub Pages or any static host.'
+---
+
 # Deployment
 
 `poveste build` writes a static site. There is no server to run — any host that serves files will do, with one rule to get right.

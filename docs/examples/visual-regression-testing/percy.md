@@ -1,3 +1,8 @@
+---
+title: 'Visual regression testing with Percy'
+description: 'Capture a screenshot of every story and diff them between runs using Percy.'
+---
+
 # Poveste Screenshot with Percy for visual regression testing
 
 You need the [Percy CLI](https://docs.percy.io/docs/cli-overview) installed to be able to send snapshots to Percy.

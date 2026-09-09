@@ -1,3 +1,8 @@
+---
+title: 'How to write stories in Svelte'
+description: 'The shape of a Svelte story file, where Poveste looks for one, and how a story becomes an entry in the book.'
+---
+
 # How to write stories?
 
 Stories are svelte files ending with `.story.svelte`. Add a `Hst` prop so poveste can provide its builtin components. You then need to use the `<Hst.Story>` tag at the root of your template.

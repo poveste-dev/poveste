@@ -1,3 +1,8 @@
+---
+title: 'Wrapper in Svelte — render markup around every story'
+description: 'Use addWrapper to put a provider, a theme or a layout around every Svelte story in the book.'
+---
+
 # Wrapper
 
 **Not supported yet.**

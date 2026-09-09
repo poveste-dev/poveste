@@ -1,3 +1,8 @@
+---
+title: 'Controlled stories in Vue — custom controls'
+description: 'Build custom controls that update a Vue component, rather than relying on the generated ones.'
+---
+
 # Controlled stories
 
 These patterns let you create custom controls to update your component

@@ -1,3 +1,8 @@
+---
+title: 'Migrating from histoire — what changes and what does not'
+description: 'Poveste is a drop-in fork, so your stories and configuration carry over. What to rename, and what to leave alone.'
+---
+
 # Migrating from Histoire
 
 **poveste** is a community-maintained, **drop-in fork** of

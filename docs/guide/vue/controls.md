@@ -1,3 +1,8 @@
+---
+title: 'State and controls in Vue — make story props editable'
+description: 'Bind story state to the controls pane so a reader can change props and see the Vue component react.'
+---
+
 # State & Controls
 
 Controls give you the ability to interact with your components arguments.
