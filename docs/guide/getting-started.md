@@ -33,7 +33,7 @@ npm i -D poveste @poveste/plugin-<framework>
 
 - [Vue &rarr;](./vue/getting-started.md) — `poveste` and `@poveste/plugin-vue`
 - [Nuxt &rarr;](./nuxt/getting-started.md) — the Vue packages, plus `@poveste/plugin-nuxt`
-- [Quasar &rarr;](./config.md#quasar) — the Vue packages, plus `@poveste/plugin-quasar`
+- [Quasar &rarr;](./quasar/getting-started.md) — the Vue packages, plus `@poveste/plugin-quasar`
 - [Svelte &rarr;](./svelte/getting-started.md) — `poveste` and `@poveste/plugin-svelte`
 - [SvelteKit &rarr;](./sveltekit/getting-started.md) — the same two as Svelte
 
@@ -182,7 +182,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 | --------- | ------- | ------------ | ---- |
 | [Vue →](./vue/getting-started.md) | ✅ | ✅ | - |
 | [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | - |
-| [Quasar →](./config.md#quasar) | ✅ | ✅ | - |
+| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | - |
 | [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
 | [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | - |
 | Solid | - | - | - |
