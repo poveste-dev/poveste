@@ -277,7 +277,7 @@ Each object in the array is a preset with the following properties:
 
 - `label: string`: Label for the preset.
 - `width: number`: Width of the preset (pixels).
-- `height: number`: Height of the preset (pixels).
+- `height: number | null`: Height of the preset (pixels). `null` sizes the preview to the available space, which is what four of the defaults below do.
 
 Default values are shown in the example below:
 

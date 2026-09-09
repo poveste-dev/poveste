@@ -1,10 +1,30 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue'
+import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
 
 const settings = usePreviewSettingsStore().currentSettings
+
+// Not `v-model.number`: Vue's `looseToNumber` returns the original value when
+// `parseFloat` gives NaN, so clearing the field stored the string `''`. That is
+// a third value for a two-valued setting, and it is not nullish — so the `??`
+// in the size tooltip and in the dragger's start value both stopped firing, and
+// dragging after clearing the field set the size to the drag distance (#440).
+// The placeholder already says empty means auto, so empty becomes `null`.
+function autoWhenEmpty(key: 'responsiveWidth' | 'responsiveHeight') {
+  return computed<number | null>({
+    get: () => settings[key],
+    set: (value) => {
+      const parsed = typeof value === 'number' ? value : Number.parseFloat(value ?? '')
+      settings[key] = Number.isFinite(parsed) ? parsed : null
+    },
+  })
+}
+
+const responsiveWidth = autoWhenEmpty('responsiveWidth')
+const responsiveHeight = autoWhenEmpty('responsiveHeight')
 </script>
 
 <template>
@@ -40,7 +60,7 @@ const settings = usePreviewSettingsStore().currentSettings
 
         <div class="flex items-center gap-2 px-4 py-3">
           <input
-            v-model.number="settings.responsiveWidth"
+            v-model="responsiveWidth"
             v-tooltip="'Responsive width (px)'"
             type="number"
             class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"
@@ -49,7 +69,7 @@ const settings = usePreviewSettingsStore().currentSettings
           >
           <span class="opacity-50">×</span>
           <input
-            v-model.number="settings.responsiveHeight"
+            v-model="responsiveHeight"
             v-tooltip="'Responsive height (px)'"
             type="number"
             class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"

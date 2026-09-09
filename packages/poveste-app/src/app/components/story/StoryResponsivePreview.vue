@@ -43,12 +43,22 @@ function addWindowListener(event: string, listener: (event: any) => unknown) {
 
 const previewWrapper = ref<HTMLDivElement>()
 
-function useDragger(el: Ref<HTMLDivElement>, value: Ref<number>, min: number, max: number, axis: 'x' | 'y') {
+function useDragger(el: Ref<HTMLDivElement>, value: Ref<number | null>, min: number, max: number, axis: 'x' | 'y') {
+  // `null` is the value that means "size to the available space", so a drag
+  // beginning from auto has to begin from the size actually rendered. The touch
+  // path had no fallback and `null + delta` coerces to `delta`, which collapsed
+  // a full-height preview to the minimum on the first move (#440).
+  function startFrom() {
+    return value.value ?? (axis === 'x'
+      ? previewWrapper.value.clientWidth - 67
+      : previewWrapper.value.clientHeight - 70)
+  }
+
   function onMouseDown(event: MouseEvent) {
     event.preventDefault()
     event.stopPropagation()
     const start = axis === 'x' ? event.clientX : event.clientY
-    const startValue = value.value ?? (axis === 'x' ? previewWrapper.value.clientWidth - 67 : previewWrapper.value.clientHeight - 70)
+    const startValue = startFrom()
     resizing.value = true
 
     const removeListeners = [
@@ -77,7 +87,7 @@ function useDragger(el: Ref<HTMLDivElement>, value: Ref<number>, min: number, ma
     event.preventDefault()
     event.stopPropagation()
     const start = axis === 'x' ? event.touches[0].clientX : event.touches[0].clientY
-    const startValue = value.value
+    const startValue = startFrom()
     resizing.value = true
 
     const removeListeners = [
