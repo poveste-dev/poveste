@@ -260,7 +260,32 @@ jobs:
 
       - name: Build book
         if: env.RUN == 'true'
-        run: pnpm --filter ./examples/${{ matrix.example }} run story:build
+        run: |
+          # `pipefail`, because the default shell is `bash -e` and without it the
+          # pipe reports tee's status and a failed build becomes a green step.
+          set -o pipefail
+          pnpm --filter ./examples/${{ matrix.example }} run story:build 2>&1 | tee "$RUNNER_TEMP/book-build.log"
+
+      # Each reference book carries one deliberately empty story file — the "no
+      # story found" path — and nothing asserted any of them. The signal was a
+      # yellow line sitting inside three false ones, because documentation pages
+      # have no variants and were counted as empty too (#670).
+      #
+      # Now that the line is true and names the file, this is the assertion that
+      # fixture was placed to earn. It pins the count as well as the path: a
+      # second empty file appearing is the regression, not an inconvenience.
+      #
+      # `grep -F` on the inner text: picocolors colours the line when `CI` is set,
+      # so the message is wrapped in escapes but not interrupted by them.
+      - name: Assert the empty story fixture still warns
+        if: ${{ env.RUN == 'true' && matrix.example == 'vue3' }}
+        run: |
+          if ! grep -aqF '1 empty story file: src/components/Empty.story.vue' "$RUNNER_TEMP/book-build.log"; then
+            echo "::error::examples/vue3 no longer warns about its empty story fixture — the fixture, the collector's no-story path, or the counter has changed (#670)"
+            grep -aE 'empty story file|Built ' "$RUNNER_TEMP/book-build.log" || echo '(the build printed neither line)'
+            exit 1
+          fi
+          echo "The empty story fixture still warns, and it is the only one"
 
       # The book is not the app. This job was green for months while the
       # SvelteKit app the example demonstrates did not compile, because building
