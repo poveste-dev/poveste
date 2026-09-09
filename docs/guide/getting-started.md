@@ -32,10 +32,10 @@ npm i -D poveste @poveste/plugin-<framework>
 ```
 
 - [Vue &rarr;](./vue/getting-started.md) — `poveste` and `@poveste/plugin-vue`
-- [Nuxt &rarr;](./vue/getting-started.md#nuxt) — the Vue packages, plus `@poveste/plugin-nuxt`
+- [Nuxt &rarr;](./nuxt/getting-started.md) — the Vue packages, plus `@poveste/plugin-nuxt`
 - [Quasar &rarr;](./config.md#quasar) — the Vue packages, plus `@poveste/plugin-quasar`
 - [Svelte &rarr;](./svelte/getting-started.md) — `poveste` and `@poveste/plugin-svelte`
-- [SvelteKit &rarr;](./svelte/getting-started.md#sveltekit) — the same two as Svelte
+- [SvelteKit &rarr;](./sveltekit/getting-started.md) — the same two as Svelte
 
 ## Try it in a live editor
 
@@ -88,7 +88,7 @@ project at all, which is why the range starts where it does rather than at `^5.0
 Svelte and SvelteKit alike, so a plain-Svelte project has no `@sveltejs/kit` installed and a
 required peer would warn on every such install. Optional means the range is enforced when
 Kit is present and ignored when it is not. See [the SvelteKit
-section](./svelte/getting-started.md#sveltekit).
+section](./sveltekit/getting-started.md).
 
 Node is the one exception to "declared in `peerDependencies`": it is an `engines` field on
 every published package, so npm warns you at install time rather than leaving you to find out
@@ -181,10 +181,10 @@ Two limits are worth knowing, because neither is obvious from a green run:
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
 | [Vue →](./vue/getting-started.md) | ✅ | ✅ | - |
-| [Nuxt →](./vue/getting-started.md#nuxt) | ✅ | ✅ | - |
+| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | - |
 | [Quasar →](./config.md#quasar) | ✅ | ✅ | - |
 | [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
-| [SvelteKit →](./svelte/getting-started.md#sveltekit) | ✅ | - | - |
+| [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | - |
 | Solid | - | - | - |
 | Angular | - | - | - |
 | React | - ([Alternative](https://www.ladle.dev)) | - | - |
