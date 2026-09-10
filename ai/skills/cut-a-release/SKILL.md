@@ -25,6 +25,24 @@ Everything else in a release can be re-run. This cannot.
 4. **Pick the type from the commits, not the milestone** — a `feat` in the range means `minor`, otherwise `patch`. A milestone names the release its issues aim at, not what shipped; issues slip.
 5. `pnpm run release patch` (or `minor`).
 
+## The freeze
+
+**Declare it before step 1 and lift it deliberately.** `next` is frozen from the moment you start writing the notes: the release is a fast-forward, so anything merged while you write ships inside a section that never described it. Contributors are told to park work as green-and-open in `ai/AGENTS.md`; the person cutting is the one who has to say when that starts and when it ends.
+
+**It lifts on two conditions, not one.**
+
+1. **The release is verified on npm** — not when the tag is pushed. `release.yml` waits on `test.yml` green for the tagged commit, and a red run gets re-run; until the packages are on the registry the release can still need attention, and `next` wants to be unchanged while it does.
+2. **`next` has been rebased onto `main`.** This is the one that gets forgotten, because by then the interesting part is over. `scripts/release.ts` commits the bump to `main` alone, so `next` is one commit behind the moment a release lands — and merging into an un-rebased `next` is exactly how the *next* cut arrives at `git merge --ff-only` refusing. Rebase before you cut, rebase before you resume; they are the same rule from both ends.
+
+**The check, immediately before tagging.** `node scripts/check-changelog.ts v<version>` warns on stderr when commits landed after the section was last written, and names them:
+
+```
+::warning::3 commits landed after the CHANGELOG.md section was last written
+  • fix(app): …
+```
+
+Read each one. If it belongs in the notes, add it; if it is deliberately unmentioned — a chore no consumer can see — touching `CHANGELOG.md` records that judgement and clears the warning. It is a warning rather than a failure because that judgement is the writer's, and it is on stderr because the workflow redirects this script's stdout into the published release body.
+
 ## `next` is behind by one commit the moment a release lands
 
 This is the step that is easy to miss, because it is invisible until the second release in a cycle.
