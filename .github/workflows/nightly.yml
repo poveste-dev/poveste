@@ -5,6 +5,15 @@ name: Publish Nightlies
 on:
   workflow_dispatch:
 
+# Only `contents: read`, like the other build workflows — but this one is not
+# purely build-and-test: `pkg-pr-new publish` runs at the end. The workflow is
+# disabled until the pkg.pr.new App is installed, so that step has never run and
+# the scope it needs cannot be verified from here. An explicit block sets every
+# scope it omits to `none` (#192), so whoever re-enables it will find out at that
+# step, loudly, rather than later and quietly.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
