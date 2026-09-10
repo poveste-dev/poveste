@@ -1,0 +1,13 @@
+{
+  // Everything in `settings.json` is inert without these: the Tailwind entries
+  // need IntelliSense, `eslint.validate` and `codeActionsOnSave` need ESLint,
+  // and a `.vue` file is not type-checked at all without Vue (Official).
+  // `.editorconfig` at the root has the same problem.
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "Vue.volar",
+    "svelte.svelte-vscode",
+    "EditorConfig.EditorConfig"
+  ]
+}
