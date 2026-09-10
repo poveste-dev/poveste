@@ -33,8 +33,12 @@ const route = useRoute()
 // Restore variant selection
 
 watch(() => storyStore.currentVariant, (value) => {
-  if (value) {
-    storyStore.currentStory.lastSelectedVariant = value
+  // A current variant is found *inside* the current story, so one implies the
+  // other — but that is a fact about two computeds in the store, not something
+  // the compiler can see from here.
+  const story = storyStore.currentStory
+  if (value && story) {
+    story.lastSelectedVariant = value
   }
 }, {
   immediate: true,

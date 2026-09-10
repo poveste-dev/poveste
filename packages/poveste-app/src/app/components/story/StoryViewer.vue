@@ -24,10 +24,10 @@ watch(variant, () => {
 <template>
   <div class="poveste-story-viewer bg-gray-50 h-full dark:bg-gray-750">
     <StoryVariantGrid
-      v-if="storyStore.currentStory.layout.type === 'grid'"
+      v-if="storyStore.currentStory?.layout?.type === 'grid'"
     />
     <StoryVariantSingle
-      v-else-if="storyStore.currentStory.layout.type === 'single'"
+      v-else-if="storyStore.currentStory?.layout?.type === 'single'"
       @open-variant-menu="isMenuOpened = true"
     />
   </div>
@@ -38,7 +38,7 @@ watch(variant, () => {
     @close="closeMenu"
   >
     <StoryVariantListItem
-      v-for="(v, index) of storyStore.currentStory.variants"
+      v-for="(v, index) of storyStore.currentStory?.variants ?? []"
       :key="index"
       :variant="v"
     />
