@@ -131,9 +131,35 @@ function chrome(baseURL: string) {
   return { ...devices['Desktop Chrome'], baseURL }
 }
 
+/**
+ * `POVESTE_E2E_WORKERS`, or undefined for Playwright's own default.
+ *
+ * Throws rather than passing the number through, because Playwright only
+ * rejects `workers` at or below zero. `Number('50%')` is `NaN`, `NaN <= 0` is
+ * false, and the run then prints "using NaN workers", executes nothing and
+ * exits 0 — a green e2e job with no coverage, which is the same silent no-op
+ * an unknown `POVESTE_E2E_EXAMPLE` is made to fail on.
+ */
+function workersFrom(raw: string | undefined): number | undefined {
+  if (!raw) return undefined
+
+  const workers = Number(raw)
+  if (!Number.isInteger(workers) || workers < 1) {
+    throw new Error(`POVESTE_E2E_WORKERS must be a positive integer, not ${JSON.stringify(raw)}.`)
+  }
+  return workers
+}
+
 export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // Unset by default, which leaves Playwright's own choice of half the cores —
+  // two on `ubuntu-latest`'s four. `POVESTE_E2E_WORKERS` exists so the number
+  // can be varied per run without editing this file, because raising it is a
+  // measurement rather than a setting: #266 found whole projects failing on
+  // selector timeouts under load, and vue3 and svelte5 are the jobs that boot a
+  // dev server alongside the preview server (#416).
+  workers: workersFrom(process.env.POVESTE_E2E_WORKERS),
   retries: process.env.CI ? 2 : 0,
   // `retries` turns a flake into a green job, so CI also needs a machine-readable
   // result to find one after the fact — the list output is for humans and is not

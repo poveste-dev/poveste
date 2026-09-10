@@ -8,6 +8,11 @@ on:
     branches: [main, next]
   pull_request:
   workflow_dispatch:
+    inputs:
+      workers:
+        description: 'Playwright workers per example job — a positive integer; blank = half the cores, which is 2 here'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -313,6 +318,10 @@ jobs:
         if: env.RUN == 'true'
         env:
           POVESTE_E2E_EXAMPLE: ${{ matrix.example }}
+          # Empty unless a run sets it, and empty means Playwright's default.
+          # Dispatch the workflow with a value to measure a different width
+          # without editing `playwright.config.ts` (#416).
+          POVESTE_E2E_WORKERS: ${{ inputs.workers }}
         run: pnpm run test:e2e
 
       # After the tests, so a size regression does not pre-empt the e2e result.
