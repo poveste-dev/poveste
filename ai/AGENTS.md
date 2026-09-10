@@ -75,6 +75,14 @@ Node comes from [`.node-version`](../.node-version); `fnm exec --using <version>
 
 An issue gets a native GitHub issue **type** (`Bug`, `Feature`, `Task`) and at least one **`a:` label**: `a:vue`, `a:svelte`, `a:nuxt`, `a:app`, `a:node`, `a:controls`, `a:plugins`, `a:ci`, `a:repo`.
 
+Seven of those say what they are. Two do not, and picking them wrongly is defensible enough that it has already happened:
+
+**`a:repo` is the repository as a published artifact** — governance files, the docs site, CI configuration, `scripts/`, what the README claims. It is *not* "any file outside `packages/`", which describes a large and unrelated set and answers no question anyone asks the label.
+
+**A framework label covers that framework's example books**, not only its plugin package. An example's source takes the label of the framework it teaches, because someone filtering `a:svelte` wants the Svelte surface entire. #610 is a defect in the SvelteKit example's own source and carries `a:svelte`, though it changes no plugin package; #146 is the same directory family and carries it too.
+
+`a:ci` is the workflows and the test harness, which is the one real overlap and is fine: an example's **wiring** is `a:ci`, an example's **source** is its framework. That is why #386 and #278 carry it while sitting under `examples/`.
+
 Milestones and `sprint:*` labels are the owner's — do not set them. `blocked` and the native dependency links express ordering instead.
 
 `on:next` marks an issue whose fix has merged to `next` but has not shipped. Close it then, with a PR reference, rather than waiting for the release — but confirm the fix actually landed first; an issue mentioned in a diff is often incidental.
