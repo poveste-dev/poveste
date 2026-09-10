@@ -15,6 +15,9 @@ on:
       - scripts/check-starters.ts
       - .github/workflows/starters.yml
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
