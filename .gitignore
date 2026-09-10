@@ -3,6 +3,13 @@ dist/
 poveste-dist/
 .poveste/
 .idea
+
+# Two files here are shared on purpose; anything else in `.vscode` is personal.
+# Naming them beats trusting that a `launch.json` never gets committed by
+# accident.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 **/test-results/
 **/playwright-report/
 playwright-results.json
