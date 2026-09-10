@@ -204,6 +204,10 @@ Most of these are transitive dev-tooling advisories about denial of service in a
 
 Releases are cut from `main` by [`scripts/release.ts`](./scripts/release.ts), which runs [bumpp](https://github.com/antfu-collective/bumpp) to bump every workspace `package.json` in lockstep, commit and tag `v<version>`, then pushes the commit and that one tag. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
 
+**Where `next` fits, because the section above says `main` and the work is not on it.** Contributions land on `next`; a release fast-forwards `main` to `next` and cuts from there. A fast-forward has no selection step, so the release contains whatever is on `next` at that moment — which is why work is parked rather than merged in the day before a cut, and why `git merge --ff-only` is the command: if it refuses, the branches have diverged and the fix is to rebase `next`, never to force the merge.
+
+**Afterwards `next` is one commit behind, every time.** The bump above is committed to `main` and nowhere else, so the moment a release lands every `package.json` on `next` still says the previous version — a branch cut from `next` in that window carries stale versions into its PR, and the *next* release is the one that pays, because that is when the fast-forward refuses. Rebase `next` onto `main` before resuming work. `ai/skills/cut-a-release/SKILL.md` carries the same rule from the cutter's side, as both edges of one freeze.
+
 ```sh
 # Root of the mono-repo
 pnpm run release patch   # or: minor, major
