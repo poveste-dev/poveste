@@ -16,8 +16,9 @@ const emit = defineEmits<{
   (e: 'next'): void
 }>()
 
+// Optional coming in, required going out, so the empty case settles here.
 const model = computed({
-  get: () => props.modelValue,
+  get: () => props.modelValue ?? '',
   set: (value) => {
     emit('update:modelValue', value)
     emit('next')

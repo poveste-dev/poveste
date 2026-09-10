@@ -57,8 +57,13 @@ function applyPreset(id) {
   if (id === DEFAULT_ID) {
     resetState()
   }
-  else if (presetStates.value.has(id)) {
-    applyState(props.variant.state, clone(toRawDeep(presetStates.value.get(id).state)))
+  else {
+    // `has` then `get` is two lookups and only the second one is the value;
+    // reading it once says the same thing and carries the type with it.
+    const preset = presetStates.value.get(id)
+    if (preset) {
+      applyState(props.variant.state, clone(toRawDeep(preset.state)))
+    }
   }
 }
 
@@ -85,6 +90,17 @@ async function createPreset() {
   input.value?.select()
 }
 
+// The template bound `v-model` straight to `presetStates.get(selectedOption).label`,
+// which is a Map lookup that can miss. Naming it once keeps the template honest
+// and gives the miss somewhere to go.
+const editingLabel = computed({
+  get: () => presetStates.value.get(selectedOption.value)?.label ?? '',
+  set: (value) => {
+    const preset = presetStates.value.get(selectedOption.value)
+    if (preset) preset.label = value
+  },
+})
+
 const savedNotif = ref(false)
 const savedTimeout = useTimeoutFn(() => {
   savedNotif.value = false
@@ -94,6 +110,7 @@ async function savePreset() {
   if (!canEdit.value) return
 
   const preset = presetStates.value.get(selectedOption.value)
+  if (!preset) return
   preset.state = toPresetState(props.variant.state, omitKeys)
   savedNotif.value = true
   savedTimeout.start()
@@ -149,7 +166,7 @@ onClickOutside(select, stopEditing)
           <input
             v-if="isEditing"
             ref="input"
-            v-model="presetStates.get(selectedOption).label"
+            v-model="editingLabel"
             type="text"
             class="text-inherit bg-transparent w-full h-full outline-none"
             @click.stop.prevent

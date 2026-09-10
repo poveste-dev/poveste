@@ -70,7 +70,7 @@ export function mapVariant(variant: Variant, existingVariant?: Variant): Variant
         _hPropState: {},
         _hPropDefs: {},
       }),
-      setupApp: null,
+      setupApp: undefined,
       // The three keys `Variant` declares, absent rather than missing: a
       // variant created here defines no slots, and consumers read them
       // with `||`. `Story.slots` is `() => any`, which is why the same

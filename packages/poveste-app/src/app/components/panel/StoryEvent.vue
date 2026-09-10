@@ -10,8 +10,13 @@ const formattedArgument = computed(() => {
   switch (typeof props.event.argument) {
     case 'string':
       return `"${props.event.argument}"`
-    case 'object':
-      return `{ ${Object.keys(props.event.argument).map(key => `${key}: ${props.event.argument[key]}`).join(', ')} }`
+    case 'object': {
+      // `argument` is `unknown`, and `typeof x === 'object'` narrows it only as
+      // far as `object | null` — enough for `Object.keys`, not for indexing.
+      const argument = props.event.argument as Record<string, unknown> | null
+      if (!argument) return 'null'
+      return `{ ${Object.keys(argument).map(key => `${key}: ${argument[key]}`).join(', ')} }`
+    }
     default:
       return props.event.argument
   }

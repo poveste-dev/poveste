@@ -15,10 +15,13 @@ const props = defineProps<{
   variant: Variant
 }>()
 
-const generateSourceCodeFn = ref(null)
+// `ref(null)` infers `Ref<null>`, so the assignment below and the call further
+// down were both errors about a type nobody meant to declare.
+const generateSourceCodeFn = shallowRef<((variant: Variant) => Promise<string>) | null>(null)
 
 watchEffect(async () => {
-  const clientPlugin = clientSupportPlugins[props.story.file?.supportPluginId]
+  const supportPluginId = props.story.file?.supportPluginId
+  const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
   if (clientPlugin) {
     const pluginModule = await clientPlugin()
     generateSourceCodeFn.value = markRaw(pluginModule.generateSourceCode)
@@ -28,7 +31,7 @@ watchEffect(async () => {
 const highlighter = shallowRef<HighlighterCore>()
 
 const dynamicSourceCode = ref('')
-const error = ref<string>(null)
+const error = ref<string | null>(null)
 
 // Above the watch that assigns it: the callback is async but runs immediately,
 // and a story whose `slots()` throws reaches the auto-switch below before its

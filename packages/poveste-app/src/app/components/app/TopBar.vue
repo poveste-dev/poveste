@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useStoryStore } from '../../stores/story'
 import DevOnlyToolbarOpenInEditor from '../toolbar/DevOnlyToolbarOpenInEditor.vue'
 import ToolbarBackground from '../toolbar/ToolbarBackground.vue'
@@ -15,6 +16,10 @@ defineEmits({
 })
 
 const storyStore = useStoryStore()
+
+// Named once so the `v-if` and the binding below read the same value; a story
+// without a file has nothing to open.
+const editableFile = computed(() => storyStore.currentStory?.file?.filePath)
 </script>
 
 <template>
@@ -51,8 +56,8 @@ const storyStore = useStoryStore()
         :story="storyStore.currentStory"
       />
       <DevOnlyToolbarOpenInEditor
-        v-if="__POVESTE_DEV__"
-        :file="storyStore.currentStory.file?.filePath"
+        v-if="__POVESTE_DEV__ && editableFile"
+        :file="editableFile"
         tooltip="Edit story in editor"
       />
     </TopBarChip>

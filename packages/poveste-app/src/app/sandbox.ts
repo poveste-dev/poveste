@@ -72,7 +72,7 @@ if (window.parent && window.parent !== window) {
 // window, and no framework hook sees an error raised outside its own call
 // stack (#323).
 function reportUncaught(error: unknown) {
-  reportStoryError(error, { storyId: storyId.value, variantId: variantId.value })
+  reportStoryError(error, { storyId: storyId.value ?? undefined, variantId: variantId.value ?? undefined })
 }
 window.addEventListener('error', (event) => {
   if (!isBenignResizeObserverEvent(event)) {

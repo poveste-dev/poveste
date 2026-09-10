@@ -14,7 +14,9 @@ export function useStoryDoc(story: Ref<Story>) {
 
   watchEffect(async () => {
     // Markdown file
-    const mdKey = story.value.file.filePath.replace(/\.(\w*)$/, '.md')
+    const filePath = story.value?.file?.filePath
+    if (!filePath) return
+    const mdKey = filePath.replace(/\.(\w*)$/, '.md')
     if (markdownFiles[mdKey]) {
       const md = await markdownFiles[mdKey]()
       renderedDoc.value = md.html

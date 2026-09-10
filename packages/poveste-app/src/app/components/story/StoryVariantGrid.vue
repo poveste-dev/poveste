@@ -120,8 +120,12 @@ function updateSize() {
 
   if (!gridEl.value) return
 
-  if (gridTemplateWidth.value.endsWith('%')) {
-    gridColumnWidth.value = viewWidth.value * Number.parseInt(gridTemplateWidth.value) / 100 - gap
+  // Undefined when the story is not a grid, which is when this never runs.
+  const templateWidth = gridTemplateWidth.value
+  if (!templateWidth) return
+
+  if (templateWidth.endsWith('%')) {
+    gridColumnWidth.value = viewWidth.value * Number.parseInt(templateWidth) / 100 - gap
   }
   else {
     gridColumnWidth.value = Number.parseInt(gridTemplateWidth.value)
@@ -250,14 +254,18 @@ watch(() => storyStore.currentVariant, (variant) => {
               transform: offsetY ? `translateY(${offsetY}px)` : undefined,
             }"
           >
-            <StoryVariantGridItem
-              v-for="(slot, index) of slots"
-              :key="index"
-              :variant="slot.variant"
-              :story="storyStore.currentStory"
-              :style="{ order: slot.order, display: slot.visible ? undefined : 'none' }"
-              @resize="onItemResize"
-            />
+            <!-- A `template`, so the guard adds no element: `gridEl` above is
+                 measured by a resize observer and must not move. -->
+            <template v-if="storyStore.currentStory">
+              <StoryVariantGridItem
+                v-for="(slot, index) of slots"
+                :key="index"
+                :variant="slot.variant"
+                :story="storyStore.currentStory"
+                :style="{ order: slot.order, display: slot.visible ? undefined : 'none' }"
+                @resize="onItemResize"
+              />
+            </template>
           </div>
         </div>
       </div>

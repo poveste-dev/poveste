@@ -105,6 +105,9 @@ function isMatchingShortcut(shortcut: KeyboardShortcut): boolean {
 function isMatchingCombination(combination: string): boolean {
   const splitted = combination.split('+').map(key => key.trim())
   const targetKey = splitted.pop()
+  // `split` always yields at least one element, so this is unreachable for any
+  // real combination — an empty or blank one matches nothing, which is right.
+  if (!targetKey) return false
   for (const mod in modifiers) {
     const containsMod = splitted.includes(mod)
     const isPressed = modifiers[mod].pressed

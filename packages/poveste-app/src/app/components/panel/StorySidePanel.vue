@@ -60,6 +60,7 @@ const panelContentComponent = computed(() => {
         <template #first>
           <div class="flex flex-col h-full">
             <PaneTabs
+              v-if="storyStore.currentStory"
               :story="storyStore.currentStory"
               :variant="storyStore.currentVariant"
             />
@@ -75,6 +76,7 @@ const panelContentComponent = computed(() => {
 
         <template #last>
           <StorySourceCode
+            v-if="storyStore.currentStory"
             :story="storyStore.currentStory"
             :variant="storyStore.currentVariant"
             class="h-full"
