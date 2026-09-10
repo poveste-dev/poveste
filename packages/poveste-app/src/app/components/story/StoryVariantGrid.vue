@@ -38,7 +38,7 @@ const initialCount = 10
 
 const maxItemHeight = ref(0)
 
-const el = ref<HTMLDivElement>(null)
+const el = ref<HTMLDivElement>()
 const scrollTop = ref(0)
 const viewportHeight = ref(0)
 
@@ -103,7 +103,7 @@ function onItemResize(_w: number, h: number) {
 
 // Grid size
 
-const gridEl = ref<HTMLDivElement>(null)
+const gridEl = ref<HTMLDivElement>()
 const gridColumnWidth = ref(1)
 const viewWidth = ref(1)
 

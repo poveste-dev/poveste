@@ -49,15 +49,21 @@ const ChildWrapper = {
     const state = reactive({ width: 0, index: props.index })
 
     useResizeObserver(el, (entries) => {
+      // The observer only fires for an element it is observing, so this is
+      // never null here — but `children` is keyed by the element, and an
+      // undefined key would silently make a second entry for the same child.
+      const element = el.value
+      if (!element) return
       const width = entries[0].contentRect.width
-      if (!children.value.has(el.value)) {
-        children.value.set(el.value, state)
+      if (!children.value.has(element)) {
+        children.value.set(element, state)
       }
       state.width = width
     })
 
     onBeforeUnmount(() => {
-      children.value.delete(el.value)
+      const element = el.value
+      if (element) children.value.delete(element)
     })
 
     const visible = computed(() => visibleChildrenCount.value > state.index)

@@ -45,7 +45,9 @@ watch(() => props.shown, (value) => {
   if (value) {
     requestAnimationFrame(() => {
       focused.value = true
-      input.value.select()
+      // A whole frame later, so the pane may have been closed again — a
+      // template ref is undefined once its element unmounts.
+      input.value?.select()
     })
   }
 })

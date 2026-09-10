@@ -61,7 +61,7 @@ function setVariant(variantId: string) {
 
 // Docs auto-scroll to top
 
-const docsOnlyScroller = ref<HTMLElement>(null)
+const docsOnlyScroller = ref<HTMLElement>()
 
 function scrollDocsToTop() {
   docsOnlyScroller.value?.scrollTo(0, 0)
