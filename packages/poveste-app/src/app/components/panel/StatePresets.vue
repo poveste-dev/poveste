@@ -80,7 +80,9 @@ async function createPreset() {
   selectedOption.value = id
   isEditing.value = true
   await nextTick()
-  input.value.select()
+  // The input is rendered by the edit state set above, so it exists by now —
+  // unless editing was cancelled during the tick, which unmounts it.
+  input.value?.select()
 }
 
 const savedNotif = ref(false)
@@ -117,7 +119,9 @@ async function startEditing() {
 
   isEditing.value = true
   await nextTick()
-  input.value.select()
+  // The input is rendered by the edit state set above, so it exists by now —
+  // unless editing was cancelled during the tick, which unmounts it.
+  input.value?.select()
 }
 
 function stopEditing() {

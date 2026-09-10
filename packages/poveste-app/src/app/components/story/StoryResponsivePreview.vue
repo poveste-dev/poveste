@@ -43,15 +43,27 @@ function addWindowListener(event: string, listener: (event: any) => unknown) {
 
 const previewWrapper = ref<HTMLDivElement>()
 
-function useDragger(el: Ref<HTMLDivElement>, value: Ref<number | null>, min: number, max: number, axis: 'x' | 'y') {
+function useDragger(el: Ref<HTMLDivElement | undefined>, value: Ref<number | null>, min: number, max: number, axis: 'x' | 'y') {
+  // The wrapper is a template ref, so it is undefined before mount and after
+  // unmount. Every read below happens during a drag, when it is on screen — but
+  // the move and up listeners are on `window`, so "during a drag" is not the
+  // same as "while this component is alive".
+  function wrapperSize() {
+    const wrapper = previewWrapper.value
+    if (!wrapper) return null
+    return axis === 'x' ? wrapper.clientWidth : wrapper.clientHeight
+  }
+
   // `null` is the value that means "size to the available space", so a drag
   // beginning from auto has to begin from the size actually rendered. The touch
   // path had no fallback and `null + delta` coerces to `delta`, which collapsed
   // a full-height preview to the minimum on the first move (#440).
   function startFrom() {
-    return value.value ?? (axis === 'x'
-      ? previewWrapper.value.clientWidth - 67
-      : previewWrapper.value.clientHeight - 70)
+    if (value.value !== null) return value.value
+    const size = wrapperSize()
+    // Nothing to measure against, so start from the floor rather than from NaN.
+    if (size === null) return min
+    return size - (axis === 'x' ? 67 : 70)
   }
 
   function onMouseDown(event: MouseEvent) {
@@ -67,11 +79,14 @@ function useDragger(el: Ref<HTMLDivElement>, value: Ref<number | null>, min: num
     ]
 
     function onMouseMove(event: MouseEvent) {
-      const snapTarget = (axis === 'x' ? previewWrapper.value.clientWidth : previewWrapper.value.clientHeight)
+      const snapTarget = wrapperSize()
       const delta = (axis === 'x' ? event.clientX : event.clientY) - start
       value.value = Math.max(min, Math.min(max, startValue + delta))
 
-      if (Math.abs(value.value - (snapTarget - 67)) < 16) {
+      // 67 on both axes, unlike `startFrom`. Left as it was: the snap threshold
+      // is a feel, not a measurement, and changing it here would be a UX edit
+      // wearing a type fix's clothes.
+      if (snapTarget !== null && Math.abs(value.value - (snapTarget - 67)) < 16) {
         value.value = null
       }
     }

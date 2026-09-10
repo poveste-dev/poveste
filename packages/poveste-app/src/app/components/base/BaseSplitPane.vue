@@ -174,7 +174,7 @@ const rightStyle = computed(() => {
 const dragging = ref(false)
 let startPosition = 0
 let startSplit = 0
-const el = ref(null)
+const el = ref<HTMLElement>()
 
 function dragStart(e) {
   dragging.value = true
@@ -186,15 +186,20 @@ function dragStart(e) {
 
 function dragMove(e) {
   if (dragging.value) {
+    // The move listener is on `window`, so it can outlive the element for the
+    // rest of a drag if the pane unmounts under it.
+    const pane = el.value
+    if (!pane) return
+
     let position
     let totalSize
     if (props.orientation === 'landscape') {
       position = e.pageX
-      totalSize = el.value.offsetWidth
+      totalSize = pane.offsetWidth
     }
     else {
       position = e.pageY
-      totalSize = el.value.offsetHeight
+      totalSize = pane.offsetHeight
     }
     const dPosition = position - startPosition
     if (props.fixed) {

@@ -19,7 +19,10 @@ async function resetUnseen() {
     eventsStore.unseen = 0
   }
   await nextTick()
-  eventsElement.value.scrollTo({ top: eventsElement.value.scrollHeight })
+  // Read after the await, and it is a template ref: the panel can be closed
+  // during the tick, and then there is nothing to scroll.
+  const events = eventsElement.value
+  events?.scrollTo({ top: events.scrollHeight })
 }
 </script>
 

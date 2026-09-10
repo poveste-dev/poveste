@@ -2,7 +2,11 @@ import type { Ref } from 'vue'
 import scrollIntoView from 'scroll-into-view-if-needed'
 import { onMounted, watch } from 'vue'
 
-export function useScrollOnActive(active: Ref<boolean>, el: Ref<HTMLElement>) {
+// `el` is a template ref, so it is undefined until the component mounts and
+// again once it unmounts. `autoScroll` has always guarded for that; the
+// signature was the only thing claiming otherwise, and it made four callers
+// pass a `Ref<HTMLDivElement | undefined>` into a parameter that denied it.
+export function useScrollOnActive(active: Ref<boolean>, el: Ref<HTMLElement | undefined>) {
   watch(active, (value) => {
     if (value) {
       autoScroll()
