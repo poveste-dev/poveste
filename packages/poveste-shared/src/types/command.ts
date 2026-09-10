@@ -26,8 +26,16 @@ export type ClientCommand = Command & ClientCommandOptions
 
 export interface ClientCommandContext {
   route: RouteLocationNormalizedLoaded
-  currentStory: Story
-  currentVariant: Variant
+  /**
+   * The story the route names, or undefined on any route that names none — the
+   * home page, or a story id that is not loaded. Declared non-optional here
+   * until #667: the app has always filled it from a `.find()`, so a plugin
+   * writing `ctx.currentStory.id` in `showIf` was reading a value the type
+   * promised and the app did not always supply.
+   */
+  currentStory: Story | undefined
+  /** The selected variant, or undefined. Null in the tick between a story being routed to and its variant being chosen. */
+  currentVariant: Variant | undefined
 }
 
 export interface PluginCommand<
