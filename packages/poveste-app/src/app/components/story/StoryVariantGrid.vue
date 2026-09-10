@@ -8,12 +8,19 @@ import StoryVariantGridItem from './StoryVariantGridItem.vue'
 
 const storyStore = useStoryStore()
 
+// `currentStory` is a `.find()` over the loaded stories, so it is undefined for
+// a route naming a story that is not there, and `layout` is optional on top of
+// that. `StoryView` only mounts this component inside its `v-else` on the same
+// value, so neither is ever absent here — but that guarantee lives in another
+// component's template and cannot be seen from this one, which is why these
+// read through `?.` rather than an assertion.
 const gridTemplateWidth = computed(() => {
-  if (storyStore.currentStory.layout.type !== 'grid') {
+  const layout = storyStore.currentStory?.layout
+  if (layout?.type !== 'grid') {
     return
   }
 
-  const layoutWidth = storyStore.currentStory.layout.width
+  const layoutWidth = layout.width
 
   if (!layoutWidth) {
     return '200px'
@@ -42,7 +49,7 @@ const el = ref<HTMLDivElement>()
 const scrollTop = ref(0)
 const viewportHeight = ref(0)
 
-const variants = computed(() => storyStore.currentStory.variants)
+const variants = computed(() => storyStore.currentStory?.variants ?? [])
 
 useResizeObserver(el, () => {
   updateWindow()
@@ -184,7 +191,9 @@ function scheduleTrim() {
 }
 
 watch(visibleVariants, (visible) => {
-  slots.value = assignSlots(slots.value, storyStore.currentStory.id, visible)
+  const story = storyStore.currentStory
+  if (!story) return
+  slots.value = assignSlots(slots.value, story.id, visible)
   scheduleTrim()
 }, { immediate: true })
 

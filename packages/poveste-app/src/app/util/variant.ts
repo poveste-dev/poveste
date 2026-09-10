@@ -11,7 +11,10 @@ import { useRoute } from 'vue-router'
  * reader to pick one" needs the same answer it will give — hence one predicate
  * rather than two copies of the condition (#328).
  */
-export function autoSelectsVariant(story: Story | null | undefined): boolean {
+// A type predicate rather than `boolean`: the body already establishes that the
+// story is there, and returning `boolean` threw that away at every call site —
+// `StoryView` reads the story twice immediately after this returns true.
+export function autoSelectsVariant(story: Story | null | undefined): story is Story {
   return !!story && (!!story.lastSelectedVariant || story.variants.length === 1)
 }
 
