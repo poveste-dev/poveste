@@ -16,7 +16,8 @@ const props = defineProps<{
 const mountComponent = ref(null)
 
 watchEffect(async () => {
-  const clientPlugin = clientSupportPlugins[props.story.file?.supportPluginId]
+  const supportPluginId = props.story.file?.supportPluginId
+  const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
   if (clientPlugin) {
     try {
       const pluginModule = await clientPlugin()

@@ -24,7 +24,7 @@ const promptTypes = {
 const answers = reactive<Record<string, any>>({})
 
 // Initial default values
-for (const prompt of props.command.prompts) {
+for (const prompt of props.command.prompts ?? []) {
   let defaultValue
   if (typeof prompt.defaultValue === 'function') {
     defaultValue = prompt.defaultValue(answers)

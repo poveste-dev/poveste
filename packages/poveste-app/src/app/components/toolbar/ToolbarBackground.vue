@@ -17,7 +17,7 @@ const colorSchemeOptions: { value: SandboxColorScheme, label: string, icon: stri
 // A book that hides the app color scheme switch doesn't want the preview one
 // either — it keeps whatever `theme.defaultColorScheme` says.
 const showColorScheme = !povesteConfig.theme.hideColorSchemeSwitch
-const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets.length
+const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets?.length
 </script>
 
 <template>

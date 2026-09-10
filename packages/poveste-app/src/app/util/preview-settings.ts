@@ -37,5 +37,5 @@ export function applyPreviewSettings(settings: PreviewSettings) {
 }
 
 export function getContrastColor(setting: PreviewSettings) {
-  return povesteConfig.backgroundPresets.find(preset => preset.color === setting.backgroundColor)?.contrastColor ?? 'unset'
+  return povesteConfig.backgroundPresets?.find(preset => preset.color === setting.backgroundColor)?.contrastColor ?? 'unset'
 }

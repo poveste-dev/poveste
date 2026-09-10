@@ -26,7 +26,7 @@ export function assignSlots(slots: Slot[], storyId: string, visible: Variant[]):
   const position = new Map(visible.map((v, i) => [v.id, i]))
   const next: Slot[] = slots.map(slot => (
     slot.storyId === storyId && position.has(slot.variant.id)
-      ? { ...slot, visible: true, order: position.get(slot.variant.id) }
+      ? { ...slot, visible: true, order: position.get(slot.variant.id) ?? 0 }
       : { ...slot, visible: false, order: 0 }
   ))
   const placed = new Set(next.filter(s => s.visible).map(s => s.variant.id))

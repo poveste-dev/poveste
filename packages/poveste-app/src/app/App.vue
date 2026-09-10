@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script lang="ts" setup>
-import type { StoryFile, Tree } from './types'
+import type { Story, StoryFile, Tree } from './types'
 import { useTitle } from '@vueuse/core'
 import { onUpdate, files as rawFiles, tree as rawTree } from 'virtual:$poveste-stories'
 import { computed, onMounted, ref, watch } from 'vue'
@@ -41,8 +41,11 @@ onUpdate((newFiles: StoryFile[], newTree: Tree) => {
   tree.value = newTree
 })
 
-const stories = computed(() => files.value.reduce((acc, file) => {
-  acc.push(file.story)
+// The accumulator needs a type: `[]` alone infers `never[]`, so the push was an
+// error about the seed rather than about the story. A file whose story has not
+// been collected yet contributes nothing.
+const stories = computed(() => files.value.reduce<Story[]>((acc, file) => {
+  if (file.story) acc.push(file.story)
   return acc
 }, []))
 

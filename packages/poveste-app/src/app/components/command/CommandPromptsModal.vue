@@ -33,6 +33,7 @@ const commandStore = useCommandStore()
     />
     <div class="bg-white dark:bg-gray-900 md:mt-16 md:mx-auto w-screen max-w-[512px] max-h-[80vh] overflow-y-auto scroll-smooth shadow-xl border border-gray-200 dark:border-gray-750 rounded-lg relative divide-y divide-gray-200 dark:divide-gray-850">
       <CommandPrompts
+        v-if="commandStore.selectedCommand"
         :command="commandStore.selectedCommand"
         @close="close()"
       />

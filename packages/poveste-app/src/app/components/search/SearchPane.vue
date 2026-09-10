@@ -129,7 +129,11 @@ watch(rateLimitedSearch, async (value) => {
     if (!idMapData) continue
     switch (idMapData.kind) {
       case 'story': {
-        list.push(storyResultFactory(storyStore.getStoryById(idMapData.id), rank))
+        // The search index is built from the stories and outlives an
+        // individual one, so a hit can name a story that is no longer loaded.
+        const story = storyStore.getStoryById(idMapData.id)
+        if (!story) continue
+        list.push(storyResultFactory(story, rank))
         rank++
         break
       }
@@ -137,6 +141,7 @@ watch(rateLimitedSearch, async (value) => {
         const [storyId] = idMapData.id.split(':')
         const story = storyStore.getStoryById(storyId)
         const variant = storyStore.getVariantById(idMapData.id)
+        if (!story || !variant) continue
         list.push(variantResultFactory(story, variant, rank))
         rank++
         break
@@ -160,7 +165,9 @@ async function searchOnDocField(query: string) {
       if (!idMapData) continue
       switch (idMapData.kind) {
         case 'story': {
-          list.push(storyResultFactory(storyStore.getStoryById(idMapData.id), rank, 'docs'))
+          const story = storyStore.getStoryById(idMapData.id)
+          if (!story) continue
+          list.push(storyResultFactory(story, rank, 'docs'))
           rank++
           break
         }
@@ -190,7 +197,7 @@ function storyResultFactory(story: Story, rank: number, type: SearchResultType =
           : {},
       },
     },
-    path: story.file.path.slice(0, -1),
+    path: story.file?.path.slice(0, -1) ?? [],
     icon: story.icon,
     iconColor: story.iconColor,
   }
@@ -214,7 +221,7 @@ function variantResultFactory(story: Story, variant: Variant, rank: number, type
           : {},
       },
     },
-    path: [...story.file.path ?? [], story.title],
+    path: [...story.file?.path ?? [], story.title],
     icon: variant.icon,
     iconColor: variant.iconColor,
   }

@@ -1,11 +1,15 @@
 import { router } from './router.js'
 
 export function setupPluginApi() {
-  if (!import.meta.hot) return
+  // Captured rather than re-read: the narrowing from this guard does not reach
+  // into the callbacks below, and `hot?.send` there would leave `sendEvent`'s
+  // promise waiting for a reply to a message that was never sent.
+  const hot = import.meta.hot
+  if (!hot) return
 
   const listeners: Record<string, Set<(result: any) => unknown>> = {}
 
-  import.meta.hot.on('poveste:dev-event-result', ({ event, result }) => {
+  hot.on('poveste:dev-event-result', ({ event, result }) => {
     const set = listeners[event]
     if (set) {
       for (const listener of set) {
@@ -36,7 +40,7 @@ export function setupPluginApi() {
   window.__HST_PLUGIN_API__ = {
     sendEvent: (event: string, payload?: any) => {
       return new Promise((resolve) => {
-        import.meta.hot.send(`poveste:dev-event`, {
+        hot.send(`poveste:dev-event`, {
           event,
           payload,
         })

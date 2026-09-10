@@ -28,7 +28,7 @@ watch(() => props.variant, () => {
   ready.value = false
 })
 
-const hasCustomControls = computed(() => props.variant.slots().controls || props.story.slots().controls)
+const hasCustomControls = computed(() => props.variant.slots?.().controls || props.story.slots?.().controls)
 
 const hasInitState = computed(() => Object
   .entries(props.variant.state || {})

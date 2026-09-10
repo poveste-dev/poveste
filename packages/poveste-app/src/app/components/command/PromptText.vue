@@ -9,11 +9,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: 'update:modelValue', value: string | undefined): void
 }>()
 
-const model = computed({
-  get: () => props.modelValue,
+// The input needs a string to bind to, so the getter fills in `''` — but an
+// absent answer has to leave as absent. `''` is falsy and *not* nullish, so
+// coercing on the way out would stop a command's `answers.x ?? fallback` from
+// firing, which is the trap #440 was about one file over.
+const model = computed<string | undefined>({
+  get: () => props.modelValue ?? '',
   set: value => emit('update:modelValue', value),
 })
 

@@ -87,7 +87,7 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
               ? 'bg-primary-500 hover:bg-primary-600 text-white dark:text-black'
               : 'bg-transparent hover:bg-primary-100 dark:hover:bg-primary-700',
           ]"
-          @click="settings.responsiveWidth = preset.width;settings.responsiveHeight = preset.height;hide()"
+          @click="settings.responsiveWidth = preset.width;settings.responsiveHeight = preset.height ?? null;hide()"
         >
           {{ preset.label }}
           <span class="ml-auto opacity-70 flex gap-1">

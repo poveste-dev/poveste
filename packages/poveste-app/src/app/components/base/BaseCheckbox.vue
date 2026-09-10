@@ -28,7 +28,7 @@ const progress = computed(() => props.modelValue ? 1 : 0)
 const dashoffset = computed(() => (1 - progress.value) * dasharray.value)
 
 watch(path, () => {
-  dasharray.value = path.value.getTotalLength?.() ?? 21.21
+  dasharray.value = path.value?.getTotalLength?.() ?? 21.21
 })
 </script>
 

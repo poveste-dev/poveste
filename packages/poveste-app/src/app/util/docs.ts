@@ -13,7 +13,8 @@ export async function getSourceCode(story: Story, variant: Variant) {
     }
   }
   else {
-    const clientPlugin = clientSupportPlugins[story.file?.supportPluginId]
+    const supportPluginId = story.file?.supportPluginId
+    const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
     if (clientPlugin) {
       const pluginModule = await clientPlugin()
       return pluginModule.generateSourceCode(variant)

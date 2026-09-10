@@ -168,7 +168,7 @@ const rightStyle = computed(() => {
   if (!hasBothPanes.value) {
     return { [axis.value]: '100%' }
   }
-  return { [axis.value]: props.fixed ? null : `${100 - boundSplit.value}%` }
+  return { [axis.value]: props.fixed ? undefined : `${100 - boundSplit.value}%` }
 })
 
 const dragging = ref(false)

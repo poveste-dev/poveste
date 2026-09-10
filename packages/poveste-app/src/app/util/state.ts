@@ -19,7 +19,7 @@ export function toRawDeep(val, clean = false, seen = new WeakMap()) {
   }
 
   if (Array.isArray(unwrappedValue)) {
-    const result = []
+    const result: unknown[] = []
     seen.set(unwrappedValue, result)
     let list = unwrappedValue.map(value => toRawDeep(value, clean, seen))
     if (clean) {

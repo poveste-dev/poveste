@@ -5,7 +5,7 @@ import { useStoryStore } from '../stores/story'
 import { customLogos, povesteConfig } from '../util/config'
 import HomeCounter from './app/HomeCounter.vue'
 
-const logoUrl = computed(() => povesteConfig.theme?.logo?.square ? customLogos.square : PovesteLogo)
+const logoUrl = computed(() => povesteConfig.theme?.logo?.square ? customLogos?.square ?? PovesteLogo : PovesteLogo)
 const storyStore = useStoryStore()
 
 const stats = computed(() => {

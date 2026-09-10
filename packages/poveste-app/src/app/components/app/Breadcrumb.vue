@@ -16,7 +16,8 @@ const storyStore = useStoryStore()
 const story = computed(() => storyStore.currentStory)
 
 const folders = computed(() => {
-  return story.value.file.path.slice(0, -1)
+  // No story, or a story with no file behind it, means no trail to draw.
+  return story.value?.file?.path.slice(0, -1) ?? []
 })
 
 const isMenuOpened = ref(false)
