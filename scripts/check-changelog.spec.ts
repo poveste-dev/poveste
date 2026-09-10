@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeVersion, releasedVersions, sectionFor, strayHeadings } from './check-changelog.ts'
+import { freezeWarning, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './check-changelog.ts'
 
 // The shape of the real file: newest release first, then older ones, then the
 // inherited histoire history behind its own `## ` heading.
@@ -131,5 +131,51 @@ describe('normalizeVersion', () => {
 describe('releasedVersions', () => {
   it('lists the releases newest first, and not the inherited history', () => {
     expect(releasedVersions(CHANGELOG)).toEqual(['v0.8.1', 'v0.8.0'])
+  })
+})
+
+describe('subjectsAfter', () => {
+  it('lists the subjects git reported', () => {
+    expect(subjectsAfter('fix: one\nfeat: two\n')).toEqual(['fix: one', 'feat: two'])
+  })
+
+  it('is empty when nothing landed after the notes', () => {
+    expect(subjectsAfter('')).toEqual([])
+  })
+
+  it('is empty when git could not answer, rather than reporting a blank commit', () => {
+    expect(subjectsAfter('\n  \n')).toEqual([])
+  })
+
+  // It bumps the manifests and nothing else, so it always lands after the notes
+  // commit — reporting it would make the warning fire on every release.
+  it('drops the release commit, which always lands after the notes', () => {
+    expect(subjectsAfter('chore: release v0.14.0\n')).toEqual([])
+  })
+
+  it('keeps real work that landed alongside it', () => {
+    expect(subjectsAfter('fix: one\nchore: release v0.14.0\n')).toEqual(['fix: one'])
+  })
+
+  it('does not mistake a commit that merely mentions a release', () => {
+    expect(subjectsAfter('docs(repo): write the v0.14.0 release notes\n')).toEqual(['docs(repo): write the v0.14.0 release notes'])
+  })
+})
+
+describe('freezeWarning', () => {
+  it('names every commit, since the reader has to judge each one', () => {
+    const lines = freezeWarning(['fix: one', 'chore: two'])
+
+    expect(lines.join('\n')).toContain('fix: one')
+    expect(lines.join('\n')).toContain('chore: two')
+  })
+
+  it('says how to clear it, so the warning is not just an accusation', () => {
+    expect(freezeWarning(['fix: one']).join('\n')).toContain('touching CHANGELOG.md')
+  })
+
+  it('agrees with itself about the count', () => {
+    expect(freezeWarning(['fix: one'])[0]).toContain('1 commit landed')
+    expect(freezeWarning(['a', 'b'])[0]).toContain('2 commits landed')
   })
 })

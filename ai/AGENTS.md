@@ -24,6 +24,10 @@ The shape alone does not decide it. `StoryViewer` and `StoryVariantSingleView` b
 
 Work targets **`next`**, not `main`. `next` is the integration branch; it reaches `main` at release time as a fast-forward, which is why it is rebased rather than merged.
 
+A fast-forward has no selection step, so a release contains whatever is sitting on `next` when the tag is cut — not what the notes describe. Within a day of a release, work is **green and parked**: branch, build, open the PR, get it green, and *do not merge*. Say "parked until v<version> is out" in the body, because a green check is otherwise read as an invitation. `on:next` and the closing convention are unaffected — this is only about the merge.
+
+The asymmetry is why it is a rule rather than a judgement: holding a commit for a day costs a day, while a commit that lands unnoticed ships inside a release whose notes were written against a different set, and publishing is what emails every watcher (#399). That email cannot be re-sent.
+
 Branching off `main` for anything multi-step is wrong before it starts.
 
 Stacked PRs are normal for a queue of related work: base each branch on the previous one and say so in the body, since the GitHub diff otherwise shows the whole stack.
