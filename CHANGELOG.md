@@ -4,6 +4,49 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.14.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.13.1...v0.14.0)
+
+**Every framework has a page of its own, and following the Vue or Svelte guide from an empty project now gives you a first story that builds.**
+
+The other change you will notice is in the preview pane. When the preview is sized to fit the available space (auto size, the default), a touch drag no longer snaps the pane to the distance your finger travelled. Clearing the width field now means auto instead of storing an empty string.
+
+This is a `minor`, and it's worth saying why, because neither `feat` in the range is something you can see. One makes our release fail when a published package has no tests. The other turns on `strictNullChecks` for the app, which is how the open-in-editor bug below was found. The version comes from the commits. The one change that can touch code you wrote is a type correction, listed first below.
+
+### 🚨 Breaking Changes
+
+- **`ResponsivePreset.height` is typed `number | null`** ([#440](https://github.com/poveste-dev/poveste/issues/440)). This changes a type only; nothing behaves differently at runtime. `null` means "size to the available space", and four of the eight default presets have always set it. The declaration said `number`, and the config reference said so too, directly above an example that printed `height: null` four times. Writing presets in your config is unaffected. Code that *reads* the field, such as `const h: number = preset.height`, stops compiling under `strictNullChecks` until it handles `null`.
+
+### 🩹 Fixes
+
+- **Dragging the preview from auto size resizes it from where it is** ([#440](https://github.com/poveste-dev/poveste/issues/440)). The touch path had no fallback for auto, so `null + delta` became `delta`. Since auto is the default, that's what a reader got on first load: a 40px drag collapsed a full-height preview to the 32px minimum. Mouse and touch now share one starting point. Clearing the width field produced the same jump on the next mouse drag, because it stored `''` rather than `null`. Empty now means auto, which is what the field's `Auto` placeholder already said. `0` still means `0`.
+- **Open in editor no longer asks for a file named `undefined`** ([#694](https://github.com/poveste-dev/poveste/pull/694)). For a story with no source file, the command sent the literal string `undefined` as the path, and nothing in the UI said anything. It is now only offered when there is a path to open.
+- **`poveste build` counts documentation pages as documents** ([#670](https://github.com/poveste-dev/poveste/issues/670)). A standalone `.story.md` has no variants by construction, and the build counted it as an empty story. So any book with docs pages ended with a warning that was mostly wrong, and a story count that disagreed with the book's own home page. The two now report the same numbers. The warning names the files instead of giving a bare count, so when it does fire you can act on it.
+- **Percy's missing-puppeteer message now covers every way the load can fail** ([#632](https://github.com/poveste-dev/poveste/issues/632)). 0.13.0 promised a clear message when `puppeteer` is missing. The code recognised two error codes and rethrew everything else raw. Any failure to load it now gets the message, with the original error attached as `cause`, so an installed-but-broken puppeteer still says what went wrong. It is also covered by a test now, which it was not when that promise was made.
+
+### 📖 Documentation
+
+- **The Vue and Svelte guides include the `vite.config` step** ([#623](https://github.com/poveste-dev/poveste/issues/623)). Poveste compiles through your project's own Vite config, so a Vue project needs `@vitejs/plugin-vue` and a Svelte one needs `@sveltejs/vite-plugin-svelte`. Neither guide said so, and each guide's first example failed to build. These are one scope away from `@poveste/plugin-vue` and `@poveste/plugin-svelte`, which the guides did install. The first pair teaches Vite to compile your components; the second teaches Poveste to collect stories.
+- **Nuxt, SvelteKit and Quasar have pages of their own** ([#628](https://github.com/poveste-dev/poveste/issues/628), [#570](https://github.com/poveste-dev/poveste/issues/570)). Before this release they were sections inside other pages, so they had no URL, and Nuxt was missing from the sidebar entirely. Each page now states its own install and scripts, and all five frameworks in the table link to a page. The old sections keep a short summary pointing to the new pages.
+- **The supported versions table includes Quasar** ([#625](https://github.com/poveste-dev/poveste/issues/625)). It gets two rows, one for Quasar and one for the build tool that drives it, the same shape as Svelte and SvelteKit. Both ranges were already declared and tested, so the table was the only thing missing them.
+- **The SvelteKit page explains `setupFile`** ([#635](https://github.com/poveste-dev/poveste/issues/635)). The config meant to be copied whole pointed at a file the page never mentioned again. The docs also spelled its path two ways. Both worked, for different reasons, but the docs now use the leading-slash form everywhere and say what it means.
+- **Hovering the plugin API in your editor shows a description.** Every declaration in the plugin types now has one. Three of those descriptions shipped in the published types still saying *histoire*, and `Plugin.onBuild` had two doc blocks, so its description never reached anyone.
+- **Asking a question has a form.** The contact link in the issue chooser goes straight to a Q&A form that asks for your version and what you tried. Before, it went to a discussion board that asked for nothing.
+
+### 🏡 Chore
+
+- **A published package without tests fails the release** ([#669](https://github.com/poveste-dev/poveste/issues/669)). `pnpm test` skips a package with no `test` script silently, and two published packages reached a release that way. Each exemption now has to state its reason.
+- **`@poveste/app` is type-checked with `strictNullChecks`** ([#667](https://github.com/poveste-dev/poveste/issues/667)). This took 95 errors across 42 files to zero, and it is where the two preview fixes and the open-in-editor fix above came from.
+
+### Upgrading
+
+**Most projects have nothing to do.** No configuration changed, no API was removed, and nothing was deprecated. Stories and config files that worked on 0.13.1 work here unchanged.
+
+**If your TypeScript reads `ResponsivePreset.height`**, handle `null`. It was always a possible value; now the type says so. The type is exported from `poveste`.
+
+Rebuild your book to pick up the preview fixes. They are in the chrome, so an existing built book keeps the old behaviour until you rebuild it.
+
 ## v0.13.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.13.0...v0.13.1)
