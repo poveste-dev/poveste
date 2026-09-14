@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
 import { EXEMPT, testScriptProblems } from './check-package-tests.ts'
+import { publishablePackages } from './check-publishable.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
 
 const TESTED = { name: '@poveste/plugin-vue', scripts: { build: 'tsc', test: 'vitest run' } }
 const UNTESTED = { name: '@poveste/plugin-percy', scripts: { build: 'tsc' } }
@@ -47,5 +51,59 @@ describe('the exemption list', () => {
     for (const [name, reason] of Object.entries(EXEMPT)) {
       expect(reason, name).not.toHaveLength(0)
     }
+  })
+})
+
+// This check has no walk of its own — it reads `publishablePackages`, which is
+// why parameterizing that one function reaches four checks rather than one
+// (#719). Nothing in `check-package-tests.ts` changed to make the below
+// possible.
+//
+// It matters here more than most: the drift that leaves this check green is a
+// package quietly leaving the shared list, and a package it never sees is a
+// package whose missing `test` script it cannot report — which is #387 and
+// #632, the two defects it exists to stop.
+
+afterEach(removeTrees)
+
+function manifest(name: string, extra: Record<string, unknown> = {}): string {
+  return JSON.stringify({ name, version: '1.0.0', ...extra })
+}
+
+/** What `main()` does, against a tree a spec chose. */
+function problemsUnder(root: string, exempt: Record<string, string> = {}): string[] {
+  const manifests = publishablePackages(root).map(({ name, dir }) => ({
+    ...JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')),
+    name,
+  }))
+
+  return testScriptProblems(manifests, exempt)
+}
+
+describe('over a tree on disk', () => {
+  it('names a published package that declares no test script', () => {
+    const root = tree({
+      'packages/quiet/package.json': manifest('@fixture/quiet'),
+      'packages/tested/package.json': manifest('@fixture/tested', { scripts: { test: 'vitest run' } }),
+    })
+
+    expect(problemsUnder(root)).toEqual([expect.stringContaining('@fixture/quiet is published and declares no `test` script')])
+  })
+
+  it('says nothing about a private package, which `pnpm test` never selects', () => {
+    const root = tree({
+      'packages/internal/package.json': manifest('@fixture/internal', { private: true }),
+      'packages/tested/package.json': manifest('@fixture/tested', { scripts: { test: 'vitest run' } }),
+    })
+
+    expect(problemsUnder(root)).toEqual([])
+  })
+
+  it('reports an exemption for a package the walk no longer returns', () => {
+    const root = tree({ 'packages/tested/package.json': manifest('@fixture/tested', { scripts: { test: 'vitest run' } }) })
+
+    expect(problemsUnder(root, { '@fixture/gone': 'a reason' })).toEqual([
+      expect.stringContaining('EXEMPT names @fixture/gone, which is not a published package'),
+    ])
   })
 })

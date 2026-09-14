@@ -12,7 +12,6 @@ import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const PACKAGES = join(ROOT, 'packages')
 const DEP_KEYS = ['dependencies', 'peerDependencies', 'optionalDependencies']
 
 // Published only so the workspace can depend on them, and consumed through
@@ -32,22 +31,101 @@ function sleepSync(ms: number): void {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
 }
 
-export function publishablePackages(): Pkg[] {
+export interface Skipped {
+  dir: string
+  reason: string
+}
+
+export interface Walk {
+  packages: Pkg[]
+  /** Every entry under `packages/` the walk did not select, and why. */
+  skipped: Skipped[]
+  /** Everything `packages/` held, selected or not. */
+  entries: string[]
+}
+
+/**
+ * The walk, split from the checks that judge what it finds so a spec can point
+ * it at a fixture tree (#719).
+ *
+ * It reports what it *rejected* as well as what it kept, because the failure
+ * worth catching here is partial. Four checks read this one list, and a filter
+ * that quietly stops selecting a package leaves two of them green over a
+ * package they no longer examine — `check-package-tests` and
+ * `check-doc-coverage` both exit 0 with one package missing from the list.
+ */
+export function walkPackages(root = ROOT): Walk {
   const packages: Pkg[] = []
-  for (const entry of readdirSync(PACKAGES)) {
-    const dir = join(PACKAGES, entry)
+  const skipped: Skipped[] = []
+  const entries = readdirSync(join(root, 'packages'))
+
+  for (const entry of entries) {
+    const dir = join(root, 'packages', entry)
     let manifest: any
     try {
       manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
     }
     catch {
+      skipped.push({ dir: entry, reason: 'no readable package.json' })
       continue
     }
-    if (manifest.name && !manifest.private) {
-      packages.push({ name: manifest.name, dir })
+    if (!manifest.name) {
+      skipped.push({ dir: entry, reason: 'its manifest declares no name' })
+      continue
     }
+    if (manifest.private) {
+      skipped.push({ dir: entry, reason: 'private' })
+      continue
+    }
+    packages.push({ name: manifest.name, dir })
   }
-  return packages.sort((a, b) => a.name.localeCompare(b.name))
+
+  return { packages: packages.sort((a, b) => a.name.localeCompare(b.name)), skipped, entries }
+}
+
+/**
+ * `--root <path>` aims the whole check at a fixture tree.
+ *
+ * Parameterizing the walk lets a spec assert what was read; it does not let one
+ * assert what the check *did* with it, and "reported success over an assertion
+ * that never ran" is a statement about the exit code (#719). So the process has
+ * to be aimable too, not just the function.
+ */
+export function rootFromArgv(argv: string[]): string | undefined {
+  const at = argv.indexOf('--root')
+  return at === -1 ? undefined : argv[at + 1]
+}
+
+export function publishablePackages(root = ROOT): Pkg[] {
+  return walkPackages(root).packages
+}
+
+/**
+ * What the walk has to be able to say about itself before anything trusts it.
+ *
+ * "It examined at least one thing" is the floor and is not enough on its own:
+ * a walk that stops selecting *one* package passes it. So the assertion is that
+ * every entry is accounted for — selected, or skipped for a stated reason. A
+ * directory that falls out of both is a silent loss, and silent partial loss is
+ * what four checks sharing this walk cannot survive.
+ */
+export function walkProblems({ packages, skipped, entries }: Walk): string[] {
+  if (entries.length === 0) {
+    return ['packages/ held nothing to walk — this check no longer describes the tree']
+  }
+
+  const problems: string[] = []
+
+  if (packages.length === 0) {
+    problems.push(`packages/ held ${entries.length} entries and the walk selected none of them as publishable`)
+  }
+
+  const accounted = packages.length + skipped.length
+  if (accounted !== entries.length) {
+    problems.push(`the walk accounted for ${accounted} of ${entries.length} entries under packages/ — the rest were neither selected nor skipped for a reason, so they left the list without saying so`)
+  }
+
+  return problems
 }
 
 /**
@@ -273,23 +351,29 @@ function describeError(err: any): string {
 
 function main(): void {
   const offline = process.argv.includes('--offline')
-  const packages = publishablePackages()
+  const root = rootFromArgv(process.argv) ?? ROOT
+  const packagesDir = join(root, 'packages')
+  const walk = walkPackages(root)
+  const packages = walk.packages
 
   const allNames: string[] = []
-  for (const entry of readdirSync(PACKAGES)) {
+  for (const entry of readdirSync(packagesDir)) {
     try {
-      const manifest = JSON.parse(readFileSync(join(PACKAGES, entry, 'package.json'), 'utf8'))
+      const manifest = JSON.parse(readFileSync(join(packagesDir, entry, 'package.json'), 'utf8'))
       if (manifest.name) {
         allNames.push(manifest.name)
       }
     }
     catch {}
   }
-  const problems: string[] = packageTableProblems(
-    readFileSync(join(ROOT, 'CONTRIBUTING.md'), 'utf8'),
-    packages.map(pkg => pkg.name),
-    allNames,
-  )
+  const problems: string[] = [
+    ...walkProblems(walk),
+    ...packageTableProblems(
+      readFileSync(join(root, 'CONTRIBUTING.md'), 'utf8'),
+      packages.map(pkg => pkg.name),
+      allNames,
+    ),
+  ]
   const skippedEntrypoints: string[] = []
 
   for (const pkg of packages) {
