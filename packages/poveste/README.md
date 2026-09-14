@@ -20,6 +20,8 @@ pnpm i -D poveste @poveste/plugin-nuxt     # Nuxt 4
 pnpm i -D poveste @poveste/plugin-quasar   # Quasar
 ```
 
+> **Installed an older version than you expected?** For about a day after a release, pnpm installs the previous one — `(x.y.z is available)`, no error. That is pnpm's release-age cooldown, not a broken publish. Use `npm`, wait it out, or pass `--config.minimum-release-age=0` (kebab-case — pnpm 12 silently ignores the camelCase spelling). Asking for the exact version does not help: pnpm 12 refuses one inside the window too.
+
 Then create a `poveste.config.ts` in your project root:
 
 ```ts

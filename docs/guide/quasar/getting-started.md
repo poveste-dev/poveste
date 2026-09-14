@@ -19,6 +19,10 @@ npm i -D poveste @poveste/plugin-vue @poveste/plugin-quasar
 yarn add -D poveste @poveste/plugin-vue @poveste/plugin-quasar
 ```
 
+::: tip Just installed and got an older version?
+For about a day after a release, pnpm installs the **previous** version and says so only in passing — `+ poveste x.y.z (x.y.z is available)`, with no error and no warning. That is pnpm's release-age cooldown holding back anything published in the last 24 hours, not a broken publish. Use the `npm` line above, wait it out, or pass `--config.minimum-release-age=0` — the kebab-case spelling, because pnpm 12 accepts the camelCase one and silently ignores it. Asking for the exact version does not get you past it: pnpm 12 refuses a version inside the window too, with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
+:::
+
 You need an existing Quasar project. The plugin reads the Vite config Quasar builds, so it looks for a `quasar.config` file above the current directory and fails with a message saying so if there is none.
 
 ## Configuration
