@@ -41,7 +41,7 @@ export const builtinCommands: ClientCommand[] = [
     label: 'Open Poveste Documentation',
     icon: 'carbon:help',
     clientAction: () => {
-      window.open('https://poveste.dev/guide/getting-started.html', '_blank')
+      window.open('https://poveste.dev/guide/getting-started', '_blank')
     },
   },
 ]

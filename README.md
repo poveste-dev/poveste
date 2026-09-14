@@ -14,7 +14,7 @@
 migrate by swapping one dependency — the `<Story>`/`<Variant>` API, `.story.*` files, and
 `histoire.config.*` all keep working. **Svelte** needs one code change as well: Svelte 5 removed
 the API histoire used to read a story's state, so story state moves onto `initState`
-([how, and why](https://poveste.dev/guide/migration-from-histoire.html#svelte-story-state-moves-to-initstate)).
+([how, and why](https://poveste.dev/guide/migration-from-histoire#svelte-story-state-moves-to-initstate)).
 Say it however you like — we answer to "po-VEST" too. 🙂
 
 [![Unit tests and smoke](https://github.com/poveste-dev/poveste/actions/workflows/test.yml/badge.svg)](https://github.com/poveste-dev/poveste/actions/workflows/test.yml)
@@ -51,7 +51,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 | Quasar App Vite | `^3.8.0` |
 
 Every range is backed by a CI job that exercises it — see
-[supported versions](https://poveste.dev/guide/getting-started.html#supported-versions) for
+[supported versions](https://poveste.dev/guide/getting-started#supported-versions) for
 what proves each one, the package-manager story, and the version-support policy.
 
 ## Packages
