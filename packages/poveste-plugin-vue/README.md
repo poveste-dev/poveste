@@ -40,5 +40,5 @@ import MyButton from './MyButton.vue'
 Coming from histoire? The Vue API is unchanged: swap the dependency and your existing
 `.story.vue` files keep working.
 
-[Vue guide](https://poveste.dev/guide/vue/getting-started.html) ·
+[Vue guide](https://poveste.dev/guide/vue/getting-started) ·
 [Documentation](https://poveste.dev)
