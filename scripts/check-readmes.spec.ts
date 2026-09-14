@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { aliasesTaughtAlone, externalHosts, installLineProblems, instructsWithHistoire, missingInstallLine, referencedWorkflows, unrunnableFences } from './check-readmes.ts'
+import { afterEach, describe, expect, it } from 'vitest'
+import { aliasesTaughtAlone, collect, externalHosts, installLineProblems, instructsWithHistoire, legacyOwnUrls, missingInstallLine, referencedWorkflows, unrunnableFences, walkProblems } from './check-readmes.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
 
 // The heuristics below are the whole guard. Each case here is one that got
 // past an earlier version of it, so a regression is a defect shipping again
@@ -267,6 +268,134 @@ describe('aliasesTaughtAlone in a diff fence', () => {
 
     expect(aliasesTaughtAlone(doc)).toEqual([
       { line: 6, deprecated: 'process.env.HISTOIRE', canonical: 'process.env.POVESTE' },
+    ])
+  })
+})
+
+describe('legacyOwnUrls', () => {
+  // The 24 that shipped. `externalHosts` stops at the first slash, so the host
+  // was right and the path was never looked at (#731).
+  it('finds a .html link to our own site', () => {
+    expect(legacyOwnUrls('[docs](https://poveste.dev/guide/getting-started.html)')).toEqual([
+      'https://poveste.dev/guide/getting-started.html',
+    ])
+  })
+
+  it('finds one carrying a fragment, which is how most of them were written', () => {
+    expect(legacyOwnUrls('see [versions](https://poveste.dev/guide/getting-started.html#supported-versions)')).toEqual([
+      'https://poveste.dev/guide/getting-started.html#supported-versions',
+    ])
+  })
+
+  it('is silent on the clean spelling', () => {
+    expect(legacyOwnUrls('[docs](https://poveste.dev/guide/getting-started#supported-versions)')).toEqual([])
+  })
+
+  // Whether someone else's site serves `.html` is their business, and not
+  // knowable from here.
+  it('ignores another host entirely', () => {
+    expect(legacyOwnUrls('[vite](https://vite.dev/config/index.html)')).toEqual([])
+  })
+
+  // `.html` has to be the page, not a substring of one.
+  it('does not fire on a path that merely contains the letters', () => {
+    expect(legacyOwnUrls('[x](https://poveste.dev/guide/htmlx)')).toEqual([])
+  })
+
+  it('reports each distinct link once, however often it appears', () => {
+    const twice = '[a](https://poveste.dev/guide/css.html) and [b](https://poveste.dev/guide/css.html)'
+
+    expect(legacyOwnUrls(twice)).toHaveLength(1)
+  })
+})
+
+// Everything above this line asserts predicates against strings, which is the
+// half that was already covered. These read the tree (#719).
+
+afterEach(removeTrees)
+
+function MANIFEST(name: string, extra: Record<string, unknown> = {}): string {
+  return JSON.stringify({ name, version: '1.0.0', ...extra })
+}
+
+describe('collect', () => {
+  it('finds a published package README and marks it as a package page', async () => {
+    const root = tree({
+      'README.md': '# root',
+      'packages/one/package.json': MANIFEST('@fixture/one', { peerDependencies: { vue: '^3' } }),
+      'packages/one/README.md': '# one',
+    })
+
+    const { pages, published } = await collect(root)
+
+    expect(published).toBe(1)
+    expect(pages.find(page => page.label === '@fixture/one')?.pkg).toEqual({ entry: 'one', peers: { vue: '^3' } })
+  })
+
+  it('passes over a private package rather than counting it as published', async () => {
+    const root = tree({
+      'README.md': '# root',
+      'packages/hidden/package.json': MANIFEST('@fixture/hidden', { private: true }),
+      'packages/hidden/README.md': '# hidden',
+    })
+
+    expect((await collect(root)).published).toBe(0)
+  })
+
+  // npm renders "This package does not have a README" for these, which is the
+  // defect #184 is about.
+  it('names a published package with no README rather than skipping it', async () => {
+    const root = tree({ 'README.md': '# root', 'packages/bare/package.json': MANIFEST('@fixture/bare') })
+
+    expect((await collect(root)).withoutReadme).toEqual(['@fixture/bare'])
+  })
+
+  it('reaches example READMEs and both template directories', async () => {
+    const root = tree({
+      'README.md': '# root',
+      'examples/demo/README.md': '# demo',
+      '.github/ISSUE_TEMPLATE/bug-report.yml': 'name: bug',
+      '.github/DISCUSSION_TEMPLATE/q-a.yml': 'name: q-a',
+    })
+
+    expect((await collect(root)).pages.map(page => page.label)).toEqual([
+      'README.md',
+      'examples/demo',
+      '.github/ISSUE_TEMPLATE/bug-report.yml',
+      '.github/DISCUSSION_TEMPLATE/q-a.yml',
+    ])
+  })
+})
+
+describe('walkProblems', () => {
+  it('is silent over a tree with pages and a published package', async () => {
+    const root = tree({
+      'README.md': '# root',
+      'packages/one/package.json': MANIFEST('@fixture/one'),
+      'packages/one/README.md': '# one',
+    })
+
+    expect(walkProblems(await collect(root))).toEqual([])
+  })
+
+  // The state every check in scripts/ was in until #719: reaches nothing,
+  // compares nothing, exits 0.
+  it('fails when the walk reaches pages but no published package', async () => {
+    // A tree with no `packages/` at all, which is what a moved or renamed
+    // directory looks like from here: `readdir` reports nothing, every npm page
+    // assertion below has no page to run against, and the check would otherwise
+    // print a success line with a zero in it.
+    const root = tree({ 'README.md': '# root' })
+
+    expect(walkProblems(await collect(root))).toEqual([
+      expect.stringContaining('found no published packages'),
+    ])
+  })
+
+  it('fails when there are no pages at all', () => {
+    expect(walkProblems({ pages: [], published: 0, withoutReadme: [] })).toEqual([
+      expect.stringContaining('no pages to read at all'),
+      expect.stringContaining('found no published packages'),
     ])
   })
 })

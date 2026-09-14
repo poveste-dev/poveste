@@ -36,8 +36,6 @@ import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const PACKAGES = join(ROOT, 'packages')
-const EXAMPLES = join(ROOT, 'examples')
 const WORKFLOWS = join(ROOT, '.github', 'workflows')
 
 const MIN_LENGTH = 120
@@ -279,6 +277,40 @@ export function referencedWorkflows(markdown: string): string[] {
   return [...new Set([...withoutFences(markdown).matchAll(/workflows\/([\w.-]+\.ya?ml)/g)].map(match => match[1]))]
 }
 
+/** Our own domain, whose URL shape we control. */
+const OWN_HOST = 'poveste.dev'
+
+/**
+ * Links to our own site that use the legacy `.html` spelling.
+ *
+ * The docs site sets `cleanUrls: true`, so every page has a clean URL and the
+ * `.html` twin answers 200 with a canonical pointing at the clean one. Both
+ * work for a reader; only one should be linked, because #664 measured what
+ * linking the other costs — 7 of 45 sitemap URLs came back `Duplicate without
+ * user-selected canonical`, and for `reference/config` Google picked the
+ * `.html` twin over the clean URL. A README on npm is the worst place to cast
+ * that vote: long-lived, read by a stranger evaluating the package, cached
+ * where we cannot reach it.
+ *
+ * `externalHosts` above looks like it would have caught this and never could:
+ * its capture class excludes `/`, so it stops at the first slash and has never
+ * seen a path. `poveste.dev` is the correct host in every one of these, so all
+ * 24 of them passed it for months (#731).
+ *
+ * Scoped to our own host on purpose. Whether someone else's site serves
+ * `.html` is their business and not knowable from here.
+ */
+export function legacyOwnUrls(markdown: string): string[] {
+  const found = new Set<string>()
+  for (const match of markdown.matchAll(/https?:\/\/poveste\.dev\/[^\s)"'`>\]]*/g)) {
+    const url = match[0].replace(/[.,;:!?]+$/, '')
+    if (/\.html(?:$|[#?])/.test(url)) {
+      found.add(url)
+    }
+  }
+  return [...found]
+}
+
 export function externalHosts(markdown: string): string[] {
   const hosts = new Set<string>()
   for (const match of markdown.matchAll(/https?:\/\/([^/\s)"'>\]]+)/g)) {
@@ -297,19 +329,40 @@ export function externalHosts(markdown: string): string[] {
 
 // Guarded, so importing the helpers above for a test does not run the whole
 // check — and cannot reach the `process.exit(1)` below and kill the runner.
-async function main(): Promise<void> {
-  const problems: string[] = []
-  const workflowsOnDisk = new Set(await readdir(WORKFLOWS).catch(() => []))
+export interface Page {
+  label: string
+  path: string
+  /** Set for a published package's own README, which carries extra assertions. */
+  pkg?: { entry: string, peers: Record<string, string> }
+}
 
-  // Every page this project owns, not only the npm ones.
-  const pages: Array<{ label: string, path: string }> = [
-    { label: 'README.md', path: join(ROOT, 'README.md') },
-  ]
+export interface Walk {
+  pages: Page[]
+  /** Published packages found, whether or not each had a README. */
+  published: number
+  /** Published packages with no README at all. */
+  withoutReadme: string[]
+}
 
+/**
+ * Every page this project owns, found rather than listed.
+ *
+ * Split from the judging so a spec can point it at a fixture tree and assert
+ * what it reached (#719). Discovery only — nothing here decides whether a page
+ * is wrong, which keeps the assertions above testable against strings and this
+ * testable against directories.
+ */
+export async function collect(root = ROOT): Promise<Walk> {
+  const packages = join(root, 'packages')
+  const examples = join(root, 'examples')
+
+  const pages: Page[] = [{ label: 'README.md', path: join(root, 'README.md') }]
+  const withoutReadme: string[] = []
   let published = 0
-  for (const entry of await readdir(PACKAGES)) {
-    const dir = join(PACKAGES, entry)
-    if (!(await stat(dir)).isDirectory()) {
+
+  for (const entry of await readdir(packages).catch(() => [])) {
+    const dir = join(packages, entry)
+    if (!(await stat(dir).catch(() => null))?.isDirectory()) {
       continue
     }
 
@@ -326,26 +379,18 @@ async function main(): Promise<void> {
 
     published++
     const readmePath = join(dir, 'README.md')
-    try {
-      await stat(readmePath)
-    }
-    catch {
-      problems.push(`${manifest.name} has no README.md — npm renders "This package does not have a README"`)
+    if (!await stat(readmePath).then(() => true).catch(() => false)) {
+      withoutReadme.push(manifest.name)
       continue
     }
-    pages.push({ label: manifest.name, path: readmePath })
-
-    const readme = await readFile(readmePath, 'utf8')
-    problems.push(...installLineProblems(entry, readme, manifest.peerDependencies ?? {}))
-    problems.push(...missingInstallLine(entry, readme))
-    problems.push(...unrunnableFences(relative(ROOT, readmePath), readme))
+    pages.push({ label: manifest.name, path: readmePath, pkg: { entry, peers: manifest.peerDependencies ?? {} } })
   }
 
   // Not npm pages, but they are what a contributor opens to find out how to run
   // an example — and they were scaffold output naming create-svelte and linking
   // domains that have since moved (#294).
-  for (const entry of await readdir(EXAMPLES).catch(() => [])) {
-    const readme = join(EXAMPLES, entry, 'README.md')
+  for (const entry of await readdir(examples).catch(() => [])) {
+    const readme = join(examples, entry, 'README.md')
     if (await stat(readme).then(() => true).catch(() => false)) {
       pages.push({ label: `examples/${entry}`, path: readme })
     }
@@ -358,13 +403,54 @@ async function main(): Promise<void> {
   // makes Discussions the only route out of the three issue forms, so the Q&A
   // form is the page reached by everyone who does not have a concrete bug — the
   // largest first-time audience of the four (#407).
-  const GITHUB_DIR = join(ROOT, '.github')
   for (const dir of ['ISSUE_TEMPLATE', 'DISCUSSION_TEMPLATE']) {
-    for (const entry of await readdir(join(GITHUB_DIR, dir)).catch(() => [])) {
+    for (const entry of await readdir(join(root, '.github', dir)).catch(() => [])) {
       if (/\.ya?ml$/.test(entry)) {
-        pages.push({ label: `.github/${dir}/${entry}`, path: join(GITHUB_DIR, dir, entry) })
+        pages.push({ label: `.github/${dir}/${entry}`, path: join(root, '.github', dir, entry) })
       }
     }
+  }
+
+  return { pages, published, withoutReadme }
+}
+
+/**
+ * The floor: this check opened something, and found the packages it is about.
+ *
+ * A walk that reaches nothing compares nothing, reports nothing and exits 0 —
+ * which is the state every check in `scripts/` was in until #719. Nothing here
+ * is clever; it is the assertion that was missing.
+ */
+export function walkProblems({ pages, published }: Walk): string[] {
+  const problems: string[] = []
+  if (pages.length === 0) {
+    problems.push('this check found no pages to read at all — the walk has stopped reaching the tree')
+  }
+  if (published === 0) {
+    problems.push('this check found no published packages under packages/ — every npm page assertion below would pass by examining nothing')
+  }
+  return problems
+}
+
+async function main(): Promise<void> {
+  const workflowsOnDisk = new Set(await readdir(WORKFLOWS).catch(() => []))
+
+  const walk = await collect()
+  const { pages, published } = walk
+  const problems: string[] = walkProblems(walk)
+
+  for (const name of walk.withoutReadme) {
+    problems.push(`${name} has no README.md — npm renders "This package does not have a README"`)
+  }
+
+  for (const page of pages) {
+    if (!page.pkg) {
+      continue
+    }
+    const readme = await readFile(page.path, 'utf8')
+    problems.push(...installLineProblems(page.pkg.entry, readme, page.pkg.peers))
+    problems.push(...missingInstallLine(page.pkg.entry, readme))
+    problems.push(...unrunnableFences(relative(ROOT, page.path), readme))
   }
 
   for (const page of pages) {
@@ -397,6 +483,10 @@ async function main(): Promise<void> {
       if (!ALLOWED_HOSTS.has(host)) {
         problems.push(`${where} links ${host}, which is not an allowlisted host — add it to ALLOWED_HOSTS if it is deliberate`)
       }
+    }
+
+    for (const url of legacyOwnUrls(content)) {
+      problems.push(`${where} links ${url} — ${OWN_HOST} sets \`cleanUrls\`, so drop the \`.html\` and link the page Google is asked to index (#731)`)
     }
   }
 
