@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkScripts, floorProblems, hasFloor } from './check-walk-floors.ts'
+import { checkScripts, exportsFloor, floorIsExercised, floorProblems, hasFloor } from './check-walk-floors.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
 import { runCheck } from './run-check.ts'
 
@@ -25,14 +25,56 @@ describe('hasFloor', () => {
   })
 })
 
+describe('exportsFloor', () => {
+  it('sees an async floor', () => {
+    expect(exportsFloor('export async function walkProblems(): Promise<string[]> { return [] }')).toBe(true)
+  })
+
+  // `collect` is already async in `check-versions`, so a floor that has to
+  // `stat` its inputs is a matter of time. Reporting one as missing would push
+  // its author toward an exemption for a check that has one.
+  it('sees a floor declared as a const', () => {
+    expect(exportsFloor('export const walkProblems = (walk: Walk): string[] => []')).toBe(true)
+  })
+
+  it('does not count a floor read from another check as this one exporting it', () => {
+    expect(exportsFloor('import { walkProblems } from \'./check-publishable.ts\'')).toBe(false)
+  })
+})
+
+describe('floorIsExercised', () => {
+  it('is true when a spec importing the check reaches its floor', () => {
+    const specs = { 'check-a.spec.ts': 'import { collect, walkProblems } from \'./check-a.ts\'\nwalkProblems(collect(root))' }
+
+    expect(floorIsExercised('check-a.ts', specs)).toBe(true)
+  })
+
+  // The hole this closes. A floor that always returns an empty array satisfies
+  // every pattern in this file and can never produce a problem, and it is the
+  // shortest way past a failure someone reads as an obstacle.
+  it('is false when the check has a spec that never reaches the floor', () => {
+    const specs = { 'check-a.spec.ts': 'import { collect } from \'./check-a.ts\'\ncollect(root)' }
+
+    expect(floorIsExercised('check-a.ts', specs)).toBe(false)
+  })
+
+  it('does not accept another check\'s spec reaching its own floor', () => {
+    const specs = { 'check-b.spec.ts': 'import { walkProblems } from \'./check-b.ts\'' }
+
+    expect(floorIsExercised('check-a.ts', specs)).toBe(false)
+  })
+})
+
 describe('floorProblems', () => {
   const guarded = 'export function walkProblems(): string[] { return [] }'
+  const exercised = { 'check-a.spec.ts': 'import { walkProblems } from \'./check-a.ts\'' }
 
   it('is silent when every check is guarded or explained', () => {
     expect(floorProblems(
       ['check-a.ts', 'check-b.ts'],
       { 'check-a.ts': guarded, 'check-b.ts': 'nothing' },
       { 'check-b.ts': 'a reason' },
+      exercised,
     )).toEqual([])
   })
 
@@ -45,13 +87,13 @@ describe('floorProblems', () => {
   })
 
   it('names an exemption for a check that has since grown a floor', () => {
-    expect(floorProblems(['check-a.ts'], { 'check-a.ts': guarded }, { 'check-a.ts': 'a reason' })).toEqual([
+    expect(floorProblems(['check-a.ts'], { 'check-a.ts': guarded }, { 'check-a.ts': 'a reason' }, exercised)).toEqual([
       expect.stringContaining('check-a.ts has a floor now'),
     ])
   })
 
   it('names an exemption for a check that no longer exists', () => {
-    expect(floorProblems(['check-a.ts'], { 'check-a.ts': guarded }, { 'check-gone.ts': 'a reason' })).toEqual([
+    expect(floorProblems(['check-a.ts'], { 'check-a.ts': guarded }, { 'check-gone.ts': 'a reason' }, exercised)).toEqual([
       expect.stringContaining('WITHOUT_FLOOR names check-gone.ts, which is not a check'),
     ])
   })
@@ -60,6 +102,12 @@ describe('floorProblems', () => {
     expect(floorProblems(['check-a.ts'], { 'check-a.ts': 'nothing' }, { 'check-a.ts': '' })).toEqual([
       expect.stringContaining('check-a.ts neither asserts'),
       expect.stringContaining('with no reason'),
+    ])
+  })
+
+  it('names a floor that no spec reaches', () => {
+    expect(floorProblems(['check-a.ts'], { 'check-a.ts': guarded }, {}, {})).toEqual([
+      expect.stringContaining('check-a.ts exports a `walkProblems` that no spec reaches'),
     ])
   })
 

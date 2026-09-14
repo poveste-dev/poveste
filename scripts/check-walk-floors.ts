@@ -14,7 +14,15 @@
 // The exemptions are the interesting half. Each says why the question does not
 // apply, and each goes stale in a way this notices: name a check that no longer
 // exists, or one that has since grown a floor, and it fails rather than ageing
-// quietly. That is the shape `EXEMPT`, `ALLOWED` and `AFTER_BUILD` already use.
+// quietly.
+//
+// What it does *not* do, and `EXEMPT` and `ALLOWED` do: check the premise of
+// each reason. Those two verify the negation of their own — a package that
+// gains a `test` script, a workflow that stops pinning a version — because
+// their reasons are uniform. These are not. `check-recipes` is exempt because
+// it reports a missing section per recipe; delete those guards and this still
+// reports it as classified. The entries are held to being current, not to being
+// true, which is why each one names the thing to go and look at.
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -55,20 +63,55 @@ export function checkScripts(dir: string): string[] {
 }
 
 /**
- * Whether a check asserts that its own inputs were reached.
+ * Whether a check declares a floor of its own.
  *
- * Declarations only — an export of its own, or an import of another check's.
- * The first version of this matched the word anywhere, and so matched the
- * message four lines below telling an author to add one, which made this file
+ * Declarations only. The first version matched the word anywhere, and so
+ * matched the message below telling an author to add one, which made this file
  * report itself as guarded. A check that detects a thing by mentioning it is
  * the joke this whole issue is about.
+ *
+ * `async` and a `const` arrow both count: `collect` is already async in
+ * `check-versions`, so a floor that has to `stat` its inputs is a matter of
+ * time, and reporting one as missing would push its author toward an exemption
+ * for a check that has one.
  */
-export function hasFloor(source: string): boolean {
-  return /^export function walkProblems\(/m.test(source)
-    || /^import \{[^}]*\bwalkProblems\b[^}]*\} from '\.\/check-[\w-]+\.ts'$/m.test(source)
+export function exportsFloor(source: string): boolean {
+  return /^export (?:async )?function walkProblems\b/m.test(source)
+    || /^export const walkProblems\b/m.test(source)
 }
 
-export function floorProblems(checks: string[], sources: Record<string, string>, exempt: Record<string, string>): string[] {
+/** Whether a check reads the floor of the walk it shares with another check. */
+export function importsFloor(source: string): boolean {
+  return /^import \{[^}]*\bwalkProblems\b[^}]*\} from '\.\/check-[\w-]+\.ts'$/m.test(source)
+}
+
+/** Whether a check asserts that its own inputs were reached, either way. */
+export function hasFloor(source: string): boolean {
+  return exportsFloor(source) || importsFloor(source)
+}
+
+/**
+ * Whether a spec that imports this check also exercises its floor.
+ *
+ * Declaring a floor is not having one: `export function walkProblems() { return
+ * [] }` satisfies every pattern above, can never produce a problem, and is the
+ * shortest way past this check for anyone who reads its failure as an obstacle.
+ *
+ * Nothing static proves a function is able to fail, and this does not claim to.
+ * It raises the bar from *declared* to *reached by a spec*, which is where an
+ * empty floor stops being invisible and starts being something a reviewer is
+ * looking at. A stub with a spec that merely names it still passes — that is
+ * the residual, and it is a question for review rather than for a regex.
+ *
+ * Only owners are asked. A check that imports another's floor is covered by
+ * that check's spec, and asking twice would put the same fact in two places.
+ */
+export function floorIsExercised(check: string, specs: Record<string, string>): boolean {
+  const importsCheck = new RegExp(`from '\\./${check.replace(/\.ts$/, '')}\\.ts'`)
+  return Object.values(specs).some(spec => importsCheck.test(spec) && /\bwalkProblems\b/.test(spec))
+}
+
+export function floorProblems(checks: string[], sources: Record<string, string>, exempt: Record<string, string>, specs: Record<string, string> = {}): string[] {
   const problems: string[] = []
 
   if (checks.length === 0) {
@@ -76,7 +119,8 @@ export function floorProblems(checks: string[], sources: Record<string, string>,
   }
 
   for (const check of checks) {
-    const guarded = hasFloor(sources[check] ?? '')
+    const source = sources[check] ?? ''
+    const guarded = hasFloor(source)
     const reason = exempt[check]
 
     if (!guarded && !reason) {
@@ -84,6 +128,9 @@ export function floorProblems(checks: string[], sources: Record<string, string>,
     }
     if (guarded && reason) {
       problems.push(`${check} has a floor now, so its WITHOUT_FLOOR entry is stale — delete it`)
+    }
+    if (exportsFloor(source) && !floorIsExercised(check, specs)) {
+      problems.push(`${check} exports a \`walkProblems\` that no spec reaches — a floor nothing exercises is a declaration, and an empty one would pass every other assertion here`)
     }
   }
 
@@ -102,7 +149,12 @@ export function floorProblems(checks: string[], sources: Record<string, string>,
 function main(): void {
   const checks = checkScripts(SCRIPTS)
   const sources = Object.fromEntries(checks.map(name => [name, readFileSync(join(SCRIPTS, name), 'utf8')]))
-  const problems = floorProblems(checks, sources, WITHOUT_FLOOR)
+  const specs = Object.fromEntries(
+    readdirSync(SCRIPTS)
+      .filter(name => name.endsWith('.spec.ts'))
+      .map(name => [name, readFileSync(join(SCRIPTS, name), 'utf8')]),
+  )
+  const problems = floorProblems(checks, sources, WITHOUT_FLOOR, specs)
 
   if (problems.length > 0) {
     console.error('❌ A check could report success over an assertion that never ran:\n')
