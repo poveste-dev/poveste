@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
 import { afterEach, describe, expect, it } from 'vitest'
 import { collect, compareMirror, MIRRORS, walkProblems } from './check-mirrored-conformance.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+
+afterEach(removeTrees)
 
 const source = new Map([['Button.story.vue', 'a'], ['Grid.story.vue', 'b']])
 
@@ -90,40 +91,6 @@ describe('mIRRORS', () => {
 //
 // `collect(root, mirrors)` takes the real values as defaults, so these specs
 // point it at a throwaway tree without the check hard-coding anything.
-
-const trees: string[] = []
-
-/**
- * A tree on disk for the walk to read, as `path -> content`.
- *
- * A real directory rather than a mocked `fs`: the thing under test here is
- * whether the walk finds files, and a mock that answers `readdirSync` is an
- * assertion about the mock.
- */
-function tree(layout: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'poveste-mirrors-'))
-  trees.push(root)
-
-  for (const [path, content] of Object.entries(layout)) {
-    // A trailing slash is an empty directory. A `.keep` in it would not be the
-    // same thing: it is a file, so the walk has something to read and a floor
-    // on reach is satisfied by it.
-    if (path.endsWith('/')) {
-      mkdirSync(join(root, path), { recursive: true })
-      continue
-    }
-    mkdirSync(join(root, dirname(path)), { recursive: true })
-    writeFileSync(join(root, path), content)
-  }
-
-  return root
-}
-
-afterEach(() => {
-  for (const root of trees.splice(0)) {
-    rmSync(root, { recursive: true, force: true })
-  }
-})
 
 const PAIR = [{ source: 'src/conformance', mirror: 'mirror/conformance' }]
 

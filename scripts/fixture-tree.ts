@@ -15,12 +15,24 @@ import { dirname, join } from 'node:path'
 
 const made: string[] = []
 
-/** Writes `path -> content` under a fresh temporary root and returns it. */
+/**
+ * Writes `path -> content` under a fresh temporary root and returns it.
+ *
+ * A key ending in `/` is an empty directory, and its value is ignored. That is
+ * not a convenience: a floor on *reach* asks whether a walk found anything, and
+ * the only way to fail it is a directory that exists and holds nothing. A
+ * `.keep` inside one does not express it — a `.keep` is a file, so the walk has
+ * something to read and the floor is satisfied by it.
+ */
 export function tree(layout: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), 'poveste-check-'))
   made.push(root)
 
   for (const [path, content] of Object.entries(layout)) {
+    if (path.endsWith('/')) {
+      mkdirSync(join(root, path), { recursive: true })
+      continue
+    }
     mkdirSync(join(root, dirname(path)), { recursive: true })
     writeFileSync(join(root, path), content)
   }
