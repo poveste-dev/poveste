@@ -46,6 +46,22 @@ const REPORT_SCRIPT = 'release:report'
  */
 export const EXCLUDED: Record<string, string> = {}
 
+/**
+ * Steps the chain runs *after* the build, so the pre-build report cannot cover
+ * them, and why.
+ *
+ * The report is what someone reads instead of the chain, and one that quietly
+ * covers eleven of the twelve things it used to is the `100 skipped` shape
+ * again: a clean run reading as "all of it is clean". So the gap is named in
+ * the success line rather than left to whoever diffs the pipeline.
+ *
+ * Keyed by step so an entry that stops being true fails instead of ageing: the
+ * step has to still be in the chain, and still be after the build.
+ */
+export const AFTER_BUILD: Record<string, string> = {
+  'lint:gate': 'type-aware rules cannot resolve `@poveste/*` until `dist` exists, so a pre-build lint passes over the one thing it cannot see (#546)',
+}
+
 /** Task names declared under `tasks:`. */
 export function declaredTasks(workspace: string): string[] {
   const block = /^tasks:\n((?:[ \t].*\n|\n)*)/m.exec(workspace)?.[1] ?? ''
@@ -70,10 +86,25 @@ export function beforeBuild(steps: string[]): string[] {
   return build === -1 ? steps : steps.slice(0, build)
 }
 
+/**
+ * Everything after `build`, which is where the pre-build report must not reach.
+ *
+ * A step that needs a built tree cannot be in a pipeline that runs before one.
+ * `lint` moved across that line when `ts/no-deprecated` turned out to be blind
+ * to cross-package deprecations on a cold tree (#546), and nothing here would
+ * have noticed it staying in the report: the run would lint an unbuilt
+ * workspace and pass, which is the same green-over-nothing this file exists for.
+ */
+export function afterBuild(steps: string[]): string[] {
+  const build = steps.indexOf('build')
+  return build === -1 ? [] : steps.slice(build + 1)
+}
+
 export function taskGraphProblems(
   workspace: string,
   scripts: Record<string, string>,
   excluded: Record<string, string>,
+  afterBuildNotes: Record<string, string>,
 ): string[] {
   const problems: string[] = []
   const tasks = declaredTasks(workspace)
@@ -89,7 +120,10 @@ export function taskGraphProblems(
     problems.push(`\`release:check\` runs ${step} before the build, but \`pipelines.${PIPELINE}\` does not — the report would pass while the gate fails`)
   }
 
+  const built = afterBuild(chain)
+
   for (const step of pipeline) {
+    if (built.includes(step)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which \`release:check\` runs after the build — the report would run it against an unbuilt tree and pass`)
     if (!tasks.includes(step)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which has no entry under \`tasks:\``)
     if (!(step in scripts)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which is not a root script — pnpm would skip it and still exit 0`)
   }
@@ -101,6 +135,12 @@ export function taskGraphProblems(
   for (const step of Object.keys(excluded)) {
     if (!required.includes(step)) problems.push(`EXCLUDED names ${step}, which \`release:check\` no longer runs before the build — delete the entry`)
     if (pipeline.includes(step)) problems.push(`EXCLUDED names ${step}, which is in the pipeline anyway — one of the two is wrong`)
+  }
+
+  for (const [step, reason] of Object.entries(afterBuildNotes)) {
+    if (!reason) problems.push(`AFTER_BUILD names ${step} with no reason — an unexplained gap in the report is the gap this file is about`)
+    if (!chain.includes(step)) problems.push(`AFTER_BUILD names ${step}, which \`release:check\` no longer runs at all — delete the entry`)
+    else if (!built.includes(step)) problems.push(`AFTER_BUILD names ${step}, which \`release:check\` now runs before the build — it belongs in \`pipelines.${PIPELINE}\`, not here`)
   }
 
   const report = scripts[REPORT_SCRIPT] ?? ''
@@ -125,7 +165,7 @@ export function taskGraphProblems(
 function main(): void {
   const workspace = readFileSync(join(ROOT, WORKSPACE), 'utf8')
   const { scripts } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
-  const problems = taskGraphProblems(workspace, scripts, EXCLUDED)
+  const problems = taskGraphProblems(workspace, scripts, EXCLUDED, AFTER_BUILD)
 
   if (problems.length > 0) {
     console.error('❌ The task graph and the scripts it mirrors disagree:\n')
@@ -135,7 +175,9 @@ function main(): void {
   }
 
   const covered = pipelineSteps(workspace, PIPELINE).length
-  console.log(`✅ ${covered} pre-build checks declared as tasks and named in \`pipelines.${PIPELINE}\`, matching \`release:check\``)
+  const absent = Object.keys(AFTER_BUILD)
+  const gap = absent.length ? `. ${REPORT_SCRIPT} does not cover ${absent.join(', ')}: run after the build` : ''
+  console.log(`✅ ${covered} pre-build checks declared as tasks and named in \`pipelines.${PIPELINE}\`, matching \`release:check\`${gap}`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

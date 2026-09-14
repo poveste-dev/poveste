@@ -86,8 +86,6 @@ overrides:
 # #716 and lands behind a measurement, because a wrong cache key ships a stale
 # result and a green run is exactly what that looks like.
 tasks:
-  lint:
-    cache: false
   test:tags:
     cache: false
   test:versions:
@@ -113,5 +111,11 @@ tasks:
   test:task-graph:
     cache: false
 
+# `release:report` runs this, and it runs before the build — so `lint` is not in
+# it. Not an oversight: `ts/no-deprecated` is type-aware and cannot resolve
+# across a package boundary until `dist` exists, so linting here would report a
+# tidy pass over the one thing it cannot see (#546). `check-task-graph` keeps
+# this list and the `&&` chain in agreement, and names the gap in its own output
+# so a clean report is not read as "lint is clean".
 pipelines:
-  checks: [lint, test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]
+  checks: [test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]

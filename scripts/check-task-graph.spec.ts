@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { beforeBuild, chainSteps, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
+import { afterBuild, beforeBuild, chainSteps, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
 
 const WORKSPACE = `packages:
   - 'packages/*'
@@ -63,23 +63,69 @@ describe('beforeBuild', () => {
   })
 })
 
+describe('afterBuild', () => {
+  it('is everything past the build', () => {
+    expect(afterBuild(['lint', 'build', 'test:smoke'])).toEqual(['test:smoke'])
+  })
+
+  // Nothing is "after the build" when there is no build, so nothing can be
+  // wrongly reported as needing one.
+  it('is empty when nothing builds', () => {
+    expect(afterBuild(['lint'])).toEqual([])
+  })
+})
+
 describe('taskGraphProblems', () => {
+  // The drift #546 would otherwise have introduced: `lint` moved past the build
+  // because a type-aware rule cannot resolve workspace types on a cold tree, and
+  // nothing stopped it staying in a report that runs before one. The report
+  // would lint an unbuilt workspace and pass.
+  // The report is read instead of the chain, so a gap in it has to be stated.
+  // These three keep the statement true rather than merely present.
+  it('catches an AFTER_BUILD note for a step the chain no longer runs', () => {
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { 'test:gone': 'a reason' }, {})).toEqual([
+      expect.stringContaining('AFTER_BUILD names test:gone, which `release:check` no longer runs at all'),
+    ])
+  })
+
+  it('catches an AFTER_BUILD note for a step that moved back before the build', () => {
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { lint: 'a reason' }, {})).toEqual([
+      expect.stringContaining('AFTER_BUILD names lint, which `release:check` now runs before the build'),
+    ])
+  })
+
+  it('catches an AFTER_BUILD note with no reason', () => {
+    const scripts = { ...SCRIPTS, 'release:check': 'pnpm run test:tags && pnpm run build && pnpm run lint' }
+
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, { lint: '' }, {})).toContainEqual(
+      expect.stringContaining('AFTER_BUILD names lint with no reason'),
+    )
+  })
+
+  it('catches a pipeline step the chain runs after the build', () => {
+    const scripts = { ...SCRIPTS, 'release:check': 'pnpm run test:tags && pnpm run build && pnpm run lint' }
+
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {}, {})).toEqual([
+      expect.stringContaining('names lint, which `release:check` runs after the build'),
+    ])
+  })
+
   it('is empty when the graph matches the chain', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {})).toEqual([])
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, {})).toEqual([])
   })
 
   it('catches a pre-build step the report would not cover', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run lint && pnpm run test:tags && pnpm run test:mirrors && pnpm run build' }
-    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([expect.stringContaining('test:mirrors')])
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([expect.stringContaining('test:mirrors')])
   })
 
   it('accepts a pre-build step that is excluded with a reason', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run lint && pnpm run test:tags && pnpm run test:mirrors && pnpm run build' }
-    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' })).toEqual([])
+    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' }, {})).toEqual([])
   })
 
   it('catches a stale exclusion', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, { 'test:gone': 'why' })).toEqual([expect.stringContaining('delete the entry')])
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, { 'test:gone': 'why' }, {})).toEqual([expect.stringContaining('delete the entry')])
   })
 
   // Without the flag pnpm leaves the root out, skips every root script and
@@ -87,29 +133,29 @@ describe('taskGraphProblems', () => {
   // failures in the tree.
   it('catches a report that would skip every root script and pass', () => {
     const scripts = { ...SCRIPTS, 'release:report': 'pnpm pipeline checks --full --no-cache' }
-    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([expect.stringContaining('--include-workspace-root')])
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([expect.stringContaining('--include-workspace-root')])
   })
 
   // pnpm selects only what changed since the base by default. It warns and
   // expands when a root file changes, but a warning is not a guarantee.
   it('catches a report left on the affected-since-base selection', () => {
     const scripts = { ...SCRIPTS, 'release:report': 'pnpm pipeline checks --no-cache --include-workspace-root' }
-    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([expect.stringContaining('--full')])
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([expect.stringContaining('--full')])
   })
 
   it('catches caching being switched on before its measurement', () => {
     const scripts = { ...SCRIPTS, 'release:report': 'pnpm pipeline checks --full --include-workspace-root' }
-    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([expect.stringContaining('--no-cache')])
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([expect.stringContaining('--no-cache')])
   })
 
   it('catches the report script being deleted while the graph stays', () => {
     const { 'release:report': _, ...scripts } = SCRIPTS
-    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([expect.stringContaining('never run')])
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([expect.stringContaining('never run')])
   })
 
   it('catches a task that is not a root script', () => {
     const workspace = WORKSPACE.replace('tasks:\n', 'tasks:\n  test:imaginary:\n    cache: false\n')
-    expect(taskGraphProblems(workspace, SCRIPTS, {})).toEqual([expect.stringContaining('test:imaginary')])
+    expect(taskGraphProblems(workspace, SCRIPTS, {}, {})).toEqual([expect.stringContaining('test:imaginary')])
   })
 })
 
