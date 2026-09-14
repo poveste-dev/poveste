@@ -34,6 +34,28 @@ describe('didNotRun', () => {
   it('does not fire on a check that merely mentions a module or a path', () => {
     expect(didNotRun('docs/guide/index.md names a module that no longer exists')).toBeUndefined()
   })
+
+  // The dangerous direction, and the one a hand-written message does not reach.
+  // `check-publishable` splices a failed `pnpm pack`'s stderr into a finding
+  // verbatim, so a malformed fixture package — the defect a spec is asserting —
+  // produces a bullet carrying the runtime's own vocabulary. Classifying on it
+  // would report a real verdict as a broken worktree.
+  it('does not classify runtime text a check reported as a finding', () => {
+    const reported = [
+      '❌ This release would half-publish or ship uninstallable packages:',
+      '  • @fixture/one could not be packed to verify it: Command failed: pnpm pack',
+      '  • ENOENT: no such file or directory, open \'/tmp/fx/node_modules/.bin/tar\'',
+    ].join('\n')
+
+    expect(didNotRun(reported)).toBeUndefined()
+  })
+
+  // …while the same words on their own line, which is where the runtime puts
+  // them when the check never got going, still classify.
+  it('still classifies the same words when the runtime wrote them', () => {
+    expect(didNotRun('node:internal/modules/run_main\nError [ERR_MODULE_NOT_FOUND]: Cannot find module'))
+      .toBe('a module it imports could not be resolved')
+  })
 })
 
 describe('runCheck', () => {
@@ -65,5 +87,11 @@ describe('runCheck', () => {
   // the family of defect #719 is about.
   it('tells the reader what to do rather than skipping', () => {
     expect(() => runCheck('check-does-not-exist.ts')).toThrow(/pnpm install/)
+  })
+
+  // A check that exited 0 has said something about the tree, and no diagnostic
+  // may overrule it.
+  it('never reclassifies a check that ran to a clean verdict', () => {
+    expect(runCheck('check-mirrored-conformance.ts').status).toBe(0)
   })
 })

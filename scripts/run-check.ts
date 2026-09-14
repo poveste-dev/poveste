@@ -48,10 +48,29 @@ export interface CheckRun {
   stderr: string
 }
 
-/** The reason a run is not a result, or `undefined` when it is one. */
+/**
+ * The reason a run is not a result, or `undefined` when it is one.
+ *
+ * Reads only the lines a check did *not* write as findings. Every check reports
+ * its problems as `  • …`, and those lines carry text out of the tree under
+ * test — `check-publishable` splices a failed `pnpm pack`'s stderr into one
+ * verbatim. A malformed fixture package is a verdict, and its message can
+ * mention `ENOENT` and a `node_modules` path while being exactly the defect the
+ * spec is asserting. Classifying on it would hide a real failure behind a
+ * diagnosis of the environment.
+ *
+ * The bullet is the repository's own problem format, shared by all nineteen
+ * checks, rather than any check's wording — so a reworded message stays
+ * excluded and the guarantee from #725's review holds.
+ */
 export function didNotRun(output: string): string | undefined {
+  const runtime = output
+    .split('\n')
+    .filter(line => !/^\s*•/.test(line))
+    .join('\n')
+
   for (const { pattern, because } of DID_NOT_RUN) {
-    const match = pattern.exec(output)
+    const match = pattern.exec(runtime)
     if (match) {
       return because.replace('$1', match[1] ?? '')
     }
@@ -81,8 +100,12 @@ export function runCheck(script: string, args: string[] = []): CheckRun {
     throw new Error(`${script} was killed by ${result.signal ?? 'a signal'} rather than exiting`)
   }
 
-  const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
-  const reason = didNotRun(output)
+  // stderr only, and only when the check produced no verdict. A check that ran
+  // to an answer has said something about the tree, and nothing here may
+  // overrule that; a check that could not run exits non-zero having said
+  // nothing about it.
+  const output = result.stderr ?? ''
+  const reason = result.status === 0 ? undefined : didNotRun(output)
   if (reason) {
     throw new Error(
       `${script} did not run to a verdict: ${reason}.
