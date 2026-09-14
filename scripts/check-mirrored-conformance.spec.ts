@@ -150,7 +150,7 @@ describe('collect', () => {
       'mirror/conformance/fixtures/Thing.vue': 'b',
     })
 
-    expect(collect(root, PAIR).examined).toEqual([
+    expect(collect(root, PAIR).pairs[0].examined).toEqual([
       'src/conformance/Button.story.vue',
       'src/conformance/fixtures/Thing.vue',
       'mirror/conformance/Button.story.vue',
@@ -177,7 +177,7 @@ describe('collect', () => {
   it('reports a directory that is not on disk rather than treating it as empty', () => {
     const root = tree({ 'src/conformance/Button.story.vue': 'a' })
 
-    expect(collect(root, PAIR).missing).toEqual(['mirror/conformance'])
+    expect(collect(root, PAIR).pairs[0].missing).toEqual(['mirror/conformance'])
   })
 })
 
@@ -187,18 +187,54 @@ describe('walkProblems', () => {
   // equal to empty and the check reports success over an assertion that never
   // ran. Narrowing the real walk to one extension takes the count from 75 to 0
   // with every other assertion in this file still green.
-  it('fails when both directories exist and neither holds a file', () => {
+  it('fails when both directories of a pair exist and neither holds a file', () => {
     const root = tree({ 'src/conformance/': '', 'mirror/conformance/': '' })
 
-    expect(walkProblems(collect(root, PAIR))).toEqual([expect.stringContaining('stopped reaching')])
+    expect(walkProblems(collect(root, PAIR))).toEqual([
+      expect.stringContaining('src/conformance and mirror/conformance both exist and neither holds a file'),
+    ])
+  })
+
+  // The reason it is per pair. `MIRRORS` has three entries, and an aggregate
+  // floor is held above zero by the other two while a whole framework's set
+  // goes unexamined — the floor silent for the failure it was written for.
+  it('names the empty pair even while another pair is healthy', () => {
+    const root = tree({
+      'a/src/One.story.vue': 'x',
+      'a/mirror/One.story.vue': 'x',
+      'b/src/': '',
+      'b/mirror/': '',
+    })
+    const pairs = [{ source: 'a/src', mirror: 'a/mirror' }, { source: 'b/src', mirror: 'b/mirror' }]
+
+    expect(walkProblems(collect(root, pairs))).toEqual([
+      expect.stringContaining('b/src and b/mirror both exist and neither holds a file'),
+    ])
+  })
+
+  it('reports three empty pairs as three problems, not one', () => {
+    const root = tree({ 'a/src/': '', 'a/mirror/': '', 'b/src/': '', 'b/mirror/': '', 'c/src/': '', 'c/mirror/': '' })
+    const pairs = ['a', 'b', 'c'].map(name => ({ source: `${name}/src`, mirror: `${name}/mirror` }))
+
+    expect(walkProblems(collect(root, pairs))).toHaveLength(3)
   })
 
   // The failure a floor on *reach* does not catch, and the one that actually
   // happened: narrowing the selection took the real check from 75 files
   // compared to 36, exit 0, every other assertion green. Any one of those 36
   // satisfies "it examined something".
-  it('fails when the directories held files the walk did not compare', () => {
-    expect(walkProblems({ pairs: [], missing: [], examined: ['src/conformance/Button.story.vue'], offered: 3 })).toEqual([
+  it('fails when a pair held files the walk did not compare', () => {
+    const pair = {
+      source: 'src/conformance',
+      mirror: 'mirror/conformance',
+      sourceFiles: new Map(),
+      mirrorFiles: new Map(),
+      missing: [],
+      examined: ['src/conformance/Button.story.vue'],
+      offered: 3,
+    }
+
+    expect(walkProblems({ pairs: [pair] })).toEqual([
       expect.stringContaining('hold 3 files and the walk compared 1'),
     ])
   })
@@ -217,20 +253,24 @@ describe('walkProblems', () => {
 
     const walk = collect(root, PAIR)
 
-    expect(walk.examined).toHaveLength(walk.offered)
+    expect(walk.pairs[0].examined).toHaveLength(walk.pairs[0].offered)
     expect(walkProblems(walk)).toEqual([])
   })
 
   // A missing directory is already reported by name, and is a different fault
   // with a different fix. Saying both would send the reader to the wrong one.
   it('says only that a directory is missing when one is', () => {
-    expect(walkProblems({ pairs: [], missing: ['gone'], examined: [], offered: 0 })).toEqual([
-      expect.stringContaining('gone does not exist'),
+    const root = tree({ 'src/conformance/Button.story.vue': 'a' })
+
+    expect(walkProblems(collect(root, PAIR))).toEqual([
+      expect.stringContaining('mirror/conformance does not exist'),
     ])
   })
 
   it('is silent when the walk read something', () => {
-    expect(walkProblems({ pairs: [], missing: [], examined: ['src/conformance/Button.story.vue'], offered: 1 })).toEqual([])
+    const root = tree({ 'src/conformance/One.story.vue': 'a', 'mirror/conformance/One.story.vue': 'a' })
+
+    expect(walkProblems(collect(root, PAIR))).toEqual([])
   })
 })
 

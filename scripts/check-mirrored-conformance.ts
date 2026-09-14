@@ -130,16 +130,16 @@ export function compareMirror(sourceFiles: Map<string, string>, mirrorFiles: Map
 export interface Pair extends Mirror {
   sourceFiles: Map<string, string>
   mirrorFiles: Map<string, string>
+  /** This pair's directories that are not on disk. */
+  missing: string[]
+  /** Files opened for this pair, as `<dir>/<name>`. */
+  examined: string[]
+  /** How many files this pair's two directories held, compared or not. */
+  offered: number
 }
 
 export interface Walk {
   pairs: Pair[]
-  /** Directories `mirrors` names that are not on disk. */
-  missing: string[]
-  /** Every file opened, as `<dir>/<name>`. */
-  examined: string[]
-  /** How many files those directories held, compared or not. */
-  offered: number
 }
 
 /**
@@ -152,56 +152,76 @@ export interface Walk {
  */
 export function collect(root = ROOT, mirrors: Mirror[] = MIRRORS): Walk {
   const pairs: Pair[] = []
-  const missing: string[] = []
-  const examined: string[] = []
-  let offered = 0
-
-  const read = (dir: string): Map<string, string> => {
-    try {
-      statSync(join(root, dir))
-    }
-    catch {
-      missing.push(dir)
-      return new Map()
-    }
-    const selection = filesIn(join(root, dir))
-    offered += selection.offered
-    examined.push(...selection.files.map(name => `${dir}/${name}`))
-    return new Map(selection.files.map(name => [name, readFileSync(join(root, dir, name), 'utf8')]))
-  }
 
   for (const { source, mirror } of mirrors) {
-    pairs.push({ source, mirror, sourceFiles: read(source), mirrorFiles: read(mirror) })
+    const missing: string[] = []
+    const examined: string[] = []
+    let offered = 0
+
+    const read = (dir: string): Map<string, string> => {
+      try {
+        statSync(join(root, dir))
+      }
+      catch {
+        missing.push(dir)
+        return new Map()
+      }
+      const selection = filesIn(join(root, dir))
+      offered += selection.offered
+      examined.push(...selection.files.map(name => `${dir}/${name}`))
+      return new Map(selection.files.map(name => [name, readFileSync(join(root, dir, name), 'utf8')]))
+    }
+
+    pairs.push({ source, mirror, sourceFiles: read(source), mirrorFiles: read(mirror), missing, examined, offered })
   }
 
-  return { pairs, missing, examined, offered }
+  return { pairs }
 }
 
 /**
  * What the walk has to be able to say about itself before anything trusts it.
  *
- * "It examined something" is a floor on *reach*, and reach is not the failure.
- * Narrowing `filesIn` to one extension takes this check from 75 files compared
- * to 36 — still green, still reporting success, and a reach floor is satisfied
- * by any one of the 36. So the assertion is coverage: every file the
- * directories held was compared.
+ * Both assertions are **per pair**, because `MIRRORS` has three entries and an
+ * aggregate hides two thirds of this check. If the svelte5 pair went empty, the
+ * two vue3 pairs would keep any aggregate well clear of zero and the success
+ * line would report a count missing a whole framework — the floor silent for
+ * exactly the failure it was written for, one pair down instead of three.
  *
- * The reach floor stays underneath it, for directories that exist and hold
- * nothing at all — where a coverage assertion is true and worthless.
+ * Reach — a pair whose directories both exist and hold no file has stopped
+ * reaching its conformance set.
+ *
+ * Coverage — "it examined something" is satisfied by any one file, so it is
+ * not enough on its own — narrowing the selection to one extension took this
+ * check from 75 files compared to 36, at exit 0, with every other assertion
+ * green. So every file a pair holds must be compared. `filesIn` counts what was
+ * offered from the dirent rather than from the expression that decides what to
+ * keep: a count derived from that expression agrees with it by construction,
+ * including when it is wrong. It is a second measurement taken in the same run,
+ * not a baseline anyone has to maintain against a set that grows.
+ *
+ * What neither catches is a selection narrowed *and* a counter moved with it.
+ * Nothing inside one function defends against that.
+ *
+ * The pair's directories are checked for existence first and reported by name,
+ * because a moved directory is a different fault with a different fix.
  */
-export function walkProblems({ missing, examined, offered }: Walk): string[] {
-  const problems = missing.map(dir => `${dir} does not exist — a mirrored set has moved, and this check no longer describes the tree`)
+export function walkProblems({ pairs }: Walk): string[] {
+  const problems: string[] = []
 
-  if (missing.length > 0) {
-    return problems
-  }
+  for (const { source, mirror, missing, examined, offered } of pairs) {
+    if (missing.length > 0) {
+      problems.push(...missing.map(dir => `${dir} does not exist — a mirrored set has moved, and this check no longer describes the tree`))
+      continue
+    }
 
-  if (examined.length === 0) {
-    problems.push('every mirrored directory exists and none of them held a file this check could read — the walk has stopped reaching the conformance sets')
-  }
+    if (examined.length === 0) {
+      problems.push(`${source} and ${mirror} both exist and neither holds a file — this pair has stopped reaching its conformance set`)
+      continue
+    }
 
-  if (examined.length !== offered) {
-    problems.push(`the mirrored directories hold ${offered} files and the walk compared ${examined.length} of them — the rest left the comparison without saying so`)
+    if (examined.length !== offered) {
+      problems.push(`${source} and ${mirror} hold ${offered} files and the walk compared ${examined.length} of them — the rest left the comparison without saying so`)
+    }
   }
 
   return problems
