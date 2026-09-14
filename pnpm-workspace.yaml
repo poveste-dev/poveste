@@ -75,3 +75,43 @@ overrides:
   # that state fail rather than commit. `picomatch@4` is unaffected and separate.
   picomatch@^2: ^2.3.2
   '@humanfs/node': ^0.16.8
+
+# The checks that run before the build, declared as a task graph so one run
+# reports every failure instead of stopping at the first (#716).
+#
+# The `&&` chain in `release:check` is still the gate that decides. This is a
+# report: additive, and revertible by deleting this block and one script.
+#
+# `cache: false` on every task is deliberate. Task result caching is step two of
+# #716 and lands behind a measurement, because a wrong cache key ships a stale
+# result and a green run is exactly what that looks like.
+tasks:
+  lint:
+    cache: false
+  test:tags:
+    cache: false
+  test:versions:
+    cache: false
+  test:node-versions:
+    cache: false
+  test:package-tests:
+    cache: false
+  test:readmes:
+    cache: false
+  test:config-reference:
+    cache: false
+  test:example-wiring:
+    cache: false
+  test:mirrors:
+    cache: false
+  test:conformance-config:
+    cache: false
+  test:preview-position:
+    cache: false
+  test:recipes:
+    cache: false
+  test:task-graph:
+    cache: false
+
+pipelines:
+  checks: [lint, test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]
