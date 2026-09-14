@@ -156,45 +156,63 @@ jobs:
             pnpm-v1-${{ runner.os }}-
 
       - name: Install dependencies
+        id: install
         run: pnpm install
 
+      # From here to `Test the release scripts` nothing needs a build, so one
+      # failing check must not skip the eleven after it: a run that could name
+      # twelve problems otherwise costs twelve cycles to read (#720).
+      #
+      # Paired with the install rather than standing alone. `!cancelled()`
+      # suppresses the implicit `success()` in full, including the dependency on
+      # the step above, so a failed install would run all twelve and fail all
+      # twelve on the same missing `node_modules`.
       - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run lint
 
       # Cheap and needs nothing built, so it runs before the build rather than
       # next to the smoke test.
       - name: Check the version tables
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:versions
 
       # Cheap and manifest-only, so it sits with the other front-of-queue checks
       # rather than after the build.
       - name: Check CI reads .node-version
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:node-versions
 
       - name: Check every published package declares a test script
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:package-tests
 
       - name: Check the npm package pages
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:readmes
 
       # On the PR that adds a config key, not at release time: a gate that only
       # runs in `release:check` blocks the release on a docs task instead of the
       # change that introduced it (#152).
       - name: Check the config reference
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:config-reference
 
       # The example harness is three lists that have to agree, and nothing compared
       # them until a job died on its own unknown-name guard before running a test
       # (#384). Cheap and needs nothing built.
       - name: Check the example harness wiring
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:example-wiring
 
       - name: Check mirrored conformance sets
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:mirrors
 
       # The other half of the contract: a book can carry every shared story and
       # still fail 18 specs on a preset it did not declare (#540).
       - name: Check the conformance config
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:conformance-config
 
       # Four hand-found instances of one rule (#328, #595, #596, #600), none of
@@ -203,19 +221,26 @@ jobs:
       # preview in more than one branch, and the condition is what separates
       # them (#607).
       - name: Check no layout choice moves the preview
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:preview-position
 
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:recipes
 
       - name: Test the release scripts
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:scripts
 
       # The docs site is not part of the package build, so it gets its own. Both
       # defects this covers answered HTTP 200 while broken (#288, #343), which is
       # why the check reads the build instead of probing it.
+      #
+      # The guard above stops here. This and everything after it depends on a
+      # build, and a status function would report each dependent step's own
+      # missing-input error on top of the failure that is already the reason.
       - name: Build the docs site
         run: pnpm run docs:build
 
