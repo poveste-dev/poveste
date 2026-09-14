@@ -43,3 +43,61 @@ export function buildCounts(storyFiles: ServerStoryFile[]): BuildCounts {
 
   return counts
 }
+
+/**
+ * Whether the build produced anything a reader can open.
+ *
+ * Stated once because two callers ask it: the message below, and the colour
+ * `build.ts` prints that message in. Reading it back off the message instead —
+ * one line means green — ties the colour to the shape of an unrelated decision,
+ * and a second success line would turn a good build yellow.
+ */
+export function builtSomething(counts: BuildCounts): boolean {
+  return counts.stories > 0 || counts.docs > 0
+}
+
+/**
+ * What a finished build says it produced.
+ *
+ * A separate function because the interesting case is a claim rather than a
+ * number: `✅ Built 0 stories (0 variants)` is true of a working build in a
+ * project with nothing to build, and it is what a first-time reader gets from
+ * the first command the guide tells them to run (#624). Nothing in it says
+ * where the build looked, so there is no next step in it either.
+ *
+ * Nothing built is two states, not one, and the likelier is the second: a
+ * reader who followed the guide has a story file and has not put a `<Story>`
+ * in it yet. Those files matched, so "nothing matched" is false of them, and
+ * "write a story file" asks for the one they already wrote.
+ *
+ * Not an error. A book with no stories is a valid thing to build — scaffolding
+ * is exactly that state — so this changes what is said, not the exit code.
+ *
+ * Documents count as content: a book of `.story.md` pages with no variants has
+ * something in it, and telling its author nothing was found would be wrong.
+ */
+export function buildSummary(counts: BuildCounts, seconds: number, storyMatch: string[]): string[] {
+  const took = `in ${seconds}s`
+  const globs = storyMatch.join(', ')
+
+  if (!builtSomething(counts)) {
+    if (counts.empty.length) {
+      const files = `${counts.empty.length} file${counts.empty.length === 1 ? '' : 's'}`
+      return [
+        `Built 0 stories ${took} — ${files} matched ${globs} and produced no story`,
+        'A story file needs a <Story> in it: https://poveste.dev/guide/',
+      ]
+    }
+
+    return [
+      `Built 0 stories ${took} — nothing matched ${globs}`,
+      'Write a story file and run this again: https://poveste.dev/guide/',
+    ]
+  }
+
+  const stories = `${counts.stories} stor${counts.stories === 1 ? 'y' : 'ies'}`
+  const variants = `${counts.variants} variant${counts.variants === 1 ? '' : 's'}`
+  const docs = counts.docs ? ` and ${counts.docs} document${counts.docs === 1 ? '' : 's'}` : ''
+
+  return [`✅ Built ${stories} (${variants})${docs} ${took}`]
+}
