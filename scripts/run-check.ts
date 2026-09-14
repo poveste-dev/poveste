@@ -37,7 +37,6 @@ import process from 'node:process'
 const DID_NOT_RUN: Array<{ pattern: RegExp, because: string }> = [
   { pattern: /spawnSync (\S+) ENOENT/, because: 'it shells out to `$1`, which is not on PATH' },
   { pattern: /\bERR_MODULE_NOT_FOUND\b|Cannot find module/, because: 'a module it imports could not be resolved' },
-  { pattern: /ENOENT.+node_modules/, because: 'something under `node_modules` was not there' },
   { pattern: /command not found/, because: 'a command it runs is not installed' },
 ]
 
@@ -51,26 +50,26 @@ export interface CheckRun {
 /**
  * The reason a run is not a result, or `undefined` when it is one.
  *
- * Reads only the lines a check did *not* write as findings. Every check reports
- * its problems as `  • …`, and those lines carry text out of the tree under
- * test — `check-publishable` splices a failed `pnpm pack`'s stderr into one
- * verbatim. A malformed fixture package is a verdict, and its message can
- * mention `ENOENT` and a `node_modules` path while being exactly the defect the
- * spec is asserting. Classifying on it would hide a real failure behind a
- * diagnosis of the environment.
+ * Narrow by *signature* rather than by where in the output it appears. The
+ * first version of this also matched `ENOENT` near a `node_modules` path, which
+ * is text a check can legitimately report about the tree under test —
+ * `check-publishable` splices a failed `pnpm pack`'s stderr into a finding
+ * verbatim — so a real verdict could be reported as a broken worktree.
  *
- * The bullet is the repository's own problem format, shared by all nineteen
- * checks, rather than any check's wording — so a reworded message stays
- * excluded and the guarantee from #725's review holds.
+ * Filtering the check's own findings out was the wrong answer to that, and
+ * measurably so: `check-publishable` *catches* its spawn failures and reports
+ * them as findings, so excluding findings excluded the one case this exists
+ * for. Dropping the loose pattern fixes it where it went wrong.
+ *
+ * The three that remain are the runtime's own vocabulary, emitted by Node or
+ * the shell and never by a check about a tree: a child process that would not
+ * start, a module that would not load, a command that is not installed. None is
+ * a sentence a check author writes, so the guarantee from #725's review holds —
+ * rewording a check's message cannot turn a green spec red.
  */
 export function didNotRun(output: string): string | undefined {
-  const runtime = output
-    .split('\n')
-    .filter(line => !/^\s*•/.test(line))
-    .join('\n')
-
   for (const { pattern, because } of DID_NOT_RUN) {
-    const match = pattern.exec(runtime)
+    const match = pattern.exec(output)
     if (match) {
       return because.replace('$1', match[1] ?? '')
     }

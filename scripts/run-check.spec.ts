@@ -35,12 +35,12 @@ describe('didNotRun', () => {
     expect(didNotRun('docs/guide/index.md names a module that no longer exists')).toBeUndefined()
   })
 
-  // The dangerous direction, and the one a hand-written message does not reach.
-  // `check-publishable` splices a failed `pnpm pack`'s stderr into a finding
-  // verbatim, so a malformed fixture package — the defect a spec is asserting —
-  // produces a bullet carrying the runtime's own vocabulary. Classifying on it
-  // would report a real verdict as a broken worktree.
-  it('does not classify runtime text a check reported as a finding', () => {
+  // The direction a hand-written message does not reach: `check-publishable`
+  // splices a failed `pnpm pack`'s stderr into a finding verbatim, so a
+  // malformed fixture package — the defect a spec is asserting — reports paths
+  // under `node_modules`. An earlier version matched `ENOENT` near that word
+  // and would have called this a broken worktree.
+  it('does not classify a pack failure a check reported about the tree', () => {
     const reported = [
       '❌ This release would half-publish or ship uninstallable packages:',
       '  • @fixture/one could not be packed to verify it: Command failed: pnpm pack',
@@ -50,11 +50,13 @@ describe('didNotRun', () => {
     expect(didNotRun(reported)).toBeUndefined()
   })
 
-  // …while the same words on their own line, which is where the runtime puts
-  // them when the check never got going, still classify.
-  it('still classifies the same words when the runtime wrote them', () => {
-    expect(didNotRun('node:internal/modules/run_main\nError [ERR_MODULE_NOT_FOUND]: Cannot find module'))
-      .toBe('a module it imports could not be resolved')
+  // And the case this exists for, which a check *catches* and reports as a
+  // finding of its own — so classifying only lines outside the findings would
+  // miss it entirely. Measured: that is what happened when this filtered them.
+  it('classifies a spawn failure even when a check reported it as a finding', () => {
+    const reported = '  • @poveste/one could not be verified: spawnSync attw ENOENT'
+
+    expect(didNotRun(reported)).toBe('it shells out to `attw`, which is not on PATH')
   })
 })
 
