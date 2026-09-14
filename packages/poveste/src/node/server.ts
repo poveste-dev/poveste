@@ -183,7 +183,6 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
     queuedFiles = []
     queued = false
 
-    console.log('Collect stories start', currentFiles.length ? currentFiles.map(f => f.fileName).join(', ') : 'all')
     const time = performance.now()
     if (currentFiles.length) {
       await Promise.all(currentFiles.map(async (storyFile) => {
