@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { barrelImport, LIMITS, measurements, overLimit } from './check-bundle-size.ts'
+import { join } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { barrelImport, findBook, LIMITS, measurements, overLimit } from './check-bundle-size.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+
+afterEach(removeTrees)
 
 const LIMIT = [{ prefix: 'highlighter', max: 3000, because: 'a barrel import' }]
 
@@ -116,5 +120,31 @@ describe('barrelImport', () => {
 
   it('does not fire on a subpath that merely starts with the name', () => {
     expect(barrelImport('import { x } from \'shikiji\'')).toBeUndefined()
+  })
+})
+
+// `overLimit` above is given its chunks. `findBook` is the half that goes and
+// looks for them, and an example that was never built is the state it has to
+// tell from a built one — the ceilings are meaningless either way, so a book it
+// fails to find has to say so rather than measure nothing (#719).
+describe('findBook', () => {
+  it('finds a built book by its index.html beside an assets directory', () => {
+    const root = tree({ '.poveste/dist/index.html': '<html></html>', '.poveste/dist/assets/app.js': '' })
+
+    expect(findBook(root)).toBe(join(root, '.poveste', 'dist'))
+  })
+
+  it('finds no book in an example that was never built', () => {
+    expect(findBook(tree({ 'package.json': '{}' }))).toBeUndefined()
+  })
+
+  it('finds no book where index.html has no assets beside it', () => {
+    expect(findBook(tree({ 'index.html': '<html></html>' }))).toBeUndefined()
+  })
+
+  it('reports no book rather than throwing when the example is not there at all', () => {
+    const absent = join(tree({}), 'never-created')
+
+    expect(findBook(absent)).toBeUndefined()
   })
 })

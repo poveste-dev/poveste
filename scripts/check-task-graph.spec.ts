@@ -157,6 +157,25 @@ describe('taskGraphProblems', () => {
     const workspace = WORKSPACE.replace('tasks:\n', 'tasks:\n  test:imaginary:\n    cache: false\n')
     expect(taskGraphProblems(workspace, SCRIPTS, {}, {})).toEqual([expect.stringContaining('test:imaginary')])
   })
+
+  // The floor. Both inputs are found by regex over the workspace file, so a
+  // rename there leaves this function with two empty lists — and every case
+  // above passes over them without a word (#719).
+  describe('when the workspace declares neither input', () => {
+    const NOTHING = `packages:\n  - 'packages/*'\n`
+
+    it('reports a missing tasks block rather than a clean graph', () => {
+      expect(taskGraphProblems(NOTHING, SCRIPTS, {}, {})).toContainEqual(
+        expect.stringContaining('declares no `tasks:`'),
+      )
+    })
+
+    it('reports a missing pipeline rather than a clean graph', () => {
+      expect(taskGraphProblems(NOTHING, SCRIPTS, {}, {})).toContainEqual(
+        expect.stringContaining('declares no `pipelines.checks`'),
+      )
+    })
+  })
 })
 
 describe('the exclusion list', () => {
