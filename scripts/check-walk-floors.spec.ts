@@ -1,7 +1,12 @@
+import { cpSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { checkScripts, exportsFloor, floorIsExercised, floorProblems, hasFloor } from './check-walk-floors.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
 import { runCheck } from './run-check.ts'
+
+const SCRIPTS = dirname(fileURLToPath(import.meta.url))
 
 describe('hasFloor', () => {
   it('sees a check that exports its own floor', () => {
@@ -131,8 +136,55 @@ describe('checkScripts', () => {
   })
 })
 
+// `floorProblems` returning a problem says nothing about what `main()` does
+// with it. Deleting the `process.exit(1)` left every spec above green while the
+// check reported success over each of the four mutations it exists to catch —
+// this file's own defect, committed inside it.
+//
+// So the status is asserted in both directions, and the message is required to
+// name the file, because a non-zero exit that does not say which check is
+// wrong sends the reader to read all twenty.
 describe('the check as a process', () => {
   it('exits 0 over the repository it actually ships with', () => {
     expect(runCheck('check-walk-floors.ts').status).toBe(0)
+  })
+
+  /**
+   * A copy of the real `scripts/`, plus whatever the case injects.
+   *
+   * `WITHOUT_FLOOR` travels with this file rather than with the tree, so a
+   * fixture holding two invented checks makes all fourteen entries stale and
+   * the run fails for that instead — which would let these pass without the
+   * injected fault being noticed at all. Copying the real directory keeps the
+   * record current, so a non-zero status means the thing that was injected.
+   */
+  function scriptsPlus(files: Record<string, string>): string {
+    const root = tree({ 'keep.txt': '' })
+    cpSync(SCRIPTS, join(root, 'scripts'), { recursive: true })
+    for (const [name, content] of Object.entries(files)) {
+      writeFileSync(join(root, 'scripts', name), content)
+    }
+    return root
+  }
+
+  it('exits 0 over a copy of the real scripts/ with nothing injected', () => {
+    expect(runCheck('check-walk-floors.ts', ['--root', scriptsPlus({})]).status).toBe(0)
+    removeTrees()
+  })
+
+  it('exits non-zero over a check that is neither guarded nor explained', () => {
+    const run = runCheck('check-walk-floors.ts', ['--root', scriptsPlus({ 'check-unclassified.ts': 'export function nothing(): void {}\n' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('check-unclassified.ts neither asserts that it reached its inputs')
+    removeTrees()
+  })
+
+  it('exits non-zero over a floor no spec reaches', () => {
+    const run = runCheck('check-walk-floors.ts', ['--root', scriptsPlus({ 'check-stub.ts': 'export function walkProblems(): string[] { return [] }\n' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('check-stub.ts exports a `walkProblems` that no spec reaches')
+    removeTrees()
   })
 })
