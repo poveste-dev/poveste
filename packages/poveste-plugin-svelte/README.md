@@ -56,5 +56,5 @@ and your content reads it from the snippet:
 > [How, and why](https://poveste.dev/guide/migration-from-histoire#svelte-story-state-moves-to-initstate)
 
 [Svelte guide](https://poveste.dev/guide/svelte/getting-started) ·
-[SvelteKit](https://poveste.dev/guide/svelte/getting-started#sveltekit) ·
+[SvelteKit](https://poveste.dev/guide/sveltekit/getting-started) ·
 [Documentation](https://poveste.dev)

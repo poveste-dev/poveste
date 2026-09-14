@@ -71,4 +71,4 @@ raising an error. That is caught while its config is being read, so a missing
 plugin instead of taking the CLI down with no explanation.
 
 [Configuration](https://poveste.dev/reference/config) ·
-[Quasar recipe](https://poveste.dev/guide/config)
+[Quasar guide](https://poveste.dev/guide/quasar/getting-started)
