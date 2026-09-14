@@ -33,16 +33,21 @@ describe('delimitAttr', () => {
     })
   })
 
-  // Both characters, so neither delimiter is free — and the attribute has a
-  // real escape for exactly this.
-  it('escapes the double quote when the code carries both', () => {
-    expect(delimitAttr(['() => console.log("it\'s here")']).lines).toEqual([
-      '() => console.log(&quot;it\'s here&quot;)',
-    ])
+  // Both characters, so whichever delimiter is chosen has to be escaped inside
+  // it. Two doubles against one single here, so the single is the cheaper one.
+  it('escapes the quote that appears less often when the code carries both', () => {
+    expect(delimitAttr(['() => console.log("it\'s here")'])).toEqual({
+      quote: '\'',
+      lines: ['() => console.log("it&#39;s here")'],
+    })
   })
 
-  it('keeps the usual delimiter when it escapes', () => {
-    expect(delimitAttr(['() => console.log("it\'s here")']).quote).toBe('"')
+  // Four singles against two doubles, so the double is the cheaper one here.
+  it('escapes the double quote instead when that is the rarer one', () => {
+    expect(delimitAttr(['() => alert(\'a\', \'b\', "c")'])).toEqual({
+      quote: '"',
+      lines: ['() => alert(\'a\', \'b\', &quot;c&quot;)'],
+    })
   })
 
   // The alert CodeQL raised: the escaping pass never escaped a backslash, so
@@ -58,10 +63,11 @@ describe('delimitAttr', () => {
   })
 
   it('escapes on every line, not only the one that decided it', () => {
-    expect(delimitAttr(['() => {', '  alert("a")', '  alert(\'b\')', '}']).lines).toEqual([
+    expect(delimitAttr(['() => {', '  alert("a")', '  alert(\'b\')', '  alert(\'c\')', '}']).lines).toEqual([
       '() => {',
       '  alert(&quot;a&quot;)',
       '  alert(\'b\')',
+      '  alert(\'c\')',
       '}',
     ])
   })
@@ -103,9 +109,9 @@ describe('generateSourceCode, for an event handler', () => {
     expect(await generateSourceCode(variantWith(WITH_SINGLE))).toContain(`@click="${WITH_SINGLE}"`)
   })
 
-  it('escapes only the delimiter when the handler carries both quotes', async () => {
+  it('escapes only the rarer quote when the handler carries both', async () => {
     expect(await generateSourceCode(variantWith(WITH_BOTH)))
-      .toContain('@click="() => console.log(&quot;it\'s here&quot;)"')
+      .toContain('@click=\'() => console.log("it&#39;s here")\'')
   })
 
   it('shows a backslash the author wrote exactly as written', async () => {

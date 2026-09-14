@@ -377,14 +377,22 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
  */
 export function delimitAttr(lines: string[]): { quote: string, lines: string[] } {
   const code = lines.join('\n')
+  const doubles = (code.match(/"/g) ?? []).length
+  const singles = (code.match(/'/g) ?? []).length
 
-  if (!code.includes('"')) {
+  if (doubles === 0) {
     return { quote: '"', lines }
   }
-  if (!code.includes('\'')) {
+  if (singles === 0) {
     return { quote: '\'', lines }
   }
-  return { quote: '"', lines: lines.map(line => line.replace(/"/g, '&quot;')) }
+
+  // Both appear, so whichever delimiter is chosen has to be escaped inside it.
+  // The one that appears less often wins, because every escape is a character
+  // the author did not write and this pane exists to show what they did.
+  return singles <= doubles
+    ? { quote: '\'', lines: lines.map(line => line.replace(/'/g, '&#39;')) }
+    : { quote: '"', lines: lines.map(line => line.replace(/"/g, '&quot;')) }
 }
 
 export function getTagName(vnode: VNode) {
