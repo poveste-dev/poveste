@@ -1,9 +1,12 @@
 import { cpSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { checkScripts, exportsFloor, floorIsExercised, floorProblems, hasFloor } from './check-walk-floors.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
 import { runCheck } from './run-check.ts'
+
+const SCRIPTS = dirname(fileURLToPath(import.meta.url))
 
 describe('hasFloor', () => {
   it('sees a check that exports its own floor', () => {
@@ -157,7 +160,7 @@ describe('the check as a process', () => {
    */
   function scriptsPlus(files: Record<string, string>): string {
     const root = tree({ 'keep.txt': '' })
-    cpSync(new URL('.', import.meta.url).pathname, join(root, 'scripts'), { recursive: true })
+    cpSync(SCRIPTS, join(root, 'scripts'), { recursive: true })
     for (const [name, content] of Object.entries(files)) {
       writeFileSync(join(root, 'scripts', name), content)
     }
