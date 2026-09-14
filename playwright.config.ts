@@ -153,13 +153,17 @@ function workersFrom(raw: string | undefined): number | undefined {
 export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  // Unset by default, which leaves Playwright's own choice of half the cores —
-  // two on `ubuntu-latest`'s four. `POVESTE_E2E_WORKERS` exists so the number
-  // can be varied per run without editing this file, because raising it is a
-  // measurement rather than a setting: #266 found whole projects failing on
-  // selector timeouts under load, and vue3 and svelte5 are the jobs that boot a
-  // dev server alongside the preview server (#416).
-  workers: workersFrom(process.env.POVESTE_E2E_WORKERS),
+  // Three on CI, where it was measured: `ubuntu-latest` has four cores, so
+  // Playwright's own default is two, and four measured no better while costing
+  // the margin the timing-sensitive specs run on. Nine runs at 2, 3 and 4 are
+  // on #416.
+  //
+  // Off CI the default is left alone. Three is a fact about a four-core runner,
+  // not about the machine you are sitting at — pinning it everywhere would halve
+  // the workers on a laptop that Playwright would otherwise give six.
+  // `POVESTE_E2E_WORKERS` overrides both, because the next change to this number
+  // should be measured the same way rather than argued.
+  workers: workersFrom(process.env.POVESTE_E2E_WORKERS) ?? (process.env.CI ? 3 : undefined),
   retries: process.env.CI ? 2 : 0,
   // `retries` turns a flake into a green job, so CI also needs a machine-readable
   // result to find one after the fact — the list output is for humans and is not
