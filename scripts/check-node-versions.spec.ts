@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { ALLOWED, hardcodedNodeVersions, lowestVersion, nodeVersionProblems } from './check-node-versions.ts'
+import { afterEach, describe, expect, it } from 'vitest'
+import { ALLOWED, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './check-node-versions.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 const ENGINES = '^22.22.2 || ^24.15.0 || >=26.0.0'
 const FLOOR = { workflow: 'test.yml', line: 319, value: '22.22.2' }
@@ -112,5 +114,72 @@ describe('the allowance list', () => {
     for (const [workflow, allowance] of Object.entries(ALLOWED)) {
       expect(allowance.value, workflow).toMatch(/^\d+\.\d+\.\d+$/)
     }
+  })
+})
+
+// Everything above asserts predicates against strings. These read the tree
+// (#719): the half that finds the workflows and opens them was asserted
+// nowhere, so a walk that stopped matching would report nothing and exit 0.
+
+afterEach(removeTrees)
+
+const MANIFEST = JSON.stringify({ engines: { node: '^22.22.2 || >=24.0.0' } })
+
+describe('collect', () => {
+  it('reads every workflow and names them', () => {
+    const root = tree({
+      '.github/workflows/test.yml': 'jobs:\n',
+      '.github/workflows/release.yaml': 'jobs:\n',
+      'packages/poveste/package.json': MANIFEST,
+    })
+
+    expect(collect(root).workflows).toEqual(['release.yaml', 'test.yml'])
+  })
+
+  it('passes over a file that is not a workflow', () => {
+    const root = tree({
+      '.github/workflows/test.yml': 'jobs:\n',
+      '.github/workflows/README.md': 'not a workflow',
+      'packages/poveste/package.json': MANIFEST,
+    })
+
+    expect(collect(root).workflows).toEqual(['test.yml'])
+  })
+
+  // The pins are what the whole check is about, so the walk has to actually
+  // open the files rather than only list them.
+  it('finds a pinned version inside a workflow it read', () => {
+    const root = tree({
+      '.github/workflows/test.yml': 'steps:\n  - uses: actions/setup-node@v6\n    with:\n      node-version: 26\n',
+      'packages/poveste/package.json': MANIFEST,
+    })
+
+    expect(collect(root).uses).toEqual([{ workflow: 'test.yml', line: 4, value: '26' }])
+  })
+
+  it('reads the published floor from the manifest rather than assuming one', () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n', 'packages/poveste/package.json': MANIFEST })
+
+    expect(collect(root).enginesNode).toBe('^22.22.2 || >=24.0.0')
+  })
+})
+
+describe('walkProblems', () => {
+  it('is silent when the walk read workflows', () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n', 'packages/poveste/package.json': MANIFEST })
+
+    expect(walkProblems(collect(root))).toEqual([])
+  })
+
+  it('fails when the directory held no workflow at all', () => {
+    const root = tree({ '.github/workflows/notes.md': 'x', 'packages/poveste/package.json': MANIFEST })
+
+    expect(walkProblems(collect(root))).toEqual([expect.stringContaining('held no workflow files')])
+  })
+})
+
+describe('the check as a process', () => {
+  it('exits 0 over the repository it actually ships with', () => {
+    expect(runCheck('check-node-versions.ts').status).toBe(0)
   })
 })

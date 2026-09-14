@@ -34,7 +34,6 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 const ROOT = join(import.meta.dirname, '..')
-const WORKFLOWS = join(ROOT, '.github', 'workflows')
 
 export interface Allowance {
   /** The exact literal permitted. A different one is drift, not this allowance. */
@@ -139,13 +138,44 @@ export function nodeVersionProblems(
   return problems
 }
 
-function main(): void {
-  const uses = readdirSync(WORKFLOWS)
-    .filter(entry => /\.ya?ml$/.test(entry))
-    .flatMap(entry => hardcodedNodeVersions(entry, readFileSync(join(WORKFLOWS, entry), 'utf8')))
+export interface Walk {
+  uses: NodeVersionUse[]
+  /** Workflow files read, by name. */
+  workflows: string[]
+  enginesNode: string
+}
 
-  const enginesNode = JSON.parse(readFileSync(join(ROOT, 'packages', 'poveste', 'package.json'), 'utf8')).engines.node
-  const problems = nodeVersionProblems(uses, ALLOWED, enginesNode)
+/**
+ * The walk, split from the judging so a spec can point it at a fixture tree
+ * and assert what it read (#719).
+ */
+export function collect(root = ROOT): Walk {
+  const dir = join(root, '.github', 'workflows')
+  const workflows = readdirSync(dir).filter(entry => /\.ya?ml$/.test(entry))
+  const uses = workflows.flatMap(entry => hardcodedNodeVersions(entry, readFileSync(join(dir, entry), 'utf8')))
+  const enginesNode = JSON.parse(readFileSync(join(root, 'packages', 'poveste', 'package.json'), 'utf8')).engines.node
+
+  return { uses, workflows, enginesNode }
+}
+
+/**
+ * The floor: it read some workflows.
+ *
+ * `ALLOWED` gives this one a guard by accident — its reverse pass reports an
+ * entry that no longer pins anything, so an empty walk fails there too. That is
+ * a guard on the allow-list rather than on the walk, and it would go with the
+ * list the day the allowance is deleted. This says what is meant (#719).
+ */
+export function walkProblems({ workflows }: Walk): string[] {
+  return workflows.length === 0
+    ? ['.github/workflows held no workflow files — this check is reading a directory that has moved']
+    : []
+}
+
+function main(): void {
+  const walk = collect()
+  const { uses, enginesNode } = walk
+  const problems = [...walkProblems(walk), ...nodeVersionProblems(uses, ALLOWED, enginesNode)]
 
   if (problems.length > 0) {
     console.error('❌ CI would keep running a Node the project has moved off:\n')
