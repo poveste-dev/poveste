@@ -103,11 +103,23 @@ export function publishablePackages(root = ROOT): Pkg[] {
 /**
  * What the walk has to be able to say about itself before anything trusts it.
  *
- * "It examined at least one thing" is the floor and is not enough on its own:
- * a walk that stops selecting *one* package passes it. So the assertion is that
- * every entry is accounted for — selected, or skipped for a stated reason. A
- * directory that falls out of both is a silent loss, and silent partial loss is
- * what four checks sharing this walk cannot survive.
+ * "It examined at least one thing" is the floor and is not enough on its own: a
+ * walk that stops selecting *one* package passes it, and four checks read this
+ * list, so a package leaving it quietly is what none of them survives.
+ *
+ * **The accounting cannot fire against the walk as written** — every path above
+ * either selects or records a skip, so the counts agree by construction. It is
+ * a tripwire for the next filter somebody adds, not evidence that this walk is
+ * complete. A green accounting check proves nothing about today; it fails the
+ * day an entry starts falling through.
+ *
+ * **It covers one half of partial loss.** An entry that drops out entirely
+ * fails here. An entry *misclassified* — recorded as skipped, with a reason
+ * that is not true of it — passes, and no count can catch that, because any
+ * count derived from the same classification moves with it. Only an independent
+ * list of what should be there catches a misclassification, which is what
+ * `packageTableProblems` is and why this check survives one while
+ * `check-package-tests`, reading the same walk, does not.
  */
 export function walkProblems({ packages, skipped, entries }: Walk): string[] {
   if (entries.length === 0) {
@@ -356,6 +368,16 @@ function main(): void {
   const walk = walkPackages(root)
   const packages = walk.packages
 
+  // A second walk of the same directory, deliberately, and not duplication of
+  // `walk.entries`: it reads every manifest's name whatever `walkPackages`
+  // decided about it, so the CONTRIBUTING table below is compared against a
+  // list that does not come from the classification it is checking.
+  //
+  // That independence is load-bearing. Marking a real package private passes
+  // the accounting in `walkProblems` and leaves `check-package-tests` and
+  // `check-doc-coverage` green; this is the only thing in the four checks that
+  // catches it. Folding it into the walk above would make both lists agree by
+  // construction and take that with it.
   const allNames: string[] = []
   for (const entry of readdirSync(packagesDir)) {
     try {

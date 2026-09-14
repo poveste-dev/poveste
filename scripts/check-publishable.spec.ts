@@ -325,6 +325,11 @@ describe('walkProblems', () => {
   // not the assertion. One package leaving the list is the realistic drift, and
   // it leaves `check-package-tests` and `check-doc-coverage` green over a
   // package they have stopped examining.
+  //
+  // Built by hand rather than from `walkPackages`, because the walk cannot
+  // produce this state: every path selects or records a skip. That is the
+  // point — the assertion is a tripwire for the next filter, and this is the
+  // only way to show it armed.
   it('fails when an entry is neither selected nor skipped for a reason', () => {
     expect(walkProblems({
       packages: [{ name: '@poveste/one', dir: '/tmp/one' }],
