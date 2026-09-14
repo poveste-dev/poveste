@@ -86,8 +86,6 @@ overrides:
 # #716 and lands behind a measurement, because a wrong cache key ships a stale
 # result and a green run is exactly what that looks like.
 tasks:
-  lint:
-    cache: false
   test:tags:
     cache: false
   test:versions:
@@ -114,4 +112,4 @@ tasks:
     cache: false
 
 pipelines:
-  checks: [lint, test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]
+  checks: [test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]

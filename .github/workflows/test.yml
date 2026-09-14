@@ -160,17 +160,14 @@ jobs:
         run: pnpm install
 
       # From here to `Test the release scripts` nothing needs a build, so one
-      # failing check must not skip the eleven after it: a run that could name
-      # twelve problems otherwise costs twelve cycles to read (#720).
+      # failing check must not skip the ten after it: a run that could name
+      # eleven problems otherwise costs eleven cycles to read (#720).
       #
       # Paired with the install rather than standing alone. `!cancelled()`
       # suppresses the implicit `success()` in full, including the dependency on
-      # the step above, so a failed install would run all twelve and fail all
-      # twelve on the same missing `node_modules`.
-      - name: Lint
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm run lint
-
+      # the step above, so a failed install would run all eleven and fail all
+      # eleven on the same missing `node_modules`.
+      #
       # Cheap and needs nothing built, so it runs before the build rather than
       # next to the smoke test.
       - name: Check the version tables
@@ -249,6 +246,21 @@ jobs:
 
       - name: Build
         run: pnpm run build
+
+      # After `build`, for the reason the typecheck below is: `ts/no-deprecated`
+      # is type-aware, and @poveste/* types resolve through the workspace
+      # symlink to `dist/*.d.ts`. Cold, the rule cannot see across a package
+      # boundary — so a use of a deprecated cross-package export passed, as an
+      # `error`, in silence (#546). Retiring the histoire compatibility surface
+      # is how deprecations get made here, so that is the main case rather than
+      # an edge one.
+      #
+      # No `if:`, deliberately, unlike the eleven above. A status function would
+      # suppress the implicit `success()` and run this after a failed build,
+      # against a workspace with no `dist` — hundreds of unresolved-type errors
+      # stacked on top of the one error that is the reason for them.
+      - name: Lint
+        run: pnpm run lint
 
       # Reports, never fails on the number — see the header of the script for
       # why a threshold here would be red on the day it landed. It needs the

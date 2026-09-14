@@ -70,6 +70,20 @@ export function beforeBuild(steps: string[]): string[] {
   return build === -1 ? steps : steps.slice(0, build)
 }
 
+/**
+ * Everything after `build`, which is where the pre-build report must not reach.
+ *
+ * A step that needs a built tree cannot be in a pipeline that runs before one.
+ * `lint` moved across that line when `ts/no-deprecated` turned out to be blind
+ * to cross-package deprecations on a cold tree (#546), and nothing here would
+ * have noticed it staying in the report: the run would lint an unbuilt
+ * workspace and pass, which is the same green-over-nothing this file exists for.
+ */
+export function afterBuild(steps: string[]): string[] {
+  const build = steps.indexOf('build')
+  return build === -1 ? [] : steps.slice(build + 1)
+}
+
 export function taskGraphProblems(
   workspace: string,
   scripts: Record<string, string>,
@@ -89,7 +103,10 @@ export function taskGraphProblems(
     problems.push(`\`release:check\` runs ${step} before the build, but \`pipelines.${PIPELINE}\` does not — the report would pass while the gate fails`)
   }
 
+  const built = afterBuild(chain)
+
   for (const step of pipeline) {
+    if (built.includes(step)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which \`release:check\` runs after the build — the report would run it against an unbuilt tree and pass`)
     if (!tasks.includes(step)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which has no entry under \`tasks:\``)
     if (!(step in scripts)) problems.push(`\`pipelines.${PIPELINE}\` names ${step}, which is not a root script — pnpm would skip it and still exit 0`)
   }

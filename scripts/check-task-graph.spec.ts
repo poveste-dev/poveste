@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { beforeBuild, chainSteps, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
+import { afterBuild, beforeBuild, chainSteps, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
 
 const WORKSPACE = `packages:
   - 'packages/*'
@@ -63,7 +63,31 @@ describe('beforeBuild', () => {
   })
 })
 
+describe('afterBuild', () => {
+  it('is everything past the build', () => {
+    expect(afterBuild(['lint', 'build', 'test:smoke'])).toEqual(['test:smoke'])
+  })
+
+  // Nothing is "after the build" when there is no build, so nothing can be
+  // wrongly reported as needing one.
+  it('is empty when nothing builds', () => {
+    expect(afterBuild(['lint'])).toEqual([])
+  })
+})
+
 describe('taskGraphProblems', () => {
+  // The drift #546 would otherwise have introduced: `lint` moved past the build
+  // because a type-aware rule cannot resolve workspace types on a cold tree, and
+  // nothing stopped it staying in a report that runs before one. The report
+  // would lint an unbuilt workspace and pass.
+  it('catches a pipeline step the chain runs after the build', () => {
+    const scripts = { ...SCRIPTS, 'release:check': 'pnpm run test:tags && pnpm run build && pnpm run lint' }
+
+    expect(taskGraphProblems(WORKSPACE, scripts, {})).toEqual([
+      expect.stringContaining('names lint, which `release:check` runs after the build'),
+    ])
+  })
+
   it('is empty when the graph matches the chain', () => {
     expect(taskGraphProblems(WORKSPACE, SCRIPTS, {})).toEqual([])
   })
