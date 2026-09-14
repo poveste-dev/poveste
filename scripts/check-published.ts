@@ -22,7 +22,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { publishablePackages } from './check-publishable.ts'
+import { walkPackages, walkProblems } from './check-publishable.ts'
 
 interface Release { name: string, version: string }
 
@@ -143,7 +143,25 @@ function npmProbe(name: string, version: string): string {
 }
 
 function main(): void {
-  const releases: Release[] = publishablePackages().map(pkg => ({
+  // The shared walk's floor rather than a second one. This check does not walk
+  // the tree itself — it reads `check-publishable`'s list — so "it examined
+  // something" is a question about that walk, and asking it here would be a
+  // second place the same fact is asserted.
+  //
+  // Without it an empty list read as success right up to `releases[0].version`
+  // below, which threw `Cannot read properties of undefined` — loud, but about
+  // the wrong thing.
+  const walk = walkPackages()
+  const walked = walkProblems(walk)
+  if (walked.length > 0) {
+    console.error(`::error::this check never got a list of packages to ask the registry about`)
+    for (const problem of walked) {
+      console.error(`  • ${problem}`)
+    }
+    process.exit(1)
+  }
+
+  const releases: Release[] = walk.packages.map(pkg => ({
     name: pkg.name,
     version: JSON.parse(readFileSync(join(pkg.dir, 'package.json'), 'utf8')).version,
   }))
