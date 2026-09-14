@@ -255,12 +255,17 @@ jobs:
       # is how deprecations get made here, so that is the main case rather than
       # an edge one.
       #
+      # `lint:gate`, not `lint`: the latter is `--cache`, and ESLint's cache keys
+      # on file content and config, neither of which changes when `dist`
+      # appears. A cache written by a lint of an unbuilt tree therefore replays
+      # a run in which this rule resolved nothing, and replays it as a pass.
+      #
       # No `if:`, deliberately, unlike the eleven above. A status function would
       # suppress the implicit `success()` and run this after a failed build,
       # against a workspace with no `dist` — hundreds of unresolved-type errors
       # stacked on top of the one error that is the reason for them.
       - name: Lint
-        run: pnpm run lint
+        run: pnpm run lint:gate
 
       # Reports, never fails on the number — see the header of the script for
       # why a threshold here would be red on the day it landed. It needs the

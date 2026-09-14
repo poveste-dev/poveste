@@ -59,7 +59,7 @@ export const EXCLUDED: Record<string, string> = {}
  * step has to still be in the chain, and still be after the build.
  */
 export const AFTER_BUILD: Record<string, string> = {
-  lint: 'type-aware rules cannot resolve `@poveste/*` until `dist` exists, so a pre-build lint passes over the one thing it cannot see (#546)',
+  'lint:gate': 'type-aware rules cannot resolve `@poveste/*` until `dist` exists, so a pre-build lint passes over the one thing it cannot see (#546)',
 }
 
 /** Task names declared under `tasks:`. */
