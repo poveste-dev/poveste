@@ -16,7 +16,7 @@ import {
   build as viteBuild,
 } from 'vite'
 import { APP_PATH } from './alias.js'
-import { buildCounts } from './build-counts.js'
+import { buildCounts, buildSummary } from './build-counts.js'
 import { getSerializedStoryData } from './build-serialize.js'
 import { useCollectStories } from './collect/index.js'
 import { useModuleLoader } from './load.js'
@@ -314,8 +314,17 @@ export async function build(ctx: Context) {
     if (empty.length) {
       console.warn(pc.yellow(`⚠️  ${empty.length} empty story file${empty.length === 1 ? '' : 's'}: ${empty.join(', ')}`))
     }
-    const docsNote = docsCount ? ` and ${docsCount} document${docsCount === 1 ? '' : 's'}` : ''
-    console.log(pc.green(`✅ Built ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'} (${variantCount} variant${variantCount === 1 ? '' : 's'})${docsNote} in ${Math.round(duration / 1000 * 100) / 100}s`))
+    const summary = buildSummary(
+      { stories: storyCount, variants: variantCount, docs: docsCount, empty },
+      Math.round(duration / 1000 * 100) / 100,
+      ctx.config.storyMatch,
+    )
+    // Green only when something was built. A tick over nothing is the claim
+    // #624 is about, and it is the first command the guide asks for.
+    const paint = summary.length === 1 ? pc.green : pc.yellow
+    for (const line of summary) {
+      console.log(paint(line))
+    }
 
     // Render
     if (previewStoryCallbacks.length) {

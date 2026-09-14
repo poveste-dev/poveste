@@ -43,3 +43,35 @@ export function buildCounts(storyFiles: ServerStoryFile[]): BuildCounts {
 
   return counts
 }
+
+/**
+ * What a finished build says it produced.
+ *
+ * A separate function because the interesting case is a claim rather than a
+ * number: `✅ Built 0 stories (0 variants)` is true of a working build in a
+ * project with nothing to build, and it is what a first-time reader gets from
+ * the first command the guide tells them to run (#624). Nothing in it says
+ * where the build looked, so there is no next step in it either.
+ *
+ * Not an error. A book with no stories is a valid thing to build — scaffolding
+ * is exactly that state — so this changes what is said, not the exit code.
+ *
+ * Documents count as content: a book of `.story.md` pages with no variants has
+ * something in it, and telling its author nothing was found would be wrong.
+ */
+export function buildSummary(counts: BuildCounts, seconds: number, storyMatch: string[]): string[] {
+  const took = `in ${seconds}s`
+
+  if (counts.stories === 0 && counts.docs === 0) {
+    return [
+      `Built 0 stories ${took} — nothing matched ${storyMatch.join(', ')}`,
+      'Write a story file and run this again: https://poveste.dev/guide/',
+    ]
+  }
+
+  const stories = `${counts.stories} stor${counts.stories === 1 ? 'y' : 'ies'}`
+  const variants = `${counts.variants} variant${counts.variants === 1 ? '' : 's'}`
+  const docs = counts.docs ? ` and ${counts.docs} document${counts.docs === 1 ? '' : 's'}` : ''
+
+  return [`✅ Built ${stories} (${variants})${docs} ${took}`]
+}
