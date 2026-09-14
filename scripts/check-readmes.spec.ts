@@ -350,6 +350,15 @@ describe('collect', () => {
     expect((await collect(root)).withoutReadme).toEqual(['@fixture/bare'])
   })
 
+  // Everything downstream reads a page's file, so a page for a file that is not
+  // there is an ENOENT out of a later loop rather than something the floor can
+  // report.
+  it('does not offer a page for a root README that is not there', async () => {
+    const root = tree({ 'packages/one/package.json': MANIFEST('@fixture/one'), 'packages/one/README.md': '# one' })
+
+    expect((await collect(root)).pages.map(page => page.label)).toEqual(['@fixture/one'])
+  })
+
   it('reaches example READMEs and both template directories', async () => {
     const root = tree({
       'README.md': '# root',

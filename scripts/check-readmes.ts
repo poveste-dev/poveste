@@ -280,6 +280,15 @@ export function referencedWorkflows(markdown: string): string[] {
 /** Our own domain, whose URL shape we control. */
 const OWN_HOST = 'poveste.dev'
 
+// Built from `OWN_HOST` rather than repeating it. Written twice, a domain move
+// edits the constant, the pattern keeps matching the old host, and the check
+// goes on passing by examining nothing — which is the defect it exists to end.
+//
+// A source rather than a regex, for the reason `INSTALL_LINE` above is one: a
+// shared `/g` regex carries `lastIndex` between calls, so each use compiles its
+// own.
+const OWN_URL = String.raw`https?://${OWN_HOST.replace(/\./g, String.raw`\.`)}/[^\s)"'\`>\]]*`
+
 /**
  * Links to our own site that use the legacy `.html` spelling.
  *
@@ -302,7 +311,7 @@ const OWN_HOST = 'poveste.dev'
  */
 export function legacyOwnUrls(markdown: string): string[] {
   const found = new Set<string>()
-  for (const match of markdown.matchAll(/https?:\/\/poveste\.dev\/[^\s)"'`>\]]*/g)) {
+  for (const match of markdown.matchAll(new RegExp(OWN_URL, 'g'))) {
     const url = match[0].replace(/[.,;:!?]+$/, '')
     if (/\.html(?:$|[#?])/.test(url)) {
       found.add(url)
@@ -356,7 +365,13 @@ export async function collect(root = ROOT): Promise<Walk> {
   const packages = join(root, 'packages')
   const examples = join(root, 'examples')
 
-  const pages: Page[] = [{ label: 'README.md', path: join(root, 'README.md') }]
+  const pages: Page[] = []
+  // Conditional, because everything downstream reads a page's file. Returning a
+  // path that is not there hands the caller an ENOENT out of a later loop
+  // instead of a problem the floor can name.
+  if (await stat(join(root, 'README.md')).then(() => true).catch(() => false)) {
+    pages.push({ label: 'README.md', path: join(root, 'README.md') })
+  }
   const withoutReadme: string[] = []
   let published = 0
 
