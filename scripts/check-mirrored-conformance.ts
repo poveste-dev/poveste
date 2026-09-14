@@ -103,26 +103,76 @@ export function compareMirror(sourceFiles: Map<string, string>, mirrorFiles: Map
   return problems
 }
 
-function read(dir: string): Map<string, string> {
-  return new Map(filesIn(join(ROOT, dir)).map(name => [name, readFileSync(join(ROOT, dir, name), 'utf8')]))
+export interface Pair extends Mirror {
+  sourceFiles: Map<string, string>
+  mirrorFiles: Map<string, string>
+}
+
+export interface Walk {
+  pairs: Pair[]
+  /** Directories `mirrors` names that are not on disk. */
+  missing: string[]
+  /** Every file opened, as `<dir>/<name>`. */
+  examined: string[]
+}
+
+/**
+ * The half that finds and opens files, split from the half that judges them so
+ * that a spec can point it at a fixture tree and assert what it read (#719).
+ *
+ * `root` and `mirrors` are parameters with the real values as defaults, so
+ * every existing caller is unchanged and nothing new runs on import — the
+ * import guard's guarantee is what it was (#388).
+ */
+export function collect(root = ROOT, mirrors: Mirror[] = MIRRORS): Walk {
+  const pairs: Pair[] = []
+  const missing: string[] = []
+  const examined: string[] = []
+
+  const read = (dir: string): Map<string, string> => {
+    try {
+      statSync(join(root, dir))
+    }
+    catch {
+      missing.push(dir)
+      return new Map()
+    }
+    const files = filesIn(join(root, dir))
+    examined.push(...files.map(name => `${dir}/${name}`))
+    return new Map(files.map(name => [name, readFileSync(join(root, dir, name), 'utf8')]))
+  }
+
+  for (const { source, mirror } of mirrors) {
+    pairs.push({ source, mirror, sourceFiles: read(source), mirrorFiles: read(mirror) })
+  }
+
+  return { pairs, missing, examined }
+}
+
+/**
+ * The floor this check had no way to fail: it examined something.
+ *
+ * A walk that matches nothing compares empty against empty, finds no
+ * difference, and prints a success line with a zero in it. Narrowing `filesIn`
+ * to one extension takes the count from 75 to 0 with every assertion still
+ * green, which is the whole of #719 in one mutation.
+ */
+export function walkProblems({ missing, examined }: Walk): string[] {
+  const problems = missing.map(dir => `${dir} does not exist — a mirrored set has moved, and this check no longer describes the tree`)
+
+  if (examined.length === 0 && missing.length === 0) {
+    problems.push('every mirrored directory exists and none of them held a file this check could read — the walk has stopped reaching the conformance sets')
+  }
+
+  return problems
 }
 
 function main(): void {
-  const problems: string[] = []
+  const walk = collect()
+  const problems: string[] = walkProblems(walk)
   let compared = 0
 
-  for (const { source, mirror } of MIRRORS) {
-    for (const dir of [source, mirror]) {
-      try {
-        statSync(join(ROOT, dir))
-      }
-      catch {
-        problems.push(`${dir} does not exist — a mirrored set has moved, and this check no longer describes the tree`)
-      }
-    }
-
-    const sourceFiles = read(source)
-    const mirrorFiles = read(mirror)
+  for (const { source, mirror, sourceFiles, mirrorFiles } of walk.pairs) {
     compared += sourceFiles.size
 
     for (const { file, reason } of compareMirror(sourceFiles, mirrorFiles, MIRROR_EXCEPTIONS, mirror)) {
