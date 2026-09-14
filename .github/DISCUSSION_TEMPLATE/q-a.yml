@@ -6,7 +6,7 @@ body:
 
         Worth thirty seconds first: [search the existing discussions](https://github.com/poveste-dev/poveste/discussions?discussions_q=) and the [docs](https://poveste.dev/guide/).
 
-        Two required fields, and a third only if you have it. They are here because almost every answer turns on the version and on what the config looks like, and asking afterwards costs a day per round trip.
+        One required field, and two others if you have them. They are here because almost every answer turns on the version and on what the config looks like, and asking afterwards costs a day per round trip — but not having a version is not a reason to wait.
   - type: input
     id: version
     attributes:
@@ -14,7 +14,7 @@ body:
       description: The `poveste` version, plus the framework plugin if the question involves one. `npm ls poveste` prints both.
       placeholder: poveste 0.13.1, @poveste/plugin-vue 0.13.1
     validations:
-      required: true
+      required: false
   - type: textarea
     id: question
     attributes:
