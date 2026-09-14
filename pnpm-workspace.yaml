@@ -110,6 +110,8 @@ tasks:
     cache: false
   test:task-graph:
     cache: false
+  test:walk-floors:
+    cache: false
 
 # `release:report` runs this, and it runs before the build — so `lint` is not in
 # it. Not an oversight: `ts/no-deprecated` is type-aware and cannot resolve
@@ -118,4 +120,4 @@ tasks:
 # this list and the `&&` chain in agreement, and names the gap in its own output
 # so a clean report is not read as "lint is clean".
 pipelines:
-  checks: [test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph]
+  checks: [test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph, test:walk-floors]

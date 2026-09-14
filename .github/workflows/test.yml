@@ -160,13 +160,13 @@ jobs:
         run: pnpm install
 
       # From here to `Test the release scripts` nothing needs a build, so one
-      # failing check must not skip the ten after it: a run that could name
-      # eleven problems otherwise costs eleven cycles to read (#720).
+      # failing check must not skip the eleven after it: a run that could name
+      # twelve problems otherwise costs twelve cycles to read (#720).
       #
       # Paired with the install rather than standing alone. `!cancelled()`
       # suppresses the implicit `success()` in full, including the dependency on
-      # the step above, so a failed install would run all eleven and fail all
-      # eleven on the same missing `node_modules`.
+      # the step above, so a failed install would run all twelve and fail all
+      # twelve on the same missing `node_modules`.
       #
       # Cheap and needs nothing built, so it runs before the build rather than
       # next to the smoke test.
@@ -226,6 +226,13 @@ jobs:
       - name: Check the published recipes
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:recipes
+
+      # Every check either asserts it reached its inputs or says why it cannot,
+      # so a check added without either fails here rather than in a release
+      # whose gate reported success over an assertion that never ran (#719).
+      - name: Check every check can fail
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run test:walk-floors
 
       - name: Test the release scripts
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

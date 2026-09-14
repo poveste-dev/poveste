@@ -135,10 +135,20 @@ async function main(): Promise<void> {
   const afterPublish = process.argv.includes('--after-publish')
   const attempts = afterPublish ? 4 : 1
 
+  // `starters` is imported, not walked, so an empty one is not an error this
+  // check can attribute — but it is the one state where every assertion below
+  // passes by running none of them, and `All 0 starters resolve.` reads exactly
+  // like a clean run (#719).
+  const frameworks = Object.keys(starters) as Framework[]
+  if (frameworks.length === 0) {
+    console.error('::error::docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing')
+    process.exit(1)
+  }
+
   let results: Result[] = []
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const pending = attempt === 1
-      ? (Object.keys(starters) as Framework[])
+      ? frameworks
       : results.filter(r => !r.ok).map(r => r.framework)
 
     if (attempt > 1) {
