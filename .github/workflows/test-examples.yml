@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       workers:
-        description: 'Playwright workers per example job — a positive integer; blank = half the cores, which is 2 here'
+        description: 'Playwright workers per example job — a positive integer; blank = 3, the measured default'
         required: false
         type: string
 
