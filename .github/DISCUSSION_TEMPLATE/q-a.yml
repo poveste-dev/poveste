@@ -26,6 +26,6 @@ body:
     id: reproduction
     attributes:
       label: Somewhere to look, if you have one
-      description: 'A StackBlitz — the "Try it live" buttons on [Getting started](https://poveste.dev/guide/getting-started.html) open a runnable Vue, Nuxt or Svelte book — or a repository. Not required, because a question is not a bug report and needing a reproduction to ask is the thing this form exists to avoid. If the answer turns out to be a bug, this is what turns the discussion into an issue without starting over.'
+      description: 'A StackBlitz — the "Try it live" buttons on [Getting started](https://poveste.dev/guide/getting-started) open a runnable Vue, Nuxt or Svelte book — or a repository. Not required, because a question is not a bug report and needing a reproduction to ask is the thing this form exists to avoid. If the answer turns out to be a bug, this is what turns the discussion into an issue without starting over.'
     validations:
       required: false

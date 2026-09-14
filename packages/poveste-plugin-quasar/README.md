@@ -70,5 +70,5 @@ raising an error. That is caught while its config is being read, so a missing
 `index.html` or a rejected `quasar.config` fails as a Poveste error naming this
 plugin instead of taking the CLI down with no explanation.
 
-[Configuration](https://poveste.dev/reference/config.html) ·
-[Quasar recipe](https://poveste.dev/guide/config.html)
+[Configuration](https://poveste.dev/reference/config) ·
+[Quasar recipe](https://poveste.dev/guide/config)

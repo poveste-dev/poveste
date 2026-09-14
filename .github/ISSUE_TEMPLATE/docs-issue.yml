@@ -12,7 +12,7 @@ body:
     attributes:
       label: Page
       description: Link to the page, ideally to the specific heading.
-      placeholder: https://poveste.dev/guide/css.html#root-selectors
+      placeholder: https://poveste.dev/guide/css#root-selectors
     validations:
       required: true
   - type: dropdown

@@ -23,5 +23,5 @@ pnpm run dev            # the Nuxt app itself
 ```
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the wider development loop, and
-the [Nuxt guide](https://poveste.dev/guide/vue/getting-started.html#nuxt) for how
+the [Nuxt guide](https://poveste.dev/guide/vue/getting-started#nuxt) for how
 to set this up in your own project.

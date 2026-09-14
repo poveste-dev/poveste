@@ -26,5 +26,5 @@ pnpm run dev            # the SvelteKit app itself
 ```
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the wider development loop, and
-the [Svelte guide](https://poveste.dev/guide/svelte/getting-started.html) for how
+the [Svelte guide](https://poveste.dev/guide/svelte/getting-started) for how
 to set this up in your own project.

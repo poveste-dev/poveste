@@ -219,7 +219,7 @@ bumpp runs with `--no-push`, because its own push is `git push --tags` — every
 
 Pick the type from the commits being released, not from the milestone: **a `feat` in the range means `minor`, otherwise `patch`**. Check with `git log v<previous>..HEAD --format='%s'` before running it. A milestone names the release its issues are aimed at, not a guarantee of what ships in it — issues can slip to a later version, so the milestone and the actual release can disagree.
 
-`major` is never reached this way. It is a deliberate stability declaration with its own checklist — see [What 1.0 means](https://poveste.dev/guide/getting-started.html#what-1-0-means).
+`major` is never reached this way. It is a deliberate stability declaration with its own checklist — see [What 1.0 means](https://poveste.dev/guide/getting-started#what-1-0-means).
 
 `release` runs `release:check` first, which gates the release on lint, build, unit tests and the smoke test:
 

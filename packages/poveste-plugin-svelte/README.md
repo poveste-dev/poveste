@@ -53,8 +53,8 @@ and your content reads it from the snippet:
 > preview — Poveste owns the state instead. A story with controls but no `initState` logs an
 > error explaining this.
 >
-> [How, and why](https://poveste.dev/guide/migration-from-histoire.html#svelte-story-state-moves-to-initstate)
+> [How, and why](https://poveste.dev/guide/migration-from-histoire#svelte-story-state-moves-to-initstate)
 
-[Svelte guide](https://poveste.dev/guide/svelte/getting-started.html) ·
-[SvelteKit](https://poveste.dev/guide/svelte/getting-started.html#sveltekit) ·
+[Svelte guide](https://poveste.dev/guide/svelte/getting-started) ·
+[SvelteKit](https://poveste.dev/guide/svelte/getting-started#sveltekit) ·
 [Documentation](https://poveste.dev)

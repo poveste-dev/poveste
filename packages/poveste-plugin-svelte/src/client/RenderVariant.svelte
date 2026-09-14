@@ -41,7 +41,7 @@
       'Controls will render and appear to work, but their edits cannot reach the story:',
       'the story is mounted separately for each slot, so a component-local variable is not shared.',
       'Pass `initState` and read state from the snippet —',
-      'https://poveste.dev/guide/migration-from-histoire.html#svelte-story-state-moves-to-initstate',
+      'https://poveste.dev/guide/migration-from-histoire#svelte-story-state-moves-to-initstate',
     ].join(' '))
   }
 

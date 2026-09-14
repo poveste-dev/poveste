@@ -19,5 +19,5 @@ export default defineConfig({
 })
 ```
 
-[Nuxt guide](https://poveste.dev/guide/vue/getting-started.html#nuxt) ·
+[Nuxt guide](https://poveste.dev/guide/vue/getting-started#nuxt) ·
 [Documentation](https://poveste.dev)
