@@ -271,7 +271,6 @@ export async function build(ctx: Context) {
     buildViteConfig.plugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
 
     for (const cb of changeViteConfigCallbacks) {
-      console.log('vite config hook', cb)
       await cb(buildViteConfig)
     }
 
