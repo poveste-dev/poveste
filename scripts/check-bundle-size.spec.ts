@@ -142,7 +142,9 @@ describe('findBook', () => {
     expect(findBook(tree({ 'index.html': '<html></html>' }))).toBeUndefined()
   })
 
-  it('returns rather than throwing when the example directory is absent', () => {
-    expect(findBook(join(tree({}), 'never-created'))).toBeUndefined()
+  it('reports no book rather than throwing when the example is not there at all', () => {
+    const absent = join(tree({}), 'never-created')
+
+    expect(findBook(absent)).toBeUndefined()
   })
 })
