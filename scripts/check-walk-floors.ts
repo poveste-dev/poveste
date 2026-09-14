@@ -46,7 +46,7 @@ export const WITHOUT_FLOOR: Record<string, string> = {
   'check-example-wiring.ts': 'three guards already: no `example:` matrix, the guide missing, and no example table in it',
   'check-docs-site.ts': 'separates a missing build from a built one by name, and asserts specific paths are present, so an empty build fails before anything counts',
   'check-bundle-size.ts': 'separates "could not read the directory" from "no book in it" deliberately, and exits 1 for both',
-  'check-conformance-config.ts': 'guards an empty spec list, an empty defaults list and an empty book list in its own predicates',
+  'check-conformance-config.ts': 'guards an empty spec list in `specProblems`, asserted in its spec — the empty defaults list and the empty book list are guarded in `main()`, so nothing reaches them yet (#719)',
   'check-doc-coverage.ts': 'reports an unbuilt tree by name, because a partial run over resolving shims is the failure it exists to catch',
   'check-package-tests.ts': 'has no walk of its own, and `EXEMPT` naming a package the list no longer carries fails it',
   'check-preview-position.ts': 'guards an empty file list and an empty group list in its own predicates',

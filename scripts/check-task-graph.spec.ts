@@ -75,6 +75,26 @@ describe('afterBuild', () => {
   })
 })
 
+// The floor. `declaredTasks` and `pipelineSteps` both find their input by
+// regex over the workspace file, so a rename there leaves them with nothing to
+// read — and every assertion in the describe above passes over two empty lists
+// without saying so (#719).
+describe('when the workspace declares neither input', () => {
+  const NOTHING = `packages:\n  - 'packages/*'\n`
+
+  it('reports a missing tasks block rather than a clean graph', () => {
+    expect(taskGraphProblems(NOTHING, SCRIPTS, {}, {})).toContainEqual(
+      expect.stringContaining('declares no `tasks:`'),
+    )
+  })
+
+  it('reports a missing pipeline rather than a clean graph', () => {
+    expect(taskGraphProblems(NOTHING, SCRIPTS, {}, {})).toContainEqual(
+      expect.stringContaining('declares no `pipelines.checks`'),
+    )
+  })
+})
+
 describe('taskGraphProblems', () => {
   // The drift #546 would otherwise have introduced: `lint` moved past the build
   // because a type-aware rule cannot resolve workspace types on a cold tree, and
