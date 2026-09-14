@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { citedJobProblems, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems } from './check-versions.ts'
+import { afterEach, describe, expect, it } from 'vitest'
+import { citedJobProblems, collect, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './check-versions.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`
 // while the plugin declared `^5.46.4`, inviting a combination that cannot be
@@ -204,5 +206,78 @@ describe('citedJobProblems', () => {
     const row = '| [SvelteKit](https://svelte.dev) | `^2.53.0` | build + `svelte-check` |'
 
     expect(citedJobProblems('f', table(row), jobs)).toHaveLength(1)
+  })
+})
+
+// Everything above asserts predicates against strings. These read the tree
+// (#719): the half that finds the workflows and the package READMEs was
+// asserted nowhere, and either half going empty is silent.
+
+afterEach(removeTrees)
+
+function pkg(name: string, extra: Record<string, unknown> = {}): string {
+  return JSON.stringify({ name, version: '1.0.0', ...extra })
+}
+
+describe('collect', () => {
+  it('reads workflow contents rather than only their names', async () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n  build:\n    name: Build\n' })
+
+    expect(jobNames((await collect(root)).workflows)).toContain('Build')
+  })
+
+  it('passes over a file in the workflow directory that is not a workflow', async () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n', '.github/workflows/notes.md': 'jobs:\n  x:\n    name: Nope\n' })
+
+    expect((await collect(root)).workflows).toHaveLength(1)
+  })
+
+  it('pairs each package README with its manifest', async () => {
+    const root = tree({
+      'packages/one/package.json': pkg('@fixture/one', { peerDependencies: { vue: '^3' } }),
+      'packages/one/README.md': '# one',
+    })
+
+    expect((await collect(root)).packages).toEqual([
+      { entry: 'one', readme: '# one', manifest: expect.objectContaining({ name: '@fixture/one' }) },
+    ])
+  })
+
+  // A package with no README has nothing to compare and is not this check's
+  // defect to report — `check-readmes` owns that one.
+  it('passes over a package with a manifest and no README', async () => {
+    const root = tree({ 'packages/bare/package.json': pkg('@fixture/bare') })
+
+    expect((await collect(root)).packages).toEqual([])
+  })
+})
+
+describe('walkProblems', () => {
+  it('is silent when both halves read something', async () => {
+    const root = tree({
+      '.github/workflows/test.yml': 'jobs:\n',
+      'packages/one/package.json': pkg('@fixture/one'),
+      'packages/one/README.md': '# one',
+    })
+
+    expect(walkProblems(await collect(root))).toEqual([])
+  })
+
+  it('fails when no workflow was read, since every cited job would resolve against nothing', async () => {
+    const root = tree({ 'packages/one/package.json': pkg('@fixture/one'), 'packages/one/README.md': '# one' })
+
+    expect(walkProblems(await collect(root))).toEqual([expect.stringContaining('held no workflow files')])
+  })
+
+  it('fails when no package was read, since the per-README assertions examined nothing', async () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n' })
+
+    expect(walkProblems(await collect(root))).toEqual([expect.stringContaining('held no package with both')])
+  })
+})
+
+describe('the check as a process', () => {
+  it('exits 0 over the repository it actually ships with', () => {
+    expect(runCheck('check-versions.ts').status).toBe(0)
   })
 })

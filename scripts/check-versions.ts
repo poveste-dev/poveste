@@ -28,7 +28,6 @@ import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const PACKAGES = join(ROOT, 'packages')
 
 export interface Expectation {
   label: string
@@ -290,6 +289,59 @@ export function readmeRangeProblems(pkg: string, readme: string, peers: Record<s
   return problems
 }
 
+export interface Walk {
+  /** Workflow file contents, which `jobNames` reads the job list out of. */
+  workflows: string[]
+  /** Packages whose README and manifest were both readable. */
+  packages: Array<{ entry: string, readme: string, manifest: any }>
+}
+
+/**
+ * The walk, split from the judging so a spec can point it at a fixture tree
+ * and assert what it read (#719).
+ */
+export async function collect(root = ROOT): Promise<Walk> {
+  const workflowDir = join(root, '.github', 'workflows')
+  const workflows = await Promise.all(
+    (await readdir(workflowDir).catch(() => []))
+      .filter(name => /\.ya?ml$/.test(name))
+      .map(name => readFile(join(workflowDir, name), 'utf8')),
+  )
+
+  const packages: Walk['packages'] = []
+  for (const entry of await readdir(join(root, 'packages')).catch(() => [])) {
+    try {
+      const manifest = JSON.parse(await readFile(join(root, 'packages', entry, 'package.json'), 'utf8'))
+      const readme = await readFile(join(root, 'packages', entry, 'README.md'), 'utf8')
+      packages.push({ entry, readme, manifest })
+    }
+    catch {
+      continue
+    }
+  }
+
+  return { workflows, packages }
+}
+
+/**
+ * The floor: both halves of the walk reached something.
+ *
+ * Either going empty is silent on its own — no workflows means every cited job
+ * resolves against an empty set, and no packages means the per-README range
+ * assertions run over nothing. The tables above would still match and the
+ * success line would still print a row count.
+ */
+export function walkProblems({ workflows, packages }: Walk): string[] {
+  const problems: string[] = []
+  if (workflows.length === 0) {
+    problems.push('.github/workflows held no workflow files, so every job name cited by a table would resolve against nothing')
+  }
+  if (packages.length === 0) {
+    problems.push('packages/ held no package with both a manifest and a README, so the per-package range assertions examined nothing')
+  }
+  return problems
+}
+
 async function main(): Promise<void> {
   const [expected, tables] = await Promise.all([
     expectations(),
@@ -298,28 +350,14 @@ async function main(): Promise<void> {
 
   const problems = tables.flatMap(table => tableProblems(table, expected))
 
-  const workflowDir = join(ROOT, '.github', 'workflows')
-  const workflows = await Promise.all(
-    (await readdir(workflowDir))
-      .filter(name => /\.ya?ml$/.test(name))
-      .map(name => readFile(join(workflowDir, name), 'utf8')),
-  )
-  const jobs = jobNames(workflows)
+  const walk = await collect()
+  problems.push(...walkProblems(walk))
+
   for (const file of TABLES) {
-    problems.push(...citedJobProblems(file, await readFile(join(ROOT, file), 'utf8'), jobs))
+    problems.push(...citedJobProblems(file, await readFile(join(ROOT, file), 'utf8'), jobNames(walk.workflows)))
   }
 
-  for (const entry of await readdir(PACKAGES)) {
-    let readme: string
-    let manifest: any
-    try {
-      manifest = JSON.parse(await readFile(join(PACKAGES, entry, 'package.json'), 'utf8'))
-      readme = await readFile(join(PACKAGES, entry, 'README.md'), 'utf8')
-    }
-    catch {
-      continue
-    }
-
+  for (const { entry, readme, manifest } of walk.packages) {
     problems.push(...readmeRangeProblems(entry, readme, manifest.peerDependencies ?? {}))
     problems.push(...nodeClaimProblems(entry, readme, manifest.engines?.node))
   }

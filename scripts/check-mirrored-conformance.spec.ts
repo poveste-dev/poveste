@@ -1,9 +1,7 @@
-import { spawnSync } from 'node:child_process'
-import { join } from 'node:path'
-import process from 'node:process'
 import { afterEach, describe, expect, it } from 'vitest'
 import { collect, compareMirror, MIRRORS, walkProblems } from './check-mirrored-conformance.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 afterEach(removeTrees)
 
@@ -249,9 +247,6 @@ describe('walkProblems', () => {
 // console text would make every reworded message a test failure about nothing.
 describe('the check as a process', () => {
   it('exits 0 over the repository it actually ships with', () => {
-    const check = join(import.meta.dirname, 'check-mirrored-conformance.ts')
-    const result = spawnSync(process.execPath, ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', check], { encoding: 'utf8' })
-
-    expect(result.status).toBe(0)
+    expect(runCheck('check-mirrored-conformance.ts').status).toBe(0)
   })
 })

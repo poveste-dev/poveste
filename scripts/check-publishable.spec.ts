@@ -1,9 +1,8 @@
-import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import process from 'node:process'
 import { afterEach, describe, expect, it } from 'vitest'
 import { emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './check-publishable.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -351,10 +350,7 @@ describe('walkProblems', () => {
 // repository here anyway — it packs each package, so it needs a built tree, and
 // `test:scripts` runs before the build.
 describe('the check as a process', () => {
-  const check = join(import.meta.dirname, 'check-publishable.ts')
-
-  const run = (root: string) =>
-    spawnSync(process.execPath, ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', check, '--offline', '--root', root], { encoding: 'utf8' })
+  const run = (root: string) => runCheck('check-publishable.ts', ['--offline', '--root', root])
 
   const book = () => ({
     'CONTRIBUTING.md': '| Package | What |\n| --- | --- |\n| [@fixture/one](./packages/one) | the only one |\n',
