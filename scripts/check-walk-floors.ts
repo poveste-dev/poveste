@@ -28,9 +28,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { rootFromArgv } from './check-publishable.ts'
 
 const ROOT = join(import.meta.dirname, '..')
-const SCRIPTS = join(ROOT, 'scripts')
 
 /**
  * Checks with no floor, and why the question does not apply to them.
@@ -147,12 +147,19 @@ export function floorProblems(checks: string[], sources: Record<string, string>,
 }
 
 function main(): void {
-  const checks = checkScripts(SCRIPTS)
-  const sources = Object.fromEntries(checks.map(name => [name, readFileSync(join(SCRIPTS, name), 'utf8')]))
+  // `--root` for the same reason `check-publishable` has one: a spec can assert
+  // what `floorProblems` returns without it, but not what this process does
+  // with the answer — and "reports success over an assertion that never ran" is
+  // a statement about the exit code. Deleting the `process.exit` below left all
+  // twelve specs green, which is this file's own defect committed inside it.
+  const scripts = join(rootFromArgv(process.argv) ?? ROOT, 'scripts')
+
+  const checks = checkScripts(scripts)
+  const sources = Object.fromEntries(checks.map(name => [name, readFileSync(join(scripts, name), 'utf8')]))
   const specs = Object.fromEntries(
-    readdirSync(SCRIPTS)
+    readdirSync(scripts)
       .filter(name => name.endsWith('.spec.ts'))
-      .map(name => [name, readFileSync(join(SCRIPTS, name), 'utf8')]),
+      .map(name => [name, readFileSync(join(scripts, name), 'utf8')]),
   )
   const problems = floorProblems(checks, sources, WITHOUT_FLOOR, specs)
 
@@ -165,8 +172,12 @@ function main(): void {
     process.exit(1)
   }
 
-  const guarded = checks.length - Object.keys(WITHOUT_FLOOR).length
-  console.log(`✅ ${checks.length} checks classified: ${guarded} assert they reached their inputs, ${Object.keys(WITHOUT_FLOOR).length} say why they do not have to`)
+  // Counted, not derived. `checks.length - exempt.length` is right only while
+  // the two failures above keep the sets disjoint, and it would go on looking
+  // right if either were relaxed.
+  const guarded = checks.filter(name => hasFloor(sources[name] ?? '')).length
+  const explained = checks.filter(name => name in WITHOUT_FLOOR).length
+  console.log(`✅ ${checks.length} checks classified: ${guarded} assert they reached their inputs, ${explained} say why they do not have to`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
