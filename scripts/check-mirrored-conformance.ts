@@ -65,16 +65,40 @@ export interface MirrorProblem {
  * failing at build on a missing import — the confusing red in a book you did not
  * touch that this exists to replace.
  */
-function filesIn(dir: string, prefix = ''): string[] {
-  return readdirSync(dir, { withFileTypes: true })
-    .flatMap((entry) => {
-      const name = prefix ? `${prefix}/${entry.name}` : entry.name
-      if (entry.isDirectory()) {
-        return filesIn(join(dir, entry.name), name)
-      }
-      return entry.isFile() ? [name] : []
-    })
-    .sort()
+interface Selection {
+  files: string[]
+  /**
+   * How many files the directory held, counted from the dirent and not from
+   * the selection below it.
+   *
+   * Deliberately a second, independent count. Anything derived from the same
+   * expression that decides what to keep agrees with it by construction, and
+   * would agree just as readily when that expression is wrong.
+   */
+  offered: number
+}
+
+function filesIn(dir: string, prefix = ''): Selection {
+  const files: string[] = []
+  let offered = 0
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const name = prefix ? `${prefix}/${entry.name}` : entry.name
+
+    if (entry.isDirectory()) {
+      const nested = filesIn(join(dir, entry.name), name)
+      files.push(...nested.files)
+      offered += nested.offered
+      continue
+    }
+
+    if (entry.isFile()) {
+      offered++
+      files.push(name)
+    }
+  }
+
+  return { files: files.sort(), offered }
 }
 
 export function compareMirror(sourceFiles: Map<string, string>, mirrorFiles: Map<string, string>, exceptions: Set<string> = MIRROR_EXCEPTIONS, mirrorDir = ''): MirrorProblem[] {
@@ -114,6 +138,8 @@ export interface Walk {
   missing: string[]
   /** Every file opened, as `<dir>/<name>`. */
   examined: string[]
+  /** How many files those directories held, compared or not. */
+  offered: number
 }
 
 /**
@@ -128,6 +154,7 @@ export function collect(root = ROOT, mirrors: Mirror[] = MIRRORS): Walk {
   const pairs: Pair[] = []
   const missing: string[] = []
   const examined: string[] = []
+  let offered = 0
 
   const read = (dir: string): Map<string, string> => {
     try {
@@ -137,31 +164,44 @@ export function collect(root = ROOT, mirrors: Mirror[] = MIRRORS): Walk {
       missing.push(dir)
       return new Map()
     }
-    const files = filesIn(join(root, dir))
-    examined.push(...files.map(name => `${dir}/${name}`))
-    return new Map(files.map(name => [name, readFileSync(join(root, dir, name), 'utf8')]))
+    const selection = filesIn(join(root, dir))
+    offered += selection.offered
+    examined.push(...selection.files.map(name => `${dir}/${name}`))
+    return new Map(selection.files.map(name => [name, readFileSync(join(root, dir, name), 'utf8')]))
   }
 
   for (const { source, mirror } of mirrors) {
     pairs.push({ source, mirror, sourceFiles: read(source), mirrorFiles: read(mirror) })
   }
 
-  return { pairs, missing, examined }
+  return { pairs, missing, examined, offered }
 }
 
 /**
- * The floor this check had no way to fail: it examined something.
+ * What the walk has to be able to say about itself before anything trusts it.
  *
- * A walk that matches nothing compares empty against empty, finds no
- * difference, and prints a success line with a zero in it. Narrowing `filesIn`
- * to one extension takes the count from 75 to 0 with every assertion still
- * green, which is the whole of #719 in one mutation.
+ * "It examined something" is a floor on *reach*, and reach is not the failure.
+ * Narrowing `filesIn` to one extension takes this check from 75 files compared
+ * to 36 — still green, still reporting success, and a reach floor is satisfied
+ * by any one of the 36. So the assertion is coverage: every file the
+ * directories held was compared.
+ *
+ * The reach floor stays underneath it, for directories that exist and hold
+ * nothing at all — where a coverage assertion is true and worthless.
  */
-export function walkProblems({ missing, examined }: Walk): string[] {
+export function walkProblems({ missing, examined, offered }: Walk): string[] {
   const problems = missing.map(dir => `${dir} does not exist — a mirrored set has moved, and this check no longer describes the tree`)
 
-  if (examined.length === 0 && missing.length === 0) {
+  if (missing.length > 0) {
+    return problems
+  }
+
+  if (examined.length === 0) {
     problems.push('every mirrored directory exists and none of them held a file this check could read — the walk has stopped reaching the conformance sets')
+  }
+
+  if (examined.length !== offered) {
+    problems.push(`the mirrored directories hold ${offered} files and the walk compared ${examined.length} of them — the rest left the comparison without saying so`)
   }
 
   return problems

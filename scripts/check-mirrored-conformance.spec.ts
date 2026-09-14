@@ -105,6 +105,13 @@ function tree(layout: Record<string, string>): string {
   trees.push(root)
 
   for (const [path, content] of Object.entries(layout)) {
+    // A trailing slash is an empty directory. A `.keep` in it would not be the
+    // same thing: it is a file, so the walk has something to read and a floor
+    // on reach is satisfied by it.
+    if (path.endsWith('/')) {
+      mkdirSync(join(root, path), { recursive: true })
+      continue
+    }
     mkdirSync(join(root, dirname(path)), { recursive: true })
     writeFileSync(join(root, path), content)
   }
@@ -180,24 +187,50 @@ describe('walkProblems', () => {
   // equal to empty and the check reports success over an assertion that never
   // ran. Narrowing the real walk to one extension takes the count from 75 to 0
   // with every other assertion in this file still green.
-  it('fails when both directories exist and neither yielded a file', () => {
-    const root = tree({ 'src/conformance/.keep': '', 'mirror/conformance/.keep': '' })
-    const walk = collect(root, PAIR)
-    walk.examined.length = 0
+  it('fails when both directories exist and neither holds a file', () => {
+    const root = tree({ 'src/conformance/': '', 'mirror/conformance/': '' })
 
-    expect(walkProblems(walk)).toEqual([expect.stringContaining('stopped reaching')])
+    expect(walkProblems(collect(root, PAIR))).toEqual([expect.stringContaining('stopped reaching')])
+  })
+
+  // The failure a floor on *reach* does not catch, and the one that actually
+  // happened: narrowing the selection took the real check from 75 files
+  // compared to 36, exit 0, every other assertion green. Any one of those 36
+  // satisfies "it examined something".
+  it('fails when the directories held files the walk did not compare', () => {
+    expect(walkProblems({ pairs: [], missing: [], examined: ['src/conformance/Button.story.vue'], offered: 3 })).toEqual([
+      expect.stringContaining('hold 3 files and the walk compared 1'),
+    ])
+  })
+
+  // Asserted against a real tree rather than a hand-built `Walk`, so a
+  // selection that starts dropping files fails here and not only in review.
+  it('compares every file the directories hold', () => {
+    const root = tree({
+      'src/conformance/Button.story.vue': 'a',
+      'src/conformance/fixtures/Thing.vue': 'b',
+      'src/conformance/README.md': 'c',
+      'mirror/conformance/Button.story.vue': 'a',
+      'mirror/conformance/fixtures/Thing.vue': 'b',
+      'mirror/conformance/README.md': 'c',
+    })
+
+    const walk = collect(root, PAIR)
+
+    expect(walk.examined).toHaveLength(walk.offered)
+    expect(walkProblems(walk)).toEqual([])
   })
 
   // A missing directory is already reported by name, and is a different fault
   // with a different fix. Saying both would send the reader to the wrong one.
   it('says only that a directory is missing when one is', () => {
-    expect(walkProblems({ pairs: [], missing: ['gone'], examined: [] })).toEqual([
+    expect(walkProblems({ pairs: [], missing: ['gone'], examined: [], offered: 0 })).toEqual([
       expect.stringContaining('gone does not exist'),
     ])
   })
 
   it('is silent when the walk read something', () => {
-    expect(walkProblems({ pairs: [], missing: [], examined: ['src/conformance/Button.story.vue'] })).toEqual([])
+    expect(walkProblems({ pairs: [], missing: [], examined: ['src/conformance/Button.story.vue'], offered: 1 })).toEqual([])
   })
 })
 
