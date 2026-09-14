@@ -25,7 +25,7 @@ export function strayTags(tags: string[]): string[] {
  * The empty entries go here rather than only in `strayTags`. `''.split('\n')`
  * is `['']`, so a checkout with no tags would otherwise be counted as one —
  * and the count below is the entire point of #740. `strayTags` keeps its own
- * guard because `release.spec.ts` asserts it directly.
+ * guard regardless: it is exported, and it filters a list it did not produce.
  */
 export function localTags(cwd: string = process.cwd()): string[] {
   return String(execFileSync('git', ['tag', '--list'], { cwd, stdio: ['ignore', 'pipe', 'pipe'] }))

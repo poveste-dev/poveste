@@ -41,12 +41,24 @@ describe('localTags', () => {
 })
 
 describe('strayTags', () => {
-  it('keeps its own guard against the empty entry', () => {
-    expect(strayTags([''])).toEqual([])
+  it('is silent when every tag is a release tag', () => {
+    expect(strayTags(['v0.10.0', 'v0.11.0'])).toEqual([])
   })
 
-  it('names a tag a release has no business pushing', () => {
-    expect(strayTags(['v1.0.0', 'salvage/thing'])).toEqual(['salvage/thing'])
+  it('does not treat a prerelease tag as stray', () => {
+    expect(strayTags(['v0.12.0-beta.1'])).toEqual([])
+  })
+
+  // The tag that actually leaked when v0.10.0 was cut (#457).
+  it('names a private tag parked on the machine', () => {
+    expect(strayTags(['v0.10.0', 'salvage/amazing-cerf-61cd4c'])).toEqual(['salvage/amazing-cerf-61cd4c'])
+  })
+
+  // `localTags` filters this too. Asserted on both because they guard for
+  // different reasons: one is what git prints, the other is an exported
+  // function taking a list it did not produce.
+  it('keeps its own guard against the empty entry', () => {
+    expect(strayTags([''])).toEqual([])
   })
 })
 
