@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
-import { emptyFilesEntries, packageTableProblems, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, workspaceProtocolDeps } from './check-publishable.ts'
+import { spawnSync } from 'node:child_process'
+import { join } from 'node:path'
+import process from 'node:process'
+import { afterEach, describe, expect, it } from 'vitest'
+import { emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './check-publishable.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -220,5 +224,180 @@ describe('packageTableProblems', () => {
   // switch the guard off without failing anything.
   it('reports a table that has gone missing', () => {
     expect(packageTableProblems('# Contributing\n\nNo table.', published, all)).toHaveLength(1)
+  })
+})
+
+// Everything above asserts predicates against strings. Nothing above opens a
+// file — which is the gap (#719), and it is widest here: three other checks
+// import `publishablePackages`, so this one walk decides what
+// `check-doc-coverage`, `check-package-tests` and `check-published` examine.
+
+afterEach(removeTrees)
+
+function manifest(name: string, extra: Record<string, unknown> = {}): string {
+  return JSON.stringify({ name, version: '1.0.0', ...extra })
+}
+
+describe('walkPackages', () => {
+  it('selects a package that declares a name and is not private', () => {
+    const root = tree({ 'packages/one/package.json': manifest('@poveste/one') })
+
+    expect(walkPackages(root).packages).toEqual([
+      { name: '@poveste/one', dir: join(root, 'packages', 'one') },
+    ])
+  })
+
+  it('sorts by name so a directory rename cannot reorder the list', () => {
+    const root = tree({
+      'packages/zeta/package.json': manifest('@poveste/a'),
+      'packages/alpha/package.json': manifest('@poveste/z'),
+    })
+
+    expect(walkPackages(root).packages.map(pkg => pkg.name)).toEqual(['@poveste/a', '@poveste/z'])
+  })
+
+  // Rejections are reported rather than dropped, because the failure worth
+  // catching is a package leaving the list — and a list cannot say what is no
+  // longer on it.
+  it('says why it passed over each entry it did not select', () => {
+    const root = tree({
+      'packages/kept/package.json': manifest('@poveste/kept'),
+      'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
+      'packages/nameless/package.json': JSON.stringify({ version: '1.0.0' }),
+      'packages/not-a-package/README.md': 'no manifest here',
+    })
+
+    expect(walkPackages(root).skipped).toEqual([
+      { dir: 'hidden', reason: 'private' },
+      { dir: 'nameless', reason: 'its manifest declares no name' },
+      { dir: 'not-a-package', reason: 'no readable package.json' },
+    ])
+  })
+
+  // The property the accounting rests on, asserted against a real directory
+  // rather than against a `Walk` typed by hand: every entry leaves the walk
+  // either selected or explained. A refactor that drops one on the floor fails
+  // here, which a spec built from a literal cannot notice.
+  it('leaves no entry unaccounted for, whatever kind it is', () => {
+    const root = tree({
+      'packages/kept/package.json': manifest('@poveste/kept'),
+      'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
+      'packages/nameless/package.json': JSON.stringify({ version: '1.0.0' }),
+      'packages/not-a-package/README.md': 'no manifest here',
+    })
+
+    const walk = walkPackages(root)
+
+    expect(walk.packages.length + walk.skipped.length).toBe(walk.entries.length)
+    expect(walkProblems(walk)).toEqual([])
+  })
+
+  it('counts every entry it walked, selected or not', () => {
+    const root = tree({
+      'packages/one/package.json': manifest('@poveste/one'),
+      'packages/two/package.json': manifest('@poveste/two', { private: true }),
+    })
+
+    expect(walkPackages(root).entries).toHaveLength(2)
+  })
+})
+
+describe('walkProblems', () => {
+  it('is silent when every entry is either selected or explained', () => {
+    const root = tree({
+      'packages/one/package.json': manifest('@poveste/one'),
+      'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
+    })
+
+    expect(walkProblems(walkPackages(root))).toEqual([])
+  })
+
+  it('fails when packages/ holds nothing at all', () => {
+    const root = tree({ 'CONTRIBUTING.md': '', 'packages/.keep': '' })
+
+    expect(walkProblems({ packages: [], skipped: [], entries: [] })).toEqual([
+      expect.stringContaining('held nothing to walk'),
+    ])
+    expect(walkProblems(walkPackages(root))).not.toEqual([])
+  })
+
+  // The floor "it examined at least one thing" passes this, which is why it is
+  // not the assertion. One package leaving the list is the realistic drift, and
+  // it leaves `check-package-tests` and `check-doc-coverage` green over a
+  // package they have stopped examining.
+  //
+  // Built by hand rather than from `walkPackages`, because the walk cannot
+  // produce this state: every path selects or records a skip. That is the
+  // point — the assertion is a tripwire for the next filter, and this is the
+  // only way to show it armed.
+  it('fails when an entry is neither selected nor skipped for a reason', () => {
+    expect(walkProblems({
+      packages: [{ name: '@poveste/one', dir: '/tmp/one' }],
+      skipped: [],
+      entries: ['one', 'two'],
+    })).toEqual([expect.stringContaining('accounted for 1 of 2')])
+  })
+})
+
+// `walkPackages()` returning packages says nothing about what `main()` did with
+// them, and the defect is a check *reporting success*. The exit code is how
+// that success is expressed, so one spec runs the real check and reads it.
+//
+// It asserts the status rather than the output: matching console text would
+// make every reworded message a failing test about nothing.
+//
+// `--root` is what makes this possible at all. Aiming only the walk would leave
+// the assertion on an intermediate value, and this check cannot be run over the
+// repository here anyway — it packs each package, so it needs a built tree, and
+// `test:scripts` runs before the build.
+describe('the check as a process', () => {
+  const check = join(import.meta.dirname, 'check-publishable.ts')
+
+  const run = (root: string) =>
+    spawnSync(process.execPath, ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', check, '--offline', '--root', root], { encoding: 'utf8' })
+
+  const book = () => ({
+    'CONTRIBUTING.md': '| Package | What |\n| --- | --- |\n| [@fixture/one](./packages/one) | the only one |\n',
+    'packages/one/package.json': manifest('@fixture/one', { type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
+    'packages/one/index.js': 'export const one = 1\n',
+  })
+
+  it('exits 0 over a tree where everything it asserts holds', () => {
+    expect(run(tree(book())).status).toBe(0)
+  }, 30_000)
+
+  // Exit 0 on its own is what a check that examined nothing also produces, so
+  // the pair is the assertion: this proves the status can still move.
+  it('exits 1 over a tree with a package the table omits', () => {
+    const root = tree({
+      ...book(),
+      'packages/two/package.json': manifest('@fixture/two', { type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
+      'packages/two/index.js': 'export const two = 2\n',
+    })
+
+    expect(run(root).status).toBe(1)
+  }, 30_000)
+})
+
+describe('rootFromArgv', () => {
+  it('reads the path after --root', () => {
+    expect(rootFromArgv(['node', 'check.ts', '--offline', '--root', '/tmp/fixture'])).toBe('/tmp/fixture')
+  })
+
+  it('is undefined when the flag is absent, so the real tree stays the default', () => {
+    expect(rootFromArgv(['node', 'check.ts', '--offline'])).toBeUndefined()
+  })
+})
+
+// The point of parameterizing the shared walk rather than this one check: the
+// three importers become aimable too, with no edit of their own.
+describe('the walk the other checks import', () => {
+  it('can be pointed at a fixture tree by a caller that never mentions ROOT', () => {
+    const root = tree({
+      'packages/one/package.json': manifest('@poveste/one'),
+      'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
+    })
+
+    expect(publishablePackages(root).map(pkg => pkg.name)).toEqual(['@poveste/one'])
   })
 })
