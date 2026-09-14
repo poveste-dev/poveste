@@ -193,7 +193,6 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
   }
   const runtimeDir = fileURLToPath(new URL('../runtime', import.meta.url))
   nuxt.options.build.templates.push(
-    { src: join(runtimeDir, 'composables.mjs'), filename: 'poveste/composables.mjs' },
     { src: join(runtimeDir, 'components.mjs'), filename: 'poveste/components.mjs' },
     { src: join(runtimeDir, 'tolerant-plugins.mjs'), filename: 'poveste/tolerant-plugins.mjs' },
   )
@@ -224,18 +223,17 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
     }
   })
 
+  // `useNuxtApp` was stubbed here until #439, which cost every story the real
+  // one: `$config` read as undefined and a value a plugin provided was
+  // unreachable, which is the case histoire#666 was about. The polyfills stay —
+  // they are dropped from the `#app` presets and deliberately not replaced.
   nuxt.hook('imports:sources', (presets) => {
     const polyfills = ['requestIdleCallback', 'cancelIdleCallback']
-    const stubbedComposables = ['useNuxtApp']
     for (const appPreset of presets.filter(p => p && typeof p === 'object' && 'from' in p && p.from?.startsWith('#app'))) {
       if ('imports' in appPreset && Array.isArray(appPreset.imports)) {
-        appPreset.imports = appPreset.imports.filter(i => typeof i !== 'string' || (!stubbedComposables.includes(i) && !polyfills.includes(i)))
+        appPreset.imports = appPreset.imports.filter(i => typeof i !== 'string' || !polyfills.includes(i))
       }
     }
-    presets.push({
-      from: '#build/poveste/composables.mjs',
-      imports: stubbedComposables,
-    })
   })
 
   return {
