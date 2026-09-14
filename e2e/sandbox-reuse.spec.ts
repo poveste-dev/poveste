@@ -130,27 +130,31 @@ test.describe('sandbox reuse', () => {
     expect(await taggedDocuments(page), 'the preview kept its document across the story change').toBe(1)
   })
 
-  test('a story that selects no variant lets the previous realm go', async ({ page }) => {
-    // The preview outliving the variant is what makes the retarget above
-    // possible, and it is also how it goes wrong. Holding it is right for the
-    // gap between a story change and the variant that follows it; it is wrong
-    // once no variant is coming, because then the realm the reader has left
-    // would keep running — timers, media and all — behind a hidden iframe for
-    // as long as they stay on the variant list.
+  test('a multi-variant story the reader has never opened retargets the realm too', async ({ page }) => {
+    // This used to assert the opposite, and it was right to: a multi-variant
+    // story with no history selected nothing, so holding the preview would have
+    // left the realm the reader came from running — timers, media and all —
+    // behind a hidden iframe for as long as they sat on the variant list.
+    //
+    // That state no longer exists. The first variant opens by itself (#724), so
+    // this is the retarget above rather than a release, and the reader never
+    // waits on a variant list they did not ask for. The realm the previous
+    // story used is the one showing the new one.
+    //
+    // The release branch in `StoryVariantSingleView` is still correct and now
+    // only reachable for a story with no variants at all, which no conformance
+    // book carries.
     await openTagged(page, 'conformance-button')
 
     await openStoryInApp(page, 'Wrapper')
-    await expect(
-      page.getByTestId('preview-iframe'),
-      'the story the reader left is neither shown nor left running',
-    ).toHaveCount(0)
 
-    await page.locator('[data-testid="story-variant-list-item"]').first().click()
     // Host-side as well as in-frame: a locator inside `contentFrame()` is
     // evaluated in the sandbox document and would pass while the iframe itself
     // stayed hidden in the page.
     await expect(page.getByTestId('preview-iframe')).toBeVisible()
     await expect(page.getByTestId('preview-iframe').contentFrame().locator('.conformance-wrapper-text')).toBeVisible()
+
+    expect(await taggedDocuments(page), 'the preview kept its document across the story change').toBe(1)
   })
 
   /*
