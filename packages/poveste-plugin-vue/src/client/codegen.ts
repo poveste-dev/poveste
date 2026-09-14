@@ -169,7 +169,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
           serialized = cleanupExpression(value.substring(2, value.length - 2).trim()).split('\n')
         }
         else if (typeof value === 'function') {
-          let code = cleanupExpression(value.toString().replace(/'/g, '\\\'').replace(/"/g, '\''))
+          let code = cleanupExpression(value.toString())
           const testResult = /function (\S+)\(/.exec(code)
           if (testResult) {
             // Function name only
@@ -186,15 +186,16 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
         else {
           serialized = serializeAndCleanJs(value)
         }
-        if (serialized.length > 1) {
+        const { quote, lines } = delimitAttr(serialized)
+        if (lines.length > 1) {
           multilineAttrs = true
-          const indented: string[] = [`${directive}${arg}="${serialized[0]}`]
-          indented.push(...serialized.slice(1, serialized.length - 1))
-          indented.push(`${serialized[serialized.length - 1]}"`)
+          const indented: string[] = [`${directive}${arg}=${quote}${lines[0]}`]
+          indented.push(...lines.slice(1, lines.length - 1))
+          indented.push(`${lines[lines.length - 1]}${quote}`)
           attrs.push(indented)
         }
         else {
-          attrs.push([`${directive}${arg}="${serialized[0]}"`])
+          attrs.push([`${directive}${arg}=${quote}${lines[0]}${quote}`])
         }
       }
       // @ts-expect-error TODO
@@ -350,6 +351,40 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
   return {
     lines,
   }
+}
+
+/**
+ * How to delimit an attribute whose value is arbitrary code.
+ *
+ * The source pane shows template source a reader copies, so the code has to
+ * survive as written. The pass this replaces escaped `'` for a JavaScript
+ * string and rewrote `"` into `'`, and the consumer is neither — it is an
+ * attribute delimited by `"`. Both halves reached the reader: a handler written
+ * `() => alert("hi")` was shown as `() => alert('hi')`, and one written
+ * `() => alert('hi')` came out with visible backslashes, which reads as a bug
+ * in the reader's own code rather than as our rendering.
+ *
+ * The order made it worse. Every `'` the rewrite introduced arrived after the
+ * escaping pass, so an authored quote was escaped and a manufactured one was
+ * not. A backslash was never escaped at all, which is what CodeQL flagged as
+ * `js/incomplete-sanitization`: `() => alert('it\'s')` went in carrying one
+ * and came out carrying four.
+ *
+ * So nothing is escaped for a string context. Code containing `"` takes the
+ * other delimiter, the way someone writing the template by hand would; code
+ * carrying both quote characters has no safe delimiter, so its `"` becomes
+ * `&quot;` — the escape an attribute actually has (#602).
+ */
+export function delimitAttr(lines: string[]): { quote: string, lines: string[] } {
+  const code = lines.join('\n')
+
+  if (!code.includes('"')) {
+    return { quote: '"', lines }
+  }
+  if (!code.includes('\'')) {
+    return { quote: '\'', lines }
+  }
+  return { quote: '"', lines: lines.map(line => line.replace(/"/g, '&quot;')) }
 }
 
 export function getTagName(vnode: VNode) {
