@@ -171,6 +171,24 @@ describe('walkProblems', () => {
     expect(walkProblems(collect(root))).toEqual([])
   })
 
+  // The input a spec most obviously reaches for when testing the floor: a tree
+  // with workflows and nothing else. It has to produce a Walk the floor can
+  // describe, not an ENOENT out of the walk.
+  it('describes a tree with no manifest rather than throwing out of the walk', () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n' })
+
+    expect(walkProblems(collect(root))).toEqual([expect.stringContaining('declares no `engines.node`')])
+  })
+
+  it('describes a manifest that declares no engines block', () => {
+    const root = tree({
+      '.github/workflows/test.yml': 'jobs:\n',
+      'packages/poveste/package.json': JSON.stringify({ name: 'poveste' }),
+    })
+
+    expect(walkProblems(collect(root))).toEqual([expect.stringContaining('declares no `engines.node`')])
+  })
+
   it('fails when the directory held no workflow at all', () => {
     const root = tree({ '.github/workflows/notes.md': 'x', 'packages/poveste/package.json': MANIFEST })
 

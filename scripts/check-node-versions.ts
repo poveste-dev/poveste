@@ -153,7 +153,22 @@ export function collect(root = ROOT): Walk {
   const dir = join(root, '.github', 'workflows')
   const workflows = readdirSync(dir).filter(entry => /\.ya?ml$/.test(entry))
   const uses = workflows.flatMap(entry => hardcodedNodeVersions(entry, readFileSync(join(dir, entry), 'utf8')))
-  const enginesNode = JSON.parse(readFileSync(join(root, 'packages', 'poveste', 'package.json'), 'utf8')).engines.node
+
+  // Read rather than assumed. A spec pointing this at a fixture that only
+  // carries workflows — the obvious way to exercise the floor below — would
+  // otherwise get ENOENT out of the walk instead of a `Walk` the floor can
+  // describe, which is the failure this check is being given a floor to avoid.
+  let manifest: any
+  try {
+    manifest = JSON.parse(readFileSync(join(root, 'packages', 'poveste', 'package.json'), 'utf8'))
+  }
+  catch {
+    // Unreadable or unparseable only. A manifest that is there and declares no
+    // `engines` is a different fault, and catching it here would hide a typo in
+    // the line below as easily as it hides a missing block.
+    manifest = undefined
+  }
+  const enginesNode: string = manifest?.engines?.node ?? ''
 
   return { uses, workflows, enginesNode }
 }
@@ -166,10 +181,15 @@ export function collect(root = ROOT): Walk {
  * a guard on the allow-list rather than on the walk, and it would go with the
  * list the day the allowance is deleted. This says what is meant (#719).
  */
-export function walkProblems({ workflows }: Walk): string[] {
-  return workflows.length === 0
-    ? ['.github/workflows held no workflow files — this check is reading a directory that has moved']
-    : []
+export function walkProblems({ workflows, enginesNode }: Walk): string[] {
+  const problems: string[] = []
+  if (workflows.length === 0) {
+    problems.push('.github/workflows held no workflow files — this check is reading a directory that has moved')
+  }
+  if (enginesNode === '') {
+    problems.push('packages/poveste declares no `engines.node`, and the floor a pinned job is checked against comes from it')
+  }
+  return problems
 }
 
 function main(): void {
