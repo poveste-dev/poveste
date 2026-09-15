@@ -18,11 +18,11 @@ permissions:
   contents: read
 
 concurrency:
-  # Grouped by commit for a push, so two pushes never queue behind each other.
-  # `cancel-in-progress: false` protected only a run that had already started,
-  # and a queued one was evicted by the next arrival — see `test.yml` for the
-  # whole reasoning (#707).
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  # One group per run outside a PR, so nothing ever queues behind anything —
+  # pushes and the `workflow_dispatch` above alike. `cancel-in-progress: false`
+  # protected only a run that had already started, and a queued one was evicted
+  # by the next arrival; see `test.yml` for the whole reasoning (#707).
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

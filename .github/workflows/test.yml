@@ -18,8 +18,9 @@ permissions:
   contents: read
 
 concurrency:
-  # A push groups by its own commit, so no two pushes ever share a group. The
-  # ref was here until #707, and `cancel-in-progress: false` did not save them:
+  # Every run outside a PR is its own group, so nothing ever queues behind
+  # anything. The ref was here until #707, and `cancel-in-progress: false` did
+  # not save them:
   # it protects a run that has already STARTED and does nothing for one that is
   # QUEUED. A group holds one running plus at most one pending run, and every
   # further arrival evicts whatever was pending — so a burst of merges to `next`
@@ -35,7 +36,14 @@ concurrency:
   #
   # The trade is concurrent runners during a burst. This repository is public,
   # so those minutes are free.
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  #
+  # `run_id` rather than `sha`, which was the first attempt: the commit
+  # separates pushes from each other but not repeated `workflow_dispatch` runs
+  # of one commit, and #707 reproduced the eviction that way too — six
+  # dispatches on a branch returned one run and four cancelled. `run_id` is
+  # unique per run, so both halves go. A re-run keeps its id, and by then the
+  # original has finished.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   # Only a PR's own runs supersede each other. Pushes cannot: one commit, one
   # group, nothing to supersede.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
