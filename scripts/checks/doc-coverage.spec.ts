@@ -5,9 +5,7 @@ import { checkDocCoverage } from '../check-doc-coverage.ts'
 it('every published entrypoint is measured for doc comments', { tags: ['docs', 'build'] }, async ({ annotate }) => {
   const { broken, report } = checkDocCoverage()
   process.stdout.write(`${report.join('\n')}\n`)
-  const summary = report.find(line => line.startsWith('📖'))
-  if (summary) {
-    await annotate(summary, 'notice')
-  }
+
   expect(broken, 'Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.').toEqual([])
+  await annotate(String(report.find(line => line.startsWith('📖'))), 'notice')
 })
