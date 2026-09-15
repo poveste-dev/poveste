@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { freezeWarning, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './check-changelog.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 import { runCheck } from './run-check.ts'
 
 // The shape of the real file: newest release first, then older ones, then the
@@ -196,7 +196,6 @@ describe('the check as a process', () => {
     expect(run.status).toBe(1)
     expect(run.stderr).toContain('Usage: check-changelog.ts <version>')
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
-    removeTrees()
   })
 
   it('exits non-zero when the changelog has no section for the version', () => {
@@ -205,7 +204,6 @@ describe('the check as a process', () => {
     expect(run.status).toBe(1)
     expect(run.stderr).toContain('has no section for')
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
-    removeTrees()
   })
 
   it('exits non-zero when a section carries a release-level heading', () => {
@@ -214,6 +212,5 @@ describe('the check as a process', () => {
     expect(run.status).toBe(1)
     expect(run.stderr).toContain('contains a heading at the release level')
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
-    removeTrees()
   })
 })

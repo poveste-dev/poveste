@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { bookProblems, checkConformanceConfig, CUSTOM_PRESET, presetsIn, specPresets, specProblems, toRendered } from './check-conformance-config.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const DEFAULTS = [
   { label: 'Transparent', color: 'transparent', contrastColor: '#333' },
@@ -151,6 +151,5 @@ describe('checkConformanceConfig', () => {
     const root = tree({ 'packages/poveste/src/node/config.ts': 'export const nothing = 1\n' })
 
     expect(await checkConformanceConfig(root)).toEqual(['could not read `backgroundPresets` from packages/poveste/src/node/config.ts'])
-    removeTrees()
   })
 })

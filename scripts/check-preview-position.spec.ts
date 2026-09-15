@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { canonical, checkPreviewPosition, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const wrap = (template: string) => `<template>${template}</template>`
 
@@ -204,6 +204,5 @@ describe('checkPreviewPosition', () => {
     const root = tree({ 'packages/poveste-app/src/': '' })
 
     expect(checkPreviewPosition(root)).toEqual(['no components found under packages/poveste-app/src — this check is looking in the wrong place'])
-    removeTrees()
   })
 })

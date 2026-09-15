@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 import { didNotRun, runCheck } from './run-check.ts'
 
 describe('didNotRun', () => {
@@ -67,12 +67,10 @@ describe('runCheck', () => {
 
   it('returns the status of a check that ran', () => {
     expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
-    removeTrees()
   })
 
   it('returns a non-zero status rather than throwing when a check reports a problem', () => {
     expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('')]).status).toBe(1)
-    removeTrees()
   })
 
   // A renamed or deleted check is the same event as a missing binary: the
@@ -92,6 +90,5 @@ describe('runCheck', () => {
   // may overrule it.
   it('never reclassifies a check that ran to a clean verdict', () => {
     expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
-    removeTrees()
   })
 })

@@ -1,8 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { checkMirroredConformance, collect, compareMirror, MIRRORS, walkProblems } from './check-mirrored-conformance.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
-
-afterEach(removeTrees)
+import { tree } from './fixture-tree.ts'
 
 const source = new Map([['Button.story.vue', 'a'], ['Grid.story.vue', 'b']])
 
@@ -244,6 +242,5 @@ describe('checkMirroredConformance', () => {
     const root = tree(Object.fromEntries(MIRRORS.flatMap(({ source, mirror }, index) => [[`${source}/Probe.story.vue`, 'same'], [`${mirror}/Probe.story.vue`, index === 0 ? 'drifted' : 'same']])))
 
     expect(checkMirroredConformance(root)).toContainEqual(expect.stringContaining('differs between'))
-    removeTrees()
   })
 })

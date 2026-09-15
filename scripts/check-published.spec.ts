@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { backoffMs, checkPublished, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './check-published.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -233,6 +233,5 @@ describe('checkPublished', () => {
     const root = tree({ 'packages/': '' })
 
     expect(checkPublished(root)[0]).toBe('this check never got a list of packages to ask the registry about')
-    removeTrees()
   })
 })

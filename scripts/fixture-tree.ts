@@ -12,8 +12,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-
-const made: string[] = []
+import { onTestFinished } from 'vitest'
 
 /**
  * Writes `path -> content` under a fresh temporary root and returns it.
@@ -26,7 +25,9 @@ const made: string[] = []
  */
 export function tree(layout: Record<string, string>): string {
   const root = mkdtempSync(join(tmpdir(), 'poveste-check-'))
-  made.push(root)
+  // Removed when the test finishes, pass or fail. A cleanup call after the
+  // assertions never ran for a test that failed one.
+  onTestFinished(() => rmSync(root, { recursive: true, force: true }))
 
   for (const [path, content] of Object.entries(layout)) {
     if (path.endsWith('/')) {
@@ -38,11 +39,4 @@ export function tree(layout: Record<string, string>): string {
   }
 
   return root
-}
-
-/** Deletes every tree built so far. Call from `afterEach`. */
-export function removeTrees(): void {
-  for (const root of made.splice(0)) {
-    rmSync(root, { recursive: true, force: true })
-  }
 }

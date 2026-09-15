@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config'
-import { NEED_TAGS, SUBJECT_TAGS } from './scripts/checks/tag-names.ts'
+import { NEED_TAGS, SUBJECT_TAGS } from './scripts/checks/tag-names.mts'
 
 // Without `projects`, a root config applies vitest's default include to the
 // whole repository and loads the Playwright specs under `e2e/` and `examples/`.

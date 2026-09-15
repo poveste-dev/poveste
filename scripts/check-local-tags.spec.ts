@@ -1,9 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { localTags, reportLocalTags, strayTags } from './check-local-tags.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
-
-afterEach(removeTrees)
+import { tree } from './fixture-tree.ts'
 
 /**
  * A repository with the tags named on it, and nothing else.

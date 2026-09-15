@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { aliasesTaughtAlone, checkReadmes, collect, externalHosts, installLineProblems, instructsWithHistoire, legacyOwnUrls, missingInstallLine, referencedWorkflows, unrunnableFences, walkProblems } from './check-readmes.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 // The heuristics below are the whole guard. Each case here is one that got
 // past an earlier version of it, so a regression is a defect shipping again
@@ -312,8 +312,6 @@ describe('legacyOwnUrls', () => {
 // Everything above this line asserts predicates against strings, which is the
 // half that was already covered. These read the tree (#719).
 
-afterEach(removeTrees)
-
 function MANIFEST(name: string, extra: Record<string, unknown> = {}): string {
   return JSON.stringify({ name, version: '1.0.0', ...extra })
 }
@@ -414,6 +412,5 @@ describe('checkReadmes', () => {
     const root = tree({ 'README.md': '# root' })
 
     expect(await checkReadmes(root)).toContainEqual(expect.stringContaining('found no published packages under packages/'))
-    removeTrees()
   })
 })

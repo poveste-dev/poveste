@@ -20,7 +20,7 @@ import {
   titleProblems,
   unsafeCatchAlls,
 } from './check-docs-site.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const REDIRECTS = `
 [build]
@@ -591,6 +591,5 @@ describe('checkDocsSite', () => {
     const root = tree({ 'docs/': '' })
 
     expect(await checkDocsSite(root)).toContainEqual(expect.stringContaining('no build at'))
-    removeTrees()
   })
 })

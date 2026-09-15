@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { checkDocCoverage, entrypointsOf, formatRows, summarise, typesConditionOf, UNRESOLVED } from './check-doc-coverage.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const everythingExists = (): boolean => true
 
@@ -105,10 +105,8 @@ describe('entrypointsOf, with nested conditions', () => {
 })
 
 describe('the UNRESOLVED list', () => {
-  it('gives every exemption a reason, not just a name', () => {
-    for (const [specifier, reason] of Object.entries(UNRESOLVED)) {
-      expect(reason, specifier).not.toHaveLength(0)
-    }
+  it.for(Object.entries(UNRESOLVED).map(([name, reason]) => ({ name, reason })))('$name has a reason, not just a name', ({ reason }) => {
+    expect(reason).not.toHaveLength(0)
   })
 })
 
@@ -153,6 +151,5 @@ describe('checkDocCoverage', () => {
     })
 
     expect(checkDocCoverage(root).broken).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
-    removeTrees()
   })
 })

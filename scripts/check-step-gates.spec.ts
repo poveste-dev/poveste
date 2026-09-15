@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { boundariesIn, checkStepGates, collect, gateProblems, jobsIn, masksFailure, statesDependency, walkProblems } from './check-step-gates.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const WORKFLOWS = join(dirname(fileURLToPath(import.meta.url)), '..', '.github', 'workflows')
 
@@ -261,7 +261,6 @@ describe('collect', () => {
     const root = tree({ '.github/workflows/a.yml': job('      - name: One\n        run: echo hi\n'), '.github/workflows/notes.md': '' })
 
     expect(collect(root).walk).toEqual({ workflows: ['a.yml'], jobs: 1, steps: 1 })
-    removeTrees()
   })
 })
 
@@ -284,7 +283,6 @@ describe('checkStepGates', () => {
 
   it('finds nothing over a copy with nothing injected', () => {
     expect(checkStepGates(workflowsWith('test.yml', source => source))).toEqual([])
-    removeTrees()
   })
 
   // #722's fourth attempt, as a diff: a sweep step placed after the publish
@@ -293,7 +291,6 @@ describe('checkStepGates', () => {
     const root = workflowsWith('release.yml', source => `${source}\n      - name: Sweep the labels\n        run: gh issue list\n`)
 
     expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Sweep the labels inherits `success()`'))
-    removeTrees()
   })
 
   // On the step that opens the region, because that is where one edit is enough:
@@ -305,13 +302,11 @@ describe('checkStepGates', () => {
       source.replace('      - name: Draft the GitHub release\n', `      - name: Draft the GitHub release\n        if: ${expr('!cancelled()')}\n`))
 
     expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Draft the GitHub release is in NEEDS_EVERYTHING_ABOVE'))
-    removeTrees()
   })
 
   it('reports a recorded boundary renamed out from under its reason', () => {
     const root = workflowsWith('release.yml', source => source.replace('- name: Verify every package reached npm', '- name: Check npm'))
 
     expect(checkStepGates(root)).toContainEqual(expect.stringContaining('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm'))
-    removeTrees()
   })
 })

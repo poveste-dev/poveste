@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { afterBuild, beforeBuild, chainSteps, checkTaskGraph, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const WORKSPACE = `packages:
   - 'packages/*'
@@ -190,6 +190,5 @@ describe('checkTaskGraph', () => {
     const root = tree({ 'pnpm-workspace.yaml': 'packages: []\n', 'package.json': '{ "scripts": { "release:check": "pnpm run test:tags && pnpm run build" } }\n' })
 
     expect(checkTaskGraph(root)).toContainEqual(expect.stringContaining('declares no `tasks:`'))
-    removeTrees()
   })
 })

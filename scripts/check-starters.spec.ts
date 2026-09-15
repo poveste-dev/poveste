@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './check-starters.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const result = (framework: string, ok: boolean) => ({ framework, ok, detail: ok ? 'resolves' : 'ERESOLVE' } as any)
 
@@ -113,6 +113,5 @@ describe('checkStarters', () => {
     const root = tree({ 'docs/.vitepress/theme/starters.ts': 'export const starters = {}\n' })
 
     expect(await checkStarters(root)).toEqual(['docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing'])
-    removeTrees()
   })
 })

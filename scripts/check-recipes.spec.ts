@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { checkRecipes, section, tsBlocks } from './check-recipes.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const PAGE = [
   '## Vite config',
@@ -81,6 +81,5 @@ describe('checkRecipes', () => {
     const root = tree({ 'docs/guide/quasar/getting-started.md': '# Getting started\n\nNo configuration here.\n' })
 
     expect(checkRecipes(root)).toContainEqual(expect.stringContaining('has no "## Configuration" section'))
-    removeTrees()
   })
 })

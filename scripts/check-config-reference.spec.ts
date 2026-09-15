@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { checkConfigReference, codeOnly, configKeys, documentedKeys, parseConfig, REFERENCE as REFERENCE_PATH, staleEntries, TYPES, undocumentedKeys } from './check-config-reference.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const SOURCE = `
 export interface PovesteConfig {
@@ -211,6 +211,5 @@ describe('checkConfigReference', () => {
     const root = tree({ [TYPES]: readFileSync(join(import.meta.dirname, '..', TYPES), 'utf8'), [REFERENCE_PATH]: '# Configuration\n' })
 
     expect(checkConfigReference(root)).toContainEqual(expect.stringContaining('is a config key with no reference entry'))
-    removeTrees()
   })
 })

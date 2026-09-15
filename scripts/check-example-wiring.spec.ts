@@ -13,7 +13,7 @@ import {
   portsByExample,
   portsOf,
 } from './check-example-wiring.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 // The cases below are the drift this guard exists for: #384 shipped an example in
 // the workflow matrix and not in the Playwright config, and the job died before a
@@ -187,6 +187,5 @@ describe('checkExampleWiring', () => {
     })
 
     expect(await checkExampleWiring(root)).toContainEqual(expect.stringContaining('has no `example:` matrix to read'))
-    removeTrees()
   })
 })

@@ -1,7 +1,7 @@
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { checkPublishable, emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './check-publishable.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -229,8 +229,6 @@ describe('packageTableProblems', () => {
 // file — which is the gap (#719), and it is widest here: three other checks
 // import `publishablePackages`, so this one walk decides what
 // `check-doc-coverage`, `check-package-tests` and `check-published` examine.
-
-afterEach(removeTrees)
 
 function manifest(name: string, extra: Record<string, unknown> = {}): string {
   return JSON.stringify({ name, version: '1.0.0', ...extra })

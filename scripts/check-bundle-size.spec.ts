@@ -1,9 +1,7 @@
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { barrelImport, checkBundleSize, findBook, LIMITS, measurements, overLimit } from './check-bundle-size.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
-
-afterEach(removeTrees)
+import { tree } from './fixture-tree.ts'
 
 const LIMIT = [{ prefix: 'highlighter', max: 3000, because: 'a barrel import' }]
 
@@ -154,6 +152,5 @@ describe('checkBundleSize', () => {
     const root = tree({ 'examples/vue3/': '' })
 
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue3'))
-    removeTrees()
   })
 })

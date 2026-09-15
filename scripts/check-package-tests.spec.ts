@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { checkPackageTests, EXEMPT, testScriptProblems } from './check-package-tests.ts'
 import { publishablePackages } from './check-publishable.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const TESTED = { name: '@poveste/plugin-vue', scripts: { build: 'tsc', test: 'vitest run' } }
 const UNTESTED = { name: '@poveste/plugin-percy', scripts: { build: 'tsc' } }
@@ -47,10 +47,8 @@ describe('testScriptProblems', () => {
 })
 
 describe('the exemption list', () => {
-  it('gives every exemption a reason, not just a name', () => {
-    for (const [name, reason] of Object.entries(EXEMPT)) {
-      expect(reason, name).not.toHaveLength(0)
-    }
+  it.for(Object.entries(EXEMPT).map(([name, reason]) => ({ name, reason })))('$name has a reason, not just a name', ({ reason }) => {
+    expect(reason).not.toHaveLength(0)
   })
 })
 
@@ -63,8 +61,6 @@ describe('the exemption list', () => {
 // package quietly leaving the shared list, and a package it never sees is a
 // package whose missing `test` script it cannot report — which is #387 and
 // #632, the two defects it exists to stop.
-
-afterEach(removeTrees)
 
 function manifest(name: string, extra: Record<string, unknown> = {}): string {
   return JSON.stringify({ name, version: '1.0.0', ...extra })
@@ -113,6 +109,5 @@ describe('checkPackageTests', () => {
     const root = tree({ 'packages/untested/package.json': manifest('@fixture/untested') })
 
     expect(checkPackageTests(root)).toContainEqual(expect.stringContaining('@fixture/untested is published and declares no `test` script'))
-    removeTrees()
   })
 })

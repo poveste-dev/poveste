@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { checkVersions, citedJobProblems, collect, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './check-versions.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`
 // while the plugin declared `^5.46.4`, inviting a combination that cannot be
@@ -212,8 +212,6 @@ describe('citedJobProblems', () => {
 // (#719): the half that finds the workflows and the package READMEs was
 // asserted nowhere, and either half going empty is silent.
 
-afterEach(removeTrees)
-
 function pkg(name: string, extra: Record<string, unknown> = {}): string {
   return JSON.stringify({ name, version: '1.0.0', ...extra })
 }
@@ -296,6 +294,5 @@ describe('checkVersions', () => {
     })
 
     expect(await checkVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
-    removeTrees()
   })
 })

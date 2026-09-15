@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ALLOWED, checkNodeVersions, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './check-node-versions.ts'
-import { removeTrees, tree } from './fixture-tree.ts'
+import { tree } from './fixture-tree.ts'
 
 const ENGINES = '^22.22.2 || ^24.15.0 || >=26.0.0'
 const FLOOR = { workflow: 'test.yml', line: 319, value: '22.22.2' }
@@ -103,24 +103,18 @@ describe('lowestVersion', () => {
 })
 
 describe('the allowance list', () => {
-  it('gives every entry a reason, not just a name', () => {
-    for (const [workflow, allowance] of Object.entries(ALLOWED)) {
-      expect(allowance.reason, workflow).not.toHaveLength(0)
-    }
+  it.for(Object.entries(ALLOWED).map(([name, allowance]) => ({ name, allowance })))('$name has a reason, not just a name', ({ allowance }) => {
+    expect(allowance.reason).not.toHaveLength(0)
   })
 
-  it('pins the value each allowance permits, so a changed literal is drift', () => {
-    for (const [workflow, allowance] of Object.entries(ALLOWED)) {
-      expect(allowance.value, workflow).toMatch(/^\d+\.\d+\.\d+$/)
-    }
+  it.for(Object.entries(ALLOWED).map(([name, allowance]) => ({ name, allowance })))('$name pins the value it permits, so a changed literal is drift', ({ allowance }) => {
+    expect(allowance.value).toMatch(/^\d+\.\d+\.\d+$/)
   })
 })
 
 // Everything above asserts predicates against strings. These read the tree
 // (#719): the half that finds the workflows and opens them was asserted
 // nowhere, so a walk that stopped matching would report nothing and exit 0.
-
-afterEach(removeTrees)
 
 const MANIFEST = JSON.stringify({ engines: { node: '^22.22.2 || >=24.0.0' } })
 
@@ -200,6 +194,5 @@ describe('checkNodeVersions', () => {
     const root = tree({ '.github/workflows/': '', 'packages/poveste/package.json': MANIFEST })
 
     expect(checkNodeVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
-    removeTrees()
   })
 })
