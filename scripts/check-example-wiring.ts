@@ -49,6 +49,20 @@ export function exampleNames(projects: string[]): string[] {
   return [...new Set(projects.map(name => name.split(':')[0]))]
 }
 
+/**
+ * The books carrying the conformance set, read off the root Playwright config.
+ *
+ * A book carries it exactly when the config gives it a `:conformance` project,
+ * which is why this is derived rather than kept as a second list. Exported
+ * because `check-conformance-config.ts` asked the same question of the same
+ * projects and answered it with its own copy of these two lines — so the empty
+ * case, which both treat as "this checked nothing", was stated twice and
+ * asserted in neither (#719).
+ */
+export function conformanceBooks(projects: string[]): string[] {
+  return exampleNames(projects.filter(name => name.endsWith(':conformance')))
+}
+
 export function portOf(url: string | undefined): number | undefined {
   const port = url?.match(/:(\d+)/)?.[1]
   return port ? Number(port) : undefined
@@ -189,11 +203,7 @@ async function main(): Promise<void> {
   }
   const { reference, conformance: conformanceOnly, fixtures } = guideExamples(guide)
   const guideConformance = [...reference, ...conformanceOnly]
-  const conformance = exampleNames(
-    (root.projects ?? [])
-      .map((project: { name: string }) => project.name)
-      .filter((name: string) => name.endsWith(':conformance')),
-  )
+  const conformance = conformanceBooks((root.projects ?? []).map((project: { name: string }) => project.name))
 
   if (reference.length === 0 && fixtures.length === 0) {
     problems.push(`${GUIDE} has no example table to read — the shape this check reads has changed`)

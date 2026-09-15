@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   asServers,
+  conformanceBooks,
   duplicatePorts,
   exampleNames,
   guideExamples,
@@ -39,6 +40,27 @@ describe('exampleNames', () => {
     const projects = ['vue3', 'vue3:conformance', 'vue3:dev', 'vue3:dev-shared', 'vike', 'vike:dev']
 
     expect(exampleNames(projects)).toEqual(['vue3', 'vike'])
+  })
+})
+
+describe('conformanceBooks', () => {
+  it('names the book behind each :conformance project', () => {
+    expect(conformanceBooks(['vue3:conformance', 'quasar:conformance'])).toEqual(['vue3', 'quasar'])
+  })
+
+  it('ignores a project that is not a conformance one', () => {
+    expect(conformanceBooks(['vue3', 'vue3:conformance', 'vue3:dev'])).toEqual(['vue3'])
+  })
+
+  it('names a book once however many conformance projects it has', () => {
+    expect(conformanceBooks(['vue3:conformance', 'vue3:conformance'])).toEqual(['vue3'])
+  })
+
+  // The state both callers treat as "this checked nothing". It was stated in
+  // two files and asserted in neither until the derivation became one function
+  // (#719).
+  it('finds no books when the config defines no conformance project', () => {
+    expect(conformanceBooks(['vue3', 'svelte5:dev'])).toEqual([])
   })
 })
 

@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { conformanceBooks } from './check-example-wiring.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -168,12 +169,7 @@ async function main(): Promise<void> {
   // gives it a `:conformance` project — the same source of truth
   // `check-example-wiring.ts` uses, so a new book is covered by existing here.
   const playwright: any = (await import(pathToFileURL(join(ROOT, 'playwright.config.ts')).href)).default
-  const books = [...new Set(
-    (playwright.projects ?? [])
-      .map((project: { name: string }) => project.name)
-      .filter((name: string) => name.endsWith(':conformance'))
-      .map((name: string) => name.split(':')[0]),
-  )] as string[]
+  const books = conformanceBooks((playwright.projects ?? []).map((project: { name: string }) => project.name))
 
   if (books.length === 0) {
     problems.push('playwright.config.ts defines no `:conformance` project, so this checked nothing')
