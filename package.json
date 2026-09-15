@@ -21,7 +21,7 @@
     "test:e2e": "playwright test",
     "bench": "node bench/run.mjs",
     "bench:smoke": "vitest run --project bench",
-    "story:build:e2e": "pnpm --filter ./examples/vue3 --filter ./examples/vue3-tailwind --filter ./examples/nuxt4 --filter ./examples/svelte5 --filter ./examples/sveltekit run story:build",
+    "story:build:e2e": "pnpm --filter ./examples/vue3 --filter ./examples/vue3-tailwind --filter ./examples/nuxt4 --filter ./examples/svelte5 --filter ./examples/sveltekit --filter ./examples/quasar --filter ./examples/vike run story:build",
     "test:smoke": "bash scripts/release/smoke-test.sh",
     "test:starters": "vitest run --project scripts checks/starters --tags-filter=\"check && !after-publish\"",
     "test:starters:release": "vitest run --project scripts checks/starters --tags-filter=\"check && after-publish\"",
