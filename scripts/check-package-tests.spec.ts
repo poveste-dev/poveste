@@ -110,9 +110,8 @@ describe('checkPackageTests', () => {
 
     expect(checkPackageTests(root)).toContainEqual(expect.stringContaining('@fixture/untested is published and declares no `test` script'))
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('every published package declares a test script', { tags: ['check', 'release'] }, () => {
-  expect(checkPackageTests(), 'Add a `test` script and a spec, or add the package to EXEMPT in scripts/check-package-tests.ts with the reason tests are the wrong tool for it.').toEqual([])
+  it('every published package declares a test script', { tags: ['check', 'release'] }, () => {
+    expect(checkPackageTests(), 'Add a `test` script and a spec, or add the package to EXEMPT in scripts/check-package-tests.ts with the reason tests are the wrong tool for it.').toEqual([])
+  })
 })

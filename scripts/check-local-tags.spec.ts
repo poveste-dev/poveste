@@ -81,13 +81,12 @@ describe('reportLocalTags', () => {
   it('names a stray tag', () => {
     expect(reportLocalTags(repoWith(['v0.1.0', 'salvage/thing']))).toContain('salvage/thing')
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-// Reports and never fails (#457), so there is nothing to assert. The annotation
-// is what reaches the workflow run; the default reporter hides it on a pass.
-it('reports local tags a release would not push', { tags: ['check', 'release'] }, async ({ annotate }) => {
-  const report = reportLocalTags()
-  process.stdout.write(`${report}\n`)
-  await annotate(report, report.startsWith('⚠️') ? 'warning' : 'notice')
+  // Reports and never fails (#457), so there is nothing to assert. The annotation
+  // is what reaches the workflow run; the default reporter hides it on a pass.
+  it('reports local tags a release would not push', { tags: ['check', 'release'] }, async ({ annotate }) => {
+    const report = reportLocalTags()
+    process.stdout.write(`${report}\n`)
+    await annotate(report, report.startsWith('⚠️') ? 'warning' : 'notice')
+  })
 })

@@ -114,13 +114,12 @@ describe('checkStarters', () => {
 
     expect(await checkStarters(root)).toEqual(['docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing'])
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('every starter installs', { tags: ['check', 'release', 'network'] }, async () => {
-  expect(await checkStarters(), 'Fix the versions in docs/.vitepress/theme/starters.ts.').toEqual([])
-})
+  it('every starter installs', { tags: ['check', 'release', 'network'] }, async () => {
+    expect(await checkStarters(), 'Fix the versions in docs/.vitepress/theme/starters.ts.').toEqual([])
+  })
 
-it('every starter installs the version that just published', { tags: ['check', 'release', 'network', 'after-publish'] }, async () => {
-  expect(await checkStarters(undefined, { afterPublish: true }), 'The release that just published cannot be installed. Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.').toEqual([])
+  it('every starter installs the version that just published', { tags: ['check', 'release', 'network', 'after-publish'] }, async () => {
+    expect(await checkStarters(undefined, { afterPublish: true }), 'The release that just published cannot be installed. Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.').toEqual([])
+  })
 })

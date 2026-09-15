@@ -234,9 +234,8 @@ describe('checkPublished', () => {
 
     expect(checkPublished(root)).toContain('this check never got a list of packages to ask the registry about')
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('every package is on the registry at its released version', { tags: ['check', 'release', 'network', 'after-publish'] }, () => {
-  expect(checkPublished(), 'Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.').toEqual([])
+  it('every package is on the registry at its released version', { tags: ['check', 'release', 'network', 'after-publish'] }, () => {
+    expect(checkPublished(), 'Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.').toEqual([])
+  })
 })

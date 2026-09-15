@@ -154,13 +154,12 @@ describe('checkBundleSize', () => {
 
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue3'))
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, async ({ annotate }) => {
-  const { problems, measurements } = checkBundleSize()
-  process.stdout.write(measurements.map(line => `  ${line}\n`).join(''))
+  it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, async ({ annotate }) => {
+    const { problems, measurements } = checkBundleSize()
+    process.stdout.write(measurements.map(line => `  ${line}\n`).join(''))
 
-  expect(problems, 'Raise a ceiling only with a reason written next to it. See scripts/check-bundle-size.ts.').toEqual([])
-  await annotate(measurements.join('\n'), 'notice')
+    expect(problems, 'Raise a ceiling only with a reason written next to it. See scripts/check-bundle-size.ts.').toEqual([])
+    await annotate(measurements.join('\n'), 'notice')
+  })
 })

@@ -153,13 +153,12 @@ describe('checkDocCoverage', () => {
 
     expect(checkDocCoverage(root).broken).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, async ({ annotate }) => {
-  const { broken, report } = checkDocCoverage()
-  process.stdout.write(`${report.join('\n')}\n`)
+  it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, async ({ annotate }) => {
+    const { broken, report } = checkDocCoverage()
+    process.stdout.write(`${report.join('\n')}\n`)
 
-  expect(broken, 'Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.').toEqual([])
-  await annotate(String(report.find(line => line.startsWith('📖'))), 'notice')
+    expect(broken, 'Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.').toEqual([])
+    await annotate(String(report.find(line => line.startsWith('📖'))), 'notice')
+  })
 })

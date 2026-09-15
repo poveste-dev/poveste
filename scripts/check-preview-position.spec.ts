@@ -205,9 +205,8 @@ describe('checkPreviewPosition', () => {
 
     expect(checkPreviewPosition(root)).toEqual(['no components found under packages/poveste-app/src — this check is looking in the wrong place'])
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('no layout choice moves the preview in the component tree', { tags: ['check', 'app'] }, () => {
-  expect(checkPreviewPosition(), 'Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/check-preview-position.ts with the reason.').toEqual([])
+  it('no layout choice moves the preview in the component tree', { tags: ['check', 'app'] }, () => {
+    expect(checkPreviewPosition(), 'Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/check-preview-position.ts with the reason.').toEqual([])
+  })
 })

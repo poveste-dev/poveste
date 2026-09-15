@@ -595,17 +595,18 @@ describe('checkDocsSite', () => {
 
     expect(await checkDocsSite(root)).toContainEqual(expect.stringContaining('no build at'))
   })
+
+  it('the docs site config and build hold up', { tags: ['check', 'docs', 'build'] }, async () => {
+    expect(await checkDocsSite(), 'Run `pnpm run docs:build` first if the build is missing.').toEqual([])
+  })
 })
 
-// The check itself, over this repository rather than a fixture.
-it('the docs site config and build hold up', { tags: ['check', 'docs', 'build'] }, async () => {
-  expect(await checkDocsSite(), 'Run `pnpm run docs:build` first if the build is missing.').toEqual([])
-})
-
-// Production by default; a deploy preview is named by `POVESTE_DOCS_SITE`.
-it('the deployed docs site answers correctly', { tags: ['check', 'docs', 'network'] }, async () => {
-  const site = process.env.POVESTE_DOCS_SITE ?? SITE
-  const { problems, deployed } = await checkDocsSiteLive(site)
-  process.stdout.write(`Reached ${site} (${deployed ?? 'deploy unidentified'})\n`)
-  expect(problems).toEqual([])
+describe('checkDocsSiteLive', () => {
+  // Production by default; a deploy preview is named by `POVESTE_DOCS_SITE`.
+  it('the deployed docs site answers correctly', { tags: ['check', 'docs', 'network'] }, async () => {
+    const site = process.env.POVESTE_DOCS_SITE ?? SITE
+    const { problems, deployed } = await checkDocsSiteLive(site)
+    process.stdout.write(`Reached ${site} (${deployed ?? 'deploy unidentified'})\n`)
+    expect(problems).toEqual([])
+  })
 })

@@ -188,9 +188,8 @@ describe('checkExampleWiring', () => {
 
     expect(await checkExampleWiring(root)).toContainEqual(expect.stringContaining('has no `example:` matrix to read'))
   })
-})
 
-// The check itself, over this repository rather than a fixture.
-it('the workflow matrix, the Playwright config, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
-  expect(await checkExampleWiring(), 'The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.').toEqual([])
+  it('the workflow matrix, the Playwright config, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
+    expect(await checkExampleWiring(), 'The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.').toEqual([])
+  })
 })
