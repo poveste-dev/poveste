@@ -80,6 +80,25 @@ export interface PercyPluginOptions {
   ) => Promise<void | boolean>
 }
 
+/**
+ * How to wait for the sandbox before serialising it.
+ *
+ * Puppeteer's own default is `load`, which fires once the document and its
+ * subresources are in — before the sandbox has mounted the story. So
+ * `PercyDOM.serialize` ran against the shell and every snapshot posted to Percy
+ * was an empty page: two comment placeholders where the story should be (#352).
+ *
+ * That failure is invisible by construction, which is why it survived. Uniformly
+ * blank snapshots make a stable baseline and zero diffs, and a blank baseline
+ * never fails — it reads exactly like "no visual changes".
+ *
+ * `networkidle0` is enough on its own and adds no fixed sleep, so `pptrWait`
+ * stays a user-tunable extra at 0. `@poveste/plugin-screenshot` was never
+ * affected because `capture-website` waits for network idle already, so the two
+ * plugins doing the same job now agree.
+ */
+export const NAVIGATION: WaitForOptions = { waitUntil: 'networkidle0' }
+
 const defaultOptions: PercyPluginOptions = {
   percyOptions: {},
   pptrWait: 0,
@@ -91,6 +110,22 @@ function resolveOptions<T extends object | number>(
   payload: PagePayload,
 ): T {
   return typeof option === 'function' ? option(payload) : option
+}
+
+/**
+ * The navigation options a snapshot actually uses.
+ *
+ * Applied here rather than left to `defu` against `defaultOptions`, because
+ * `pptrOptions` may be a function of the payload and `defu` cannot merge into
+ * what a function will return — so the callback form would navigate on
+ * puppeteer's `load` default and snapshot the shell, which is the whole of
+ * #352. Anything the caller sets still wins, including `waitUntil`.
+ */
+export function navigationOptions(
+  option: PercyPluginOptions['pptrOptions'],
+  payload: PagePayload,
+): WaitForOptions & { referer?: string } {
+  return { ...NAVIGATION, ...(option === undefined ? {} : resolveOptions(option, payload)) }
 }
 
 export function HstPercy(options: PercyPluginOptions = {}): Plugin {
@@ -125,7 +160,7 @@ export function HstPercy(options: PercyPluginOptions = {}): Plugin {
           return
         }
 
-        const pptrOptions = resolveOptions(finalOptions.pptrOptions, payload)
+        const pptrOptions = navigationOptions(finalOptions.pptrOptions, payload)
         const pptrWait = resolveOptions(finalOptions.pptrWait, payload)
         const percyOptions = resolveOptions(finalOptions.percyOptions, payload)
 

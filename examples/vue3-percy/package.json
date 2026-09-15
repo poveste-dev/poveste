@@ -6,7 +6,8 @@
   "scripts": {
     "story:dev": "poveste dev",
     "story:build": "poveste build",
-    "story:preview": "poveste preview"
+    "story:preview": "poveste preview",
+    "test:percy": "node percy-smoke.mjs"
   },
   "dependencies": {
     "vue": "^3.5.26"
