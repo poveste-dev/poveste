@@ -125,3 +125,25 @@ describe('generateSourceCode, for an event handler', () => {
     expect(source.match(/\\/g)).toHaveLength(1)
   })
 })
+
+/*
+ * A string prop is the other way a `"` reaches an attribute, and it took the
+ * delimiter fix later than the handlers did — the element below rendered its
+ * directives correctly and mangled this one.
+ */
+describe('generateSourceCode, for a string prop', () => {
+  function variantWithTitle(title: string): Variant {
+    return {
+      state: {},
+      slots: () => ({ default: () => h('div', { title }, 'go') }),
+    } as unknown as Variant
+  }
+
+  it('leaves a plain value under the usual delimiter', async () => {
+    expect(await generateSourceCode(variantWithTitle('a calm title'))).toContain('title="a calm title"')
+  })
+
+  it('takes the other delimiter rather than closing the attribute early', async () => {
+    expect(await generateSourceCode(variantWithTitle('He said "hi"'))).toContain(`title='He said "hi"'`)
+  })
+})

@@ -203,7 +203,12 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
         attrs.push([prop])
       }
       else {
-        attrs.push([`${prop}="${value}"`])
+        // Same delimiting as the directive branch above. A string prop is the
+        // other way a `"` reaches an attribute — `title='He said "hi"'` closed
+        // the attribute early and turned the rest of the value into stray
+        // attributes, on an element whose directives rendered correctly.
+        const plain = delimitAttr([String(value)])
+        attrs.push([`${prop}=${plain.quote}${plain.lines[0]}${plain.quote}`])
       }
     }
 
@@ -371,9 +376,12 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
  * and came out carrying four.
  *
  * So nothing is escaped for a string context. Code containing `"` takes the
- * other delimiter, the way someone writing the template by hand would; code
- * carrying both quote characters has no safe delimiter, so its `"` becomes
- * `&quot;` — the escape an attribute actually has (#602).
+ * other delimiter, the way someone writing the template by hand would. Code
+ * carrying both quote characters has no free delimiter, so whichever it takes
+ * is escaped inside it — and the one appearing less often wins, because every
+ * escape is a character the author did not write. That is `&#39;` as often as
+ * `&quot;`: the repository's own `get-name` fixture holds two doubles and one
+ * single, so the single is the cheaper one there (#602).
  */
 export function delimitAttr(lines: string[]): { quote: string, lines: string[] } {
   const code = lines.join('\n')
