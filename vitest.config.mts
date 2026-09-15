@@ -38,6 +38,19 @@ export default defineConfig({
           testTimeout: 0,
         },
       },
+      {
+        test: {
+          name: 'bench',
+          include: ['bench/*.spec.ts'],
+          environment: 'node',
+          // Forks: `run.mjs` hands child output to `process.stderr`, which a
+          // worker thread does not have as a real file descriptor.
+          pool: 'forks',
+          // A book build plus a browser measurement; a bench that measures
+          // nothing waits 5 × 60s before saying so.
+          testTimeout: 0,
+        },
+      },
     ],
   },
 })

@@ -11,21 +11,13 @@
  */
 import { spawn } from 'node:child_process'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { measureGridFill } from './grid-fill.mjs'
 import { measureSandbox } from './sandbox.mjs'
 
 // stdout is the interface: results are JSON or a table for the terminal.
 /* eslint-disable no-console */
 
-const args = process.argv.slice(2)
-function opt(name, fallback) {
-  const i = args.indexOf(`--${name}`)
-  return i !== -1 && args[i + 1] ? args[i + 1] : fallback
-}
-const examples = opt('examples', 'vue3,svelte5').split(',').map(s => s.trim()).filter(Boolean)
-const sizes = opt('sizes', '10,100,1000').split(',').map(Number)
-const runs = Number(opt('runs', '7'))
-const json = args.includes('--json')
 const BASE_PORT = 4990
 
 const env = { ...process.env, POVESTE_BENCH: '1' }
@@ -52,7 +44,11 @@ async function waitForHttp(url, timeoutMs = 60_000) {
   throw new Error(`${url} did not come up in ${timeoutMs}ms`)
 }
 
-async function main() {
+/**
+ * Builds, serves and measures each example, and returns the report `--json` prints.
+ * Exported so `smoke.spec.ts` runs the same instrument in-process.
+ */
+export async function runBench({ examples, sizes, runs, log = console.error }) {
   const report = []
 
   for (const [i, example] of examples.entries()) {
@@ -60,10 +56,10 @@ async function main() {
     const baseURL = `http://localhost:${port}`
     const filter = `./examples/${example}`
 
-    console.error(`\n=== ${example}: building with bench stories ===`)
+    log(`\n=== ${example}: building with bench stories ===`)
     await sh('pnpm', ['--filter', filter, 'run', 'story:build'])
 
-    console.error(`=== ${example}: serving on ${port} ===`)
+    log(`=== ${example}: serving on ${port} ===`)
     const server = spawn('pnpm', ['--filter', filter, 'exec', 'poveste', 'preview', '--port', String(port)], {
       stdio: 'ignore',
       env,
@@ -73,13 +69,13 @@ async function main() {
       await waitForHttp(`${baseURL}/`)
 
       for (const size of sizes) {
-        console.error(`--- ${example} grid, V=${size}, ${runs} runs ---`)
-        const r = await measureGridFill({ baseURL, storyId: `bench-grid-${size}`, runs, log: console.error })
+        log(`--- ${example} grid, V=${size}, ${runs} runs ---`)
+        const r = await measureGridFill({ baseURL, storyId: `bench-grid-${size}`, runs, log })
         report.push({ example, kind: 'grid', size, ...r })
       }
 
-      console.error(`--- ${example} single sandbox, V=${sizes[sizes.length - 1]} ---`)
-      const s = await measureSandbox({ baseURL, storyId: `bench-grid-${sizes[sizes.length - 1]}`, variantId: 'v1', runs: 5, log: console.error })
+      log(`--- ${example} single sandbox, V=${sizes[sizes.length - 1]} ---`)
+      const s = await measureSandbox({ baseURL, storyId: `bench-grid-${sizes[sizes.length - 1]}`, variantId: 'v1', runs: 5, log })
       report.push({ example, kind: 'sandbox', size: sizes[sizes.length - 1], ...s })
     }
     finally {
@@ -91,22 +87,42 @@ async function main() {
     }
   }
 
-  if (json) {
+  return report
+}
+
+function printTable(report) {
+  const pad = (s, n) => String(s ?? '—').padStart(n)
+  console.log('\nexample    kind     V      cells  first   t10    last   blocked  last range')
+  for (const r of report) {
+    if (r.kind === 'grid') {
+      console.log(`${r.example.padEnd(10)} grid   ${pad(r.size, 5)}  ${pad(r.cells, 5)}  ${pad(r.first, 5)}  ${pad(r.t10, 5)}  ${pad(r.last, 5)}  ${pad(r.blocked, 7)}  ${r.lastRange}`)
+    }
+    else {
+      console.log(`${r.example.padEnd(10)} sandbox${pad(r.size, 5)}      —  ${pad(r.median, 5)}      —      —        —  ${r.range}`)
+    }
+  }
+  console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport; "blocked" = long-task time over 50ms)')
+}
+
+async function main() {
+  const args = process.argv.slice(2)
+  const opt = (name, fallback) => {
+    const i = args.indexOf(`--${name}`)
+    return i !== -1 && args[i + 1] ? args[i + 1] : fallback
+  }
+  const report = await runBench({
+    examples: opt('examples', 'vue3,svelte5').split(',').map(s => s.trim()).filter(Boolean),
+    sizes: opt('sizes', '10,100,1000').split(',').map(Number),
+    runs: Number(opt('runs', '7')),
+  })
+  if (args.includes('--json')) {
     console.log(JSON.stringify(report, null, 2))
   }
   else {
-    const pad = (s, n) => String(s ?? '—').padStart(n)
-    console.log('\nexample    kind     V      cells  first   t10    last   blocked  last range')
-    for (const r of report) {
-      if (r.kind === 'grid') {
-        console.log(`${r.example.padEnd(10)} grid   ${pad(r.size, 5)}  ${pad(r.cells, 5)}  ${pad(r.first, 5)}  ${pad(r.t10, 5)}  ${pad(r.last, 5)}  ${pad(r.blocked, 7)}  ${r.lastRange}`)
-      }
-      else {
-        console.log(`${r.example.padEnd(10)} sandbox${pad(r.size, 5)}      —  ${pad(r.median, 5)}      —      —        —  ${r.range}`)
-      }
-    }
-    console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport; "blocked" = long-task time over 50ms)')
+    printTable(report)
   }
 }
 
-main()
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  main()
+}

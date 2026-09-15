@@ -480,6 +480,6 @@ jobs:
         run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
 
       # `run.mjs` builds the book with POVESTE_BENCH=1, serves it, measures and
-      # kills the server; `smoke.mjs` is what fails when it measured nothing.
+      # kills the server; `smoke.spec.ts` is what fails when it measured nothing.
       - name: Run the bench once and assert it measured something
         run: pnpm run bench:smoke
