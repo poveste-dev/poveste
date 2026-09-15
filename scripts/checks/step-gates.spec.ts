@@ -174,7 +174,7 @@ describe('gateProblems', () => {
   const classified = [{ key: 'a.yml / build / Check', states: true }, { key: 'a.yml / build / Build', states: false }]
 
   it('is silent when every boundary is classified the way it is written', () => {
-    expect(gateProblems(classified, runs, needs)).toEqual([])
+    expect(gateProblems(classified, runs, needs)).toHaveNoProblems()
   })
 
   // The case this exists for: a step added below a masked one inherits a
@@ -240,7 +240,7 @@ describe('gateProblems', () => {
 
 describe('walkProblems', () => {
   it('is silent over a walk that read something', () => {
-    expect(walkProblems({ workflows: ['test.yml'], jobs: 1, steps: 4 })).toEqual([])
+    expect(walkProblems({ workflows: ['test.yml'], jobs: 1, steps: 4 })).toHaveNoProblems()
   })
 
   it('fails when the directory it reads has moved', () => {
@@ -282,7 +282,7 @@ describe('checkStepGates', () => {
   }
 
   it('finds nothing over a copy with nothing injected', () => {
-    expect(checkStepGates(workflowsWith('test.yml', source => source))).toEqual([])
+    expect(checkStepGates(workflowsWith('test.yml', source => source))).toHaveNoProblems()
   })
 
   // #722's fourth attempt, as a diff: a sweep step placed after the publish
@@ -311,6 +311,6 @@ describe('checkStepGates', () => {
   })
 
   it('every workflow step\'s position means what it looks like', { tags: ['check', 'ci'] }, () => {
-    expect(checkStepGates(), 'Name the dependency in the `if:`, or record the boundary in scripts/checks/step-gates.ts with the reason (#723).').toEqual([])
+    expect(checkStepGates()).toHaveNoProblems('Name the dependency in the `if:`, or record the boundary in scripts/checks/step-gates.ts with the reason (#723).')
   })
 })

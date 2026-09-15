@@ -158,7 +158,7 @@ describe('checkDocCoverage', () => {
     const { broken, report } = checkDocCoverage()
     process.stdout.write(`${report.join('\n')}\n`)
 
-    expect(broken, 'Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.').toEqual([])
+    expect(broken).toHaveNoProblems('Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.')
     await annotate(String(report.find(line => line.startsWith('📖'))), 'notice')
   })
 })

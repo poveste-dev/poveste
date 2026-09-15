@@ -126,7 +126,7 @@ describe('installLineProblems', () => {
   })
 
   it('is satisfied once poveste is named', () => {
-    expect(installLineProblems('p', 'pnpm add -D poveste @poveste/plugin-nuxt', nuxtPeers)).toEqual([])
+    expect(installLineProblems('p', 'pnpm add -D poveste @poveste/plugin-nuxt', nuxtPeers)).toHaveNoProblems()
   })
 
   // `@poveste/plugin-nuxt` contains the string "poveste" — the scoped name must
@@ -138,7 +138,7 @@ describe('installLineProblems', () => {
   // plugin-percy and plugin-screenshot are add-ons for a project that already
   // has poveste, so omitting it there is deliberate.
   it('exempts an add-on with no framework peer', () => {
-    expect(installLineProblems('poveste-plugin-percy', 'pnpm add -D @poveste/plugin-percy', { poveste: 'workspace:^' })).toEqual([])
+    expect(installLineProblems('poveste-plugin-percy', 'pnpm add -D @poveste/plugin-percy', { poveste: 'workspace:^' })).toHaveNoProblems()
   })
 
   // Only the first install line used to be checked, so a second bare one shipped
@@ -157,7 +157,7 @@ describe('installLineProblems', () => {
   })
 
   it('reads the `pnpm i -D` spelling the core README uses', () => {
-    expect(installLineProblems('p', 'pnpm i -D poveste @poveste/plugin-vue', { vue: '^3' })).toEqual([])
+    expect(installLineProblems('p', 'pnpm i -D poveste @poveste/plugin-vue', { vue: '^3' })).toHaveNoProblems()
   })
 })
 
@@ -382,7 +382,7 @@ describe('walkProblems', () => {
       'packages/one/README.md': '# one',
     })
 
-    expect(walkProblems(await collect(root))).toEqual([])
+    expect(walkProblems(await collect(root))).toHaveNoProblems()
   })
 
   // The state every check in scripts/ was in until #719: reaches nothing,
@@ -415,6 +415,6 @@ describe('checkReadmes', () => {
   })
 
   it('every page describes Poveste and points somewhere real', { tags: ['check', 'docs'] }, async () => {
-    expect(await checkReadmes(), 'Pages that describe the wrong project, or point nowhere.').toEqual([])
+    expect(await checkReadmes()).toHaveNoProblems('Pages that describe the wrong project, or point nowhere.')
   })
 })

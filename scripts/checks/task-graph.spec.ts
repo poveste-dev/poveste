@@ -112,7 +112,7 @@ describe('taskGraphProblems', () => {
   })
 
   it('is empty when the graph matches the chain', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, {})).toEqual([])
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, {})).toHaveNoProblems()
   })
 
   it('catches a pre-build step the report would not cover', () => {
@@ -122,7 +122,7 @@ describe('taskGraphProblems', () => {
 
   it('accepts a pre-build step that is excluded with a reason', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run lint && pnpm run test:tags && pnpm run test:mirrors && pnpm run build' }
-    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' }, {})).toEqual([])
+    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' }, {})).toHaveNoProblems()
   })
 
   it('catches a stale exclusion', () => {
@@ -193,6 +193,6 @@ describe('checkTaskGraph', () => {
   })
 
   it('the task graph matches release:check', { tags: ['check', 'ci'] }, () => {
-    expect(checkTaskGraph(), 'The `&&` chain in release:check decides; release:report only reports. A report covering less than the gate is the failure worth catching (#716).').toEqual([])
+    expect(checkTaskGraph()).toHaveNoProblems('The `&&` chain in release:check decides; release:report only reports. A report covering less than the gate is the failure worth catching (#716).')
   })
 })

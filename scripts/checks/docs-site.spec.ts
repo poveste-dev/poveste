@@ -245,7 +245,7 @@ describe('robotsProblems', () => {
   })
 
   it('accepts the file the site actually ships', () => {
-    expect(robotsProblems('User-agent: *\nAllow: /\n\nSitemap: https://poveste.dev/sitemap.xml\n')).toEqual([])
+    expect(robotsProblems('User-agent: *\nAllow: /\n\nSitemap: https://poveste.dev/sitemap.xml\n')).toHaveNoProblems()
   })
 })
 
@@ -420,7 +420,7 @@ describe('pages declaring their own address', () => {
     expect(selfDeclarationProblems([
       page('/index.html', 'https://poveste.dev/'),
       page('/guide/getting-started.html', 'https://poveste.dev/guide/getting-started'),
-    ])).toEqual([])
+    ])).toHaveNoProblems()
   })
 
   // The defect itself: one `og:url` in the config, emitted on all 37 pages.
@@ -504,7 +504,7 @@ describe('titleProblems', () => {
   })
 
   it('is silent on the page as it is now built', () => {
-    expect(titleProblems([{ path: '/guide/getting-started.html', html: titled(DECORATIVE) }])).toEqual([])
+    expect(titleProblems([{ path: '/guide/getting-started.html', html: titled(DECORATIVE) }])).toHaveNoProblems()
   })
 
   it('flags a second document title, which is the failure the svg one imitated', () => {
@@ -544,7 +544,7 @@ function home(block?: string): string {
 
 describe('structuredDataProblems', () => {
   it('accepts the block the home page builds', () => {
-    expect(structuredDataProblems(home(JSON.stringify(LD)), '0.12.0')).toEqual([])
+    expect(structuredDataProblems(home(JSON.stringify(LD)), '0.12.0')).toHaveNoProblems()
   })
 
   // The state before #573: Bing reported "No Markup found".
@@ -597,7 +597,7 @@ describe('checkDocsSite', () => {
   })
 
   it('the docs site config and build hold up', { tags: ['check', 'docs', 'build'] }, async () => {
-    expect(await checkDocsSite(), 'Run `pnpm run docs:build` first if the build is missing.').toEqual([])
+    expect(await checkDocsSite()).toHaveNoProblems('Run `pnpm run docs:build` first if the build is missing.')
   })
 })
 
@@ -607,6 +607,6 @@ describe('checkDocsSiteLive', () => {
     const site = process.env.POVESTE_DOCS_SITE ?? SITE
     const { problems, deployed } = await checkDocsSiteLive(site)
     process.stdout.write(`Reached ${site} (${deployed ?? 'deploy unidentified'})\n`)
-    expect(problems).toEqual([])
+    expect(problems).toHaveNoProblems()
   })
 })

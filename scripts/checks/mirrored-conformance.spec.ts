@@ -216,7 +216,7 @@ describe('walkProblems', () => {
     const walk = collect(root, PAIR)
 
     expect(walk.pairs[0].examined).toHaveLength(walk.pairs[0].offered)
-    expect(walkProblems(walk)).toEqual([])
+    expect(walkProblems(walk)).toHaveNoProblems()
   })
 
   // A missing directory is already reported by name, and is a different fault
@@ -232,7 +232,7 @@ describe('walkProblems', () => {
   it('is silent when the walk read something', () => {
     const root = tree({ 'src/conformance/One.story.vue': 'a', 'mirror/conformance/One.story.vue': 'a' })
 
-    expect(walkProblems(collect(root, PAIR))).toEqual([])
+    expect(walkProblems(collect(root, PAIR))).toHaveNoProblems()
   })
 })
 
@@ -252,6 +252,6 @@ describe('checkMirroredConformance', () => {
   })
 
   it('every mirrored conformance story is identical to its source', { tags: ['check', 'examples'] }, () => {
-    expect(checkMirroredConformance(), 'Run `pnpm run sync:conformance` to rewrite the mirrors from their source, or add the file to MIRROR_EXCEPTIONS in scripts/checks/mirrored-conformance.ts if it should differ.').toEqual([])
+    expect(checkMirroredConformance()).toHaveNoProblems('Run `pnpm run sync:conformance` to rewrite the mirrors from their source, or add the file to MIRROR_EXCEPTIONS in scripts/checks/mirrored-conformance.ts if it should differ.')
   })
 })

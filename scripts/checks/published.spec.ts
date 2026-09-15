@@ -23,7 +23,7 @@ describe('unpublishedReleases', () => {
   it('passes when every release is on the registry', () => {
     const problems = unpublishedReleases(RELEASES, () => 'present', options())
 
-    expect(problems).toEqual([])
+    expect(problems).toHaveNoProblems()
   })
 
   it('names every missing release, so recovery is one operation', () => {
@@ -44,7 +44,7 @@ describe('unpublishedReleases', () => {
 
     const problems = unpublishedReleases(RELEASES, probe, options())
 
-    expect(problems).toEqual([])
+    expect(problems).toHaveNoProblems()
   })
 
   it('re-probes only what is still unaccounted for', () => {
@@ -89,7 +89,7 @@ describe('the default retry window', () => {
       },
     })
 
-    expect(problems).toEqual([])
+    expect(problems).toHaveNoProblems()
   })
 
   it('still reports the gap it exists for', () => {
@@ -236,6 +236,6 @@ describe('checkPublished', () => {
   })
 
   it('every package is on the registry at its released version', { tags: ['check', 'release', 'network', 'after-publish'] }, () => {
-    expect(checkPublished(), 'Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.').toEqual([])
+    expect(checkPublished()).toHaveNoProblems('Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.')
   })
 })

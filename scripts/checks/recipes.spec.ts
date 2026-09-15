@@ -84,6 +84,6 @@ describe('checkRecipes', () => {
   })
 
   it('every published recipe is exactly what its example runs', { tags: ['check', 'docs', 'examples'] }, () => {
-    expect(checkRecipes(), 'Copy the block from the docs into the example, or fix the docs. They are one thing.').toEqual([])
+    expect(checkRecipes()).toHaveNoProblems('Copy the block from the docs into the example, or fix the docs. They are one thing.')
   })
 })

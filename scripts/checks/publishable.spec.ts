@@ -95,7 +95,7 @@ describe('unacceptedResolutionProblems', () => {
   })
 
   it('reports nothing when attw found no problems', () => {
-    expect(unacceptedResolutionProblems({})).toEqual([])
+    expect(unacceptedResolutionProblems({})).toHaveNoProblems()
   })
 })
 
@@ -207,7 +207,7 @@ describe('packageTableProblems', () => {
       row('@poveste/controls-stories', ' — **not published**'),
     ].join('\n')
 
-    expect(packageTableProblems(table, published, all)).toEqual([])
+    expect(packageTableProblems(table, published, all)).toHaveNoProblems()
   })
 
   it('catches a row naming a package that does not exist', () => {
@@ -285,7 +285,7 @@ describe('walkPackages', () => {
     const walk = walkPackages(root)
 
     expect(walk.packages.length + walk.skipped.length).toBe(walk.entries.length)
-    expect(walkProblems(walk)).toEqual([])
+    expect(walkProblems(walk)).toHaveNoProblems()
   })
 
   it('counts every entry it walked, selected or not', () => {
@@ -305,7 +305,7 @@ describe('walkProblems', () => {
       'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
     })
 
-    expect(walkProblems(walkPackages(root))).toEqual([])
+    expect(walkProblems(walkPackages(root))).toHaveNoProblems()
   })
 
   it('fails when packages/ holds nothing at all', () => {
@@ -347,7 +347,7 @@ describe('checkPublishable', () => {
   })
 
   it('finds nothing over a tree where everything it asserts holds', () => {
-    expect(check(tree(book()))).toEqual([])
+    expect(check(tree(book()))).toHaveNoProblems()
   }, 30_000)
 
   // An empty list is also what a check that examined nothing returns, so the
@@ -363,11 +363,11 @@ describe('checkPublishable', () => {
   }, 30_000)
 
   it('every publishable package exists on the registry, packs and resolves', { tags: ['check', 'release', 'build', 'network'] }, () => {
-    expect(checkPublishable(), 'Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.').toEqual([])
+    expect(checkPublishable()).toHaveNoProblems('Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.')
   })
 
   it('every publishable package packs and resolves, without asking the registry', { tags: ['check', 'release', 'build'] }, () => {
-    expect(checkPublishable(undefined, { offline: true }), 'Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.').toEqual([])
+    expect(checkPublishable(undefined, { offline: true })).toHaveNoProblems('Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.')
   })
 })
 

@@ -33,7 +33,7 @@ describe('hardcodedNodeVersions', () => {
 
 describe('nodeVersionProblems', () => {
   it('is empty when only the deliberate floor is pinned', () => {
-    expect(nodeVersionProblems([FLOOR], ALLOWED, ENGINES)).toEqual([])
+    expect(nodeVersionProblems([FLOOR], ALLOWED, ENGINES)).toHaveNoProblems()
   })
 
   it('names a workflow that pins a version instead of reading the file', () => {
@@ -161,7 +161,7 @@ describe('walkProblems', () => {
   it('is silent when the walk read workflows', () => {
     const root = tree({ '.github/workflows/test.yml': 'jobs:\n', 'packages/poveste/package.json': MANIFEST })
 
-    expect(walkProblems(collect(root))).toEqual([])
+    expect(walkProblems(collect(root))).toHaveNoProblems()
   })
 
   // The input a spec most obviously reaches for when testing the floor: a tree
@@ -197,6 +197,6 @@ describe('checkNodeVersions', () => {
   })
 
   it('every CI job reads .node-version, except the recorded floor', { tags: ['check', 'versions', 'ci'] }, () => {
-    expect(checkNodeVersions(), '`.node-version` is what the release publishes from. A job that pins the number instead keeps building on it after the file moves, and stays green while doing it (#425).').toEqual([])
+    expect(checkNodeVersions()).toHaveNoProblems('`.node-version` is what the release publishes from. A job that pins the number instead keeps building on it after the file moves, and stays green while doing it (#425).')
   })
 })

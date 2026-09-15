@@ -214,6 +214,6 @@ describe('checkConfigReference', () => {
   })
 
   it('every config key has a reference entry, and every entry is a config key', { tags: ['check', 'docs'] }, () => {
-    expect(checkConfigReference(), 'Every key needs a heading in docs/reference/config.md. A key books should not set still needs one, saying so — an omission reads as an oversight rather than a decision.').toEqual([])
+    expect(checkConfigReference()).toHaveNoProblems('Every key needs a heading in docs/reference/config.md. A key books should not set still needs one, saying so — an omission reads as an oversight rather than a decision.')
   })
 })

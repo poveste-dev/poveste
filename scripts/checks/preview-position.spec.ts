@@ -207,6 +207,6 @@ describe('checkPreviewPosition', () => {
   })
 
   it('no layout choice moves the preview in the component tree', { tags: ['check', 'app'] }, () => {
-    expect(checkPreviewPosition(), 'Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/checks/preview-position.ts with the reason.').toEqual([])
+    expect(checkPreviewPosition()).toHaveNoProblems('Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/checks/preview-position.ts with the reason.')
   })
 })

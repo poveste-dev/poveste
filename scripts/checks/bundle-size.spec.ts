@@ -159,7 +159,7 @@ describe('checkBundleSize', () => {
     const { problems, measurements } = checkBundleSize()
     process.stdout.write(measurements.map(line => `  ${line}\n`).join(''))
 
-    expect(problems, 'Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.').toEqual([])
+    expect(problems).toHaveNoProblems('Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.')
     await annotate(measurements.join('\n'), 'notice')
   })
 })

@@ -79,7 +79,7 @@ describe('specProblems', () => {
   ]
 
   it('is silent when the spec matches the declared presets', () => {
-    expect(specProblems(DEFAULTS, rendered)).toEqual([])
+    expect(specProblems(DEFAULTS, rendered)).toHaveNoProblems()
   })
 
   // The state this exists for: the defaults move and the rgb list does not.
@@ -106,11 +106,11 @@ describe('specProblems', () => {
 
 describe('bookProblems', () => {
   it('accepts a book that spreads the defaults', () => {
-    expect(bookProblems('vue3', 'f.ts', SPREADING, DEFAULTS)).toEqual([])
+    expect(bookProblems('vue3', 'f.ts', SPREADING, DEFAULTS)).toHaveNoProblems()
   })
 
   it('accepts a book that lists the defaults literally, since Quasar cannot spread them', () => {
-    expect(bookProblems('quasar', 'f.ts', LITERAL, DEFAULTS)).toEqual([])
+    expect(bookProblems('quasar', 'f.ts', LITERAL, DEFAULTS)).toHaveNoProblems()
   })
 
   // The #499 failure: every story present, eighteen specs red, and the message
@@ -154,6 +154,6 @@ describe('checkConformanceConfig', () => {
   })
 
   it('every conformance book declares the background presets the shared specs assert', { tags: ['check', 'examples'] }, async () => {
-    expect(await checkConformanceConfig(), 'A conformance book declares the background presets as well as carrying the stories. See "The conformance contract" in ai/AGENTS.md.').toEqual([])
+    expect(await checkConformanceConfig()).toHaveNoProblems('A conformance book declares the background presets as well as carrying the stories. See "The conformance contract" in ai/AGENTS.md.')
   })
 })

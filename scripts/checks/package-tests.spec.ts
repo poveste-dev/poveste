@@ -10,7 +10,7 @@ const UNTESTED = { name: '@poveste/plugin-percy', scripts: { build: 'tsc' } }
 
 describe('testScriptProblems', () => {
   it('is empty when every published package declares a test script', () => {
-    expect(testScriptProblems([TESTED], {})).toEqual([])
+    expect(testScriptProblems([TESTED], {})).toHaveNoProblems()
   })
 
   it('names a published package that declares no test script', () => {
@@ -26,7 +26,7 @@ describe('testScriptProblems', () => {
   })
 
   it('accepts a package with no test script when it is exempt', () => {
-    expect(testScriptProblems([UNTESTED], { '@poveste/plugin-percy': 'a reason' })).toEqual([])
+    expect(testScriptProblems([UNTESTED], { '@poveste/plugin-percy': 'a reason' })).toHaveNoProblems()
   })
 
   it('rejects an exemption for a package that now declares a test script', () => {
@@ -92,7 +92,7 @@ describe('over a tree on disk', () => {
       'packages/tested/package.json': manifest('@fixture/tested', { scripts: { test: 'vitest run' } }),
     })
 
-    expect(problemsUnder(root)).toEqual([])
+    expect(problemsUnder(root)).toHaveNoProblems()
   })
 
   it('reports an exemption for a package the walk no longer returns', () => {
@@ -112,6 +112,6 @@ describe('checkPackageTests', () => {
   })
 
   it('every published package declares a test script', { tags: ['check', 'release'] }, () => {
-    expect(checkPackageTests(), 'Add a `test` script and a spec, or add the package to EXEMPT in scripts/checks/package-tests.ts with the reason tests are the wrong tool for it.').toEqual([])
+    expect(checkPackageTests()).toHaveNoProblems('Add a `test` script and a spec, or add the package to EXEMPT in scripts/checks/package-tests.ts with the reason tests are the wrong tool for it.')
   })
 })

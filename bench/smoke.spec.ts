@@ -46,5 +46,5 @@ describe('reportProblems', () => {
 it('the bench still measures something', async () => {
   const report = await runBench({ examples: ['vue3'], sizes: [10], runs: 1 })
 
-  expect(reportProblems(report), 'the bench ran and measured nothing').toEqual([])
+  expect(reportProblems(report)).toHaveNoProblems('the bench ran and measured nothing')
 })
