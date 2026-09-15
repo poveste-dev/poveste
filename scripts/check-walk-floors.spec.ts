@@ -169,6 +169,21 @@ describe('hasFailureExit', () => {
     expect(hasFailureExit('process.exitCode = 1')).toBe(true)
   })
 
+  // A conditional exit can fail. Reading it as unable to would ask for an
+  // exemption that never goes stale, switching the rule off for that check.
+  it.each([
+    'process.exit(problems.length > 0 ? 1 : 0)',
+    'process.exitCode = problems.length ? 1 : 0',
+    'process.exit(2)',
+    'process.exit(code)',
+  ])('sees %s as a way to fail', (line) => {
+    expect(hasFailureExit(line)).toBe(true)
+  })
+
+  it.each(['process.exit(0)', 'process.exit()', 'if (process.exitCode === 1) warn()'])('does not see %s as a way to fail', (line) => {
+    expect(hasFailureExit(line)).toBe(false)
+  })
+
   // Three checks explain in a comment why importing them cannot reach the exit,
   // which is how #760's table counted three calls too many.
   it('is not fooled by a comment that mentions the exit', () => {
@@ -218,12 +233,77 @@ describe('failureIsAsserted', () => {
   })
 })
 
+describe('failureIsAsserted, over the spec shapes that hid or faked a watch', () => {
+  const lines = (...parts: string[]): string => parts.join('\n')
+  const asserted = (spec: string): boolean => failureIsAsserted('check-a.ts', { 's.spec.ts': spec })
+
+  // An assertion that never runs watches nothing.
+  it.each(['it.skip', 'test.skip', 'xit', 'it.todo', 'it.skipIf(process.env.CI)'])('does not count a test declared with %s', (head) => {
+    expect(asserted(lines(`${head}("fails", () => {`, '  expect(runCheck("check-a.ts", []).status).toBe(1)', '})'))).toBe(false)
+  })
+
+  it('does not count a test inside a skipped suite', () => {
+    expect(asserted(lines('describe.skip("off", () => {', '  it("fails", () => {', '    expect(runCheck("check-a.ts", []).status).toBe(1)', '  })', '})'))).toBe(false)
+  })
+
+  it('counts a test after a skipped suite has closed', () => {
+    expect(asserted(lines('describe.skip("off", () => {', '  it("x", () => {})', '})', 'describe("on", () => {', '  it("fails", () => {', '    expect(runCheck("check-a.ts", []).status).toBe(1)', '  })', '})'))).toBe(true)
+  })
+
+  // Only `it(` used to start a block, so this one merged into the test above and
+  // lent it check-b's failure.
+  it('does not credit a check with a parameterised test about a different one', () => {
+    expect(asserted(lines('it("passes", () => {', '  expect(runCheck("check-a.ts").status).toBe(0)', '})', 'it.each([1])("fails %s", () => {', '  expect(runCheck("check-b.ts", []).status).toBe(1)', '})'))).toBe(false)
+  })
+
+  it('does not credit a test with a run a following suite header holds', () => {
+    expect(asserted(lines('it("fails", () => {', '  expect(runCheck("check-b.ts", []).status).toBe(1)', '})', 'describe("next", () => {', '  const result = runCheck("check-a.ts", [])', '  it("passes", () => {', '    expect(result.status).toBe(0)', '  })', '})'))).toBe(false)
+  })
+
+  it('counts a parameterised test that does watch it fail', () => {
+    expect(asserted(lines('it.each(["a", "b"])("fails over %s", (root) => {', '  expect(runCheck("check-a.ts", ["--root", root]).status).toBe(1)', '})'))).toBe(true)
+  })
+
+  it('sees a helper with a return type', () => {
+    expect(asserted(lines('const run = (root: string): CheckRun => runCheck("check-a.ts", ["--root", root])', 'it("fails", () => {', '  expect(run(root).status).toBe(1)', '})'))).toBe(true)
+  })
+
+  it('sees a helper whose body is on the next line', () => {
+    expect(asserted(lines('const run = (root: string) =>', '  runCheck("check-a.ts", ["--root", root])', 'it("fails", () => {', '  expect(run(root).status).toBe(1)', '})'))).toBe(true)
+  })
+
+  it('sees a function helper', () => {
+    expect(asserted(lines('function run(root: string) {', '  return runCheck("check-a.ts", ["--root", root])', '}', 'it("fails", () => {', '  expect(run(root).status).toBe(1)', '})'))).toBe(true)
+  })
+
+  it('sees a result held by the suite and asserted in a test', () => {
+    expect(asserted(lines('describe("p", () => {', '  const result = runCheck("check-a.ts", ["--root", root])', '  it("fails", () => {', '    expect(result.status).toBe(1)', '  })', '})'))).toBe(true)
+  })
+
+  it('does not credit a name the test has rebound to another check', () => {
+    expect(asserted(lines('const run = (root: string) => runCheck("check-a.ts", [root])', 'it("fails", () => {', '  const run = runCheck("check-b.ts", [])', '  expect(run.status).toBe(1)', '})'))).toBe(false)
+  })
+
+  it('accepts a status asserted as greater than zero', () => {
+    expect(asserted(lines('it("fails", () => {', '  const run = runCheck("check-a.ts", [])', '  expect(run.status).toBeGreaterThan(0)', '})'))).toBe(true)
+  })
+})
+
 describe('exitProblems', () => {
   const exits = 'if (problems.length > 0) process.exit(1)'
   const watched = { 'check-a.spec.ts': 'it(\'fails\', () => {\n  expect(runCheck(\'check-a.ts\', []).status).toBe(1)\n})' }
 
   it('is silent when every check that can fail is watched failing, and the rest say why', () => {
     expect(exitProblems(['check-a.ts', 'check-quiet.ts'], { 'check-a.ts': exits, 'check-quiet.ts': 'console.warn(tags)' }, watched, { 'check-quiet.ts': 'warns only' })).toEqual([])
+  })
+
+  it('holds a conditional exit to the same rule, not to an exemption', () => {
+    const conditional = 'process.exit(problems.length > 0 ? 1 : 0)'
+
+    expect(exitProblems(['check-a.ts'], { 'check-a.ts': conditional }, watched, {})).toEqual([])
+    expect(exitProblems(['check-a.ts'], { 'check-a.ts': conditional }, watched, { 'check-a.ts': 'warns only' })).toEqual([
+      expect.stringContaining('check-a.ts has a failure exit now, so its WITHOUT_FAILURE_EXIT entry is stale'),
+    ])
   })
 
   it('names a failure exit that no spec watches', () => {

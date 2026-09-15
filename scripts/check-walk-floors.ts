@@ -171,6 +171,11 @@ export function citationProblems(check: string, reason: string, source: string, 
 /**
  * Whether a check can exit non-zero at all.
  *
+ * Any exit that can carry a non-zero code, not only a literal `1`: a check that
+ * ends in `process.exit(problems.length ? 1 : 0)` can fail, and reading it as
+ * unable to would ask for a `WITHOUT_FAILURE_EXIT` entry that never goes stale
+ * — an exemption that switches this rule off for a check it applies to.
+ *
  * Code lines only. Three checks explain in a comment that their import guard
  * keeps the exit from killing the runner, and counting those mentions is how
  * #760's own table came out three calls too high.
@@ -178,7 +183,65 @@ export function citationProblems(check: string, reason: string, source: string, 
 export function hasFailureExit(source: string): boolean {
   return source.split('\n').some(line =>
     !/^\s*(?:\/\/|\*|\/\*)/.test(line)
-    && /\bprocess\.(?:exit\(1\)|exitCode\s*=\s*1\b)/.test(line))
+    && /\bprocess\.(?:exit\((?!\s*(?:0\s*)?\))|exitCode\s*=(?!=)\s*(?!0\b))/.test(line))
+}
+
+/** Where a spec's blocks start: every test, suite and hook call, with its modifiers. */
+const BLOCK_HEAD = /^([ \t]*)(x?(?:it|test|describe)(?:\.\w+)*|(?:before|after)(?:Each|All))\(/gm
+
+/** A head that never runs its body. */
+const SKIPPED = /^x|\.(?:skip\w*|todo)\b/
+
+/** An assertion that a run's status was not zero. */
+const FAILING = /\.status(?:,[^)]*)?\)\.(?:toBe\(1\)|toEqual\(1\)|not\.toBe\(0\)|toBeGreaterThan\(0\))/
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** The test blocks that run, each with the text up to the next head. */
+function runningTests(spec: string): string[] {
+  const heads = [...spec.matchAll(BLOCK_HEAD)]
+  const skippedSuites: number[] = []
+  const tests: string[] = []
+
+  heads.forEach((match, index) => {
+    const indent = match[1].length
+    const head = match[2]
+    while (skippedSuites.length > 0 && indent <= skippedSuites.at(-1)!) skippedSuites.pop()
+
+    if (head.startsWith('describe') || head.startsWith('xdescribe')) {
+      if (SKIPPED.test(head)) skippedSuites.push(indent)
+      return
+    }
+    if (!/^x?(?:it|test)\b/.test(head) || SKIPPED.test(head) || skippedSuites.length > 0) return
+    tests.push(spec.slice(match.index, heads[index + 1]?.index ?? spec.length))
+  })
+
+  return tests
+}
+
+/**
+ * Names a spec binds to running this check: a helper that calls it, or a
+ * result it holds.
+ *
+ * `const run = (root: string): CheckRun => runCheck(…)`, the same across lines,
+ * `function run(root) { return runCheck(…) }`, and a suite-level
+ * `const result = runCheck(…)` asserted in a later test all count.
+ */
+function namesBoundTo(direct: string, spec: string): string[] {
+  const variable = new RegExp(`(?:const|let|var)\\s+(\\w+)[^=\\n]*=\\s*(?:async\\s*)?(?:\\([^)]*\\)(?:\\s*:[^=]*?)?\\s*=>\\s*)?(?:\\{\\s*return\\s+)?${direct}`, 'g')
+  const fn = /^([ \t]*)(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)[^{]*\{([\s\S]*?)^\1\}/gm
+  return [
+    ...[...spec.matchAll(variable)].map(match => match[1]),
+    ...[...spec.matchAll(fn)].filter(match => new RegExp(direct).test(match[3])).map(match => match[2]),
+  ]
+}
+
+/** Whether a test binds `name` to something other than this check, hiding the spec-wide one. */
+function rebinds(name: string, test: string, direct: string): boolean {
+  const binding = new RegExp(`(?:const|let|var)\\s+${name}\\b[^=\\n]*=([\\s\\S]*?)(?:\\n\\s*\\n|$)`, 'g')
+  return [...test.matchAll(binding)].some(match => !new RegExp(direct).test(match[1]))
 }
 
 /**
@@ -186,21 +249,27 @@ export function hasFailureExit(source: string): boolean {
  *
  * Per test block, not per file: `run-check.spec.ts` runs one check expecting 0
  * and another expecting 1, and a file-wide match would credit the first with the
- * second's assertion. The check can be run directly, from a result bound in the
- * same block, or through a helper bound to it — `check-publishable.spec.ts`
- * declares `run` once and asserts in a later test.
+ * second's assertion. A block starts at every test, suite or hook call — a
+ * suite's header merged into the test above it would credit that test with a
+ * run the header holds. A skipped test, or one inside a skipped suite, never
+ * runs its assertion and never counts.
+ *
+ * The check can be run directly, or through a name the spec binds to it (see
+ * `namesBoundTo`), unless the test rebinds that name to something else.
  *
  * Any spec counts, not only the check's own: the property is that something
- * watches the exit move. The residual is one block running two checks with
- * opposite expectations, which credits both; that is a question for review.
+ * watches the exit move. The residual is a block that runs two checks with
+ * opposite expectations, or one name bound to two checks in one file; both
+ * credit too much, and both are a question for review.
  */
 export function failureIsAsserted(check: string, specs: Record<string, string>): boolean {
-  const direct = `runCheck\\('${check.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}'`
-  const failing = /\.status(?:,[^)]*)?\)\.(?:toBe\(1\)|not\.toBe\(0\))/
+  const direct = `runCheck\\(\\s*['"]${escapeRegExp(check)}['"]`
   return Object.values(specs).some((spec) => {
-    const helpers = [...spec.matchAll(new RegExp(`const (\\w+) = \\([^)]*\\) => ${direct}`, 'g'))].map(match => match[1])
-    const runs = new RegExp([direct, ...helpers.map(helper => `\\b${helper}\\(`)].join('|'))
-    return spec.split(/\n\s*(?:it|test)\(/).some(block => runs.test(block) && failing.test(block))
+    const bound = namesBoundTo(direct, spec)
+    return runningTests(spec).some(test =>
+      FAILING.test(test)
+      && (new RegExp(direct).test(test)
+        || bound.some(name => new RegExp(`\\b${name}\\b`).test(test) && !rebinds(name, test, direct))))
   })
 }
 
