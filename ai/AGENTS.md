@@ -87,6 +87,8 @@ Milestones and `sprint:*` labels are the owner's — do not set them. `blocked` 
 
 `on:next` marks an issue whose fix has merged to `next` but has not shipped. Close it then, with a PR reference, rather than waiting for the release — but confirm the fix actually landed first; an issue mentioned in a diff is often incidental.
 
+`release.yml` clears the label from everything carrying it once the packages are verified on npm, so it means what it says rather than accumulating. Nothing removed it until #722 and it had reached 104 issues, 100 of them already shipped — read as documented it was wrong 96% of the time.
+
 ## Commits and PRs
 
 The [commit convention](../.github/commit-convention.md) is enforced on PR titles by a required check.
