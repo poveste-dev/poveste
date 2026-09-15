@@ -1,6 +1,6 @@
 ---
 title: 'Migrating from histoire — what changes and what does not'
-description: 'Poveste is a drop-in fork, so your stories and configuration carry over. What to rename, and what to leave alone.'
+description: 'Poveste is a drop-in fork of histoire, so your stories and configuration carry over. What it adds, what to rename, what to leave alone, and whether you need to move at all.'
 ---
 
 # Migrating from Histoire
@@ -31,6 +31,18 @@ and Svelte 5+. If your project is below any of them, that upgrade comes first an
 real work; the dependency swap below is the easy part. See
 [supported versions](./getting-started.md#supported-versions).
 :::
+
+## What it adds, and whether you need to move
+
+Everything histoire gave you keeps working, and a few things are new:
+
+- **Five frameworks, each with its own example book and CI job.** Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar are each built and end-to-end tested on every commit.
+- **Quasar.** histoire does not support Quasar. Poveste does, including the app boot files a story otherwise skips. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
+- **Automatic controls for Svelte 5.** Poveste reads a Svelte component's declared props out of its source when the book is built, so a variant gets a control per prop without writing one. See [Automatic controls](./svelte/controls.md#automatic-controls).
+
+You don't have to move. If histoire does what you need, it's fine to stay. For Vue and Nuxt the move is a dependency swap, and for Svelte it's one change per story that uses controls, so it costs about the same later as it does now.
+
+For reference, as of 15 September 2026 histoire's npm `latest` is `1.0.0-beta.1`, published 7 January 2026.
 
 ## 1. Swap the dependencies
 

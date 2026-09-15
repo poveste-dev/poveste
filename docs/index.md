@@ -74,13 +74,17 @@ ratio and the boxes would otherwise be ragged. -->
     <span class="text-sm font-medium">SvelteKit</span>
   </a>
   <a
-    href="./guide/config.html#quasar"
+    href="./guide/quasar/getting-started"
     class="w-40 p-6 rounded bg-gray-100 dark:bg-gray-900 transition-colors hover:bg-sky-100 dark:hover:bg-sky-950 flex flex-col items-center justify-center gap-3"
   >
     <span class="w-12 h-12 flex items-center justify-center text-3xl" aria-hidden="true">Q</span>
     <span class="text-sm font-medium">Quasar</span>
   </a>
 </div>
+
+<p class="text-center text-sm mt-6">
+  Quasar components missing from a story? <a href="./guide/quasar-components-in-a-story">Here's why, and the fix</a>.
+</p>
 
 <style lang="postcss" scoped>
 /* v4: @apply in a scoped <style> needs the theme referenced explicitly. */
