@@ -13,7 +13,7 @@ on:
     paths:
       - docs/.vitepress/theme/starters.ts
       - scripts/check-starters.ts
-      - scripts/checks/starters.spec.ts
+      - scripts/check-starters.spec.ts
       - vitest.config.mts
       - .github/workflows/starters.yml
 

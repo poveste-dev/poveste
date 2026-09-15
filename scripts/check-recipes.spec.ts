@@ -83,3 +83,8 @@ describe('checkRecipes', () => {
     expect(checkRecipes(root)).toContainEqual(expect.stringContaining('has no "## Configuration" section'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('every published recipe is exactly what its example runs', { tags: ['check', 'docs', 'examples'] }, () => {
+  expect(checkRecipes(), 'Copy the block from the docs into the example, or fix the docs. They are one thing.').toEqual([])
+})

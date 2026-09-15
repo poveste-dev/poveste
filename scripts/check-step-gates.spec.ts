@@ -310,3 +310,8 @@ describe('checkStepGates', () => {
     expect(checkStepGates(root)).toContainEqual(expect.stringContaining('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('every workflow step\'s position means what it looks like', { tags: ['check', 'ci'] }, () => {
+  expect(checkStepGates(), 'Name the dependency in the `if:`, or record the boundary in scripts/check-step-gates.ts with the reason (#723).').toEqual([])
+})

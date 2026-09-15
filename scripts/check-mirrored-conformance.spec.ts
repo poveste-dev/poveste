@@ -251,3 +251,8 @@ describe('checkMirroredConformance', () => {
     expect(checkMirroredConformance(root)).toContainEqual(expect.stringContaining('differs between'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('every mirrored conformance story is identical to its source', { tags: ['check', 'examples'] }, () => {
+  expect(checkMirroredConformance(), 'Run `pnpm run sync:conformance` to rewrite the mirrors from their source, or add the file to MIRROR_EXCEPTIONS in scripts/check-mirrored-conformance.ts if it should differ.').toEqual([])
+})

@@ -385,3 +385,12 @@ describe('the walk the other checks import', () => {
     expect(publishablePackages(root).map(pkg => pkg.name)).toEqual(['@poveste/one'])
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('every publishable package exists on the registry, packs and resolves', { tags: ['check', 'release', 'build', 'network'] }, () => {
+  expect(checkPublishable(), 'Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.').toEqual([])
+})
+
+it('every publishable package packs and resolves, without asking the registry', { tags: ['check', 'release', 'build'] }, () => {
+  expect(checkPublishable(undefined, { offline: true }), 'Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.').toEqual([])
+})

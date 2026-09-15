@@ -296,3 +296,8 @@ describe('checkVersions', () => {
     expect(await checkVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('the version tables match what the packages declare', { tags: ['check', 'versions'] }, async () => {
+  expect(await checkVersions(), 'The declared range is the truth. Fix the table, or fix the range and the CI job behind it.').toEqual([])
+})

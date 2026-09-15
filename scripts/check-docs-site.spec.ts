@@ -1,6 +1,8 @@
+import process from 'node:process'
 import { describe, expect, it } from 'vitest'
 import {
   checkDocsSite,
+  checkDocsSiteLive,
   declaredOrigins,
   deployMarker,
   documentTitles,
@@ -12,6 +14,7 @@ import {
   robotsProblems,
   rulesBelowCatchAll,
   selfDeclarationProblems,
+  SITE,
   sitemapGaps,
   sitemapLocations,
   staleHtmlTargets,
@@ -592,4 +595,17 @@ describe('checkDocsSite', () => {
 
     expect(await checkDocsSite(root)).toContainEqual(expect.stringContaining('no build at'))
   })
+})
+
+// The check itself, over this repository rather than a fixture.
+it('the docs site config and build hold up', { tags: ['check', 'docs', 'build'] }, async () => {
+  expect(await checkDocsSite(), 'Run `pnpm run docs:build` first if the build is missing.').toEqual([])
+})
+
+// Production by default; a deploy preview is named by `POVESTE_DOCS_SITE`.
+it('the deployed docs site answers correctly', { tags: ['check', 'docs', 'network'] }, async () => {
+  const site = process.env.POVESTE_DOCS_SITE ?? SITE
+  const { problems, deployed } = await checkDocsSiteLive(site)
+  process.stdout.write(`Reached ${site} (${deployed ?? 'deploy unidentified'})\n`)
+  expect(problems).toEqual([])
 })

@@ -414,3 +414,8 @@ describe('checkReadmes', () => {
     expect(await checkReadmes(root)).toContainEqual(expect.stringContaining('found no published packages under packages/'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('every page describes Poveste and points somewhere real', { tags: ['check', 'docs'] }, async () => {
+  expect(await checkReadmes(), 'Pages that describe the wrong project, or point nowhere.').toEqual([])
+})

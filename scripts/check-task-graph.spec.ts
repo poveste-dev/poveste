@@ -192,3 +192,8 @@ describe('checkTaskGraph', () => {
     expect(checkTaskGraph(root)).toContainEqual(expect.stringContaining('declares no `tasks:`'))
   })
 })
+
+// The check itself, over this repository rather than a fixture.
+it('the task graph matches release:check', { tags: ['check', 'ci'] }, () => {
+  expect(checkTaskGraph(), 'The `&&` chain in release:check decides; release:report only reports. A report covering less than the gate is the failure worth catching (#716).').toEqual([])
+})
