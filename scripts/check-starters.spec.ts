@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './check-starters.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 const result = (framework: string, ok: boolean) => ({ framework, ok, detail: ok ? 'resolves' : 'ERESOLVE' } as any)
 
@@ -104,5 +106,25 @@ describe('isPovestePackage', () => {
   it('leaves everything else alone', () => {
     expect(['typescript', 'vue', 'histoire', '@histoire/plugin-vue'].map(isPovestePackage))
       .toEqual([false, false, false, false])
+  })
+})
+
+// The guard this check is exempted for lives in `main()`, and deleting its
+// `process.exit(1)` left every assertion above green (#719). So the status is
+// asserted over a tree where the guard has to fire, together with the guard's
+// own message. Only this direction: a passing run installs every starter
+// from the registry.
+// Also the guard's own message: a crash on a missing file exits non-zero too, and would pass a
+// status-only assertion for the wrong reason. And with no stack trace, because a
+// guard that prints and then falls through to a crash on the next read looks the
+// same from outside — and exits 0 in any tree where that read happens to work.
+describe('the check as a process', () => {
+  it('exits non-zero when the docs declare no starters', () => {
+    const run = runCheck('check-starters.ts', ['--root', tree({ 'docs/.vitepress/theme/starters.ts': 'export const starters = {}\n' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('declares no starters, so this check verified nothing')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })

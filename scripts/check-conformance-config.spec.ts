@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { bookProblems, CUSTOM_PRESET, presetsIn, specPresets, specProblems, toRendered } from './check-conformance-config.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 const DEFAULTS = [
   { label: 'Transparent', color: 'transparent', contrastColor: '#333' },
@@ -142,5 +144,27 @@ describe('specPresets', () => {
     const source = `const presets = [\n  { name: 'transparent', bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' },\n]\n`
 
     expect(specPresets(source)).toEqual([{ bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' }])
+  })
+})
+
+// The guard this check is exempted for lives in `main()`, and deleting its
+// `process.exit(1)` left every assertion above green (#719). So the status is
+// asserted over a tree where the guard has to fire, together with the guard's
+// own message: a crash on a missing file exits non-zero too, and would pass a
+// status-only assertion for the wrong reason. And with no stack trace, because a
+// guard that prints and then falls through to a crash on the next read looks the
+// same from outside — and exits 0 in any tree where that read happens to work.
+describe('the check as a process', () => {
+  it('exits 0 over the books it actually ships with', () => {
+    expect(runCheck('check-conformance-config.ts').status).toBe(0)
+  })
+
+  it('exits non-zero when the defaults it compares against cannot be read', () => {
+    const run = runCheck('check-conformance-config.ts', ['--root', tree({ 'packages/poveste/src/node/config.ts': 'export const nothing = 1\n' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('could not read `backgroundPresets`')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })

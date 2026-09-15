@@ -37,7 +37,7 @@ import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import { starters } from '../docs/.vitepress/theme/starters.ts'
+import { rootFromArgv } from './check-publishable.ts'
 
 const run = promisify(execFile)
 
@@ -47,7 +47,13 @@ interface Result {
   detail: string
 }
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+// `--root` so a spec can run this as a process over a tree where its guard has
+// to fire: the exit status is the verdict, and no spec could reach it (#719).
+const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+
+// Loaded from the root rather than imported statically, or `--root` would move
+// every read but this one.
+const { starters } = await import(pathToFileURL(join(ROOT, 'docs/.vitepress/theme/starters.ts')).href) as typeof import('../docs/.vitepress/theme/starters.ts')
 
 // The one thing the starters do not pin. During a publish `latest` genuinely is
 // the previous release, for as long as propagation takes — 60s for v0.8.1 (#401)
