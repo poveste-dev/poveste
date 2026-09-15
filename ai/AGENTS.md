@@ -16,7 +16,7 @@ This is not the contributor guide. [`CONTRIBUTING.md`](../CONTRIBUTING.md) cover
 
 ## One preview, whatever the layout
 
-A layout choice must never be expressed as sibling template branches that both contain the preview. Flipping it then moves the preview in the component tree, Vue rebuilds it, and the sandbox realm underneath boots a cold document — no crash, no wrong pixel, no red test. It was found by hand four times (#328, #595, #596, #600) before `scripts/check-preview-position.ts` started failing on it.
+A layout choice must never be expressed as sibling template branches that both contain the preview. Flipping it then moves the preview in the component tree, Vue rebuilds it, and the sandbox realm underneath boots a cold document — no crash, no wrong pixel, no red test. It was found by hand four times (#328, #595, #596, #600) before `scripts/checks/preview-position.ts` started failing on it.
 
 The shape alone does not decide it. `StoryViewer` and `StoryVariantSingleView` both put the preview in more than one branch and are fine, because their conditions are properties of the story being shown and a story change rebuilds anyway. The condition is what matters: a live layout flag is the bug, a per-story property is not. The check knows the second kind from a skip-list, so a condition nobody has classified fails rather than being assumed harmless — add to `STABLE` with a reason, or hoist the preview above the branches.
 
@@ -26,7 +26,7 @@ Once a step in a job carries a status-function `if:` — `success()`, `failure()
 
 Specifying one label sweep cost four attempts on this, each correct-looking in review, before landing on the step whose outcome the work actually depended on (#722, #723). Say what a step depends on — `if: ${{ steps.<id>.outcome == 'success' }}` — rather than placing it somewhere that looks safe.
 
-`scripts/check-step-gates.ts` holds it. It classifies **boundaries** rather than steps: the first masked step in a job, and each point below it where the job switches between stating its dependency and inheriting `success()`. Two records, not one, because the deliberate cases are opposites — `RUNS_PAST_FAILURE` for a step that names a status function so it runs *after* something failed, `NEEDS_EVERYTHING_ABOVE` for one that names nothing because the implicit `success()` is exactly what it wants. A single "classified, with a reason" list would file both under the same heading and hand the next person two entries arguing opposite ways.
+`scripts/checks/step-gates.ts` holds it. It classifies **boundaries** rather than steps: the first masked step in a job, and each point below it where the job switches between stating its dependency and inheriting `success()`. Two records, not one, because the deliberate cases are opposites — `RUNS_PAST_FAILURE` for a step that names a status function so it runs *after* something failed, `NEEDS_EVERYTHING_ABOVE` for one that names nothing because the implicit `success()` is exactly what it wants. A single "classified, with a reason" list would file both under the same heading and hand the next person two entries arguing opposite ways.
 
 ## Branches
 
@@ -48,7 +48,7 @@ A story that proves a behaviour goes in **all four** reference books — `vue3`,
 
 The ids are explicit rather than derived from paths, because each framework lays its files out differently and a path-derived id cannot be addressed by one shared spec.
 
-**The contract is not only stories.** A conformance book also declares the background presets the shared specs assert — the five `getDefaultConfig()` defaults plus the `Custom gray` sixth, and `defaultBackgroundColor: 'transparent'`. Spread `getDefaultConfig().backgroundPresets` or list the six literally; `examples/quasar` does the latter because its published recipe already owns the import line. A book that carries all 17 stories and skips this fails 18 specs on a preset count, which is how promoting Quasar spent a session (#540). `scripts/check-conformance-config.ts` fails on it in seconds instead, and covers a new book automatically — it reads the `:conformance` projects in `playwright.config.ts`, the same source of truth as the wiring check.
+**The contract is not only stories.** A conformance book also declares the background presets the shared specs assert — the five `getDefaultConfig()` defaults plus the `Custom gray` sixth, and `defaultBackgroundColor: 'transparent'`. Spread `getDefaultConfig().backgroundPresets` or list the six literally; `examples/quasar` does the latter because its published recipe already owns the import line. A book that carries all 17 stories and skips this fails 18 specs on a preset count, which is how promoting Quasar spent a session (#540). `scripts/checks/conformance-config.ts` fails on it in seconds instead, and covers a new book automatically — it reads the `:conformance` projects in `playwright.config.ts`, the same source of truth as the wiring check.
 
 ## What the examples are for
 
@@ -64,7 +64,7 @@ Eleven directories, three kinds, not interchangeable:
 
 The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is 17 ids and is the contract; `SHARED_STORY_TITLES` is 54 names and is this book's demo content. Requiring both of every new framework would price onboarding at 54 stories rather than 17.
 
-`scripts/check-example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue3-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
+`scripts/checks/example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue3-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
 
 ## Commands that do less than their name
 

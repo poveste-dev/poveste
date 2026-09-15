@@ -21,7 +21,7 @@ Everything else in a release can be re-run. This cannot.
 
 1. **Rebase `next` onto `main` if they have diverged, then fast-forward `main` to it.** After every release `main` is exactly one commit ahead — bumpp's version bump goes there and nowhere else — so the *second* release in a cycle always needs the rebase first. `git merge --ff-only` fails with *"Not possible to fast-forward"* when you skip it. The rebase rewrites `next`, so pushing it needs `--force-with-lease`; `next` is unprotected, `main` is not.
 2. **Write the `CHANGELOG.md` section by hand.** Nothing generates it and nothing can. Draft from `git log v<previous>..HEAD --format='%s'`, group as changelogithub does (🚨 Breaking Changes / 🚀 Enhancements / 🩹 Fixes / 📖 Documentation / ✅ Tests / 🤖 CI / 🏡 Chore), skip anything a consumer cannot see, and add the `[compare changes]` link.
-3. **Check what will actually be published:** `node scripts/check-changelog.ts v<version>`.
+3. **Check what will actually be published:** `node scripts/checks/changelog.ts v<version>`.
 4. **Pick the type from the commits, not the milestone** — a `feat` in the range means `minor`, otherwise `patch`. A milestone names the release its issues aim at, not what shipped; issues slip.
 5. `pnpm run release patch` (or `minor`).
 
@@ -32,9 +32,9 @@ Everything else in a release can be re-run. This cannot.
 **It lifts on two conditions, not one.**
 
 1. **The release is verified on npm** — not when the tag is pushed. `release.yml` waits on `test.yml` green for the tagged commit, and a red run gets re-run; until the packages are on the registry the release can still need attention, and `next` wants to be unchanged while it does.
-2. **`next` has been rebased onto `main`.** This is the one that gets forgotten, because by then the interesting part is over. `scripts/release.ts` commits the bump to `main` alone, so `next` is one commit behind the moment a release lands — and merging into an un-rebased `next` is exactly how the *next* cut arrives at `git merge --ff-only` refusing. Rebase before you cut, rebase before you resume; they are the same rule from both ends.
+2. **`next` has been rebased onto `main`.** This is the one that gets forgotten, because by then the interesting part is over. `scripts/release/release.ts` commits the bump to `main` alone, so `next` is one commit behind the moment a release lands — and merging into an un-rebased `next` is exactly how the *next* cut arrives at `git merge --ff-only` refusing. Rebase before you cut, rebase before you resume; they are the same rule from both ends.
 
-**The check, immediately before tagging.** `node scripts/check-changelog.ts v<version>` warns on stderr when commits landed after the section was last written, and names them:
+**The check, immediately before tagging.** `node scripts/checks/changelog.ts v<version>` warns on stderr when commits landed after the section was last written, and names them:
 
 ```
 ::warning::3 commits landed after the CHANGELOG.md section was last written
@@ -47,7 +47,7 @@ Read each one. If it belongs in the notes, add it; if it is deliberately unmenti
 
 This is the step that is easy to miss, because it is invisible until the second release in a cycle.
 
-`scripts/release.ts` bumps 26 manifests, commits and tags **on `main`**. `next` never receives that commit, so it still says the previous version. One release and nobody notices; two, and `git merge --ff-only origin/next` refuses.
+`scripts/release/release.ts` bumps 26 manifests, commits and tags **on `main`**. `next` never receives that commit, so it still says the previous version. One release and nobody notices; two, and `git merge --ff-only origin/next` refuses.
 
 Rebasing replays the new work on top of the bump, which is why the branch model rebases `next` rather than merging it — a merge would put the bump *behind* the new commits and the fast-forward would still be impossible.
 
@@ -57,7 +57,7 @@ Rebasing replays the new work on top of the bump, which is why the branch model 
 
 ## The invocation
 
-The type is a **positional** argument, read by `scripts/release.ts` and validated before anything runs:
+The type is a **positional** argument, read by `scripts/release/release.ts` and validated before anything runs:
 
 ```bash
 pnpm run release patch

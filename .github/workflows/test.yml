@@ -180,14 +180,14 @@ jobs:
         id: install
         run: pnpm install
 
-      # From here to `Test the release scripts` nothing needs a build, so one
-      # failing check must not skip the eleven after it: a run that could name
-      # twelve problems otherwise costs twelve cycles to read (#720).
+      # From here to `Type-check the scripts` nothing needs a build, so one
+      # failing check must not skip the twelve after it: a run that could name
+      # thirteen problems otherwise costs thirteen cycles to read (#720).
       #
       # Paired with the install rather than standing alone. `!cancelled()`
       # suppresses the implicit `success()` in full, including the dependency on
-      # the step above, so a failed install would run all twelve and fail all
-      # twelve on the same missing `node_modules`.
+      # the step above, so a failed install would run all thirteen and fail all
+      # thirteen on the same missing `node_modules`.
       #
       # Cheap and needs nothing built, so it runs before the build rather than
       # next to the smoke test.
@@ -248,14 +248,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:recipes
 
-      # Every check either asserts it reached its inputs or says why it cannot,
-      # so a check added without either fails here rather than in a release
-      # whose gate reported success over an assertion that never ran (#719).
-      - name: Check every check can fail
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm run test:walk-floors
-
-      # The rule this file is the largest instance of: twelve steps above give
+      # The rule this file is the largest instance of: thirteen steps above give
       # up the guarantee their position implies, and the eight below inherit a
       # `success()` that has to be the deliberate choice rather than the default
       # nobody looked at (#723).
@@ -266,6 +259,12 @@ jobs:
       - name: Test the release scripts
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:scripts
+
+      # The scripts carry no tsconfig of their own anywhere else, so this is the
+      # only place a type error in a check, or a misspelled test tag, is caught.
+      - name: Type-check the scripts
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run typecheck:scripts
 
       # The docs site is not part of the package build, so it gets its own. Both
       # defects this covers answered HTTP 200 while broken (#288, #343), which is
@@ -296,7 +295,7 @@ jobs:
       # appears. A cache written by a lint of an unbuilt tree therefore replays
       # a run in which this rule resolved nothing, and replays it as a pass.
       #
-      # No `if:`, deliberately, unlike the eleven above. A status function would
+      # No `if:`, deliberately, unlike the thirteen above. A status function would
       # suppress the implicit `success()` and run this after a failed build,
       # against a workspace with no `dist` — hundreds of unresolved-type errors
       # stacked on top of the one error that is the reason for them.

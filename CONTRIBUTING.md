@@ -202,7 +202,7 @@ Most of these are transitive dev-tooling advisories about denial of service in a
 
 ## Releasing
 
-Releases are cut from `main` by [`scripts/release.ts`](./scripts/release.ts), which runs [bumpp](https://github.com/antfu-collective/bumpp) to bump every workspace `package.json` in lockstep, commit and tag `v<version>`, then pushes the commit and that one tag. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
+Releases are cut from `main` by [`scripts/release/release.ts`](./scripts/release/release.ts), which runs [bumpp](https://github.com/antfu-collective/bumpp) to bump every workspace `package.json` in lockstep, commit and tag `v<version>`, then pushes the commit and that one tag. The pushed tag triggers `.github/workflows/release.yml`, which builds, runs the smoke test and publishes to npm.
 
 **Where `next` fits, because the section above says `main` and the work is not on it.** Contributions land on `next`; a release fast-forwards `main` to `next` and cuts from there. A fast-forward has no selection step, so the release contains whatever is on `next` at that moment — which is why work is parked rather than merged in the day before a cut, and why `git merge --ff-only` is the command: if it refuses, the branches have diverged and the fix is to rebase `next`, never to force the merge.
 
@@ -269,7 +269,7 @@ The release is created as a **draft** and published only after the packages are 
 So the section has to be right **before** the tag is cut. The workflow extracts it and fails before publishing anything if it is missing — check what it will publish first:
 
 ```sh
-node scripts/check-changelog.ts v<version>
+node scripts/checks/changelog.ts v<version>
 ```
 
 `v0.4.0` is the worked example. changelogithub produced a single line — "Accept setupVue alongside setupVue3" — which is a correct summary of the commit and a useless summary of the release: nothing told a reader that their existing code still works, that their editor would start flagging `defineSetupVue3`, or that 1.0 is the deadline for the old spelling.

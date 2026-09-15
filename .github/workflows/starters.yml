@@ -2,7 +2,7 @@ name: Check StackBlitz starters
 
 # The "Try it live" starters install with npm from the public registry, so the
 # workspace suites cannot vouch for them — see the header of
-# scripts/check-starters.ts. The failure mode is the registry moving underneath
+# scripts/checks/starters.ts. The failure mode is the registry moving underneath
 # a file nobody touched, which is why this is mostly a scheduled run; the paths
 # filter just catches a bad edit before it ships.
 on:
@@ -12,7 +12,9 @@ on:
   pull_request:
     paths:
       - docs/.vitepress/theme/starters.ts
-      - scripts/check-starters.ts
+      - scripts/checks/starters.ts
+      - scripts/checks/starters.spec.ts
+      - vitest.config.mts
       - .github/workflows/starters.yml
 
 permissions:
@@ -29,12 +31,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install node
-        uses: actions/setup-node@v7
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
+          cache: pnpm
 
-      # No `pnpm install`: the script's only import from the starters module is
-      # `import type`, so node strips it and nothing needs resolving locally.
+      # The check is a vitest test now, so it needs the workspace installed.
+      # Running `scripts/checks/starters.ts` with node imports it and exits 0.
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Resolve every starter
-        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-starters.ts
+        run: pnpm run test:starters

@@ -1,0 +1,258 @@
+// Asserts that the lists behind the example e2e matrix still agree with each other.
+//
+// `examples/vike` shipped in the workflow matrix but not in the root Playwright
+// config's `ALL_EXAMPLES`, so the job died on that config's own unknown-name guard
+// before a single test ran (#384). Nothing had compared the two, because nothing
+// could: one is a YAML matrix and the other a TypeScript array.
+//
+// The ports are the same shape of problem. Each example states its preview port
+// three times — the root config's `webServer`, `story:preview` in its package.json,
+// and the root playwright config — and a disagreement is a Playwright run waiting
+// two minutes for a server that came up somewhere else.
+//
+// What this does not cover: an example directory named in neither list. Four exist
+// on purpose (vue3-percy, vue3-screenshot, vue3-themed, vue3-vuetify), which is
+// #337's subject, so "is a directory under examples/" cannot be the truth here.
+//
+// It also holds `ai/AGENTS.md` to the same lists. A guide that names the wrong books
+// is worse than no guide, and its table is the one part of it a machine can read.
+//
+// No network, no build: it reads the workflow text and imports the configs, so it
+// checks the config the harness actually resolves rather than how it is written.
+
+import type { CheckResult } from './support/check-result.ts'
+import { readdir, readFile, stat } from 'node:fs/promises'
+import { join } from 'node:path'
+import process from 'node:process'
+import { pathToFileURL } from 'node:url'
+
+const ROOT = join(import.meta.dirname, '..', '..')
+const WORKFLOW = '.github/workflows/test-examples.yml'
+const GUIDE = 'ai/AGENTS.md'
+
+export interface Ports {
+  preview?: number
+  dev?: number
+}
+
+interface WebServer {
+  command?: string
+  url?: string
+}
+
+export function matrixExamples(workflow: string): string[] {
+  const list = workflow.match(/^\s*example:\s*\[([^\]]*)\]/m)?.[1]
+  return list ? list.split(',').map(name => name.trim()).filter(Boolean) : []
+}
+
+// `vue3`, `vue3:conformance` and `vue3:dev` are one example with three projects.
+export function exampleNames(projects: string[]): string[] {
+  return [...new Set(projects.map(name => name.split(':')[0]))]
+}
+
+/**
+ * The books carrying the conformance set, read off the root Playwright config.
+ *
+ * A book carries it exactly when the config gives it a `:conformance` project,
+ * which is why this is derived rather than kept as a second list. Exported
+ * because `checks/conformance-config.ts` asked the same question of the same
+ * projects and answered it with its own copy of these two lines — so the empty
+ * case, which both treat as "this checked nothing", was stated twice and
+ * asserted in neither (#719).
+ */
+export function conformanceBooks(projects: string[]): string[] {
+  return exampleNames(projects.filter(name => name.endsWith(':conformance')))
+}
+
+export function portOf(url: string | undefined): number | undefined {
+  const port = url?.match(/:(\d+)/)?.[1]
+  return port ? Number(port) : undefined
+}
+
+export function portFromCommand(command: string | undefined): number | undefined {
+  const port = command?.match(/--port[= ](\d+)/)?.[1]
+  return port ? Number(port) : undefined
+}
+
+function role(command: string | undefined): keyof Ports | undefined {
+  if (command?.includes('story:preview')) {
+    return 'preview'
+  }
+  return command?.includes('poveste dev') ? 'dev' : undefined
+}
+
+// Playwright accepts a lone object as well as an array, and the examples use both.
+export function asServers(webServer: unknown): WebServer[] {
+  if (Array.isArray(webServer)) {
+    return webServer
+  }
+  return webServer ? [webServer as WebServer] : []
+}
+
+export function portsOf(servers: WebServer[]): Ports {
+  const ports: Ports = {}
+  for (const server of servers) {
+    const key = role(server.command)
+    if (key) {
+      ports[key] = portOf(server.url)
+    }
+  }
+  return ports
+}
+
+// The root config's commands carry the example they belong to; a per-example
+// config's do not, which is why that one is read with `portsOf` instead.
+export function portsByExample(servers: WebServer[]): Map<string, Ports> {
+  const byExample = new Map<string, Ports>()
+  for (const server of servers) {
+    const name = server.command?.match(/\.\/examples\/([\w.-]+)/)?.[1]
+    const key = name && role(server.command)
+    if (!name || !key) {
+      continue
+    }
+    byExample.set(name, { ...byExample.get(name), [key]: portOf(server.url) })
+  }
+  return byExample
+}
+
+export function duplicatePorts(ports: (number | undefined)[]): number[] {
+  const seen = new Set<number>()
+  const repeated = new Set<number>()
+  for (const port of ports) {
+    if (port === undefined) {
+      continue
+    }
+    if (seen.has(port)) {
+      repeated.add(port)
+    }
+    seen.add(port)
+  }
+  return [...repeated]
+}
+
+/**
+ * The two lists of examples `AGENTS.md` states, read back out of its table.
+ *
+ * Only the names in backticks are read, so the prose in each row is free to
+ * change without touching this.
+ */
+export function guideExamples(markdown: string): { reference: string[], conformance: string[], fixtures: string[] } {
+  const cell = (label: string) => markdown.match(new RegExp(`^\\| \\*\\*${label}\\*\\* \\|(.*)$`, 'm'))?.[1] ?? ''
+  const names = (row: string) => [...row.matchAll(/`([\w.-]+)`/g)].map(match => match[1])
+  return {
+    reference: names(cell('Reference books')),
+    conformance: names(cell('Conformance books')),
+    fixtures: names(cell('Fixtures')),
+  }
+}
+
+export function onlyInFirst(a: string[], b: string[]): string[] {
+  return a.filter(name => !b.includes(name))
+}
+
+async function importDefault(path: string, root: string): Promise<any> {
+  return (await import(pathToFileURL(join(root, path)).href)).default
+}
+
+async function exists(path: string, root: string): Promise<boolean> {
+  try {
+    await stat(join(root, path))
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+async function repositoryProblems(root = ROOT): Promise<string[]> {
+  const problems: string[] = []
+
+  // The root config filters itself by this, and a CI job that sets it would make
+  // every other example look missing.
+  delete process.env.POVESTE_E2E_EXAMPLE
+
+  const workflow = await readFile(join(root, WORKFLOW), 'utf8')
+  const matrix = matrixExamples(workflow)
+  if (matrix.length === 0) {
+    problems.push(`${WORKFLOW} has no \`example:\` matrix to read — the shape this check reads has changed`)
+  }
+
+  const config = await importDefault('playwright.config.ts', root)
+  const configured = exampleNames((config.projects ?? []).map((project: { name: string }) => project.name))
+  const rootPorts = portsByExample(asServers(config.webServer))
+
+  for (const name of onlyInFirst(matrix, configured)) {
+    problems.push(`${WORKFLOW} runs "${name}", which playwright.config.ts does not define — that job fails before a test runs`)
+  }
+  for (const name of onlyInFirst(configured, matrix)) {
+    problems.push(`playwright.config.ts defines "${name}", which ${WORKFLOW} never runs — nothing tests it in CI`)
+  }
+
+  // A book carries the conformance set exactly when the root config gives it a
+  // `:conformance` project, so the guide is checked against that rather than
+  // against a second hand-kept list.
+  //
+  // Reference and conformance are two claims, not one (#499): the guide's first
+  // two rows are both conformance books, and only the first is also a mirror of
+  // the reference book. Both rows are read here, because what the config knows
+  // is "has a conformance project".
+  // Read rather than crash: the guide has moved once already, and "it is not
+  // there" should read as a problem like the others rather than a stack trace.
+  const guide = await exists(GUIDE, root) ? await readFile(join(root, GUIDE), 'utf8') : ''
+  if (guide === '') {
+    problems.push(`${GUIDE} is missing — the guide the example table lives in has moved or gone`)
+  }
+  const { reference, conformance: conformanceOnly, fixtures } = guideExamples(guide)
+  const guideConformance = [...reference, ...conformanceOnly]
+  const conformance = conformanceBooks((config.projects ?? []).map((project: { name: string }) => project.name))
+
+  if (reference.length === 0 && fixtures.length === 0) {
+    problems.push(`${GUIDE} has no example table to read — the shape this check reads has changed`)
+  }
+
+  for (const name of onlyInFirst(guideConformance, conformance)) {
+    problems.push(`${GUIDE} says "${name}" carries the conformance set, but playwright.config.ts gives it no conformance project`)
+  }
+  for (const name of onlyInFirst(conformance, guideConformance)) {
+    problems.push(`"${name}" carries the conformance set, but ${GUIDE} lists it as neither a reference book nor a conformance book`)
+  }
+
+  const directories = (await readdir(join(root, 'examples'), { withFileTypes: true }))
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name)
+  const listed = [...guideConformance, ...fixtures]
+
+  for (const name of onlyInFirst(listed, directories)) {
+    problems.push(`${GUIDE} lists example "${name}", which does not exist`)
+  }
+  for (const name of onlyInFirst(directories, listed)) {
+    problems.push(`examples/${name} exists, but ${GUIDE} does not say what it is for`)
+  }
+
+  for (const port of duplicatePorts([...rootPorts.values()].flatMap(ports => [ports.preview, ports.dev]))) {
+    problems.push(`playwright.config.ts starts two servers on port ${port} — one book would be tested twice and the other not at all`)
+  }
+
+  for (const name of configured) {
+    if (!await exists(`examples/${name}/package.json`, root)) {
+      problems.push(`playwright.config.ts defines "${name}", but examples/${name}/package.json does not exist`)
+      continue
+    }
+
+    const ports = rootPorts.get(name) ?? {}
+    const manifest = JSON.parse(await readFile(join(root, `examples/${name}/package.json`), 'utf8'))
+    const declared = portFromCommand(manifest.scripts?.['story:preview'])
+
+    if (declared !== ports.preview) {
+      problems.push(`examples/${name} previews on port ${declared}, but playwright.config.ts waits on ${ports.preview}`)
+    }
+  }
+
+  return problems
+}
+
+const REMEDY = 'The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.'
+
+export async function checkExampleWiring(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
+}

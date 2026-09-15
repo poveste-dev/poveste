@@ -6,7 +6,7 @@ import { defineConfig } from 'bumpp'
 // since `pnpm -r publish` skips them. The `v%s` tag matches the trigger in
 // .github/workflows/release.yml (`tags: - 'v*'`).
 //
-// Released with `pnpm release <patch|minor|major>`, which is `scripts/release.ts`
+// Released with `pnpm release <patch|minor|major>`, which is `scripts/release/release.ts`
 // — it reads the type, runs bumpp, then pushes the commit and `v<version>` by
 // name.
 //

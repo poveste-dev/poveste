@@ -62,7 +62,7 @@ jobs:
       # saw (#399). Extracted before anything publishes: a missing section stops the
       # release here rather than shipping a release with no body.
       - name: Build the release notes
-        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-changelog.ts "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+        run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/checks/changelog.ts "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
 
       # Drafted, not published: publishing is what emails every watcher, and the
       # body now tells them what to upgrade — so it must not go out before npm has
@@ -157,7 +157,7 @@ jobs:
           if ! gh release view "$GITHUB_REF_NAME" --json tagName --jq .tagName; then
             echo "::error::Published $GITHUB_REF_NAME to npm, but no GitHub release exists for it."
             echo "Creating it failed earlier in this run. Create it now — the packages are already out:"
-            echo "  node scripts/check-changelog.ts $GITHUB_REF_NAME > notes.md"
+            echo "  node scripts/checks/changelog.ts $GITHUB_REF_NAME > notes.md"
             echo "  gh release create $GITHUB_REF_NAME --title $GITHUB_REF_NAME --notes-file notes.md"
             exit 1
           fi
