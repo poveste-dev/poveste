@@ -74,14 +74,14 @@ jobs:
           # whole of `scripts/`: the other thirty would each trigger five book
           # builds and a Playwright run to serve one step that reads one file.
           #
-          # The bundle-size step's assertion is `scripts/check-bundle-size.spec.ts`,
+          # The bundle-size step's assertion is `scripts/checks/bundle-size.spec.ts`,
           # and `vitest.config.mts` decides what that step and the bench smoke
           # collect, so both are named alongside the check module.
           #
           # `bench/` for the same reason, from the other direction: the smoke
           # job below is the only thing that runs it, so a bench-only edit is
           # the one change that would reach nothing able to check it.
-          PATTERN='^(packages/|examples/|e2e/|bench/|scripts/check-bundle-size\.ts$|scripts/check-bundle-size\.spec\.ts$|vitest\.config\.mts$|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
+          PATTERN='^(packages/|examples/|e2e/|bench/|scripts/checks/bundle-size\.ts$|scripts/checks/bundle-size\.spec\.ts$|vitest\.config\.mts$|\.github/scripts/|playwright\.config\.ts$|package\.json$|pnpm-lock\.yaml$|\.github/workflows/test-examples\.yml$)'
 
           if [ "$everything" = true ] || printf '%s\n' "$changed" | grep -qE "$PATTERN"; then
             value=true
@@ -370,7 +370,7 @@ jobs:
   # state worth keeping rather than rediscovering. One build each is cheap
   # beside a Playwright run, and there are no specs to run against them.
   #
-  # Not in the matrix above: `check-example-wiring.ts` reads the first
+  # Not in the matrix above: `checks/example-wiring.ts` reads the first
   # `example:` list in this file to check it against `playwright.config.ts`,
   # and a second one would be a list it silently does not read.
   unbuilt-books:

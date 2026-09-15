@@ -4,15 +4,16 @@ import { expect, it } from 'vitest'
 import { SUBJECT_TAGS } from './tag-names.mts'
 
 const SCRIPTS = import.meta.dirname
-const SPECS = readdirSync(SCRIPTS).filter(file => /^check-[\w-]+\.spec\.ts$/.test(file))
+const CHECKS = join(SCRIPTS, 'checks')
+const SPECS = readdirSync(CHECKS).filter(file => file.endsWith('.spec.ts'))
 const PER_CHECK = Object.entries(JSON.parse(readFileSync(join(SCRIPTS, '..', 'package.json'), 'utf8')).scripts as Record<string, string>)
   .flatMap(([name, command]) => {
-    const module = command.match(/--project scripts (check-[\w-]+)/)?.[1]
+    const module = command.match(/--project scripts checks\/([\w-]+)/)?.[1]
     return module ? [{ name, file: `${module}.spec.ts` }] : []
   })
 
 function checkTagLists(file: string): string[][] {
-  return [...readFileSync(join(SCRIPTS, file), 'utf8').matchAll(/\btags: \[([^\]]*)\]/g)]
+  return [...readFileSync(join(CHECKS, file), 'utf8').matchAll(/\btags: \[([^\]]*)\]/g)]
     .map(match => [...match[1].matchAll(/'([\w-]+)'/g)].map(tag => tag[1]))
     .filter(tags => tags.includes('check'))
 }

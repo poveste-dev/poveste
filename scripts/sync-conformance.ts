@@ -15,7 +15,7 @@ import { copyFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { MIRRORS } from './check-mirrored-conformance.ts'
+import { MIRRORS } from './checks/mirrored-conformance.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 

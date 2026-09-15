@@ -1,7 +1,7 @@
 import type { OpenFileOption, ProjectFiles } from '@stackblitz/sdk'
 
 // The "Try it live" starters, as data. Kept apart from the StackBlitz launcher
-// so `scripts/check-starters.ts` can resolve these manifests against the real
+// so `scripts/checks/starters.ts` can resolve these manifests against the real
 // npm registry without pulling in the browser SDK — see #113.
 //
 // StackBlitz WebContainer projects always boot with npm (the SDK has no

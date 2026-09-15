@@ -7,7 +7,7 @@
 // read it.
 //
 // What an exit code does not carry is whether the check ran at all. Several of
-// these shell out — `check-publishable` packs every package and asks `attw`
+// these shell out — `checks/publishable` packs every package and asks `attw`
 // about the result — so in a tree with no `node_modules` the check starts,
 // fails to find its tool, catches that, and reports it as a problem. From
 // outside it is indistinguishable from a real defect, and the spec fails with
@@ -53,11 +53,11 @@ export interface CheckRun {
  * Narrow by *signature* rather than by where in the output it appears. The
  * first version of this also matched `ENOENT` near a `node_modules` path, which
  * is text a check can legitimately report about the tree under test —
- * `check-publishable` splices a failed `pnpm pack`'s stderr into a finding
+ * `checks/publishable` splices a failed `pnpm pack`'s stderr into a finding
  * verbatim — so a real verdict could be reported as a broken worktree.
  *
  * Filtering the check's own findings out was the wrong answer to that, and
- * measurably so: `check-publishable` *catches* its spawn failures and reports
+ * measurably so: `checks/publishable` *catches* its spawn failures and reports
  * them as findings, so excluding findings excluded the one case this exists
  * for. Dropping the loose pattern fixes it where it went wrong.
  *

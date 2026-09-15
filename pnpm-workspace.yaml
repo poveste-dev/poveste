@@ -116,7 +116,7 @@ tasks:
 # `release:report` runs this, and it runs before the build — so `lint` is not in
 # it. Not an oversight: `ts/no-deprecated` is type-aware and cannot resolve
 # across a package boundary until `dist` exists, so linting here would report a
-# tidy pass over the one thing it cannot see (#546). `check-task-graph` keeps
+# tidy pass over the one thing it cannot see (#546). `checks/task-graph` keeps
 # this list and the `&&` chain in agreement, and names the gap in its own output
 # so a clean report is not read as "lint is clean".
 pipelines:

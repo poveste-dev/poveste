@@ -3,7 +3,7 @@ import { tree } from './fixture-tree.ts'
 import { didNotRun, runCheck } from './run-check.ts'
 
 describe('didNotRun', () => {
-  // The case this exists for. `check-publishable` packs every package and asks
+  // The case this exists for. `checks/publishable` packs every package and asks
   // `attw` about the result; in a worktree with no install it catches the
   // ENOENT and reports it as a problem, so the check exits 1 and a spec
   // asserting the status fails with `expected 1 to be +0` — which names neither
@@ -35,7 +35,7 @@ describe('didNotRun', () => {
     expect(didNotRun('docs/guide/index.md names a module that no longer exists')).toBeUndefined()
   })
 
-  // The direction a hand-written message does not reach: `check-publishable`
+  // The direction a hand-written message does not reach: `checks/publishable`
   // splices a failed `pnpm pack`'s stderr into a finding verbatim, so a
   // malformed fixture package — the defect a spec is asserting — reports paths
   // under `node_modules`. An earlier version matched `ENOENT` near that word
@@ -60,17 +60,17 @@ describe('didNotRun', () => {
   })
 })
 
-// `check-changelog` is the one check still run as a process: the release skill
+// `checks/changelog` is the one check still run as a process: the release skill
 // calls it with a version before tagging.
 describe('runCheck', () => {
   const changelog = (section: string) => tree({ 'CHANGELOG.md': `# Changelog\n\n${section}## v0.98.0\n\nOlder notes.\n` })
 
   it('returns the status of a check that ran', () => {
-    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
+    expect(runCheck('checks/changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
   })
 
   it('returns a non-zero status rather than throwing when a check reports a problem', () => {
-    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('')]).status).toBe(1)
+    expect(runCheck('checks/changelog.ts', ['0.99.0', '--root', changelog('')]).status).toBe(1)
   })
 
   // A renamed or deleted check is the same event as a missing binary: the

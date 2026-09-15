@@ -269,7 +269,7 @@ The release is created as a **draft** and published only after the packages are 
 So the section has to be right **before** the tag is cut. The workflow extracts it and fails before publishing anything if it is missing — check what it will publish first:
 
 ```sh
-node scripts/check-changelog.ts v<version>
+node scripts/checks/changelog.ts v<version>
 ```
 
 `v0.4.0` is the worked example. changelogithub produced a single line — "Accept setupVue alongside setupVue3" — which is a correct summary of the commit and a useless summary of the release: nothing told a reader that their existing code still works, that their editor would start flagging `defineSetupVue3`, or that 1.0 is the deadline for the old spelling.
