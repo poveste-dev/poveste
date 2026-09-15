@@ -18,13 +18,34 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  # Only a PR's own runs supersede each other. A push must always finish: a
-  # cancelled job never runs `actions/cache`'s post step, so it saves nothing —
-  # and on `next`, where work lands by rebase, a burst of force-pushes would
-  # otherwise leave the branch with neither a cache nor a result.
+  # Every run outside a PR is its own group, so nothing ever queues behind
+  # anything. The ref was here until #707, and `cancel-in-progress: false` did
+  # not save them:
+  # it protects a run that has already STARTED and does nothing for one that is
+  # QUEUED. A group holds one running plus at most one pending run, and every
+  # further arrival evicts whatever was pending — so a burst of merges to `next`
+  # ran the first and the last and cancelled everything between.
   #
-  # The same reason the release commit ends up with no result on `main` (#335).
+  # Both costs land where they hurt most. A cancelled job never reaches
+  # `actions/cache`'s post step, so it saves nothing, and `next` is the branch
+  # PRs restore from (#417) — a burst is exactly when it most needs a fresh
+  # cache. And a merged commit with no run of its own leaves a bisect over that
+  # range with nothing to read: on 14 Sep three merges inside 51 seconds left
+  # the middle commit with no check runs at all, which is the same API response
+  # as a repository with no workflows.
+  #
+  # The trade is concurrent runners during a burst. This repository is public,
+  # so those minutes are free.
+  #
+  # `run_id` rather than `sha`, which was the first attempt: the commit
+  # separates pushes from each other but not repeated `workflow_dispatch` runs
+  # of one commit, and #707 reproduced the eviction that way too — six
+  # dispatches on a branch returned one run and four cancelled. `run_id` is
+  # unique per run, so both halves go. A re-run keeps its id, and by then the
+  # original has finished.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  # Only a PR's own runs supersede each other. Pushes cannot: one commit, one
+  # group, nothing to supersede.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
