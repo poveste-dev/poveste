@@ -1,7 +1,5 @@
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import {
   checkDocsSite,
   checkDocsSiteLive,
@@ -25,6 +23,8 @@ import {
   titleProblems,
   unsafeCatchAlls,
 } from './docs-site.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const REDIRECTS = `
 [build]

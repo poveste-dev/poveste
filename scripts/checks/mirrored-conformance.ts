@@ -20,7 +20,7 @@
 //
 // `pnpm sync:conformance` rewrites the mirrors from their source.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../scripts/assert-no-problems.ts'
+import { assertNoProblems } from '../scripts/checks/support/assert-no-problems.ts'
 import { runBench } from './run.mjs'
 
 // One book, one size, one run (#666). Not a measurement: a shared runner's

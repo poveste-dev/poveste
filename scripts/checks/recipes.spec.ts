@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { checkRecipes, section, tsBlocks } from './recipes.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const PAGE = [
   '## Vite config',

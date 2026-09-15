@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { bookProblems, checkConformanceConfig, CUSTOM_PRESET, presetsIn, specPresets, specProblems, toRendered } from './conformance-config.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const DEFAULTS = [
   { label: 'Transparent', color: 'transparent', contrastColor: '#333' },

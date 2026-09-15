@@ -47,7 +47,7 @@
 // scalar's body has to be indented past the key that opens it, which is what
 // puts it out of reach of the two guards below.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

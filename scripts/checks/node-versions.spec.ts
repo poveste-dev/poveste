@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { ALLOWED, checkNodeVersions, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './node-versions.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const ENGINES = '^22.22.2 || ^24.15.0 || >=26.0.0'
 const FLOOR = { workflow: 'test.yml', line: 319, value: '22.22.2' }

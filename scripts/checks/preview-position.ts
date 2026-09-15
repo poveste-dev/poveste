@@ -19,7 +19,7 @@
 // `isMobile` (#600) and the settings toggles (#596) were both live flags nobody
 // had thought about.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { globSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parse } from '@vue/compiler-sfc'

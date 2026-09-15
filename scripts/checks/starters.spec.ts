@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './starters.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const result = (framework: string, ok: boolean) => ({ framework, ok, detail: ok ? 'resolves' : 'ERESOLVE' } as any)
 

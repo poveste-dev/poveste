@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { tree } from '../fixture-tree.ts'
 import { localTags, reportLocalTags, strayTags } from './local-tags.ts'
+import { tree } from './support/fixture-tree.ts'
 
 /**
  * A repository with the tags named on it, and nothing else.

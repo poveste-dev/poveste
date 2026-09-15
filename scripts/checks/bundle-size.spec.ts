@@ -1,9 +1,9 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { barrelImport, checkBundleSize, findBook, LIMITS, measurements, overLimit } from './bundle-size.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const LIMIT = [{ prefix: 'highlighter', max: 3000, because: 'a barrel import' }]
 

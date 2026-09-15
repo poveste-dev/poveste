@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { checkConfigReference, codeOnly, configKeys, documentedKeys, parseConfig, REFERENCE as REFERENCE_PATH, staleEntries, TYPES, undocumentedKeys } from './config-reference.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const SOURCE = `
 export interface PovesteConfig {

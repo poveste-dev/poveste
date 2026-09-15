@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { canonical, checkPreviewPosition, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './preview-position.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const wrap = (template: string) => `<template>${template}</template>`
 

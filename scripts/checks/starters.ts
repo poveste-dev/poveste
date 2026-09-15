@@ -29,7 +29,7 @@
 // reports rather than gates — the packages are already out.
 
 import type { Framework, Manifest } from '../../docs/.vitepress/theme/starters.ts'
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'

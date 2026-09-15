@@ -11,7 +11,7 @@
 // and not on the ordinary drift of a dependency bump. A limit that cries wolf
 // gets raised without being read.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 

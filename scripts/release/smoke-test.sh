@@ -21,7 +21,7 @@
 # Assumes `pnpm run build` has already run.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Shared by every consumer, whatever the framework.
 CORE_PACKAGES=(

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 import { checkVersions, citedJobProblems, collect, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './versions.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`

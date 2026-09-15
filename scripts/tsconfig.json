@@ -20,7 +20,8 @@
   },
   "include": [
     "*.ts",
-    "*.mts",
-    "checks/*.ts"
+    "checks/**/*.ts",
+    "checks/**/*.mts",
+    "release/*.ts"
   ]
 }

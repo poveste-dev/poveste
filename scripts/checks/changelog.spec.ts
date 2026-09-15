@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { tree } from '../fixture-tree.ts'
-import { runCheck } from '../run-check.ts'
 import { freezeWarning, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
+import { tree } from './support/fixture-tree.ts'
+import { runCheck } from './support/run-check.ts'
 
 // The shape of the real file: newest release first, then older ones, then the
 // inherited histoire history behind its own `## ` heading.

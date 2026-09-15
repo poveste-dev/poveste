@@ -4,7 +4,7 @@
 // publish cannot be walked back (#286, #302). `--offline` drops the registry
 // lookup, the only networked check. Needs each package built.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'

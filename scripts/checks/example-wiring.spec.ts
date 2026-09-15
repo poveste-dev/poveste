@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import {
   asServers,
   checkExampleWiring,
@@ -15,6 +13,8 @@ import {
   portsByExample,
   portsOf,
 } from './example-wiring.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 // The cases below are the drift this guard exists for: #384 shipped an example in
 // the workflow matrix and not in the Playwright config, and the job died before a

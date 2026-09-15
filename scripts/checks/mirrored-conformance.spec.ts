@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { checkMirroredConformance, collect, compareMirror, MIRRORS, walkProblems } from './mirrored-conformance.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const source = new Map([['Button.story.vue', 'a'], ['Grid.story.vue', 'b']])
 

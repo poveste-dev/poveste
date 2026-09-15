@@ -27,7 +27,7 @@
 // from `main` (#321), so a PR cannot prove production. Run it against a deploy
 // preview before a redirect change lands, and against production after.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'

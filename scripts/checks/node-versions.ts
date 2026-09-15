@@ -28,7 +28,7 @@
 // appears. No install, no network — it sits with the manifest checks at the
 // front of `release:check`.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

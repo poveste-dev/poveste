@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { expect, it } from 'vitest'
 import { SUBJECT_TAGS } from './tag-names.mts'
 
-const SCRIPTS = import.meta.dirname
+const SCRIPTS = join(import.meta.dirname, '..', '..')
 const CHECKS = join(SCRIPTS, 'checks')
 const SPECS = readdirSync(CHECKS).filter(file => file.endsWith('.spec.ts'))
 const PER_CHECK = Object.entries(JSON.parse(readFileSync(join(SCRIPTS, '..', 'package.json'), 'utf8')).scripts as Record<string, string>)

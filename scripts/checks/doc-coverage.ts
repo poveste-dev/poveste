@@ -40,7 +40,7 @@
 // Needs a build: it reads `dist`, so it runs after Build rather than with the
 // manifest checks at the front of `release:check`.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import ts from 'typescript'

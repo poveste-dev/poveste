@@ -28,7 +28,7 @@
 // after it need a built tree, which would put this report on the critical path
 // — step one is additive on purpose.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

@@ -15,7 +15,7 @@
 // with `test:versions` at the front of `release:check` rather than with
 // `test:publishable` after it.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { publishablePackages } from './publishable.ts'

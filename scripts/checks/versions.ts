@@ -17,7 +17,7 @@
 //
 // No network, no install: it reads files and compares strings.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 

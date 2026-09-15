@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
 import { backoffMs, checkPublished, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './published.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },

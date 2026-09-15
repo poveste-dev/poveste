@@ -7,7 +7,7 @@
 // oversight rather than as a decision, so a key books should not set is
 // documented saying so.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 

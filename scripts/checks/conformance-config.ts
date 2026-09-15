@@ -17,7 +17,7 @@
 // because its published recipe already owns the import line (#543). Nothing
 // compared them until this.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'

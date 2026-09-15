@@ -20,7 +20,7 @@
 // No network, no build: it reads the workflow text and imports the configs, so it
 // checks the config the harness actually resolves rather than how it is written.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'

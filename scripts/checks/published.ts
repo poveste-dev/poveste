@@ -17,7 +17,7 @@
 // because the publish makes it correct, not because `latest` was never supposed
 // to follow a prerelease.
 
-import type { CheckResult } from '../check-result.ts'
+import type { CheckResult } from './support/check-result.ts'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { assertNoProblems } from '../assert-no-problems.ts'
-import { tree } from '../fixture-tree.ts'
+import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 import { afterBuild, beforeBuild, chainSteps, checkTaskGraph, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './task-graph.ts'
 
 const WORKSPACE = `packages:

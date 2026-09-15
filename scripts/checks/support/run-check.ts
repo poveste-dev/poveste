@@ -85,7 +85,7 @@ export function didNotRun(output: string): string | undefined {
  * verdict — in either direction.
  */
 export function runCheck(script: string, args: string[] = []): CheckRun {
-  const path = join(import.meta.dirname, script)
+  const path = join(import.meta.dirname, '..', '..', script)
   const result = spawnSync(
     process.execPath,
     ['--disable-warning=MODULE_TYPELESS_PACKAGE_JSON', path, ...args],
