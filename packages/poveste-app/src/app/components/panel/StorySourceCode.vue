@@ -156,7 +156,7 @@ watch(sourceHtml, async () => {
           class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
             displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-800 dark:text-primary-400',
-            dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
+            dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'dynamic' && 'opacity-50',
           ]"
           @click="dynamicSourceCode && (displayedSource = 'dynamic')"
         >
@@ -178,7 +178,7 @@ watch(sourceHtml, async () => {
           class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-r transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
           :class="[
             displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-800 dark:text-primary-400',
-            staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : 'opacity-50',
+            staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'static' && 'opacity-50',
           ]"
           @click="staticSourceCode && (displayedSource = 'static')"
         >
@@ -223,6 +223,7 @@ watch(sourceHtml, async () => {
       ref="scroller"
       class="__poveste-code-placeholder w-full h-full p-4 outline-none bg-transparent resize-none m-0"
       :value="displayedSourceCode"
+      aria-label="Source code"
       readonly
       data-testid="story-source-code"
       @scroll="onScroll"
