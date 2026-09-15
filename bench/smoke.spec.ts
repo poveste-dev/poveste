@@ -44,8 +44,10 @@ describe('reportProblems', () => {
   })
 })
 
-it('the bench still measures something', async () => {
-  const report = await runBench({ examples: ['vue3'], sizes: [10], runs: 1 })
+describe('runBench', () => {
+  it('measures something over one book, one size and one run', async () => {
+    const report = await runBench({ examples: ['vue3'], sizes: [10], runs: 1 })
 
-  assertNoProblems({ problems: reportProblems(report), remedy: 'The bench ran and measured nothing: `run.mjs` finished, but the report holds no numbers.', notes: [] })
+    assertNoProblems({ problems: reportProblems(report), remedy: 'The bench ran and measured nothing: `run.mjs` finished, but the report holds no numbers.', notes: [] })
+  })
 })

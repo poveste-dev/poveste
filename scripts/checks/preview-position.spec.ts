@@ -131,16 +131,20 @@ describe('the STABLE skip-list', () => {
     expect(STABLE.every(entry => entry instanceof RegExp)).toBe(true)
   })
 
-  it('does not classify a live layout flag as stable', () => {
-    expect(isStable('isMobile')).toBe(false)
-    expect(isStable('!effectiveStoryOptionsVisible')).toBe(false)
-    expect(isStable('layoutStore.settings.storyListVisible')).toBe(false)
+  it.for([
+    'isMobile',
+    '!effectiveStoryOptionsVisible',
+    'layoutStore.settings.storyListVisible',
+  ])('does not classify the live layout flag %s as stable', (condition) => {
+    expect(isStable(condition)).toBe(false)
   })
 
-  it('classifies the story properties the legitimate groups switch on', () => {
-    expect(isStable('storyStore.currentStory.layout.type === \'grid\'')).toBe(true)
-    expect(isStable('shown.story.layout?.iframe === false')).toBe(true)
-    expect(isStable('storyStore.currentStory.docsOnly')).toBe(true)
+  it.for([
+    'storyStore.currentStory.layout.type === \'grid\'',
+    'shown.story.layout?.iframe === false',
+    'storyStore.currentStory.docsOnly',
+  ])('classifies the story property %s as stable', (condition) => {
+    expect(isStable(condition)).toBe(true)
   })
 })
 
@@ -148,9 +152,11 @@ describe('the STABLE skip-list', () => {
 // something per-story lets a live flag ride in on the back of a `&&`, which is
 // #600 wearing a per-story condition as cover.
 describe('a compound condition', () => {
-  it('is unstable when one operand is a live flag', () => {
-    expect(isStable('currentStory && !isMobile')).toBe(false)
-    expect(isStable('shown.story.layout || isMobile')).toBe(false)
+  it.for([
+    'currentStory && !isMobile',
+    'shown.story.layout || isMobile',
+  ])('is unstable when one operand of %s is a live flag', (condition) => {
+    expect(isStable(condition)).toBe(false)
   })
 
   it('fails the group rather than passing on the per-story half', () => {
@@ -162,15 +168,19 @@ describe('a compound condition', () => {
     expect(problemsIn(files)).toHaveLength(1)
   })
 
-  it('stays stable when every operand is per-story', () => {
-    expect(isStable('storyStore.currentStory || storyStore.currentVariant')).toBe(true)
-    expect(isStable('storyStore.currentStory && !storyStore.currentStory.docsOnly')).toBe(true)
-    expect(isStable('shown.story.layout?.type === \'single\' && shown.story.layout.iframe === false')).toBe(true)
+  it.for([
+    'storyStore.currentStory || storyStore.currentVariant',
+    'storyStore.currentStory && !storyStore.currentStory.docsOnly',
+    'shown.story.layout?.type === \'single\' && shown.story.layout.iframe === false',
+  ])('stays stable when every operand of %s is per-story', (condition) => {
+    expect(isStable(condition)).toBe(true)
   })
 
-  it('drops literals rather than treating them as operands', () => {
-    expect(operandsOf('layout.type === \'grid\'')).toEqual(['layout.type'])
-    expect(operandsOf('depth > 0 && story')).toEqual(['depth', 'story'])
+  it.for([
+    { condition: 'layout.type === \'grid\'', operands: ['layout.type'] },
+    { condition: 'depth > 0 && story', operands: ['depth', 'story'] },
+  ])('drops the literals from $condition rather than treating them as operands', ({ condition, operands }) => {
+    expect(operandsOf(condition)).toEqual(operands)
   })
 })
 

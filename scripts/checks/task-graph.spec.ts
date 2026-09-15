@@ -182,7 +182,7 @@ describe('taskGraphProblems', () => {
 
 describe('the exclusion list', () => {
   it('gives every entry a reason', () => {
-    for (const [step, reason] of Object.entries(EXCLUDED)) expect(reason, step).not.toHaveLength(0)
+    expect(Object.values(EXCLUDED)).not.toContain('')
   })
 })
 

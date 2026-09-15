@@ -499,9 +499,7 @@ describe('titleProblems', () => {
   it('names the icon titles and says what to do instead', () => {
     const problems = titleProblems([{ path: '/guide/getting-started.html', html: titled(ICON + ICON + ICON) }])
 
-    expect(problems).toHaveLength(1)
-    expect(problems[0]).toMatch(/3 <title> inside an <svg> \("Bluesky"\)/)
-    expect(problems[0]).toMatch(/aria-hidden/)
+    expect(problems).toEqual([expect.stringMatching(/3 <title> inside an <svg> \("Bluesky"\).*aria-hidden/)])
   })
 
   it('is silent on the page as it is now built', () => {

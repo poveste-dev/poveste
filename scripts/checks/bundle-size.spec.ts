@@ -47,7 +47,7 @@ describe('overLimit', () => {
 describe('the ceilings themselves', () => {
   // A ceiling with no reason next to it gets raised without being read.
   it('gives every ceiling a reason', () => {
-    expect(LIMITS.every(limit => limit.because.length > 0)).toBe(true)
+    expect(LIMITS.map(limit => limit.because)).not.toContain('')
   })
 
   it('keeps the highlighter ceiling below what the barrel import shipped', () => {
@@ -66,11 +66,11 @@ describe('measurements', () => {
   // out what the book weighs, so every ceiling has to report, not just a
   // failing one (#601).
   it('reports every ceiling', () => {
-    const lines = measurements(chunks, LIMITS)
-
-    expect(lines).toContain('highlighter-abc.js 1344 KB / 3000 KB')
-    expect(lines).toContain('vendor-def.js 1413 KB / 2500 KB')
-    expect(lines).toContain('whole book 2957 KB / 6500 KB')
+    expect(measurements(chunks, LIMITS)).toEqual(expect.arrayContaining([
+      'highlighter-abc.js 1344 KB / 3000 KB',
+      'vendor-def.js 1413 KB / 2500 KB',
+      'whole book 2957 KB / 6500 KB',
+    ]))
   })
 
   it('totals the whole book for the ceiling that has no prefix', () => {

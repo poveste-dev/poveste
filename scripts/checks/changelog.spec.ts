@@ -193,24 +193,21 @@ describe('the check as a process', () => {
   it('exits non-zero without a version to print', () => {
     const run = runCheck('checks/changelog.ts', [])
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('Usage: checks/changelog.ts <version>')
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('Usage: checks/changelog.ts <version>') })
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
   })
 
   it('exits non-zero when the changelog has no section for the version', () => {
     const run = runCheck('checks/changelog.ts', ['0.99.0', '--root', tree({ 'CHANGELOG.md': '# Changelog\n\n## v0.98.0\n\nOlder notes.\n' })])
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('has no section for')
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('has no section for') })
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
   })
 
   it('exits non-zero when a section carries a release-level heading', () => {
     const run = runCheck('checks/changelog.ts', ['0.99.0', '--root', tree({ 'CHANGELOG.md': '# Changelog\n\n## v0.99.0\n\nNotes.\n\n## Breaking changes\n\nMore.\n\n## v0.98.0\n\nOlder notes.\n' })])
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('contains a heading at the release level')
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('contains a heading at the release level') })
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
   })
 })
