@@ -1,3 +1,7 @@
+/**
+ * @module-tag docs
+ * @module-tag build
+ */
 import process from 'node:process'
 import { expect, it } from 'vitest'
 import { checkDocCoverage } from '../check-doc-coverage.ts'

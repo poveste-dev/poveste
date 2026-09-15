@@ -1,3 +1,7 @@
+/**
+ * @module-tag docs
+ * @module-tag build
+ */
 import { expect, it } from 'vitest'
 import { checkDocsSite } from '../check-docs-site.ts'
 

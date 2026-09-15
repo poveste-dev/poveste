@@ -1,3 +1,7 @@
+/**
+ * @module-tag app
+ * @module-tag build
+ */
 import process from 'node:process'
 import { expect, it } from 'vitest'
 import { checkBundleSize } from '../check-bundle-size.ts'

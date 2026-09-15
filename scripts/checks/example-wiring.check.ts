@@ -1,3 +1,7 @@
+/**
+ * @module-tag examples
+ * @module-tag ci
+ */
 import { expect, it } from 'vitest'
 import { checkExampleWiring } from '../check-example-wiring.ts'
 

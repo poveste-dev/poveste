@@ -1,3 +1,6 @@
+/**
+ * @module-tag versions
+ */
 import { expect, it } from 'vitest'
 import { checkVersions } from '../check-versions.ts'
 

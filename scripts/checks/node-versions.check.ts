@@ -1,3 +1,7 @@
+/**
+ * @module-tag versions
+ * @module-tag ci
+ */
 import { expect, it } from 'vitest'
 import { checkNodeVersions } from '../check-node-versions.ts'
 

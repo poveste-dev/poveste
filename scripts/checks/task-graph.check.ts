@@ -1,3 +1,6 @@
+/**
+ * @module-tag ci
+ */
 import { expect, it } from 'vitest'
 import { checkTaskGraph } from '../check-task-graph.ts'
 

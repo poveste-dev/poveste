@@ -1,3 +1,7 @@
+/**
+ * @module-tag docs
+ * @module-tag examples
+ */
 import { expect, it } from 'vitest'
 import { checkRecipes } from '../check-recipes.ts'
 

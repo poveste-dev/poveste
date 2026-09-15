@@ -39,6 +39,8 @@
     "test:published": "vitest run --project checks checks/published.check",
     "test:packaging": "vitest run --project checks checks/packaging.check",
     "test:scripts": "vitest run --project scripts",
+    "test:checks": "vitest run --project checks --tags-filter=\"!build && !network\"",
+    "test:docs": "vitest run --project checks --tags-filter=\"docs && !network\"",
     "test:tags": "vitest run --project checks checks/tags.check",
     "release": "pnpm run release:check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release.ts",
     "release:report": "pnpm pipeline checks --full --no-cache --include-workspace-root",

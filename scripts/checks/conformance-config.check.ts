@@ -1,3 +1,6 @@
+/**
+ * @module-tag examples
+ */
 import { expect, it } from 'vitest'
 import { checkConformanceConfig } from '../check-conformance-config.ts'
 

@@ -1,3 +1,7 @@
+/**
+ * @module-tag release
+ * @module-tag network
+ */
 import { expect, it } from 'vitest'
 import { checkPublished } from '../check-published.ts'
 

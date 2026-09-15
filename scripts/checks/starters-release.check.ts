@@ -1,3 +1,7 @@
+/**
+ * @module-tag release
+ * @module-tag network
+ */
 import { expect, it } from 'vitest'
 import { checkStarters } from '../check-starters.ts'
 

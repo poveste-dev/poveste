@@ -1,3 +1,7 @@
+/**
+ * @module-tag docs
+ * @module-tag network
+ */
 import process from 'node:process'
 import { expect, it } from 'vitest'
 import { checkDocsSiteLive, SITE } from '../check-docs-site.ts'

@@ -1,3 +1,6 @@
+/**
+ * @module-tag release
+ */
 import { expect, it } from 'vitest'
 import { checkPackageTests } from '../check-package-tests.ts'
 

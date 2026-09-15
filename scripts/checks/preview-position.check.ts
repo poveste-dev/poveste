@@ -1,3 +1,6 @@
+/**
+ * @module-tag app
+ */
 import { expect, it } from 'vitest'
 import { checkPreviewPosition } from '../check-preview-position.ts'
 

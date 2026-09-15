@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { NEED_TAGS, SUBJECT_TAGS } from './scripts/checks/tag-names.ts'
 
 // Without `projects`, a root config applies vitest's default include to the
 // whole repository and loads the Playwright specs under `e2e/` and `examples/`.
@@ -23,6 +24,7 @@ export default defineConfig({
         test: {
           name: 'checks',
           include: ['scripts/checks/*.check.ts'],
+          tags: Object.entries({ ...SUBJECT_TAGS, ...NEED_TAGS }).map(([name, description]) => ({ name, description })),
           environment: 'node',
           // A check can pack every package or install a starter from the
           // registry, far past the 5s default.

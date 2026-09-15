@@ -1,3 +1,7 @@
+/**
+ * @module-tag release
+ * @module-tag build
+ */
 import { expect, it } from 'vitest'
 import { checkPublishable } from '../check-publishable.ts'
 

@@ -1,3 +1,6 @@
+/**
+ * @module-tag docs
+ */
 import { expect, it } from 'vitest'
 import { checkReadmes } from '../check-readmes.ts'
 

@@ -1,3 +1,6 @@
+/**
+ * @module-tag release
+ */
 import process from 'node:process'
 import { it } from 'vitest'
 import { reportLocalTags } from '../check-local-tags.ts'
