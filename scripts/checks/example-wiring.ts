@@ -14,6 +14,10 @@
 // on purpose (vue3-percy, vue3-screenshot, vue3-themed, vue3-vuetify), which is
 // #337's subject, so "is a directory under examples/" cannot be the truth here.
 //
+// And the root `story:build:e2e` script, which builds the books an unnarrowed local
+// run then serves. It lagged the config by two books and nothing failed, because
+// every CI job narrows to one book and builds that one itself (#706).
+//
 // It also holds `ai/AGENTS.md` to the same lists. A guide that names the wrong books
 // is worse than no guide, and its table is the one part of it a machine can read.
 //
@@ -29,6 +33,7 @@ import { pathToFileURL } from 'node:url'
 const ROOT = join(import.meta.dirname, '..', '..')
 const WORKFLOW = '.github/workflows/test-examples.yml'
 const GUIDE = 'ai/AGENTS.md'
+const BUILD_SCRIPT = 'story:build:e2e'
 
 export interface Ports {
   preview?: number
@@ -62,6 +67,11 @@ export function exampleNames(projects: string[]): string[] {
  */
 export function conformanceBooks(projects: string[]): string[] {
   return exampleNames(projects.filter(name => name.endsWith(':conformance')))
+}
+
+// pnpm takes `--filter=x` as well as `--filter x`.
+export function builtExamples(script: string | undefined): string[] {
+  return [...(script ?? '').matchAll(/--filter[= ]\.\/examples\/([\w.-]+)/g)].map(match => match[1])
 }
 
 export function portOf(url: string | undefined): number | undefined {
@@ -188,6 +198,16 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
     problems.push(`playwright.config.ts defines "${name}", which ${WORKFLOW} never runs — nothing tests it in CI`)
   }
 
+  const rootManifest = await exists('package.json', root) ? JSON.parse(await readFile(join(root, 'package.json'), 'utf8')) : {}
+  const built = builtExamples(rootManifest.scripts?.[BUILD_SCRIPT])
+
+  for (const name of onlyInFirst(configured, built)) {
+    problems.push(`playwright.config.ts boots "${name}", which \`${BUILD_SCRIPT}\` never builds — a full local run waits two minutes on its server and runs no spec`)
+  }
+  for (const name of onlyInFirst(built, configured)) {
+    problems.push(`\`${BUILD_SCRIPT}\` builds "${name}", which playwright.config.ts never serves`)
+  }
+
   // A book carries the conformance set exactly when the root config gives it a
   // `:conformance` project, so the guide is checked against that rather than
   // against a second hand-kept list.
@@ -251,7 +271,7 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
   return problems
 }
 
-const REMEDY = 'The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.'
+const REMEDY = `The matrix, playwright.config.ts, \`${BUILD_SCRIPT}\` and each example's own package.json all name the same books and the same ports. Fix whichever one drifted.`
 
 export async function checkExampleWiring(root = ROOT): Promise<CheckResult> {
   return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }

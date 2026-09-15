@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   asServers,
+  builtExamples,
   checkExampleWiring,
   conformanceBooks,
   duplicatePorts,
@@ -64,6 +65,22 @@ describe('conformanceBooks', () => {
   // (#719).
   it('finds no books when the config defines no conformance project', () => {
     expect(conformanceBooks(['vue3', 'svelte5:dev'])).toEqual([])
+  })
+})
+
+describe('builtExamples', () => {
+  it('reads the books a build script filters to', () => {
+    const script = 'pnpm --filter ./examples/vue3 --filter ./examples/vue3-tailwind run story:build'
+
+    expect(builtExamples(script)).toEqual(['vue3', 'vue3-tailwind'])
+  })
+
+  it('reads a filter written with an equals sign', () => {
+    expect(builtExamples('pnpm --filter=./examples/quasar run story:build')).toEqual(['quasar'])
+  })
+
+  it('builds nothing when the script is gone', () => {
+    expect(builtExamples(undefined)).toEqual([])
   })
 })
 
@@ -190,7 +207,32 @@ describe('checkExampleWiring', () => {
     expect((await checkExampleWiring(root)).problems).toContainEqual(expect.stringContaining('has no `example:` matrix to read'))
   })
 
-  it('the workflow matrix, the Playwright config, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
+  // #706: quasar and vike were booted by the config and built by nothing. The
+  // harness is otherwise in agreement, so the build script is the only drift.
+  function harnessBuilding(buildScript: string): string {
+    return tree({
+      'package.json': JSON.stringify({ scripts: { 'story:build:e2e': buildScript } }),
+      '.github/workflows/test-examples.yml': 'jobs:\n  test:\n    strategy:\n      matrix:\n        example: [vue3]\n',
+      'playwright.config.ts': 'export default { projects: [{ name: \'vue3\' }], webServer: [{ command: \'pnpm --filter ./examples/vue3 run story:preview\', url: \'http://localhost:4567\' }] }\n',
+      'ai/AGENTS.md': '| **Fixtures** | `vue3`, `vike` |\n',
+      'examples/vue3/package.json': JSON.stringify({ scripts: { 'story:preview': 'poveste preview --port 4567' } }),
+      'examples/vike/package.json': '{}',
+    })
+  }
+
+  it('reports a book the config boots and the build script never builds', async () => {
+    const root = harnessBuilding('pnpm -r run story:build')
+
+    expect((await checkExampleWiring(root)).problems).toEqual(['playwright.config.ts boots "vue3", which `story:build:e2e` never builds — a full local run waits two minutes on its server and runs no spec'])
+  })
+
+  it('reports a book the build script builds and the config never serves', async () => {
+    const root = harnessBuilding('pnpm --filter ./examples/vue3 --filter ./examples/vike run story:build')
+
+    expect((await checkExampleWiring(root)).problems).toEqual(['`story:build:e2e` builds "vike", which playwright.config.ts never serves'])
+  })
+
+  it('the workflow matrix, the Playwright config, the build script, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
     assertNoProblems(await checkExampleWiring())
   })
 })
