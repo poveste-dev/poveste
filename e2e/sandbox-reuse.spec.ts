@@ -65,6 +65,26 @@ function mismatchedCells(page: Page, elementClass: string) {
   }, elementClass)
 }
 
+/** The variant each visible cell's header names, in order. */
+function visibleTitles(page: Page) {
+  return page.evaluate(() => [...document.querySelectorAll('.poveste-story-variant-grid-item')]
+    .filter(item => (item as HTMLElement).offsetParent !== null)
+    .map(item => item.querySelector('span.truncate')?.textContent?.trim() ?? ''))
+}
+
+/**
+ * Scrolls one viewport, and waits for the grid to hand its cells new variants.
+ *
+ * Every cell already shows the variant its header names before the grid has
+ * reacted to the scroll, so `mismatchedCells` alone can pass with no handover
+ * yet and let the test measure the grid it started with (#772).
+ */
+async function scrollToNewVariants(page: Page) {
+  const before = await visibleTitles(page)
+  await scrollOneViewport(page)
+  await expect.poll(() => visibleTitles(page), { timeout: 15_000 }).not.toEqual(before)
+}
+
 async function openGrid(page: Page, id: string, buttonClass: string) {
   await openStory(page, id)
   await expect(page.getByTestId('preview-iframe').first()).toBeVisible()
@@ -81,8 +101,8 @@ test.describe('sandbox reuse', () => {
   test('a scrolled grid retargets the documents it has instead of loading new ones', async ({ page }) => {
     const tagged = await openGrid(page, 'conformance-huge-grid', 'conformance-huge-grid-button')
 
-    await scrollOneViewport(page)
-    await scrollOneViewport(page)
+    await scrollToNewVariants(page)
+    await scrollToNewVariants(page)
     await expect.poll(() => mismatchedCells(page, 'conformance-huge-grid-button'), { timeout: 15_000 }).toEqual([])
 
     expect(await taggedDocuments(page), 'every tagged document is still the one in its iframe').toBe(tagged)
@@ -93,20 +113,20 @@ test.describe('sandbox reuse', () => {
     // it is handed next has to get its setup too, or its label renders empty.
     await openGrid(page, 'conformance-grid-state', 'conformance-grid-state-label')
 
-    await scrollOneViewport(page)
-    await scrollOneViewport(page)
+    await scrollToNewVariants(page)
+    await scrollToNewVariants(page)
     await expect.poll(() => mismatchedCells(page, 'conformance-grid-state-label'), { timeout: 15_000 }).toEqual([])
   })
 
   test('layout.isolate reloads the document for every handover', async ({ page }) => {
     const tagged = await openGrid(page, 'conformance-isolated-grid', 'conformance-isolated-grid-button')
 
-    await scrollOneViewport(page)
+    await scrollToNewVariants(page)
     await expect.poll(() => mismatchedCells(page, 'conformance-isolated-grid-button'), { timeout: 15_000 }).toEqual([])
 
     // Cells handed a new variant reloaded, so their tagged documents are gone;
     // cells whose variant stayed on screen kept theirs.
-    expect(await taggedDocuments(page), 'some cell should have been handed a new variant').toBeLessThan(tagged)
+    await expect.poll(() => taggedDocuments(page), { message: 'a cell handed a new variant should have reloaded', timeout: 15_000 }).toBeLessThan(tagged)
   })
 
   /** Open a single-layout story and tag the document its realm is holding. */
