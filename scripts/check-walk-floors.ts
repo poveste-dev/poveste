@@ -23,6 +23,16 @@
 // it reports a missing section per recipe; delete those guards and this still
 // reports it as classified. The entries are held to being current, not to being
 // true, which is why each one names the thing to go and look at.
+//
+// A check can see its inputs and still report success over anything, as long
+// as its failure exit is gone: with every one deleted, 17 of 20 specs stayed
+// green (#760). So a check that can exit non-zero needs a spec that runs it as
+// a process and watches it do so, and a check that cannot has to say why
+// (#761). That reads test blocks, not behaviour. A spec asserting a non-zero
+// status over a tree that fails for an unrelated reason satisfies it, which is
+// why #759 and #764 also assert the message and the absence of a stack trace —
+// and `check-published`, which prints its message and then crashes, would get
+// past this alone.
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -53,6 +63,18 @@ export const WITHOUT_FLOOR: Record<string, string> = {
   'check-task-graph.ts': 'guards an empty `tasks:` block and an empty pipeline, which is every way its two inputs can go empty. Both are in `taskGraphProblems` and both are asserted in `check-task-graph.spec.ts` — the sentence was true before that and said nothing about it, which reads identically to one that is wrong (#719)',
   'check-starters.ts': 'reads a map rather than walking, and fails when that map is empty. The guard is in `main()`, over the map it loads from the root, and `check-starters.spec.ts` runs the check as a process over a root that declares no starters, asserting the exit (#719)',
   'check-walk-floors.ts': 'this file — it walks `scripts/` and fails below when that walk finds nothing',
+}
+
+/**
+ * Checks with no failure exit, and why that is right for them.
+ *
+ * Unlike `WITHOUT_FLOOR`, the premise here is mechanical, so it is held to being
+ * true: an entry whose check has since gained a failure exit fails, because a
+ * record saying "this cannot fail" is exactly what a deleted exit would look like
+ * from outside.
+ */
+export const WITHOUT_FAILURE_EXIT: Record<string, string> = {
+  'check-local-tags.ts': 'warns and never fails, deliberately (#457): a tag on unmerged work is worth pointing out, not worth blocking a release on. `check-local-tags.spec.ts` asserts it exits 0 over a repository with tags, with none, and with a stray one',
 }
 
 /** Check scripts on disk, by filename. */
@@ -146,6 +168,85 @@ export function citationProblems(check: string, reason: string, source: string, 
   return problems
 }
 
+/**
+ * Whether a check can exit non-zero at all.
+ *
+ * Code lines only. Three checks explain in a comment that their import guard
+ * keeps the exit from killing the runner, and counting those mentions is how
+ * #760's own table came out three calls too high.
+ */
+export function hasFailureExit(source: string): boolean {
+  return source.split('\n').some(line =>
+    !/^\s*(?:\/\/|\*|\/\*)/.test(line)
+    && /\bprocess\.(?:exit\(1\)|exitCode\s*=\s*1\b)/.test(line))
+}
+
+/**
+ * Whether some spec runs this check as a process and asserts that it failed.
+ *
+ * Per test block, not per file: `run-check.spec.ts` runs one check expecting 0
+ * and another expecting 1, and a file-wide match would credit the first with the
+ * second's assertion. The check can be run directly, from a result bound in the
+ * same block, or through a helper bound to it — `check-publishable.spec.ts`
+ * declares `run` once and asserts in a later test.
+ *
+ * Any spec counts, not only the check's own: the property is that something
+ * watches the exit move. The residual is one block running two checks with
+ * opposite expectations, which credits both; that is a question for review.
+ */
+export function failureIsAsserted(check: string, specs: Record<string, string>): boolean {
+  const direct = `runCheck\\('${check.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}'`
+  const failing = /\.status(?:,[^)]*)?\)\.(?:toBe\(1\)|not\.toBe\(0\))/
+  return Object.values(specs).some((spec) => {
+    const helpers = [...spec.matchAll(new RegExp(`const (\\w+) = \\([^)]*\\) => ${direct}`, 'g'))].map(match => match[1])
+    const runs = new RegExp([direct, ...helpers.map(helper => `\\b${helper}\\(`)].join('|'))
+    return spec.split(/\n\s*(?:it|test)\(/).some(block => runs.test(block) && failing.test(block))
+  })
+}
+
+/**
+ * Round three: every check that can fail is watched failing (#761).
+ *
+ * Separate from `floorProblems` because it asks a different question — not
+ * whether a check sees its inputs, but whether its verdict reaches the exit
+ * code.
+ */
+export function exitProblems(checks: string[], sources: Record<string, string>, specs: Record<string, string>, withoutFailureExit: Record<string, string>): string[] {
+  const problems: string[] = []
+
+  for (const check of checks) {
+    const source = sources[check] ?? ''
+    const recorded = check in withoutFailureExit
+
+    if (hasFailureExit(source)) {
+      if (recorded) {
+        problems.push(`${check} has a failure exit now, so its WITHOUT_FAILURE_EXIT entry is stale — delete it, and assert the exit in its spec`)
+      }
+      else if (!failureIsAsserted(check, specs)) {
+        problems.push(`${check} can exit non-zero, and no spec runs it as a process and asserts that it does — deleting its failure exit would leave every spec green (#760). Run it through \`runCheck\` over a tree where it has to fail and expect a non-zero status`)
+      }
+    }
+    else if (!recorded) {
+      problems.push(`${check} has no failure exit and does not say why — a check that cannot exit non-zero reports success over anything. Add the exit, or an entry to WITHOUT_FAILURE_EXIT with the reason`)
+    }
+  }
+
+  const specNames = Object.keys(specs)
+  for (const [name, reason] of Object.entries(withoutFailureExit)) {
+    if (!checks.includes(name)) {
+      problems.push(`WITHOUT_FAILURE_EXIT names ${name}, which is not a check in scripts/ — delete the entry`)
+    }
+    else if (!reason) {
+      problems.push(`WITHOUT_FAILURE_EXIT names ${name} with no reason`)
+    }
+    else {
+      problems.push(...citationProblems(name, reason, sources[name] ?? '', specNames))
+    }
+  }
+
+  return problems
+}
+
 export function floorProblems(checks: string[], sources: Record<string, string>, exempt: Record<string, string>, specs: Record<string, string> = {}): string[] {
   const problems: string[] = []
 
@@ -203,14 +304,14 @@ function main(): void {
       .filter(name => name.endsWith('.spec.ts'))
       .map(name => [name, readFileSync(join(scripts, name), 'utf8')]),
   )
-  const problems = floorProblems(checks, sources, WITHOUT_FLOOR, specs)
+  const problems = [...floorProblems(checks, sources, WITHOUT_FLOOR, specs), ...exitProblems(checks, sources, specs, WITHOUT_FAILURE_EXIT)]
 
   if (problems.length > 0) {
     console.error('❌ A check could report success over an assertion that never ran:\n')
     for (const problem of problems) {
       console.error(`  • ${problem}`)
     }
-    console.error('\nEvery check either asserts it reached its inputs or says why it cannot (#719).')
+    console.error('\nEvery check either asserts it reached its inputs or says why it cannot (#719), and every check that can fail has a spec that watches it fail (#761).')
     process.exit(1)
   }
 
@@ -219,7 +320,9 @@ function main(): void {
   // right if either were relaxed.
   const guarded = checks.filter(name => hasFloor(sources[name] ?? '')).length
   const explained = checks.filter(name => name in WITHOUT_FLOOR).length
-  console.log(`✅ ${checks.length} checks classified: ${guarded} assert they reached their inputs, ${explained} say why they do not have to`)
+  const watched = checks.filter(name => hasFailureExit(sources[name] ?? '') && failureIsAsserted(name, specs)).length
+  const silent = checks.filter(name => name in WITHOUT_FAILURE_EXIT).length
+  console.log(`✅ ${checks.length} checks classified: ${guarded} assert they reached their inputs, ${explained} say why they do not have to; ${watched} are watched failing by a spec, ${silent} say why they cannot fail`)
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
