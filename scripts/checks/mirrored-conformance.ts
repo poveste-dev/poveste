@@ -20,6 +20,7 @@
 //
 // `pnpm sync:conformance` rewrites the mirrors from their source.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -225,7 +226,7 @@ export function walkProblems({ pairs }: Walk): string[] {
   return problems
 }
 
-export function checkMirroredConformance(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const walk = collect(root)
   const problems = walkProblems(walk)
 
@@ -244,4 +245,10 @@ export function checkMirroredConformance(root = ROOT): string[] {
   }
 
   return problems
+}
+
+const REMEDY = 'Run `pnpm run sync:conformance` to rewrite the mirrors from their source, or add the file to MIRROR_EXCEPTIONS in scripts/checks/mirrored-conformance.ts if it should differ.'
+
+export function checkMirroredConformance(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

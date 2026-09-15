@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkPublishable, emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
 
@@ -95,7 +96,7 @@ describe('unacceptedResolutionProblems', () => {
   })
 
   it('reports nothing when attw found no problems', () => {
-    expect(unacceptedResolutionProblems({})).toHaveNoProblems()
+    expect(unacceptedResolutionProblems({})).toEqual([])
   })
 })
 
@@ -207,7 +208,7 @@ describe('packageTableProblems', () => {
       row('@poveste/controls-stories', ' — **not published**'),
     ].join('\n')
 
-    expect(packageTableProblems(table, published, all)).toHaveNoProblems()
+    expect(packageTableProblems(table, published, all)).toEqual([])
   })
 
   it('catches a row naming a package that does not exist', () => {
@@ -285,7 +286,7 @@ describe('walkPackages', () => {
     const walk = walkPackages(root)
 
     expect(walk.packages.length + walk.skipped.length).toBe(walk.entries.length)
-    expect(walkProblems(walk)).toHaveNoProblems()
+    expect(walkProblems(walk)).toEqual([])
   })
 
   it('counts every entry it walked, selected or not', () => {
@@ -305,7 +306,7 @@ describe('walkProblems', () => {
       'packages/hidden/package.json': manifest('@poveste/hidden', { private: true }),
     })
 
-    expect(walkProblems(walkPackages(root))).toHaveNoProblems()
+    expect(walkProblems(walkPackages(root))).toEqual([])
   })
 
   it('fails when packages/ holds nothing at all', () => {
@@ -347,7 +348,7 @@ describe('checkPublishable', () => {
   })
 
   it('finds nothing over a tree where everything it asserts holds', () => {
-    expect(check(tree(book()))).toHaveNoProblems()
+    assertNoProblems(check(tree(book())))
   }, 30_000)
 
   // An empty list is also what a check that examined nothing returns, so the
@@ -359,15 +360,15 @@ describe('checkPublishable', () => {
       'packages/two/index.js': 'export const two = 2\n',
     })
 
-    expect(check(root)).toContainEqual(expect.stringContaining('@fixture/two'))
+    expect(check(root).problems).toContainEqual(expect.stringContaining('@fixture/two'))
   }, 30_000)
 
   it('every publishable package exists on the registry, packs and resolves', { tags: ['check', 'release', 'build', 'network'] }, () => {
-    expect(checkPublishable()).toHaveNoProblems('Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.')
+    assertNoProblems(checkPublishable())
   })
 
   it('every publishable package packs and resolves, without asking the registry', { tags: ['check', 'release', 'build'] }, () => {
-    expect(checkPublishable(undefined, { offline: true })).toHaveNoProblems('Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.')
+    assertNoProblems(checkPublishable(undefined, { offline: true }))
   })
 })
 

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkPackageTests, EXEMPT, testScriptProblems } from './package-tests.ts'
 import { publishablePackages } from './publishable.ts'
@@ -10,7 +11,7 @@ const UNTESTED = { name: '@poveste/plugin-percy', scripts: { build: 'tsc' } }
 
 describe('testScriptProblems', () => {
   it('is empty when every published package declares a test script', () => {
-    expect(testScriptProblems([TESTED], {})).toHaveNoProblems()
+    expect(testScriptProblems([TESTED], {})).toEqual([])
   })
 
   it('names a published package that declares no test script', () => {
@@ -26,7 +27,7 @@ describe('testScriptProblems', () => {
   })
 
   it('accepts a package with no test script when it is exempt', () => {
-    expect(testScriptProblems([UNTESTED], { '@poveste/plugin-percy': 'a reason' })).toHaveNoProblems()
+    expect(testScriptProblems([UNTESTED], { '@poveste/plugin-percy': 'a reason' })).toEqual([])
   })
 
   it('rejects an exemption for a package that now declares a test script', () => {
@@ -92,7 +93,7 @@ describe('over a tree on disk', () => {
       'packages/tested/package.json': manifest('@fixture/tested', { scripts: { test: 'vitest run' } }),
     })
 
-    expect(problemsUnder(root)).toHaveNoProblems()
+    expect(problemsUnder(root)).toEqual([])
   })
 
   it('reports an exemption for a package the walk no longer returns', () => {
@@ -108,10 +109,10 @@ describe('checkPackageTests', () => {
   it('reports a published package with no test script', () => {
     const root = tree({ 'packages/untested/package.json': manifest('@fixture/untested') })
 
-    expect(checkPackageTests(root)).toContainEqual(expect.stringContaining('@fixture/untested is published and declares no `test` script'))
+    expect(checkPackageTests(root).problems).toContainEqual(expect.stringContaining('@fixture/untested is published and declares no `test` script'))
   })
 
   it('every published package declares a test script', { tags: ['check', 'release'] }, () => {
-    expect(checkPackageTests()).toHaveNoProblems('Add a `test` script and a spec, or add the package to EXEMPT in scripts/checks/package-tests.ts with the reason tests are the wrong tool for it.')
+    assertNoProblems(checkPackageTests())
   })
 })

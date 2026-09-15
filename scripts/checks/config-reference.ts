@@ -7,6 +7,7 @@
 // oversight rather than as a decision, so a key books should not set is
 // documented saying so.
 
+import type { CheckResult } from '../check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -147,7 +148,7 @@ export function staleEntries(source: string, markdown: string): string[] {
   return stale
 }
 
-export function checkConfigReference(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const source = readFileSync(join(root, TYPES), 'utf8')
   const markdown = readFileSync(join(root, REFERENCE), 'utf8')
 
@@ -155,4 +156,10 @@ export function checkConfigReference(root = ROOT): string[] {
     ...undocumentedKeys(source, markdown).map(key => `\`${key}\` is a config key with no reference entry`),
     ...staleEntries(source, markdown).map(entry => `\`${entry}\` has a reference entry but is not a config key`),
   ]
+}
+
+const REMEDY = 'Every key needs a heading in docs/reference/config.md. A key books should not set still needs one, saying so — an omission reads as an oversight rather than a decision.'
+
+export function checkConfigReference(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkVersions, citedJobProblems, collect, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './versions.ts'
 
@@ -48,7 +49,7 @@ describe('tableProblems', () => {
   it('is silent when the documented range matches what is declared', () => {
     const table = parseTable('README.md', '| Svelte | `^5.46.4` |')
 
-    expect(tableProblems(table, EXPECTED)).toHaveNoProblems()
+    expect(tableProblems(table, EXPECTED)).toEqual([])
   })
 
   it('names both ranges when the table has drifted', () => {
@@ -78,13 +79,13 @@ describe('readmeRangeProblems', () => {
   })
 
   it('is silent when they agree', () => {
-    expect(readmeRangeProblems('p', 'Requires `svelte@^5.46.4`.', { svelte: '^5.46.4' })).toHaveNoProblems()
+    expect(readmeRangeProblems('p', 'Requires `svelte@^5.46.4`.', { svelte: '^5.46.4' })).toEqual([])
   })
 
   // An install line names a package the plugin does not peer on, and saying
   // nothing about it is the point — otherwise every README mention is a rule.
   it('ignores a package that this one does not peer on at all', () => {
-    expect(readmeRangeProblems('p', 'Install `poveste@^0.11.0`.', { svelte: '^5.46.4' })).toHaveNoProblems()
+    expect(readmeRangeProblems('p', 'Install `poveste@^0.11.0`.', { svelte: '^5.46.4' })).toEqual([])
   })
 })
 
@@ -99,15 +100,15 @@ describe('nodeClaimProblems', () => {
   })
 
   it('is silent when they agree', () => {
-    expect(nodeClaimProblems('poveste', `Node \`${engines}\`.`, engines)).toHaveNoProblems()
+    expect(nodeClaimProblems('poveste', `Node \`${engines}\`.`, engines)).toEqual([])
   })
 
   it('says nothing about a README that makes no Node claim', () => {
-    expect(nodeClaimProblems('p', 'Vite `^8.0.0` only.', engines)).toHaveNoProblems()
+    expect(nodeClaimProblems('p', 'Vite `^8.0.0` only.', engines)).toEqual([])
   })
 
   it('says nothing when the package declares no engines', () => {
-    expect(nodeClaimProblems('p', 'Node `>=26`.', undefined)).toHaveNoProblems()
+    expect(nodeClaimProblems('p', 'Node `>=26`.', undefined)).toEqual([])
   })
 })
 
@@ -189,14 +190,14 @@ describe('citedJobProblems', () => {
   it('accepts a row naming a real job', () => {
     const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue3)` — builds that book |'
 
-    expect(citedJobProblems('f', table(row), jobs)).toHaveNoProblems()
+    expect(citedJobProblems('f', table(row), jobs)).toEqual([])
   })
 
   // The evidence column also names directories; those are not job names.
   it('skips a backticked path', () => {
     const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue3` — `Example e2e (vue3)` |'
 
-    expect(citedJobProblems('f', table(row), jobs)).toHaveNoProblems()
+    expect(citedJobProblems('f', table(row), jobs)).toEqual([])
   })
 
   // The SvelteKit row credited a tool that exists as a script and in no
@@ -257,7 +258,7 @@ describe('walkProblems', () => {
       'packages/one/README.md': '# one',
     })
 
-    expect(walkProblems(await collect(root))).toHaveNoProblems()
+    expect(walkProblems(await collect(root))).toEqual([])
   })
 
   it('fails when no workflow was read, since every cited job would resolve against nothing', async () => {
@@ -293,10 +294,10 @@ describe('checkVersions', () => {
       ...PEER_MANIFESTS,
     })
 
-    expect(await checkVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
+    expect((await checkVersions(root)).problems).toContainEqual(expect.stringContaining('held no workflow files'))
   })
 
   it('the version tables match what the packages declare', { tags: ['check', 'versions'] }, async () => {
-    expect(await checkVersions()).toHaveNoProblems('The declared range is the truth. Fix the table, or fix the range and the CI job behind it.')
+    assertNoProblems(await checkVersions())
   })
 })

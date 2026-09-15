@@ -23,6 +23,7 @@
 //
 // No network, no build: it reads two files and a markdown fence.
 
+import type { CheckResult } from '../check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -99,7 +100,7 @@ export function missingLines(published: string, actual: string): string[] {
   return missing
 }
 
-export function checkRecipes(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const problems: string[] = []
 
   for (const recipe of RECIPES) {
@@ -125,4 +126,10 @@ export function checkRecipes(root = ROOT): string[] {
   }
 
   return problems
+}
+
+const REMEDY = 'Copy the block from the docs into the example, or fix the docs. They are one thing.'
+
+export function checkRecipes(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

@@ -4,6 +4,7 @@
 // publish cannot be walked back (#286, #302). `--offline` drops the registry
 // lookup, the only networked check. Needs each package built.
 
+import type { CheckResult } from '../check-result.ts'
 import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -356,7 +357,7 @@ function describeError(err: any): string {
   return stderr ? `${err.message} — ${stderr}` : err.message
 }
 
-export function checkPublishable(root = ROOT, { offline = false }: { offline?: boolean } = {}): string[] {
+function repositoryProblems(root: string, { offline = false }: { offline?: boolean }): string[] {
   const packagesDir = join(root, 'packages')
   const walk = walkPackages(root)
   const packages = walk.packages
@@ -446,4 +447,10 @@ export function checkPublishable(root = ROOT, { offline = false }: { offline?: b
   }
 
   return problems
+}
+
+const REMEDY = 'Fix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.'
+
+export function checkPublishable(root = ROOT, options: { offline?: boolean } = {}): CheckResult {
+  return { problems: repositoryProblems(root, options), remedy: REMEDY, notes: [] }
 }

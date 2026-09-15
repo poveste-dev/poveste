@@ -29,6 +29,7 @@
 // reports rather than gates — the packages are already out.
 
 import type { Framework, Manifest } from '../../docs/.vitepress/theme/starters.ts'
+import type { CheckResult } from '../check-result.ts'
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -138,7 +139,7 @@ async function check(starters: Starters, framework: Framework, afterPublish: boo
   }
 }
 
-export async function checkStarters(root = ROOT, { afterPublish = false }: { afterPublish?: boolean } = {}): Promise<string[]> {
+async function repositoryProblems(root: string, { afterPublish = false }: { afterPublish?: boolean }): Promise<string[]> {
   const starters = await startersAt(root)
   const attempts = afterPublish ? 4 : 1
 
@@ -173,4 +174,14 @@ export async function checkStarters(root = ROOT, { afterPublish = false }: { aft
   }
 
   return results.filter(r => !r.ok).map(r => `${r.framework} cannot be installed: ${r.detail}`)
+}
+
+const REMEDY = 'Fix the versions in docs/.vitepress/theme/starters.ts.'
+
+// The versions are live and npm versions are immutable, so there is nothing to
+// fix in place — 0.6.1 is the worked example of the way out.
+const AFTER_PUBLISH_REMEDY = 'The release that just published cannot be installed. Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.'
+
+export async function checkStarters(root = ROOT, options: { afterPublish?: boolean } = {}): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root, options), remedy: options.afterPublish ? AFTER_PUBLISH_REMEDY : REMEDY, notes: [] }
 }

@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkDocCoverage, entrypointsOf, formatRows, summarise, typesConditionOf, UNRESOLVED } from './doc-coverage.ts'
 
@@ -151,14 +152,14 @@ describe('checkDocCoverage', () => {
       'packages/poveste-app/package.json': '{ "name": "@poveste/app", "version": "1.0.0", "types": "./dist/index.d.ts" }\n',
     })
 
-    expect(checkDocCoverage(root).broken).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
+    expect(checkDocCoverage(root).problems).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
   })
 
   it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, async ({ annotate }) => {
-    const { broken, report } = checkDocCoverage()
-    process.stdout.write(`${report.join('\n')}\n`)
+    const result = checkDocCoverage()
+    process.stdout.write(`${result.notes.join('\n')}\n`)
 
-    expect(broken).toHaveNoProblems('Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.')
-    await annotate(String(report.find(line => line.startsWith('📖'))), 'notice')
+    assertNoProblems(result)
+    await annotate(String(result.notes.find(line => line.startsWith('📖'))), 'notice')
   })
 })

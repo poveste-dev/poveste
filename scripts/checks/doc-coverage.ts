@@ -40,6 +40,7 @@
 // Needs a build: it reads `dist`, so it runs after Build rather than with the
 // manifest checks at the front of `release:check`.
 
+import type { CheckResult } from '../check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import ts from 'typescript'
@@ -217,7 +218,9 @@ function measure(entry: Entrypoint): { coverage: Coverage | null, halfBuilt: str
   }
 }
 
-export function checkDocCoverage(root = ROOT): { broken: string[], report: string[] } {
+const REMEDY = 'Usually this is an unbuilt tree — run `pnpm run build` first. A partial run reports a plausible percentage over a fraction of the surface rather than an obvious zero.'
+
+export function checkDocCoverage(root = ROOT): CheckResult {
   const rows: Coverage[] = []
   const unmeasured: string[] = []
 
@@ -281,7 +284,7 @@ export function checkDocCoverage(root = ROOT): { broken: string[], report: strin
   }
 
   if (broken.length) {
-    return { broken, report: [] }
+    return { problems: broken, remedy: REMEDY, notes: [] }
   }
 
   const { documented, total, pct } = summarise(rows)
@@ -301,5 +304,5 @@ export function checkDocCoverage(root = ROOT): { broken: string[], report: strin
   }
 
   report.push('This step never fails on the number. It is here so the number is measured rather than remembered (#363).')
-  return { broken, report }
+  return { problems: broken, remedy: REMEDY, notes: report }
 }

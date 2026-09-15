@@ -17,7 +17,6 @@ export default defineConfig({
           // `**`, not `*`: a spec in a subdirectory would otherwise be skipped
           // with a green exit.
           include: ['scripts/**/*.spec.ts'],
-          setupFiles: ['scripts/matchers.ts'],
           environment: 'node',
           // Measured −22% on the test phase by `vitest doctor`. It also stops the
           // forks pool reporting the worker's own stdin pipe as an async leak
@@ -35,7 +34,6 @@ export default defineConfig({
         test: {
           name: 'bench',
           include: ['bench/*.spec.ts'],
-          setupFiles: ['scripts/matchers.ts'],
           environment: 'node',
           // Forks: `run.mjs` hands child output to `process.stderr`, which a
           // worker thread does not have as a real file descriptor.

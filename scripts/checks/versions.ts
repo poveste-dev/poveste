@@ -17,6 +17,7 @@
 //
 // No network, no install: it reads files and compares strings.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
@@ -335,7 +336,7 @@ export function walkProblems({ workflows, packages }: Walk): string[] {
   return problems
 }
 
-export async function checkVersions(root = ROOT): Promise<string[]> {
+async function repositoryProblems(root = ROOT): Promise<string[]> {
   const [expected, tables] = await Promise.all([
     expectations(root),
     Promise.all(TABLES.map(async file => parseTable(file, await readFile(join(root, file), 'utf8')))),
@@ -356,4 +357,10 @@ export async function checkVersions(root = ROOT): Promise<string[]> {
   }
 
   return problems
+}
+
+const REMEDY = 'The declared range is the truth. Fix the table, or fix the range and the CI job behind it.'
+
+export async function checkVersions(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

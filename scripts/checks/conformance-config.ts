@@ -17,6 +17,7 @@
 // because its published recipe already owns the import line (#543). Nothing
 // compared them until this.
 
+import type { CheckResult } from '../check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -150,7 +151,7 @@ export function configFileFor(example: string, root = ROOT): string | undefined 
     .find(path => existsSync(join(root, path)))
 }
 
-export async function checkConformanceConfig(root = ROOT): Promise<string[]> {
+async function repositoryProblems(root = ROOT): Promise<string[]> {
   const defaults = presetsIn(readFileSync(join(root, DEFAULTS), 'utf8'))
   if (defaults.length === 0) {
     return [`could not read \`backgroundPresets\` from ${DEFAULTS}`]
@@ -181,4 +182,10 @@ export async function checkConformanceConfig(root = ROOT): Promise<string[]> {
   }
 
   return problems
+}
+
+const REMEDY = 'A conformance book declares the background presets as well as carrying the stories. See "The conformance contract" in ai/AGENTS.md.'
+
+export async function checkConformanceConfig(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

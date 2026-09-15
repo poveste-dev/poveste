@@ -20,6 +20,7 @@
 // No network, no build: it reads the workflow text and imports the configs, so it
 // checks the config the harness actually resolves rather than how it is written.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
@@ -163,7 +164,7 @@ async function exists(path: string, root: string): Promise<boolean> {
   }
 }
 
-export async function checkExampleWiring(root = ROOT): Promise<string[]> {
+async function repositoryProblems(root = ROOT): Promise<string[]> {
   const problems: string[] = []
 
   // The root config filters itself by this, and a CI job that sets it would make
@@ -248,4 +249,10 @@ export async function checkExampleWiring(root = ROOT): Promise<string[]> {
   }
 
   return problems
+}
+
+const REMEDY = 'The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.'
+
+export async function checkExampleWiring(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

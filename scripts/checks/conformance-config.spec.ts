@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { bookProblems, checkConformanceConfig, CUSTOM_PRESET, presetsIn, specPresets, specProblems, toRendered } from './conformance-config.ts'
 
@@ -79,7 +80,7 @@ describe('specProblems', () => {
   ]
 
   it('is silent when the spec matches the declared presets', () => {
-    expect(specProblems(DEFAULTS, rendered)).toHaveNoProblems()
+    expect(specProblems(DEFAULTS, rendered)).toEqual([])
   })
 
   // The state this exists for: the defaults move and the rgb list does not.
@@ -106,11 +107,11 @@ describe('specProblems', () => {
 
 describe('bookProblems', () => {
   it('accepts a book that spreads the defaults', () => {
-    expect(bookProblems('vue3', 'f.ts', SPREADING, DEFAULTS)).toHaveNoProblems()
+    expect(bookProblems('vue3', 'f.ts', SPREADING, DEFAULTS)).toEqual([])
   })
 
   it('accepts a book that lists the defaults literally, since Quasar cannot spread them', () => {
-    expect(bookProblems('quasar', 'f.ts', LITERAL, DEFAULTS)).toHaveNoProblems()
+    expect(bookProblems('quasar', 'f.ts', LITERAL, DEFAULTS)).toEqual([])
   })
 
   // The #499 failure: every story present, eighteen specs red, and the message
@@ -150,10 +151,10 @@ describe('checkConformanceConfig', () => {
   it('reports that the defaults it compares against cannot be read', async () => {
     const root = tree({ 'packages/poveste/src/node/config.ts': 'export const nothing = 1\n' })
 
-    expect(await checkConformanceConfig(root)).toEqual(['could not read `backgroundPresets` from packages/poveste/src/node/config.ts'])
+    expect((await checkConformanceConfig(root)).problems).toEqual(['could not read `backgroundPresets` from packages/poveste/src/node/config.ts'])
   })
 
   it('every conformance book declares the background presets the shared specs assert', { tags: ['check', 'examples'] }, async () => {
-    expect(await checkConformanceConfig()).toHaveNoProblems('A conformance book declares the background presets as well as carrying the stories. See "The conformance contract" in ai/AGENTS.md.')
+    assertNoProblems(await checkConformanceConfig())
   })
 })

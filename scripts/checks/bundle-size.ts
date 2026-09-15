@@ -11,6 +11,7 @@
 // and not on the ordinary drift of a dependency bump. A limit that cries wolf
 // gets raised without being read.
 
+import type { CheckResult } from '../check-result.ts'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, sep } from 'node:path'
 
@@ -154,7 +155,9 @@ export function findBook(example: string): string | undefined {
     .find(dir => existsSync(join(dir, 'assets')))
 }
 
-export function checkBundleSize(root = ROOT): { problems: string[], measurements: string[] } {
+const REMEDY = 'Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.'
+
+export function checkBundleSize(root = ROOT): CheckResult {
   let book: string | undefined
   try {
     book = findBook(join(root, EXAMPLE))
@@ -163,11 +166,11 @@ export function checkBundleSize(root = ROOT): { problems: string[], measurements
     // Narrow: a directory that cannot be read is not the same as one with no
     // book in it, and reporting both as "run story:build" sends the reader
     // after a command that already worked.
-    return { problems: [`could not read ${EXAMPLE}: ${error.message}`], measurements: [] }
+    return { problems: [`could not read ${EXAMPLE}: ${error.message}`], remedy: REMEDY, notes: [] }
   }
 
   if (book === undefined) {
-    return { problems: [`no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`], measurements: [] }
+    return { problems: [`no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`], remedy: REMEDY, notes: [] }
   }
 
   const chunks = chunksIn(book)
@@ -178,5 +181,5 @@ export function checkBundleSize(root = ROOT): { problems: string[], measurements
     problems.push(`${HIGHLIGHTER} has \`${barrel}\` — the full-bundle entry, which ships every grammar and theme (#304)`)
   }
 
-  return { problems, measurements: measurements(chunks, LIMITS) }
+  return { problems, remedy: REMEDY, notes: measurements(chunks, LIMITS) }
 }

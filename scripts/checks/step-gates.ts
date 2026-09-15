@@ -47,6 +47,7 @@
 // scalar's body has to be indented past the key that opens it, which is what
 // puts it out of reach of the two guards below.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -344,7 +345,13 @@ export function gateProblems(
   return problems
 }
 
-export function checkStepGates(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const { workflows, walk } = collect(root)
   return [...walkProblems(walk), ...gateProblems(boundaries(workflows), RUNS_PAST_FAILURE, NEEDS_EVERYTHING_ABOVE)]
+}
+
+const REMEDY = 'Name the dependency in the `if:`, or record the boundary in scripts/checks/step-gates.ts with the reason (#723).'
+
+export function checkStepGates(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

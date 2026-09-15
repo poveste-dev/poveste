@@ -19,6 +19,7 @@
 // `isMobile` (#600) and the settings toggles (#596) were both live flags nobody
 // had thought about.
 
+import type { CheckResult } from '../check-result.ts'
 import { globSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parse } from '@vue/compiler-sfc'
@@ -188,7 +189,7 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
   return problems
 }
 
-export function checkPreviewPosition(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const files = globSync(`${APP_SOURCE}/**/*.vue`, { cwd: root })
     .map(file => ({ file, source: readFileSync(join(root, file), 'utf8') }))
 
@@ -200,4 +201,10 @@ export function checkPreviewPosition(root = ROOT): string[] {
   }
 
   return problemsIn(files)
+}
+
+const REMEDY = 'Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/checks/preview-position.ts with the reason.'
+
+export function checkPreviewPosition(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

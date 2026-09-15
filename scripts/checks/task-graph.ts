@@ -28,6 +28,7 @@
 // after it need a built tree, which would put this report on the critical path
 // — step one is additive on purpose.
 
+import type { CheckResult } from '../check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -160,8 +161,14 @@ export function taskGraphProblems(
   return problems
 }
 
-export function checkTaskGraph(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const workspace = readFileSync(join(root, WORKSPACE), 'utf8')
   const { scripts } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   return taskGraphProblems(workspace, scripts, EXCLUDED, AFTER_BUILD)
+}
+
+const REMEDY = 'The `&&` chain in release:check decides; release:report only reports. A report covering less than the gate is the failure worth catching (#716).'
+
+export function checkTaskGraph(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

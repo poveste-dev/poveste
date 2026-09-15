@@ -27,6 +27,7 @@
 // from `main` (#321), so a PR cannot prove production. Run it against a deploy
 // preview before a redirect change lands, and against production after.
 
+import type { CheckResult } from '../check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
@@ -603,7 +604,7 @@ async function checkLive(problems: string[], site: string): Promise<string | und
   }
 }
 
-export async function checkDocsSite(root = ROOT): Promise<string[]> {
+async function repositoryProblems(root = ROOT): Promise<string[]> {
   const problems: string[] = []
   const dist = join(root, 'docs', '.vitepress', 'dist')
   const built = existsSync(dist) ? await builtEntries(dist) : undefined
@@ -617,8 +618,16 @@ export async function checkDocsSite(root = ROOT): Promise<string[]> {
  * with the problems: a green run against a stale deploy proves nothing about the
  * commit in hand.
  */
-export async function checkDocsSiteLive(site = SITE): Promise<{ problems: string[], deployed: string | undefined }> {
+const LIVE_REMEDY = 'poveste.dev deploys from `main`, so a problem here is live. Fix it on `main`, or name a deploy preview in `POVESTE_DOCS_SITE` to check a fix before it lands.'
+
+export async function checkDocsSiteLive(site = SITE): Promise<CheckResult> {
   const problems: string[] = []
   const deployed = await checkLive(problems, site.replace(/\/$/, ''))
-  return { problems, deployed }
+  return { problems, remedy: LIVE_REMEDY, notes: [`Reached ${site} (${deployed ?? 'deploy unidentified'})`] }
+}
+
+const REMEDY = 'Run `pnpm run docs:build` first if the build is missing.'
+
+export async function checkDocsSite(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

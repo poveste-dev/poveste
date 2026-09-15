@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { afterBuild, beforeBuild, chainSteps, checkTaskGraph, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './task-graph.ts'
 
@@ -112,7 +113,7 @@ describe('taskGraphProblems', () => {
   })
 
   it('is empty when the graph matches the chain', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, {})).toHaveNoProblems()
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, {})).toEqual([])
   })
 
   it('catches a pre-build step the report would not cover', () => {
@@ -122,7 +123,7 @@ describe('taskGraphProblems', () => {
 
   it('accepts a pre-build step that is excluded with a reason', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run lint && pnpm run test:tags && pnpm run test:mirrors && pnpm run build' }
-    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' }, {})).toHaveNoProblems()
+    expect(taskGraphProblems(WORKSPACE, scripts, { 'test:mirrors': 'why' }, {})).toEqual([])
   })
 
   it('catches a stale exclusion', () => {
@@ -189,10 +190,10 @@ describe('checkTaskGraph', () => {
   it('reports a workspace that declares no task graph', () => {
     const root = tree({ 'pnpm-workspace.yaml': 'packages: []\n', 'package.json': '{ "scripts": { "release:check": "pnpm run test:tags && pnpm run build" } }\n' })
 
-    expect(checkTaskGraph(root)).toContainEqual(expect.stringContaining('declares no `tasks:`'))
+    expect(checkTaskGraph(root).problems).toContainEqual(expect.stringContaining('declares no `tasks:`'))
   })
 
   it('the task graph matches release:check', { tags: ['check', 'ci'] }, () => {
-    expect(checkTaskGraph()).toHaveNoProblems('The `&&` chain in release:check decides; release:report only reports. A report covering less than the gate is the failure worth catching (#716).')
+    assertNoProblems(checkTaskGraph())
   })
 })

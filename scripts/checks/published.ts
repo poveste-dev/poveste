@@ -17,6 +17,7 @@
 // because the publish makes it correct, not because `latest` was never supposed
 // to follow a prerelease.
 
+import type { CheckResult } from '../check-result.ts'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -140,7 +141,7 @@ function npmProbe(name: string, version: string): string {
   return tagged.out === version ? 'present' : `untagged:${tagFor(version)}:${tagged.out || 'nothing'}`
 }
 
-export function checkPublished(root?: string): string[] {
+function repositoryProblems(root?: string): string[] {
   // The shared walk's floor rather than a second one: this check reads
   // `checks/publishable`'s list, so "it examined something" is a question about
   // that walk. Without it an empty list read as success.
@@ -156,4 +157,10 @@ export function checkPublished(root?: string): string[] {
   }))
 
   return unpublishedReleases(releases, npmProbe)
+}
+
+const REMEDY = 'Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.'
+
+export function checkPublished(root?: string): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

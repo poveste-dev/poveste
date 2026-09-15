@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkConfigReference, codeOnly, configKeys, documentedKeys, parseConfig, REFERENCE as REFERENCE_PATH, staleEntries, TYPES, undocumentedKeys } from './config-reference.ts'
 
@@ -210,10 +211,10 @@ describe('checkConfigReference', () => {
   it('reports config keys that have no reference entry', () => {
     const root = tree({ [TYPES]: readFileSync(join(import.meta.dirname, '..', '..', TYPES), 'utf8'), [REFERENCE_PATH]: '# Configuration\n' })
 
-    expect(checkConfigReference(root)).toContainEqual(expect.stringContaining('is a config key with no reference entry'))
+    expect(checkConfigReference(root).problems).toContainEqual(expect.stringContaining('is a config key with no reference entry'))
   })
 
   it('every config key has a reference entry, and every entry is a config key', { tags: ['check', 'docs'] }, () => {
-    expect(checkConfigReference()).toHaveNoProblems('Every key needs a heading in docs/reference/config.md. A key books should not set still needs one, saying so — an omission reads as an oversight rather than a decision.')
+    assertNoProblems(checkConfigReference())
   })
 })

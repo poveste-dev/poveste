@@ -30,6 +30,7 @@
 //
 // No network, by design.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
@@ -442,7 +443,7 @@ export function walkProblems({ pages, published }: Walk): string[] {
   return problems
 }
 
-export async function checkReadmes(root = ROOT): Promise<string[]> {
+async function repositoryProblems(root = ROOT): Promise<string[]> {
   const workflowsOnDisk = new Set(await readdir(join(root, '.github', 'workflows')).catch(() => []))
 
   const walk = await collect(root)
@@ -530,4 +531,10 @@ export async function checkReadmes(root = ROOT): Promise<string[]> {
   }
 
   return problems
+}
+
+const REMEDY = 'Fix the page, or add a host it links on purpose to ALLOWED_HOSTS in scripts/checks/readmes.ts.'
+
+export async function checkReadmes(root = ROOT): Promise<CheckResult> {
+  return { problems: await repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

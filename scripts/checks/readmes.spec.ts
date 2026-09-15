@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { aliasesTaughtAlone, checkReadmes, collect, externalHosts, installLineProblems, instructsWithHistoire, legacyOwnUrls, missingInstallLine, referencedWorkflows, unrunnableFences, walkProblems } from './readmes.ts'
 
@@ -126,7 +127,7 @@ describe('installLineProblems', () => {
   })
 
   it('is satisfied once poveste is named', () => {
-    expect(installLineProblems('p', 'pnpm add -D poveste @poveste/plugin-nuxt', nuxtPeers)).toHaveNoProblems()
+    expect(installLineProblems('p', 'pnpm add -D poveste @poveste/plugin-nuxt', nuxtPeers)).toEqual([])
   })
 
   // `@poveste/plugin-nuxt` contains the string "poveste" — the scoped name must
@@ -138,7 +139,7 @@ describe('installLineProblems', () => {
   // plugin-percy and plugin-screenshot are add-ons for a project that already
   // has poveste, so omitting it there is deliberate.
   it('exempts an add-on with no framework peer', () => {
-    expect(installLineProblems('poveste-plugin-percy', 'pnpm add -D @poveste/plugin-percy', { poveste: 'workspace:^' })).toHaveNoProblems()
+    expect(installLineProblems('poveste-plugin-percy', 'pnpm add -D @poveste/plugin-percy', { poveste: 'workspace:^' })).toEqual([])
   })
 
   // Only the first install line used to be checked, so a second bare one shipped
@@ -157,7 +158,7 @@ describe('installLineProblems', () => {
   })
 
   it('reads the `pnpm i -D` spelling the core README uses', () => {
-    expect(installLineProblems('p', 'pnpm i -D poveste @poveste/plugin-vue', { vue: '^3' })).toHaveNoProblems()
+    expect(installLineProblems('p', 'pnpm i -D poveste @poveste/plugin-vue', { vue: '^3' })).toEqual([])
   })
 })
 
@@ -382,7 +383,7 @@ describe('walkProblems', () => {
       'packages/one/README.md': '# one',
     })
 
-    expect(walkProblems(await collect(root))).toHaveNoProblems()
+    expect(walkProblems(await collect(root))).toEqual([])
   })
 
   // The state every check in scripts/ was in until #719: reaches nothing,
@@ -411,10 +412,10 @@ describe('checkReadmes', () => {
   it('reports that there is no published package to check', async () => {
     const root = tree({ 'README.md': '# root' })
 
-    expect(await checkReadmes(root)).toContainEqual(expect.stringContaining('found no published packages under packages/'))
+    expect((await checkReadmes(root)).problems).toContainEqual(expect.stringContaining('found no published packages under packages/'))
   })
 
   it('every page describes Poveste and points somewhere real', { tags: ['check', 'docs'] }, async () => {
-    expect(await checkReadmes()).toHaveNoProblems('Pages that describe the wrong project, or point nowhere.')
+    assertNoProblems(await checkReadmes())
   })
 })

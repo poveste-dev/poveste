@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkMirroredConformance, collect, compareMirror, MIRRORS, walkProblems } from './mirrored-conformance.ts'
 
@@ -216,7 +217,7 @@ describe('walkProblems', () => {
     const walk = collect(root, PAIR)
 
     expect(walk.pairs[0].examined).toHaveLength(walk.pairs[0].offered)
-    expect(walkProblems(walk)).toHaveNoProblems()
+    expect(walkProblems(walk)).toEqual([])
   })
 
   // A missing directory is already reported by name, and is a different fault
@@ -232,7 +233,7 @@ describe('walkProblems', () => {
   it('is silent when the walk read something', () => {
     const root = tree({ 'src/conformance/One.story.vue': 'a', 'mirror/conformance/One.story.vue': 'a' })
 
-    expect(walkProblems(collect(root, PAIR))).toHaveNoProblems()
+    expect(walkProblems(collect(root, PAIR))).toEqual([])
   })
 })
 
@@ -248,10 +249,10 @@ describe('checkMirroredConformance', () => {
   it('reports a mirror that has drifted from its source', () => {
     const root = mirrorsWhereTheFirstDrifted()
 
-    expect(checkMirroredConformance(root)).toContainEqual(expect.stringContaining('differs between'))
+    expect(checkMirroredConformance(root).problems).toContainEqual(expect.stringContaining('differs between'))
   })
 
   it('every mirrored conformance story is identical to its source', { tags: ['check', 'examples'] }, () => {
-    expect(checkMirroredConformance()).toHaveNoProblems('Run `pnpm run sync:conformance` to rewrite the mirrors from their source, or add the file to MIRROR_EXCEPTIONS in scripts/checks/mirrored-conformance.ts if it should differ.')
+    assertNoProblems(checkMirroredConformance())
   })
 })

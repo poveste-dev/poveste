@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { barrelImport, checkBundleSize, findBook, LIMITS, measurements, overLimit } from './bundle-size.ts'
 
@@ -156,10 +157,10 @@ describe('checkBundleSize', () => {
   })
 
   it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, async ({ annotate }) => {
-    const { problems, measurements } = checkBundleSize()
-    process.stdout.write(measurements.map(line => `  ${line}\n`).join(''))
+    const result = checkBundleSize()
+    process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 
-    expect(problems).toHaveNoProblems('Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.')
-    await annotate(measurements.join('\n'), 'notice')
+    assertNoProblems(result)
+    await annotate(result.notes.join('\n'), 'notice')
   })
 })

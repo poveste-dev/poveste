@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './starters.ts'
 
@@ -112,14 +113,14 @@ describe('checkStarters', () => {
   it('reports that the docs declare no starters', async () => {
     const root = tree({ 'docs/.vitepress/theme/starters.ts': 'export const starters = {}\n' })
 
-    expect(await checkStarters(root)).toEqual(['docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing'])
+    expect((await checkStarters(root)).problems).toEqual(['docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing'])
   })
 
   it('every starter installs', { tags: ['check', 'release', 'network'] }, async () => {
-    expect(await checkStarters()).toHaveNoProblems('Fix the versions in docs/.vitepress/theme/starters.ts.')
+    assertNoProblems(await checkStarters())
   })
 
   it('every starter installs the version that just published', { tags: ['check', 'release', 'network', 'after-publish'] }, async () => {
-    expect(await checkStarters(undefined, { afterPublish: true })).toHaveNoProblems('The release that just published cannot be installed. Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.')
+    assertNoProblems(await checkStarters(undefined, { afterPublish: true }))
   })
 })

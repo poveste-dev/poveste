@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import {
   asServers,
@@ -186,10 +187,10 @@ describe('checkExampleWiring', () => {
       'examples/': '',
     })
 
-    expect(await checkExampleWiring(root)).toContainEqual(expect.stringContaining('has no `example:` matrix to read'))
+    expect((await checkExampleWiring(root)).problems).toContainEqual(expect.stringContaining('has no `example:` matrix to read'))
   })
 
   it('the workflow matrix, the Playwright config, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
-    expect(await checkExampleWiring()).toHaveNoProblems('The matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.')
+    assertNoProblems(await checkExampleWiring())
   })
 })

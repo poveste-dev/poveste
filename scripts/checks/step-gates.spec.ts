@@ -2,6 +2,7 @@ import { cpSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { boundariesIn, checkStepGates, collect, gateProblems, jobsIn, masksFailure, statesDependency, walkProblems } from './step-gates.ts'
 
@@ -174,7 +175,7 @@ describe('gateProblems', () => {
   const classified = [{ key: 'a.yml / build / Check', states: true }, { key: 'a.yml / build / Build', states: false }]
 
   it('is silent when every boundary is classified the way it is written', () => {
-    expect(gateProblems(classified, runs, needs)).toHaveNoProblems()
+    expect(gateProblems(classified, runs, needs)).toEqual([])
   })
 
   // The case this exists for: a step added below a masked one inherits a
@@ -240,7 +241,7 @@ describe('gateProblems', () => {
 
 describe('walkProblems', () => {
   it('is silent over a walk that read something', () => {
-    expect(walkProblems({ workflows: ['test.yml'], jobs: 1, steps: 4 })).toHaveNoProblems()
+    expect(walkProblems({ workflows: ['test.yml'], jobs: 1, steps: 4 })).toEqual([])
   })
 
   it('fails when the directory it reads has moved', () => {
@@ -282,7 +283,7 @@ describe('checkStepGates', () => {
   }
 
   it('finds nothing over a copy with nothing injected', () => {
-    expect(checkStepGates(workflowsWith('test.yml', source => source))).toHaveNoProblems()
+    assertNoProblems(checkStepGates(workflowsWith('test.yml', source => source)))
   })
 
   // #722's fourth attempt, as a diff: a sweep step placed after the publish
@@ -290,7 +291,7 @@ describe('checkStepGates', () => {
   it('reports a step added below a masked one with nothing said', () => {
     const root = workflowsWith('release.yml', source => `${source}\n      - name: Sweep the labels\n        run: gh issue list\n`)
 
-    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Sweep the labels inherits `success()`'))
+    expect(checkStepGates(root).problems).toContainEqual(expect.stringContaining('release.yml / release / Sweep the labels inherits `success()`'))
   })
 
   // On the step that opens the region, because that is where one edit is enough:
@@ -301,16 +302,16 @@ describe('checkStepGates', () => {
     const root = workflowsWith('release.yml', source =>
       source.replace('      - name: Draft the GitHub release\n', `      - name: Draft the GitHub release\n        if: ${expr('!cancelled()')}\n`))
 
-    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Draft the GitHub release is in NEEDS_EVERYTHING_ABOVE'))
+    expect(checkStepGates(root).problems).toContainEqual(expect.stringContaining('release.yml / release / Draft the GitHub release is in NEEDS_EVERYTHING_ABOVE'))
   })
 
   it('reports a recorded boundary renamed out from under its reason', () => {
     const root = workflowsWith('release.yml', source => source.replace('- name: Verify every package reached npm', '- name: Check npm'))
 
-    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm'))
+    expect(checkStepGates(root).problems).toContainEqual(expect.stringContaining('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm'))
   })
 
   it('every workflow step\'s position means what it looks like', { tags: ['check', 'ci'] }, () => {
-    expect(checkStepGates()).toHaveNoProblems('Name the dependency in the `if:`, or record the boundary in scripts/checks/step-gates.ts with the reason (#723).')
+    assertNoProblems(checkStepGates())
   })
 })

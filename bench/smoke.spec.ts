@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../scripts/assert-no-problems.ts'
 import { runBench } from './run.mjs'
 
 // One book, one size, one run (#666). Not a measurement: a shared runner's
@@ -46,5 +47,5 @@ describe('reportProblems', () => {
 it('the bench still measures something', async () => {
   const report = await runBench({ examples: ['vue3'], sizes: [10], runs: 1 })
 
-  expect(reportProblems(report)).toHaveNoProblems('the bench ran and measured nothing')
+  assertNoProblems({ problems: reportProblems(report), remedy: 'The bench ran and measured nothing: `run.mjs` finished, but the report holds no numbers.', notes: [] })
 })

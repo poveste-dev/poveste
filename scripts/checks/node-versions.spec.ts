@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { ALLOWED, checkNodeVersions, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './node-versions.ts'
 
@@ -33,7 +34,7 @@ describe('hardcodedNodeVersions', () => {
 
 describe('nodeVersionProblems', () => {
   it('is empty when only the deliberate floor is pinned', () => {
-    expect(nodeVersionProblems([FLOOR], ALLOWED, ENGINES)).toHaveNoProblems()
+    expect(nodeVersionProblems([FLOOR], ALLOWED, ENGINES)).toEqual([])
   })
 
   it('names a workflow that pins a version instead of reading the file', () => {
@@ -161,7 +162,7 @@ describe('walkProblems', () => {
   it('is silent when the walk read workflows', () => {
     const root = tree({ '.github/workflows/test.yml': 'jobs:\n', 'packages/poveste/package.json': MANIFEST })
 
-    expect(walkProblems(collect(root))).toHaveNoProblems()
+    expect(walkProblems(collect(root))).toEqual([])
   })
 
   // The input a spec most obviously reaches for when testing the floor: a tree
@@ -193,10 +194,10 @@ describe('checkNodeVersions', () => {
   it('reports that there is no workflow to read', () => {
     const root = tree({ '.github/workflows/': '', 'packages/poveste/package.json': MANIFEST })
 
-    expect(checkNodeVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
+    expect(checkNodeVersions(root).problems).toContainEqual(expect.stringContaining('held no workflow files'))
   })
 
   it('every CI job reads .node-version, except the recorded floor', { tags: ['check', 'versions', 'ci'] }, () => {
-    expect(checkNodeVersions()).toHaveNoProblems('`.node-version` is what the release publishes from. A job that pins the number instead keeps building on it after the file moves, and stays green while doing it (#425).')
+    assertNoProblems(checkNodeVersions())
   })
 })

@@ -15,6 +15,7 @@
 // with `test:versions` at the front of `release:check` rather than with
 // `test:publishable` after it.
 
+import type { CheckResult } from '../check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { publishablePackages } from './publishable.ts'
@@ -67,11 +68,17 @@ export function testScriptProblems(manifests: Manifest[], exempt: Record<string,
   return problems
 }
 
-export function checkPackageTests(root?: string): string[] {
+function repositoryProblems(root?: string): string[] {
   const manifests = publishablePackages(root).map(({ name, dir }): Manifest => ({
     ...JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')),
     name,
   }))
 
   return testScriptProblems(manifests, EXEMPT)
+}
+
+const REMEDY = 'Add a `test` script and a spec, or add the package to EXEMPT in scripts/checks/package-tests.ts with the reason tests are the wrong tool for it.'
+
+export function checkPackageTests(root?: string): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

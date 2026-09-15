@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { checkRecipes, section, tsBlocks } from './recipes.ts'
 
@@ -80,10 +81,10 @@ describe('checkRecipes', () => {
   it('reports a recipe whose section has gone from its page', () => {
     const root = tree({ 'docs/guide/quasar/getting-started.md': '# Getting started\n\nNo configuration here.\n' })
 
-    expect(checkRecipes(root)).toContainEqual(expect.stringContaining('has no "## Configuration" section'))
+    expect(checkRecipes(root).problems).toContainEqual(expect.stringContaining('has no "## Configuration" section'))
   })
 
   it('every published recipe is exactly what its example runs', { tags: ['check', 'docs', 'examples'] }, () => {
-    expect(checkRecipes()).toHaveNoProblems('Copy the block from the docs into the example, or fix the docs. They are one thing.')
+    assertNoProblems(checkRecipes())
   })
 })

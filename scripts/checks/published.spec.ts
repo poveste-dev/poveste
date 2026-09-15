@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { backoffMs, checkPublished, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './published.ts'
 
@@ -23,7 +24,7 @@ describe('unpublishedReleases', () => {
   it('passes when every release is on the registry', () => {
     const problems = unpublishedReleases(RELEASES, () => 'present', options())
 
-    expect(problems).toHaveNoProblems()
+    expect(problems).toEqual([])
   })
 
   it('names every missing release, so recovery is one operation', () => {
@@ -44,7 +45,7 @@ describe('unpublishedReleases', () => {
 
     const problems = unpublishedReleases(RELEASES, probe, options())
 
-    expect(problems).toHaveNoProblems()
+    expect(problems).toEqual([])
   })
 
   it('re-probes only what is still unaccounted for', () => {
@@ -89,7 +90,7 @@ describe('the default retry window', () => {
       },
     })
 
-    expect(problems).toHaveNoProblems()
+    expect(problems).toEqual([])
   })
 
   it('still reports the gap it exists for', () => {
@@ -232,10 +233,10 @@ describe('checkPublished', () => {
   it('reports that the walk found no package to ask about', () => {
     const root = tree({ 'packages/': '' })
 
-    expect(checkPublished(root)).toContain('this check never got a list of packages to ask the registry about')
+    expect(checkPublished(root).problems).toContain('this check never got a list of packages to ask the registry about')
   })
 
   it('every package is on the registry at its released version', { tags: ['check', 'release', 'network', 'after-publish'] }, () => {
-    expect(checkPublished()).toHaveNoProblems('Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.')
+    assertNoProblems(checkPublished())
   })
 })

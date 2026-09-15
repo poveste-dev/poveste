@@ -28,6 +28,7 @@
 // appears. No install, no network — it sits with the manifest checks at the
 // front of `release:check`.
 
+import type { CheckResult } from '../check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -190,7 +191,13 @@ export function walkProblems({ workflows, enginesNode }: Walk): string[] {
   return problems
 }
 
-export function checkNodeVersions(root = ROOT): string[] {
+function repositoryProblems(root = ROOT): string[] {
   const walk = collect(root)
   return [...walkProblems(walk), ...nodeVersionProblems(walk.uses, ALLOWED, walk.enginesNode)]
+}
+
+const REMEDY = '`.node-version` is what the release publishes from. A job that pins the number instead keeps building on it after the file moves, and stays green while doing it (#425).'
+
+export function checkNodeVersions(root = ROOT): CheckResult {
+  return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }
 }

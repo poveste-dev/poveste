@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { assertNoProblems } from '../assert-no-problems.ts'
 import { tree } from '../fixture-tree.ts'
 import { canonical, checkPreviewPosition, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './preview-position.ts'
 
@@ -203,10 +204,10 @@ describe('checkPreviewPosition', () => {
   it('reports that the app source holds no component', () => {
     const root = tree({ 'packages/poveste-app/src/': '' })
 
-    expect(checkPreviewPosition(root)).toEqual(['no components found under packages/poveste-app/src — this check is looking in the wrong place'])
+    expect(checkPreviewPosition(root).problems).toEqual(['no components found under packages/poveste-app/src — this check is looking in the wrong place'])
   })
 
   it('no layout choice moves the preview in the component tree', { tags: ['check', 'app'] }, () => {
-    expect(checkPreviewPosition()).toHaveNoProblems('Moving the preview rebuilds it and cold-boots the sandbox under it (#328, #595, #596, #600). Hoist it above the branches, or add the condition to STABLE in scripts/checks/preview-position.ts with the reason.')
+    assertNoProblems(checkPreviewPosition())
   })
 })
