@@ -12,6 +12,7 @@ import { useStoryErrorStore } from '../../stores/story-errors'
 import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
+import { createRenderTracker } from '../../util/render-tracker'
 import { getSandboxUrl } from '../../util/sandbox'
 import { toRawDeep } from '../../util/state'
 import { createStateBridge } from '../../util/state-bridge'
@@ -31,11 +32,7 @@ const errorStore = useStoryErrorStore()
 
 const storyError = computed(() => errorStore.forVariant(props.story.id, props.variant.id))
 
-// The realm re-renders on every retarget, so a stale error must not outlive the
-// render that produced it — otherwise a fixed story stays marked until reload.
-watch(() => [props.story.id, props.variant.id], () => {
-  errorStore.clear(props.story.id, props.variant.id)
-})
+const render = createRenderTracker()
 
 // Iframe
 
@@ -115,10 +112,15 @@ useEventListener(window, 'message', (event) => {
       break
     case SANDBOX_READY:
       if (!fromCurrentOccupant(event.data)) break
+      // Last render wins, which is what makes a fixed story stop being marked
+      // without a reload. Clearing on the id change instead cleared the pair
+      // being navigated *to*, so arriving at a broken story hid its error (#597).
+      if (render.wasClean()) errorStore.clear(props.story.id, props.variant.id)
       setPreviewReady()
       break
     case SANDBOX_ERROR:
       if (!fromCurrentOccupant(event.data)) break
+      render.threw()
       errorStore.report({
         message: event.data.message,
         stack: event.data.stack,
@@ -207,6 +209,7 @@ let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
 
 function reload(url: string) {
+  render.begin()
   retargets = 0
   retargeting.value = false
   clearTimeout(retargetTimer)
@@ -223,6 +226,7 @@ function reload(url: string) {
 }
 
 watch(sandboxUrl, (url) => {
+  render.begin()
   // A new occupant has agreed to nothing, so neither has this end. Kept as a
   // new bridge rather than a reset so there is one way to be in that state.
   bridge = createStateBridge(postState)
