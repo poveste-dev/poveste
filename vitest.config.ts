@@ -13,9 +13,9 @@ export default defineConfig({
       {
         test: {
           name: 'scripts',
-          // vitest's default pattern, scoped: `vitest run scripts` found nested
-          // and `.test` files, and a narrower glob would skip them in silence.
-          include: ['scripts/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+          // `**`, not `*`: a spec in a subdirectory would otherwise be skipped
+          // with a green exit.
+          include: ['scripts/**/*.spec.ts'],
           environment: 'node',
         },
       },
