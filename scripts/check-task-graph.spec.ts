@@ -84,13 +84,13 @@ describe('taskGraphProblems', () => {
   // The report is read instead of the chain, so a gap in it has to be stated.
   // These three keep the statement true rather than merely present.
   it('catches an AFTER_BUILD note for a step the chain no longer runs', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { 'test:gone': 'a reason' }, {})).toEqual([
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { 'test:gone': 'a reason' })).toEqual([
       expect.stringContaining('AFTER_BUILD names test:gone, which `release:check` no longer runs at all'),
     ])
   })
 
   it('catches an AFTER_BUILD note for a step that moved back before the build', () => {
-    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { lint: 'a reason' }, {})).toEqual([
+    expect(taskGraphProblems(WORKSPACE, SCRIPTS, {}, { lint: 'a reason' })).toEqual([
       expect.stringContaining('AFTER_BUILD names lint, which `release:check` now runs before the build'),
     ])
   })
@@ -98,7 +98,7 @@ describe('taskGraphProblems', () => {
   it('catches an AFTER_BUILD note with no reason', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run test:tags && pnpm run build && pnpm run lint' }
 
-    expect(taskGraphProblems(WORKSPACE, scripts, {}, { lint: '' }, {})).toContainEqual(
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, { lint: '' })).toContainEqual(
       expect.stringContaining('AFTER_BUILD names lint with no reason'),
     )
   })
@@ -106,7 +106,7 @@ describe('taskGraphProblems', () => {
   it('catches a pipeline step the chain runs after the build', () => {
     const scripts = { ...SCRIPTS, 'release:check': 'pnpm run test:tags && pnpm run build && pnpm run lint' }
 
-    expect(taskGraphProblems(WORKSPACE, scripts, {}, {}, {})).toEqual([
+    expect(taskGraphProblems(WORKSPACE, scripts, {}, {})).toEqual([
       expect.stringContaining('names lint, which `release:check` runs after the build'),
     ])
   })

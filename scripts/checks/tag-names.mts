@@ -15,3 +15,11 @@ export const NEED_TAGS = {
   build: 'reads built output, so it runs after `pnpm run build`',
   network: 'asks the npm registry or a deployed site',
 }
+
+// Types `tags` in a test's options, so a name the config does not define fails
+// the typecheck as well as the run.
+declare module 'vitest' {
+  interface TestTags {
+    tags: keyof typeof SUBJECT_TAGS | keyof typeof NEED_TAGS
+  }
+}

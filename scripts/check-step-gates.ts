@@ -62,7 +62,7 @@ const WORKFLOWS = '.github/workflows'
  * following it under the same gate are covered by it.
  */
 export const RUNS_PAST_FAILURE: Record<string, string> = {
-  'test.yml / build-and-test / Check the version tables': 'opens the twelve build-free checks. One failing check must not skip the eleven after it, or a run that could name twelve problems costs twelve cycles to read (#720). Paired with the install rather than standing alone, because `!cancelled()` suppresses the dependency on the step above as well',
+  'test.yml / build-and-test / Check the version tables': 'opens the thirteen build-free checks. One failing check must not skip the twelve after it, or a run that could name thirteen problems costs thirteen cycles to read (#720). Paired with the install rather than standing alone, because `!cancelled()` suppresses the dependency on the step above as well',
   'release.yml / release / Verify every package reached npm': 'the first of three registry and release checks that run even after one of them fails, so a single run names every problem — a partial publish and a missing GitHub release would otherwise take one re-run each (#327)',
   'release.yml / release / Verify the GitHub release was created': 'both release steps are deliberately non-fatal, so a GitHub API blip cannot block an otherwise good publish — but the run must not go green without the release that explains it. Last in the job, so it reports rather than gates (#186)',
   'test-examples.yml / test / Flag flaky tests': 'retries make a flake green, so this is the only thing that says one happened. It has to read a result the job has already decided was a pass, and the upload below it wants the traces on the same terms (#75)',
