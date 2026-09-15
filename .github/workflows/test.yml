@@ -255,6 +255,14 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:walk-floors
 
+      # The rule this file is the largest instance of: twelve steps above give
+      # up the guarantee their position implies, and the eight below inherit a
+      # `success()` that has to be the deliberate choice rather than the default
+      # nobody looked at (#723).
+      - name: Check what a step's position promises
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run test:step-gates
+
       - name: Test the release scripts
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:scripts
