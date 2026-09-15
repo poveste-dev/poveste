@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { EXEMPT, testScriptProblems } from './check-package-tests.ts'
 import { publishablePackages } from './check-publishable.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 const TESTED = { name: '@poveste/plugin-vue', scripts: { build: 'tsc', test: 'vitest run' } }
 const UNTESTED = { name: '@poveste/plugin-percy', scripts: { build: 'tsc' } }
@@ -105,5 +106,25 @@ describe('over a tree on disk', () => {
     expect(problemsUnder(root, { '@fixture/gone': 'a reason' })).toEqual([
       expect.stringContaining('EXEMPT names @fixture/gone, which is not a published package'),
     ])
+  })
+})
+
+// The failure exits live in `main()`, so a spec asserting only what the pure
+// functions return stayed green with every `process.exit(1)` deleted (#760).
+// The status is asserted over a tree where the check has to fail, with the
+// message it prints and no stack trace: a crash exits non-zero too, and a guard
+// that prints and then falls through to one looks the same from outside (#759).
+describe('the check as a process', () => {
+  it('exits 0 over the repository it actually ships with', () => {
+    expect(runCheck('check-package-tests.ts').status).toBe(0)
+  })
+
+  it('exits non-zero over a published package with no test script', () => {
+    const run = runCheck('check-package-tests.ts', ['--root', tree({ 'packages/untested/package.json': manifest('@fixture/untested') })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('@fixture/untested is published and declares no `test` script')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })

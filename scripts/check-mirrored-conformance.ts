@@ -24,8 +24,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { rootFromArgv } from './check-publishable.ts'
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+// `--root` so a spec can run this as a process over a tree where it has to
+// fail: the exit status is the verdict, and no spec reached it (#760).
+const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
 
 export interface Mirror {
   /** The authored set. */

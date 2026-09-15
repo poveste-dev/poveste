@@ -280,4 +280,34 @@ describe('the check as a process', () => {
   it('exits 0 over the repository it actually ships with', () => {
     expect(runCheck('check-versions.ts').status).toBe(0)
   })
+
+  // `expectations()` reads these five manifests before anything reaches the walk,
+  // and throws on a missing one. They carry no README, so the walk still finds no
+  // package to check and its own guard is what fires.
+  const PEER_MANIFESTS = {
+    'packages/poveste/package.json': '{ "engines": { "node": ">=26" }, "peerDependencies": { "vite": "^8" } }',
+    'packages/poveste-plugin-vue/package.json': '{ "peerDependencies": { "vue": "^3" } }',
+    'packages/poveste-plugin-nuxt/package.json': '{ "peerDependencies": { "nuxt": "^4" } }',
+    'packages/poveste-plugin-svelte/package.json': '{ "peerDependencies": { "svelte": "^5", "@sveltejs/kit": "^2" } }',
+    'packages/poveste-plugin-quasar/package.json': '{ "peerDependencies": { "quasar": "^2", "@quasar/app-vite": "^2" } }',
+  }
+
+  // The failure exits live in `main()`, so a spec asserting only what the pure
+  // functions return stayed green with every `process.exit(1)` deleted (#760).
+  // The status is asserted over a tree where the check has to fail, with the
+  // message it prints and no stack trace: a crash exits non-zero too, and a guard
+  // that prints and then falls through to one looks the same from outside (#759).
+  it('exits non-zero when there is no workflow to cite a job from', () => {
+    const run = runCheck('check-versions.ts', ['--root', tree({
+      'README.md': '# t\n',
+      'docs/guide/getting-started.md': '# t\n',
+      '.github/workflows/': '',
+      ...PEER_MANIFESTS,
+    })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('held no workflow files')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
+  })
 })
