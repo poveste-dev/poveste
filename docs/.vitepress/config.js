@@ -404,6 +404,19 @@ module.exports = {
           ],
         },
         {
+          text: 'Coming from histoire',
+          items: [
+            {
+              text: 'Migrating from histoire',
+              link: '/guide/migration-from-histoire',
+            },
+            {
+              text: 'Quasar components in a story',
+              link: '/guide/quasar-components-in-a-story',
+            },
+          ],
+        },
+        {
           text: 'Plugins',
           items: [
             {
