@@ -47,7 +47,7 @@
     "release:report": "pnpm pipeline checks --full --no-cache --include-workspace-root",
     "test:task-graph": "vitest run --project scripts checks/task-graph",
     "test:step-gates": "vitest run --project scripts checks/step-gates",
-    "release:check": "pnpm run test:task-graph && pnpm run test:step-gates && pnpm run test:tags && pnpm run test:versions && pnpm run test:node-versions && pnpm run test:package-tests && pnpm run test:readmes && pnpm run test:config-reference && pnpm run test:example-wiring && pnpm run test:mirrors && pnpm run test:conformance-config && pnpm run test:preview-position && pnpm run test:recipes && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",

@@ -86,31 +86,7 @@ overrides:
 # #716 and lands behind a measurement, because a wrong cache key ships a stale
 # result and a green run is exactly what that looks like.
 tasks:
-  test:tags:
-    cache: false
-  test:versions:
-    cache: false
-  test:node-versions:
-    cache: false
-  test:package-tests:
-    cache: false
-  test:readmes:
-    cache: false
-  test:config-reference:
-    cache: false
-  test:example-wiring:
-    cache: false
-  test:mirrors:
-    cache: false
-  test:conformance-config:
-    cache: false
-  test:preview-position:
-    cache: false
-  test:recipes:
-    cache: false
-  test:task-graph:
-    cache: false
-  test:step-gates:
+  test:checks:
     cache: false
 
 # `release:report` runs this, and it runs before the build — so `lint` is not in
@@ -120,4 +96,4 @@ tasks:
 # this list and the `&&` chain in agreement, and names the gap in its own output
 # so a clean report is not read as "lint is clean".
 pipelines:
-  checks: [test:tags, test:versions, test:node-versions, test:package-tests, test:readmes, test:config-reference, test:example-wiring, test:mirrors, test:conformance-config, test:preview-position, test:recipes, test:task-graph, test:step-gates]
+  checks: [test:checks]
