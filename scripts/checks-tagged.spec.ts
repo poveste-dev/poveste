@@ -7,8 +7,8 @@ const SCRIPTS = import.meta.dirname
 const SPECS = readdirSync(SCRIPTS).filter(file => /^check-[\w-]+\.spec\.ts$/.test(file))
 const PER_CHECK = Object.entries(JSON.parse(readFileSync(join(SCRIPTS, '..', 'package.json'), 'utf8')).scripts as Record<string, string>)
   .flatMap(([name, command]) => {
-    const spec = command.match(/--project scripts scripts\/(check-[\w-]+\.spec)\b/)?.[1]
-    return spec ? [{ name, file: `${spec}.ts` }] : []
+    const module = command.match(/--project scripts (check-[\w-]+)/)?.[1]
+    return module ? [{ name, file: `${module}.spec.ts` }] : []
   })
 
 function checkTagLists(file: string): string[][] {
