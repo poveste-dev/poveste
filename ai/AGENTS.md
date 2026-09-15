@@ -20,6 +20,14 @@ A layout choice must never be expressed as sibling template branches that both c
 
 The shape alone does not decide it. `StoryViewer` and `StoryVariantSingleView` both put the preview in more than one branch and are fine, because their conditions are properties of the story being shown and a story change rebuilds anyway. The condition is what matters: a live layout flag is the bug, a per-story property is not. The check knows the second kind from a skip-list, so a condition nobody has classified fails rather than being assumed harmless — add to `STABLE` with a reason, or hoist the preview above the branches.
 
+## A step's position stops meaning anything
+
+Once a step in a job carries a status-function `if:` — `success()`, `failure()`, `always()`, `cancelled()` — or `continue-on-error: true`, no step below it inherits what its position suggests. A status function suppresses the implicit `success()` in full, including the dependency on the step immediately above; `continue-on-error` makes a step's conclusion success whatever its outcome. So "put it after X" specifies nothing below the first such step, and both `test.yml` and `release.yml` are past that line for most of their length.
+
+Specifying one label sweep cost four attempts on this, each correct-looking in review, before landing on the step whose outcome the work actually depended on (#722, #723). Say what a step depends on — `if: ${{ steps.<id>.outcome == 'success' }}` — rather than placing it somewhere that looks safe.
+
+`scripts/check-step-gates.ts` holds it. It classifies **boundaries** rather than steps: the first masked step in a job, and each point below it where the job switches between stating its dependency and inheriting `success()`. Two records, not one, because the deliberate cases are opposites — `RUNS_PAST_FAILURE` for a step that names a status function so it runs *after* something failed, `NEEDS_EVERYTHING_ABOVE` for one that names nothing because the implicit `success()` is exactly what it wants. A single "classified, with a reason" list would file both under the same heading and hand the next person two entries arguing opposite ways.
+
 ## Branches
 
 Work targets **`next`**, not `main`. `next` is the integration branch; it reaches `main` at release time as a fast-forward, which is why it is rebased rather than merged.
