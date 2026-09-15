@@ -38,7 +38,7 @@
     "test:publishable": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-publishable.ts",
     "test:published": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-published.ts",
     "test:packaging": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-publishable.ts --offline",
-    "test:scripts": "vitest run scripts",
+    "test:scripts": "vitest run --project scripts",
     "test:tags": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/check-local-tags.ts",
     "release": "pnpm run release:check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release.ts",
     "release:report": "pnpm pipeline checks --full --no-cache --include-workspace-root",
