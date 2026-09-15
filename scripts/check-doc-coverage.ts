@@ -49,9 +49,11 @@ import { join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
-import { publishablePackages } from './check-publishable.ts'
+import { publishablePackages, rootFromArgv } from './check-publishable.ts'
 
-const ROOT = join(import.meta.dirname, '..')
+// `--root` so a spec can run this as a process over a tree where its guard has
+// to fire: the exit status is the verdict, and no spec could reach it (#719).
+const ROOT = rootFromArgv(process.argv) ?? join(import.meta.dirname, '..')
 
 /**
  * Entrypoints that declare a `.d.ts` the build does not emit.
@@ -231,7 +233,7 @@ function main(): void {
 
   const seen = new Set<string>()
 
-  for (const { name, dir } of publishablePackages()) {
+  for (const { name, dir } of publishablePackages(ROOT)) {
     const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
     const entries = entrypointsOf(name, dir, manifest)
     if (!entries.length) {

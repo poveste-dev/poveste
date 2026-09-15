@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { barrelImport, findBook, LIMITS, measurements, overLimit } from './check-bundle-size.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 afterEach(removeTrees)
 
@@ -146,5 +147,25 @@ describe('findBook', () => {
     const absent = join(tree({}), 'never-created')
 
     expect(findBook(absent)).toBeUndefined()
+  })
+})
+
+// The guard this check is exempted for lives in `main()`, and deleting its
+// `process.exit(1)` left every assertion above green (#719). So the status is
+// asserted over a tree where the guard has to fire, together with the guard's
+// own message. Only this direction: a passing run needs a built book, and
+// asserting it would make this spec depend on a build.
+// Also the guard's own message: a crash on a missing file exits non-zero too, and would pass a
+// status-only assertion for the wrong reason. And with no stack trace, because a
+// guard that prints and then falls through to a crash on the next read looks the
+// same from outside — and exits 0 in any tree where that read happens to work.
+describe('the check as a process', () => {
+  it('exits non-zero over an example with no built book in it', () => {
+    const run = runCheck('check-bundle-size.ts', ['--root', tree({ 'examples/vue3/': '' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('no built book under examples/vue3')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })

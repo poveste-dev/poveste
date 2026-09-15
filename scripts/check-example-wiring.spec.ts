@@ -12,6 +12,8 @@ import {
   portsByExample,
   portsOf,
 } from './check-example-wiring.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 // The cases below are the drift this guard exists for: #384 shipped an example in
 // the workflow matrix and not in the Playwright config, and the job died before a
@@ -170,5 +172,34 @@ describe('guideExamples', () => {
   // otherwise turn the guard off without failing anything.
   it('finds nothing when the table is gone', () => {
     expect(guideExamples('# Poveste\n\nNo table here.')).toEqual({ reference: [], conformance: [], fixtures: [] })
+  })
+})
+
+// The guard this check is exempted for lives in `main()`, and deleting its
+// `process.exit(1)` left every assertion above green (#719). So the status is
+// asserted over a tree where the guard has to fire, together with the guard's
+// own message: a crash on a missing file exits non-zero too, and would pass a
+// status-only assertion for the wrong reason. And with no stack trace, because a
+// guard that prints and then falls through to a crash on the next read looks the
+// same from outside — and exits 0 in any tree where that read happens to work.
+describe('the check as a process', () => {
+  it('exits 0 over the harness it actually ships with', () => {
+    expect(runCheck('check-example-wiring.ts').status).toBe(0)
+  })
+
+  // The fixture brings its own `playwright.config.ts`, importing nothing: the
+  // real one imports `@playwright/test`, which does not resolve from a tmpdir.
+  it('exits non-zero when the workflow has no example matrix to read', () => {
+    const run = runCheck('check-example-wiring.ts', ['--root', tree({
+      '.github/workflows/test-examples.yml': 'jobs:\n  test:\n    runs-on: ubuntu-latest\n',
+      'playwright.config.ts': 'export default { projects: [], webServer: [] }\n',
+      'ai/AGENTS.md': '# Guide\n',
+      'examples/': '',
+    })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('has no `example:` matrix to read')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })
