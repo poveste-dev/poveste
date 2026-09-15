@@ -62,7 +62,7 @@ const ALL_EXAMPLES: Example[] = [
     reference: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
-  { name: 'nuxt4', port: 4568, conformance: true, reference: true },
+  { name: 'nuxt4', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts'] } },
   {
     name: 'svelte5',
     port: 4569,
