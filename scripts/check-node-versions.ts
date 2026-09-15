@@ -32,8 +32,11 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { rootFromArgv } from './check-publishable.ts'
 
-const ROOT = join(import.meta.dirname, '..')
+// `--root` so a spec can run this as a process over a tree where it has to
+// fail: the exit status is the verdict, and no spec reached it (#760).
+const ROOT = rootFromArgv(process.argv) ?? join(import.meta.dirname, '..')
 
 export interface Allowance {
   /** The exact literal permitted. A different one is drift, not this allowance. */

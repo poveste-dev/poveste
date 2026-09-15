@@ -200,4 +200,18 @@ describe('the check as a process', () => {
   it('exits 0 over the repository it actually ships with', () => {
     expect(runCheck('check-node-versions.ts').status).toBe(0)
   })
+
+  // The failure exits live in `main()`, so a spec asserting only what the pure
+  // functions return stayed green with every `process.exit(1)` deleted (#760).
+  // The status is asserted over a tree where the check has to fail, with the
+  // message it prints and no stack trace: a crash exits non-zero too, and a guard
+  // that prints and then falls through to one looks the same from outside (#759).
+  it('exits non-zero when there is no workflow to read', () => {
+    const run = runCheck('check-node-versions.ts', ['--root', tree({ '.github/workflows/': '', 'packages/poveste/package.json': MANIFEST })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('held no workflow files')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
+  })
 })

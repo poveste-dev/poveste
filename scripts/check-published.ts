@@ -22,7 +22,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { walkPackages, walkProblems } from './check-publishable.ts'
+import { rootFromArgv, walkPackages, walkProblems } from './check-publishable.ts'
 
 interface Release { name: string, version: string }
 
@@ -151,7 +151,9 @@ function main(): void {
   // Without it an empty list read as success right up to `releases[0].version`
   // below, which threw `Cannot read properties of undefined` — loud, but about
   // the wrong thing.
-  const walk = walkPackages()
+  // `--root` so a spec can run this as a process over a tree where it has to
+  // fail before asking the registry anything (#760).
+  const walk = walkPackages(rootFromArgv(process.argv))
   const walked = walkProblems(walk)
   if (walked.length > 0) {
     console.error(`::error::this check never got a list of packages to ask the registry about`)

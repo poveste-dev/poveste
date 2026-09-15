@@ -23,7 +23,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { publishablePackages } from './check-publishable.ts'
+import { publishablePackages, rootFromArgv } from './check-publishable.ts'
 
 /**
  * Packages that are published and will not have a `test` script.
@@ -74,7 +74,9 @@ export function testScriptProblems(manifests: Manifest[], exempt: Record<string,
 }
 
 function main(): void {
-  const manifests = publishablePackages().map(({ name, dir }): Manifest => ({
+  // `--root` so a spec can run this as a process over a tree where it has to
+  // fail (#760). Absent, the walk's own default is the repository.
+  const manifests = publishablePackages(rootFromArgv(process.argv)).map(({ name, dir }): Manifest => ({
     ...JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')),
     name,
   }))

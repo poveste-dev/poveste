@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { backoffMs, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './check-published.ts'
+import { removeTrees, tree } from './fixture-tree.ts'
+import { runCheck } from './run-check.ts'
 
 const RELEASES = [
   { name: 'poveste', version: '0.7.0' },
@@ -223,5 +225,23 @@ describe('problemFor, on a tag that could not be read', () => {
   it('does not read as a missing tarball', () => {
     expect(problemFor('the latest dist-tag could not be read: npm error code E500'))
       .toBe('could not be verified: the latest dist-tag could not be read: npm error code E500')
+  })
+})
+
+// The failure exits live in `main()`, so a spec asserting only what the pure
+// functions return stayed green with every `process.exit(1)` deleted (#760).
+// The status is asserted over a tree where the check has to fail, with the
+// message it prints and no stack trace: a crash exits non-zero too, and a guard
+// that prints and then falls through to one looks the same from outside (#759).
+describe('the check as a process', () => {
+  // Only the failing direction: passing asks the registry. The guard fires before
+  // the first probe, so this touches no network.
+  it('exits non-zero when the walk finds no package to ask about', () => {
+    const run = runCheck('check-published.ts', ['--root', tree({ 'packages/': '' })])
+
+    expect(run.status).toBe(1)
+    expect(run.stderr).toContain('this check never got a list of packages to ask the registry about')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    removeTrees()
   })
 })
