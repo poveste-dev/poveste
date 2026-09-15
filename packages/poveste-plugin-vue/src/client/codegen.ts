@@ -169,7 +169,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
           serialized = cleanupExpression(value.substring(2, value.length - 2).trim()).split('\n')
         }
         else if (typeof value === 'function') {
-          let code = cleanupExpression(value.toString().replace(/'/g, '\\\'').replace(/"/g, '\''))
+          let code = cleanupExpression(value.toString())
           const testResult = /function (\S+)\(/.exec(code)
           if (testResult) {
             // Function name only
@@ -186,15 +186,16 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
         else {
           serialized = serializeAndCleanJs(value)
         }
-        if (serialized.length > 1) {
+        const { quote, lines } = delimitAttr(serialized)
+        if (lines.length > 1) {
           multilineAttrs = true
-          const indented: string[] = [`${directive}${arg}="${serialized[0]}`]
-          indented.push(...serialized.slice(1, serialized.length - 1))
-          indented.push(`${serialized[serialized.length - 1]}"`)
+          const indented: string[] = [`${directive}${arg}=${quote}${lines[0]}`]
+          indented.push(...lines.slice(1, lines.length - 1))
+          indented.push(`${lines[lines.length - 1]}${quote}`)
           attrs.push(indented)
         }
         else {
-          attrs.push([`${directive}${arg}="${serialized[0]}"`])
+          attrs.push([`${directive}${arg}=${quote}${lines[0]}${quote}`])
         }
       }
       // @ts-expect-error TODO
@@ -202,7 +203,12 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
         attrs.push([prop])
       }
       else {
-        attrs.push([`${prop}="${value}"`])
+        // Same delimiting as the directive branch above. A string prop is the
+        // other way a `"` reaches an attribute — `title='He said "hi"'` closed
+        // the attribute early and turned the rest of the value into stray
+        // attributes, on an element whose directives rendered correctly.
+        const plain = delimitAttr([String(value)])
+        attrs.push([`${prop}=${plain.quote}${plain.lines[0]}${plain.quote}`])
       }
     }
 
@@ -350,6 +356,51 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> = nu
   return {
     lines,
   }
+}
+
+/**
+ * How to delimit an attribute whose value is arbitrary code.
+ *
+ * The source pane shows template source a reader copies, so the code has to
+ * survive as written. The pass this replaces escaped `'` for a JavaScript
+ * string and rewrote `"` into `'`, and the consumer is neither — it is an
+ * attribute delimited by `"`. Both halves reached the reader: a handler written
+ * `() => alert("hi")` was shown as `() => alert('hi')`, and one written
+ * `() => alert('hi')` came out with visible backslashes, which reads as a bug
+ * in the reader's own code rather than as our rendering.
+ *
+ * The order made it worse. Every `'` the rewrite introduced arrived after the
+ * escaping pass, so an authored quote was escaped and a manufactured one was
+ * not. A backslash was never escaped at all, which is what CodeQL flagged as
+ * `js/incomplete-sanitization`: `() => alert('it\'s')` went in carrying one
+ * and came out carrying four.
+ *
+ * So nothing is escaped for a string context. Code containing `"` takes the
+ * other delimiter, the way someone writing the template by hand would. Code
+ * carrying both quote characters has no free delimiter, so whichever it takes
+ * is escaped inside it — and the one appearing less often wins, because every
+ * escape is a character the author did not write. That is `&#39;` as often as
+ * `&quot;`: the repository's own `get-name` fixture holds two doubles and one
+ * single, so the single is the cheaper one there (#602).
+ */
+export function delimitAttr(lines: string[]): { quote: string, lines: string[] } {
+  const code = lines.join('\n')
+  const doubles = (code.match(/"/g) ?? []).length
+  const singles = (code.match(/'/g) ?? []).length
+
+  if (doubles === 0) {
+    return { quote: '"', lines }
+  }
+  if (singles === 0) {
+    return { quote: '\'', lines }
+  }
+
+  // Both appear, so whichever delimiter is chosen has to be escaped inside it.
+  // The one that appears less often wins, because every escape is a character
+  // the author did not write and this pane exists to show what they did.
+  return singles <= doubles
+    ? { quote: '\'', lines: lines.map(line => line.replace(/'/g, '&#39;')) }
+    : { quote: '"', lines: lines.map(line => line.replace(/"/g, '&quot;')) }
 }
 
 export function getTagName(vnode: VNode) {

@@ -174,10 +174,18 @@ const cases: { variant: string, expected: string }[] = [
 </ul>`,
   },
   {
+    // Both handlers are written with `"` inside them, and this used to rewrite
+    // every one into `'` and escape the author's own `'` for a JavaScript
+    // string the value never becomes — so the pane showed code nobody wrote
+    // (#602). Each attribute now takes the delimiter its contents leave free.
+    //
+    // `get-name` carries both quote characters, so whichever delimiter it takes
+    // has to be escaped inside. The rarer one wins: one `&#39;` here rather
+    // than two `&quot;`, and the `"` the author typed survive.
     variant: 'function',
     expected: `<div
-  :hello="(arg1, arg2, arg3) => 'meow'.repeat(arg3)"
-  :get-name="(shade) => \`\${'\\'very-'.repeat(5)}long-\${shade}\`"
+  :hello='(arg1, arg2, arg3) => "meow".repeat(arg3)'
+  :get-name='(shade) => \`\${"&#39;very-".repeat(5)}long-\${shade}\`'
 />`,
   },
 ]
