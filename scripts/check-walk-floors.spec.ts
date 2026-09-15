@@ -2,7 +2,7 @@ import { cpSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { checkScripts, exportsFloor, floorIsExercised, floorProblems, hasFloor } from './check-walk-floors.ts'
+import { checkScripts, citationProblems, exportsFloor, floorIsExercised, floorProblems, hasFloor } from './check-walk-floors.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
 import { runCheck } from './run-check.ts'
 
@@ -67,6 +67,44 @@ describe('floorIsExercised', () => {
     const specs = { 'check-b.spec.ts': 'import { walkProblems } from \'./check-b.ts\'' }
 
     expect(floorIsExercised('check-a.ts', specs)).toBe(false)
+  })
+})
+
+describe('citationProblems', () => {
+  const SPECS = ['check-task-graph.spec.ts']
+
+  it('is silent when a named function is still in the check', () => {
+    expect(citationProblems('check-task-graph.ts', 'guarded in `taskGraphProblems`', 'export function taskGraphProblems() {}', SPECS)).toEqual([])
+  })
+
+  it('catches a function the reason outlived', () => {
+    const problems = citationProblems('check-task-graph.ts', 'guarded in `taskGraphProblems`', 'export function somethingElse() {}', SPECS)
+
+    expect(problems).toEqual([expect.stringContaining('names `taskGraphProblems`, which is not in check-task-graph.ts')])
+  })
+
+  it('is silent when a cited spec is there', () => {
+    expect(citationProblems('check-task-graph.ts', 'asserted in `check-task-graph.spec.ts`', '', SPECS)).toEqual([])
+  })
+
+  it('catches a cited spec that is not', () => {
+    const problems = citationProblems('check-task-graph.ts', 'asserted in `check-gone.spec.ts`', '', SPECS)
+
+    expect(problems).toEqual([expect.stringContaining('cites check-gone.spec.ts')])
+  })
+
+  // Everything else a reason backticks is prose, and reading it as a symbol
+  // would fail every entry in the record rather than the wrong ones.
+  it('reads none of the prose a reason quotes', () => {
+    const prose = 'guarded in `main()` over an empty `tasks:` block, reachable only with `--root`, from `export interface PovesteConfig`'
+
+    expect(citationProblems('check-task-graph.ts', prose, '', SPECS)).toEqual([])
+  })
+
+  it('reports every bad citation in one reason, not the first', () => {
+    const problems = citationProblems('check-task-graph.ts', '`goneOne` and `goneTwo`', '', SPECS)
+
+    expect(problems).toHaveLength(2)
   })
 })
 

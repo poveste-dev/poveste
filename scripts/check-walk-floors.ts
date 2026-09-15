@@ -39,18 +39,18 @@ const ROOT = join(import.meta.dirname, '..')
  * indistinguishable from a list somebody found inconvenient.
  */
 export const WITHOUT_FLOOR: Record<string, string> = {
-  'check-changelog.ts': 'not a check but a release tool — it prints a section, and it already exits 1 when the version it was asked for is not in the file',
-  'check-recipes.ts': 'guarded per recipe: a missing section and a block count that does not match the files are both reported by name, so a parse that yields nothing fails once per recipe rather than passing',
+  'check-changelog.ts': 'not a check but a release tool — it prints a section, and it already exits 1 when the version it was asked for is not in the file. `sectionFor` is where that is decided, and `check-changelog.spec.ts` asserts it returns nothing for a release never written up (#399)',
+  'check-recipes.ts': 'guarded per recipe: a missing section and a block count that does not match the files are both reported by name, so a parse that yields nothing fails once per recipe rather than passing. `section` returning nothing and the count from `tsBlocks` are both asserted in `check-recipes.spec.ts`; the per-recipe reporting around them is in `main()`',
   'check-local-tags.ts': 'warns and never fails, deliberately (#457), so its exit code carries no verdict for a floor to protect — and a repository with no tags at all is a normal state, not a walk that stopped reaching them',
-  'check-config-reference.ts': 'throws when it cannot find `export interface PovesteConfig`, which is the same assertion a floor would make and louder',
+  'check-config-reference.ts': 'throws when it cannot find `export interface PovesteConfig`, which is the same assertion a floor would make and louder. In `parseConfig`, and `check-config-reference.spec.ts` asserts the throw',
   'check-example-wiring.ts': 'three guards, all three in `main()` because each is the reaction to a read it just did: no `example:` matrix, the guide missing, no example table in it. The one derivation a spec can reach is `conformanceBooks`, which is asserted (#719)',
   'check-docs-site.ts': 'separates a missing build from a built one by name, and asserts specific paths are present, so an empty build fails before anything counts — in `checkBuild`, which is not exported, so no spec reaches it without the check taking `--root` (#719)',
   'check-bundle-size.ts': 'separates "could not read the directory" from "no book in it" deliberately, and exits 1 for both. The half that finds the book is `findBook`, asserted in its spec over a tree with no book in it; the try/catch telling the two apart is in `main()` (#719)',
   'check-conformance-config.ts': 'guards an empty spec list in `specProblems`, asserted in its spec, and an empty book list through `conformanceBooks`, asserted in `check-example-wiring.spec.ts`. The empty defaults list is guarded in `main()`, where it is the reaction to reading one named file (#719)',
   'check-doc-coverage.ts': 'reports an unbuilt tree by name, because a partial run over resolving shims is the failure it exists to catch. The guard is in `main()` — it reads the two lists that run produced, so there is nothing for a spec to hand it short of running the check (#719)',
-  'check-package-tests.ts': 'has no walk of its own, and `EXEMPT` naming a package the list no longer carries fails it',
+  'check-package-tests.ts': 'has no walk of its own, and `EXEMPT` naming a package the list no longer carries fails it. In `testScriptProblems`, asserted in `check-package-tests.spec.ts`',
   'check-preview-position.ts': 'guards an empty group list in `problemsIn`. The empty file list is guarded in `main()` and belongs there: it is the reaction to a glob over the app source matching nothing, which is reachable only by pointing the check at another tree (#719)',
-  'check-task-graph.ts': 'guards an empty `tasks:` block and an empty pipeline, which is every way its two inputs can go empty',
+  'check-task-graph.ts': 'guards an empty `tasks:` block and an empty pipeline, which is every way its two inputs can go empty. Both are in `taskGraphProblems` and both are asserted in `check-task-graph.spec.ts` — the sentence was true before that and said nothing about it, which reads identically to one that is wrong (#719)',
   'check-starters.ts': 'reads an imported map rather than walking, and fails when that map is empty — the guard is in `main()`, over a module it imports directly, so a spec cannot substitute the map without the check taking it as an argument (#719)',
   'check-walk-floors.ts': 'this file — it walks `scripts/` and fails below when that walk finds nothing',
 }
@@ -111,6 +111,41 @@ export function floorIsExercised(check: string, specs: Record<string, string>): 
   return Object.values(specs).some(spec => importsCheck.test(spec) && /\bwalkProblems\b/.test(spec))
 }
 
+/**
+ * Whether the names a reason cites still exist.
+ *
+ * A reason is prose, so its claim rots silently — which is this file's own
+ * subject one level up. Two halves of it can be held mechanically: a spec file
+ * a reason points at has to be there, and a function it names has to still be
+ * in the check it is about.
+ *
+ * Neither proves the reason true. A sentence can cite a real function and
+ * describe it wrongly, and nothing here would notice. What this stops is a
+ * rename turning a citation into fiction, which is how `check-conformance-config`
+ * came to claim three predicate guards while having one (#719).
+ *
+ * Only two shapes are read, because everything else a reason backticks is
+ * prose: `main()`, `--root`, `tasks:`, `export interface PovesteConfig`. A bare
+ * identifier and a `check-*.spec.ts` are the two that name something findable.
+ */
+export function citationProblems(check: string, reason: string, source: string, specs: string[]): string[] {
+  const problems: string[] = []
+
+  for (const [, cited] of reason.matchAll(/`([^`]+)`/g)) {
+    if (/^check-[\w-]+\.spec\.ts$/.test(cited)) {
+      if (!specs.includes(cited)) {
+        problems.push(`${check}'s reason cites ${cited}, which is not in scripts/ — the spec it points at has moved or gone`)
+      }
+      continue
+    }
+    if (/^[a-z][a-z0-9]*$/i.test(cited) && !new RegExp(`\\b${cited}\\b`).test(source)) {
+      problems.push(`${check}'s reason names \`${cited}\`, which is not in ${check} any more — the reason outlived what it describes`)
+    }
+  }
+
+  return problems
+}
+
 export function floorProblems(checks: string[], sources: Record<string, string>, exempt: Record<string, string>, specs: Record<string, string> = {}): string[] {
   const problems: string[] = []
 
@@ -131,6 +166,13 @@ export function floorProblems(checks: string[], sources: Record<string, string>,
     }
     if (exportsFloor(source) && !floorIsExercised(check, specs)) {
       problems.push(`${check} exports a \`walkProblems\` that no spec reaches — a floor nothing exercises is a declaration, and an empty one would pass every other assertion here`)
+    }
+  }
+
+  const specNames = Object.keys(specs)
+  for (const [name, reason] of Object.entries(exempt)) {
+    if (reason && checks.includes(name)) {
+      problems.push(...citationProblems(name, reason, sources[name] ?? '', specNames))
     }
   }
 
