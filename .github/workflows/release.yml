@@ -6,6 +6,8 @@ permissions:
   # Reading the tagged commit's workflow runs (#192). An explicit block sets
   # every scope it omits to `none`, so this has to be named.
   actions: read
+  # Clearing `on:next` from what this release ships (#722).
+  issues: write
 
 on:
   push:
@@ -125,6 +127,7 @@ jobs:
       # problem: a partial publish and a missing GitHub release would otherwise
       # take two cycles to discover, one per re-run.
       - name: Verify every package reached npm
+        id: npm-verified
         if: ${{ !cancelled() }}
         run: pnpm run test:published
 
@@ -164,5 +167,35 @@ jobs:
             echo "  gh release edit $GITHUB_REF_NAME --draft=false"
             exit 1
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `on:next` is documented as "merged to `next`, not shipped", and nothing
+      # ever removed it — so it accumulated across six releases and marked 100
+      # issues that had already shipped, against 4 that had not. Read as
+      # documented it was wrong 96% of the time, and it did mislead a session
+      # into treating four shipped issues as pending work (#722).
+      #
+      # Gated on the npm verification by name, not by sitting after it. Every
+      # step above carries a status-function `if:` or is `continue-on-error`,
+      # so from the first of them a step's position says nothing about what
+      # succeeded — an unguarded step here would inherit `success()` and sweep
+      # over a failed publish, and gating on the GitHub-release step instead
+      # would skip a good release whose notification merely blipped (#723).
+      # This is the outcome the label actually depends on: once the packages
+      # are on npm, everything carrying `on:next` has shipped.
+      #
+      # Last in the job so it reports rather than gates: a labelling failure
+      # must not fail a release that published correctly.
+      - name: Clear on:next from what this release shipped
+        if: ${{ steps.npm-verified.outcome == 'success' }}
+        continue-on-error: true
+        run: |
+          swept=0
+          for issue in $(gh issue list --label on:next --state all --limit 500 --json number --jq '.[].number'); do
+            gh issue edit "$issue" --remove-label on:next
+            swept=$((swept + 1))
+          done
+          echo "✅ Cleared on:next from $swept issues — everything it marked is now published."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
