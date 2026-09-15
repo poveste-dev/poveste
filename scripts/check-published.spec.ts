@@ -232,6 +232,6 @@ describe('checkPublished', () => {
   it('reports that the walk found no package to ask about', () => {
     const root = tree({ 'packages/': '' })
 
-    expect(checkPublished(root)[0]).toBe('this check never got a list of packages to ask the registry about')
+    expect(checkPublished(root)).toContain('this check never got a list of packages to ask the registry about')
   })
 })

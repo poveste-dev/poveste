@@ -237,9 +237,16 @@ describe('walkProblems', () => {
 })
 
 describe('checkMirroredConformance', () => {
-  // Every mirrored pair holds the same file, except the first mirror, which differs.
+  /** Every mirrored pair holds the same story, except the first mirror, whose copy differs. */
+  function mirrorsWhereTheFirstDrifted(): string {
+    return tree(Object.fromEntries(MIRRORS.flatMap(({ source, mirror }, index) => [
+      [`${source}/Probe.story.vue`, 'same'],
+      [`${mirror}/Probe.story.vue`, index === 0 ? 'drifted' : 'same'],
+    ])))
+  }
+
   it('reports a mirror that has drifted from its source', () => {
-    const root = tree(Object.fromEntries(MIRRORS.flatMap(({ source, mirror }, index) => [[`${source}/Probe.story.vue`, 'same'], [`${mirror}/Probe.story.vue`, index === 0 ? 'drifted' : 'same']])))
+    const root = mirrorsWhereTheFirstDrifted()
 
     expect(checkMirroredConformance(root)).toContainEqual(expect.stringContaining('differs between'))
   })

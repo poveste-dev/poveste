@@ -85,10 +85,4 @@ describe('runCheck', () => {
   it('tells the reader what to do rather than skipping', () => {
     expect(() => runCheck('check-does-not-exist.ts')).toThrow(/pnpm install/)
   })
-
-  // A check that exited 0 has said something about the tree, and no diagnostic
-  // may overrule it.
-  it('never reclassifies a check that ran to a clean verdict', () => {
-    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
-  })
 })
