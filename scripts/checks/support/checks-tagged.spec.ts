@@ -6,7 +6,8 @@ import { SUBJECT_TAGS } from './tag-names.mts'
 const SCRIPTS = join(import.meta.dirname, '..', '..')
 const CHECKS = join(SCRIPTS, 'checks')
 const SPECS = readdirSync(CHECKS).filter(file => file.endsWith('.spec.ts'))
-const PER_CHECK = Object.entries(JSON.parse(readFileSync(join(SCRIPTS, '..', 'package.json'), 'utf8')).scripts as Record<string, string>)
+const PACKAGE_SCRIPTS = JSON.parse(readFileSync(join(SCRIPTS, '..', 'package.json'), 'utf8')).scripts as Record<string, string>
+const PER_CHECK = Object.entries(PACKAGE_SCRIPTS)
   .flatMap(([name, command]) => {
     const module = command.match(/--project scripts checks\/([\w-]+)/)?.[1]
     return module ? [{ name, file: `${module}.spec.ts` }] : []
@@ -20,6 +21,35 @@ function checkTagLists(file: string): string[][] {
 
 const CHECK_TESTS = SPECS.flatMap(file => checkTagLists(file).map(tags => ({ file, tags })))
 
+// The tags `test:checks` excludes, read from its own filter so the two cannot disagree.
+const EXCLUDED_BY_TEST_CHECKS = [...PACKAGE_SCRIPTS['test:checks'].matchAll(/!([\w-]+)/g)].map(match => match[1])
+const SELECTED_BY_TEST_CHECKS = [...new Set(CHECK_TESTS
+  .filter(({ tags }) => !tags.some(tag => EXCLUDED_BY_TEST_CHECKS.includes(tag)))
+  .map(({ file }) => file.replace(/\.spec\.ts$/, '')))].sort()
+
+/**
+ * The checks `release:check` runs before the build, through `test:checks`.
+ *
+ * Named because the tag filter selects them: a check test that gains `build` or
+ * `network` leaves the release gate while every other run stays green. Adding
+ * or removing one here is the deliberate step that change needs.
+ */
+const RELEASE_GATE_CHECKS = [
+  'config-reference',
+  'conformance-config',
+  'example-wiring',
+  'local-tags',
+  'mirrored-conformance',
+  'node-versions',
+  'package-tests',
+  'preview-position',
+  'readmes',
+  'recipes',
+  'step-gates',
+  'task-graph',
+  'versions',
+]
+
 // A subject filter skips a check with no subject tag, and the run stays green.
 it.for(CHECK_TESTS)('a check test in $file carries a subject tag', ({ tags }) => {
   expect(tags.filter(tag => tag in SUBJECT_TAGS)).not.toHaveLength(0)
@@ -29,4 +59,8 @@ it.for(CHECK_TESTS)('a check test in $file carries a subject tag', ({ tags }) =>
 // the script would select a file with nothing to run.
 it.for(PER_CHECK)('$name selects a check test in $file', ({ file }) => {
   expect(checkTagLists(file)).not.toHaveLength(0)
+})
+
+it('test:checks selects exactly the checks release:check runs before the build', () => {
+  expect(SELECTED_BY_TEST_CHECKS).toEqual(RELEASE_GATE_CHECKS)
 })

@@ -156,11 +156,10 @@ describe('checkBundleSize', () => {
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue3'))
   })
 
-  it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, async ({ annotate }) => {
+  it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, () => {
     const result = checkBundleSize()
     process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 
     assertNoProblems(result)
-    await annotate(result.notes.join('\n'), 'notice')
   })
 })

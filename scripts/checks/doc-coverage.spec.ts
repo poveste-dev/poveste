@@ -155,11 +155,10 @@ describe('checkDocCoverage', () => {
     expect(checkDocCoverage(root).problems).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
   })
 
-  it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, async ({ annotate }) => {
+  it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, () => {
     const result = checkDocCoverage()
     process.stdout.write(`${result.notes.join('\n')}\n`)
 
     assertNoProblems(result)
-    await annotate(String(result.notes.find(line => line.startsWith('📖'))), 'notice')
   })
 })
