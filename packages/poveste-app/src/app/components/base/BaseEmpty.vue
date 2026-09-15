@@ -1,5 +1,5 @@
 <template>
-  <div class="poveste-base-empty base-empty flex flex-col items-center justify-center space-y-4 py-12 h-full text-center text-gray-400  text-lg">
+  <div class="poveste-base-empty base-empty flex flex-col items-center justify-center space-y-4 py-12 h-full text-center text-gray-500 dark:text-gray-400 text-lg">
     <slot />
   </div>
 </template>

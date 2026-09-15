@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { expect, test } from '@playwright/test'
 import { openStory } from './support.js'
@@ -125,4 +126,54 @@ test('the book chrome has no axe violations with the story list hidden', async (
   )
 
   expect(detail).toEqual([])
+})
+
+/*
+ * The source panel passes through states the tests above only meet by timing:
+ * axe ran before it settled often enough to flake them on CI (#770). These put
+ * the panel in each state on purpose, so a violation there fails every run.
+ */
+async function sourcePanelViolations(page: Page): Promise<string[]> {
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important }' })
+
+  const results = await page.evaluate(async (axe) => {
+    const script = document.createElement('script')
+    script.textContent = axe
+    document.head.append(script)
+    return (window as any).axe.run('.poveste-story-source-code')
+  }, AXE)
+
+  return results.violations.flatMap((violation: any) =>
+    violation.nodes.map((node: any) =>
+      `${violation.id} :: ${node.target[0]} :: ${(node.failureSummary ?? '').split('\n')[1]?.trim()}`,
+    ),
+  )
+}
+
+// Shiki needs WebAssembly, and the panel keeps its plain textarea when the
+// highlighter cannot start. The same textarea is up while the highlighter loads.
+test('the source panel has no axe violations when the highlighter cannot start', async ({ page }) => {
+  await page.addInitScript(() => {
+    const refuse = () => Promise.reject(new Error('WebAssembly refused by the test'))
+    WebAssembly.instantiate = refuse as typeof WebAssembly.instantiate
+    WebAssembly.instantiateStreaming = refuse as typeof WebAssembly.instantiateStreaming
+  })
+
+  await openStory(page, STORY, '?variantId=default')
+  await expect(page.locator('.poveste-story-source-code textarea')).toBeVisible()
+
+  expect(await sourcePanelViolations(page)).toEqual([])
+})
+
+// A plugin with no dynamic source (Svelte's) switches the panel to the static
+// file, so with that unavailable too it settles on "Not available" under a
+// selected mode with nothing to show. A Vue book keeps its dynamic source here.
+test('the source panel has no axe violations when the story source cannot load', async ({ page }) => {
+  await page.route(new RegExp(`/__resolved__virtual_story-source_${STORY}-[^/]*\\.js$`), route => route.abort())
+
+  await openStory(page, STORY, '?variantId=default')
+  const panel = page.locator('.poveste-story-source-code')
+  await expect(panel.getByTestId('story-source-code').or(panel.getByText('Not available'))).toBeVisible()
+
+  expect(await sourcePanelViolations(page)).toEqual([])
 })
