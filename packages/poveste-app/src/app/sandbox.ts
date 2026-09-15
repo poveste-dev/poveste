@@ -147,6 +147,12 @@ const app = createApp({
     let mounted = false
 
     window.addEventListener('message', (event) => {
+      // The sandbox end of the check the host makes in
+      // `StoryVariantSinglePreviewRemote`. `__sandbox.html` is a public URL in
+      // every published book, and a page that iframes it is its `parent`, so
+      // without this anyone embedding it could write story state, retarget it,
+      // or restyle it. Only the book drives its own sandbox (#379).
+      if (event.origin !== window.location.origin) return
       // console.log('[sandbox] received message', event.data)
       if (event.data?.type === STATE_SYNC) {
         if (!mounted || !variant.value) return

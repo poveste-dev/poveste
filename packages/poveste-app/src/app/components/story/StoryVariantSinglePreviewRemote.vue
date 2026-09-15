@@ -100,6 +100,8 @@ function fromCurrentOccupant(data: { storyId?: string, variantId?: string }) {
 useEventListener(window, 'message', (event) => {
   // With many grid iframes mounted, every sandbox postMessage hits every
   // parent listener. Skip events that didn't originate from this iframe.
+  // Paired with the origin check in `sandbox.ts`, which guards the other
+  // direction (#379).
   if (event.source !== iframe.value?.contentWindow) return
   switch (event.data?.type) {
     case STATE_SYNC:
