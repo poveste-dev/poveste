@@ -10,7 +10,7 @@ function declaredTags(file: string): string[] {
   return [...list.matchAll(/'([\w-]+)'/g)].map(match => match[1])
 }
 
-describe.each(readdirSync(CHECKS).filter(file => file.endsWith('.check.ts')))('%s', (file) => {
+describe.each(readdirSync(CHECKS).filter(file => file.endsWith('.spec.ts')))('%s', (file) => {
   it('carries a subject tag, so no subject filter skips it', () => {
     expect(declaredTags(file).filter(tag => tag in SUBJECT_TAGS)).not.toHaveLength(0)
   })
