@@ -21,22 +21,17 @@
 // file under `docs/public/` ships into the build and would reintroduce #343
 // with netlify.toml untouched.
 //
-// `--live [url]` runs the same contract against a deployed site instead of the
-// build, defaulting to production. It is not wired into CI: poveste.dev deploys
+// `pnpm run test:docs-site:live` runs the same contract against a deployed site
+// instead of the build: production by default, a deploy preview when
+// `POVESTE_DOCS_SITE` names one. It is not wired into CI: poveste.dev deploys
 // from `main` (#321), so a PR cannot prove production. Run it against a deploy
 // preview before a redirect change lands, and against production after.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { dirname, join, relative, sep } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join, relative, sep } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
-const DIST = join(ROOT, 'docs', '.vitepress', 'dist')
+const ROOT = join(import.meta.dirname, '..')
 
 export interface Redirect { from: string, to: string, status: number }
 
@@ -409,9 +404,9 @@ async function builtEntries(dist: string): Promise<Built> {
 
 // Reads a file the check cannot do without, reporting its absence rather than
 // dying on it — deleting one is a defect this should name, not crash on.
-function readRequired(path: string, problems: string[]): string | undefined {
+function readRequired(root: string, path: string, problems: string[]): string | undefined {
   try {
-    return readFileSync(join(ROOT, path), 'utf8')
+    return readFileSync(join(root, path), 'utf8')
   }
   catch {
     problems.push(`${path} is missing, and the site is built from it`)
@@ -419,9 +414,10 @@ function readRequired(path: string, problems: string[]): string | undefined {
   }
 }
 
-function checkBuild(problems: string[], built: Built | undefined): void {
+function checkBuild(root: string, problems: string[], built: Built | undefined): void {
+  const dist = join(root, 'docs', '.vitepress', 'dist')
   if (!built) {
-    problems.push(`no build at ${DIST} — run \`pnpm run docs:build\` first`)
+    problems.push(`no build at ${dist} — run \`pnpm run docs:build\` first`)
     return
   }
 
@@ -433,7 +429,7 @@ function checkBuild(problems: string[], built: Built | undefined): void {
     problems.push('robots.txt is not in the build — the host will answer /robots.txt with the 404 page')
   }
   else {
-    problems.push(...robotsProblems(readFileSync(join(DIST, 'robots.txt'), 'utf8')))
+    problems.push(...robotsProblems(readFileSync(join(dist, 'robots.txt'), 'utf8')))
   }
 
   if (!built.paths.has('/sitemap.xml')) {
@@ -441,7 +437,7 @@ function checkBuild(problems: string[], built: Built | undefined): void {
     return
   }
 
-  const xml = readFileSync(join(DIST, 'sitemap.xml'), 'utf8')
+  const xml = readFileSync(join(dist, 'sitemap.xml'), 'utf8')
   if (!xml.trimStart().startsWith('<?xml')) {
     problems.push('sitemap.xml is not XML')
   }
@@ -457,7 +453,7 @@ function checkBuild(problems: string[], built: Built | undefined): void {
     }
   }
 
-  const pages = built.pages.map(page => ({ path: page, html: readFileSync(join(DIST, page.slice(1)), 'utf8') }))
+  const pages = built.pages.map(page => ({ path: page, html: readFileSync(join(dist, page.slice(1)), 'utf8') }))
 
   // 404.html has no canonical to check — it is not a page anyone should reach by
   // name — but it renders the same nav and footer, so it carries the same titles.
@@ -465,8 +461,8 @@ function checkBuild(problems: string[], built: Built | undefined): void {
   problems.push(...titleProblems(pages))
 
   if (built.paths.has('/index.html')) {
-    const { version } = JSON.parse(readFileSync(join(ROOT, 'packages', 'poveste', 'package.json'), 'utf8'))
-    problems.push(...structuredDataProblems(readFileSync(join(DIST, 'index.html'), 'utf8'), version))
+    const { version } = JSON.parse(readFileSync(join(root, 'packages', 'poveste', 'package.json'), 'utf8'))
+    problems.push(...structuredDataProblems(readFileSync(join(dist, 'index.html'), 'utf8'), version))
   }
 
   const { missing, extra } = sitemapGaps(built.pages, listed)
@@ -479,10 +475,10 @@ function checkBuild(problems: string[], built: Built | undefined): void {
 }
 
 // Netlify honours netlify.toml first and `_redirects` second, so both are read.
-function redirectSources(problems: string[]): { file: string, redirects: Redirect[] }[] {
+function redirectSources(root: string, problems: string[]): { file: string, redirects: Redirect[] }[] {
   const sources: { file: string, redirects: Redirect[] }[] = []
 
-  const toml = readRequired('netlify.toml', problems)
+  const toml = readRequired(root, 'netlify.toml', problems)
   if (toml !== undefined) {
     sources.push({ file: 'netlify.toml', redirects: parseRedirects(toml) })
   }
@@ -490,10 +486,10 @@ function redirectSources(problems: string[]): { file: string, redirects: Redirec
   // The build copy is usually the source copy; report it once, unless they differ.
   const seen = new Set<string>()
   for (const file of ['docs/public/_redirects', 'docs/.vitepress/dist/_redirects']) {
-    if (!existsSync(join(ROOT, file))) {
+    if (!existsSync(join(root, file))) {
       continue
     }
-    const text = readFileSync(join(ROOT, file), 'utf8')
+    const text = readFileSync(join(root, file), 'utf8')
     if (!seen.has(text)) {
       seen.add(text)
       sources.push({ file, redirects: parseRedirectsFile(text) })
@@ -503,8 +499,8 @@ function redirectSources(problems: string[]): { file: string, redirects: Redirec
   return sources
 }
 
-function checkConfig(problems: string[], built: Built | undefined): void {
-  for (const { file, redirects } of redirectSources(problems)) {
+function checkConfig(root: string, problems: string[], built: Built | undefined): void {
+  for (const { file, redirects } of redirectSources(root, problems)) {
     for (const redirect of unsafeCatchAlls(redirects)) {
       const status = Number.isNaN(redirect.status) ? 'an unreadable status' : `status ${redirect.status}`
       problems.push(`${file}: \`${redirect.from}\` answers every missing path with \`${redirect.to}\` and ${status} — that is a soft 404`)
@@ -522,8 +518,8 @@ function checkConfig(problems: string[], built: Built | undefined): void {
     }
   }
 
-  const robots = readRequired('docs/public/robots.txt', problems)
-  const config = readRequired('docs/.vitepress/config.js', problems)
+  const robots = readRequired(root, 'docs/public/robots.txt', problems)
+  const config = readRequired(root, 'docs/.vitepress/config.js', problems)
   if (robots === undefined || config === undefined) {
     return
   }
@@ -550,17 +546,7 @@ function checkConfig(problems: string[], built: Built | undefined): void {
   }
 }
 
-const SITE = 'https://poveste.dev'
-
-// `--live` alone means production; `--live <url>` means a deploy preview.
-export function liveTarget(argv: string[]): string {
-  const flag = argv.indexOf('--live')
-  if (flag === -1) {
-    return SITE
-  }
-  const candidate = argv[flag + 1]
-  return candidate && !candidate.startsWith('-') ? candidate.replace(/\/$/, '') : SITE
-}
+export const SITE = 'https://poveste.dev'
 
 async function checkLive(problems: string[], site: string): Promise<string | undefined> {
   const get = async (path: string) => {
@@ -617,36 +603,22 @@ async function checkLive(problems: string[], site: string): Promise<string | und
   }
 }
 
-async function main(): Promise<void> {
-  const live = process.argv.includes('--live')
-  const site = liveTarget(process.argv)
+export async function checkDocsSite(root = ROOT): Promise<string[]> {
   const problems: string[] = []
-
-  let deployed: string | undefined
-  if (live) {
-    deployed = await checkLive(problems, site)
-  }
-  else {
-    const built = existsSync(DIST) ? await builtEntries(DIST) : undefined
-    checkConfig(problems, built)
-    checkBuild(problems, built)
-  }
-
-  // Which deploy was reached matters as much as the verdict: a green run against a
-  // stale deploy proves nothing about the commit in hand.
-  const reached = live ? `${site} (${deployed ?? 'deploy unidentified'})` : 'The docs site'
-
-  if (problems.length) {
-    console.error(`${reached} does not hold up:\n`)
-    for (const problem of problems) {
-      console.error(`  ✗ ${problem}`)
-    }
-    process.exit(1)
-  }
-
-  console.log(live ? `${reached} answers correctly.` : 'The docs site config and build hold up.')
+  const dist = join(root, 'docs', '.vitepress', 'dist')
+  const built = existsSync(dist) ? await builtEntries(dist) : undefined
+  checkConfig(root, problems, built)
+  checkBuild(root, problems, built)
+  return problems
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  await main()
+/**
+ * The deployed site rather than the build. The deploy it reached comes back
+ * with the problems: a green run against a stale deploy proves nothing about the
+ * commit in hand.
+ */
+export async function checkDocsSiteLive(site = SITE): Promise<{ problems: string[], deployed: string | undefined }> {
+  const problems: string[] = []
+  const deployed = await checkLive(problems, site.replace(/\/$/, ''))
+  return { problems, deployed }
 }

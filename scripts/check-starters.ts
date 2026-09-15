@@ -33,11 +33,10 @@ import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import { rootFromArgv } from './check-publishable.ts'
 
 const run = promisify(execFile)
 
@@ -47,13 +46,15 @@ interface Result {
   detail: string
 }
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
-// Loaded from the root rather than imported statically, or `--root` would move
-// every read but this one.
-const { starters } = await import(pathToFileURL(join(ROOT, 'docs/.vitepress/theme/starters.ts')).href) as typeof import('../docs/.vitepress/theme/starters.ts')
+type Starters = typeof import('../docs/.vitepress/theme/starters.ts')['starters']
+
+// Loaded from the root rather than imported statically, so a spec can point it
+// at a tree with no starters.
+async function startersAt(root: string): Promise<Starters> {
+  return (await import(pathToFileURL(join(root, 'docs/.vitepress/theme/starters.ts')).href)).starters
+}
 
 // The one thing the starters do not pin. During a publish `latest` genuinely is
 // the previous release, for as long as propagation takes — 60s for v0.8.1 (#401)
@@ -86,8 +87,8 @@ export function pinLatest(manifest: Manifest, version: string): Manifest {
 
 // The workspace is checked out at the tag during a release, so its own version is
 // the one being published — no need to parse the ref.
-export function releasedVersion(): string {
-  return JSON.parse(readFileSync(join(ROOT, 'packages/poveste/package.json'), 'utf8')).version
+export function releasedVersion(root = ROOT): string {
+  return JSON.parse(readFileSync(join(root, 'packages/poveste/package.json'), 'utf8')).version
 }
 
 // `--prefer-online` matters only after a publish, and matters a lot: the registry
@@ -106,11 +107,11 @@ export function mergeResults(previous: Result[], latest: Result[]): Result[] {
   return previous.map(before => latest.find(after => after.framework === before.framework) ?? before)
 }
 
-async function check(framework: Framework, afterPublish = false): Promise<Result> {
+async function check(starters: Starters, framework: Framework, afterPublish: boolean, root: string): Promise<Result> {
   const dir = await mkdtemp(join(tmpdir(), `poveste-starter-${framework}-`))
   try {
     const { manifest } = starters[framework]()
-    const resolved = afterPublish ? pinLatest(manifest, releasedVersion()) : manifest
+    const resolved = afterPublish ? pinLatest(manifest, releasedVersion(root)) : manifest
     await writeFile(join(dir, 'package.json'), `${JSON.stringify(resolved, null, 2)}\n`)
 
     const { stdout } = await run(
@@ -125,7 +126,7 @@ async function check(framework: Framework, afterPublish = false): Promise<Result
       },
     )
     const packages = /added (\d+) package/.exec(stdout)?.[1] ?? '?'
-    const asked = afterPublish ? ` for ${releasedVersion()}` : ''
+    const asked = afterPublish ? ` for ${releasedVersion(root)}` : ''
     return { framework, ok: true, detail: `resolves${asked}, ${packages} packages` }
   }
   catch (error) {
@@ -137,18 +138,16 @@ async function check(framework: Framework, afterPublish = false): Promise<Result
   }
 }
 
-async function main(): Promise<void> {
-  const afterPublish = process.argv.includes('--after-publish')
+export async function checkStarters(root = ROOT, { afterPublish = false }: { afterPublish?: boolean } = {}): Promise<string[]> {
+  const starters = await startersAt(root)
   const attempts = afterPublish ? 4 : 1
 
   // `starters` is imported, not walked, so an empty one is not an error this
   // check can attribute — but it is the one state where every assertion below
-  // passes by running none of them, and `All 0 starters resolve.` reads exactly
-  // like a clean run (#719).
+  // passes by running none of them (#719).
   const frameworks = Object.keys(starters) as Framework[]
   if (frameworks.length === 0) {
-    console.error('::error::docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing')
-    process.exit(1)
+    return ['docs/.vitepress/theme/starters.ts declares no starters, so this check verified nothing']
   }
 
   let results: Result[] = []
@@ -158,16 +157,13 @@ async function main(): Promise<void> {
       : results.filter(r => !r.ok).map(r => r.framework)
 
     if (attempt > 1) {
-      console.log(`\nRetrying ${pending.join(', ')} (${attempt}/${attempts}) — \`latest\` may still be catching up.`)
+      // After a publish, `latest` may still be catching up.
       await new Promise(resolve => setTimeout(resolve, 20_000))
     }
 
     const round: Result[] = []
     for (const framework of pending) {
-      console.log(`▸ ${framework}`)
-      const result = await check(framework, afterPublish)
-      console.log(`  ${result.ok ? '✓' : '✗'} ${result.detail.replaceAll('\n', '\n    ')}`)
-      round.push(result)
+      round.push(await check(starters, framework, afterPublish, root))
     }
     results = attempt === 1 ? round : mergeResults(results, round)
 
@@ -176,23 +172,5 @@ async function main(): Promise<void> {
     }
   }
 
-  const failed = results.filter(r => !r.ok)
-  if (failed.length) {
-    console.error(`\n${failed.length}/${results.length} starters cannot be installed: ${failed.map(r => r.framework).join(', ')}`)
-    if (afterPublish) {
-      // The versions are live and npm versions are immutable, so there is nothing
-      // to fix in place — 0.6.1 is the worked example of the way out.
-      console.error('::error::The release that just published cannot be installed.')
-      console.error('Cut a patch release with the fix, then `npm deprecate` the broken versions. Do not unpublish.')
-    }
-    else {
-      console.error('Fix the versions in docs/.vitepress/theme/starters.ts.')
-    }
-    process.exit(1)
-  }
-  console.log(`\nAll ${results.length} starters resolve.`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  await main()
+  return results.filter(r => !r.ok).map(r => `${r.framework} cannot be installed: ${r.detail}`)
 }

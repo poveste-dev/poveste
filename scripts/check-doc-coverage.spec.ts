@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { entrypointsOf, formatRows, summarise, typesConditionOf, UNRESOLVED } from './check-doc-coverage.ts'
+import { checkDocCoverage, entrypointsOf, formatRows, summarise, typesConditionOf, UNRESOLVED } from './check-doc-coverage.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const everythingExists = (): boolean => true
 
@@ -143,28 +142,17 @@ describe('summarise', () => {
   })
 })
 
-// The guard this check is exempted for lives in `main()`, and deleting its
-// `process.exit(1)` left every assertion above green (#719). So the status is
-// asserted over a tree where the guard has to fire, together with the guard's
-// own message. Only this direction: a passing run measures emitted
-// declarations, so it needs a built tree.
-// Also the guard's own message: a crash on a missing file exits non-zero too, and would pass a
-// status-only assertion for the wrong reason. And with no stack trace, because a
-// guard that prints and then falls through to a crash on the next read looks the
-// same from outside — and exits 0 in any tree where that read happens to work.
-describe('the check as a process', () => {
+describe('checkDocCoverage', () => {
   // `@poveste/app` is published with types that do not resolve, which is exactly
-  // what `UNRESOLVED` excuses. An empty tree would not reach the guard at all:
-  // the excuse would be stale, and that problem fires first.
-  it('exits non-zero when nothing could be measured', () => {
-    const run = runCheck('check-doc-coverage.ts', ['--root', tree({
+  // what `UNRESOLVED` excuses. An empty tree would not reach the floor at all:
+  // the excuse would be stale, and that problem is reported first.
+  it('reports that nothing could be measured', () => {
+    const root = tree({
       'CONTRIBUTING.md': '',
       'packages/poveste-app/package.json': '{ "name": "@poveste/app", "version": "1.0.0", "types": "./dist/index.d.ts" }\n',
-    })])
+    })
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('no entrypoint was measured at all')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(checkDocCoverage(root).broken).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
     removeTrees()
   })
 })

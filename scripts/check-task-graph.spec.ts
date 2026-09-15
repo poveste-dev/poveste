@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { afterBuild, beforeBuild, chainSteps, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
+import { afterBuild, beforeBuild, chainSteps, checkTaskGraph, declaredTasks, EXCLUDED, pipelineSteps, taskGraphProblems } from './check-task-graph.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const WORKSPACE = `packages:
   - 'packages/*'
@@ -186,22 +185,11 @@ describe('the exclusion list', () => {
   })
 })
 
-// The failure exits live in `main()`, so a spec asserting only what the pure
-// functions return stayed green with every `process.exit(1)` deleted (#760).
-// The status is asserted over a tree where the check has to fail, with the
-// message it prints and no stack trace: a crash exits non-zero too, and a guard
-// that prints and then falls through to one looks the same from outside (#759).
-describe('the check as a process', () => {
-  it('exits 0 over the repository it actually ships with', () => {
-    expect(runCheck('check-task-graph.ts').status).toBe(0)
-  })
+describe('checkTaskGraph', () => {
+  it('reports a workspace that declares no task graph', () => {
+    const root = tree({ 'pnpm-workspace.yaml': 'packages: []\n', 'package.json': '{ "scripts": { "release:check": "pnpm run test:tags && pnpm run build" } }\n' })
 
-  it('exits non-zero when the workspace declares no task graph', () => {
-    const run = runCheck('check-task-graph.ts', ['--root', tree({ 'pnpm-workspace.yaml': 'packages: []\n', 'package.json': '{ "scripts": { "release:check": "pnpm run test:tags && pnpm run build" } }\n' })])
-
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('declares no `tasks:`')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(checkTaskGraph(root)).toContainEqual(expect.stringContaining('declares no `tasks:`'))
     removeTrees()
   })
 })

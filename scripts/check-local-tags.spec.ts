@@ -1,8 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { afterEach, describe, expect, it } from 'vitest'
-import { localTags, strayTags } from './check-local-tags.ts'
+import { localTags, reportLocalTags, strayTags } from './check-local-tags.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 afterEach(removeTrees)
 
@@ -62,40 +61,25 @@ describe('strayTags', () => {
   })
 })
 
-// The two states #740 is about. Both are clean, both exit 0, and before this
-// they printed the same line — so a check that had stopped reading tags
-// entirely was indistinguishable from one that read fourteen and found nothing
-// wrong.
-describe('the check as a process', () => {
-  it('counts the tags it read on the success line', () => {
-    const run = runCheck('check-local-tags.ts', ['--root', repoWith(['v0.1.0', 'v0.2.0'])])
-
-    expect(run.status).toBe(0)
-    expect(run.stdout).toContain('2 local tags, none outside v<version>')
+// The two states #740 is about. Both are clean, and before this they reported
+// the same line — so a check that had stopped reading tags entirely was
+// indistinguishable from one that read fourteen and found nothing wrong.
+describe('reportLocalTags', () => {
+  it('counts the tags it read', () => {
+    expect(reportLocalTags(repoWith(['v0.1.0', 'v0.2.0']))).toContain('2 local tags, none outside v<version>')
   })
 
   it('says zero rather than the same sentence when it read nothing', () => {
-    const run = runCheck('check-local-tags.ts', ['--root', repoWith([])])
-
-    expect(run.status).toBe(0)
-    expect(run.stdout).toContain('0 local tags, none outside v<version>')
+    expect(reportLocalTags(repoWith([]))).toContain('0 local tags, none outside v<version>')
   })
 
-  // The distinction the old line could not carry, stated as one assertion:
-  // whatever these two runs print, they must not print the same thing.
-  it('does not print the same line for both', () => {
-    const populated = runCheck('check-local-tags.ts', ['--root', repoWith(['v0.1.0', 'v0.2.0'])]).stdout
-    const empty = runCheck('check-local-tags.ts', ['--root', repoWith([])]).stdout
-
-    expect(populated).not.toBe(empty)
+  it('does not report the same line for both', () => {
+    expect(reportLocalTags(repoWith(['v0.1.0', 'v0.2.0']))).not.toBe(reportLocalTags(repoWith([])))
   })
 
-  // Still a warning and still exit 0 — the non-blocking design is deliberate
-  // (#457), and a tag on unmerged work can be its only reference.
-  it('warns about a stray tag without failing the release', () => {
-    const run = runCheck('check-local-tags.ts', ['--root', repoWith(['v0.1.0', 'salvage/thing'])])
-
-    expect(run.status).toBe(0)
-    expect(run.stderr).toContain('salvage/thing')
+  // A warning, never a failure — the non-blocking design is deliberate (#457),
+  // and a tag on unmerged work can be its only reference.
+  it('names a stray tag', () => {
+    expect(reportLocalTags(repoWith(['v0.1.0', 'salvage/thing']))).toContain('salvage/thing')
   })
 })

@@ -30,13 +30,8 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(import.meta.dirname, '..')
+const ROOT = join(import.meta.dirname, '..')
 const WORKSPACE = 'pnpm-workspace.yaml'
 const PIPELINE = 'checks'
 const REPORT_SCRIPT = 'release:report'
@@ -165,24 +160,8 @@ export function taskGraphProblems(
   return problems
 }
 
-function main(): void {
-  const workspace = readFileSync(join(ROOT, WORKSPACE), 'utf8')
-  const { scripts } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
-  const problems = taskGraphProblems(workspace, scripts, EXCLUDED, AFTER_BUILD)
-
-  if (problems.length > 0) {
-    console.error('❌ The task graph and the scripts it mirrors disagree:\n')
-    for (const problem of problems) console.error(`  • ${problem}`)
-    console.error(`\nThe \`&&\` chain decides; \`${REPORT_SCRIPT}\` only reports. A report covering less than the gate is the failure worth catching (#716).`)
-    process.exit(1)
-  }
-
-  const covered = pipelineSteps(workspace, PIPELINE).length
-  const absent = Object.keys(AFTER_BUILD)
-  const gap = absent.length ? `. ${REPORT_SCRIPT} does not cover ${absent.join(', ')}: run after the build` : ''
-  console.log(`✅ ${covered} pre-build checks declared as tasks and named in \`pipelines.${PIPELINE}\`, matching \`release:check\`${gap}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+export function checkTaskGraph(root = ROOT): string[] {
+  const workspace = readFileSync(join(root, WORKSPACE), 'utf8')
+  const { scripts } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
+  return taskGraphProblems(workspace, scripts, EXCLUDED, AFTER_BUILD)
 }

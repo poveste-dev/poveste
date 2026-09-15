@@ -8,8 +8,7 @@ import { execFileSync } from 'node:child_process'
 import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DEP_KEYS = ['dependencies', 'peerDependencies', 'optionalDependencies']
@@ -84,12 +83,8 @@ export function walkPackages(root = ROOT): Walk {
 }
 
 /**
- * `--root <path>` aims the whole check at a fixture tree.
- *
- * Parameterizing the walk lets a spec assert what was read; it does not let one
- * assert what the check *did* with it, and "reported success over an assertion
- * that never ran" is a statement about the exit code (#719). So the process has
- * to be aimable too, not just the function.
+ * `--root <path>` aims `check-changelog.ts` at a fixture tree. It is the one check
+ * still run as a process, so its spec can only reach a tree through its argv.
  */
 export function rootFromArgv(argv: string[]): string | undefined {
   const at = argv.indexOf('--root')
@@ -361,9 +356,7 @@ function describeError(err: any): string {
   return stderr ? `${err.message} — ${stderr}` : err.message
 }
 
-function main(): void {
-  const offline = process.argv.includes('--offline')
-  const root = rootFromArgv(process.argv) ?? ROOT
+export function checkPublishable(root = ROOT, { offline = false }: { offline?: boolean } = {}): string[] {
   const packagesDir = join(root, 'packages')
   const walk = walkPackages(root)
   const packages = walk.packages
@@ -396,7 +389,6 @@ function main(): void {
       allNames,
     ),
   ]
-  const skippedEntrypoints: string[] = []
 
   for (const pkg of packages) {
     if (!offline) {
@@ -439,10 +431,7 @@ function main(): void {
           problems.push(`${pkg.name} declares \`${entry}\` in \`files\` but ships nothing for it; renamed or mistyped?`)
         }
       }
-      if (BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
-        skippedEntrypoints.push(pkg.name)
-      }
-      else {
+      if (!BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
         for (const entrypoint of entrypointResolutionProblems(packed.tarball, packed.dest)) {
           problems.push(`${pkg.name} advertises an entrypoint whose types do not resolve: ${entrypoint}`)
         }
@@ -456,24 +445,5 @@ function main(): void {
     }
   }
 
-  if (problems.length > 0) {
-    console.error('❌ This release would half-publish or ship uninstallable packages:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nFix these before tagging: a tag cannot be moved once the GitHub release and half the registry refer to it.')
-    process.exit(1)
-  }
-
-  // Name what was not checked; a green line that overstates its coverage hides.
-  const checks = [
-    offline ? null : 'exist on the registry',
-    'pack to an installable manifest, declaring every path they ship',
-    `resolve every advertised entrypoint (${packages.length - skippedEntrypoints.length}/${packages.length}${skippedEntrypoints.length ? `, bundler-only and skipped: ${skippedEntrypoints.join(', ')} — #312` : ''})`,
-  ].filter(Boolean)
-  console.log(`✅ All ${packages.length} publishable packages ${checks.join(', ')}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return problems
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { canonical, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
+import { canonical, checkPreviewPosition, groupsIn, isStable, operandsOf, previewReaching, problemsIn, STABLE } from './check-preview-position.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const wrap = (template: string) => `<template>${template}</template>`
 
@@ -200,24 +199,11 @@ describe('a component used in kebab-case', () => {
   })
 })
 
-// The guard this check is exempted for lives in `main()`, and deleting its
-// `process.exit(1)` left every assertion above green (#719). So the status is
-// asserted over a tree where the guard has to fire, together with the guard's
-// own message: a crash on a missing file exits non-zero too, and would pass a
-// status-only assertion for the wrong reason. And with no stack trace, because a
-// guard that prints and then falls through to a crash on the next read looks the
-// same from outside — and exits 0 in any tree where that read happens to work.
-describe('the check as a process', () => {
-  it('exits 0 over the app it actually ships with', () => {
-    expect(runCheck('check-preview-position.ts').status).toBe(0)
-  })
+describe('checkPreviewPosition', () => {
+  it('reports that the app source holds no component', () => {
+    const root = tree({ 'packages/poveste-app/src/': '' })
 
-  it('exits non-zero when the app source holds no component', () => {
-    const run = runCheck('check-preview-position.ts', ['--root', tree({ 'packages/poveste-app/src/': '' })])
-
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('no components found under packages/poveste-app/src')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(checkPreviewPosition(root)).toEqual(['no components found under packages/poveste-app/src — this check is looking in the wrong place'])
     removeTrees()
   })
 })

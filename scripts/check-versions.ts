@@ -16,21 +16,11 @@
 // (#303).
 //
 // No network, no install: it reads files and compares strings.
-//
-// The comparison lives in exported pure functions and the I/O and the exit live
-// in `main()` behind the import guard at the bottom, so importing the helpers
-// for a test does not run the whole check and cannot reach `process.exit(1)` and
-// kill the runner (#388).
 
 import { readdir, readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export interface Expectation {
   label: string
@@ -43,13 +33,13 @@ export interface Table {
   rows: Map<string, string>
 }
 
-async function json(path: string): Promise<any> {
-  return JSON.parse(await readFile(join(ROOT, path), 'utf8'))
+async function json(path: string, root: string): Promise<any> {
+  return JSON.parse(await readFile(join(root, path), 'utf8'))
 }
 
-async function expectations(): Promise<Expectation[]> {
+async function expectations(root: string): Promise<Expectation[]> {
   const peer = async (path: string, key: string) => {
-    const manifest = await json(path)
+    const manifest = await json(path, root)
     const range = manifest.peerDependencies?.[key]
     if (!range) {
       throw new Error(`${path} declares no peerDependencies["${key}"]`)
@@ -58,7 +48,7 @@ async function expectations(): Promise<Expectation[]> {
   }
 
   const povesteManifest = 'packages/poveste/package.json'
-  const engines = JSON.parse(await readFile(join(ROOT, povesteManifest), 'utf8')).engines?.node
+  const engines = JSON.parse(await readFile(join(root, povesteManifest), 'utf8')).engines?.node
   if (!engines) {
     throw new Error(`${povesteManifest} declares no engines.node`)
   }
@@ -345,19 +335,19 @@ export function walkProblems({ workflows, packages }: Walk): string[] {
   return problems
 }
 
-async function main(): Promise<void> {
+export async function checkVersions(root = ROOT): Promise<string[]> {
   const [expected, tables] = await Promise.all([
-    expectations(),
-    Promise.all(TABLES.map(async file => parseTable(file, await readFile(join(ROOT, file), 'utf8')))),
+    expectations(root),
+    Promise.all(TABLES.map(async file => parseTable(file, await readFile(join(root, file), 'utf8')))),
   ])
 
   const problems = tables.flatMap(table => tableProblems(table, expected))
 
-  const walk = await collect()
+  const walk = await collect(root)
   problems.push(...walkProblems(walk))
 
   for (const file of TABLES) {
-    problems.push(...citedJobProblems(file, await readFile(join(ROOT, file), 'utf8'), jobNames(walk.workflows)))
+    problems.push(...citedJobProblems(file, await readFile(join(root, file), 'utf8'), jobNames(walk.workflows)))
   }
 
   for (const { entry, readme, manifest } of walk.packages) {
@@ -365,20 +355,5 @@ async function main(): Promise<void> {
     problems.push(...nodeClaimProblems(entry, readme, manifest.engines?.node))
   }
 
-  if (problems.length > 0) {
-    console.error('❌ Version tables disagree with what the packages declare:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nThe declared range is the truth. Fix the table, or fix the range and the CI job behind it.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${TABLES.join(' and ')} match the declared ranges (${expected.length} rows each), as do the package READMEs`)
-}
-
-// Guarded, so importing the helpers above for a test does not run the whole
-// check — and cannot reach the `process.exit(1)` above and kill the runner.
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  await main()
+  return problems
 }

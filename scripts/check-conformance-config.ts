@@ -18,15 +18,11 @@
 // compared them until this.
 
 import { existsSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { conformanceBooks } from './check-example-wiring.ts'
-import { rootFromArgv } from './check-publishable.ts'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export const DEFAULTS = 'packages/poveste/src/node/config.ts'
 export const SPEC = 'e2e/toolbar-background.spec.ts'
@@ -148,30 +144,27 @@ export function bookProblems(name: string, file: string, source: string, default
   return problems
 }
 
-export function configFileFor(example: string): string | undefined {
+export function configFileFor(example: string, root = ROOT): string | undefined {
   return CONFIG_FILENAMES
     .map(filename => join('examples', example, filename))
-    .find(path => existsSync(join(ROOT, path)))
+    .find(path => existsSync(join(root, path)))
 }
 
-async function main(): Promise<void> {
-  const problems: string[] = []
-
-  const defaults = presetsIn(readFileSync(join(ROOT, DEFAULTS), 'utf8'))
+export async function checkConformanceConfig(root = ROOT): Promise<string[]> {
+  const defaults = presetsIn(readFileSync(join(root, DEFAULTS), 'utf8'))
   if (defaults.length === 0) {
-    console.error(`::error::could not read \`backgroundPresets\` from ${DEFAULTS}`)
-    process.exit(1)
+    return [`could not read \`backgroundPresets\` from ${DEFAULTS}`]
   }
 
-  problems.push(...specProblems(
+  const problems = specProblems(
     [...defaults, CUSTOM_PRESET],
-    specPresets(readFileSync(join(ROOT, SPEC), 'utf8')),
-  ))
+    specPresets(readFileSync(join(root, SPEC), 'utf8')),
+  )
 
   // A book carries the conformance set exactly when the root Playwright config
   // gives it a `:conformance` project — the same source of truth
   // `check-example-wiring.ts` uses, so a new book is covered by existing here.
-  const playwright: any = (await import(pathToFileURL(join(ROOT, 'playwright.config.ts')).href)).default
+  const playwright: any = (await import(pathToFileURL(join(root, 'playwright.config.ts')).href)).default
   const books = conformanceBooks((playwright.projects ?? []).map((project: { name: string }) => project.name))
 
   if (books.length === 0) {
@@ -179,27 +172,13 @@ async function main(): Promise<void> {
   }
 
   for (const book of books) {
-    const file = configFileFor(book)
+    const file = configFileFor(book, root)
     if (file === undefined) {
       problems.push(`${book} has no ${CONFIG_FILENAMES.join(', ')} — nothing to read its conformance config from`)
       continue
     }
-    problems.push(...bookProblems(book, file, readFileSync(join(ROOT, file), 'utf8'), defaults))
+    problems.push(...bookProblems(book, file, readFileSync(join(root, file), 'utf8'), defaults))
   }
 
-  if (problems.length > 0) {
-    console.error('::error::The conformance contract is not met by config\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nA conformance book declares the background presets as well as carrying the stories.')
-    console.error('See "The conformance contract" in ai/AGENTS.md.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${books.length} conformance books declare the ${defaults.length + 1} background presets the shared specs assert`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return problems
 }

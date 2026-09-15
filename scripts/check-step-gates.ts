@@ -49,9 +49,6 @@
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
 
 const ROOT = join(import.meta.dirname, '..')
 const WORKFLOWS = '.github/workflows'
@@ -347,26 +344,7 @@ export function gateProblems(
   return problems
 }
 
-function main(): void {
-  const { workflows, walk } = collect(rootFromArgv(process.argv) ?? ROOT)
-  const found = boundaries(workflows)
-  const problems = [...walkProblems(walk), ...gateProblems(found, RUNS_PAST_FAILURE, NEEDS_EVERYTHING_ABOVE)]
-
-  if (problems.length > 0) {
-    console.error('❌ A workflow step\'s position does not mean what it looks like:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nOnce a step above has a status-function `if:` or `continue-on-error`, nothing')
-    console.error('below it inherits what its position suggests. Name the dependency in the `if:`,')
-    console.error('or record the boundary in scripts/check-step-gates.ts with the reason (#723).')
-    process.exit(1)
-  }
-
-  const states = found.filter(boundary => boundary.states).length
-  console.log(`✅ ${found.length} step-gate boundaries across ${walk.workflows.length} workflows: ${states} run past a failure on purpose, ${found.length - states} inherit \`success()\` on purpose`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+export function checkStepGates(root = ROOT): string[] {
+  const { workflows, walk } = collect(root)
+  return [...walkProblems(walk), ...gateProblems(boundaries(workflows), RUNS_PAST_FAILURE, NEEDS_EVERYTHING_ABOVE)]
 }

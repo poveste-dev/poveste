@@ -20,9 +20,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { rootFromArgv, walkPackages, walkProblems } from './check-publishable.ts'
+import { walkPackages, walkProblems } from './check-publishable.ts'
 
 interface Release { name: string, version: string }
 
@@ -142,25 +140,14 @@ function npmProbe(name: string, version: string): string {
   return tagged.out === version ? 'present' : `untagged:${tagFor(version)}:${tagged.out || 'nothing'}`
 }
 
-function main(): void {
-  // The shared walk's floor rather than a second one. This check does not walk
-  // the tree itself — it reads `check-publishable`'s list — so "it examined
-  // something" is a question about that walk, and asking it here would be a
-  // second place the same fact is asserted.
-  //
-  // Without it an empty list read as success right up to `releases[0].version`
-  // below, which threw `Cannot read properties of undefined` — loud, but about
-  // the wrong thing.
-  // `--root` so a spec can run this as a process over a tree where it has to
-  // fail before asking the registry anything (#760).
-  const walk = walkPackages(rootFromArgv(process.argv))
+export function checkPublished(root?: string): string[] {
+  // The shared walk's floor rather than a second one: this check reads
+  // `check-publishable`'s list, so "it examined something" is a question about
+  // that walk. Without it an empty list read as success.
+  const walk = walkPackages(root)
   const walked = walkProblems(walk)
   if (walked.length > 0) {
-    console.error(`::error::this check never got a list of packages to ask the registry about`)
-    for (const problem of walked) {
-      console.error(`  • ${problem}`)
-    }
-    process.exit(1)
+    return ['this check never got a list of packages to ask the registry about', ...walked]
   }
 
   const releases: Release[] = walk.packages.map(pkg => ({
@@ -168,22 +155,5 @@ function main(): void {
     version: JSON.parse(readFileSync(join(pkg.dir, 'package.json'), 'utf8')).version,
   }))
 
-  const problems = unpublishedReleases(releases, npmProbe)
-  if (problems.length > 0) {
-    console.error(`::error::${problems.length} of ${releases.length} packages are not released at their version`)
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    // `npm publish` is the wrong move: it does not rewrite pnpm's `workspace:`
-    // protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable
-    // packages. Re-running skips what already published as a duplicate.
-    console.error('\nRe-run this release job. Do NOT `npm publish` by hand.')
-    process.exit(1)
-  }
-
-  console.log(`✅ All ${releases.length} packages are on the registry with ${tagFor(releases[0].version)} pointing at their released version`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return unpublishedReleases(releases, npmProbe)
 }

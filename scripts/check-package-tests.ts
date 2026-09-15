@@ -14,16 +14,10 @@
 // No network, no install, no build: it reads manifests, which is why it sits
 // with `test:versions` at the front of `release:check` rather than with
 // `test:publishable` after it.
-//
-// The comparison is a pure function and the I/O and the exit live in `main()`
-// behind the import guard at the bottom, so importing it for a test cannot
-// reach `process.exit(1)` and kill the runner (#388).
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { publishablePackages, rootFromArgv } from './check-publishable.ts'
+import { publishablePackages } from './check-publishable.ts'
 
 /**
  * Packages that are published and will not have a `test` script.
@@ -73,32 +67,11 @@ export function testScriptProblems(manifests: Manifest[], exempt: Record<string,
   return problems
 }
 
-function main(): void {
-  // `--root` so a spec can run this as a process over a tree where it has to
-  // fail (#760). Absent, the walk's own default is the repository.
-  const manifests = publishablePackages(rootFromArgv(process.argv)).map(({ name, dir }): Manifest => ({
+export function checkPackageTests(root?: string): string[] {
+  const manifests = publishablePackages(root).map(({ name, dir }): Manifest => ({
     ...JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')),
     name,
   }))
 
-  const problems = testScriptProblems(manifests, EXEMPT)
-
-  if (problems.length > 0) {
-    console.error('❌ `pnpm test` would stay green over a package it never ran:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nAdd a `test` script and a spec, or add the package to EXEMPT in scripts/check-package-tests.ts with the reason tests are the wrong tool for it.')
-    process.exit(1)
-  }
-
-  // Name what was not checked; a green line that overstates its coverage hides.
-  const exempted = Object.keys(EXEMPT)
-  const tested = manifests.length - exempted.length
-  const note = exempted.length ? `, and ${exempted.length} exempt with a reason: ${exempted.join(', ')}` : ''
-  console.log(`✅ ${tested}/${manifests.length} published packages declare a \`test\` script${note}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return testScriptProblems(manifests, EXEMPT)
 }

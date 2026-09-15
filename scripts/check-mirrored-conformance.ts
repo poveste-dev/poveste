@@ -21,14 +21,9 @@
 // `pnpm sync:conformance` rewrites the mirrors from their source.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export interface Mirror {
   /** The authored set. */
@@ -230,14 +225,11 @@ export function walkProblems({ pairs }: Walk): string[] {
   return problems
 }
 
-function main(): void {
-  const walk = collect()
-  const problems: string[] = walkProblems(walk)
-  let compared = 0
+export function checkMirroredConformance(root = ROOT): string[] {
+  const walk = collect(root)
+  const problems = walkProblems(walk)
 
   for (const { source, mirror, sourceFiles, mirrorFiles } of walk.pairs) {
-    compared += sourceFiles.size
-
     for (const { file, reason } of compareMirror(sourceFiles, mirrorFiles, MIRROR_EXCEPTIONS, mirror)) {
       if (reason === 'differs') {
         problems.push(`${file} differs between ${source} and ${mirror}`)
@@ -251,19 +243,5 @@ function main(): void {
     }
   }
 
-  if (problems.length > 0) {
-    console.error('❌ Mirrored conformance sets have drifted:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nRun `pnpm run sync:conformance` to rewrite the mirrors from their source,')
-    console.error('or add the file to MIRROR_EXCEPTIONS in scripts/check-mirrored-conformance.ts if it should differ.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${compared} conformance stories identical across ${MIRRORS.length} mirrored pairs`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return problems
 }

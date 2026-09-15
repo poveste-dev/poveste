@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { ALLOWED, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './check-node-versions.ts'
+import { ALLOWED, checkNodeVersions, collect, hardcodedNodeVersions, lowestVersion, nodeVersionProblems, walkProblems } from './check-node-versions.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const ENGINES = '^22.22.2 || ^24.15.0 || >=26.0.0'
 const FLOOR = { workflow: 'test.yml', line: 319, value: '22.22.2' }
@@ -196,22 +195,11 @@ describe('walkProblems', () => {
   })
 })
 
-describe('the check as a process', () => {
-  it('exits 0 over the repository it actually ships with', () => {
-    expect(runCheck('check-node-versions.ts').status).toBe(0)
-  })
+describe('checkNodeVersions', () => {
+  it('reports that there is no workflow to read', () => {
+    const root = tree({ '.github/workflows/': '', 'packages/poveste/package.json': MANIFEST })
 
-  // The failure exits live in `main()`, so a spec asserting only what the pure
-  // functions return stayed green with every `process.exit(1)` deleted (#760).
-  // The status is asserted over a tree where the check has to fail, with the
-  // message it prints and no stack trace: a crash exits non-zero too, and a guard
-  // that prints and then falls through to one looks the same from outside (#759).
-  it('exits non-zero when there is no workflow to read', () => {
-    const run = runCheck('check-node-versions.ts', ['--root', tree({ '.github/workflows/': '', 'packages/poveste/package.json': MANIFEST })])
-
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('held no workflow files')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(checkNodeVersions(root)).toContainEqual(expect.stringContaining('held no workflow files'))
     removeTrees()
   })
 })

@@ -31,15 +31,9 @@
 // No network, by design.
 
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join, relative } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
-const WORKFLOWS = join(ROOT, '.github', 'workflows')
+const ROOT = join(import.meta.dirname, '..')
 
 const MIN_LENGTH = 120
 
@@ -339,8 +333,6 @@ export function externalHosts(markdown: string): string[] {
   return [...hosts]
 }
 
-// Guarded, so importing the helpers above for a test does not run the whole
-// check — and cannot reach the `process.exit(1)` below and kill the runner.
 export interface Page {
   label: string
   path: string
@@ -450,11 +442,11 @@ export function walkProblems({ pages, published }: Walk): string[] {
   return problems
 }
 
-async function main(): Promise<void> {
-  const workflowsOnDisk = new Set(await readdir(WORKFLOWS).catch(() => []))
+export async function checkReadmes(root = ROOT): Promise<string[]> {
+  const workflowsOnDisk = new Set(await readdir(join(root, '.github', 'workflows')).catch(() => []))
 
-  const walk = await collect()
-  const { pages, published } = walk
+  const walk = await collect(root)
+  const { pages } = walk
   const problems: string[] = walkProblems(walk)
 
   for (const name of walk.withoutReadme) {
@@ -468,12 +460,12 @@ async function main(): Promise<void> {
     const readme = await readFile(page.path, 'utf8')
     problems.push(...installLineProblems(page.pkg.entry, readme, page.pkg.peers))
     problems.push(...missingInstallLine(page.pkg.entry, readme))
-    problems.push(...unrunnableFences(relative(ROOT, page.path), readme))
+    problems.push(...unrunnableFences(relative(root, page.path), readme))
   }
 
   for (const page of pages) {
     const content = await readFile(page.path, 'utf8')
-    const where = relative(ROOT, page.path)
+    const where = relative(root, page.path)
 
     if (page.path.endsWith('README.md') && content.trim().length < MIN_LENGTH) {
       problems.push(`${page.label}: ${where} is ${content.trim().length} chars, under the ${MIN_LENGTH} minimum`)
@@ -510,7 +502,7 @@ async function main(): Promise<void> {
 
   // Only this assertion reads `docs/**`: it is where the deprecated spellings
   // live, while the histoire-naming rules above would fight the migration guide.
-  const docsDir = join(ROOT, 'docs')
+  const docsDir = join(root, 'docs')
   async function* markdownUnder(dir: string): AsyncGenerator<string> {
     for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
       if (entry.name === 'node_modules' || entry.name === '.vitepress') {
@@ -528,26 +520,14 @@ async function main(): Promise<void> {
 
   for (const path of [...pages.map(p => p.path)]) {
     for (const { line, deprecated, canonical } of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
-      problems.push(`${relative(ROOT, path)}:${line} names ${deprecated} without ${canonical}`)
+      problems.push(`${relative(root, path)}:${line} names ${deprecated} without ${canonical}`)
     }
   }
   for await (const path of markdownUnder(docsDir)) {
     for (const { line, deprecated, canonical } of aliasesTaughtAlone(await readFile(path, 'utf8'))) {
-      problems.push(`${relative(ROOT, path)}:${line} names ${deprecated} without ${canonical}`)
+      problems.push(`${relative(root, path)}:${line} names ${deprecated} without ${canonical}`)
     }
   }
 
-  if (problems.length > 0) {
-    console.error('❌ Pages that describe the wrong project, or point nowhere:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    process.exit(1)
-  }
-
-  console.log(`✅ ${pages.length} pages check out, covering all ${published} published packages`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  await main()
+  return problems
 }

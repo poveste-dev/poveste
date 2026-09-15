@@ -60,23 +60,20 @@ describe('didNotRun', () => {
   })
 })
 
+// `check-changelog` is the one check still run as a process: the release skill
+// calls it with a version before tagging.
 describe('runCheck', () => {
+  const changelog = (section: string) => tree({ 'CHANGELOG.md': `# Changelog\n\n${section}## v0.98.0\n\nOlder notes.\n` })
+
   it('returns the status of a check that ran', () => {
-    expect(runCheck('check-mirrored-conformance.ts').status).toBe(0)
+    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
+    removeTrees()
   })
 
   it('returns a non-zero status rather than throwing when a check reports a problem', () => {
-    const root = tree({
-      'CONTRIBUTING.md': '| Package | What |\n| --- | --- |\n| [@fixture/one](./packages/one) | one |\n',
-      'packages/one/package.json': JSON.stringify({ name: '@fixture/one', version: '1.0.0', type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
-      'packages/one/index.js': 'export const one = 1\n',
-      'packages/two/package.json': JSON.stringify({ name: '@fixture/two', version: '1.0.0', type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
-      'packages/two/index.js': 'export const two = 2\n',
-    })
-
-    expect(runCheck('check-publishable.ts', ['--offline', '--root', root]).status).toBe(1)
+    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('')]).status).toBe(1)
     removeTrees()
-  }, 30_000)
+  })
 
   // A renamed or deleted check is the same event as a missing binary: the
   // process exits non-zero having asserted nothing, and a caller reading the
@@ -94,6 +91,7 @@ describe('runCheck', () => {
   // A check that exited 0 has said something about the tree, and no diagnostic
   // may overrule it.
   it('never reclassifies a check that ran to a clean verdict', () => {
-    expect(runCheck('check-mirrored-conformance.ts').status).toBe(0)
+    expect(runCheck('check-changelog.ts', ['0.99.0', '--root', changelog('## v0.99.0\n\nNotes.\n\n')]).status).toBe(0)
+    removeTrees()
   })
 })

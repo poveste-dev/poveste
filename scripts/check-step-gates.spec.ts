@@ -2,9 +2,8 @@ import { cpSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { boundariesIn, collect, gateProblems, jobsIn, masksFailure, statesDependency, walkProblems } from './check-step-gates.ts'
+import { boundariesIn, checkStepGates, collect, gateProblems, jobsIn, masksFailure, statesDependency, walkProblems } from './check-step-gates.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const WORKFLOWS = join(dirname(fileURLToPath(import.meta.url)), '..', '.github', 'workflows')
 
@@ -266,21 +265,13 @@ describe('collect', () => {
   })
 })
 
-// `gateProblems` returning a problem says nothing about what `main()` does with
-// it, and "reports success over an assertion that never ran" is a statement
-// about the exit code (#719). Deleting the `process.exit(1)` below leaves every
-// spec above green.
-describe('the check as a process', () => {
-  it('exits 0 over the workflows it actually ships with', () => {
-    expect(runCheck('check-step-gates.ts').status).toBe(0)
-  })
-
+describe('checkStepGates', () => {
   /**
    * A copy of the real `.github/workflows/`, with one file rewritten.
    *
    * The two records travel with the check rather than with the tree, so an
-   * invented workflow would make all seven entries stale and the run would fail
-   * for that instead — which would let these pass without the injected fault
+   * invented workflow would make all seven entries stale and the check would
+   * report that instead — which would let these pass without the injected fault
    * being noticed at all.
    */
   function workflowsWith(file: string, edit: (source: string) => string): string {
@@ -291,19 +282,17 @@ describe('the check as a process', () => {
     return root
   }
 
-  it('exits 0 over a copy with nothing injected', () => {
-    expect(runCheck('check-step-gates.ts', ['--root', workflowsWith('test.yml', source => source)]).status).toBe(0)
+  it('finds nothing over a copy with nothing injected', () => {
+    expect(checkStepGates(workflowsWith('test.yml', source => source))).toEqual([])
     removeTrees()
   })
 
   // #722's fourth attempt, as a diff: a sweep step placed after the publish
   // with no condition, inheriting a success the publish did not have.
-  it('exits non-zero over a step added below a masked one with nothing said', () => {
-    const run = runCheck('check-step-gates.ts', ['--root', workflowsWith('release.yml', source =>
-      `${source}\n      - name: Sweep the labels\n        run: gh issue list\n`)])
+  it('reports a step added below a masked one with nothing said', () => {
+    const root = workflowsWith('release.yml', source => `${source}\n      - name: Sweep the labels\n        run: gh issue list\n`)
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('release.yml / release / Sweep the labels inherits `success()`')
+    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Sweep the labels inherits `success()`'))
     removeTrees()
   })
 
@@ -311,21 +300,18 @@ describe('the check as a process', () => {
   // it is the first masked step either way, so it stays a boundary and changes
   // sides. Anywhere else, a step growing a condition joins the run above it and
   // stops being a boundary at all, which the stale-entry problem reports instead.
-  it('exits non-zero when the step that opens a region crosses to the other record', () => {
-    const run = runCheck('check-step-gates.ts', ['--root', workflowsWith('release.yml', source =>
-      source.replace('      - name: Draft the GitHub release\n', `      - name: Draft the GitHub release\n        if: ${expr('!cancelled()')}\n`))])
+  it('reports the step that opens a region crossing to the other record', () => {
+    const root = workflowsWith('release.yml', source =>
+      source.replace('      - name: Draft the GitHub release\n', `      - name: Draft the GitHub release\n        if: ${expr('!cancelled()')}\n`))
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('release.yml / release / Draft the GitHub release is in NEEDS_EVERYTHING_ABOVE')
+    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('release.yml / release / Draft the GitHub release is in NEEDS_EVERYTHING_ABOVE'))
     removeTrees()
   })
 
-  it('exits non-zero when a recorded boundary is renamed out from under its reason', () => {
-    const run = runCheck('check-step-gates.ts', ['--root', workflowsWith('release.yml', source =>
-      source.replace('- name: Verify every package reached npm', '- name: Check npm'))])
+  it('reports a recorded boundary renamed out from under its reason', () => {
+    const root = workflowsWith('release.yml', source => source.replace('- name: Verify every package reached npm', '- name: Check npm'))
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm')
+    expect(checkStepGates(root)).toContainEqual(expect.stringContaining('RUNS_PAST_FAILURE names release.yml / release / Verify every package reached npm'))
     removeTrees()
   })
 })

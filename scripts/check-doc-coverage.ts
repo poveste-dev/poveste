@@ -39,21 +39,13 @@
 //
 // Needs a build: it reads `dist`, so it runs after Build rather than with the
 // manifest checks at the front of `release:check`.
-//
-// The formatting is pure and exported; the compiler work and the exit live in
-// `main()` behind the import guard, so a test importing this cannot reach
-// `process.exit` (#388).
 
 import { existsSync, readFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
 import ts from 'typescript'
-import { publishablePackages, rootFromArgv } from './check-publishable.ts'
+import { publishablePackages } from './check-publishable.ts'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(import.meta.dirname, '..')
+const ROOT = join(import.meta.dirname, '..')
 
 /**
  * Entrypoints that declare a `.d.ts` the build does not emit.
@@ -225,7 +217,7 @@ function measure(entry: Entrypoint): { coverage: Coverage | null, halfBuilt: str
   }
 }
 
-function main(): void {
+export function checkDocCoverage(root = ROOT): { broken: string[], report: string[] } {
   const rows: Coverage[] = []
   const unmeasured: string[] = []
 
@@ -233,7 +225,7 @@ function main(): void {
 
   const seen = new Set<string>()
 
-  for (const { name, dir } of publishablePackages(ROOT)) {
+  for (const { name, dir } of publishablePackages(root)) {
     const manifest = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'))
     const entries = entrypointsOf(name, dir, manifest)
     if (!entries.length) {
@@ -246,7 +238,7 @@ function main(): void {
 
       if (!entry.resolved) {
         if (excused) unmeasured.push(`${entry.specifier} — ${excused}`)
-        else broken.push(`${entry.specifier} declares ${relative(ROOT, entry.types)}, which does not exist`)
+        else broken.push(`${entry.specifier} declares ${relative(root, entry.types)}, which does not exist`)
         continue
       }
 
@@ -289,29 +281,25 @@ function main(): void {
   }
 
   if (broken.length) {
-    console.error('❌ The measurement did not happen, so the number below it would be fiction:\n')
-    for (const problem of broken) console.error(`  • ${problem}`)
-    console.error('\nUsually this is an unbuilt tree — run `pnpm run build` first. A partial run is the failure worth catching: the shims still resolve, so it reports a plausible percentage over a fraction of the surface rather than an obvious zero.')
-    process.exit(1)
+    return { broken, report: [] }
   }
 
-  console.log('Documented exports, per entrypoint:\n')
-  for (const line of formatRows(rows)) console.log(line)
-
   const { documented, total, pct } = summarise(rows)
-  console.log(`\n📖 ${documented} of ${total} exported symbols carry a doc comment across ${rows.length} entrypoints (${pct}%).`)
+  const report = [
+    'Documented exports, per entrypoint:',
+    '',
+    ...formatRows(rows),
+    '',
+    `📖 ${documented} of ${total} exported symbols carry a doc comment across ${rows.length} entrypoints (${pct}%).`,
+  ]
 
   // Named with their reasons, one per line, because a package dropping out of
   // the denominator improves the percentage — that has to be legible, not a
   // clause at the end of a sentence.
   if (unmeasured.length) {
-    console.log(`\nNot measured (${unmeasured.length}):`)
-    for (const entry of unmeasured) console.log(`  • ${entry}`)
+    report.push('', `Not measured (${unmeasured.length}):`, ...unmeasured.map(entry => `  • ${entry}`))
   }
 
-  console.log('This step never fails on the number. It is here so the number is measured rather than remembered (#363).')
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  report.push('This step never fails on the number. It is here so the number is measured rather than remembered (#363).')
+  return { broken, report }
 }

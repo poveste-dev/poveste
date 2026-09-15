@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  checkDocsSite,
   declaredOrigins,
   deployMarker,
   documentTitles,
-  liveTarget,
   missingRedirectTargets,
   pageUrlPath,
   parseRedirects,
@@ -21,7 +21,6 @@ import {
   unsafeCatchAlls,
 } from './check-docs-site.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const REDIRECTS = `
 [build]
@@ -349,25 +348,6 @@ describe('declaredOrigins', () => {
   })
 })
 
-describe('liveTarget', () => {
-  it('defaults to production when --live carries no url', () => {
-    expect(liveTarget(['node', 'check-docs-site.ts', '--live'])).toBe('https://poveste.dev')
-  })
-
-  it('takes a deploy preview url and drops its trailing slash', () => {
-    expect(liveTarget(['node', 'check-docs-site.ts', '--live', 'https://deploy-preview-346--poveste.netlify.app/']))
-      .toBe('https://deploy-preview-346--poveste.netlify.app')
-  })
-
-  it('does not read a following flag as a url', () => {
-    expect(liveTarget(['node', 'check-docs-site.ts', '--live', '--verbose'])).toBe('https://poveste.dev')
-  })
-
-  it('does not read argv[0] as a url when --live is absent', () => {
-    expect(liveTarget(['/usr/bin/node', 'scripts/check-docs-site.ts'])).toBe('https://poveste.dev')
-  })
-})
-
 describe('deployMarker', () => {
   it('reads the branch, commit and context the build stamped in', () => {
     const html = '<head><meta name="poveste:deploy" content="main 21cb684 production"></head>'
@@ -606,21 +586,11 @@ describe('structuredDataProblems', () => {
   })
 })
 
-// The guard this check is exempted for lives in `main()`, and deleting its
-// `process.exit(1)` left every assertion above green (#719). So the status is
-// asserted over a tree where the guard has to fire, together with the guard's
-// own message. Only this direction: a passing run reads a built docs site.
-// Also the guard's own message: a crash on a missing file exits non-zero too, and would pass a
-// status-only assertion for the wrong reason. And with no stack trace, because a
-// guard that prints and then falls through to a crash on the next read looks the
-// same from outside — and exits 0 in any tree where that read happens to work.
-describe('the check as a process', () => {
-  it('exits non-zero when there is no build to read', () => {
-    const run = runCheck('check-docs-site.ts', ['--root', tree({ 'docs/': '' })])
+describe('checkDocsSite', () => {
+  it('reports that there is no build to read', async () => {
+    const root = tree({ 'docs/': '' })
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('no build at')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(await checkDocsSite(root)).toContainEqual(expect.stringContaining('no build at'))
     removeTrees()
   })
 })

@@ -19,6 +19,16 @@ export default defineConfig({
           environment: 'node',
         },
       },
+      {
+        test: {
+          name: 'checks',
+          include: ['scripts/checks/*.check.ts'],
+          environment: 'node',
+          // A check can pack every package or install a starter from the
+          // registry, far past the 5s default.
+          testTimeout: 0,
+        },
+      },
     ],
   },
 })

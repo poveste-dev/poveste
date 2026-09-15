@@ -8,14 +8,9 @@
 // documented saying so.
 
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export const TYPES = 'packages/poveste-shared/src/types/config.ts'
 export const REFERENCE = 'docs/reference/config.md'
@@ -152,29 +147,12 @@ export function staleEntries(source: string, markdown: string): string[] {
   return stale
 }
 
-function main(): void {
-  const source = readFileSync(join(ROOT, TYPES), 'utf8')
-  const markdown = readFileSync(join(ROOT, REFERENCE), 'utf8')
+export function checkConfigReference(root = ROOT): string[] {
+  const source = readFileSync(join(root, TYPES), 'utf8')
+  const markdown = readFileSync(join(root, REFERENCE), 'utf8')
 
-  const undocumented = undocumentedKeys(source, markdown)
-  const stale = staleEntries(source, markdown)
-
-  if (undocumented.length > 0 || stale.length > 0) {
-    console.error(`::error::${REFERENCE} does not match ${TYPES}\n`)
-    for (const key of undocumented) {
-      console.error(`  • \`${key}\` is a config key with no reference entry`)
-    }
-    for (const entry of stale) {
-      console.error(`  • \`${entry}\` has a reference entry but is not a config key`)
-    }
-    console.error(`\nEvery key needs a heading in ${REFERENCE}. A key books should not set still`)
-    console.error('needs one, saying so — an omission reads as an oversight rather than a decision.')
-    process.exit(1)
-  }
-
-  console.log(`✅ All ${configKeys(source).length} config keys have a reference entry`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return [
+    ...undocumentedKeys(source, markdown).map(key => `\`${key}\` is a config key with no reference entry`),
+    ...staleEntries(source, markdown).map(entry => `\`${entry}\` has a reference entry but is not a config key`),
+  ]
 }

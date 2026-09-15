@@ -1,8 +1,7 @@
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './check-publishable.ts'
+import { checkPublishable, emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './check-publishable.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string }
 
@@ -338,19 +337,10 @@ describe('walkProblems', () => {
   })
 })
 
-// `walkPackages()` returning packages says nothing about what `main()` did with
-// them, and the defect is a check *reporting success*. The exit code is how
-// that success is expressed, so one spec runs the real check and reads it.
-//
-// It asserts the status rather than the output: matching console text would
-// make every reworded message a failing test about nothing.
-//
-// `--root` is what makes this possible at all. Aiming only the walk would leave
-// the assertion on an intermediate value, and this check cannot be run over the
-// repository here anyway — it packs each package, so it needs a built tree, and
-// `test:scripts` runs before the build.
-describe('the check as a process', () => {
-  const run = (root: string) => runCheck('check-publishable.ts', ['--offline', '--root', root])
+// Offline, because packing and resolving is what a fixture tree can exercise;
+// asking the registry about `@fixture/one` cannot come back clean.
+describe('checkPublishable', () => {
+  const check = (root: string) => checkPublishable(root, { offline: true })
 
   const book = () => ({
     'CONTRIBUTING.md': '| Package | What |\n| --- | --- |\n| [@fixture/one](./packages/one) | the only one |\n',
@@ -358,20 +348,20 @@ describe('the check as a process', () => {
     'packages/one/index.js': 'export const one = 1\n',
   })
 
-  it('exits 0 over a tree where everything it asserts holds', () => {
-    expect(run(tree(book())).status).toBe(0)
+  it('finds nothing over a tree where everything it asserts holds', () => {
+    expect(check(tree(book()))).toEqual([])
   }, 30_000)
 
-  // Exit 0 on its own is what a check that examined nothing also produces, so
-  // the pair is the assertion: this proves the status can still move.
-  it('exits 1 over a tree with a package the table omits', () => {
+  // An empty list is also what a check that examined nothing returns, so the
+  // pair is the assertion: this proves a problem can still be found.
+  it('reports a package the table omits', () => {
     const root = tree({
       ...book(),
       'packages/two/package.json': manifest('@fixture/two', { type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
       'packages/two/index.js': 'export const two = 2\n',
     })
 
-    expect(run(root).status).toBe(1)
+    expect(check(root)).toContainEqual(expect.stringContaining('@fixture/two'))
   }, 30_000)
 })
 

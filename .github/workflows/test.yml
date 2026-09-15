@@ -248,13 +248,6 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:recipes
 
-      # Every check either asserts it reached its inputs or says why it cannot,
-      # so a check added without either fails here rather than in a release
-      # whose gate reported success over an assertion that never ran (#719).
-      - name: Check every check can fail
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm run test:walk-floors
-
       # The rule this file is the largest instance of: twelve steps above give
       # up the guarantee their position implies, and the eight below inherit a
       # `success()` that has to be the deliberate choice rather than the default

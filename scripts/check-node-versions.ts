@@ -30,13 +30,8 @@
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import process from 'node:process'
-import { pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
 
-// `--root` so a spec can run this as a process over a tree where it has to
-// fail: the exit status is the verdict, and no spec reached it (#760).
-const ROOT = rootFromArgv(process.argv) ?? join(import.meta.dirname, '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export interface Allowance {
   /** The exact literal permitted. A different one is drift, not this allowance. */
@@ -195,24 +190,7 @@ export function walkProblems({ workflows, enginesNode }: Walk): string[] {
   return problems
 }
 
-function main(): void {
-  const walk = collect()
-  const { uses, enginesNode } = walk
-  const problems = [...walkProblems(walk), ...nodeVersionProblems(uses, ALLOWED, enginesNode)]
-
-  if (problems.length > 0) {
-    console.error('❌ CI would keep running a Node the project has moved off:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\n`.node-version` is what the release publishes from. A job that pins the number instead keeps building on it after the file moves, and stays green while doing it (#425).')
-    process.exit(1)
-  }
-
-  const pinned = Object.keys(ALLOWED).join(', ')
-  console.log(`✅ Every CI job reads \`.node-version\`, except the deliberate floor in ${pinned}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+export function checkNodeVersions(root = ROOT): string[] {
+  const walk = collect(root)
+  return [...walkProblems(walk), ...nodeVersionProblems(walk.uses, ALLOWED, walk.enginesNode)]
 }

@@ -12,14 +12,9 @@
 // gets raised without being read.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { dirname, join, relative, sep } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join, sep } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export interface Limit {
   /** Chunks whose basename starts with this, or `''` for the whole build. */
@@ -159,48 +154,29 @@ export function findBook(example: string): string | undefined {
     .find(dir => existsSync(join(dir, 'assets')))
 }
 
-function main(): void {
+export function checkBundleSize(root = ROOT): { problems: string[], measurements: string[] } {
   let book: string | undefined
   try {
-    book = findBook(join(ROOT, EXAMPLE))
+    book = findBook(join(root, EXAMPLE))
   }
   catch (error: any) {
     // Narrow: a directory that cannot be read is not the same as one with no
     // book in it, and reporting both as "run story:build" sends the reader
     // after a command that already worked.
-    console.error(`::error::could not read ${EXAMPLE}: ${error.message}`)
-    process.exit(1)
+    return { problems: [`could not read ${EXAMPLE}: ${error.message}`], measurements: [] }
   }
 
   if (book === undefined) {
-    console.error(`::error::no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`)
-    process.exit(1)
+    return { problems: [`no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`], measurements: [] }
   }
 
   const chunks = chunksIn(book)
-
   const problems = overLimit(chunks, LIMITS)
 
-  const barrel = barrelImport(readFileSync(join(ROOT, HIGHLIGHTER), 'utf8'))
+  const barrel = barrelImport(readFileSync(join(root, HIGHLIGHTER), 'utf8'))
   if (barrel !== undefined) {
     problems.push(`${HIGHLIGHTER} has \`${barrel}\` — the full-bundle entry, which ships every grammar and theme (#304)`)
   }
-  for (const line of measurements(chunks, LIMITS)) {
-    console.log(`  ${line}`)
-  }
 
-  if (problems.length > 0) {
-    console.error('::error::A built book is over its size ceiling\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nRaise a ceiling only with a reason written next to it. See scripts/check-bundle-size.ts.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${relative(ROOT, book)} is within every ceiling`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return { problems, measurements: measurements(chunks, LIMITS) }
 }

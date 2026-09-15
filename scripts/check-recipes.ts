@@ -24,14 +24,9 @@
 // No network, no build: it reads two files and a markdown fence.
 
 import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { join } from 'node:path'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 interface Recipe {
   doc: string
@@ -104,11 +99,11 @@ export function missingLines(published: string, actual: string): string[] {
   return missing
 }
 
-function main(): void {
+export function checkRecipes(root = ROOT): string[] {
   const problems: string[] = []
 
   for (const recipe of RECIPES) {
-    const body = section(readFileSync(join(ROOT, recipe.doc), 'utf8'), recipe.heading)
+    const body = section(readFileSync(join(root, recipe.doc), 'utf8'), recipe.heading)
     if (!body) {
       problems.push(`${recipe.doc} has no "${recipe.heading}" section — the recipe this checks has moved or been renamed`)
       continue
@@ -122,25 +117,12 @@ function main(): void {
 
     blocks.forEach((block, index) => {
       const file = recipe.files[index]
-      const missing = missingLines(block, readFileSync(join(ROOT, file), 'utf8'))
+      const missing = missingLines(block, readFileSync(join(root, file), 'utf8'))
       if (missing.length > 0) {
         problems.push(`${file} no longer runs what "${recipe.heading}" publishes — the example guards a recipe nobody is being given. Missing: ${missing.map(line => JSON.stringify(line)).join(', ')}`)
       }
     })
   }
 
-  if (problems.length > 0) {
-    console.error('❌ A published recipe and the example that guards it disagree:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nCopy the block from the docs into the example, or fix the docs. They are one thing.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${RECIPES.length} published recipe${RECIPES.length === 1 ? ' is' : 's are'} exactly what the examples run`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return problems
 }

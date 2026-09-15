@@ -20,15 +20,10 @@
 // had thought about.
 
 import { globSync, readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { join } from 'node:path'
 import { parse } from '@vue/compiler-sfc'
-import { rootFromArgv } from './check-publishable.ts'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 
 export const APP_SOURCE = 'packages/poveste-app/src'
 
@@ -193,37 +188,16 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
   return problems
 }
 
-function main(): void {
-  const files = globSync(`${APP_SOURCE}/**/*.vue`, { cwd: ROOT })
-    .map(file => ({ file, source: readFileSync(join(ROOT, file), 'utf8') }))
+export function checkPreviewPosition(root = ROOT): string[] {
+  const files = globSync(`${APP_SOURCE}/**/*.vue`, { cwd: root })
+    .map(file => ({ file, source: readFileSync(join(root, file), 'utf8') }))
 
   if (files.length === 0) {
-    console.error(`::error::no components found under ${APP_SOURCE} — this check is looking in the wrong place`)
-    process.exit(1)
+    return [`no components found under ${APP_SOURCE} — this check is looking in the wrong place`]
+  }
+  if (previewReaching(files).size <= new Set(PREVIEW_ROOTS.map(canonical)).size) {
+    return ['nothing reaches the preview — this check stopped matching']
   }
 
-  const reaching = previewReaching(files)
-  if (reaching.size <= new Set(PREVIEW_ROOTS.map(canonical)).size) {
-    console.error('::error::nothing reaches the preview — this check stopped matching')
-    process.exit(1)
-  }
-
-  const problems = problemsIn(files)
-  if (problems.length > 0) {
-    console.error('::error::A layout choice can move the preview in the component tree\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nMoving the preview rebuilds it and cold-boots the sandbox under it')
-    console.error('(#328, #595, #596, #600). Hoist it above the branches, or — if the')
-    console.error('condition really cannot flip while the story is stationary — add it')
-    console.error('to STABLE in scripts/check-preview-position.ts with the reason.')
-    process.exit(1)
-  }
-
-  console.log(`✅ no layout choice moves the preview across ${files.length} components in ${APP_SOURCE}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  main()
+  return problemsIn(files)
 }

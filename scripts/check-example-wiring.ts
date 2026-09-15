@@ -21,14 +21,11 @@
 // checks the config the harness actually resolves rather than how it is written.
 
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
-import { rootFromArgv } from './check-publishable.ts'
+import { pathToFileURL } from 'node:url'
 
-// `--root` so a spec can run this as a process over a tree where its guard has
-// to fire: the exit status is the verdict, and no spec could reach it (#719).
-const ROOT = rootFromArgv(process.argv) ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const ROOT = join(import.meta.dirname, '..')
 const WORKFLOW = '.github/workflows/test-examples.yml'
 const GUIDE = 'ai/AGENTS.md'
 
@@ -152,13 +149,13 @@ export function onlyInFirst(a: string[], b: string[]): string[] {
   return a.filter(name => !b.includes(name))
 }
 
-async function importDefault(path: string): Promise<any> {
-  return (await import(pathToFileURL(join(ROOT, path)).href)).default
+async function importDefault(path: string, root: string): Promise<any> {
+  return (await import(pathToFileURL(join(root, path)).href)).default
 }
 
-async function exists(path: string): Promise<boolean> {
+async function exists(path: string, root: string): Promise<boolean> {
   try {
-    await stat(join(ROOT, path))
+    await stat(join(root, path))
     return true
   }
   catch {
@@ -166,22 +163,22 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-async function main(): Promise<void> {
+export async function checkExampleWiring(root = ROOT): Promise<string[]> {
   const problems: string[] = []
 
   // The root config filters itself by this, and a CI job that sets it would make
   // every other example look missing.
   delete process.env.POVESTE_E2E_EXAMPLE
 
-  const workflow = await readFile(join(ROOT, WORKFLOW), 'utf8')
+  const workflow = await readFile(join(root, WORKFLOW), 'utf8')
   const matrix = matrixExamples(workflow)
   if (matrix.length === 0) {
     problems.push(`${WORKFLOW} has no \`example:\` matrix to read — the shape this check reads has changed`)
   }
 
-  const root = await importDefault('playwright.config.ts')
-  const configured = exampleNames((root.projects ?? []).map((project: { name: string }) => project.name))
-  const rootPorts = portsByExample(asServers(root.webServer))
+  const config = await importDefault('playwright.config.ts', root)
+  const configured = exampleNames((config.projects ?? []).map((project: { name: string }) => project.name))
+  const rootPorts = portsByExample(asServers(config.webServer))
 
   for (const name of onlyInFirst(matrix, configured)) {
     problems.push(`${WORKFLOW} runs "${name}", which playwright.config.ts does not define — that job fails before a test runs`)
@@ -200,13 +197,13 @@ async function main(): Promise<void> {
   // is "has a conformance project".
   // Read rather than crash: the guide has moved once already, and "it is not
   // there" should read as a problem like the others rather than a stack trace.
-  const guide = await exists(GUIDE) ? await readFile(join(ROOT, GUIDE), 'utf8') : ''
+  const guide = await exists(GUIDE, root) ? await readFile(join(root, GUIDE), 'utf8') : ''
   if (guide === '') {
     problems.push(`${GUIDE} is missing — the guide the example table lives in has moved or gone`)
   }
   const { reference, conformance: conformanceOnly, fixtures } = guideExamples(guide)
   const guideConformance = [...reference, ...conformanceOnly]
-  const conformance = conformanceBooks((root.projects ?? []).map((project: { name: string }) => project.name))
+  const conformance = conformanceBooks((config.projects ?? []).map((project: { name: string }) => project.name))
 
   if (reference.length === 0 && fixtures.length === 0) {
     problems.push(`${GUIDE} has no example table to read — the shape this check reads has changed`)
@@ -219,7 +216,7 @@ async function main(): Promise<void> {
     problems.push(`"${name}" carries the conformance set, but ${GUIDE} lists it as neither a reference book nor a conformance book`)
   }
 
-  const directories = (await readdir(join(ROOT, 'examples'), { withFileTypes: true }))
+  const directories = (await readdir(join(root, 'examples'), { withFileTypes: true }))
     .filter(entry => entry.isDirectory())
     .map(entry => entry.name)
   const listed = [...guideConformance, ...fixtures]
@@ -236,13 +233,13 @@ async function main(): Promise<void> {
   }
 
   for (const name of configured) {
-    if (!await exists(`examples/${name}/package.json`)) {
+    if (!await exists(`examples/${name}/package.json`, root)) {
       problems.push(`playwright.config.ts defines "${name}", but examples/${name}/package.json does not exist`)
       continue
     }
 
     const ports = rootPorts.get(name) ?? {}
-    const manifest = JSON.parse(await readFile(join(ROOT, `examples/${name}/package.json`), 'utf8'))
+    const manifest = JSON.parse(await readFile(join(root, `examples/${name}/package.json`), 'utf8'))
     const declared = portFromCommand(manifest.scripts?.['story:preview'])
 
     if (declared !== ports.preview) {
@@ -250,18 +247,5 @@ async function main(): Promise<void> {
     }
   }
 
-  if (problems.length > 0) {
-    console.error('❌ The example harness disagrees with itself:\n')
-    for (const problem of problems) {
-      console.error(`  • ${problem}`)
-    }
-    console.error('\nThe matrix, playwright.config.ts and each example\'s own package.json all name the same books and the same ports. Fix whichever one drifted.')
-    process.exit(1)
-  }
-
-  console.log(`✅ ${configured.length} examples wired the same way in ${WORKFLOW}, playwright.config.ts and their own package.json, and all ${listed.length} described in ${GUIDE}`)
-}
-
-if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  await main()
+  return problems
 }

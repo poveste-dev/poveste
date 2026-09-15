@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { codeOnly, configKeys, documentedKeys, parseConfig, REFERENCE as REFERENCE_PATH, staleEntries, TYPES, undocumentedKeys } from './check-config-reference.ts'
+import { checkConfigReference, codeOnly, configKeys, documentedKeys, parseConfig, REFERENCE as REFERENCE_PATH, staleEntries, TYPES, undocumentedKeys } from './check-config-reference.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 const SOURCE = `
 export interface PovesteConfig {
@@ -203,26 +202,15 @@ describe('staleEntries, for a documented sub-key', () => {
   })
 })
 
-// The failure exits live in `main()`, so a spec asserting only what the pure
-// functions return stayed green with every `process.exit(1)` deleted (#760).
-// The status is asserted over a tree where the check has to fail, with the
-// message it prints and no stack trace: a crash exits non-zero too, and a guard
-// that prints and then falls through to one looks the same from outside (#759).
-describe('the check as a process', () => {
-  it('exits 0 over the repository it actually ships with', () => {
-    expect(runCheck('check-config-reference.ts').status).toBe(0)
-  })
-
-  // `REFERENCE_PATH`: this file already has a `REFERENCE` of its own — the fixture
-  // markdown above — and it shadows the import silently.
+describe('checkConfigReference', () => {
   // The real config interface against a reference with no entries, so every key
   // is undocumented without this spec restating the parser's input format.
-  it('exits non-zero when config keys have no reference entry', () => {
-    const run = runCheck('check-config-reference.ts', ['--root', tree({ [TYPES]: readFileSync(join(import.meta.dirname, '..', TYPES), 'utf8'), [REFERENCE_PATH]: '# Configuration\n' })])
+  // `REFERENCE_PATH`: this file already has a `REFERENCE` of its own — the fixture
+  // markdown above — and it shadows the import silently.
+  it('reports config keys that have no reference entry', () => {
+    const root = tree({ [TYPES]: readFileSync(join(import.meta.dirname, '..', TYPES), 'utf8'), [REFERENCE_PATH]: '# Configuration\n' })
 
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('is a config key with no reference entry')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(checkConfigReference(root)).toContainEqual(expect.stringContaining('is a config key with no reference entry'))
     removeTrees()
   })
 })

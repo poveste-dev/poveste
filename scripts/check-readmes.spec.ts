@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { aliasesTaughtAlone, collect, externalHosts, installLineProblems, instructsWithHistoire, legacyOwnUrls, missingInstallLine, referencedWorkflows, unrunnableFences, walkProblems } from './check-readmes.ts'
+import { aliasesTaughtAlone, checkReadmes, collect, externalHosts, installLineProblems, instructsWithHistoire, legacyOwnUrls, missingInstallLine, referencedWorkflows, unrunnableFences, walkProblems } from './check-readmes.ts'
 import { removeTrees, tree } from './fixture-tree.ts'
-import { runCheck } from './run-check.ts'
 
 // The heuristics below are the whole guard. Each case here is one that got
 // past an earlier version of it, so a regression is a defect shipping again
@@ -410,22 +409,11 @@ describe('walkProblems', () => {
   })
 })
 
-// The failure exits live in `main()`, so a spec asserting only what the pure
-// functions return stayed green with every `process.exit(1)` deleted (#760).
-// The status is asserted over a tree where the check has to fail, with the
-// message it prints and no stack trace: a crash exits non-zero too, and a guard
-// that prints and then falls through to one looks the same from outside (#759).
-describe('the check as a process', () => {
-  it('exits 0 over the repository it actually ships with', () => {
-    expect(runCheck('check-readmes.ts').status).toBe(0)
-  })
+describe('checkReadmes', () => {
+  it('reports that there is no published package to check', async () => {
+    const root = tree({ 'README.md': '# root' })
 
-  it('exits non-zero when there is no published package to check', () => {
-    const run = runCheck('check-readmes.ts', ['--root', tree({ 'README.md': '# root' })])
-
-    expect(run.status).toBe(1)
-    expect(run.stderr).toContain('found no published packages under packages/')
-    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+    expect(await checkReadmes(root)).toContainEqual(expect.stringContaining('found no published packages under packages/'))
     removeTrees()
   })
 })
