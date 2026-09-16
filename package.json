@@ -36,6 +36,7 @@
     "test:config-reference": "vitest run --project scripts checks/config-reference",
     "test:docs-site": "vitest run --project scripts checks/docs-site --tags-filter=\"check && !network\"",
     "test:docs-site:live": "vitest run --project scripts checks/docs-site --tags-filter=\"check && network\"",
+    "test:audit": "vitest run --project scripts checks/audit --tags-filter=\"check && network\"",
     "test:publishable": "vitest run --project scripts checks/publishable --tags-filter=\"check && network\"",
     "test:published": "vitest run --project scripts checks/published",
     "test:packaging": "vitest run --project scripts checks/publishable --tags-filter=\"check && !network\"",
@@ -48,7 +49,7 @@
     "release:report": "pnpm pipeline checks --full --no-cache --include-workspace-root",
     "test:task-graph": "vitest run --project scripts checks/task-graph",
     "test:step-gates": "vitest run --project scripts checks/step-gates",
-    "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:audit && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
@@ -84,7 +85,8 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitepress": "1.6.4",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "yaml": "^2.9.0"
   },
   "lint-staged": {
     "*": "eslint --fix --no-warn-ignored"

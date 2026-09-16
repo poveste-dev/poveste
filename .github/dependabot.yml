@@ -1,0 +1,37 @@
+# Version updates. Security updates are enabled in the repository settings and
+# need no entry here (#385).
+#
+# Pull requests target `next`, where all work lands; `main` only moves when a
+# release fast-forwards it. Minor and patch updates arrive as one grouped pull
+# request a week, so the stream stays reviewable; a major version gets a pull
+# request of its own, because a major is the one that needs reading (#307).
+#
+# A pull request bumping a scoped package gets a title with a bare `@scope` in it,
+# which the PR title check rejects: retitle it with the name in backticks before
+# merging, or the release notes mention a stranger (#399).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: next
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: next
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']

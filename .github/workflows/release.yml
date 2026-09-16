@@ -56,6 +56,11 @@ jobs:
       - name: Preflight — every package is bootstrappable, installable and resolvable
         run: pnpm run test:publishable
 
+      # The scheduled audit can go red between releases; this is what stops one
+      # shipping over it.
+      - name: No high or critical advisory reaches a consumer
+        run: pnpm run test:audit
+
       # The release body is the hand-written CHANGELOG section, because publishing
       # the release is what emails every watcher — and editing it afterwards never
       # re-notifies, so a generated commit list was the only thing subscribers ever
