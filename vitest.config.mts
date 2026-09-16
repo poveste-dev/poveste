@@ -1,5 +1,24 @@
+import { globSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { defineConfig } from 'vitest/config'
 import { CHECK_TAG, NEED_TAGS, SUBJECT_TAGS } from './scripts/checks/support/tag-names.mts'
+
+// `**`, not `*`: a spec in a subdirectory would otherwise be skipped with a
+// green exit.
+const SCRIPTS_INCLUDE = ['scripts/**/*.spec.ts']
+
+// Every check runs as a spec under `scripts/`, so a narrower include takes
+// checks out of `test:scripts` and `test:checks` and both still exit 0 — the
+// release gate included (#769). Held against the directory rather than a count,
+// which would drift with every new check. Failing here fails every run.
+const included = new Set(globSync(SCRIPTS_INCLUDE, { cwd: import.meta.dirname }))
+const unincluded = readdirSync(join(import.meta.dirname, 'scripts'), { recursive: true, encoding: 'utf8' })
+  .map(file => join('scripts', file))
+  .filter(file => file.endsWith('.spec.ts') && !file.includes('node_modules'))
+  .filter(file => !included.has(file))
+if (unincluded.length > 0) {
+  throw new Error(`The \`scripts\` project's include misses ${unincluded.length} spec${unincluded.length === 1 ? '' : 's'} under scripts/, which would leave the run and pass: ${unincluded.join(', ')}`)
+}
 
 // Without `projects`, a root config applies vitest's default include to the
 // whole repository and loads the Playwright specs under `e2e/` and `examples/`.
@@ -14,9 +33,7 @@ export default defineConfig({
       {
         test: {
           name: 'scripts',
-          // `**`, not `*`: a spec in a subdirectory would otherwise be skipped
-          // with a green exit.
-          include: ['scripts/**/*.spec.ts'],
+          include: SCRIPTS_INCLUDE,
           environment: 'node',
           // Measured −22% on the test phase by `vitest doctor`. It also stops the
           // forks pool reporting the worker's own stdin pipe as an async leak
