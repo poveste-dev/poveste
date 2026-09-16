@@ -31,6 +31,10 @@ Say it however you like — we answer to "po-VEST" too. 🙂
   </a>
 </p>
 
+<p align="center">
+  Rather watch than read? A 22-second recording builds a Quasar story end to end — the component rendering, a control driving it, and the boot-file gotcha — on <a href="https://bsky.app/profile/poveste.dev/post/3murumqf6es2u">Bluesky</a> or <a href="https://x.com/50rayn/status/2096269050384892241">X</a>.
+</p>
+
 - ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
 - 🧩 Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar, each proven by its own example suite in CI
 - 🪟 Collects on Windows, macOS and Linux — all three run in CI
