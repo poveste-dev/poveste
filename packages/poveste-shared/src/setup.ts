@@ -30,9 +30,14 @@ export function getSetupHook<T>(mod: SetupModule, name: string | string[], retir
   // from one that does not work (#157).
   const dropped = retired.filter(candidate => typeof mod?.[candidate] === 'function')
   if (dropped.length > 0) {
+    // Two different situations, and the message has to say which: with no live
+    // name exported the setup does not run at all, and with one it does — so
+    // "nothing runs" would send someone to debug a setup that is working.
+    const consequence = present.length > 0
+      ? `${present[0]} runs; the old export is ignored.`
+      : `Rename to ${names[names.length - 1]} — nothing runs until you do.`
     console.warn(
-      `[poveste] Setup file exports ${dropped.join(', ')}, which ${dropped.length === 1 ? 'is' : 'are'} no longer read. `
-      + `Rename to ${names[names.length - 1]} — nothing runs until you do.`,
+      `[poveste] Setup file exports ${dropped.join(', ')}, which ${dropped.length === 1 ? 'is' : 'are'} no longer read. ${consequence}`,
     )
   }
 

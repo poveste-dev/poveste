@@ -104,6 +104,25 @@ describe('getSetupHook', () => {
       expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupSvelte3'))
     })
 
+    // The live hook runs in this case, so telling the author nothing runs would
+    // send them to debug a setup that is working — or to delete the live export.
+    it('says the live hook runs when there is one, rather than that nothing does', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {}, setupSvelte: () => {} }, ['setupSvelte'], RETIRED)
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupSvelte runs; the old export is ignored'))
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('nothing runs'))
+    })
+
+    it('says nothing runs when only the retired name is exported', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {} }, ['setupSvelte'], RETIRED)
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('nothing runs until you do'))
+    })
+
     it('says nothing when no retired name is exported, which is every case today', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
