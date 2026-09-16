@@ -1,12 +1,11 @@
 import type { ServerStoryFile } from '@poveste/shared'
 import type { ViteDevServer } from 'vite'
 import type { Context } from '../context.js'
-import type { CollectRpc, Payload, ReturnData } from './worker.js'
+import type { Payload, ReturnData } from './worker.js'
 import { cpus } from 'node:os'
 import { MessageChannel } from 'node:worker_threads'
 import Tinypool from '@akryum/tinypool'
 import { escapeRegExp } from '@poveste/shared'
-import { createBirpc } from 'birpc'
 import path, { relative } from 'pathe'
 import pc from 'picocolors'
 import { TEMP_PATH } from '../alias.js'
@@ -14,6 +13,7 @@ import { createPath } from '../tree.js'
 import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
 import { createModuleServer } from './module-server.js'
+import { serveInvoke } from './rpc.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -74,12 +74,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     const port = channel.port2
     const workerPort = channel.port1
 
-    createBirpc<Record<string, never>, CollectRpc>({
-      invoke: (name, data) => node.invoke(name, data),
-    }, {
-      post: data => port.postMessage(data),
-      on: data => port.on('message', data),
-    })
+    serveInvoke(port, (name, data) => node.invoke(name, data))
 
     return {
       port,
