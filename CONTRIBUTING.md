@@ -66,6 +66,8 @@ corepack enable
 pnpm i
 ```
 
+That install also puts a pre-commit hook in place, which runs `eslint --fix` over the files you staged and nothing else — it fixes what it can, stages the fix, and stops the commit only if an error is left. A lint error that reached `main` and surfaced in CI is what it exists to catch (#18). Skip it for one commit with `git commit --no-verify`, or for a shell with `SKIP_SIMPLE_GIT_HOOKS=1`.
+
 2. Compile Poveste in watch mode:
 
 ```sh

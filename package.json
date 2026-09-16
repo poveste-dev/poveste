@@ -11,6 +11,7 @@
     "node": ">=26"
   },
   "scripts": {
+    "prepare": "simple-git-hooks",
     "lint": "eslint . --cache",
     "lint:gate": "eslint .",
     "lint:fix": "eslint . --fix --cache",
@@ -73,12 +74,20 @@
     "eslint": "^10.8.1",
     "eslint-plugin-svelte": "^3.22.0",
     "floating-vue": "5.2.2",
+    "lint-staged": "^17.5.1",
     "postcss": "catalog:",
     "rimraf": "^6.0.1",
+    "simple-git-hooks": "^2.14.0",
     "svelte-eslint-parser": "^1.8.0",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vitepress": "1.6.4",
     "vitest": "catalog:"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix --no-warn-ignored"
   }
 }
