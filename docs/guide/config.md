@@ -225,7 +225,7 @@ You can also tell Poveste to configure the sandbox application using the corresp
 | Framework | Setup function | Also accepted |
 | --------- | -------------- | ------------- |
 | Vue | `setupVue` | `setupVue3` |
-| Svelte | `setupSvelte5` | `setupSvelte4`, `setupSvelte3` |
+| Svelte | `setupSvelte` | `setupSvelte5`, `setupSvelte4`, `setupSvelte3` |
 
 ### Vue setup
 
@@ -247,14 +247,14 @@ export const setupVue = defineSetupVue(({ app, story, variant }) => {
 
 ### Svelte setup
 
-Inside your setup file, you can export a `setupSvelte5` function that will be called by Poveste for every mounted story and variant. Poveste provides an optional `defineSetupSvelte` helper to have better types in your IDE:
+Inside your setup file, you can export a `setupSvelte` function that will be called by Poveste for every mounted story and variant. Poveste provides an optional `defineSetupSvelte` helper to have better types in your IDE:
 
 ```ts
 // src/poveste.setup.ts
 
 import { defineSetupSvelte } from '@poveste/plugin-svelte'
 
-export const setupSvelte5 = defineSetupSvelte(({ app, story, variant }) => {
+export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
   document.documentElement.dataset.theme = 'dark'
 })
 ```

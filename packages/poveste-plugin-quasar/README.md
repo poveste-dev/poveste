@@ -46,10 +46,10 @@ Pass them to `setupQuasar` in your setup file:
 
 ```ts
 import { setupQuasar } from '@poveste/plugin-quasar/setup'
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import greeting from './boot/greeting'
 
-export const setupVue3 = defineSetupVue3(setupQuasar({
+export const setupVue = defineSetupVue(setupQuasar({
   boot: [greeting],
 }))
 ```
