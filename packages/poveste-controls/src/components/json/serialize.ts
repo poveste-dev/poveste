@@ -11,12 +11,20 @@
  * Nodes and windows are named rather than walked. Both are cyclic, so the guard
  * below would terminate on them, but only after walking a few thousand
  * properties of `window` on every keystroke.
+ *
+ * Past `MAX_OBJECTS` the rest is named too. A shared reference is walked each
+ * time it appears, so an app instance such as `useNuxtApp()` expands without
+ * end, and this runs synchronously on the thread the preview iframe shares
+ * (#788).
  */
+const MAX_OBJECTS = 5000
+
 export function stringifyState(value: unknown, space?: number) {
   // Ancestors, not everything seen: the same object appearing twice as a
   // sibling is a shared reference, not a cycle, and is perfectly serialisable.
   // The replacer's `this` is the holder, which is what lets the stack unwind.
   const ancestors: any[] = []
+  let walked = 0
 
   return JSON.stringify(value, function (this: any, _key, current) {
     if (typeof current === 'function') {
@@ -45,6 +53,10 @@ export function stringifyState(value: unknown, space?: number) {
 
     if (ancestors.includes(current)) {
       return '[Circular]'
+    }
+
+    if (++walked > MAX_OBJECTS) {
+      return '[Truncated]'
     }
 
     ancestors.push(current)
