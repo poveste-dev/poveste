@@ -8,6 +8,11 @@
 
   const index = { value: 0 }
   setContext('__pvtIndex', index)
+  // The sandbox realm's half of story-prop inheritance. `MountStory` does this
+  // for the app realm, and the bridge carries only `variant.state` across the
+  // iframe — so without it a story-level prop reaches the sandbox by accident,
+  // when a grid cell happens to render in the same realm (#466).
+  setContext('__pvtStoryProps', $$restProps)
 
   export let source = null
   export let initState = null

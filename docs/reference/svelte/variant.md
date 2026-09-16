@@ -100,7 +100,7 @@ It receives a payload object with the following properties:
 </Hst.Story>
 ```
 
-Put it on every variant that needs it. Unlike Vue, a `setupApp` on [`Hst.Story`](./story.md#setupapp) is not inherited by explicit variants.
+A `setupApp` on [`Hst.Story`](./story.md#setupapp) is inherited by every variant; this overrides it for one.
 
 [Learn more](../../guide/svelte/app-setup.md#local-setup)
 

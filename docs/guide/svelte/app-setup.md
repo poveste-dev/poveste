@@ -90,13 +90,6 @@ A variant can define a `setupApp` prop, called after the global hook with the sa
 </Hst.Story>
 ```
 
-::: warning Not inherited by explicit variants
-In Vue, a `setup-app` on `<Story>` gives every `<Variant>` a default. In Svelte it does not:
-a `setupApp` on `<Hst.Story>` reaches only the implicit variant of a story that declares no
-`<Hst.Variant>` children. As soon as you write explicit variants, put `setupApp` on each
-variant that needs it.
-:::
-
 ## Examples
 
 ### Shared state

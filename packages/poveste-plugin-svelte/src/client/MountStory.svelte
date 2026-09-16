@@ -7,6 +7,10 @@
   const index = { value: 0 }
   setContext('__pvtIndex', index)
   setContext('__pvtSlots', $$slots)
+  // Slots were given this treatment and props never were, so a story-level prop
+  // reached an implicit variant and was dropped the moment a story declared
+  // explicit ones — `$$restProps` is only spread in the branch below (#466).
+  setContext('__pvtStoryProps', $$restProps)
 
   // Not `$:`: Svelte invalidates a reactive statement when a variable it
   // references is reassigned, and `story` is a const read from context that

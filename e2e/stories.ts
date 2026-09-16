@@ -40,6 +40,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-isolated-grid', title: 'Isolated grid' },
   { id: 'conformance-markdown-links', title: 'Markdown links' },
   { id: 'conformance-no-iframe', title: 'No iframe' },
+  { id: 'conformance-story-setup-app', title: 'Story setup app' },
   { id: 'conformance-tall-story', title: 'Tall story' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
