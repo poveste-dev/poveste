@@ -13,7 +13,7 @@ describe('stringifyState', () => {
   })
 
   it('names a cycle instead of throwing', () => {
-    // The ComplexParameter story in the vue3 example holds exactly this, and
+    // The ComplexParameter story in the vue example holds exactly this, and
     // once the state sync started delivering the story's own scope it reached
     // the editor. `JSON.stringify` throws here, from a lifecycle hook, taking
     // the rest of the flush — the panel and the toolbar — down with it.

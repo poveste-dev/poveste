@@ -217,5 +217,5 @@ There is nothing special to do. A Svelte i18n library — or a hand-rolled `t()`
 ordinary module, not a framework plugin, so it has none of the sandbox trouble the [Nuxt
 i18n guide](../vue/getting-started.md#i18n) describes: nothing gets booted through an app
 entry, so nothing 500s the iframe. Import or initialise it like any other module (in a
-`.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. `examples/svelte5`
+`.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. `examples/svelte`
 carries a minimal version.

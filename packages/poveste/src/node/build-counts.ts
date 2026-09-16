@@ -17,7 +17,7 @@ export interface BuildCounts {
  * "No variants" is not the question. A standalone `.story.md` is collected into a
  * story with `docsOnly: true` and `variants: []` by construction (`markdown.ts`),
  * so counting empty by variants alone reported every documentation page in the
- * book as a problem — three of the four `examples/vue3` warned about are
+ * book as a problem — three of the four `examples/vue` warned about are
  * `SHARED_STORY_TITLES` entries that a required spec fails if you delete them,
  * which left the one real empty file hidden inside them (#670).
  *

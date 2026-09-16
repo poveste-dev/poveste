@@ -1,0 +1,22 @@
+{
+  "name": "poveste-example-vue-tailwind",
+  "type": "module",
+  "version": "0.14.0",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview --port 4571"
+  },
+  "dependencies": {
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@poveste/plugin-vue": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "poveste": "workspace:*",
+    "vite": "catalog:"
+  }
+}

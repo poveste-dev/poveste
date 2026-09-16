@@ -13,7 +13,7 @@
  * framework and forgotten in another fails there rather than being noticed the
  * next time somebody opens the book.
  *
- * `vue3-tailwind` is not in this contract. It exists to test a consumer's own
+ * `vue-tailwind` is not in this contract. It exists to test a consumer's own
  * Tailwind build against the chrome, not to be a fourth framework, and giving it
  * the full story set would only slow it down.
  */
@@ -53,10 +53,10 @@ export const SHARED_STORIES: SharedStory[] = [
  *
  * An example is free to carry more: `Nuxt/…`, `SvelteKit/…` and the Svelte
  * regression fixtures are framework-specific by nature. What it may not do is
- * carry fewer, which is how vue3 ended up as the only book exercising the
+ * carry fewer, which is how vue ended up as the only book exercising the
  * chrome.
  *
- * Three of vue3's stories are still absent, and two wait on the plugin: the two
+ * Three of vue's stories are still absent, and two wait on the plugin: the two
  * `WrapperMetaOn…` stories need `addWrapper` (#232), and `Story setup` needs
  * setup hooks that run before the story mounts and an app to register things on
  * (#234). `Tailwind` is the odd one out — it is generated from design-system

@@ -1,0 +1,23 @@
+{
+  "name": "poveste-example-vue-percy",
+  "type": "module",
+  "version": "0.14.0",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview",
+    "test:percy": "node percy-smoke.mjs"
+  },
+  "dependencies": {
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@poveste/plugin-percy": "workspace:*",
+    "@poveste/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "poveste": "workspace:*",
+    "puppeteer": "^25.9.0",
+    "vite": "catalog:"
+  }
+}

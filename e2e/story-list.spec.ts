@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test'
 import { SHARED_STORIES, SHARED_STORY_TITLES } from './stories.js'
 
 // The four framework examples are supposed to present the same book. They did
-// not: vue3 had the stories and the others had a handful, so a chrome feature
+// not: vue had the stories and the others had a handful, so a chrome feature
 // could be exercised on Vue and silently untested everywhere else — which is how
 // the state sync, the controls panel and the variant grid all ended up with bugs
-// only vue3 could have caught.
+// only vue could have caught.
 //
 // Read from `poveste.json`, which the build writes next to the book: it is the
 // collector's own output, so it says what this book actually contains rather

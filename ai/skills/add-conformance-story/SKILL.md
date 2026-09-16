@@ -2,7 +2,7 @@
 name: add-conformance-story
 description: >-
   Add a story that proves a behaviour to the poveste conformance set. The set spans FOUR example
-  books (vue3, nuxt4, svelte5, sveltekit) plus a spec in `e2e/` and an entry in `e2e/stories.ts`,
+  books (vue, nuxt, svelte, sveltekit) plus a spec in `e2e/` and an entry in `e2e/stories.ts`,
   and `story-list.spec.ts` fails in the three books you forget. Use whenever adding a story that
   demonstrates or proves poveste behaviour, adding an e2e spec that needs a story to drive, or
   fixing a `story-list` failure naming a missing id.
@@ -18,15 +18,15 @@ Before writing anything, open an existing conformance story in each book and cop
 
 | | |
 | --- | --- |
-| `examples/vue3/src/conformance/` | `.story.vue` |
-| `examples/nuxt4/app/components/conformance/` | `.story.vue` |
-| `examples/svelte5/src/conformance/` | `.story.svelte` |
+| `examples/vue/src/conformance/` | `.story.vue` |
+| `examples/nuxt/app/components/conformance/` | `.story.vue` |
+| `examples/svelte/src/conformance/` | `.story.svelte` |
 | `examples/sveltekit/src/lib/conformance/` | `.story.svelte` |
 | `e2e/stories.ts` | the `{ id, title }` entry all four are held to |
 
 Then the spec itself in `e2e/<name>.spec.ts`.
 
-Fixtures — `quasar`, `vike`, `vue3-tailwind`, `vue3-percy`, `vue3-screenshot`, `vue3-themed`, `vue3-vuetify` — are **not** in this contract. Adding the story to one only slows it down.
+Fixtures — `quasar`, `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify` — are **not** in this contract. Adding the story to one only slows it down.
 
 ## Ids
 
@@ -49,8 +49,8 @@ Assert on what actually ships. Several defects here looked right in the source a
 Run the suite in more than one book — one framework passing proves nothing about the contract:
 
 ```bash
-POVESTE_E2E_EXAMPLE=vue3 npx playwright test -g "<your spec>"
-POVESTE_E2E_EXAMPLE=svelte5 npx playwright test -g "<your spec>"
+POVESTE_E2E_EXAMPLE=vue npx playwright test -g "<your spec>"
+POVESTE_E2E_EXAMPLE=svelte npx playwright test -g "<your spec>"
 ```
 
 **Kill stray preview servers first.** A server left running from an earlier run is reused and serves stale output, so a fix looks broken or a broken build looks fine. This has cost real debugging time more than once.

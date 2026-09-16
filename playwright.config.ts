@@ -56,15 +56,15 @@ interface Example {
 
 const ALL_EXAMPLES: Example[] = [
   {
-    name: 'vue3',
+    name: 'vue',
     port: 4567,
     conformance: true,
     reference: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
-  { name: 'nuxt4', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts'] } },
+  { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts'] } },
   {
-    name: 'svelte5',
+    name: 'svelte',
     port: 4569,
     conformance: true,
     reference: true,
@@ -72,7 +72,7 @@ const ALL_EXAMPLES: Example[] = [
   },
   { name: 'sveltekit', port: 4570, conformance: true, reference: true },
   {
-    name: 'vue3-tailwind',
+    name: 'vue-tailwind',
     port: 4571,
     dev: { port: 4671, specs: ['**/style-isolation.spec.ts'] },
   },
@@ -101,7 +101,7 @@ const ALL_EXAMPLES: Example[] = [
  * Which examples this run covers, from `POVESTE_E2E_EXAMPLE` (comma-separated,
  * empty means all). This is #89's step 2, and the decision it left open.
  *
- * `webServer` is a top-level option, so `--project=svelte5` on its own still
+ * `webServer` is a top-level option, so `--project=svelte` on its own still
  * boots every server in the array — four book builds and four preview servers
  * to run one framework's specs. Filtering here is what makes a job per
  * framework worth having: CI can fan out over the examples and each job pays

@@ -40,7 +40,7 @@ describe('buildCounts', () => {
   })
 
   describe('over a book that mixes all three, which is every reference book', () => {
-    // examples/vue3 in miniature: many stories, three docs pages, one Empty fixture.
+    // examples/vue in miniature: many stories, three docs pages, one Empty fixture.
     const book = [NORMAL, DOCS_ONLY, DOCS_ONLY, DOCS_ONLY, EMPTY]
 
     it('keeps documents out of the story count, as the home page does', () => {

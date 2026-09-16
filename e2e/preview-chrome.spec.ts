@@ -82,9 +82,9 @@ test.describe('a single view', () => {
   // The case gating on `isResponsiveEnabled` would have broken: a single view
   // whose variant is `responsiveDisabled` still needs its chrome — it only
   // loses the draggers. The design-system story is the one that carries the
-  // flag, and it is vue3-only.
+  // flag, and it is vue-only.
   test('keeps its chrome even when the variant disables responsive', async ({ page }, testInfo) => {
-    test.skip(!testInfo.project.name.startsWith('vue3'), 'design-system story is vue3-only')
+    test.skip(!testInfo.project.name.startsWith('vue'), 'design-system story is vue-only')
 
     await openStory(page, 'tailwind', '?variantId=background-color')
     await expectChrome(page)

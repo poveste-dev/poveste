@@ -33,7 +33,7 @@ and are out of range for the same reason.
 
 Nuxt 3 is gone from the peer range too: it was advertised but never covered by an example
 or a CI job, and the 3.16/3.17 `jiti` breakage in `loadNuxt` was never something we could
-reproduce or fix. `examples/nuxt4` is what CI actually proves.
+reproduce or fix. `examples/nuxt` is what CI actually proves.
 :::
 
 Create a `poveste.config.js` or `poveste.config.ts` file in your project root, and register both plugins — `HstNuxt()` extends `HstVue()` rather than replacing it:
@@ -55,7 +55,7 @@ export default defineConfig({
 
 The [Vue guide](../vue/getting-started.md#the-vite-config) tells a plain Vue project to create a `vite.config.ts` with `@vitejs/plugin-vue`. **Nuxt does not need one.** Its own builder supplies the Vue plugin, and `@poveste/plugin-nuxt` reads Nuxt's resolved Vite config and curates it for the story sandbox.
 
-`examples/nuxt4` carries no `vite.config.ts` at all, and it is the book CI builds on every pull request.
+`examples/nuxt` carries no `vite.config.ts` at all, and it is the book CI builds on every pull request.
 
 ## Command Line Interface
 

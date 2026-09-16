@@ -1,0 +1,27 @@
+{
+  "name": "poveste-example-svelte",
+  "type": "module",
+  "version": "0.14.0",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview --port 4569",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "svelte": "^5.55.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@poveste/plugin-svelte": "workspace:*",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "lottie-web": "^5.12.2",
+    "poveste": "workspace:*",
+    "sass": "^1.82.0",
+    "svelte-check": "^4.4.5",
+    "svelte-preprocess": "^6.0.3",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

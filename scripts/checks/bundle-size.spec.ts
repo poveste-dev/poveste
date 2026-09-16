@@ -151,12 +151,12 @@ describe('findBook', () => {
 
 describe('checkBundleSize', () => {
   it('reports an example with no built book in it', () => {
-    const root = tree({ 'examples/vue3/': '' })
+    const root = tree({ 'examples/vue/': '' })
 
-    expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue3'))
+    expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue'))
   })
 
-  it('the built vue3 book is within every size ceiling', { tags: ['check', 'app', 'build'] }, () => {
+  it('the built vue book is within every size ceiling', { tags: ['check', 'app', 'build'] }, () => {
     const result = checkBundleSize()
     process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 

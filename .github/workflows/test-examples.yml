@@ -93,7 +93,7 @@ jobs:
 
   # Built once and handed to every example, so all of them are tested against
   # the same bytes. Five jobs each running their own `pnpm run build` would also
-  # work, but then "it fails only on svelte5" has one more explanation in it.
+  # work, but then "it fails only on svelte" has one more explanation in it.
   build:
     needs: changes
     if: needs.changes.outputs.examples != 'false'
@@ -133,7 +133,7 @@ jobs:
     needs: [changes, build]
     # This job is dispatched even when there is nothing to test, and every step
     # inside it is gated instead. A matrix job that never starts never expands
-    # its matrix, so `Example e2e (vue3)` and its four required siblings would
+    # its matrix, so `Example e2e (vue)` and its four required siblings would
     # never be *created* — the same permanent-pending deadlock `paths:` causes,
     # reached through `needs:`. Measured on a docs-only PR: the skipped job
     # reported once, as the literal `Example e2e (${{ matrix.example }})`.
@@ -155,12 +155,12 @@ jobs:
     # book — the whole point of a conformance suite is that a chrome regression
     # which only shows up under one plugin cannot hide behind the others.
     #
-    # `fail-fast: false` because "svelte5 broke" and "svelte5 and nuxt4 broke"
+    # `fail-fast: false` because "svelte broke" and "svelte and nuxt broke"
     # are different bugs, and cancelling the rest hides which one it is.
     strategy:
       fail-fast: false
       matrix:
-        example: [vue3, nuxt4, svelte5, sveltekit, vue3-tailwind, vike, quasar]
+        example: [vue, nuxt, svelte, sveltekit, vue-tailwind, vike, quasar]
     name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v7
@@ -210,12 +210,12 @@ jobs:
         if: ${{ env.RUN == 'true' && (steps.playwright-cache.outputs.cache-hit != 'true') }}
         run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
 
-      # Lives here rather than in the nuxt4 example's own suite because
+      # Lives here rather than in the nuxt example's own suite because
       # plugin-nuxt has no test infrastructure, and this is the only job that
       # builds a Nuxt book (#223).
       - name: Assert the host .nuxt is untouched by a story build
-        if: ${{ env.RUN == 'true' && (matrix.example == 'nuxt4') }}
-        working-directory: ./examples/nuxt4
+        if: ${{ env.RUN == 'true' && (matrix.example == 'nuxt') }}
+        working-directory: ./examples/nuxt
         run: pnpm run test:build-dir
 
       # The other half of the vike example's contract. `vite.config.ts` drops
@@ -234,11 +234,11 @@ jobs:
       # that used to be the only thing terminating a failed build (#405). It has one
       # story, so nothing is ever in flight to strand.
       #
-      # vue3 has 57, so a failure abandons executions mid-run — and collection ports
+      # vue has 57, so a failure abandons executions mid-run — and collection ports
       # that are not closed then keep the process alive with nothing left to do
-      # (#426). Measured: with the leak restored, vue3 hangs here and vike does not.
+      # (#426). Measured: with the leak restored, vue hangs here and vike does not.
       - name: Assert a broken component fails the book build
-        if: ${{ env.RUN == 'true' && (matrix.example == 'vike' || matrix.example == 'vue3') }}
+        if: ${{ env.RUN == 'true' && (matrix.example == 'vike' || matrix.example == 'vue') }}
         working-directory: ./examples/${{ matrix.example }}
         env:
           COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || 'src/components/InjectDemo.vue' }}
@@ -296,10 +296,10 @@ jobs:
       # `grep -F` on the inner text: picocolors colours the line when `CI` is set,
       # so the message is wrapped in escapes but not interrupted by them.
       - name: Assert the empty story fixture still warns
-        if: ${{ env.RUN == 'true' && matrix.example == 'vue3' }}
+        if: ${{ env.RUN == 'true' && matrix.example == 'vue' }}
         run: |
           if ! grep -aqF '1 empty story file: src/components/Empty.story.vue' "$RUNNER_TEMP/book-build.log"; then
-            echo "::error::examples/vue3 no longer warns about its empty story fixture — the fixture, the collector's no-story path, or the counter has changed (#670)"
+            echo "::error::examples/vue no longer warns about its empty story fixture — the fixture, the collector's no-story path, or the counter has changed (#670)"
             grep -aE 'empty story file|Built ' "$RUNNER_TEMP/book-build.log" || echo '(the build printed neither line)'
             exit 1
           fi
@@ -335,7 +335,7 @@ jobs:
       # `success()` and run this after a failed book build, reporting "no built
       # book" on top of the error that is already the reason.
       - name: Check the built book's size
-        if: env.RUN == 'true' && matrix.example == 'vue3'
+        if: env.RUN == 'true' && matrix.example == 'vue'
         run: pnpm run test:bundle-size
 
       # Retries make a flake green, so this is the only thing that says one
@@ -406,15 +406,15 @@ jobs:
       # (#672), which is why this job is named for the property rather than for
       # `examples/`.
       #
-      # `vue3-screenshot` is missing on purpose: its build shells out to
+      # `vue-screenshot` is missing on purpose: its build shells out to
       # `capture-website`, which wants a Chrome this runner does not have —
       # `Could not find Chrome (ver. 131.0.6778.204)`. Closing that means a
       # browser install, so it is #654 rather than a line here.
       - name: Build the books nothing else builds
         run: |
-          pnpm --filter ./examples/vue3-percy \
-               --filter ./examples/vue3-themed \
-               --filter ./examples/vue3-vuetify \
+          pnpm --filter ./examples/vue-percy \
+               --filter ./examples/vue-themed \
+               --filter ./examples/vue-vuetify \
                --filter @poveste/controls-stories \
                run story:build
 

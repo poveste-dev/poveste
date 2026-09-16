@@ -107,7 +107,7 @@ describe('specProblems', () => {
 
 describe('bookProblems', () => {
   it('accepts a book that spreads the defaults', () => {
-    expect(bookProblems('vue3', 'f.ts', SPREADING, DEFAULTS)).toEqual([])
+    expect(bookProblems('vue', 'f.ts', SPREADING, DEFAULTS)).toEqual([])
   })
 
   it('accepts a book that lists the defaults literally, since Quasar cannot spread them', () => {
@@ -119,7 +119,7 @@ describe('bookProblems', () => {
   it('names the missing custom preset and what it costs', () => {
     const source = SPREADING.replace(/\{\s*label: 'Custom gray',[\s\S]*?\},/, '')
 
-    expect(bookProblems('vue3', 'f.ts', source, DEFAULTS)[0]).toMatch(/does not declare the `Custom gray` preset/)
+    expect(bookProblems('vue', 'f.ts', source, DEFAULTS)[0]).toMatch(/does not declare the `Custom gray` preset/)
   })
 
   it('names a literal copy that has drifted from the defaults', () => {
@@ -131,7 +131,7 @@ describe('bookProblems', () => {
   it('names a book that does not set the default background', () => {
     const source = SPREADING.replace(`defaultBackgroundColor: 'transparent',`, '')
 
-    expect(bookProblems('vue3', 'f.ts', source, DEFAULTS)[0]).toMatch(/defaultBackgroundColor/)
+    expect(bookProblems('vue', 'f.ts', source, DEFAULTS)[0]).toMatch(/defaultBackgroundColor/)
   })
 
   it('reports every problem at once, so one run says what to write', () => {

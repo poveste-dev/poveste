@@ -6,7 +6,7 @@ const file = { isFile: () => true } as Stats
 const dir = { isFile: () => false } as Stats
 
 describe('createWatchIgnore', () => {
-  const root = '/repo/.claude/worktrees/feature/examples/vue3'
+  const root = '/repo/.claude/worktrees/feature/examples/vue'
   const ignored = createWatchIgnore(['**/node_modules/**', '**/dist/**'], ['**/*.story.md'])
 
   it('ignores storyIgnored paths when the root sits under a dot directory', () => {

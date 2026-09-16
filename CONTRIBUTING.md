@@ -89,11 +89,11 @@ pnpm run build
 3. In the `examples` directory, you can run `story:dev` scripts to start Poveste on an example project.
 
 ```sh
-cd examples/vue3
+cd examples/vue
 pnpm run story:dev
 ```
 
-> For the `vue3` example, you can use the `pnpm run dev:pvt` command to start the app with a special configuration enabling HMR for the Poveste UI. Especially useful when working on the UI!
+> For the `vue` example, you can use the `pnpm run dev:pvt` command to start the app with a special configuration enabling HMR for the Poveste UI. Especially useful when working on the UI!
 
 4. After you have tested your changes in development mode, build the story apps and test them using the `story:build` and `story:preview` scripts:
 
@@ -142,11 +142,11 @@ The example books are tested through the root Playwright config, which is what C
 pnpm run test:e2e
 ```
 
-`POVESTE_E2E_EXAMPLE` narrows it to one book, or several. This is the form worth using day to day: `webServer` is a top-level Playwright option, so `--project=svelte5` alone still boots every book's server, while this starts only the one you asked for.
+`POVESTE_E2E_EXAMPLE` narrows it to one book, or several. This is the form worth using day to day: `webServer` is a top-level Playwright option, so `--project=svelte` alone still boots every book's server, while this starts only the one you asked for.
 
 ```sh
-POVESTE_E2E_EXAMPLE=vue3 pnpm run test:e2e
-POVESTE_E2E_EXAMPLE=vue3,svelte5 pnpm run test:e2e
+POVESTE_E2E_EXAMPLE=vue pnpm run test:e2e
+POVESTE_E2E_EXAMPLE=vue,svelte pnpm run test:e2e
 ```
 
 Naming a book that does not exist fails the config before any test runs, rather than passing with an empty run.
@@ -154,11 +154,11 @@ Naming a book that does not exist fails the config before any test runs, rather 
 To develop new tests against a live dev server:
 
 ```sh
-cd examples/vue3
+cd examples/vue
 
 pnpm run story:dev
 # In another terminal, from the root
-POVESTE_E2E_EXAMPLE=vue3 pnpm run test:e2e --project=vue3:dev
+POVESTE_E2E_EXAMPLE=vue pnpm run test:e2e --project=vue:dev
 ```
 
 `pnpm run test:examples` and the per-example `pnpm test` are gone. They ran through a second Playwright config per example that CI never used, and the root one had already grown past it — the per-example configs declared no conformance project, so following them exercised no shared spec against any framework. See [#386](https://github.com/poveste-dev/poveste/issues/386).

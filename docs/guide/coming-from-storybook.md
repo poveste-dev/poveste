@@ -39,11 +39,11 @@ That is the whole API for a basic story: `<Story>` and `<Variant>`. State and co
 
 Poveste resolves your Vite config and runs the book through it, so aliases, plugins, `define` and your TypeScript and CSS setup apply to stories because they are the same pipeline — not because they were copied into a second one. Where a framework needs handling, its plugin does it: `@poveste/plugin-quasar` fetches the config Quasar builds asynchronously, `@poveste/plugin-nuxt` runs a Nuxt build, and you configure neither by hand.
 
-Poveste can also be configured entirely from `vite.config.ts` under a `poveste` key, with no config file of its own — which is how `examples/svelte5` and `examples/sveltekit` are set up.
+Poveste can also be configured entirely from `vite.config.ts` under a `poveste` key, with no config file of its own — which is how `examples/svelte` and `examples/sveltekit` are set up.
 
 ## What a book weighs
 
-`examples/vue3`, same `story:build` command either side of [#590](https://github.com/poveste-dev/poveste/pull/590):
+`examples/vue`, same `story:build` command either side of [#590](https://github.com/poveste-dev/poveste/pull/590):
 
 | | highlighter chunk | whole book |
 | --- | ---: | ---: |

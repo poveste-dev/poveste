@@ -69,7 +69,7 @@ describe('describeKind', () => {
   })
 })
 
-// The path `examples/svelte5` and `examples/sveltekit` actually use: no
+// The path `examples/svelte` and `examples/sveltekit` actually use: no
 // `poveste.config.ts`, everything under the `poveste` key of the vite config.
 // Validating only the first file left half the reference books unchecked.
 describe('the vite config path', () => {

@@ -199,7 +199,7 @@ export const setupVue = defineSetupVue(({ app }) => {
 ```
 
 Declare vue-i18n's compile-time flags, the same as any plain Vite app — see
-`examples/vue3`:
+`examples/vue`:
 
 ```ts
 export default defineConfig({

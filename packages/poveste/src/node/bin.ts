@@ -19,7 +19,7 @@ process.env.POVESTE = 'true'
 //
 // So failure is reported here, the exit code set, and the process forced out if
 // it does not leave on its own. Closing the collection ports (#426) was not
-// enough on its own: a failed build still hangs in the nuxt4 and sveltekit books,
+// enough on its own: a failed build still hangs in the nuxt and sveltekit books,
 // holding `FSEventWrap` and `FSReqCallback` handles — watchers nothing closes on
 // the error path. And `dev` and `preview` hold a listening server by design, so
 // for them no amount of leak-fixing would ever let the loop drain.

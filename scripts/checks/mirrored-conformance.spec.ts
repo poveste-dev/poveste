@@ -37,9 +37,9 @@ describe('compareMirror', () => {
   // purpose elsewhere in these books — so it has to be nameable, not forbidden.
   it('honours an exception, scoped to the mirror it names', () => {
     const mirror = new Map(source).set('Button.story.vue', 'deliberately different')
-    const exceptions = new Set(['examples/nuxt4/app/components/conformance/Button.story.vue'])
+    const exceptions = new Set(['examples/nuxt/app/components/conformance/Button.story.vue'])
 
-    expect(compareMirror(source, mirror, exceptions, 'examples/nuxt4/app/components/conformance')).toEqual([])
+    expect(compareMirror(source, mirror, exceptions, 'examples/nuxt/app/components/conformance')).toEqual([])
     // The same filename in another mirror is not covered by it.
     expect(compareMirror(source, mirror, exceptions, 'examples/sveltekit/src/lib/conformance')).toHaveLength(1)
   })
@@ -65,14 +65,14 @@ describe('mIRRORS', () => {
   // A moved directory would otherwise make the check quietly compare nothing.
   it('names every pair, source first', () => {
     expect(MIRRORS.map(m => `${m.source} -> ${m.mirror}`)).toEqual([
-      'examples/vue3/src/conformance -> examples/nuxt4/app/components/conformance',
-      'examples/vue3/src/conformance -> examples/quasar/src/conformance',
-      'examples/svelte5/src/conformance -> examples/sveltekit/src/lib/conformance',
+      'examples/vue/src/conformance -> examples/nuxt/app/components/conformance',
+      'examples/vue/src/conformance -> examples/quasar/src/conformance',
+      'examples/svelte/src/conformance -> examples/sveltekit/src/lib/conformance',
     ])
   })
 
   // One source can feed several mirrors — quasar inherits the Vue set that
-  // nuxt4 already mirrors, which is what stopped it being written a third time.
+  // nuxt already mirrors, which is what stopped it being written a third time.
   it('allows one source to feed more than one mirror', () => {
     const sources = MIRRORS.map(m => m.source)
 
