@@ -5,7 +5,9 @@ export function indent(lines: string[], count = 1) {
 export function unindent(code: string) {
   const lines = code.split('\n')
   let indentLevel = -1
-  let indentText: string
+  // Empty until a non-blank line is seen: `replace(undefined, '')` would look for
+  // the literal text "undefined" (TS6 reports it as used before assignment).
+  let indentText = ''
   const linesToAnalyze = lines.filter(line => line.trim().length > 0)
   for (const line of linesToAnalyze) {
     const match = /^\s*/.exec(line)
@@ -59,7 +61,7 @@ export function createAutoBuildingObject(format?: (key: string) => string, speci
       if (!cache[p]) {
         const childKey = key ? `${key}.${p.toString()}` : p.toString()
         const child = createAutoBuildingObject(format, specialKeysHandler, childKey, depth + 1)
-        cache[p] = { key: childKey, ...child }
+        cache[p] = child
       }
       return cache[p].proxy
     },
