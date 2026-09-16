@@ -68,6 +68,8 @@ pnpm i
 
 That install also puts a pre-commit hook in place, which runs `eslint --fix` over the files you staged and nothing else — it fixes what it can, stages the fix, and stops the commit only if an error is left. A lint error that reached `main` and surfaced in CI is what it exists to catch (#18). Skip it for one commit with `git commit --no-verify`, or for a shell with `SKIP_SIMPLE_GIT_HOOKS=1`.
 
+`.git/hooks` is shared by every worktree of a clone, so the hooks an install writes are live in checkouts that never installed them. The hook starts by looking for `lint-staged` and steps aside with a message when it is missing, which is what a branch older than this one gets rather than a failed commit.
+
 2. Compile Poveste in watch mode:
 
 ```sh
