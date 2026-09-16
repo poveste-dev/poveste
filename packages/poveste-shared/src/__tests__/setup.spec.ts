@@ -57,4 +57,67 @@ describe('getSetupHook', () => {
       expect(warn).not.toHaveBeenCalled()
     })
   })
+
+  // Proven with a fixture list, because every production list is empty. An empty
+  // detector that has only ever been seen to pass cannot be told apart from one
+  // that does not work — so the mechanism is exercised here, and 1.0 only has to
+  // move a string between two arrays (#157).
+  describe('when a setup file exports a name that is no longer read', () => {
+    const RETIRED = ['setupSvelte3', 'setupSvelte4']
+
+    it('warns, and names the export it found', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {} }, ['setupSvelte'], RETIRED)
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupSvelte3'))
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('no longer read'))
+    })
+
+    it('says which name to rename it to, so the message is actionable on its own', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {} }, ['setupSvelte5', 'setupSvelte'], RETIRED)
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('Rename to setupSvelte'))
+    })
+
+    it('does not run it — a retired name is not a hook', () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      expect(getSetupHook({ setupSvelte3: () => {} }, ['setupSvelte'], RETIRED)).toBeUndefined()
+    })
+
+    it('names every retired export, not only the first', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {}, setupSvelte4: () => {} }, ['setupSvelte'], RETIRED)
+
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupSvelte3, setupSvelte4'))
+    })
+
+    it('still warns when a live hook is present, since the dead export is what misleads', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const live = () => {}
+
+      expect(getSetupHook({ setupSvelte3: () => {}, setupSvelte: live }, ['setupSvelte'], RETIRED)).toBe(live)
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('setupSvelte3'))
+    })
+
+    it('says nothing when no retired name is exported, which is every case today', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte: () => {} }, ['setupSvelte'], RETIRED)
+
+      expect(warn).not.toHaveBeenCalled()
+    })
+
+    it('says nothing when the retired list is empty, which is what ships', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      getSetupHook({ setupSvelte3: () => {} }, ['setupSvelte'])
+
+      expect(warn).not.toHaveBeenCalled()
+    })
+  })
 })

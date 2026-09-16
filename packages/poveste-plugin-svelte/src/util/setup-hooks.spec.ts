@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SVELTE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
+import { SVELTE_RETIRED_SETUP_HOOK_NAMES, SVELTE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
 import { callSetupFunctions } from './svelte.js'
 
 const api = {} as any
@@ -97,6 +97,12 @@ describe('callSetupFunctions', () => {
     )
 
     expect(order).toEqual(['setup', 'variant'])
+  })
+
+  // Not decoration: a name added here has to be removed from the list above in
+  // the same change, and that is a 1.0 decision rather than a tidy-up.
+  it('retires no name yet, so every accepted spelling is still read', () => {
+    expect(SVELTE_RETIRED_SETUP_HOOK_NAMES).toEqual([])
   })
 
   it('lists the names most established first, which is what makes the choice deterministic', () => {

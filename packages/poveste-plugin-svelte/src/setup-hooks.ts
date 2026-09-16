@@ -13,3 +13,12 @@
  * is the one that yields.
  */
 export const SVELTE_SETUP_HOOK_NAMES = ['setupSvelte3', 'setupSvelte4', 'setupSvelte5', 'setupSvelte']
+
+/**
+ * Names this plugin has stopped reading.
+ *
+ * Empty, and meant to stay empty until 1.0 retires the numbered names. It is
+ * here so that doing so is a string moving from the list above to this one,
+ * with the warning already written and already tested.
+ */
+export const SVELTE_RETIRED_SETUP_HOOK_NAMES: string[] = []

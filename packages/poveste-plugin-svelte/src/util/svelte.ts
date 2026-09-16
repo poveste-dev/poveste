@@ -2,7 +2,7 @@ import type { StoryError } from '@poveste/shared'
 import type { SvelteStorySetupApi, SvelteStorySetupHandler } from '../helpers.js'
 import { getSetupHook, reportStoryError } from '@poveste/shared'
 import * as svelte from 'svelte'
-import { SVELTE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
+import { SVELTE_RETIRED_SETUP_HOOK_NAMES, SVELTE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
 
 type StoryOccupant = Pick<StoryError, 'storyId' | 'variantId'>
 
@@ -113,12 +113,12 @@ export async function callSetupFunctions(
   // of them, so a file part-way through the migration — exporting `setupSvelte5`
   // and `setupSvelte` at once — had its setup applied twice, silently. That is
   // the failure the Vue pair has always been shaped to prevent (#157).
-  const generatedHook = getSetupHook<SvelteStorySetupHandler>(generatedSetup, SVELTE_SETUP_HOOK_NAMES)
+  const generatedHook = getSetupHook<SvelteStorySetupHandler>(generatedSetup, SVELTE_SETUP_HOOK_NAMES, SVELTE_RETIRED_SETUP_HOOK_NAMES)
   if (generatedHook) {
     await generatedHook(setupApi)
   }
 
-  const setupHook = getSetupHook<SvelteStorySetupHandler>(setup, SVELTE_SETUP_HOOK_NAMES)
+  const setupHook = getSetupHook<SvelteStorySetupHandler>(setup, SVELTE_SETUP_HOOK_NAMES, SVELTE_RETIRED_SETUP_HOOK_NAMES)
   if (setupHook) {
     await setupHook(setupApi)
   }
