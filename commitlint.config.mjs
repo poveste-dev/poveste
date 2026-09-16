@@ -32,6 +32,19 @@ const BODY_OPTIONAL_TYPES = ['docs', 'revert']
 
 const local = {
   rules: {
+    // `revert: ` plus the original header is the revert format the convention
+    // doc prescribes, so measuring it whole makes a legal subject impossible to
+    // revert: eight characters the author never chose to spend. An 87-character
+    // subject is fine and its revert is 95.
+    'header-length-allowing-revert': ({ header }, _when, value) => {
+      const written = (header ?? '').replace(/^revert: /, '')
+
+      return [
+        written.length <= value,
+        `header must not be longer than ${value} characters, current length is ${written.length}`,
+      ]
+    },
+
     // Missing and too-short are different mistakes, so they get different
     // advice. Neither message mentions the exemption: "make it a `docs` commit"
     // would be advice to mislabel the change, and someone in a hurry takes it.
@@ -50,12 +63,20 @@ const local = {
       ]
     },
 
-    // Release bodies are built from subjects, so `@layer` at the start becomes
-    // a real @-mention of whichever stranger holds that handle.
-    'subject-no-bare-at-word': ({ subject }) => [
-      !/^@\w/.test(subject ?? ''),
-      'subject must not start with a bare @word — write `@layer` in backticks, or "the layer API"',
-    ],
+    // changelogithub copies the subject into the release body verbatim, and
+    // GitHub linkifies an @handle *anywhere* in a line, not only at the start —
+    // so `bump @sveltejs/kit` emails whoever holds that account, and cannot be
+    // unsent. Backticks are the way out, which is what the convention doc says,
+    // so code spans are removed before looking.
+    'subject-no-bare-at-word': ({ subject }) => {
+      const prose = (subject ?? '').replace(/`[^`]*`/g, '')
+      const bare = /@[A-Z0-9][-\w]*/i.exec(prose)
+
+      return [
+        bare === null,
+        `subject must not contain a bare ${bare?.[0] ?? '@word'} — GitHub reads it as a mention of whoever holds that handle; put it in backticks`,
+      ]
+    },
 
   },
 }
@@ -64,9 +85,12 @@ export default {
   extends: ['@commitlint/config-conventional'],
   plugins: [local],
   rules: {
-    'header-max-length': [2, 'always', 90],
-    'body-max-line-length': [2, 'always', 100],
-    'footer-max-line-length': [2, 'always', 100],
+    // Off in favour of the local rule below, which measures the same thing but
+    // does not charge a revert for its own prefix. `body-max-line-length` and
+    // `footer-max-line-length` are not set here at all: config-conventional
+    // already sets both to exactly [2, 'always', 100].
+    'header-max-length': [0, 'always', 90],
+    'header-length-allowing-revert': [2, 'always', 90],
     // The built-in for the `!` marker. The spec permits `feat(node)!:` as a
     // second spelling of the footer, and two spellings mean a release pass
     // reads one and misses the other.

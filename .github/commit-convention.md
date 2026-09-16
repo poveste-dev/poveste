@@ -57,13 +57,17 @@ fix(nuxt): build into .nuxt/poveste so a story build leaves the host untouched
 
 Seventy-eight characters, and every one of them is doing work. Cut to fifty it would say "build into .nuxt/poveste" and tell nobody why that matters. The median subject since v0.8.0 is seventy-five characters; the fifty-character habit other projects have is what this convention is written against.
 
+A revert is measured without its prefix. `revert: ` costs eight characters, so charging a revert for them would make a legal subject impossible to revert in the form below — an 87-character subject is fine and `revert: ` plus it is 95.
+
 Ninety is not a measurement of past practice — sixteen of the two hundred and nine subjects since v0.8.0 are longer than that as they were written, and the longest is a hundred and twenty-five. It is a decision that those were too long: past a certain width a subject has stopped being a line and started being a paragraph, and the second clause belongs in the body, not abbreviated away.
 
 The limit is on what you write, not on what lands. GitHub appends ` (#123)` when it squashes, so a subject that just fits here is seven or eight characters over by the time it is in the log — twenty-four of those same two hundred and nine exceed ninety once landed, against sixteen as authored. Both counts are of the same commits; they differ only in which string was measured, which is worth knowing before you re-derive one and take the other for a mistake.
 
-### Never start a subject with a bare `@word`
+### Never write a bare `@word` in a subject
 
-Release bodies are built from commit subjects, so `@layer` or `@scope` at the start becomes a real @-mention of whichever stranger owns that GitHub handle. Write "the layer API" or `` `@layer` `` in backticks instead.
+Release bodies are built from commit subjects, and GitHub turns an `@handle` into a real mention of whichever stranger owns it — **anywhere in the line, not only at the start**. `chore(deps): bump @sveltejs/kit to 2.70.3` emails the SvelteKit organisation, and an email cannot be unsent (#399).
+
+Backticks are the way out, and they read better in the notes anyway: `` `@sveltejs/kit` ``, `` `@layer` ``, or "the layer API". The rule removes code spans before it looks, so a backticked handle is fine.
 
 ### Don't write a closing keyword you don't mean
 
