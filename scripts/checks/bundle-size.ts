@@ -34,6 +34,13 @@ export interface Limit {
  * whole-book ceiling on its own would not have noticed, because one chunk
  * doubling is small against a total set loosely enough never to fire.
  *
+ * `vendor` and the whole book are the exception, and deliberately: #791 removed
+ * 257 KB of devtools code a reader cannot use, and a ceiling with the old room
+ * above it would have let every byte of it back in silently. They are set to
+ * fire on that return rather than on an order of magnitude, which buys less
+ * headroom for ordinary growth — raise them with a measurement and a reason
+ * rather than to make a red run green.
+ *
  * What a book weighs *now* is not recorded here. It used to be, and it went
  * stale from a change in another package — #374 moved CodeMirror out of
  * `vendor`, and nothing in this file could notice (#601). A run prints every
@@ -42,8 +49,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 2500, because: 'a dependency inlined into the shared chunk rather than split out of it' },
-  { prefix: '', max: 6500, because: 'the whole book, which a user uploads and their host serves' },
+  { prefix: 'vendor', max: 1500, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB)' },
+  { prefix: '', max: 5100, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and this holds that' },
 ]
 
 export interface Chunk { name: string, kb: number }
