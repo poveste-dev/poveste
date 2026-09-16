@@ -137,6 +137,38 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     return result
   }
 
+  // `@vue/devtools-api` is the registration side of the Vue Devtools browser
+  // extension. pinia and vue-router import it statically, so it is in every
+  // book's graph, and `__VUE_PROD_DEVTOOLS__` — which auto-props needs — keeps
+  // their calls live past tree-shaking. What it would register for a reader of a
+  // published book is Poveste's own stores, so the 200 KB buys them nothing
+  // (#791).
+  //
+  // A consumer's book resolves its own pinia, so stubbing the vendors pre-bundle
+  // alone leaves the payload in the book's vendor chunk. It has to happen here.
+  //
+  // `apply: 'build'` leaves `poveste dev` alone, where the registration is worth
+  // having to whoever is working on Poveste itself.
+  if (!isServer) {
+    const STUB = '\0poveste:devtools-api'
+
+    plugins.push({
+      name: 'poveste-devtools-api-stub',
+      apply: 'build',
+      enforce: 'pre',
+
+      resolveId(id) {
+        return id === '@vue/devtools-api' ? STUB : undefined
+      },
+
+      load(id) {
+        // Not an empty module: pinia and vue-router *call* this, so the export
+        // has to exist or the book throws where it used to register nothing.
+        return id === STUB ? 'export function setupDevtoolsPlugin() {}\n' : undefined
+      },
+    })
+  }
+
   plugins.push({
     name: 'poveste-vite-plugin',
 

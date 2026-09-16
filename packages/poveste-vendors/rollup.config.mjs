@@ -17,6 +17,17 @@ export default defineConfig({
   input: entries,
 
   plugins: [
+    // The same payload `packages/poveste/src/node/vite.ts` stubs out of a book
+    // build, kept out of the pre-bundle it would otherwise be baked into (#791).
+    {
+      name: 'stub-devtools-api',
+      resolveId(id) {
+        return id === '@vue/devtools-api' ? '\0poveste-vendors:devtools-api' : null
+      },
+      load(id) {
+        return id === '\0poveste-vendors:devtools-api' ? 'export function setupDevtoolsPlugin() {}\n' : null
+      },
+    },
     resolve({ preferBuiltins: true }),
     commonjs(),
     ts({
