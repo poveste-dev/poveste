@@ -69,8 +69,8 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
   return {
     name: '@poveste/plugin-nuxt',
 
-    async defaultConfig() {
-      const nuxtViteConfig = await useNuxtViteConfig([...DEFAULT_EXCLUDED_PLUGINS, ...(options.excludePlugins ?? [])])
+    async defaultConfig(_defaultConfig, mode) {
+      const nuxtViteConfig = await useNuxtViteConfig([...DEFAULT_EXCLUDED_PLUGINS, ...(options.excludePlugins ?? [])], mode === 'build')
       const { viteConfig } = nuxtViteConfig
 
       nuxt = nuxtViteConfig.nuxt
@@ -168,7 +168,7 @@ export async function setupVue3 () {
   }
 }
 
-async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
+async function useNuxtViteConfig(excludePlugins: (string | RegExp)[], isBuild: boolean) {
   const { loadNuxt, buildNuxt } = await import('@nuxt/kit')
   const nuxt = await loadNuxt({
     // cwd: process.cwd(),
@@ -183,6 +183,12 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[]) {
       ssr: false,
       experimental: {
         appManifest: false,
+        // A build has nothing to watch for. Nuxt's default watchers are started
+        // by `buildNuxt`, keep multiplying after `_stop_` aborts it, and survive
+        // `nuxt.close()`, so a failed build hung on ~115 `FSEventWrap` handles
+        // (#434). `builder` attaches to the Vite dev server instead, which this
+        // instance never creates.
+        ...isBuild ? { watcher: 'builder' as const } : {},
       },
       app: {
         rootId: 'nuxt-test',
