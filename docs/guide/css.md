@@ -107,6 +107,20 @@ You can opt out per story:
 </Story>
 ```
 
+## Why `@scope` and not a shadow root
+
+A shadow root is the other obvious way to isolate story CSS, and it is a reasonable thing to ask for. Four reasons it is not what Poveste uses.
+
+**There is already a harder boundary where it counts.** Single-variant previews and grid items render in an iframe, which is a separate document — nothing crosses it, in either direction. A shadow root would be a third isolation mechanism, weaker than the one already there. `@scope` exists for the paths that have no iframe: inline stories, grid items with [`iframeGrid: false`](#grid-iframes), and keeping the app's own CSS off story content when both sit in the same document.
+
+**Shadow roots break anything that teleports.** Dialogs, tooltips and popovers usually render to `document.body` — that is what `floating-vue`, and most component libraries, do. Moved out of the shadow root, they leave their styles behind and render unstyled. Your components would look correct until the moment one of them opened a menu.
+
+**`@font-face` does not apply inside a shadow root.** It has to be declared at document level, so a book isolating stories that way would silently drop every custom font your components use.
+
+**And some CSS is *meant* to reach stories.** Tailwind's preflight, design tokens defined on `:root`, base typography — people import these expecting them to apply to their components. `@scope` lets them through, with roots [rewritten to `:scope`](#root-selectors) so they land on the story root. A shadow root would cut them off, and there is no per-rule way to let some back in.
+
+The trade is the one the rest of this page describes: `@scope` limits matching and not inheritance, so chrome typography still reaches stories unless a story sets its own. That is a smaller problem than an unstyled popover, and it has a fix.
+
 ## Escape hatch — `isolateStyles: false`
 
 If your project depends on chrome and stories sharing the same cascade, disable isolation entirely:
