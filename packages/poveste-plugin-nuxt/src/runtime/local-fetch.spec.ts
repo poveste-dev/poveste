@@ -30,6 +30,18 @@ describe('createLocalFetch', () => {
     expect(network).toHaveBeenCalledWith('https://poveste.dev/api/status', { method: 'HEAD' })
   })
 
+  // `//host/path` starts with a slash and is another origin, so answering it
+  // from the in-memory app would hand back a 404 for something that exists.
+  it('sends a protocol-relative URL to the real fetch', async () => {
+    const network = vi.fn<typeof fetch>(async () => new Response('from the cdn'))
+    const localFetch = createLocalFetch(appWith({}), network)
+
+    const response = await localFetch('//cdn.example.com/data.json')
+
+    expect(await response.text()).toBe('from the cdn')
+    expect(network).toHaveBeenCalledWith('//cdn.example.com/data.json', undefined)
+  })
+
   it('answers a path no route handles with a 404 rather than throwing', async () => {
     const localFetch = createLocalFetch(appWith({}), vi.fn<typeof fetch>())
 
