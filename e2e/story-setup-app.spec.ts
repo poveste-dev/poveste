@@ -37,4 +37,14 @@ test.describe('story-level setupApp', () => {
 
     await expect(sandboxHtml(page)).toHaveAttribute('data-story-setup-app', 'ran')
   })
+
+  // A story with no variants of its own renders through `RenderStory` alone, so
+  // the handler has nowhere else to come from. It passed one run in three before
+  // `RenderStory` wrote it, which is why a probe run once proves little here.
+  test('runs for the implicit variant of a story that declares none', async ({ page }) => {
+    await openStory(page, `${STORY}-implicit`, '?variantId=_default')
+    await renderedVariant(page, 'Implicit variant')
+
+    await expect(sandboxHtml(page)).toHaveAttribute('data-story-setup-app', 'implicit')
+  })
 })

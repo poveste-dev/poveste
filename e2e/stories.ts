@@ -41,6 +41,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-markdown-links', title: 'Markdown links' },
   { id: 'conformance-no-iframe', title: 'No iframe' },
   { id: 'conformance-story-setup-app', title: 'Story setup app' },
+  { id: 'conformance-story-setup-app-implicit', title: 'Story setup app, implicit' },
   { id: 'conformance-tall-story', title: 'Tall story' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
