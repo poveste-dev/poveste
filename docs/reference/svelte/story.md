@@ -95,9 +95,7 @@ It receives a payload object with the following properties:
 </Hst.Story>
 ```
 
-::: warning Not inherited by explicit variants
-In Vue, a `setup-app` on `<Story>` gives every `<Variant>` a default. In Svelte it does not: a `setupApp` here reaches only the implicit variant of a story that declares no `<Hst.Variant>` children — as the example above does. As soon as you write explicit variants, put [`setupApp`](./variant.md#setupapp) on each variant that needs it.
-:::
+Every variant inherits it, including explicit `<Hst.Variant>` children. A [`setupApp` on the variant](./variant.md#setupapp) overrides it for that variant.
 
 [Learn more](../../guide/svelte/app-setup.md#local-setup)
 
@@ -180,9 +178,7 @@ Disables the responsive menu, preview resize handles and makes the preview alway
 </Hst.Story>
 ```
 
-::: warning Not inherited by explicit variants
-Like [`setupApp`](#setupapp), this reaches only the implicit variant of a story that declares no `<Hst.Variant>` children. Write it on [each variant](./variant.md#responsivedisabled) instead once the story has explicit ones. Tracked in [#466](https://github.com/poveste-dev/poveste/issues/466).
-:::
+Every variant inherits it. A variant sets [`responsiveDisabled={false}`](./variant.md#responsivedisabled) to opt out of what the story declared.
 
 ## `autoPropsDisabled`
 

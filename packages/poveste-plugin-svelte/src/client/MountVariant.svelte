@@ -2,7 +2,11 @@
   import { afterUpdate, getContext, onDestroy } from 'svelte'
 
   export let source = null
-  export let responsiveDisabled = false
+  // `null` rather than `false`/a handler: these two inherit from the story, and
+  // a literal default is indistinguishable from a variant that set it — so a
+  // variant could not opt out of what the story declared. `??` falls through on
+  // null only, so an explicit `responsiveDisabled={false}` still wins (#466).
+  export let responsiveDisabled = null
   export let autoPropsDisabled = false
   export let setupApp = null
   export let implicit = false
@@ -10,6 +14,7 @@
   const story = getContext('__pvtStory')
   const index = getContext('__pvtIndex')
   const storySlots = getContext('__pvtSlots')
+  const storyProps = getContext('__pvtStoryProps') ?? {}
   // A store: a sandbox sets it to the one variant this realm serves and changes
   // it when the realm is retargeted (#240). Null in the app realm, which keeps
   // every variant's bookkeeping.
@@ -30,9 +35,9 @@
         controls: $$slots.controls ?? storySlots.controls,
       }),
       source,
-      responsiveDisabled,
+      responsiveDisabled: responsiveDisabled ?? storyProps.responsiveDisabled ?? false,
       autoPropsDisabled,
-      setupApp,
+      setupApp: setupApp ?? storyProps.setupApp ?? null,
       configReady: true,
     })
 

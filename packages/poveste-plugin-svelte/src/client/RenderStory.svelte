@@ -8,6 +8,22 @@
 
   const index = { value: 0 }
   setContext('__pvtIndex', index)
+  // The sandbox realm's half of story-prop inheritance. `MountStory` does this
+  // for the app realm, and the bridge carries only `variant.state` across the
+  // iframe — so without it a story-level prop reaches the sandbox by accident,
+  // when a grid cell happens to render in the same realm (#466).
+  setContext('__pvtStoryProps', $$restProps)
+
+  // A story with no `<Hst.Variant>` children has no `RenderVariant` to write the
+  // handler, so the story is the only place it can come from — and without this
+  // it too reached `render.ts` only by accident, passing one run in three. At
+  // init for the same reason `RenderVariant` writes at init: the handler is read
+  // as soon as the component has mounted. The condition is `MountStory`'s own.
+  if (currentVariant && story.variants.length === 1 && story.variants[0].id === '_default') {
+    Object.assign(currentVariant, {
+      setupApp: $$restProps.setupApp ?? null,
+    })
+  }
 
   export let source = null
   export let initState = null
