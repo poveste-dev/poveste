@@ -89,6 +89,10 @@ ratio and the boxes would otherwise be ragged. -->
   Quasar components missing from a story? <a href="./guide/quasar-components-in-a-story">Here's why, and the fix</a>.
 </p>
 
+<p class="text-center text-sm mt-2">
+  Rather watch than read? A 22-second screen recording builds a Quasar story end to end — the component rendering, a control driving it, and the boot-file gotcha — on <a href="https://bsky.app/profile/poveste.dev/post/3murumqf6es2u">Bluesky</a> or <a href="https://x.com/50rayn/status/2096269050384892241">X</a>.
+</p>
+
 <style lang="postcss" scoped>
 /* v4: @apply in a scoped <style> needs the theme referenced explicitly. */
 @reference "./.vitepress/theme/style/index.pcss";
