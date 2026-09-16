@@ -26,7 +26,7 @@ const input = ref<HTMLInputElement>()
     class="poveste-text cursor-text items-center"
     :class="$attrs.class"
     :style="$attrs.style"
-    @click="input.focus()"
+    @click="input?.focus()"
   >
     <input
       ref="input"

@@ -34,7 +34,7 @@ const isTrue = computed(() => {
     return props.modelValue !== 'false'
   }
 
-  return props.modelValue
+  return props.modelValue ?? undefined
 })
 </script>
 
