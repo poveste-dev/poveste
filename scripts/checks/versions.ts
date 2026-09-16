@@ -150,7 +150,12 @@ function matrixValues(yaml: string, key: string): string[] {
 }
 
 /**
- * The `name:` of each job, and nothing else called `name:`.
+ * The check name of each job — its `name:`, or its id when it declares none.
+ *
+ * The id fallback is what GitHub reports, and leaving it out made this blind to
+ * every unnamed job: `check-title` is a required context on `main` and was not in
+ * this set, so a docs row citing it would have read as a citation of a job that
+ * does not exist (#795).
  *
  * Matching every indented `name:` also collected `with: name:` from
  * upload-artifact steps, so `packages-dist` and `playwright-traces-vue` entered
@@ -164,9 +169,15 @@ function* jobKeyNames(yaml: string): Generator<[number, string]> {
   let inJobs = false
   let idIndent: number | undefined
   let keyIndent: number | undefined
+  // The current job's id, held until a `name:` replaces it or the job ends.
+  let unnamed: [number, string] | undefined
 
   for (const [index, line] of lines.entries()) {
     if (line.startsWith('jobs:')) {
+      if (unnamed) {
+        yield unnamed
+      }
+      unnamed = undefined
       inJobs = true
       idIndent = undefined
       keyIndent = undefined
@@ -180,6 +191,10 @@ function* jobKeyNames(yaml: string): Generator<[number, string]> {
 
     const indent = line.length - line.trimStart().length
     if (indent === 0) {
+      if (unnamed) {
+        yield unnamed
+      }
+      unnamed = undefined
       inJobs = false
       continue
     }
@@ -187,6 +202,11 @@ function* jobKeyNames(yaml: string): Generator<[number, string]> {
     idIndent ??= indent
     if (indent === idIndent) {
       // A job id: its own keys set the depth, which the next line establishes.
+      if (unnamed) {
+        yield unnamed
+      }
+      const id = trimmed.match(/^([\w-]+):/)?.[1]
+      unnamed = id ? [index, id] : undefined
       keyIndent = undefined
       continue
     }
@@ -198,8 +218,13 @@ function* jobKeyNames(yaml: string): Generator<[number, string]> {
 
     const name = trimmed.match(/^name:[^\S\n]*(\S.*)$/)?.[1]
     if (name) {
+      unnamed = undefined
       yield [index, name.trim().replace(/^['"]|['"]$/g, '')]
     }
+  }
+
+  if (unnamed) {
+    yield unnamed
   }
 }
 

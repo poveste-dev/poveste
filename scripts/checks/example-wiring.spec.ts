@@ -1,3 +1,5 @@
+import { appendFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   asServers,
@@ -13,6 +15,7 @@ import {
   portOf,
   portsByExample,
   portsOf,
+  requiredContexts,
 } from './example-wiring.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
@@ -193,6 +196,18 @@ describe('guideExamples', () => {
   })
 })
 
+describe('requiredContexts', () => {
+  it('reads one context per line, ignoring comments and blanks', () => {
+    const file = ['# what main requires', '', 'Build', 'Example e2e (vue)  ', '# Example e2e (vue3)'].join('\n')
+
+    expect(requiredContexts(file)).toEqual(['Build', 'Example e2e (vue)'])
+  })
+
+  it('reads nothing out of a file that is not there', () => {
+    expect(requiredContexts('')).toEqual([])
+  })
+})
+
 describe('checkExampleWiring', () => {
   // The fixture brings its own `playwright.config.ts`, importing nothing: the
   // real one imports `@playwright/test`, which does not resolve from a tmpdir.
@@ -212,7 +227,8 @@ describe('checkExampleWiring', () => {
   function harnessBuilding(buildScript: string): string {
     return tree({
       'package.json': JSON.stringify({ scripts: { 'story:build:e2e': buildScript } }),
-      '.github/workflows/test-examples.yml': 'jobs:\n  test:\n    strategy:\n      matrix:\n        example: [vue]\n',
+      '.github/workflows/test-examples.yml': `jobs:\n  e2e:\n    name: Example e2e ($\u007B{ matrix.example }})\n    strategy:\n      matrix:\n        example: [vue]\n`,
+      '.github/required-status-checks.txt': 'Example e2e (vue)\n',
       'playwright.config.ts': 'export default { projects: [{ name: \'vue\' }], webServer: [{ command: \'pnpm --filter ./examples/vue run story:preview\', url: \'http://localhost:4567\' }] }\n',
       'ai/AGENTS.md': '| **Fixtures** | `vue`, `vike` |\n',
       'examples/vue/package.json': JSON.stringify({ scripts: { 'story:preview': 'poveste preview --port 4567' } }),
@@ -230,6 +246,33 @@ describe('checkExampleWiring', () => {
     const root = harnessBuilding('pnpm --filter ./examples/vue --filter ./examples/vike run story:build')
 
     expect((await checkExampleWiring(root)).problems).toEqual(['`story:build:e2e` builds "vike", which playwright.config.ts never serves'])
+  })
+
+  // #793 in miniature: the matrix entry was renamed and branch protection was
+  // not, so `main` required a job that can never report again.
+  it('reports a required context no workflow can produce, and says the fix is a setting', async () => {
+    const root = harnessBuilding('pnpm --filter ./examples/vue --filter ./examples/vike run story:build')
+    writeFileSync(join(root, '.github/required-status-checks.txt'), 'Example e2e (vue3)\n')
+
+    const [problem] = (await checkExampleWiring(root)).problems.filter(text => text.includes('branch protection'))
+
+    expect(problem).toContain('requires "Example e2e (vue3)"')
+    expect(problem).toContain('branch-protection settings rather than in code')
+  })
+
+  it('accepts a required context named by a job that declares no name of its own', async () => {
+    const root = harnessBuilding('pnpm --filter ./examples/vue --filter ./examples/vike run story:build')
+    appendFileSync(join(root, '.github/workflows/pr-title.yml'), 'jobs:\n  check-title:\n    runs-on: ubuntu-latest\n')
+    writeFileSync(join(root, '.github/required-status-checks.txt'), 'Example e2e (vue)\ncheck-title\n')
+
+    expect((await checkExampleWiring(root)).problems.filter(text => text.includes('branch protection'))).toEqual([])
+  })
+
+  it('reports the required-context list going missing', async () => {
+    const root = harnessBuilding('pnpm --filter ./examples/vue --filter ./examples/vike run story:build')
+    rmSync(join(root, '.github/required-status-checks.txt'))
+
+    expect((await checkExampleWiring(root)).problems).toContainEqual(expect.stringContaining('lists no required contexts'))
   })
 
   it('the workflow matrix, the Playwright config, the build script, the ports and the guide name the same books', { tags: ['check', 'examples', 'ci'] }, async () => {
