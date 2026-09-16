@@ -1,5 +1,6 @@
 import type {
   InlineConfig,
+  PluginOption,
   UserConfig as ViteConfig,
   Plugin as VitePlugin,
 } from 'vite'
@@ -29,7 +30,7 @@ import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
 
-export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Context) {
+export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Pick<Context, 'config' | 'mode'>) {
   if (ctx.config.vite) {
     const command = viteCommand(ctx.mode)
     const overrides = typeof ctx.config.vite === 'function'
@@ -43,7 +44,7 @@ export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Cont
     }
   }
 
-  let flatPlugins = []
+  let flatPlugins: PluginOption[] = []
   if (viteConfig.plugins) {
     for (const pluginOption of viteConfig.plugins) {
       const resolvedPluginOption = await pluginOption
@@ -57,8 +58,9 @@ export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Cont
     flatPlugins = flatPlugins.filter(Boolean)
   }
 
-  if (ctx.config.viteIgnorePlugins) {
-    flatPlugins = flatPlugins.filter(plugin => !ctx.config.viteIgnorePlugins.includes(plugin.name))
+  const ignoredPlugins = ctx.config.viteIgnorePlugins
+  if (ignoredPlugins) {
+    flatPlugins = flatPlugins.filter(plugin => !(plugin && 'name' in plugin && ignoredPlugins.includes(plugin.name)))
   }
 
   viteConfig.plugins = flatPlugins
@@ -116,7 +118,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   }
 
   function optimizeDeps(deps: string[]): string[] {
-    const result = []
+    const result: string[] = []
     for (const dep of deps) {
       // The bare specifier is what hoisted installs (npm, yarn, pnpm with
       // `shamefully-hoist`) need — see histoire@a1014ab. Under strict pnpm it is
@@ -308,7 +310,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           html = await applyHeadTransform(html, ctx.config.head)
           // Apply Vite HTML transforms. This injects the Vite HMR client, and
           // also applies HTML transforms from Vite plugins
-          html = await server.transformIndexHtml(req.url, html)
+          html = await server.transformIndexHtml(req.url ?? '/', html)
           res.setHeader('content-type', 'text/html; charset=UTF-8')
           res.end(html)
           return
@@ -341,7 +343,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             html = await applyHeadTransform(html, ctx.config.head)
             // Apply Vite HTML transforms. This injects the Vite HMR client, and
             // also applies HTML transforms from Vite plugins
-            html = await server.transformIndexHtml(req.url, html)
+            html = await server.transformIndexHtml(req.url ?? '/', html)
             res.setHeader('content-type', 'text/html; charset=UTF-8')
             res.end(html)
             return

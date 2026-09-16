@@ -143,7 +143,9 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       storyFile.story.title = storyFile.treePath[storyFile.treePath.length - 1]
     }
     catch (e) {
-      console.error(pc.red(`Error while collecting story ${storyFile.path}:\n${e.frame ? `${pc.bold(e.message)}\n${e.frame}` : e.stack}`))
+      // A Vite transform error carries the code frame on `frame`.
+      const error = (e instanceof Error ? e : new Error(String(e))) as Error & { frame?: string }
+      console.error(pc.red(`Error while collecting story ${storyFile.path}:\n${error.frame ? `${pc.bold(error.message)}\n${error.frame}` : error.stack}`))
       if (options.throws) {
         throw e
       }

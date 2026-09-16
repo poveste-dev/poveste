@@ -1,8 +1,10 @@
 import type { Story } from '@poveste/shared'
 import type { PropType, VNode } from 'vue'
+import type { PreviewRenderContext } from './render-context.js'
 import { omitInheritStoryProps } from '@poveste/shared'
-import { cloneVNode, computed, defineComponent, getCurrentInstance, h, isRef, provide, reactive, useAttrs } from 'vue'
+import { cloneVNode, computed, defineComponent, h, isRef, provide, reactive, useAttrs } from 'vue'
 import { useRenderContext } from './render-context.js'
+import { useInstance } from './util.js'
 import Variant from './Variant.js'
 
 export default defineComponent({
@@ -25,7 +27,7 @@ export default defineComponent({
   },
 
   setup(props) {
-    const vm = getCurrentInstance()
+    const vm = useInstance('Story')
 
     const attrs = useAttrs() as {
       story: Story
@@ -100,7 +102,7 @@ export default defineComponent({
       }
 
       Object.assign(attrs.story, {
-        slots: () => vm.proxy.$slots,
+        slots: () => vm.slots,
       })
     }
 
@@ -126,8 +128,9 @@ export default defineComponent({
       // that as it registers, so the gate held for the first render only and
       // turned the re-render a retarget needs into a full mount of every
       // sibling.
-      const targetIndex = renderContext?.targetVariantId
-        ? attrs.story.variants.findIndex(v => v.id === renderContext.targetVariantId)
+      const targetVariantId = renderContext?.targetVariantId
+      const targetIndex = targetVariantId
+        ? attrs.story.variants.findIndex(v => v.id === targetVariantId)
         : -1
 
       const applyAttrs = (vnodes: VNode[]) => {
@@ -163,9 +166,9 @@ export default defineComponent({
               nextProps.initState = props.initState
             }
 
-            for (const attr in vm.proxy.$attrs) {
+            for (const attr in vm.attrs) {
               if (typeof vnode.props?.[attr] === 'undefined') {
-                nextProps[attr] = vm.proxy.$attrs[attr]
+                nextProps[attr] = vm.attrs[attr]
               }
             }
 
@@ -189,24 +192,24 @@ export default defineComponent({
         return result
       }
 
-      return applyAttrs(vm.proxy.$slots.default?.() ?? [])
+      return applyAttrs(vm.slots.default?.() ?? [])
     }
 
-    function renderPreviewStory() {
-      renderContext.nextVariantIndex.value = 0
+    function renderPreviewStory(context: PreviewRenderContext) {
+      context.nextVariantIndex.value = 0
 
       const slotProps = {
-        state: renderContext.externalState,
+        state: context.externalState,
       }
 
-      const children = []
+      const children: VNode[] = []
 
-      if (renderContext.slotName === 'controls') {
-        children.push(...(vm.proxy.$slots.controls?.(slotProps) ?? []))
+      if (context.slotName === 'controls') {
+        children.push(...(vm.slots.controls?.(slotProps) ?? []))
       }
 
-      if (renderContext.slotName === 'default' || attrs.story.meta?.hasVariantChildComponents) {
-        children.push(...(vm.proxy.$slots.default?.(slotProps) ?? []))
+      if (context.slotName === 'default' || attrs.story.meta?.hasVariantChildComponents) {
+        children.push(...(vm.slots.default?.(slotProps) ?? []))
       }
 
       // Same story as the mount pass above: every Variant component here runs
@@ -215,12 +218,13 @@ export default defineComponent({
       // resolves to the right variant data. Filtering only the default slot —
       // the controls slot carries controls, and stories with variants in child
       // components are invisible to a vnode walk.
+      const currentVariant = context.currentVariant
       if (
-        renderContext.slotName === 'default'
-        && renderContext.currentVariant
+        context.slotName === 'default'
+        && currentVariant
         && !attrs.story.meta?.hasVariantChildComponents
       ) {
-        const targetIndex = attrs.story.variants.findIndex(v => v.id === renderContext.currentVariant.id)
+        const targetIndex = attrs.story.variants.findIndex(v => v.id === currentVariant.id)
         if (targetIndex !== -1) {
           let seen = 0
           let kept = false
@@ -245,7 +249,7 @@ export default defineComponent({
           }
           const filtered = keepTargetVariant(children)
           if (kept) {
-            renderContext.nextVariantIndex.value = targetIndex
+            context.nextVariantIndex.value = targetIndex
             return filtered
           }
         }
@@ -269,8 +273,9 @@ export default defineComponent({
       }, this.$slots)
     }
 
-    if (this.renderContext?.mode === 'render') {
-      return this.renderPreviewStory()
+    const renderContext = this.renderContext
+    if (renderContext?.mode === 'render') {
+      return this.renderPreviewStory(renderContext)
     }
 
     return this.renderMountStory()

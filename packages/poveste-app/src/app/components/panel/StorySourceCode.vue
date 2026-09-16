@@ -58,7 +58,7 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
   }
   catch (e) {
     console.error(e)
-    error.value = e.message
+    error.value = e instanceof Error ? e.message : String(e)
   }
 
   // Auto-switch

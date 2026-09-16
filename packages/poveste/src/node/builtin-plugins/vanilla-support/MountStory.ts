@@ -14,7 +14,7 @@ export default _defineComponent({
   },
 
   setup(props) {
-    const options = props.story.file.component as StoryOptions
+    const options = props.story.file?.component as StoryOptions
 
     let rawVariants: VariantOptions[] = []
 
@@ -27,7 +27,7 @@ export default _defineComponent({
       }]
     }
     else {
-      rawVariants = options.variants
+      rawVariants = options.variants ?? []
     }
 
     for (const index in props.story.variants) {

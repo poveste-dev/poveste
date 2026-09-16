@@ -55,18 +55,14 @@ export function screenshotFileName(storyId: string, variantId: string, width: nu
 
 export function HstScreenshot(options: ScreenshotPluginOptions = {}): Plugin {
   const finalOptions: ScreenshotPluginOptions = defu(options, defaultOptions)
-  if (!finalOptions.presets.length) {
-    finalOptions.presets.push({
-      width: 1280,
-      height: 800,
-    })
-  }
+  const saveFolder = finalOptions.saveFolder ?? '.poveste/screenshots'
+  const presets = finalOptions.presets?.length ? finalOptions.presets : [{ width: 1280, height: 800 }]
   return {
     name: '@poveste/plugin-screenshot',
 
     onBuild: async (api) => {
       const { default: captureWebsite } = await import('capture-website')
-      await fs.ensureDir(finalOptions.saveFolder)
+      await fs.ensureDir(saveFolder)
 
       api.onPreviewStory(async ({ file, story, variant, url }) => {
         if (finalOptions.ignored?.({
@@ -82,7 +78,10 @@ export function HstScreenshot(options: ScreenshotPluginOptions = {}): Plugin {
           return
         }
         console.log('Rendering screenshot for', file, 'title:', story.title, 'variant:', variant.id, 'title:', variant.title)
-        for (const preset of finalOptions.presets) {
+        for (const preset of presets) {
+          // capture-website's own default viewport, which a preset without a size got.
+          const width = preset.width ?? 1280
+          const height = preset.height ?? 800
           const launchOptions = finalOptions.launchOptionsArgs
             ? {
                 args: finalOptions.launchOptionsArgs,
@@ -90,12 +89,12 @@ export function HstScreenshot(options: ScreenshotPluginOptions = {}): Plugin {
             : {}
           const captureWebsiteFileOptions: FileOptions = {
             overwrite: true,
-            width: preset.width,
-            height: preset.height,
+            width,
+            height,
             fullPage: true,
             launchOptions,
           }
-          await captureWebsite.file(url, path.join(finalOptions.saveFolder, screenshotFileName(story.id, variant.id, preset.width, preset.height)), captureWebsiteFileOptions)
+          await captureWebsite.file(url, path.join(saveFolder, screenshotFileName(story.id, variant.id, width, height)), captureWebsiteFileOptions)
         }
       })
     },

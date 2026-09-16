@@ -46,7 +46,7 @@ export default _defineComponent({
   setup(props) {
     const el = _ref<HTMLDivElement>()
     let app: any
-    let target: HTMLDivElement
+    let target: HTMLDivElement | null = null
     let destroyApp: (() => void) | null = null
 
     // A store rather than a value, so a retargeted realm (#240) can tell the
@@ -58,6 +58,10 @@ export default _defineComponent({
     })
 
     async function mountStory() {
+      if (!el.value || !props.story.file) {
+        return
+      }
+
       target = document.createElement('div')
       el.value.appendChild(target)
 
@@ -81,7 +85,7 @@ export default _defineComponent({
       const setupApi: SvelteStorySetupApi = {
         app,
         story: props.story,
-        variant: null,
+        variant: undefined,
       }
 
       await callSetupFunctions(generatedSetup, setup, setupApi)

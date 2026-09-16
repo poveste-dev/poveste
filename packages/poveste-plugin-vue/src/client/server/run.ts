@@ -33,8 +33,9 @@ export async function run({ file, storyData, el }: ServerRunPayload) {
 
   const setupApi: Vue3StorySetupApi = {
     app,
-    story: null,
-    variant: null,
+    // No story or variant exists while collecting.
+    story: undefined,
+    variant: undefined,
     addWrapper: () => { /* noop */ },
   }
 

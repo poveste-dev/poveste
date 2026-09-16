@@ -55,15 +55,15 @@ function wrapControlComponent(controlComponent) {
 
       // Slots
 
-      let newSlotCalls = []
-      const slotCalls = ref([])
+      let newSlotCalls: Record<string, unknown>[] = []
+      const slotCalls = ref<Record<string, unknown>[]>([])
 
       function moveSlotContent() {
         slotCalls.value.forEach((props, index) => {
-          const renderedEl = slotEl.value.querySelector(`[renderslotid="${index}"]`)
-          if (!renderedEl) return
-          const targetEl = el.value.querySelector(`[slotid="${index}"]`)
-          while (targetEl.firstChild) {
+          const renderedEl = slotEl.value?.querySelector(`[renderslotid="${index}"]`)
+          const targetEl = el.value?.querySelector(`[slotid="${index}"]`)
+          if (!renderedEl || !targetEl) return
+          while (targetEl.lastChild) {
             targetEl.removeChild(targetEl.lastChild)
           }
           targetEl.appendChild(renderedEl)
@@ -124,7 +124,7 @@ function wrapControlComponent(controlComponent) {
           ref: 'slotEl',
         }, this.slotCalls.map((props, index) => h('div', {
           renderSlotId: index,
-        }, this.$slots.default(props)))),
+        }, this.$slots.default?.(props)))),
       ]
     },
   })

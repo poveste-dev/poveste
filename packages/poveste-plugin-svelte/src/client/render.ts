@@ -50,7 +50,7 @@ export default _defineComponent({
   setup(props, { emit }) {
     const el = _ref<HTMLDivElement>()
     let app: any
-    let target: HTMLDivElement
+    let target: HTMLDivElement | null = null
 
     let tearDownHandlers: (() => void)[] = []
 
@@ -64,10 +64,15 @@ export default _defineComponent({
     }
 
     async function mountStory() {
+      if (!el.value || !props.story.file) {
+        return
+      }
+
       target = document.createElement('div')
       el.value.appendChild(target)
 
-      let components = []
+      // Svelte component instances, announced as they register.
+      let components: any[] = []
       const { off: registerComponentOff } = documentOn('SvelteRegisterComponent', (e) => {
         const { component } = e.detail
         components.push(component)

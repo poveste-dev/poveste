@@ -1,10 +1,11 @@
+import type { ComponentInternalInstance } from 'vue'
 import { applyState, createStateBaseline } from '@poveste/shared'
 import {
   isRef as _isRef,
   unref as _unref,
   watch as _watch,
 } from '@poveste/vendors/vue'
-import { isRef, unref, watch } from 'vue'
+import { getCurrentInstance, isRef, unref, watch } from 'vue'
 
 const isObject = val => val !== null && typeof val === 'object'
 
@@ -27,7 +28,7 @@ export function toRawDeep(val, seen = new WeakMap()) {
   }
 
   if (Array.isArray(unwrappedValue)) {
-    const result = []
+    const result: unknown[] = []
     seen.set(unwrappedValue, result)
     result.push(...unwrappedValue.map(value => toRawDeep(value, seen)))
     return result
@@ -65,7 +66,7 @@ export function _toRawDeep(val, seen = new WeakMap()) {
   }
 
   if (Array.isArray(unwrappedValue)) {
-    const result = []
+    const result: unknown[] = []
     seen.set(unwrappedValue, result)
     result.push(...unwrappedValue.map(value => _toRawDeep(value, seen)))
     return result
@@ -145,4 +146,13 @@ export function syncStateBundledAndExternal(bundledState, externalState, omit: s
       stop()
     },
   }
+}
+
+/** The component being set up. Throws outside `setup`, where Vue returns null. */
+export function useInstance(name: string): ComponentInternalInstance {
+  const vm = getCurrentInstance()
+  if (!vm) {
+    throw new Error(`[poveste] <${name}> can only be set up inside a component`)
+  }
+  return vm
 }

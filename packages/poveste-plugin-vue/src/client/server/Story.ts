@@ -55,9 +55,15 @@ export default defineComponent({
 
     // Story
 
+    const id = props.id ?? file?.id
+    const title = props.title ?? file?.fileName
+    if (!id || title === undefined) {
+      throw new Error('[poveste] a <Story> collected outside a story file needs an `id` and a `title`')
+    }
+
     const story: ServerStory = {
-      id: props.id ?? file?.id,
-      title: props.title ?? file?.fileName,
+      id,
+      title,
       group: props.group,
       layout: props.layout,
       icon: props.icon,
@@ -66,7 +72,7 @@ export default defineComponent({
       meta: props.meta,
       variants: [],
     }
-    const addStory = inject('addStory', null)
+    const addStory = inject<((story: ServerStory) => void) | null>('addStory', null)
     addStory?.(story)
 
     // Variants

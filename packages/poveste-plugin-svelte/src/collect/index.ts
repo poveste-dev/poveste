@@ -34,8 +34,9 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
 
   const setupApi: SvelteStorySetupApi = {
     app,
-    story: null,
-    variant: null,
+    // No story or variant exists while collecting.
+    story: undefined,
+    variant: undefined,
   }
 
   await callSetupFunctions(generatedSetup, setup, setupApi)
