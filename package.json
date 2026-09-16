@@ -84,10 +84,6 @@
     "vitepress": "1.6.4",
     "vitest": "catalog:"
   },
-  "simple-git-hooks": {
-    "pre-commit": "[ -x node_modules/.bin/lint-staged ] || { echo \"[poveste] lint-staged is not installed in this working tree, so the pre-commit lint is being skipped. Run pnpm install on a branch that has it (see #18).\"; exit 0; }\npnpm exec lint-staged",
-    "pre-push": "[ -f scripts/hooks/pre-push-tags.ts ] || exit 0\nnode --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/hooks/pre-push-tags.ts"
-  },
   "lint-staged": {
     "*": "eslint --fix --no-warn-ignored"
   }
