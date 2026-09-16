@@ -166,6 +166,49 @@ already advertise and do not yet deliver. When the milestone is empty the 1.0 co
 open — it does not happen by itself, and the issues in it are the whole answer to "what is 1.0
 waiting for?".
 
+### Deprecations
+
+A deprecated name keeps working. This says for how long, and how you find out it is deprecated
+at all.
+
+**Our own renames keep working for the rest of 0.x, and become removable at 1.0.** A name this
+project introduced and later replaced — `defineSetupVue3` for `defineSetupVue`,
+`sandboxDarkClass` for `theme.darkClass`, `hstEvent` for `logEvent`, `tailwindTokens` for
+`HstTailwind` — stays through every 0.x release. Nothing in that list is removed in a minor or a
+patch, so an upgrade inside 0.x never breaks on a deprecation.
+
+**Histoire compatibility shims do not expire.** The `histoire.config.*` filename, the `histoire`
+key in a Vite config, the `HistoireConfig` type, the `histoire` CLI alias, the
+`--histoire-*` CSS variables and the `.histoire-*` render classes are what make Poveste a
+drop-in for [histoire](https://github.com/histoire-dev/histoire). Removing them would retire the
+reason to switch, so they are not on a clock and 1.0 does not remove them. A name that is both
+ours and a shim — kept for compatibility *and* superseded by a newer spelling — is a shim, and
+stays.
+
+**One clock covers everything else.** Config keys, setup hooks, `<Story>` and `<Variant>` props,
+client exports and package names all follow the rule above. There is no longer grace for the
+config file and no shorter one for anything else, because a reader should not have to know which
+category a name is in to know what it costs them.
+
+**A major may only remove names that were deprecated before it.** It is not a licence to remove
+anything else: a break in 1.0 that was never deprecated in 0.x is a break this policy does not
+allow, whatever the version number permits.
+
+**How a deprecation is recorded — both parts, by hand, at the time:**
+
+- An `@deprecated` JSDoc tag on the symbol, naming the replacement. The tag is the inventory: a
+  survey of `@deprecated` is how anyone answers "what is deprecated today", so **an untagged
+  deprecation is not one** — it is a name we quietly stopped recommending, which is the thing
+  this policy exists to prevent.
+- A line in the [`CHANGELOG.md`](https://github.com/poveste-dev/poveste/blob/main/CHANGELOG.md)
+  section for the release that introduces it. That file is written before the tag and published
+  verbatim as the release body, so it is the only announcement that reaches people who are not
+  reading source.
+
+A runtime warning is optional, and worth adding where a comment cannot reach the reader —
+`hstEvent` warns on call because a book that imports it gets no editor hint at build time. Most
+deprecations do not need one.
+
 ## When a component throws
 
 A story whose component throws shows an error over the preview, with the message
