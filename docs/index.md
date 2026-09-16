@@ -17,6 +17,9 @@ hero:
       text: Coming from histoire?
       link: /guide/migration-from-histoire
     - theme: alt
+      text: Coming from Storybook?
+      link: /guide/coming-from-storybook
+    - theme: alt
       text: View on GitHub
       link: https://github.com/poveste-dev/poveste
 
