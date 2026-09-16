@@ -15,7 +15,6 @@ const props = withDefaults(defineProps<{
   getName?: (key: string, value: string | number | any[] | Record<string, any>) => string
 }>(), {
   colSize: 180,
-  getName: null,
 })
 
 const processedTokens = computed(() => {
@@ -33,7 +32,7 @@ const processedTokens = computed(() => {
 
 const colSizePx = computed(() => `${props.colSize}px`)
 
-const hover = ref<string>(null)
+const hover = ref<string | null>(null)
 </script>
 
 <template>

@@ -23,17 +23,17 @@ const emit = defineEmits({
 })
 
 const showTooltip = ref(false)
-const input = ref<HTMLInputElement>(null)
+const input = ref<HTMLInputElement | null>(null)
 
 const numberModel = computed({
   get: () => props.modelValue,
-  set: (value) => {
+  set: (value: number) => {
     emit('update:modelValue', value)
   },
 })
 
 const percentage = computed(() => {
-  return (props.modelValue - props.min) / (props.max - props.min)
+  return ((props.modelValue ?? props.min) - props.min) / (props.max - props.min)
 })
 
 const tooltipStyle = computed<CSSProperties>(() => {
@@ -70,7 +70,7 @@ const tooltipStyle = computed<CSSProperties>(() => {
       >
       <div
         v-if="showTooltip"
-        v-tooltip="{ content: modelValue.toString(), shown: true, distance: 16, delay: 0 }"
+        v-tooltip="{ content: String(modelValue ?? ''), shown: true, distance: 16, delay: 0 }"
         class="absolute"
         :style="tooltipStyle"
       />

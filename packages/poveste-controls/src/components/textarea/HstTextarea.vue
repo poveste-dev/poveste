@@ -27,7 +27,7 @@ const input = ref<HTMLInputElement>()
     class="poveste-textarea cursor-text"
     :class="$attrs.class"
     :style="$attrs.style"
-    @click="input.focus()"
+    @click="input?.focus()"
   >
     <textarea
       ref="input"

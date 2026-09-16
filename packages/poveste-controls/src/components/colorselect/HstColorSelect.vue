@@ -20,7 +20,7 @@ const emit = defineEmits({
 
 const stringModel = computed({
   get: () => props.modelValue,
-  set: value => {
+  set: (value: string) => {
     emit('update:modelValue', value)
   },
 })

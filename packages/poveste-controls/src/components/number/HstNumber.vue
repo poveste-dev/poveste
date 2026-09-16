@@ -20,7 +20,7 @@ const emit = defineEmits({
 
 const numberModel = computed({
   get: () => props.modelValue,
-  set: (value) => {
+  set: (value: number) => {
     emit('update:modelValue', value)
   },
 })
@@ -28,8 +28,8 @@ const numberModel = computed({
 const input = ref<HTMLInputElement>()
 
 function focusAndSelect() {
-  input.value.focus()
-  input.value.select()
+  input.value?.focus()
+  input.value?.select()
 }
 
 // Drag to modify
@@ -41,13 +41,13 @@ let startValue: number
 function onMouseDown(event: MouseEvent) {
   isDragging.value = true
   startX = event.clientX
-  startValue = numberModel.value
+  startValue = numberModel.value ?? 0
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('mouseup', stopDragging)
 }
 
 function onMouseMove(event: MouseEvent) {
-  let step = Number.parseFloat(input.value.step)
+  let step = Number.parseFloat(input.value?.step ?? '')
   if (Number.isNaN(step)) {
     step = 1
   }

@@ -39,7 +39,7 @@ const dashoffset = computed(() => (1 - progress.value) * dasharray.value)
 const animationEnabled = ref(false)
 
 watch(path, () => {
-  dasharray.value = path.value.getTotalLength?.() ?? 21.21
+  dasharray.value = path.value?.getTotalLength?.() ?? 21.21
 })
 </script>
 
