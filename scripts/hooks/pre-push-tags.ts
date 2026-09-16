@@ -16,16 +16,29 @@ import { strayTags } from '../checks/local-tags.ts'
 
 const TAG_REF = /^refs\/tags\/(.+)$/
 
+/** The all-zero sha git sends as the local sha of a deletion. */
+const DELETED = /^0{40,}$/
+
 /**
  * The tag names a push is creating or updating, from git's pre-push stdin.
  *
- * Each line is `<local ref> <local sha> <remote ref> <remote sha>`. The local
- * ref is the field to read: deleting a remote tag sends `(delete)` there and
- * names the tag in the remote field, and a delete is not what this guards.
+ * Each line is `<local ref> <local sha> <remote ref> <remote sha>`, and the
+ * **remote** ref is the one to read, because that is the name that becomes
+ * public. Reading the local ref instead misses `git push <sha>:refs/tags/x`,
+ * which git reports with the raw sha in the local field.
+ *
+ * A deletion is excluded by its all-zero local sha rather than by its `(delete)`
+ * local ref, since removing a tag from the remote is not what this guards.
  */
 export function pushedTags(stdin: string): string[] {
   return stdin.split('\n')
-    .flatMap(line => TAG_REF.exec(line.split(' ')[0] ?? '')?.[1] ?? [])
+    .flatMap((line) => {
+      const [, localSha, remoteRef] = line.split(' ')
+      if (localSha === undefined || DELETED.test(localSha)) {
+        return []
+      }
+      return TAG_REF.exec(remoteRef ?? '')?.[1] ?? []
+    })
 }
 
 /** What to say about a push, or nothing when it carries no stray tag. */

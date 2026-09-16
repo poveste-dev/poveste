@@ -20,10 +20,24 @@ describe('pushedTags', () => {
     expect(pushedTags(stdin)).toEqual([])
   })
 
-  it('ignores a tag deletion, which names the tag in the remote field', () => {
+  it('ignores a tag deletion, which sends an all-zero local sha', () => {
     const stdin = `(delete) ${ZERO} refs/tags/salvage/amazing-cerf-61cd4c ${SHA}`
 
     expect(pushedTags(stdin)).toEqual([])
+  })
+
+  // `git push origin <sha>:refs/tags/salvage-y` puts the raw sha in the local
+  // ref field, so a guard reading that field never sees the tag being created.
+  it('names a tag created from a source ref that is not itself a tag', () => {
+    const stdin = `${SHA} ${SHA} refs/tags/salvage-y ${ZERO}`
+
+    expect(pushedTags(stdin)).toEqual(['salvage-y'])
+  })
+
+  it('names a tag pushed from a branch ref', () => {
+    const stdin = `refs/heads/next ${SHA} refs/tags/wip-snapshot ${ZERO}`
+
+    expect(pushedTags(stdin)).toEqual(['wip-snapshot'])
   })
 
   it('keeps a slash in a tag name', () => {
