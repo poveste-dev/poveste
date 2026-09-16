@@ -17,7 +17,7 @@ allowBuilds:
   # would do it again on every dependency install.
   simple-git-hooks: false
 catalog:
-  '@vueuse/core': ^14.4.0
+  '@vueuse/core': ^15.0.0
   '@tailwindcss/postcss': ^4.3.3
   '@tailwindcss/vite': ^4.3.3
   postcss: ^8.5.23
@@ -99,3 +99,7 @@ tasks:
 # so a clean report is not read as "lint is clean".
 pipelines:
   checks: [test:checks]
+minimumReleaseAgeExclude:
+  - '@vueuse/core@15.0.0'
+  - '@vueuse/metadata@15.0.0'
+  - '@vueuse/shared@15.0.0'
