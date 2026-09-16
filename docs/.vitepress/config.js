@@ -155,6 +155,10 @@ module.exports = {
                 link: '/guide/migration-from-histoire',
               },
               {
+                text: 'Coming from Storybook',
+                link: '/guide/coming-from-storybook',
+              },
+              {
                 text: 'Configuration',
                 link: '/guide/config',
               },
@@ -388,6 +392,10 @@ module.exports = {
             {
               text: 'Getting Started',
               link: '/guide/getting-started',
+            },
+            {
+              text: 'Coming from Storybook',
+              link: '/guide/coming-from-storybook',
             },
             {
               text: 'Configuration',
