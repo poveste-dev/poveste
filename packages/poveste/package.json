@@ -84,7 +84,6 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "@types/markdown-it": "^14.1.2",
-    "birpc": "^0.2.19",
     "change-case": "^5.4.4",
     "chokidar": "^4.0.1",
     "connect": "^3.7.0",

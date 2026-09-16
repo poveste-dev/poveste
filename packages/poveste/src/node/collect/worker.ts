@@ -5,11 +5,11 @@ import type { Invoke } from './runner.js'
 import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import { parentPort } from 'node:worker_threads'
-import { createBirpc } from 'birpc'
 import { dirname, resolve } from 'pathe'
 import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
+import { invokeOver } from './rpc.js'
 import { createRunner } from './runner.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -26,16 +26,12 @@ export interface ReturnData {
   storyData: ServerStory[]
 }
 
-export interface CollectRpc {
-  invoke: Invoke
-}
-
 const _evaluatedModules = new EvaluatedModules()
 let _runner: ModuleRunner | undefined
 // Worker-lifetime: externalised runtimes cache the DOM they first saw, so one
 // per story broke re-collection.
 let _domEnv: ReturnType<typeof createDomEnv> | undefined
-let _rpc: ReturnType<typeof createBirpc<CollectRpc>>
+let _invoke: Invoke
 
 // A virtual module is cached under the id the plugin resolved it to, not the one
 // it was asked for, so both forms have to go.
@@ -73,14 +69,11 @@ export default async (payload: Payload): Promise<ReturnData> => {
     ;(globalThis as Record<string, unknown>)[key] = value
   }
 
-  _rpc = createBirpc<CollectRpc>({}, {
-    post: data => payload.port.postMessage(data),
-    on: data => payload.port.on('message', data),
-  })
+  _invoke = invokeOver(payload.port)
 
   // One runner for the worker's lifetime, reaching the server through whichever
   // port the current task brought.
-  const runner = _runner ?? (_runner = createRunner((name, data) => _rpc.invoke(name, data), _evaluatedModules))
+  const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), _evaluatedModules))
 
   if (_domEnv) {
     resetDomEnv(_domEnv)
