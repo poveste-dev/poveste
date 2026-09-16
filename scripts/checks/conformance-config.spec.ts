@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { bookProblems, checkConformanceConfig, CUSTOM_PRESET, presetsIn, specPresets, specProblems, toRendered } from './conformance-config.ts'
+import { bookProblems, checkConformanceConfig, CUSTOM_PRESET, DEFAULTS as DEFAULTS_FILE, presetsIn, SPEC, specPresets, specProblems, toRendered } from './conformance-config.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -152,6 +154,17 @@ describe('checkConformanceConfig', () => {
     const root = tree({ 'packages/poveste/src/node/config.ts': 'export const nothing = 1\n' })
 
     expect((await checkConformanceConfig(root)).problems).toEqual(['could not read `backgroundPresets` from packages/poveste/src/node/config.ts'])
+  })
+
+  it('reports a Playwright config with no conformance project, rather than checking no books', async () => {
+    const repository = join(import.meta.dirname, '..', '..')
+    const root = tree({
+      [DEFAULTS_FILE]: readFileSync(join(repository, DEFAULTS_FILE), 'utf8'),
+      [SPEC]: readFileSync(join(repository, SPEC), 'utf8'),
+      'playwright.config.ts': 'export default { projects: [{ name: \'vue\' }] }\n',
+    })
+
+    expect((await checkConformanceConfig(root)).problems).toEqual(['playwright.config.ts defines no `:conformance` project, so this checked nothing'])
   })
 
   it('every conformance book declares the background presets the shared specs assert', { tags: ['check', 'examples'] }, async () => {
