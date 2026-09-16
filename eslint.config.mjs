@@ -141,10 +141,6 @@ export default antfu({
   ignores: [
     '**/*.spec.ts',
     '**/__tests__/**',
-    // Seven hits, all one unfinished migration, all in code that decides which
-    // built file is which. Being wrong there produces a broken book rather than
-    // an exception, so it gets its own change: #98.
-    'packages/poveste/src/node/build.ts',
   ],
   languageOptions: {
     parserOptions: {

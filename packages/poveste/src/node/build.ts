@@ -142,7 +142,7 @@ export async function build(ctx: Context) {
       mode: viteMode(ctx.mode),
       build: {
         lib: false,
-        rollupOptions: {
+        rolldownOptions: {
           // Named, not an array. With an array the bundler derives `[name]` from the
           // path, and `APP_PATH` is absolute — so any framework whose `entryFileNames`
           // refuses a path-shaped `[name]` fails the build outright (#369, and
@@ -199,10 +199,10 @@ export async function build(ctx: Context) {
       enforce: 'post',
       config(config) {
         // Don't externalize
-        config.build.rollupOptions.external = []
+        config.build.rolldownOptions.external = []
 
         // Force chunk strategy
-        config.build.rollupOptions.output = {
+        config.build.rolldownOptions.output = {
           manualChunks(id) {
             // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
             // virtual modules, so the node_modules routing below never sees them
@@ -283,19 +283,19 @@ export async function build(ctx: Context) {
       )
     }
     const mainStyleOutput = findEntryCss('bundle-main')
-      ?? result.output.find(o => o.name === 'style.css' && o.type === 'asset')
+      ?? result.output.find(o => o.type === 'asset' && o.names.includes('style.css'))
     const sandboxStyleOutput = findEntryCss('bundle-sandbox') ?? mainStyleOutput
 
     // Preload
-    const preloadOutputs = result.output.filter(o => PRELOAD_MODULES.includes(o.name) && o.type === 'chunk')
+    const preloadOutputs = result.output.filter(o => o.type === 'chunk' && PRELOAD_MODULES.includes(o.name))
     const preloadHtml = generateScriptLinks(preloadOutputs.map(o => o.fileName), 'preload', ctx)
 
     // Prefetch
-    const prefetchOutputs = result.output.filter(o => PREFETCHED_MODULES.includes(o.name) && o.type === 'chunk')
+    const prefetchOutputs = result.output.filter(o => o.type === 'chunk' && PREFETCHED_MODULES.includes(o.name))
     const prefetchHtml = generateScriptLinks(prefetchOutputs.map(o => o.fileName), 'prefetch', ctx)
 
     // Index
-    const indexOutput = result.output.find(o => o.name === 'bundle-main' && o.type === 'chunk')
+    const indexOutput = result.output.find(o => o.type === 'chunk' && o.name === 'bundle-main')
     let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
       HEAD: `${preloadHtml}${prefetchHtml}`,
     }, ctx)
@@ -303,7 +303,7 @@ export async function build(ctx: Context) {
     await writeFile('index.html', indexHtml, ctx)
 
     // Sandbox
-    const sandboxOutput = result.output.find(o => o.name === 'bundle-sandbox' && o.type === 'chunk')
+    const sandboxOutput = result.output.find(o => o.type === 'chunk' && o.name === 'bundle-sandbox')
     let sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
     sandboxHtml = await applyHeadTransform(sandboxHtml, ctx.config.head)
     await writeFile('__sandbox.html', sandboxHtml, ctx)
