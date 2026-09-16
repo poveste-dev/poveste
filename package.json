@@ -62,6 +62,8 @@
   "devDependencies": {
     "@antfu/eslint-config": "^9.3.0",
     "@arethetypeswrong/cli": "^0.18.5",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@iconify/vue": "^4.1.2",
     "@playwright/test": "^1.62.1",
     "@poveste/vendors": "workspace:*",

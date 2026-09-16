@@ -66,7 +66,7 @@ corepack enable
 pnpm i
 ```
 
-That install also puts a pre-commit hook in place, which runs `eslint --fix` over the files you staged and nothing else — it fixes what it can, stages the fix, and stops the commit only if an error is left. A lint error that reached `main` and surfaced in CI is what it exists to catch (#18). Skip it for one commit with `git commit --no-verify`, or for a shell with `SKIP_SIMPLE_GIT_HOOKS=1`.
+That install also puts two git hooks in place. `pre-commit` runs `eslint --fix` over the files you staged and nothing else — it fixes what it can, stages the fix, and stops the commit only if an error is left. `commit-msg` runs commitlint over the message; [the convention](.github/commit-convention.md) says what it checks and why the pull request title is the one that really decides. A lint error that reached `main` and surfaced in CI is what they exist to catch (#18). Skip them for one commit with `git commit --no-verify`, or for a shell with `SKIP_SIMPLE_GIT_HOOKS=1`.
 
 There is also a `pre-push` hook, which refuses a push carrying a tag that is not named `v<version>`. A release pushes the commit and exactly one tag, and bumpp's own push is `git push --tags` — every tag on the machine. That mistake happens locally, before any tag reaches GitHub, so no CI check can see it; a private tag published to a repository strangers watch is permanent (#457). It names the tag and prints the override.
 
