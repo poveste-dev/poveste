@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { SetupContext, VNode } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, h, onBeforeUnmount, reactive, ref } from 'vue'
@@ -43,7 +44,7 @@ const visibleChildrenCount = computed(() => {
 const ChildWrapper = {
   name: 'ChildWrapper',
   props: ['index'],
-  setup(props, { slots }) {
+  setup(props: { index: number }, { slots }: SetupContext) {
     const el = ref<HTMLDivElement>()
 
     const state = reactive({ width: 0, index: props.index })
@@ -68,24 +69,24 @@ const ChildWrapper = {
 
     const visible = computed(() => visibleChildrenCount.value > state.index)
 
-    return () => h('div', { ref: el, style: { visibility: visible.value ? 'visible' : 'hidden' } }, slots.default())
+    return () => h('div', { ref: el, style: { visibility: visible.value ? 'visible' : 'hidden' } }, slots.default?.())
   },
 }
 
 /**
  * Wraps each child with a <ChildWrapper>
  */
-function ChildrenRender(props, { slots }) {
-  const [fragment] = slots.default()
-  return fragment.children.map((vnode, index) => h(ChildWrapper, { index }, () => [vnode]))
+function ChildrenRender(_props: unknown, { slots }: SetupContext) {
+  const children = slots.default?.()[0]?.children
+  return Array.isArray(children) ? children.map((vnode, index) => h(ChildWrapper, { index }, () => [vnode])) : []
 }
 
 /**
  * Only renders a part of a children list
  */
-function ChildrenSlice(props, { slots }) {
-  const [fragment] = slots.default()
-  return fragment.children.slice(props.start, props.end)
+function ChildrenSlice(props: { start?: number, end?: number }, { slots }: SetupContext) {
+  const children = slots.default?.()[0]?.children
+  return Array.isArray(children) ? children.slice(props.start, props.end) as VNode[] : []
 }
 </script>
 

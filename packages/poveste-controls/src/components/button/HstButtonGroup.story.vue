@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import HstButtonGroup from './HstButtonGroup.vue'
 
-const options = {
+const options: Record<string, string> = {
   slow: 'Slow',
   fast: 'Fast',
   max: 'Max',

@@ -214,7 +214,7 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
     const initialFn: (...args: any[]) => Promise<any> = typeof initialValue === 'function' ? initialValue : async () => initialValue
     const valueFn: (...args: any[]) => Promise<any> = typeof value === 'function' ? value : async () => value
 
-    obj[key] = async (...args) => {
+    obj[key] = async (...args: unknown[]) => {
       // `mergeViteConfig` doesn't accept functions so we need to call them
       const initialResult = await initialFn(...args)
       const valueResult = await valueFn(...args)
@@ -227,7 +227,7 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
   if (obj[key] && key === 'plugins') {
     const initialValue = obj[key] as Plugin[]
     const newValue = obj[key] = [...value]
-    const nameMap = newValue.reduce((map, plugin) => {
+    const nameMap = newValue.reduce<Record<string, boolean>>((map, plugin) => {
       map[plugin.name] = true
       return map
     }, {})
@@ -246,7 +246,7 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
 
   if (obj[key] && key === 'supportMatch') {
     for (const item of value as SupportMatchPattern[]) {
-      const existing: SupportMatchPattern = obj[key].find(p => p.id === item.id)
+      const existing: SupportMatchPattern | undefined = obj[key].find((p: SupportMatchPattern) => p.id === item.id)
       if (existing) {
         existing.patterns = [...existing.patterns, ...item.patterns]
         existing.pluginIds = [...existing.pluginIds, ...item.pluginIds]

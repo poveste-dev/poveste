@@ -1,4 +1,6 @@
-export function clone(data) {
+// `any` in and out, as it has always been published: #709 decides whether this
+// helper stays public, and typing it here would change it for callers first.
+export function clone(data: any): any {
   try {
     return structuredClone(data)
   }
@@ -14,8 +16,8 @@ export function clone(data) {
   }
 }
 
-export function omit(data, keys: string[]) {
-  const copy = {}
+export function omit(data: any, keys: string[]): Record<string, any> {
+  const copy: Record<string, any> = {}
   for (const key in data) {
     if (!keys.includes(key)) {
       copy[key] = data[key]

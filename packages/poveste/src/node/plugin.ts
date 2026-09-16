@@ -34,15 +34,15 @@ export class BasePluginApi implements PluginApiBase {
     return path.resolve(TEMP_PATH, 'plugins', this.plugin.name.replace(/:/g, '_'))
   }
 
-  log(...msg) {
+  log(...msg: unknown[]) {
     console.log(this.colors.gray(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 
-  warn(...msg) {
+  warn(...msg: unknown[]) {
     console.warn(this.colors.yellow(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 
-  error(...msg) {
+  error(...msg: unknown[]) {
     console.error(this.colors.red(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 

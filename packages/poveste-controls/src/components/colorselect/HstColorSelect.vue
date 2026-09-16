@@ -25,9 +25,9 @@ const stringModel = computed({
   },
 })
 
-function throttle(cb, delay = 15) {
+function throttle<Args extends unknown[]>(cb: (...args: Args) => void, delay = 15) {
   let shouldWait = false
-  let waitingArgs
+  let waitingArgs: Args | null = null
   const timeoutFunc = () => {
     if (waitingArgs == null) {
       shouldWait = false
@@ -38,7 +38,7 @@ function throttle(cb, delay = 15) {
     }
   }
 
-  return (...args) => {
+  return (...args: Args) => {
     if (shouldWait) {
       waitingArgs = args
       return
@@ -52,7 +52,7 @@ function throttle(cb, delay = 15) {
 const updateValue = throttle((value: string) => {
   emit('update:modelValue', value)
 })
-function processChange(inp) {
+function processChange(inp: string) {
   updateValue(inp)
 }
 </script>

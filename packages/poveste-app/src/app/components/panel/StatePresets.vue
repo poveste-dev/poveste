@@ -41,7 +41,7 @@ const presetStates = useStorage<Map<string, { state: Record<string, unknown>, la
 )
 
 const presetsOptions = computed(() => {
-  const options = { [DEFAULT_ID]: 'Initial state' }
+  const options: Record<string, string> = { [DEFAULT_ID]: 'Initial state' }
   presetStates.value.forEach((value, key) => {
     options[key] = value.label
   })
@@ -53,7 +53,7 @@ function resetState() {
   applyState(props.variant.state, clone(defaultState))
 }
 
-function applyPreset(id) {
+function applyPreset(id: string) {
   if (id === DEFAULT_ID) {
     resetState()
   }
@@ -116,7 +116,7 @@ async function savePreset() {
   savedTimeout.start()
 }
 
-function deletePreset(id) {
+function deletePreset(id: string) {
   // @TODO custom confirm modal UI
   // eslint-disable-next-line no-alert
   if (!confirm('Are you sure you want to delete this preset?')) {

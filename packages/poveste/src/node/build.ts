@@ -155,7 +155,7 @@ export async function build(ctx: Context) {
             {
               name: 'poveste-build-rollup-options-override',
               enforce: 'post',
-              options(options) {
+              options(options: Rolldown.InputOptions) {
                 // Don't externalize
                 options.external = []
               },

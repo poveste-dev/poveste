@@ -174,7 +174,7 @@ export default defineComponent({
 
             for (const attr in attrs.story) {
               if (!omitInheritStoryProps.includes(attr) && typeof vnode.props?.[attr] === 'undefined') {
-                nextProps[attr] = attrs.story[attr]
+                nextProps[attr] = Reflect.get(attrs.story, attr)
               }
             }
 

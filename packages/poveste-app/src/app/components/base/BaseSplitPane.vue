@@ -176,7 +176,7 @@ let startPosition = 0
 let startSplit = 0
 const el = ref<HTMLElement>()
 
-function dragStart(e) {
+function dragStart(e: MouseEvent) {
   dragging.value = true
   startPosition = props.orientation === 'landscape' ? e.pageX : e.pageY
   startSplit = boundSplit.value
@@ -184,7 +184,7 @@ function dragStart(e) {
   window.addEventListener('mouseup', dragEnd)
 }
 
-function dragMove(e) {
+function dragMove(e: MouseEvent) {
   if (dragging.value) {
     // The move listener is on `window`, so it can outlive the element for the
     // rest of a drag if the pane unmounts under it.

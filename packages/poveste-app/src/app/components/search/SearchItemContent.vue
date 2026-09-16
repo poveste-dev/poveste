@@ -8,7 +8,7 @@ defineProps<{
   selected: boolean
 }>()
 
-const defaultIcons = {
+const defaultIcons: Record<string, string> = {
   story: 'carbon:cube',
   variant: 'carbon:cube',
 }

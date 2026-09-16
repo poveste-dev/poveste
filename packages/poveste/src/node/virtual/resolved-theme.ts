@@ -4,7 +4,7 @@ import { parseColor } from '../colors.js'
 export function resolvedTheme(ctx: Context) {
   let css = '*, ::before, ::after {'
   // Colors
-  const colors = ctx.config.theme?.colors ?? {}
+  const colors: Record<string, Record<string, string | undefined> | undefined> = ctx.config.theme?.colors ?? {}
   for (const color in colors) {
     for (const key in colors[color]) {
       const parsed = parseColor(colors[color][key])

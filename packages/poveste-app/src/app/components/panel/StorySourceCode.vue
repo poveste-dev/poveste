@@ -121,8 +121,8 @@ watch(() => props.variant, () => {
 
 const scroller = ref<HTMLElement>()
 
-function onScroll(event) {
-  if (sourceHtml.value) {
+function onScroll(event: Event) {
+  if (sourceHtml.value && event.target instanceof HTMLElement) {
     lastScroll = event.target.scrollTop
   }
 }

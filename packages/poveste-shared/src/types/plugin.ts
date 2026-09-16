@@ -70,9 +70,9 @@ export interface PluginApiBase {
 
   readonly pluginTempDir: string
 
-  log: (...msg) => void
-  warn: (...msg) => void
-  error: (...msg) => void
+  log: (...msg: unknown[]) => void
+  warn: (...msg: unknown[]) => void
+  error: (...msg: unknown[]) => void
 
   getStories: () => ServerStory[]
   addStoryFile: (file: string) => void

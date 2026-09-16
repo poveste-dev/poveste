@@ -119,7 +119,7 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
   let queued = false
   let queuedFiles: ServerStoryFile[] = []
   let currentFiles: ServerStoryFile[] = []
-  let queueTimer
+  let queueTimer: ReturnType<typeof setTimeout> | undefined
   let collecting = false
   let didAllStoriesYet = false
 

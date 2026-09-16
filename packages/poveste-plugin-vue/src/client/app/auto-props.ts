@@ -52,7 +52,7 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
 
       for (const key of names) {
         const prop = Array.isArray(declared) ? undefined : declared[key]
-        let types
+        let types: string[] | undefined
         let defaultValue
 
         if (prop) {

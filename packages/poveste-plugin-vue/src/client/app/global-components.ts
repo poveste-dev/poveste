@@ -27,12 +27,12 @@ export function registerGlobalComponents(app: App) {
 
   app.component('Variant', Variant)
 
-  for (const key in components) {
-    app.component(key, wrapControlComponent(components[key]))
+  for (const [key, component] of Object.entries(components)) {
+    app.component(key, wrapControlComponent(component))
   }
 }
 
-function wrapControlComponent(controlComponent) {
+function wrapControlComponent(controlComponent: (typeof components)[keyof typeof components]) {
   return defineComponent({
     name: controlComponent.name,
     inheritAttrs: false,
@@ -44,7 +44,7 @@ function wrapControlComponent(controlComponent) {
 
       const state = _reactive({})
 
-      function applyState(data) {
+      function applyState(data: Record<string, unknown>) {
         Object.assign(state, data)
       }
 
@@ -89,7 +89,7 @@ function wrapControlComponent(controlComponent) {
               ...state,
               key: 'component',
             }, {
-              default: (props) => {
+              default: (props: Record<string, unknown>) => {
                 newSlotCalls.push(props)
                 return _h('div', {
                   slotId: newSlotCalls.length - 1,

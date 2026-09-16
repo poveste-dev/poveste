@@ -7,12 +7,12 @@ import {
 } from '@poveste/vendors/vue'
 import { getCurrentInstance, isRef, unref, watch } from 'vue'
 
-const isObject = val => val !== null && typeof val === 'object'
+const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
 
 /**
  * Using external/user Vue
  */
-export function toRawDeep(val, seen = new WeakMap()) {
+export function toRawDeep(val: unknown, seen = new WeakMap()): any {
   const unwrappedValue = isRef(val) ? unref(val) : val
 
   if (typeof unwrappedValue === 'symbol') {
@@ -50,7 +50,7 @@ function toRawObject(obj: Record<any, any>, target: Record<any, any>, seen = new
 /**
  * Using bundled Vue
  */
-export function _toRawDeep(val, seen = new WeakMap()) {
+export function _toRawDeep(val: unknown, seen = new WeakMap()): any {
   const unwrappedValue = _isRef(val) ? _unref(val) : val
 
   if (typeof unwrappedValue === 'symbol') {
@@ -104,7 +104,7 @@ function without(state: Record<string, any>, omit: string[]): Record<string, any
  * @param externalState Reactive state created with the external/user Vue
  * @param omit Keys neither side may learn from the other
  */
-export function syncStateBundledAndExternal(bundledState, externalState, omit: string[] = []) {
+export function syncStateBundledAndExternal(bundledState: Record<string, any>, externalState: Record<string, any>, omit: string[] = []) {
   // Each side is asked only for what *it* changed, and that is all that crosses.
   //
   // Both watchers used to mirror the whole of their side. That works while the

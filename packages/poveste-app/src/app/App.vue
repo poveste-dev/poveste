@@ -29,7 +29,7 @@ import { onKeyboardShortcut } from './util/keyboard'
 import { mapFile } from './util/mapping'
 import { isMobile } from './util/responsive'
 
-const files = ref<StoryFile[]>(rawFiles.map(file => mapFile(file)))
+const files = ref<StoryFile[]>(rawFiles.map((file: StoryFile) => mapFile(file)))
 const tree = ref<Tree>(rawTree)
 
 onUpdate((newFiles: StoryFile[], newTree: Tree) => {

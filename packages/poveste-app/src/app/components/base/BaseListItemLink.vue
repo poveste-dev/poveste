@@ -26,9 +26,11 @@ export default defineComponent({
   },
 
   setup(props, { emit }) {
-    function handleNavigate(event, navigate: (event) => unknown) {
+    function handleNavigate(event: MouseEvent | KeyboardEvent, navigate: (event?: MouseEvent) => unknown) {
       emit('navigate')
-      navigate(event)
+      // vue-router types this as a click, but its guard reads only the modifier
+      // keys and `defaultPrevented`, which a key press carries too.
+      navigate(event as MouseEvent)
     }
 
     return {

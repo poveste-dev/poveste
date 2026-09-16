@@ -1,4 +1,4 @@
-import type { ServerRunPayload } from '@poveste/shared'
+import type { ServerRunPayload, ServerStory } from '@poveste/shared'
 import type { Vue3StorySetupApi, Vue3StorySetupHandler } from '../../helpers.js'
 import { getSetupHook } from '@poveste/shared'
 // @ts-expect-error virtual module id
@@ -15,7 +15,7 @@ export async function run({ file, storyData, el }: ServerRunPayload) {
 
   const app = createApp({
     provide: {
-      addStory(data) {
+      addStory(data: ServerStory) {
         storyData.push(data)
       },
       hstStoryFile: file,
