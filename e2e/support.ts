@@ -10,7 +10,7 @@ import { expect } from '@playwright/test'
  * These are ceilings, not waits — both return the moment the thing appears, so
  * a healthy run is unaffected. They are generous because the alternative is a
  * suite that reds under load and trains everyone to re-run it; the shell one is
- * the larger because nuxt4 is several times slower to start than the rest
+ * the larger because nuxt is several times slower to start than the rest
  * (#220), and it is the book that failed when this was measured.
  */
 const BOOK_LOAD_TIMEOUT = 60_000

@@ -1,0 +1,28 @@
+/*
+ * Adversarial rules to verify CSS isolation: without isolation these
+ * would bleed into Poveste's chrome.
+ */
+:root {
+  --user-accent: deeppink;
+}
+
+/* Custom properties only, as in vue: a real declaration here restyles every
+   story. Loud cases live in `examples/vue-tailwind`. */
+body {
+  --user-body-token: 14px;
+}
+
+* {
+  outline: 1px dotted transparent;
+}
+
+a {
+  color: var(--user-accent);
+}
+
+.user-card {
+  background: deeppink;
+  color: white;
+  padding: 16px;
+  border: 3px dashed black;
+}

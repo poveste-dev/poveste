@@ -11,7 +11,7 @@
 // two minutes for a server that came up somewhere else.
 //
 // What this does not cover: an example directory named in neither list. Four exist
-// on purpose (vue3-percy, vue3-screenshot, vue3-themed, vue3-vuetify), which is
+// on purpose (vue-percy, vue-screenshot, vue-themed, vue-vuetify), which is
 // #337's subject, so "is a directory under examples/" cannot be the truth here.
 //
 // And the root `story:build:e2e` script, which builds the books an unnarrowed local
@@ -50,7 +50,7 @@ export function matrixExamples(workflow: string): string[] {
   return list ? list.split(',').map(name => name.trim()).filter(Boolean) : []
 }
 
-// `vue3`, `vue3:conformance` and `vue3:dev` are one example with three projects.
+// `vue`, `vue:conformance` and `vue:dev` are one example with three projects.
 export function exampleNames(projects: string[]): string[] {
   return [...new Set(projects.map(name => name.split(':')[0]))]
 }

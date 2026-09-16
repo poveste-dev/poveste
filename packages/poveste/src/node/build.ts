@@ -254,7 +254,7 @@ export async function build(ctx: Context) {
           cssCodeSplit: true,
           // Not an oversight: the source pane prints story code by reading
           // functions back at runtime, and `Function.prototype.toString()`
-          // returns whatever the minifier left — `codegen-vue3.spec.ts` fails
+          // returns whatever the minifier left — `codegen-vue.spec.ts` fails
           // on three cases with this on (#329).
           minify: false,
           // Don't build in SSR mode

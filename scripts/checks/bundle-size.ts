@@ -121,7 +121,7 @@ export function measurements(chunks: Chunk[], limits: Limit[]): string[] {
   return lines
 }
 
-export const EXAMPLE = 'examples/vue3'
+export const EXAMPLE = 'examples/vue'
 
 export const HIGHLIGHTER = 'packages/poveste-app/src/app/util/highlighter.ts'
 

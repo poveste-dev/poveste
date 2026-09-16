@@ -42,9 +42,9 @@ Stacked PRs are normal for a queue of related work: base each branch on the prev
 
 ## The conformance contract
 
-A story that proves a behaviour goes in **all four** reference books — `vue3`, `nuxt4`, `svelte5`, `sveltekit` — under each one's `conformance/` directory, with the spec in `e2e/` and the id and title in [`e2e/stories.ts`](../e2e/stories.ts).
+A story that proves a behaviour goes in **all four** reference books — `vue`, `nuxt`, `svelte`, `sveltekit` — under each one's `conformance/` directory, with the spec in `e2e/` and the id and title in [`e2e/stories.ts`](../e2e/stories.ts).
 
-`story-list.spec.ts` holds every book to that list. A story added to `examples/vue3` alone fails in three other projects, and the failure names a missing id rather than the thing you did.
+`story-list.spec.ts` holds every book to that list. A story added to `examples/vue` alone fails in three other projects, and the failure names a missing id rather than the thing you did.
 
 The ids are explicit rather than derived from paths, because each framework lays its files out differently and a path-derived id cannot be addressed by one shared spec.
 
@@ -56,15 +56,15 @@ Eleven directories, three kinds, not interchangeable:
 
 | | |
 | --- | --- |
-| **Reference books** | `vue3`, `nuxt4`, `svelte5`, `sveltekit` — the conformance set *and* the full shared story list |
+| **Reference books** | `vue`, `nuxt`, `svelte`, `sveltekit` — the conformance set *and* the full shared story list |
 | **Conformance books** | `quasar` — the conformance set only |
-| **Fixtures** | `vike`, `vue3-tailwind`, `vue3-percy`, `vue3-screenshot`, `vue3-themed`, `vue3-vuetify` — each exists for one narrow thing |
+| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify` — each exists for one narrow thing |
 
-`vue3-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
+`vue-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
 
 The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is 17 ids and is the contract; `SHARED_STORY_TITLES` is 54 names and is this book's demo content. Requiring both of every new framework would price onboarding at 54 stories rather than 17.
 
-`scripts/checks/example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue3-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
+`scripts/checks/example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
 
 ## Commands that do less than their name
 
@@ -72,8 +72,8 @@ The middle row is the distinction to keep: a book can carry the conformance cont
 | --- | --- |
 | `pnpm test` | unit tests under `packages/**` only — not `scripts/` (`test:scripts`) and not the examples |
 | `pnpm test:smoke` | a publish gate, deliberately **not** in `pnpm test` — it needs a completed build, and it is what catches "works in the workspace, broken for consumers" |
-| `pnpm test:e2e` | per-example, selected by `POVESTE_E2E_EXAMPLE=vue3,svelte5`; an unknown name fails the config before any test runs. One root config defines every project and `webServer` is top-level, so `--project` on its own still boots every book's server — the variable is what narrows it (#386) |
-| `pnpm test:bundle-size` | ceilings on one built book, plus a source check for the `shiki` barrel — needs `examples/vue3` built, so it reports "no built book" rather than a size when run cold |
+| `pnpm test:e2e` | per-example, selected by `POVESTE_E2E_EXAMPLE=vue,svelte`; an unknown name fails the config before any test runs. One root config defines every project and `webServer` is top-level, so `--project` on its own still boots every book's server — the variable is what narrows it (#386) |
+| `pnpm test:bundle-size` | ceilings on one built book, plus a source check for the `shiki` barrel — needs `examples/vue` built, so it reports "no built book" rather than a size when run cold |
 
 The e2e suite serves built books. A preview server left running from an earlier run will be reused and will serve **stale output**, so a fix appears not to work, or a broken build appears to pass. Kill stray servers before trusting a local e2e result.
 
@@ -125,7 +125,7 @@ Much of `docs/` is still hard-wrapped, inherited from histoire. Leave it that wa
 
 This repo is a fork of histoire, and inherited documentation drifts from it. Where this guide and an older file disagree, this guide is the one being maintained — but say so in the PR rather than assuming, because the older file is sometimes the correct one.
 
-One thing that looks like drift and is not: `examples/nuxt4` still uses `histoire.config.ts`. The legacy filename is a supported feature with its own coverage in `config.spec.ts`, so renaming it as tidying removes the only example exercising it.
+One thing that looks like drift and is not: `examples/nuxt` still uses `histoire.config.ts`. The legacy filename is a supported feature with its own coverage in `config.spec.ts`, so renaming it as tidying removes the only example exercising it.
 
 The skills in `ai/skills/` cover the five procedures that are settled and span more than one file. There is deliberately no skill for adding a framework plugin: #375 is still the analysis, and a checklist for a procedure nobody has completed would be invention rather than documentation.
 

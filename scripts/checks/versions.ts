@@ -143,7 +143,7 @@ export function jobNames(workflows: string[]): Set<string> {
   return names
 }
 
-/** The values of one matrix variable, e.g. `example: [vue3, nuxt4]`. */
+/** The values of one matrix variable, e.g. `example: [vue, nuxt]`. */
 function matrixValues(yaml: string, key: string): string[] {
   const list = yaml.match(new RegExp(String.raw`^[^\S\n]*${key}:[^\S\n]*\[([^\]]*)\]`, 'm'))?.[1] ?? ''
   return list.split(',').map(value => value.trim()).filter(Boolean)
@@ -153,7 +153,7 @@ function matrixValues(yaml: string, key: string): string[] {
  * The `name:` of each job, and nothing else called `name:`.
  *
  * Matching every indented `name:` also collected `with: name:` from
- * upload-artifact steps, so `packages-dist` and `playwright-traces-vue3` entered
+ * upload-artifact steps, so `packages-dist` and `playwright-traces-vue` entered
  * the set of real CI checks and a docs row citing one of them would have passed.
  * A job's keys sit one level under its id, which is one level under `jobs:`, so
  * that depth is what identifies them — read from the file rather than assumed,

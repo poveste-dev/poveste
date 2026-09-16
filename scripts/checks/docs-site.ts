@@ -579,18 +579,18 @@ async function checkLive(problems: string[], site: string): Promise<string | und
   }
 
   // A 301 to the wrong place is invisible from the repo, so follow it.
-  const legacy = await get('/guide/vue3/stories.html')
+  const legacy = await get('/guide/vue/stories.html')
   const expected = '/guide/vue/stories.html'
   if (legacy.status !== 301) {
     problems.push(`live: a histoire-era path answered ${legacy.status}, not 301 — years of inbound links land on it`)
   }
   else if (new URL(legacy.location, site).pathname !== expected) {
-    problems.push(`live: /guide/vue3/stories.html redirects to ${legacy.location}, not ${expected}`)
+    problems.push(`live: /guide/vue/stories.html redirects to ${legacy.location}, not ${expected}`)
   }
   else {
     const target = await get(expected)
     if (target.status !== 200) {
-      problems.push(`live: /guide/vue3/stories.html redirects to ${expected}, which answers ${target.status}`)
+      problems.push(`live: /guide/vue/stories.html redirects to ${expected}, which answers ${target.status}`)
     }
   }
 

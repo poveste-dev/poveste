@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { sandboxHtml, seedChromeScheme, seedPreviewSettings } from './support'
 
-// `theme.darkClass` is per-book config — vue3 sets `my-dark`, the rest take the
+// `theme.darkClass` is per-book config — vue sets `my-dark`, the rest take the
 // default — so a shared spec matches either rather than pinning one book's.
 const DARK_CLASS = /(?:^|\s)(?:my-)?dark(?:\s|$)/
 // The app chrome uses its own class, driven by the top bar toggle.

@@ -364,11 +364,11 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
-      # The real Windows exercise: collect and build a book end to end. vue3 is
+      # The real Windows exercise: collect and build a book end to end. vue is
       # the plainest collector path, no Nuxt app boot in the way of the globbing
       # and path handling this is here to prove.
       - name: Build a book
-        run: pnpm --filter ./examples/vue3 run story:build
+        run: pnpm --filter ./examples/vue run story:build
 
   # The floor is a claim about the published tarballs, so it is proven the way a
   # consumer meets it: build on the release toolchain, then install and build a

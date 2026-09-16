@@ -3,7 +3,7 @@
  * builds the example's book with the bench stories included, serves it, and
  * measures grid fill at each variant count plus a single cold sandbox boot.
  *
- *   node bench/run.mjs [--examples vue3,svelte5] [--sizes 10,100,1000] [--runs 7] [--json]
+ *   node bench/run.mjs [--examples vue,svelte] [--sizes 10,100,1000] [--runs 7] [--json]
  *
  * The bench stories live in each example under `src/bench/` and are ignored by
  * the example's config unless POVESTE_BENCH=1, so normal books, dev servers and
@@ -111,7 +111,7 @@ async function main() {
     return i !== -1 && args[i + 1] ? args[i + 1] : fallback
   }
   const report = await runBench({
-    examples: opt('examples', 'vue3,svelte5').split(',').map(s => s.trim()).filter(Boolean),
+    examples: opt('examples', 'vue,svelte').split(',').map(s => s.trim()).filter(Boolean),
     sizes: opt('sizes', '10,100,1000').split(',').map(Number),
     runs: Number(opt('runs', '7')),
   })

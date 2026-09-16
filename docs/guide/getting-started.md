@@ -69,9 +69,9 @@ is wider than the CI job behind it, the range is the bug.
 | --- | --- | --- |
 | [Node](https://nodejs.org) | `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` | `Node floor` — installs the tarballs and builds a book on 22.22.2 |
 | [Vite](https://vite.dev) | `^8.0.0` | every example |
-| [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue3)` — builds that book and runs Playwright against it |
-| [Nuxt](https://nuxt.com) | `^4.5.0` | `Example e2e (nuxt4)` — builds that book and runs Playwright against it |
-| [Svelte](https://svelte.dev) | `^5.46.4` | `Example e2e (svelte5)` — builds that book and runs Playwright against it |
+| [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue)` — builds that book and runs Playwright against it |
+| [Nuxt](https://nuxt.com) | `^4.5.0` | `Example e2e (nuxt)` — builds that book and runs Playwright against it |
+| [Svelte](https://svelte.dev) | `^5.46.4` | `Example e2e (svelte)` — builds that book and runs Playwright against it |
 | [SvelteKit](https://svelte.dev/docs/kit)* | `^2.53.0` | `Example e2e (sveltekit)` — builds that book and runs Playwright against it |
 | [Quasar](https://quasar.dev) | `^2.24.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |

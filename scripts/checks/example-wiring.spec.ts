@@ -26,10 +26,10 @@ describe('matrixExamples', () => {
     const workflow = [
       '    strategy:',
       '      matrix:',
-      '        example: [vue3, nuxt4, vike]',
+      '        example: [vue, nuxt, vike]',
     ].join('\n')
 
-    expect(matrixExamples(workflow)).toEqual(['vue3', 'nuxt4', 'vike'])
+    expect(matrixExamples(workflow)).toEqual(['vue', 'nuxt', 'vike'])
   })
 
   it('returns nothing when the matrix is not where it used to be', () => {
@@ -41,38 +41,38 @@ describe('matrixExamples', () => {
 
 describe('exampleNames', () => {
   it('collapses an example\'s projects to one name', () => {
-    const projects = ['vue3', 'vue3:conformance', 'vue3:dev', 'vue3:dev-shared', 'vike', 'vike:dev']
+    const projects = ['vue', 'vue:conformance', 'vue:dev', 'vue:dev-shared', 'vike', 'vike:dev']
 
-    expect(exampleNames(projects)).toEqual(['vue3', 'vike'])
+    expect(exampleNames(projects)).toEqual(['vue', 'vike'])
   })
 })
 
 describe('conformanceBooks', () => {
   it('names the book behind each :conformance project', () => {
-    expect(conformanceBooks(['vue3:conformance', 'quasar:conformance'])).toEqual(['vue3', 'quasar'])
+    expect(conformanceBooks(['vue:conformance', 'quasar:conformance'])).toEqual(['vue', 'quasar'])
   })
 
   it('ignores a project that is not a conformance one', () => {
-    expect(conformanceBooks(['vue3', 'vue3:conformance', 'vue3:dev'])).toEqual(['vue3'])
+    expect(conformanceBooks(['vue', 'vue:conformance', 'vue:dev'])).toEqual(['vue'])
   })
 
   it('names a book once however many conformance projects it has', () => {
-    expect(conformanceBooks(['vue3:conformance', 'vue3:conformance'])).toEqual(['vue3'])
+    expect(conformanceBooks(['vue:conformance', 'vue:conformance'])).toEqual(['vue'])
   })
 
   // The state both callers treat as "this checked nothing". It was stated in
   // two files and asserted in neither until the derivation became one function
   // (#719).
   it('finds no books when the config defines no conformance project', () => {
-    expect(conformanceBooks(['vue3', 'svelte5:dev'])).toEqual([])
+    expect(conformanceBooks(['vue', 'svelte:dev'])).toEqual([])
   })
 })
 
 describe('builtExamples', () => {
   it('reads the books a build script filters to', () => {
-    const script = 'pnpm --filter ./examples/vue3 --filter ./examples/vue3-tailwind run story:build'
+    const script = 'pnpm --filter ./examples/vue --filter ./examples/vue-tailwind run story:build'
 
-    expect(builtExamples(script)).toEqual(['vue3', 'vue3-tailwind'])
+    expect(builtExamples(script)).toEqual(['vue', 'vue-tailwind'])
   })
 
   it('reads a filter written with an equals sign', () => {
@@ -118,21 +118,21 @@ describe('portsOf', () => {
 describe('portsByExample', () => {
   it('attributes each server to the example its command names', () => {
     const servers = [
-      { command: 'pnpm --filter ./examples/vue3 run story:preview', url: 'http://localhost:4567' },
-      { command: 'pnpm --filter ./examples/vue3 exec poveste dev --port 4667', url: 'http://localhost:4667' },
+      { command: 'pnpm --filter ./examples/vue run story:preview', url: 'http://localhost:4567' },
+      { command: 'pnpm --filter ./examples/vue exec poveste dev --port 4667', url: 'http://localhost:4667' },
       { command: 'pnpm --filter ./examples/vike run story:preview', url: 'http://localhost:4572' },
     ]
 
-    expect(portsByExample(servers).get('vue3')).toEqual({ preview: 4567, dev: 4667 })
+    expect(portsByExample(servers).get('vue')).toEqual({ preview: 4567, dev: 4667 })
     expect(portsByExample(servers).get('vike')).toEqual({ preview: 4572 })
   })
 
   it('keeps an example whose name contains a dash', () => {
     const servers = [
-      { command: 'pnpm --filter ./examples/vue3-tailwind run story:preview', url: 'http://localhost:4571' },
+      { command: 'pnpm --filter ./examples/vue-tailwind run story:preview', url: 'http://localhost:4571' },
     ]
 
-    expect([...portsByExample(servers).keys()]).toEqual(['vue3-tailwind'])
+    expect([...portsByExample(servers).keys()]).toEqual(['vue-tailwind'])
   })
 })
 
@@ -149,7 +149,7 @@ describe('duplicatePorts', () => {
 describe('onlyInFirst', () => {
   it('names the example the matrix runs and the config does not define', () => {
     // #384, exactly: the matrix gained `vike` and ALL_EXAMPLES did not.
-    expect(onlyInFirst(['vue3', 'vike'], ['vue3'])).toEqual(['vike'])
+    expect(onlyInFirst(['vue', 'vike'], ['vue'])).toEqual(['vike'])
   })
 })
 
@@ -167,23 +167,23 @@ describe('guideExamples', () => {
   const table = [
     '| | |',
     '| --- | --- |',
-    '| **Reference books** | `vue3`, `nuxt4`, `svelte5`, `sveltekit` — carry the full conformance set |',
+    '| **Reference books** | `vue`, `nuxt`, `svelte`, `sveltekit` — carry the full conformance set |',
     '| **Conformance books** | `quasar` — the conformance set only |',
-    '| **Fixtures** | `vike`, `vue3-tailwind` — each exists for one narrow thing |',
+    '| **Fixtures** | `vike`, `vue-tailwind` — each exists for one narrow thing |',
   ].join('\n')
 
   it('reads both lists out of the guide table', () => {
     expect(guideExamples(table)).toEqual({
-      reference: ['vue3', 'nuxt4', 'svelte5', 'sveltekit'],
+      reference: ['vue', 'nuxt', 'svelte', 'sveltekit'],
       conformance: ['quasar'],
-      fixtures: ['vike', 'vue3-tailwind'],
+      fixtures: ['vike', 'vue-tailwind'],
     })
   })
 
   it('ignores the prose beside the names, so a row can be reworded freely', () => {
     const reworded = table.replace('carry the full conformance set', 'carry every conformance story')
 
-    expect(guideExamples(reworded).reference).toEqual(['vue3', 'nuxt4', 'svelte5', 'sveltekit'])
+    expect(guideExamples(reworded).reference).toEqual(['vue', 'nuxt', 'svelte', 'sveltekit'])
   })
 
   // Reported as a problem rather than passing vacuously: a renamed heading would
@@ -212,10 +212,10 @@ describe('checkExampleWiring', () => {
   function harnessBuilding(buildScript: string): string {
     return tree({
       'package.json': JSON.stringify({ scripts: { 'story:build:e2e': buildScript } }),
-      '.github/workflows/test-examples.yml': 'jobs:\n  test:\n    strategy:\n      matrix:\n        example: [vue3]\n',
-      'playwright.config.ts': 'export default { projects: [{ name: \'vue3\' }], webServer: [{ command: \'pnpm --filter ./examples/vue3 run story:preview\', url: \'http://localhost:4567\' }] }\n',
-      'ai/AGENTS.md': '| **Fixtures** | `vue3`, `vike` |\n',
-      'examples/vue3/package.json': JSON.stringify({ scripts: { 'story:preview': 'poveste preview --port 4567' } }),
+      '.github/workflows/test-examples.yml': 'jobs:\n  test:\n    strategy:\n      matrix:\n        example: [vue]\n',
+      'playwright.config.ts': 'export default { projects: [{ name: \'vue\' }], webServer: [{ command: \'pnpm --filter ./examples/vue run story:preview\', url: \'http://localhost:4567\' }] }\n',
+      'ai/AGENTS.md': '| **Fixtures** | `vue`, `vike` |\n',
+      'examples/vue/package.json': JSON.stringify({ scripts: { 'story:preview': 'poveste preview --port 4567' } }),
       'examples/vike/package.json': '{}',
     })
   }
@@ -223,11 +223,11 @@ describe('checkExampleWiring', () => {
   it('reports a book the config boots and the build script never builds', async () => {
     const root = harnessBuilding('pnpm -r run story:build')
 
-    expect((await checkExampleWiring(root)).problems).toEqual(['playwright.config.ts boots "vue3", which `story:build:e2e` never builds — a full local run waits two minutes on its server and runs no spec'])
+    expect((await checkExampleWiring(root)).problems).toEqual(['playwright.config.ts boots "vue", which `story:build:e2e` never builds — a full local run waits two minutes on its server and runs no spec'])
   })
 
   it('reports a book the build script builds and the config never serves', async () => {
-    const root = harnessBuilding('pnpm --filter ./examples/vue3 --filter ./examples/vike run story:build')
+    const root = harnessBuilding('pnpm --filter ./examples/vue --filter ./examples/vike run story:build')
 
     expect((await checkExampleWiring(root)).problems).toEqual(['`story:build:e2e` builds "vike", which playwright.config.ts never serves'])
   })

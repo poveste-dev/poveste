@@ -311,7 +311,7 @@ export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMod
   const vitePovesteConfig = (viteConfig.poveste ?? viteConfig.histoire ?? {}) as PovesteConfig
 
   // The other place a config is written, and validating only `poveste.config.ts`
-  // left it out: `examples/svelte5` and `examples/sveltekit` have no such file
+  // left it out: `examples/svelte` and `examples/sveltekit` have no such file
   // and configure poveste entirely under this key, so half the reference books
   // took the unvalidated path (#324).
   reportConfigProblems(

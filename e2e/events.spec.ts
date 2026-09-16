@@ -4,7 +4,7 @@ import { openStory } from './support.js'
 // `logEvent` crosses from the story into the app's events panel, and how it gets
 // there differs by framework — the sandbox posts it across, the inline path
 // calls the store directly. The panel is shared chrome either way, and this had
-// no coverage outside vue3.
+// no coverage outside vue.
 const STORY = 'conformance-events'
 const EVENTS_TAB = '?variantId=default&tab=events'
 

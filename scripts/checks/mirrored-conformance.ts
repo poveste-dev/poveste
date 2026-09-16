@@ -1,7 +1,7 @@
 // Asserts that the mirrored conformance sets are still copies of each other.
 //
 // The four conformance books are two authored sets, each mirrored into a second
-// host — `examples/nuxt4/histoire.config.ts` says so in its own words. The design
+// host — `examples/nuxt/histoire.config.ts` says so in its own words. The design
 // is deliberate; what was missing is anything keeping the copies copies (#400).
 //
 // `e2e/story-list.spec.ts` reads `poveste.json` and asserts that every shared id
@@ -9,8 +9,8 @@
 // one of a pair and not the other passes it.
 //
 // It is not silent — the shared specs bind tightly to story content, so an
-// unsynced copy usually goes red. The cost is *where*: you edit vue3, and
-// `Example e2e (nuxt4)` fails on a missing locator in a book you did not touch.
+// unsynced copy usually goes red. The cost is *where*: you edit vue, and
+// `Example e2e (nuxt)` fails on a missing locator in a book you did not touch.
 // The one thing you need to know — that you changed one of a mirrored pair — is
 // exactly what that failure does not carry. And it only holds while a shared spec
 // happens to assert the changed part.
@@ -34,9 +34,9 @@ export interface Mirror {
 }
 
 export const MIRRORS: Mirror[] = [
-  { source: 'examples/vue3/src/conformance', mirror: 'examples/nuxt4/app/components/conformance' },
-  { source: 'examples/vue3/src/conformance', mirror: 'examples/quasar/src/conformance' },
-  { source: 'examples/svelte5/src/conformance', mirror: 'examples/sveltekit/src/lib/conformance' },
+  { source: 'examples/vue/src/conformance', mirror: 'examples/nuxt/app/components/conformance' },
+  { source: 'examples/vue/src/conformance', mirror: 'examples/quasar/src/conformance' },
+  { source: 'examples/svelte/src/conformance', mirror: 'examples/sveltekit/src/lib/conformance' },
 ]
 
 /**
@@ -181,8 +181,8 @@ export function collect(root = ROOT, mirrors: Mirror[] = MIRRORS): Walk {
  * What the walk has to be able to say about itself before anything trusts it.
  *
  * Both assertions are **per pair**, because `MIRRORS` has three entries and an
- * aggregate hides two thirds of this check. If the svelte5 pair went empty, the
- * two vue3 pairs would keep any aggregate well clear of zero and the success
+ * aggregate hides two thirds of this check. If the svelte pair went empty, the
+ * two vue pairs would keep any aggregate well clear of zero and the success
  * line would report a count missing a whole framework — the floor silent for
  * exactly the failure it was written for, one pair down instead of three.
  *

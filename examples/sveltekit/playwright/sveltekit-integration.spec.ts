@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 // What this example is for: poveste running inside a real SvelteKit app, with
 // `sveltekit()` in the Vite plugin chain, `svelte-preprocess` on components and
 // Kit's own route files sitting next to the stories. Plain Svelte 5 is already
-// covered by examples/svelte5 — everything here is about the Kit integration.
+// covered by examples/svelte — everything here is about the Kit integration.
 
 test.describe('story collection in a SvelteKit app', () => {
   test('collects the stories and leaves Kit route files alone', async ({ page, request }) => {

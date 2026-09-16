@@ -2,10 +2,10 @@
 //
 // The point of #400's second half: a host should *inherit* the conformance set
 // rather than have it hand-written a second time. Symlinks would make drift
-// structurally impossible, and were measured to work — a symlinked nuxt4 built
+// structurally impossible, and were measured to work — a symlinked nuxt built
 // the same 61 stories and passed all 104 of its e2e. They were not taken because
 // they would make two of the four books unbuildable on a Windows checkout without
-// `core.symlinks=true`, and the Windows CI job builds `examples/vue3` — the
+// `core.symlinks=true`, and the Windows CI job builds `examples/vue` — the
 // canonical book — so CI would not catch it.
 //
 // So the copy stays, and is generated rather than authored. Adding a host is

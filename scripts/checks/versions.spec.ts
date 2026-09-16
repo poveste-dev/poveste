@@ -121,14 +121,14 @@ describe('jobNames', () => {
       '  e2e:',
       '    strategy:',
       '      matrix:',
-      '        example: [vue3, nuxt4, svelte5]',
+      '        example: [vue, nuxt, svelte]',
       `    name: Example e2e ($\u007B{ matrix.example }})`,
     ].join('\n')
 
     expect([...jobNames([yaml])]).toEqual([
-      'Example e2e (vue3)',
-      'Example e2e (nuxt4)',
-      'Example e2e (svelte5)',
+      'Example e2e (vue)',
+      'Example e2e (nuxt)',
+      'Example e2e (svelte)',
     ])
   })
 
@@ -137,7 +137,7 @@ describe('jobNames', () => {
   })
 
   // `with: name:` on an upload-artifact step is not a job. Collecting those put
-  // `packages-dist` and `playwright-traces-vue3` in the set of real CI checks.
+  // `packages-dist` and `playwright-traces-vue` in the set of real CI checks.
   it('ignores an artifact name from a step', () => {
     const yaml = [
       'jobs:',
@@ -160,7 +160,7 @@ describe('jobNames', () => {
       '  e2e:',
       '    strategy:',
       '      matrix:',
-      '        example: [vue3, nuxt4]',
+      '        example: [vue, nuxt]',
       '        os: [ubuntu, windows]',
       `    name: Collection ($\u007B{ matrix.os }})`,
     ].join('\n')
@@ -176,7 +176,7 @@ describe('jobNames', () => {
 })
 
 describe('citedJobProblems', () => {
-  const jobs = new Set(['Node floor', 'Example e2e (vue3)'])
+  const jobs = new Set(['Node floor', 'Example e2e (vue)'])
   const table = (row: string) => ['| | Supported | Proven by |', '| --- | --- | --- |', row].join('\n')
 
   it('catches a row crediting a job that no longer exists', () => {
@@ -188,14 +188,14 @@ describe('citedJobProblems', () => {
   })
 
   it('accepts a row naming a real job', () => {
-    const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue3)` — builds that book |'
+    const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue)` — builds that book |'
 
     expect(citedJobProblems('f', table(row), jobs)).toEqual([])
   })
 
   // The evidence column also names directories; those are not job names.
   it('skips a backticked path', () => {
-    const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue3` — `Example e2e (vue3)` |'
+    const row = '| [Vue](https://vuejs.org) | `^3.5.26` | `examples/vue` — `Example e2e (vue)` |'
 
     expect(citedJobProblems('f', table(row), jobs)).toEqual([])
   })

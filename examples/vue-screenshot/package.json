@@ -1,0 +1,21 @@
+{
+  "name": "poveste-example-vue-screenshot",
+  "type": "module",
+  "version": "0.14.0",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview"
+  },
+  "dependencies": {
+    "vue": "^3.5.26"
+  },
+  "devDependencies": {
+    "@poveste/plugin-screenshot": "workspace:*",
+    "@poveste/plugin-vue": "workspace:*",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "poveste": "workspace:*",
+    "vite": "catalog:"
+  }
+}
