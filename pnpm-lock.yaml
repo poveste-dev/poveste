@@ -218,8 +218,8 @@ importers:
         specifier: ^21.2.2
         version: 21.2.2
       '@iconify/vue':
-        specifier: ^4.1.2
-        version: 4.3.0(vue@3.5.41(typescript@6.0.3))
+        specifier: ^5.0.1
+        version: 5.0.1(vue@3.5.41(typescript@6.0.3))
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -1272,8 +1272,8 @@ importers:
   packages/poveste-vendors:
     devDependencies:
       '@iconify/vue':
-        specifier: ^4.1.2
-        version: 4.3.0(vue@3.5.41(typescript@6.0.3))
+        specifier: ^5.0.1
+        version: 5.0.1(vue@3.5.41(typescript@6.0.3))
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
         version: 28.0.9(rollup@4.62.4)
@@ -2485,10 +2485,10 @@ packages:
   '@iconify/utils@3.1.4':
     resolution: {integrity: sha512-b1S7B1k9ohZ+iNTi2ATxbRYG9fTrJmUT0rc46bvVnNxqNRGW7dyo/vRREwyniI5IRN2RSJHDcm+s3BjWrSAjHw==}
 
-  '@iconify/vue@4.3.0':
-    resolution: {integrity: sha512-Xq0h6zMrHBbrW8jXJ9fISi+x8oDQllg5hTDkDuxnWiskJ63rpJu9CvJshj8VniHVTbsxCg9fVoPAaNp3RQI5OQ==}
+  '@iconify/vue@5.0.1':
+    resolution: {integrity: sha512-aumwwooJlFJ5H5qYWB6ZTAyM0C8hpfcSVLB9/a3qnH1GGvIJ+FEbpEs4s/HfErYe/M5qZeLjwmESR5fFm3lXEw==}
     peerDependencies:
-      vue: '>=3'
+      vue: '>=3.0.0'
 
   '@intlify/bundle-utils@11.2.5':
     resolution: {integrity: sha512-gl7CGygRALtuT4H8n/PNC0hubg4rnctPoT04//GZNsTemvJw0Q7i6jSaq0PZHxnH0cdGqyowNXmW4FYILbahzg==}
@@ -10605,7 +10605,7 @@ snapshots:
       '@iconify/types': 2.0.0
       import-meta-resolve: 4.2.0
 
-  '@iconify/vue@4.3.0(vue@3.5.41(typescript@6.0.3))':
+  '@iconify/vue@5.0.1(vue@3.5.41(typescript@6.0.3))':
     dependencies:
       '@iconify/types': 2.0.0
       vue: 3.5.41(typescript@6.0.3)
