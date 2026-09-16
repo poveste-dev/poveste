@@ -163,11 +163,15 @@ function commitsSinceNotes(): string {
   }
 }
 
+// A `return` after each exit, so a guard whose exit is lost ends `main()` with
+// status 0 — which the specs assert against — rather than falling into a crash
+// that exits non-zero with the right message already printed (#766).
 function main(): void {
   const version = process.argv[2]
   if (!version) {
     console.error(`Usage: checks/changelog.ts <version>\n\nPrints the ${CHANGELOG} section for that release.`)
     process.exit(1)
+    return
   }
 
   const changelog = readFileSync(join(ROOT, CHANGELOG), 'utf8')
@@ -181,6 +185,7 @@ function main(): void {
     }
     console.error(`\nUse \`###\` for sub-headings — \`##\` starts a new release, and used inside a section it silently cuts the published body short.`)
     process.exit(1)
+    return
   }
 
   if (!section) {
@@ -189,6 +194,7 @@ function main(): void {
     console.error(`\nThe GitHub release body is this section, and the release notification is sent with it — so there is no fixing it afterwards.`)
     console.error(`Add the section to ${CHANGELOG} before cutting the tag. Newest sections present: ${known}`)
     process.exit(1)
+    return
   }
 
   // After the hard failures: a leaked commit is worth knowing about, but not at
