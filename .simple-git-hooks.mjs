@@ -24,6 +24,11 @@ export default {
     'pnpm exec lint-staged',
   ),
 
+  'commit-msg': hook(
+    unless('[ -x node_modules/.bin/commitlint ] && [ -f commitlint.config.mjs ]', 'commitlint'),
+    'pnpm exec commitlint --edit "$1"',
+  ),
+
   // Refuses a push carrying a tag no release made (#457). Reads the ref list on
   // stdin, so nothing else in this hook may consume it.
   //
