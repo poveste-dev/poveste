@@ -19,7 +19,7 @@
     "floating-vue": "5.2.2",
     "lottie-web": "^5.12.2",
     "nuxt": "^4.5.2",
-    "pinia": "^2.3.0",
+    "pinia": "^4.0.3",
     "poveste": "workspace:*",
     "sass": "^1.82.0",
     "tailwindcss": "catalog:",
