@@ -7,7 +7,6 @@
       "ESNext",
       "DOM"
     ],
-    "baseUrl": ".",
     "rootDir": "src",
     "module": "ESNext",
     "moduleResolution": "bundler",
