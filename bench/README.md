@@ -15,6 +15,8 @@ pnpm bench:smoke                            # one asserted run: does the instrum
 | --- | --- |
 | `grid-fill.mjs <baseURL> <storyId> [runs]` | arrival time of each cell's `SANDBOX_READY` in the app window; long-task blocking |
 | `sandbox.mjs <baseURL> <storyId> <variantId> [runs] [--profile]` | one cold sandbox boot; `--profile` writes a CPU profile and prints top self-time frames |
+| `grid-scroll.mjs <baseURL> <storyId> [steps] [runs]` | paging: time per viewport-sized scroll step until the newly visible cells mount, and how many iframes were reused (#240) |
+| `grid-scroll.mjs <baseURL> <storyId> --fling [frames] [px] [runs]` | fling: a fixed distance per animation frame with no settle, then the cells mounted and the time taken to deliver the frames (#319) |
 
 ## Bench stories
 
@@ -34,6 +36,8 @@ It is not a measurement, and no baseline is committed. `--json` is for diffing t
 - Same machine for before/after. Headless Chromium, 1280×800 — an 18-cell window for the 200px grid.
 - `first`, `t10`, `last` are ms from navigation to the 1st/10th/last cell mounting. `blocked` is main-thread long-task time over the 50ms threshold.
 - Cells boot serially (same-origin iframes share the main thread), so `last ≈ cells × single-sandbox` is the sanity check; a big gap means cells are doing work beyond a cold boot.
+- The two scroll modes run on the largest grid only, since a smaller one fits the window. Paging settles for 1.5s after each step, about 0.5 px/ms, so it never reaches the fast-scroll path #301 added and cannot tell the two apart. Fling is the mode that does: in its report, `readyTotal` is the cells mounted across the fling and the settle, and `flingMs` is how long the page took to deliver the frames.
+- A fling is paced by frames, not by time, so a page that is slow to return frames flings slower. `fastEvents` counts the scroll events over #301's 8 px/ms threshold. A fling run with none of them never took the fast path, and it is not evidence of no difference.
 
 ## Reference (M3 Pro, `conformance-huge-grid`, V=1000, 18 cells)
 
