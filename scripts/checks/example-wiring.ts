@@ -21,6 +21,11 @@
 // It also holds `ai/AGENTS.md` to the same lists. A guide that names the wrong books
 // is worse than no guide, and its table is the one part of it a machine can read.
 //
+// And `main`'s required status checks, which are a fourth list of the same shape and
+// were outside this one. The e2e job name is built from the matrix entry, so renaming
+// an example renames a required check, and the first signal is the release push to
+// `main` being refused eleven commits later (#795).
+//
 // No network, no build: it reads the workflow text and imports the configs, so it
 // checks the config the harness actually resolves rather than how it is written.
 
@@ -29,10 +34,12 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { jobNames } from './versions.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 const WORKFLOW = '.github/workflows/test-examples.yml'
 const GUIDE = 'ai/AGENTS.md'
+const REQUIRED = '.github/required-status-checks.txt'
 const BUILD_SCRIPT = 'story:build:e2e'
 
 export interface Ports {
@@ -156,6 +163,18 @@ export function guideExamples(markdown: string): { reference: string[], conforma
   }
 }
 
+/**
+ * The contexts `main`'s branch protection requires, as this repository records them.
+ *
+ * Weaker than the other lists here, and deliberately: GitHub holds the real one and
+ * reading it needs admin, so this is a copy and it cannot see the setting drift on
+ * its own. It does catch the half that happened — a matrix entry renamed and the
+ * setting left behind.
+ */
+export function requiredContexts(file: string): string[] {
+  return file.split('\n').map(line => line.replace(/#.*$/, '').trim()).filter(Boolean)
+}
+
 export function onlyInFirst(a: string[], b: string[]): string[] {
   return a.filter(name => !b.includes(name))
 }
@@ -247,6 +266,28 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
   }
   for (const name of onlyInFirst(directories, listed)) {
     problems.push(`examples/${name} exists, but ${GUIDE} does not say what it is for`)
+  }
+
+  // The workflows' own job names, with the matrix expanded, are what GitHub can
+  // report. A required context outside that set names a check that will never
+  // arrive, which blocks the one push in the release that has to reach `main`.
+  const required = requiredContexts(await exists(REQUIRED, root) ? await readFile(join(root, REQUIRED), 'utf8') : '')
+  if (required.length === 0) {
+    problems.push(`${REQUIRED} lists no required contexts — it is missing, or the shape this check reads has changed`)
+  }
+
+  const workflowDir = join(root, '.github', 'workflows')
+  const workflows = await Promise.all(
+    (await readdir(workflowDir))
+      .filter(name => name.endsWith('.yml') || name.endsWith('.yaml'))
+      .map(name => readFile(join(workflowDir, name), 'utf8')),
+  )
+  const reportable = jobNames(workflows)
+
+  for (const context of required) {
+    if (!reportable.has(context)) {
+      problems.push(`branch protection on main requires "${context}", which no workflow can report any more — a required check that is never reported is never satisfied, so the release fast-forward to main is refused. The fix is in the repository's branch-protection settings rather than in code; edit ${REQUIRED} to match when you make it (#795)`)
+    }
   }
 
   for (const port of duplicatePorts([...rootPorts.values()].flatMap(ports => [ports.preview, ports.dev]))) {

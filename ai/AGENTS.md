@@ -66,6 +66,8 @@ The middle row is the distinction to keep: a book can carry the conformance cont
 
 `scripts/checks/example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
 
+**Renaming an example is a two-part change.** The e2e job name is built from the matrix entry, so `examples/vue3` becoming `examples/vue` renamed the required check `Example e2e (vue3)` on `main` — and a required check that is never reported is never satisfied, so the next release push to `main` is refused. `next` is unprotected, so nothing before that push says a word. `.github/required-status-checks.txt` records what `main` requires and the wiring check holds it to the matrix; GitHub holds the real list and reading it needs admin, so the settings page and that file are edited together, by hand (#795).
+
 ## Commands that do less than their name
 
 | Command | What it actually covers |

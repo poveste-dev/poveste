@@ -1,0 +1,24 @@
+# The status checks `main`'s branch protection requires, recorded here so a check can read them.
+#
+# GitHub holds the real list and reading it needs admin on the repository — a workflow's own token
+# gets 403 — so this file is a copy kept by hand. Editing the settings page without editing this
+# file, or the other way round, is the mistake it exists to catch.
+#
+# `check-example-wiring` asserts that every name below is a check some workflow can still produce.
+# That is what would have caught #793: renaming four example directories renamed four required
+# contexts, and a required check that is never reported is never satisfied, so the next release
+# fast-forward to `main` would have been refused. `next` is unprotected, so nothing before that
+# push would have said a word.
+#
+# One context per line. Blank lines and `#` comments are ignored.
+
+Unit tests and smoke
+check-title
+Build
+Example e2e (vue)
+Example e2e (nuxt)
+Example e2e (svelte)
+Example e2e (sveltekit)
+Example e2e (vue-tailwind)
+Collection (windows)
+Node floor
