@@ -2,8 +2,8 @@ import type { ModuleLoader } from '@poveste/shared'
 import type { ViteDevServer } from 'vite'
 import { resolve } from 'pathe'
 import pc from 'picocolors'
-import { ViteNodeRunner } from 'vite-node/client'
-import { ViteNodeServer } from 'vite-node/server'
+import { createModuleServer } from './collect/module-server.js'
+import { createRunner } from './collect/runner.js'
 
 export interface UseModuleLoaderOptions {
   server: ViteDevServer
@@ -15,24 +15,19 @@ let _load: ModuleLoader['loadModule']
 export function useModuleLoader(options: UseModuleLoaderOptions): ModuleLoader {
   const { server } = options
 
-  const node = new ViteNodeServer(server as any)
+  const node = createModuleServer(server, { inline: [] })
 
-  const runner = new ViteNodeRunner({
-    root: server.config.root,
-    base: server.config.base,
-    fetchModule: async id => node.fetchModule(id),
-    resolveId: (id, importer) => node.resolveId(id, importer),
-  })
+  const runner = createRunner((name, data) => node.invoke(name, data))
 
   function clearCache() {
     server.moduleGraph.invalidateAll()
-    node.fetchCache.clear()
-    runner.moduleCache.clear()
+    node.clearCache()
+    runner.evaluatedModules.clear()
   }
 
   async function loadModule(file: string) {
     try {
-      const result = await runner.executeFile(resolve(file))
+      const result = await runner.import(resolve(file))
       return result
     }
     catch (e) {

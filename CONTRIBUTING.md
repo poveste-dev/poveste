@@ -200,7 +200,7 @@ The one gap in that rule: a package's *genuine* `optionalDependencies` are insta
 
 ### A peer's peer is still a peer
 
-`vite` is a `peerDependency` of `poveste`, which reads as the consumer's problem — but `vite-node` is a real dependency of `poveste`, and `vite` is a real dependency *of `vite-node`*. It ships. Check what the intermediate package declares rather than stopping at the first peer you meet.
+`vite` is a `peerDependency` of `poveste`, which reads as the consumer's problem — but until #167, `vite-node` was a real dependency of `poveste`, and `vite` a real dependency *of `vite-node`*, so it shipped. Check what the intermediate package declares rather than stopping at the first peer you meet.
 
 ### Zero is not the target
 

@@ -1,8 +1,7 @@
 import type { ServerStoryFile } from '@poveste/shared'
 import type { ViteDevServer } from 'vite'
-import type { FetchFunction, ResolveIdFunction } from 'vite-node'
 import type { Context } from '../context.js'
-import type { Payload, ReturnData } from './worker.js'
+import type { CollectRpc, Payload, ReturnData } from './worker.js'
 import { cpus } from 'node:os'
 import { MessageChannel } from 'node:worker_threads'
 import Tinypool from '@akryum/tinypool'
@@ -10,11 +9,11 @@ import { escapeRegExp } from '@poveste/shared'
 import { createBirpc } from 'birpc'
 import path, { relative } from 'pathe'
 import pc from 'picocolors'
-import { ViteNodeServer } from 'vite-node/server'
 import { TEMP_PATH } from '../alias.js'
 import { createPath } from '../tree.js'
 import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
+import { createModuleServer } from './module-server.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -25,28 +24,25 @@ export interface UseCollectStoriesOptions {
 export function useCollectStories(options: UseCollectStoriesOptions, ctx: Context) {
   const { server, mainServer } = options
 
-  const node = new ViteNodeServer(server as any, {
-    deps: {
-      inline: [
-        // Published layout: `poveste` and scoped `@poveste/*` packages. These
-        // MUST be inlined so vite-node transforms them and resolves their
-        // `virtual:` imports; otherwise they're loaded via native Node ESM,
-        // which throws ERR_UNSUPPORTED_ESM_URL_SCHEME on `virtual:` and breaks
-        // story collection for any fresh npm install.
-        /\/poveste\/dist/,
-        /\/poveste\/client/,
-        /@poveste\/[\w-]+\/dist/,
-        // Workspace layout: packages/poveste-<name>/dist (dev / monorepo).
-        /poveste-[\w-]+\/dist/,
-        /@vue\/devtools-api/,
-        /vuetify/,
-        // @TODO temporary fix for https://github.com/histoire-dev/histoire/issues/409
-        /vite\w*\/dist\/client\/(client|env).mjs/,
-        ...ctx.config.viteNodeInlineDeps ?? [],
-        new RegExp(escapeRegExp(path.resolve(TEMP_PATH, 'plugins'))),
-      ],
-      fallbackCJS: true,
-    },
+  const node = createModuleServer(server, {
+    inline: [
+      // Published layout: `poveste` and scoped `@poveste/*` packages. These
+      // MUST be inlined so collection transforms them and resolves their
+      // `virtual:` imports; otherwise they're loaded via native Node ESM,
+      // which throws ERR_UNSUPPORTED_ESM_URL_SCHEME on `virtual:` and breaks
+      // story collection for any fresh npm install.
+      /\/poveste\/dist/,
+      /\/poveste\/client/,
+      /@poveste\/[\w-]+\/dist/,
+      // Workspace layout: packages/poveste-<name>/dist (dev / monorepo).
+      /poveste-[\w-]+\/dist/,
+      /@vue\/devtools-api/,
+      /vuetify/,
+      // @TODO temporary fix for https://github.com/histoire-dev/histoire/issues/409
+      /vite\w*\/dist\/client\/(client|env).mjs/,
+      ...ctx.config.viteNodeInlineDeps ?? [],
+      new RegExp(escapeRegExp(path.resolve(TEMP_PATH, 'plugins'))),
+    ],
     transformMode: ctx.config.viteNodeTransformMode,
   })
 
@@ -70,7 +66,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
 
   function clearCache() {
     server.moduleGraph.invalidateAll()
-    node.fetchCache.clear()
+    node.clearCache()
   }
 
   function createChannel() {
@@ -78,12 +74,8 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     const port = channel.port2
     const workerPort = channel.port1
 
-    createBirpc<Record<string, never>, {
-      fetchModule: FetchFunction
-      resolveId: ResolveIdFunction
-    }>({
-      fetchModule: id => node.fetchModule(id),
-      resolveId: (id, importer) => node.resolveId(id, importer),
+    createBirpc<Record<string, never>, CollectRpc>({
+      invoke: (name, data) => node.invoke(name, data),
     }, {
       post: data => port.postMessage(data),
       on: data => port.on('message', data),

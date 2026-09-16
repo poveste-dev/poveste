@@ -130,7 +130,7 @@ is expected to work rather than vouched for.
 **Linux** is the best-tested path — every workflow runs on `ubuntu-latest`. **Windows** is
 covered by a dedicated `windows-latest` job that installs, builds, runs the unit tests, and
 then collects and builds a real book end to end — the story-collection code (the `storyMatch`
-globs, the vite-node module graph, path handling throughout) is where a cross-platform bug
+globs, the collection module graph, path handling throughout) is where a cross-platform bug
 would surface, so that is what the job exercises. **macOS** is not in CI; it is the primary
 development platform and expected to work, but like Yarn above it is not something a workflow
 vouches for.

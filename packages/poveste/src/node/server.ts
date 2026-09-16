@@ -24,7 +24,7 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
     const { viteConfig, viteConfigFile } = await getViteConfigWithPlugins(collecting, ctx)
 
     if (collecting) {
-      // The collection server drives vite-node and has no browser, so it needs
+      // The collection server drives a module runner and has no browser, so it needs
       // no HMR socket. Left enabled, `@nuxt/vite-builder` gives it one on the
       // framework default port (24678) — see the book server below.
       viteConfig.server.hmr = false
