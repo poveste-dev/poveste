@@ -1,4 +1,4 @@
-import type MarkdownIt from 'markdown-it'
+import type { MarkdownIt } from 'markdown-it'
 import type { UseHeadInput } from 'unhead/types'
 import type {
   UserConfig as ViteConfig,

@@ -434,6 +434,8 @@ export default defineConfig({
 
 Customize the [markdown-it](https://github.com/markdown-it/markdown-it) renderer.
 
+The renderer is markdown-it 15, so a plugin passed to `md.use` has to support it: one that calls `md.utils.assign` or imports `markdown-it/lib/*` throws. Its types ship with `markdown-it` itself, so `@types/markdown-it` is not needed.
+
 ```ts
 export default defineConfig({
   markdown: (md) => {

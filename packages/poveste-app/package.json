@@ -51,7 +51,7 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "fuse.js": "^7.0.0",
-    "shiki": "^3.0.0"
+    "shiki": "^4.4.3"
   },
   "devDependencies": {
     "@fontsource/noto-sans-display": "^5.3.0",
