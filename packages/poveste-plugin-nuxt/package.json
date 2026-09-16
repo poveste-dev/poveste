@@ -62,8 +62,7 @@
     "@nuxt/kit": "^4.5.2",
     "@rollup/plugin-replace": "^6.0.1",
     "h3": "^1.13.0",
-    "ofetch": "^1.4.1",
-    "unenv": "^1.10.0"
+    "ofetch": "^1.4.1"
   },
   "devDependencies": {
     "@nuxt/schema": "^4.5.2",

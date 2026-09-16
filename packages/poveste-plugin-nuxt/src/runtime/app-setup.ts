@@ -42,16 +42,8 @@ export async function setupNuxtApp(publicConfig: PublicRuntimeConfig) {
   const registry = new Set<string>()
 
   if (__HST_COLLECT__) {
-    const {
-      toNodeListener,
-    } = await import('h3')
-    const {
-      createCall,
-      createFetch: createLocalFetch,
-    } = await import('unenv/runtime/fetch/index')
-    // @ts-expect-error TODO: fix in h3
-    const localCall = createCall(toNodeListener(h3App))
-    const localFetch = createLocalFetch(localCall, globalThis.fetch)
+    const { createLocalFetch } = await import('./local-fetch.js')
+    const localFetch = createLocalFetch(h3App)
 
     win.fetch = (init: string, options?: any) => {
       if (typeof init === 'string' && registry.has(init)) {
