@@ -1,7 +1,8 @@
 /*
- * Runs the grid-fill benchmark end to end for one or more examples (#197):
- * builds the example's book with the bench stories included, serves it, and
- * measures grid fill at each variant count plus a single cold sandbox boot.
+ * Runs the grid benchmarks end to end for one or more examples (#197): builds
+ * the example's book with the bench stories included, serves it, and measures
+ * grid fill at each variant count, a single cold sandbox boot, and scrolling
+ * the largest grid by paging and by fling (#319).
  *
  *   node bench/run.mjs [--examples vue,svelte] [--sizes 10,100,1000] [--runs 7] [--json]
  *
@@ -13,6 +14,7 @@ import { spawn } from 'node:child_process'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { measureGridFill } from './grid-fill.mjs'
+import { measureGridFling, measureGridScroll } from './grid-scroll.mjs'
 import { measureSandbox } from './sandbox.mjs'
 
 // stdout is the interface: results are JSON or a table for the terminal.
@@ -74,9 +76,19 @@ export async function runBench({ examples, sizes, runs, log = console.error }) {
         report.push({ example, kind: 'grid', size, ...r })
       }
 
-      log(`--- ${example} single sandbox, V=${sizes[sizes.length - 1]} ---`)
-      const s = await measureSandbox({ baseURL, storyId: `bench-grid-${sizes[sizes.length - 1]}`, variantId: 'v1', runs: 5, log })
-      report.push({ example, kind: 'sandbox', size: sizes[sizes.length - 1], ...s })
+      const largest = sizes[sizes.length - 1]
+      log(`--- ${example} single sandbox, V=${largest} ---`)
+      const s = await measureSandbox({ baseURL, storyId: `bench-grid-${largest}`, variantId: 'v1', runs: 5, log })
+      report.push({ example, kind: 'sandbox', size: largest, ...s })
+
+      // The largest grid only: a smaller one fits the window and does not scroll.
+      log(`--- ${example} grid scroll, paging, V=${largest}, ${runs} runs ---`)
+      const paging = await measureGridScroll({ baseURL, storyId: `bench-grid-${largest}`, runs, log })
+      report.push({ example, kind: 'scroll', size: largest, ...paging })
+
+      log(`--- ${example} grid scroll, fling, V=${largest}, ${runs} runs ---`)
+      const fling = await measureGridFling({ baseURL, storyId: `bench-grid-${largest}`, runs, log })
+      report.push({ example, kind: 'fling', size: largest, ...fling })
     }
     finally {
       // Detached so the whole pnpm → poveste tree goes with it.
@@ -97,11 +109,25 @@ function printTable(report) {
     if (r.kind === 'grid') {
       console.log(`${r.example.padEnd(10)} grid   ${pad(r.size, 5)}  ${pad(r.cells, 5)}  ${pad(r.first, 5)}  ${pad(r.t10, 5)}  ${pad(r.last, 5)}  ${pad(r.blocked, 7)}  ${r.lastRange}`)
     }
-    else {
+    else if (r.kind === 'sandbox') {
       console.log(`${r.example.padEnd(10)} sandbox${pad(r.size, 5)}      —  ${pad(r.median, 5)}      —      —        —  ${r.range}`)
     }
   }
+
+  const scrolls = report.filter(r => r.kind === 'scroll' || r.kind === 'fling')
+  if (scrolls.length) {
+    console.log('\nexample    kind     V      ms     range        mounts  range    fast events')
+    for (const r of scrolls) {
+      if (r.kind === 'scroll') {
+        console.log(`${r.example.padEnd(10)} scroll ${pad(r.size, 5)}  ${pad(r.stepMs, 5)}  ${pad(r.stepRange, 11)}  ${pad(r.newReadyPerStep, 6)}  ${pad('per step', 8)}  —`)
+      }
+      else {
+        console.log(`${r.example.padEnd(10)} fling  ${pad(r.size, 5)}  ${pad(r.flingMs, 5)}  ${pad(r.flingMsRange, 11)}  ${pad(r.readyTotal, 6)}  ${pad(r.readyTotalRange, 8)}  ${r.fastEvents} of ${r.scrollEvents}`)
+      }
+    }
+  }
   console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport; "blocked" = long-task time over 50ms)')
+  console.log('(scroll: ms per paged step after the 1.5s settle; fling: ms to deliver its frames, mounts across fling and settle)')
 }
 
 async function main() {

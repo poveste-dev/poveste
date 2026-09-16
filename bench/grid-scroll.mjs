@@ -1,12 +1,19 @@
 /*
- * Grid scroll: after the initial fill, how long each scroll step takes until
- * every newly visible cell has mounted (#240).
+ * Grid scroll, in two modes.
  *
- * Initial fill pays one realm boot per visible cell whatever the strategy; the
- * pool's win is every cell that enters the window afterwards, so this is the
- * number that tells a cold-boot grid from a retargeting one.
+ * Paging: after the initial fill, how long each scroll step takes until every
+ * newly visible cell has mounted (#240). Initial fill pays one realm boot per
+ * visible cell whatever the strategy; the pool's win is every cell that enters
+ * the window afterwards, so this tells a cold-boot grid from a retargeting one.
+ *
+ * Fling: a fixed distance per animation frame with no settle between frames
+ * (#319). Paging scrolls one viewport and then waits, about 0.5 px/ms, so every
+ * scroll event takes the prompt path and #301's deferral during fast scroll is
+ * never exercised. `fastEvents` counts the events over #301's threshold by its
+ * own formula: a fling run with none measured the prompt path, not a fling.
  *
  *   node bench/grid-scroll.mjs <baseURL> <storyId> [steps=6] [runs=5]
+ *   node bench/grid-scroll.mjs <baseURL> <storyId> --fling [frames=24] [px=200] [runs=5]
  */
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -16,11 +23,19 @@ import { median, range } from './grid-fill.mjs'
 // stdout is the interface: results are JSON or a table for the terminal.
 /* eslint-disable no-console */
 
+const SCROLLER = '.poveste-story-variant-grid .overflow-y-auto'
+
+// `FAST_PX_PER_MS` in `StoryVariantGrid.vue`.
+const FAST_PX_PER_MS = 8
+
 const INIT = `
   if (window === window.top) {
-    window.__bench = { ready: 0, reloads: 0 }
+    window.__bench = { ready: 0, readyAt: [] }
     window.addEventListener('message', (e) => {
-      if (e?.data?.type === '__poveste:sandbox-ready') window.__bench.ready++
+      if (e?.data?.type === '__poveste:sandbox-ready') {
+        window.__bench.ready++
+        window.__bench.readyAt.push(performance.now())
+      }
     })
   }
 `
@@ -63,11 +78,10 @@ export async function measureGridScroll({ baseURL, storyId, steps = 6, runs = 5,
       for (let s = 0; s < steps; s++) {
         const before = await page.evaluate(() => window.__bench.ready)
         const t0 = Date.now()
-        await page.evaluate(() => {
-          const scroller = document.querySelector('.poveste-story-variant-grid .overflow-y-auto')
-            ?? document.scrollingElement
+        await page.evaluate((selector) => {
+          const scroller = document.querySelector(selector) ?? document.scrollingElement
           scroller.scrollTop += scroller.clientHeight
-        })
+        }, SCROLLER)
         // New cells report ready as they mount; wait for the count to stop moving.
         const after = await settle(page, () => window.__bench?.ready ?? 0, 1_500, 30_000)
         stepTimes.push({ ms: Date.now() - t0 - 1_500, newReady: after - before })
@@ -102,12 +116,97 @@ export async function measureGridScroll({ baseURL, storyId, steps = 6, runs = 5,
   }
 }
 
+export async function measureGridFling({ baseURL, storyId, frames = 24, px = 200, runs = 5, viewport = { width: 1280, height: 800 }, log = () => {} }) {
+  const browser = await chromium.launch()
+  const perRun = []
+  try {
+    for (let i = 0; i < runs; i++) {
+      const context = await browser.newContext({ viewport })
+      const page = await context.newPage()
+      await page.addInitScript(INIT)
+      await page.goto(`${baseURL}/story/${storyId}`, { waitUntil: 'commit' })
+      await settle(page, () => window.__bench?.ready ?? 0, 3_000, 90_000)
+
+      const fling = await page.evaluate(async ({ selector, frames, px }) => {
+        const scroller = document.querySelector(selector)
+        if (!scroller) {
+          return { error: `no element matches ${selector}` }
+        }
+        const readyBefore = window.__bench.ready
+        // Velocity per event, the way the grid's scroll handler computes it.
+        const velocities = []
+        let lastTop = scroller.scrollTop
+        let lastT = performance.now()
+        const onScroll = () => {
+          const now = performance.now()
+          velocities.push(now > lastT ? Math.abs(scroller.scrollTop - lastTop) / (now - lastT) : 0)
+          lastTop = scroller.scrollTop
+          lastT = now
+        }
+        scroller.addEventListener('scroll', onScroll, { passive: true })
+        const t0 = performance.now()
+        // Paced by frames, not by time: a page slow to return frames flings
+        // slower, which is the cost a user feels rather than an artefact.
+        await new Promise((resolve) => {
+          let n = 0
+          const tick = () => {
+            scroller.scrollTop += px
+            if (++n < frames) {
+              requestAnimationFrame(tick)
+            }
+            else {
+              resolve()
+            }
+          }
+          requestAnimationFrame(tick)
+        })
+        const t1 = performance.now()
+        scroller.removeEventListener('scroll', onScroll)
+        return { t1, flingMs: t1 - t0, readyBefore, readyDuringFling: window.__bench.ready - readyBefore, velocities }
+      }, { selector: SCROLLER, frames, px })
+      if (fling.error) {
+        throw new Error(fling.error)
+      }
+
+      const readyAfter = await settle(page, () => window.__bench?.ready ?? 0, 1_500, 30_000)
+      const lastReadyAt = await page.evaluate(() => window.__bench.readyAt.at(-1))
+      const run = {
+        scrollEvents: fling.velocities.length,
+        fastEvents: fling.velocities.filter(v => v > FAST_PX_PER_MS).length,
+        readyTotal: readyAfter - fling.readyBefore,
+        readyDuringFling: fling.readyDuringFling,
+        flingMs: Math.round(fling.flingMs),
+        settleMs: lastReadyAt > fling.t1 ? Math.round(lastReadyAt - fling.t1) : 0,
+      }
+      perRun.push(run)
+      log(`  run ${i + 1}/${runs}: events=${run.scrollEvents} fast=${run.fastEvents} ready=${run.readyTotal} (during fling ${run.readyDuringFling}) fling=${run.flingMs}ms settle=${run.settleMs}ms`)
+      await context.close()
+    }
+  }
+  finally {
+    await browser.close()
+  }
+  const result = { storyId, frames, px, runs }
+  for (const key of ['scrollEvents', 'fastEvents', 'readyTotal', 'readyDuringFling', 'flingMs', 'settleMs']) {
+    result[key] = median(perRun.map(r => r[key]))
+    result[`${key}Range`] = range(perRun.map(r => r[key]))
+  }
+  return result
+}
+
 async function main() {
-  const [baseURL, storyId, steps = '6', runs = '5'] = process.argv.slice(2)
+  const args = process.argv.slice(2)
+  const [baseURL, storyId] = args
   if (!baseURL || !storyId) {
-    console.error('usage: node bench/grid-scroll.mjs <baseURL> <storyId> [steps] [runs]')
+    console.error('usage: node bench/grid-scroll.mjs <baseURL> <storyId> [steps] [runs]\n       node bench/grid-scroll.mjs <baseURL> <storyId> --fling [frames] [px] [runs]')
     process.exit(2)
   }
+  if (args[2] === '--fling') {
+    const [frames = '24', px = '200', runs = '5'] = args.slice(3)
+    console.log(JSON.stringify(await measureGridFling({ baseURL, storyId, frames: Number(frames), px: Number(px), runs: Number(runs), log: console.error })))
+    return
+  }
+  const [steps = '6', runs = '5'] = args.slice(2)
   const result = await measureGridScroll({ baseURL, storyId, steps: Number(steps), runs: Number(runs), log: console.error })
   console.log(JSON.stringify(result))
 }
