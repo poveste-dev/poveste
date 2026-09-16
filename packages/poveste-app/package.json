@@ -68,7 +68,7 @@
     "chokidar": "^4.0.1",
     "concurrently": "^9.1.0",
     "fs-extra": "^11.2.0",
-    "globby": "^14.0.2",
+    "globby": "^16.2.4",
     "pathe": "^1.1.2",
     "postcss": "catalog:",
     "postcss-cli": "^11.0.1",
