@@ -17,17 +17,6 @@ export default defineConfig({
   input: entries,
 
   plugins: [
-    // The same payload `packages/poveste/src/node/vite.ts` stubs out of a book
-    // build, kept out of the pre-bundle it would otherwise be baked into (#791).
-    {
-      name: 'stub-devtools-api',
-      resolveId(id) {
-        return id === '@vue/devtools-api' ? '\0poveste-vendors:devtools-api' : null
-      },
-      load(id) {
-        return id === '\0poveste-vendors:devtools-api' ? 'export function setupDevtoolsPlugin() {}\n' : null
-      },
-    },
     resolve({ preferBuiltins: true }),
     commonjs(),
     ts({
@@ -148,6 +137,17 @@ export * from '${filepath}'\n`.replace(/\n/g, process.platform === 'win32' ? '\r
     assetFileNames: '[name][extname]',
     hoistTransitiveImports: false,
     dir: 'dist/client',
+    // `@vue/devtools-api` in a chunk of its own name, so a book build can stub
+    // exactly this file while `poveste dev` loads the real one and Poveste's own
+    // stores still register with Vue Devtools (#791). Inlined into `b-pinia`,
+    // the two are only possible one at a time.
+    manualChunks(id) {
+      return /[\\/]@vue[\\/]devtools-api[\\/]/.test(id) ? 'devtools-api' : undefined
+    },
+    // Real names across chunks rather than `s as setupDevtoolsPlugin`: the book
+    // stub has to export what `b-pinia` imports, and a minified name is not a
+    // contract anything could hold to.
+    minifyInternalExports: false,
   },
 
   external: [],

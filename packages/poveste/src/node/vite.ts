@@ -144,13 +144,16 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   // published book is Poveste's own stores, so the 200 KB buys them nothing
   // (#791).
   //
-  // A consumer's book resolves its own pinia, so stubbing the vendors pre-bundle
-  // alone leaves the payload in the book's vendor chunk. It has to happen here.
+  // Two copies reach a book. A consumer's stories resolve their own pinia, which
+  // imports `@vue/devtools-api` by name; Poveste's own stores use
+  // `@poveste/vendors`, which keeps the real module as `devtools-api.js` so that
+  // `poveste dev` still registers them. Both are stubbed here.
   //
-  // `apply: 'build'` leaves `poveste dev` alone, where the registration is worth
-  // having to whoever is working on Poveste itself.
+  // `apply: 'build'` is what keeps dev registering — the vendored chunk is the
+  // real module until a book is built.
   if (!isServer) {
     const STUB = '\0poveste:devtools-api'
+    const VENDORED = /[\\/](?:poveste-vendors|@poveste[\\/]vendors)[\\/]dist[\\/]client[\\/]devtools-api\.js(?:\?.*)?$/
 
     plugins.push({
       name: 'poveste-devtools-api-stub',
@@ -164,7 +167,11 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
       load(id) {
         // Not an empty module: pinia and vue-router *call* this, so the export
         // has to exist or the book throws where it used to register nothing.
-        return id === STUB ? 'export function setupDevtoolsPlugin() {}\n' : undefined
+        // Both spellings, because `b-pinia` and `b-vue-router` import different
+        // ones of the two the package exports.
+        return id === STUB || VENDORED.test(id)
+          ? 'export function setupDevtoolsPlugin() {}\nexport { setupDevtoolsPlugin as setupDevToolsPlugin }\n'
+          : undefined
       },
     })
   }
