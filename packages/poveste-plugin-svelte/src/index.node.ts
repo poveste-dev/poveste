@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { dirname, join } from 'pathe'
 import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
+import { SVELTE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { svelteAutoProps } from './util/auto-props-vite.js'
 import { svelteKitAssetsDir } from './util/kit-assets.js'
 import { listComponentFiles } from './util/list-components.js'
@@ -52,7 +53,7 @@ export function HstSvelte(): Plugin {
     supportPlugin: {
       id: 'svelte4',
       moduleName: '@poveste/plugin-svelte',
-      setupFn: ['setupSvelte3', 'setupSvelte4', 'setupSvelte5'],
+      setupFn: SVELTE_SETUP_HOOK_NAMES,
       importStoryComponent: (file, index) => `import Comp${index} from ${JSON.stringify(file.moduleId)}`,
     },
 

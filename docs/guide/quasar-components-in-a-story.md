@@ -24,10 +24,10 @@ Name them in the book's setup file:
 ```ts
 // src/poveste.setup.ts
 import { setupQuasar } from '@poveste/plugin-quasar/setup'
-import { defineSetupVue3 } from '@poveste/plugin-vue'
+import { defineSetupVue } from '@poveste/plugin-vue'
 import greeting from './boot/greeting' // one of your own, from src/boot
 
-export const setupVue3 = defineSetupVue3(setupQuasar({
+export const setupVue = defineSetupVue(setupQuasar({
   boot: [greeting],
 }))
 ```

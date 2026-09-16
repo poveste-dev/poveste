@@ -124,6 +124,11 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
           vue: viteConfig.vue,
           logLevel: 'info',
         },
+        // The generated hook keeps the canonical name. `getSetupFnGroups` treats
+        // `setupFn[0]` as canonical and only that name is re-exported from the
+        // generated setup module, so an unnumbered `setupVue` here resolves to
+        // nothing and every Nuxt story loses its app setup — three `render-story`
+        // specs fail (#157).
         setupCode: [
           `${nuxt.options.css.map(file => `import '${file}'`).join('\n')}`,
           `import { setupNuxtApp } from '@poveste/plugin-nuxt/dist/runtime/app-setup.js'

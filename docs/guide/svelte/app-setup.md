@@ -10,7 +10,7 @@ description: 'Define a setup function so the Svelte app that renders your storie
 You can define a setup function globally in your setup file defined by the `setupFile` option
 in the global configuration ([learn more](../config.md#global-js-and-css)).
 
-For Svelte it must be called `setupSvelte5`. Poveste provides an optional `defineSetupSvelte`
+For Svelte it is called `setupSvelte`. Poveste provides an optional `defineSetupSvelte`
 helper to have better types in your IDE:
 
 ```ts
@@ -20,7 +20,7 @@ import { defineSetupSvelte } from '@poveste/plugin-svelte'
 
 import './poveste.css'
 
-export const setupSvelte5 = defineSetupSvelte(({ app, story, variant }) => {
+export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
   // Runs for every mounted story and variant
   document.documentElement.dataset.theme = 'dark'
 })
@@ -31,27 +31,26 @@ Importing global CSS or JS files at the top of the setup file — outside the ho
 most common use, and it does not need the hook at all. The file is a module like any other.
 :::
 
-## Export exactly one name
+## If you already export a numbered name
 
-`setupSvelte5`, `setupSvelte4` and `setupSvelte3` are all accepted. **Every one you export
-runs**, in that order, so exporting two names runs your setup twice:
+`setupSvelte3`, `setupSvelte4` and `setupSvelte5` are all still accepted, and nothing needs
+changing today. They are aliases of one hook, not separate hooks, so Poveste runs **the first
+one it finds** and warns about the rest:
 
 ```ts
-// Don't: both of these run, one after the other
-export function setupSvelte4() { /* … */ }
+// Both of these are the same hook. Only `setupSvelte5` runs, and the warning says so.
 export function setupSvelte5() { /* … */ }
+export function setupSvelte() { /* … */ }
 ```
 
-::: warning Different from Vue
-Vue's `setupVue` / `setupVue3` pair is *first-wins*: Poveste runs the first name it finds and
-warns about the other, so a project migrating between names never applies its setup twice.
-Svelte has no such guard — pick one name and export only that.
-:::
+Established names win, so adding `setupSvelte` to a file that already exports `setupSvelte5`
+changes nothing until you delete the old one. Rename when it suits you; keep one.
 
-The numbers are historical. `@poveste/plugin-svelte` supports Svelte 5 only, so `setupSvelte5`
-is the name to use; the other two are accepted so histoire-era setup files keep working. The
-`defineSetupSvelte` helper is unnumbered, and `defineSetupSvelte3` / `defineSetupSvelte4` /
-`defineSetupSvelte5` are aliases of it.
+The numbers were always historical. `@poveste/plugin-svelte` supports Svelte 5 only, so
+`setupSvelte3` and `setupSvelte4` name majors it cannot run — they are accepted because
+histoire users wrote them, not because they select anything. The `defineSetupSvelte` helper is
+unnumbered, and `defineSetupSvelte3` / `defineSetupSvelte4` / `defineSetupSvelte5` are aliases
+of it.
 
 ## What the hook receives
 
