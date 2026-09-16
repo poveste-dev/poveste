@@ -13,6 +13,9 @@ allowBuilds:
   esbuild: true
   puppeteer: true
   svelte-preprocess: true
+  # The root `prepare` script installs the hook; the package's own postinstall
+  # would do it again on every dependency install.
+  simple-git-hooks: false
   vue-demi: true
 catalog:
   '@vueuse/core': ^14.4.0

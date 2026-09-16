@@ -66,6 +66,12 @@ corepack enable
 pnpm i
 ```
 
+That install also puts a pre-commit hook in place, which runs `eslint --fix` over the files you staged and nothing else — it fixes what it can, stages the fix, and stops the commit only if an error is left. A lint error that reached `main` and surfaced in CI is what it exists to catch (#18). Skip it for one commit with `git commit --no-verify`, or for a shell with `SKIP_SIMPLE_GIT_HOOKS=1`.
+
+There is also a `pre-push` hook, which refuses a push carrying a tag that is not named `v<version>`. A release pushes the commit and exactly one tag, and bumpp's own push is `git push --tags` — every tag on the machine. That mistake happens locally, before any tag reaches GitHub, so no CI check can see it; a private tag published to a repository strangers watch is permanent (#457). It names the tag and prints the override.
+
+Both are defined in [`.simple-git-hooks.mjs`](.simple-git-hooks.mjs), which is where to change them. `.git/hooks` is shared by every worktree of a clone, so the hooks an install writes are live in checkouts that never installed them. Each one starts by looking for the thing it needs — the binary, or the script in the tree — and steps aside with a message when it is missing, which is what a branch older than this one gets rather than a failed commit or a refused push.
+
 2. Compile Poveste in watch mode:
 
 ```sh
