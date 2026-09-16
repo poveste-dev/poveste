@@ -20,13 +20,21 @@
 const MAX_OBJECTS = 5000
 
 export function stringifyState(value: unknown, space?: number) {
+  return serializeState(value, space).doc
+}
+
+/**
+ * `stringifyState`, and whether the budget cut the document short. A truncated
+ * document is not the value, so nothing may parse it back into the model.
+ */
+export function serializeState(value: unknown, space?: number): { doc: string, truncated: boolean } {
   // Ancestors, not everything seen: the same object appearing twice as a
   // sibling is a shared reference, not a cycle, and is perfectly serialisable.
   // The replacer's `this` is the holder, which is what lets the stack unwind.
   const ancestors: any[] = []
   let walked = 0
 
-  return JSON.stringify(value, function (this: any, _key, current) {
+  const doc = JSON.stringify(value, function (this: any, _key, current) {
     if (typeof current === 'function') {
       return '[Function]'
     }
@@ -63,4 +71,6 @@ export function stringifyState(value: unknown, space?: number) {
 
     return current
   }, space)
+
+  return { doc, truncated: walked > MAX_OBJECTS }
 }

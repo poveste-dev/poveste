@@ -34,7 +34,7 @@ import { VTooltip as vTooltip } from 'floating-vue'
 import { onMounted, ref, watch, watchEffect } from 'vue'
 import { isDark } from '../../utils'
 import HstWrapper from '../HstWrapper.vue'
-import { stringifyState } from './serialize.js'
+import { serializeState, stringifyState } from './serialize.js'
 
 const props = defineProps<{
   title?: string
@@ -52,6 +52,9 @@ let editorView: EditorView
 // our own document replaces a cycle in the story's state with the string
 // `[Circular]`, and a function with `[Function]`.
 let renderedDoc: string | undefined
+// Past the serialiser's budget the document is a partial view. Editing it would
+// write `[Truncated]` over every object it left out, so it is read-only.
+const truncated = ref(false)
 const internalValue = ref('')
 const invalidValue = ref(false)
 const editorElement = ref<HTMLInputElement>()
@@ -62,6 +65,7 @@ const themes = {
 }
 
 const themeConfig = new Compartment()
+const editableConfig = new Compartment()
 
 const extensions = [
   highlightActiveLineGutter(),
@@ -80,13 +84,19 @@ const extensions = [
     internalValue.value = viewUpdate.view.state.doc.toString()
   }),
   themeConfig.of(themes.light),
+  editableConfig.of(EditorView.editable.of(true)),
 ]
 
-onMounted(() => {
-  renderedDoc = stringifyState(props.modelValue, 2)
+function render() {
+  const result = serializeState(props.modelValue, 2)
+  renderedDoc = result.doc
+  truncated.value = result.truncated
+  return result.doc
+}
 
+onMounted(() => {
   editorView = new EditorView({
-    doc: renderedDoc,
+    doc: render(),
     extensions,
     parent: editorElement.value,
   })
@@ -95,6 +105,7 @@ onMounted(() => {
     editorView.dispatch({
       effects: [
         themeConfig.reconfigure(themes[isDark.value ? 'dark' : 'light']),
+        editableConfig.reconfigure(EditorView.editable.of(!truncated.value)),
       ],
     })
   })
@@ -111,15 +122,14 @@ watch(() => props.modelValue, () => {
   }
 
   if (!sameDocument) {
-    renderedDoc = stringifyState(props.modelValue, 2)
-    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: renderedDoc }] })
+    editorView.dispatch({ changes: [{ from: 0, to: editorView.state.doc.length, insert: render() }] })
   }
 }, { deep: true })
 
 watch(() => internalValue.value, () => {
   // Our own render coming back round. The model already holds this, and parsing
   // it would hand back the markers instead of the values they stand for.
-  if (internalValue.value === renderedDoc) {
+  if (internalValue.value === renderedDoc || truncated.value) {
     return
   }
 

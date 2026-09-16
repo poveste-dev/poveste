@@ -84,6 +84,21 @@ describe('hstJson round-trip', () => {
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
 
+  it('does not write a truncated document back into the model', async () => {
+    // Past the budget the rows it left out read `[Truncated]`, so parsing an
+    // edited document would replace them with that string.
+    const rows = Array.from({ length: 6000 }, (_, index) => ({ index }))
+    const wrapper = mount(HstJson, { props: { modelValue: rows, title: 'Rows' } })
+    await nextTick()
+
+    const view = EditorView.findFromDOM(wrapper.find('.cm-content').element as HTMLElement)!
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: view.state.doc.toString().replace('"index": 0', '"index": 1') } })
+    await nextTick()
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(view.state.facet(EditorView.editable)).toBe(false)
+  })
+
   it('still reports a document the reader changed', async () => {
     // The guard is keyed on the exact text this control last rendered, so it
     // must not swallow anything else. Without this, suppressing the echo would
