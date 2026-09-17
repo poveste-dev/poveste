@@ -1,9 +1,5 @@
 import type { Awaitable, BuildEndCallback, ChangeViteConfigCallback, PreviewStoryCallback } from '@poveste/shared'
-import type {
-  Rolldown,
-  InlineConfig as ViteInlineConfig,
-  Plugin as VitePlugin,
-} from 'vite'
+import type { ResolvedConfig, Rolldown, InlineConfig as ViteInlineConfig, Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
 import { performance } from 'node:perf_hooks'
 import fs from 'fs-extra'
@@ -80,6 +76,17 @@ export async function build(ctx: Context) {
       // bundle built from it.
       mode: viteMode(ctx.mode),
       optimizeDeps: { include: [], noDiscovery: true },
+      plugins: [{
+        // Collection reads each file once, so this server needs no watcher, and
+        // one leaked from it: a transform still in flight when a failed build
+        // closes the server re-adds a file, Vite's chokidar reopens on `add`, and
+        // the native watcher that starts is never closed (#434). A `config` hook
+        // cannot say this, because merging a config skips `null`.
+        name: 'poveste:collect-without-watcher',
+        configResolved(config: ResolvedConfig) {
+          Object.assign(config.server, { watch: null })
+        },
+      }],
     }),
   )
   await server.pluginContainer.buildStart({})
