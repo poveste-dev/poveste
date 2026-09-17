@@ -30,14 +30,14 @@ export default _defineComponent({
       rawVariants = options.variants ?? []
     }
 
-    for (const index in props.story.variants) {
+    for (const [index, variant] of props.story.variants.entries()) {
       const rawVariant = rawVariants[index]
-      Object.assign(props.story.variants[index], {
-        slots: () => ({ default: rawVariant.onMount, controls: rawVariant.onMountControls }),
-        source: rawVariant.source ?? options.source,
-        responsiveDisabled: rawVariant.responsiveDisabled ?? options.responsiveDisabled,
-        autoPropsDisabled: rawVariant.autoPropsDisabled ?? options.autoPropsDisabled,
-        setupApp: rawVariant.setupApp ?? options.setupApp,
+      Object.assign(variant, {
+        slots: () => ({ default: rawVariant?.onMount, controls: rawVariant?.onMountControls }),
+        source: rawVariant?.source ?? options.source,
+        responsiveDisabled: rawVariant?.responsiveDisabled ?? options.responsiveDisabled,
+        autoPropsDisabled: rawVariant?.autoPropsDisabled ?? options.autoPropsDisabled,
+        setupApp: rawVariant?.setupApp ?? options.setupApp,
         configReady: true,
       })
     }

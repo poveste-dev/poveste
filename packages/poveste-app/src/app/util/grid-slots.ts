@@ -67,6 +67,6 @@ export function trimSlots(slots: Slot[]): Slot[] {
   }
 
   let end = next.length
-  while (end > 0 && !next[end - 1].visible) end--
+  while (end > 0 && !next[end - 1]?.visible) end--
   return end === next.length ? next : next.slice(0, end)
 }

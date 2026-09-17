@@ -7,9 +7,9 @@ const options: Record<string, string> = {
   'ghost-of-tsushima': 'Ghost of Tsushima',
 }
 
-const objectOptions = Object.keys(options).map(key => ({
-  label: options[key],
-  value: key,
+const objectOptions = Object.entries(options).map(([value, label]) => ({
+  label,
+  value,
 }))
 
 function initState() {

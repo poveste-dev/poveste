@@ -77,7 +77,7 @@ const {
 } = useSelection(formattedOptions)
 
 function selectIndex(index: number) {
-  const result = formattedOptions.value[index].value
+  const result = formattedOptions.value[index]?.value
   if (result) {
     model.value = result
   }

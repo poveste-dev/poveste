@@ -14,9 +14,7 @@ const alias: Record<string, string> = {
 export function getInjectedImport(request: string) {
   let id: string = request
 
-  if (alias[id]) {
-    id = alias[id]
-  }
+  id = alias[id] ?? id
 
   if (path.isAbsolute(id)) {
     return JSON.stringify(pathToFileURL(id).href)

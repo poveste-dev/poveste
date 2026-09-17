@@ -382,8 +382,8 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     transform(code, id) {
       if (/\.(?:vue|js)(?:$|\?)/.test(id)) {
         const original = code
-        for (const flag in flags) {
-          code = code.replace(new RegExp(escapeRegExp(flag), 'g'), flags[flag])
+        for (const [flag, value] of Object.entries(flags)) {
+          code = code.replace(new RegExp(escapeRegExp(flag), 'g'), value)
         }
         if (original !== code) return code
       }
@@ -438,7 +438,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
         return {
           resolve: {
             alias: [
-              ...[
+              ...([
                 ['floating-vue/dist/style.css', 'node_modules/floating-vue/dist/style.css'],
                 ['floating-vue', 'floating-vue'],
                 ['@iconify/vue', 'iconify'],
@@ -447,7 +447,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
                 ['vue-router', 'vue-router'],
                 ['@vueuse/core', 'vue-use'],
                 ['vue', 'vue'],
-              ].reduce((acc, [name, entry]) => {
+              ] as const).reduce((acc, [name, entry]) => {
                 acc.push({
                   find: new RegExp(`^${escapeRegExp(name)}$`),
                   replacement: `@poveste/vendors/${entry}`,

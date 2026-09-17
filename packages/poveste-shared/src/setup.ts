@@ -52,5 +52,6 @@ export function getSetupHook<T>(mod: SetupModule, name: string | string[], retir
     )
   }
 
-  return present.length > 0 ? mod![present[0]] as T : undefined
+  const [first] = present
+  return first ? mod![first] as T : undefined
 }

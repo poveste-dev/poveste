@@ -72,8 +72,8 @@ const folderPadding = computed(() => {
           :depth="depth + 1"
         />
         <StoryListItem
-          v-else
-          :story="stories[(element as TreeLeaf).index]"
+          v-else-if="stories[(element as TreeLeaf).index]"
+          :story="stories[(element as TreeLeaf).index]!"
           :depth="depth + 1"
         />
       </template>

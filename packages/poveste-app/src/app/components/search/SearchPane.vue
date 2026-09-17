@@ -138,8 +138,7 @@ watch(rateLimitedSearch, async (value) => {
         break
       }
       case 'variant': {
-        const [storyId] = idMapData.id.split(':')
-        const story = storyStore.getStoryById(storyId)
+        const story = storyStore.getStoryById(idMapData.id.replace(/:.*$/s, ''))
         const variant = storyStore.getVariantById(idMapData.id)
         if (!story || !variant) continue
         list.push(variantResultFactory(story, variant, rank))

@@ -101,7 +101,9 @@ function useDragger(el: Ref<HTMLDivElement | undefined>, value: Ref<number | nul
   function onTouchStart(event: TouchEvent) {
     event.preventDefault()
     event.stopPropagation()
-    const start = axis === 'x' ? event.touches[0].clientX : event.touches[0].clientY
+    const [touch] = event.touches
+    if (!touch) return
+    const start = axis === 'x' ? touch.clientX : touch.clientY
     const startValue = startFrom()
     resizing.value = true
 
@@ -112,7 +114,9 @@ function useDragger(el: Ref<HTMLDivElement | undefined>, value: Ref<number | nul
     ]
 
     function onTouchMove(event: TouchEvent) {
-      const delta = (axis === 'x' ? event.touches[0].clientX : event.touches[0].clientY) - start
+      const [touch] = event.touches
+      if (!touch) return
+      const delta = (axis === 'x' ? touch.clientX : touch.clientY) - start
       value.value = Math.max(min, Math.min(max, startValue + delta))
     }
 

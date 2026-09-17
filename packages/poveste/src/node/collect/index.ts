@@ -112,15 +112,14 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
           channel.workerPort,
         ],
       }) as ReturnData
-      if (storyData.length === 0) {
+      const finalData = storyData[0]
+      if (!finalData) {
         console.warn(pc.yellow(`⚠️  No story found for ${storyFile.path}`))
         return
       }
       else if (storyData.length > 1) {
         console.warn(pc.yellow(`⚠️  Multiple stories not supported: ${storyFile.path}`))
       }
-
-      const finalData = storyData[0]
 
       // Default props
       if (ctx.config.defaultStoryProps) {
@@ -142,7 +141,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         path: relative(server.config.root, storyFile.path),
       }
       storyFile.treePath = createPath(ctx.config, storyFile.treeFile)
-      storyFile.story.title = storyFile.treePath[storyFile.treePath.length - 1]
+      finalData.title = storyFile.treePath.at(-1) ?? finalData.title
     }
     catch (e) {
       // A Vite transform error carries the code frame on `frame`.

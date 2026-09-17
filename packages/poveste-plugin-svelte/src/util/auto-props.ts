@@ -202,7 +202,7 @@ async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropCo
   for (const target of targets) {
     const props = await sources.get(target.specifier)
     if (props?.length) {
-      defs[target.variant].push({ name: target.node['name'], index: target.index, props })
+      defs[target.variant]?.push({ name: target.node['name'], index: target.index, props })
     }
   }
   return defs

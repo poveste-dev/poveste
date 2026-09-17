@@ -151,6 +151,9 @@ export async function createMarkdownRenderer(ctx: Context) {
 
     md.renderer.rules['link_open'] = function (tokens, idx, options, env, self) {
       const token = tokens[idx]
+      if (!token) {
+        return defaultRender(tokens, idx, options, env, self)
+      }
       // markdown-it 15 types an attribute value as `string | number`.
       const href = token.attrGet('href')?.toString() ?? null
 
@@ -305,8 +308,8 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
 
   function removeFile(relativePath: string) {
     const index = ctx.markdownFiles.findIndex(file => file.relativePath === relativePath)
-    if (index !== -1) {
-      const file = ctx.markdownFiles[index]
+    const file = ctx.markdownFiles[index]
+    if (file) {
       if (!file.isRelatedToStory) {
         if (file.storyFile) {
           removeStory(file.storyFile.relativePath)

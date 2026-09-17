@@ -258,7 +258,7 @@ async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
     const out: Record<string, any> = {}
     for (const [key, value] of Object.entries(group('--color'))) {
       const match = key.match(/^(.*)-(\d+)$/)
-      if (match) {
+      if (match?.[1] !== undefined && match[2] !== undefined) {
         out[match[1]] ??= {}
         out[match[1]][match[2]] = value
       }
