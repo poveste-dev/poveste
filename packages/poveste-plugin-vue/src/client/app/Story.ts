@@ -195,6 +195,20 @@ export default defineComponent({
       return applyAttrs(vm.slots['default']?.() ?? [])
     }
 
+    function countVariantVnodes(vnodes: VNode[]): number {
+      let count = 0
+      for (const vnode of vnodes) {
+        // @ts-expect-error custom option
+        if (vnode?.type?.__povesteType === 'variant') {
+          count++
+        }
+        else if (Array.isArray(vnode?.children)) {
+          count += countVariantVnodes(vnode.children as VNode[])
+        }
+      }
+      return count
+    }
+
     function renderPreviewStory(context: PreviewRenderContext) {
       context.nextVariantIndex.value = 0
 
@@ -216,13 +230,19 @@ export default defineComponent({
       // its full setup and then all but the current one render null (#197).
       // Keep only the current one, and seed the positional index so it still
       // resolves to the right variant data. Filtering only the default slot —
-      // the controls slot carries controls, and stories with variants in child
-      // components are invisible to a vnode walk.
+      // the controls slot carries controls.
+      //
+      // Gated on the walk seeing every variant, not on `hasVariantChildComponents`,
+      // for the reason the mount pass gives: every explicit <Variant> sets that flag
+      // as it renders, so from the second render on the filter never ran, and each
+      // retarget rendered all N Variant components to show one (#873). A story
+      // whose variants live in child components still renders them all, because
+      // its walk finds fewer than `variants.length`.
       const currentVariant = context.currentVariant
       if (
         context.slotName === 'default'
         && currentVariant
-        && !attrs.story.meta?.hasVariantChildComponents
+        && countVariantVnodes(children) === attrs.story.variants.length
       ) {
         const targetIndex = attrs.story.variants.findIndex(v => v.id === currentVariant.id)
         if (targetIndex !== -1) {
