@@ -32,6 +32,7 @@ export function HstVue(): Plugin {
                 if ((this.meta as any).poveste?.isCollecting && id.endsWith('.vue')) {
                   return `const _stubComponent = (name) => ['Story','Variant'].some(validName => name.toLowerCase() === validName.toLowerCase()) ? _resolveComponent(name) : ({ render: () => null });${code?.replaceAll('_resolveComponent(', '_stubComponent(') ?? ''}`
                 }
+                return undefined
               },
             },
           ],
@@ -57,6 +58,7 @@ export function HstVue(): Plugin {
           return listComponentFiles(api.payload.search, api.getConfig().storyMatch)
         }
       }
+      return undefined
     },
   }
 }

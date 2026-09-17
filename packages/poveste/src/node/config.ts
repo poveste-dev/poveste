@@ -204,6 +204,7 @@ export const mergeBuildConfig = createDefu((obj: any, key, value) => {
     obj[key] = [...obj[key], ...value]
     return true
   }
+  return undefined
 })
 
 export const mergeConfig = createDefu((obj: any, key, value) => {
@@ -278,6 +279,7 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
     obj[key] = value
     return true
   }
+  return undefined
 })
 
 /** Print every problem, then stop before anything consumes the value. */

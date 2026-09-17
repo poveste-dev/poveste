@@ -15,6 +15,7 @@ export function globalStylesPlugin(opts: GlobalStylesPluginOptions): VitePlugin 
     name: 'poveste:style-isolation:global-styles',
     resolveId(id) {
       if (id === VIRTUAL_ID) return RESOLVED_ID
+      return undefined
     },
     load(id) {
       if (id !== RESOLVED_ID) return null

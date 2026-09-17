@@ -15,4 +15,5 @@ export async function storySource(ctx: Context, id: string) {
     }
     return `export default ${JSON.stringify(source)}`
   }
+  return undefined
 }
