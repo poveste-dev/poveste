@@ -79,6 +79,7 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       // @TODO
       // return `\0${id}`
       }
+      return undefined
     },
 
     async load(id) {
@@ -141,6 +142,7 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       if (id.startsWith('/__resolved__virtual:md:')) {
         return VirtualFiles.markdown(ctx, id)
       }
+      return undefined
     },
   } as VitePlugin
 }

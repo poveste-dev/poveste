@@ -387,6 +387,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
         }
         if (original !== code) return code
       }
+      return undefined
     },
   })
 
@@ -424,6 +425,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           const result = `${code.substring(0, index)}_sfc_main.__file = '${file}'\n${code.substring(index)}`
           return result
         }
+        return undefined
       },
     })
   }

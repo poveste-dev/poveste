@@ -238,6 +238,7 @@ export async function build(ctx: Context) {
               }
               return 'vendor'
             }
+            return undefined
           },
         }
 

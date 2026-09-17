@@ -67,6 +67,7 @@ export function HstSvelte(): Plugin {
           return listComponentFiles(api.payload.search, api.getConfig().storyMatch)
         }
       }
+      return undefined
     },
   }
 }

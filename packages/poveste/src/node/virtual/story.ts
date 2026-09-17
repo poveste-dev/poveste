@@ -6,4 +6,5 @@ export function story(ctx: Context, id: string) {
   if (storyFile) {
     return storyFile.moduleCode
   }
+  return undefined
 }
