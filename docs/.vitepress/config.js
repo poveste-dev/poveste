@@ -20,6 +20,8 @@ function pageUrl(relativePath) {
   return `${SITE}/${path}`
 }
 
+const { writeFileSync } = require('node:fs')
+const { join } = require('node:path')
 // From the published package rather than a literal: `softwareVersion` is the one
 // field here that goes out of date on its own, and a hardcoded version is a lie
 // nobody notices — bumpp moves every manifest in lockstep, so this cannot drift.
@@ -94,6 +96,19 @@ module.exports = {
   // Links without `.html`, so what the site offers and what the canonical claims
   // are the same string.
   cleanUrls: true,
+
+  // Every page also answered 200 at its `.html` twin, and Google kept choosing the
+  // twin over the canonical (#811). Netlify cannot match a suffix, so each page gets
+  // its own rule; `!` forces it, since a rule is skipped when the path is a file.
+  buildEnd({ outDir, pages }) {
+    const rules = pages
+      .filter(page => page !== '404.md')
+      .map((page) => {
+        const html = `/${page.replace(/\.md$/, '.html')}`
+        return `${html} ${html.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')} 301!`
+      })
+    writeFileSync(join(outDir, '_redirects'), `${rules.sort().join('\n')}\n`)
+  },
 
   lastUpdated: true,
 

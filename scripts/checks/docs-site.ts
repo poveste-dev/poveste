@@ -34,7 +34,8 @@ import { join, relative, sep } from 'node:path'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
-export interface Redirect { from: string, to: string, status: number }
+// `force` is Netlify's override of a path that resolves to a file: `force = true`, or `301!`.
+export interface Redirect { from: string, to: string, status: number, force?: true }
 
 interface Built { pages: string[], paths: Set<string> }
 
@@ -49,7 +50,7 @@ export function parseRedirects(toml: string): Redirect[] {
     const from = read('from')
     const to = read('to')
     if (from && to) {
-      redirects.push({ from, to, status: Number(read('status') ?? 301) })
+      redirects.push({ from, to, status: Number(read('status') ?? 301), ...(read('force') === 'true' ? { force: true as const } : {}) })
     }
   }
 
@@ -63,7 +64,7 @@ export function parseRedirectsFile(text: string): Redirect[] {
   for (const line of text.split('\n')) {
     const [from, to, status] = line.replace(/#.*$/, '').trim().split(/\s+/)
     if (from && to) {
-      redirects.push({ from, to, status: status === undefined ? 301 : Number(status.replace(/!$/, '')) })
+      redirects.push({ from, to, status: status === undefined ? 301 : Number(status.replace(/!$/, '')), ...(status?.endsWith('!') ? { force: true as const } : {}) })
     }
   }
 
@@ -191,6 +192,31 @@ export function sitemapLocations(xml: string): string[] {
  */
 export function pageUrlPath(page: string): string {
   return page.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')
+}
+
+/**
+ * Pages whose `.html` twin does not permanently redirect to the page's own address.
+ *
+ * Both used to answer 200, and Google chose the twin over the canonical (#811).
+ * The rule has to be forced: the `.html` file exists, and Netlify skips an unforced
+ * rule for a path that resolves to one.
+ */
+export function htmlTwinProblems(builtPages: string[], redirects: Redirect[]): string[] {
+  const problems: string[] = []
+  for (const page of builtPages) {
+    if (page === '/404.html') {
+      continue
+    }
+    const address = pageUrlPath(page)
+    const rule = redirects.find(redirect => redirect.from === page)
+    if (!rule) {
+      problems.push(`${page} has no redirect, so it answers 200 beside ${address}`)
+    }
+    else if (rule.to !== address || rule.status !== 301 || !rule.force) {
+      problems.push(`${page} redirects to \`${rule.to}\` with ${rule.status}${rule.force ? ' forced' : ''}, not a forced 301 to \`${address}\``)
+    }
+  }
+  return problems
 }
 
 // VitePress renders one file per page and generates the sitemap from the same
@@ -454,6 +480,9 @@ function checkBuild(root: string, problems: string[], built: Built | undefined):
     }
   }
 
+  const redirectsFile = join(dist, '_redirects')
+  problems.push(...htmlTwinProblems(built.pages, existsSync(redirectsFile) ? parseRedirectsFile(readFileSync(redirectsFile, 'utf8')) : []))
+
   const pages = built.pages.map(page => ({ path: page, html: readFileSync(join(dist, page.slice(1)), 'utf8') }))
 
   // 404.html has no canonical to check — it is not a page anyone should reach by
@@ -573,26 +602,35 @@ async function checkLive(problems: string[], site: string): Promise<string | und
     problems.push(`live: a missing path answered ${missing.status}, not 404 — search engines index it as a duplicate of whatever it served`)
   }
 
-  const page = await get('/guide/getting-started.html')
-  if (page.status !== 200) {
-    problems.push(`live: /guide/getting-started.html answered ${page.status}, not 200`)
-  }
-
-  // A 301 to the wrong place is invisible from the repo, so follow it.
-  const legacy = await get('/guide/vue/stories.html')
-  const expected = '/guide/vue/stories.html'
-  if (legacy.status !== 301) {
-    problems.push(`live: a histoire-era path answered ${legacy.status}, not 301 — years of inbound links land on it`)
-  }
-  else if (new URL(legacy.location, site).pathname !== expected) {
-    problems.push(`live: /guide/vue/stories.html redirects to ${legacy.location}, not ${expected}`)
-  }
-  else {
-    const target = await get(expected)
-    if (target.status !== 200) {
-      problems.push(`live: /guide/vue/stories.html redirects to ${expected}, which answers ${target.status}`)
+  // Each hop must be a 301 and the last must be 200 at `expected`: a redirect to the
+  // wrong place, or a loop, is invisible from the repository.
+  const follow = async (start: string, expected: string, hops: number, why: string) => {
+    let path = start
+    for (let hop = 0; hop < hops; hop++) {
+      const response = await get(path)
+      if (response.status !== 301) {
+        problems.push(`live: ${path} answered ${response.status}, not 301 — ${why}`)
+        return
+      }
+      path = new URL(response.location, site).pathname
+    }
+    const target = await get(path)
+    if (path !== expected) {
+      problems.push(`live: ${start} ends at ${path}, not ${expected}`)
+    }
+    else if (target.status !== 200) {
+      problems.push(`live: ${start} ends at ${expected}, which answers ${target.status}`)
     }
   }
+
+  const twin = 'its .html twin answers beside the page, and Google picks the twin (#811)'
+  await follow('/guide/getting-started.html', '/guide/getting-started', 1, twin)
+  await follow('/guide/index.html', '/guide/', 1, twin)
+  // No hops: the address itself answers, rather than redirecting back to its twin.
+  await follow('/guide/getting-started', '/guide/getting-started', 0, twin)
+
+  // The renamed segment, then the twin: years of inbound links land on this shape.
+  await follow('/guide/vue3/stories.html', '/guide/vue/stories', 2, 'a histoire-era path must keep redirecting')
 
   // Informational only, and it runs after every assertion — so a blip here must not
   // cost the report that is already in hand.
