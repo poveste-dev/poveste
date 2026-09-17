@@ -51,16 +51,16 @@
   },
   "devDependencies": {
     "@fontsource/noto-sans-display": "^5.3.0",
-    "@iconify-json/carbon": "^1.2.25",
-    "@iconify-json/fluent": "1.2.56",
+    "@iconify-json/carbon": "^1.2.27",
+    "@iconify-json/fluent": "1.2.58",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/ri": "^1.2.10",
-    "@iconify/utils": "^3.1.4",
+    "@iconify/utils": "^3.1.7",
     "@tailwindcss/postcss": "catalog:",
-    "@tailwindcss/typography": "^0.5.15",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.1",
-    "@vitejs/plugin-vue": "^6.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
     "chokidar": "^5.0.0",
     "concurrently": "^10.0.5",
     "fs-extra": "^11.2.0",
@@ -72,7 +72,7 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vue": "^3.5.26",
+    "vue": "^3.5.42",
     "vue-tsc": "catalog:"
   }
 }

@@ -16,14 +16,14 @@
     "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/vite": "catalog:",
-    "floating-vue": "5.2.2",
+    "floating-vue": "5.4.0",
     "lottie-web": "^5.12.2",
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "poveste": "workspace:*",
     "sass": "^1.82.0",
     "tailwindcss": "catalog:",
-    "vue": "^3.5.26",
-    "vue-i18n": "^11.4.9"
+    "vue": "^3.5.42",
+    "vue-i18n": "^11.4.10"
   }
 }
