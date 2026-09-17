@@ -69,7 +69,7 @@ const ChildWrapper = {
 
     const visible = computed(() => visibleChildrenCount.value > state.index)
 
-    return () => h('div', { ref: el, style: { visibility: visible.value ? 'visible' : 'hidden' } }, slots.default?.())
+    return () => h('div', { ref: el, style: { visibility: visible.value ? 'visible' : 'hidden' } }, slots['default']?.())
   },
 }
 
@@ -77,7 +77,7 @@ const ChildWrapper = {
  * Wraps each child with a <ChildWrapper>
  */
 function ChildrenRender(_props: unknown, { slots }: SetupContext) {
-  const children = slots.default?.()[0]?.children
+  const children = slots['default']?.()[0]?.children
   return Array.isArray(children) ? children.map((vnode, index) => h(ChildWrapper, { index }, () => [vnode])) : []
 }
 
@@ -85,7 +85,7 @@ function ChildrenRender(_props: unknown, { slots }: SetupContext) {
  * Only renders a part of a children list
  */
 function ChildrenSlice(props: { start?: number, end?: number }, { slots }: SetupContext) {
-  const children = slots.default?.()[0]?.children
+  const children = slots['default']?.()[0]?.children
   return Array.isArray(children) ? children.slice(props.start, props.end) as VNode[] : []
 }
 </script>

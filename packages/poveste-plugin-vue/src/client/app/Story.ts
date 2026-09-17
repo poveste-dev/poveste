@@ -162,7 +162,7 @@ export default defineComponent({
               nextProps.key = variant.id
             }
 
-            if (!vnode.props?.initState && !vnode.props?.['init-state']) {
+            if (!vnode.props?.['initState'] && !vnode.props?.['init-state']) {
               nextProps.initState = props.initState
             }
 
@@ -192,7 +192,7 @@ export default defineComponent({
         return result
       }
 
-      return applyAttrs(vm.slots.default?.() ?? [])
+      return applyAttrs(vm.slots['default']?.() ?? [])
     }
 
     function renderPreviewStory(context: PreviewRenderContext) {
@@ -205,11 +205,11 @@ export default defineComponent({
       const children: VNode[] = []
 
       if (context.slotName === 'controls') {
-        children.push(...(vm.slots.controls?.(slotProps) ?? []))
+        children.push(...(vm.slots['controls']?.(slotProps) ?? []))
       }
 
       if (context.slotName === 'default' || attrs.story.meta?.hasVariantChildComponents) {
-        children.push(...(vm.slots.default?.(slotProps) ?? []))
+        children.push(...(vm.slots['default']?.(slotProps) ?? []))
       }
 
       // Same story as the mount pass above: every Variant component here runs

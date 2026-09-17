@@ -22,8 +22,8 @@ const query = parseQuery(window.location.search)
 // What this realm serves. Set from the URL on boot, and again by a
 // SANDBOX_RETARGET from the host: a warm realm is handed the next story or
 // variant instead of being torn down for a new document (#240).
-const storyId = ref(typeof query.storyId === 'string' ? query.storyId : null)
-const variantId = ref(typeof query.variantId === 'string' ? query.variantId : null)
+const storyId = ref(typeof query['storyId'] === 'string' ? query['storyId'] : null)
+const variantId = ref(typeof query['variantId'] === 'string' ? query['variantId'] : null)
 
 // Kept in step so `logEvent` can name the occupant it is speaking for; it posts
 // from the story's own code and cannot see these refs.

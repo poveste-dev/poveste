@@ -3,7 +3,7 @@ import { getInjectedImport } from '../util/vendors.js'
 
 export function resolvedMarkdownFiles(ctx: Context) {
   const filesJs = ctx.markdownFiles.map(f => `${JSON.stringify(f.relativePath)}: () => import(${JSON.stringify(`virtual:md:${f.id}`)})`).join(',')
-  return `import { reactive } from ${process.env.POVESTE_DEV ? `'vue'` : getInjectedImport('@poveste/vendors/vue')}
+  return `import { reactive } from ${process.env['POVESTE_DEV'] ? `'vue'` : getInjectedImport('@poveste/vendors/vue')}
 export const markdownFiles = reactive({${filesJs}})
 if (import.meta.hot) {
   if (!window.__pvt_md_hmr) {

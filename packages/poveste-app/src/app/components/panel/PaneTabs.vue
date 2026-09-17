@@ -25,13 +25,13 @@ const hasEvents = computed(() => eventsStore.events.length)
   <BaseOverflowMenu class="poveste-pane-tabs h-10 flex-none border-b border-gray-100 dark:border-gray-750">
     <BaseTab
       :to="{ ...$route, query: { ...$route.query, tab: '' } }"
-      :matched="!$route.query.tab"
+      :matched="!$route.query['tab']"
     >
       Controls
     </BaseTab>
     <BaseTab
       :to="{ ...$route, query: { ...$route.query, tab: 'docs' } }"
-      :matched="$route.query.tab === 'docs'"
+      :matched="$route.query['tab'] === 'docs'"
       :class="{
         'opacity-70': !renderedDoc,
       }"
@@ -40,7 +40,7 @@ const hasEvents = computed(() => eventsStore.events.length)
     </BaseTab>
     <BaseTab
       :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
-      :matched="$route.query.tab === 'events'"
+      :matched="$route.query['tab'] === 'events'"
       :class="{
         'opacity-70': !hasEvents,
       }"
@@ -54,13 +54,13 @@ const hasEvents = computed(() => eventsStore.events.length)
     <template #overflow>
       <BaseOverflowTab
         :to="{ ...$route, query: { ...$route.query, tab: '' } }"
-        :matched="!$route.query.tab"
+        :matched="!$route.query['tab']"
       >
         Controls
       </BaseOverflowTab>
       <BaseOverflowTab
         :to="{ ...$route, query: { ...$route.query, tab: 'docs' } }"
-        :matched="$route.query.tab === 'docs'"
+        :matched="$route.query['tab'] === 'docs'"
         :class="{
           'opacity-70': !renderedDoc,
         }"
@@ -69,7 +69,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       </BaseOverflowTab>
       <BaseOverflowTab
         :to="{ ...$route, query: { ...$route.query, tab: 'events' } }"
-        :matched="$route.query.tab === 'events'"
+        :matched="$route.query['tab'] === 'events'"
         :class="{
           'opacity-70': !hasEvents,
         }"

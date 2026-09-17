@@ -248,8 +248,8 @@ export async function build(ctx: Context) {
         // while poveste kept looking in `outDir` (#369). Only the client environment
         // builds the book. Where no framework declared environments there is nothing to
         // override, and where one did this puts the book back where poveste reads it.
-        if (config.environments?.client?.build) {
-          config.environments.client.build.outDir = ctx.config.outDir
+        if (config.environments?.['client']?.build) {
+          config.environments['client'].build.outDir = ctx.config.outDir
         }
 
         // Force vite build options

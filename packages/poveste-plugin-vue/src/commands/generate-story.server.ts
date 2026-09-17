@@ -9,13 +9,13 @@ export default {
   icon: 'https://vuejs.org/logo.svg',
   searchText: 'generate create',
   async serverAction(params) {
-    const targetFile = path.join(path.dirname(params.component), params.fileName)
+    const targetFile = path.join(path.dirname(params['component']), params['fileName'])
 
     if (fs.existsSync(targetFile)) {
       throw new Error(`File ${targetFile} already exists`)
     }
 
-    const { component, componentName, isTs } = await getComponentInfo(params.component)
+    const { component, componentName, isTs } = await getComponentInfo(params['component'])
 
     const content = `<script setup${isTs ? ' lang="ts"' : ''}>
 import ${componentName} from './${component}'

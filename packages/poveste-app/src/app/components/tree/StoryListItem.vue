@@ -25,7 +25,7 @@ const filePadding = computed(() => {
 })
 
 const route = useRoute()
-const isActive = computed(() => route.params.storyId === props.story.id)
+const isActive = computed(() => route.params['storyId'] === props.story.id)
 const el = ref<HTMLDivElement>()
 useScrollOnActive(isActive, el)
 </script>

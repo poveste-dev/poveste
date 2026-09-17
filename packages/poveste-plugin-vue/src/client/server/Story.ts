@@ -100,7 +100,7 @@ export default defineComponent({
   render() {
     let suppressError = false
     try {
-      const vnodes = this.$slots.default?.({
+      const vnodes = this.$slots['default']?.({
         get state() {
           // No variant tags
           suppressError = true
