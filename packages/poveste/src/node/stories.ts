@@ -5,6 +5,7 @@ import chokidar from 'chokidar'
 import { basename, resolve } from 'pathe'
 import picomatch from 'picomatch'
 import { glob } from 'tinyglobby'
+import { unregister } from './util/unregister.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
 
 type StoryChangeHandler = (file?: ServerStoryFile) => unknown
@@ -12,10 +13,12 @@ const storyChangeHandlers: StoryChangeHandler[] = []
 
 /**
  * Called when a new story is added or modified. Collecting should be done.
- * @param handler
+ * Returns the function that unregisters it, which a dev server calls on close:
+ * the handler closes over that server (#877).
  */
-export function onStoryChange(handler: StoryChangeHandler) {
+export function onStoryChange(handler: StoryChangeHandler): () => void {
   storyChangeHandlers.push(handler)
+  return unregister(storyChangeHandlers, handler)
 }
 
 export function notifyStoryChange(file?: ServerStoryFile) {
@@ -29,10 +32,11 @@ const storyListChangeHandlers: StoryListChangeHandler[] = []
 
 /**
  * Called when the story list has changed (ex: removed a story). No collecting should be needed.
- * @param handler
+ * Returns the function that unregisters it.
  */
-export function onStoryListChange(handler: StoryListChangeHandler) {
+export function onStoryListChange(handler: StoryListChangeHandler): () => void {
   storyListChangeHandlers.push(handler)
+  return unregister(storyListChangeHandlers, handler)
 }
 
 export function notifyStoryListChange() {

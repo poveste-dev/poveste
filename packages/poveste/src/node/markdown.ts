@@ -16,12 +16,14 @@ import pc from 'picocolors'
 import { bundledLanguagesInfo, createHighlighter, guessEmbeddedLanguages, isSpecialLang } from 'shiki'
 import { addStory, notifyStoryChange, removeStory } from './stories.js'
 import { slugify } from './util/slugify.js'
+import { unregister } from './util/unregister.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
 
 const onMarkdownListChangeHandlers: (() => unknown)[] = []
 
-export function onMarkdownListChange(handler: () => unknown) {
+export function onMarkdownListChange(handler: () => unknown): () => void {
   onMarkdownListChangeHandlers.push(handler)
+  return unregister(onMarkdownListChangeHandlers, handler)
 }
 
 function notifyMarkdownListChange() {
@@ -41,8 +43,9 @@ function notifyMarkdownListChange() {
  */
 const onMarkdownFileChangeHandlers: ((file: ServerMarkdownFile) => unknown)[] = []
 
-export function onMarkdownFileChange(handler: (file: ServerMarkdownFile) => unknown) {
+export function onMarkdownFileChange(handler: (file: ServerMarkdownFile) => unknown): () => void {
   onMarkdownFileChangeHandlers.push(handler)
+  return unregister(onMarkdownFileChangeHandlers, handler)
 }
 
 function notifyMarkdownFileChange(file: ServerMarkdownFile) {
