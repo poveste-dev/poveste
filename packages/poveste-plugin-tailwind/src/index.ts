@@ -1,5 +1,6 @@
 import type { Plugin, PluginApiBase } from '@poveste/shared'
 import fs from 'node:fs'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import { getInjectedImport } from 'poveste'
 import { css } from './tokens-style.js'
@@ -101,13 +102,13 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
 
   async function generate(api: PluginApiBase, cssFile: string) {
     try {
-      await api.fs.ensureDir(api.pluginTempDir)
-      await api.fs.emptyDir(api.pluginTempDir)
+      await rm(api.pluginTempDir, { recursive: true, force: true })
+      await mkdir(api.pluginTempDir, { recursive: true })
       api.moduleLoader.clearCache()
-      await api.fs.writeFile(api.path.resolve(api.pluginTempDir, 'style.css'), css)
-      const theme = await loadTailwindTheme(api, cssFile)
-      const storyFile = api.path.resolve(api.pluginTempDir, 'Tailwind.story.js')
-      await api.fs.writeFile(storyFile, storyTemplate({ theme }))
+      await writeFile(path.resolve(api.pluginTempDir, 'style.css'), css)
+      const theme = await loadTailwindTheme(cssFile)
+      const storyFile = path.resolve(api.pluginTempDir, 'Tailwind.story.js')
+      await writeFile(storyFile, storyTemplate({ theme }))
       api.addStoryFile(storyFile)
     }
     catch (e) {
@@ -143,15 +144,14 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
       }
     },
 
-    async onDev(api, onCleanup) {
+    async onDev(api) {
       if (tailwindCssFile) {
         await generate(api, tailwindCssFile)
 
-        const watcher = api.watcher.watch(tailwindCssFile)
-          .on('change', () => generate(api, tailwindCssFile))
-          .on('add', () => generate(api, tailwindCssFile))
-        onCleanup(() => {
-          watcher.close()
+        api.watch(tailwindCssFile, async (event) => {
+          if (event !== 'unlink') {
+            await generate(api, tailwindCssFile)
+          }
         })
       }
     },
@@ -175,19 +175,19 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
  * to the JS entry, so its `style` field is used instead — that is how
  * `@import 'tailwindcss'` reaches `tailwindcss/index.css`.
  */
-async function resolveStylesheet(api: PluginApiBase, id: string, importBase: string) {
+async function resolveStylesheet(id: string, importBase: string) {
   const { createRequire } = await import('node:module')
   const require = createRequire(`${importBase}/`)
 
   if (id.startsWith('.')) {
-    return api.path.resolve(importBase, id)
+    return path.resolve(importBase, id)
   }
   if (id.endsWith('.css')) {
     return require.resolve(id)
   }
   const packageJsonPath = require.resolve(`${id}/package.json`)
-  const packageJson = JSON.parse(await api.fs.readFile(packageJsonPath, 'utf8'))
-  return api.path.resolve(api.path.dirname(packageJsonPath), packageJson.style ?? 'index.css')
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
+  return path.resolve(path.dirname(packageJsonPath), packageJson.style ?? 'index.css')
 }
 
 export const TAILWIND_V4_REQUIRED
@@ -218,20 +218,20 @@ export async function resolveDesignSystemLoader(
   return (tailwind as { __unstable__loadDesignSystem: LoadDesignSystem }).__unstable__loadDesignSystem
 }
 
-async function loadTailwindTheme(api: PluginApiBase, cssFile: string) {
+async function loadTailwindTheme(cssFile: string) {
   const __unstable__loadDesignSystem = await resolveDesignSystemLoader()
 
-  const base = api.path.dirname(cssFile)
+  const base = path.dirname(cssFile)
   const designSystem = await __unstable__loadDesignSystem(
-    await api.fs.readFile(cssFile, 'utf8'),
+    await readFile(cssFile, 'utf8'),
     {
       base,
       loadStylesheet: async (id: string, importBase: string) => {
-        const resolved = await resolveStylesheet(api, id, importBase)
+        const resolved = await resolveStylesheet(id, importBase)
         return {
           path: resolved,
-          base: api.path.dirname(resolved),
-          content: await api.fs.readFile(resolved, 'utf8'),
+          base: path.dirname(resolved),
+          content: await readFile(resolved, 'utf8'),
         }
       },
     },
