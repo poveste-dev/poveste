@@ -1,5 +1,5 @@
 import { render } from 'svelte/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ManyVariants from '../__fixtures__/ManyVariants.svelte'
 import { renderStoryComponents } from './render-story-components'
 
@@ -23,30 +23,49 @@ function storyOf(count: number) {
   } as any
 }
 
-function renderShowing(story: any, variant: any, Hst = renderStoryComponents(story, variant)) {
+/** The variants the rendered story actually drew, in order. */
+function variantsDrawn(html: string): string[] {
+  return html.match(/Button \d+/g) ?? []
+}
+
+function renderWith(Hst: unknown, story: any, variant: any) {
   const context = new Map<string, unknown>([['__pvtStory', story], ['__pvtVariant', variant], ['__pvtSlot', 'default']])
   return render(ManyVariants as any, { props: { Hst, count: story.variants.length }, context }).body
 }
 
+function renderShowing(story: any, variant: any) {
+  return renderWith(renderStoryComponents(story, variant), story, variant)
+}
+
 describe('rendering a story that shows one of its variants', () => {
-  it('creates a RenderVariant for that variant alone', () => {
-    const story = storyOf(50)
+  beforeEach(() => {
     created.count = 0
+  })
+
+  it('draws that variant alone', () => {
+    const story = storyOf(50)
 
     const html = renderShowing(story, story.variants[36])
 
-    expect(created.count).toBe(1)
-    expect(html).toContain('Button 37')
-    expect(html).not.toMatch(/Button (?!37\b)\d+/)
+    expect(variantsDrawn(html)).toEqual(['Button 37'])
   })
 
-  it('shows the same variant when the story runs again with the same components, as a hot update does', () => {
+  it('creates a RenderVariant for it alone', () => {
+    const story = storyOf(50)
+
+    renderShowing(story, story.variants[36])
+
+    expect(created.count).toBe(1)
+  })
+
+  // A hot update runs the story again with the components it was given.
+  it('draws it again when the story runs again with the same components', () => {
     const story = storyOf(50)
     const Hst = renderStoryComponents(story, story.variants[4])
 
-    renderShowing(story, story.variants[4], Hst)
-    const html = renderShowing(story, story.variants[4], Hst)
+    renderWith(Hst, story, story.variants[4])
+    const html = renderWith(Hst, story, story.variants[4])
 
-    expect(html).toContain('Button 5')
+    expect(variantsDrawn(html)).toEqual(['Button 5'])
   })
 })
