@@ -1,3 +1,4 @@
+import type { Job } from './step-gates.ts'
 import { cpSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,6 +8,14 @@ import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
 const WORKFLOWS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.github', 'workflows')
+
+function onlyJob(source: string): Job {
+  const [parsed] = jobsIn(source)
+  if (!parsed) {
+    throw new Error('the source parsed to no job')
+  }
+  return parsed
+}
 
 function job(steps: string): string {
   return `name: A workflow\n\non:\n  push:\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n${steps}`
@@ -19,7 +28,7 @@ function expr(inner: string): string {
 
 describe('jobsIn', () => {
   it('reads a step\'s name, condition and continue-on-error', () => {
-    const [parsed] = jobsIn(job(`      - name: Publish\n        if: ${expr('!cancelled()')}\n        continue-on-error: true\n        run: echo hi\n`))
+    const parsed = onlyJob(job(`      - name: Publish\n        if: ${expr('!cancelled()')}\n        continue-on-error: true\n        run: echo hi\n`))
 
     expect(parsed.id).toBe('build')
     expect(parsed.steps).toEqual([{ name: 'Publish', uses: '', if: expr('!cancelled()'), continueOnError: true }])
@@ -30,7 +39,7 @@ describe('jobsIn', () => {
   // them introduces a step that does not exist and a condition nobody wrote,
   // which is the difference between parsing these files and grepping them.
   it('reads nothing out of a run block, however much it looks like config', () => {
-    const [parsed] = jobsIn(job(
+    const parsed = onlyJob(job(
       `      - name: Work out what changed
         run: |
           if [ "$EVENT" != pull_request ]; then
@@ -50,7 +59,7 @@ describe('jobsIn', () => {
   // carries `!cancelled()` there, and reading it as a step's would mark every
   // step in the job as running past a failure.
   it('does not read a job\'s own keys as a step\'s', () => {
-    const [parsed] = jobsIn(
+    const parsed = onlyJob(
       `jobs:\n  build:\n    if: ${expr('!cancelled()')}\n    continue-on-error: true\n    steps:\n      - name: One\n        run: echo hi\n`,
     )
 
@@ -61,7 +70,7 @@ describe('jobsIn', () => {
   // `actions/stale` takes one called `exempt-issue-labels`, and nothing stops a
   // future action taking one called `if`.
   it('does not read a nested block\'s keys as the step\'s', () => {
-    const [parsed] = jobsIn(job('      - uses: actions/stale@v11.0.0\n        with:\n          if: not mine\n          continue-on-error: true\n'))
+    const parsed = onlyJob(job('      - uses: actions/stale@v11.0.0\n        with:\n          if: not mine\n          continue-on-error: true\n'))
 
     expect(parsed.steps).toEqual([{ name: '', uses: 'actions/stale@v11.0.0', if: null, continueOnError: false }])
   })
@@ -71,7 +80,7 @@ describe('jobsIn', () => {
   // item does. Without closing the steps block, `needs:` written that way adds a
   // step called `changes`.
   it('stops reading steps when the job\'s own keys resume below them', () => {
-    const [parsed] = jobsIn('jobs:\n  build:\n    steps:\n      - name: One\n        run: x\n    needs:\n      - changes\n')
+    const parsed = onlyJob('jobs:\n  build:\n    steps:\n      - name: One\n        run: x\n    needs:\n      - changes\n')
 
     expect(parsed.steps.map(step => step.name)).toEqual(['One'])
   })
@@ -125,14 +134,14 @@ describe('boundariesIn', () => {
   const nonFatal = (name: string): string => `      - name: ${name}\n        continue-on-error: true\n        run: echo hi\n`
 
   it('finds nothing in a job where no step masks a failure', () => {
-    expect(boundariesIn('a.yml', jobsIn(job(bare('One') + bare('Two')))[0])).toEqual([])
+    expect(boundariesIn('a.yml', onlyJob(job(bare('One') + bare('Two'))))).toEqual([])
   })
 
   // Above the first masked step a bare step means exactly what it looks like,
   // so the rule has nothing to say about it. Reporting those would put every
   // unconditional step in every workflow into the record.
   it('says nothing about the steps above the first masked one', () => {
-    const [parsed] = jobsIn(job(bare('Install') + guarded('Check') + bare('Build')))
+    const parsed = onlyJob(job(bare('Install') + guarded('Check') + bare('Build')))
 
     expect(boundariesIn('a.yml', parsed).map(one => one.key)).toEqual([
       'a.yml / build / Check',
@@ -144,13 +153,13 @@ describe('boundariesIn', () => {
   // steps under one gate are one intent, and naming each of them would make the
   // classification the bulk of the config.
   it('names the first step of a run, not every step in it', () => {
-    const [parsed] = jobsIn(job(guarded('First') + guarded('Second') + guarded('Third')))
+    const parsed = onlyJob(job(guarded('First') + guarded('Second') + guarded('Third')))
 
     expect(boundariesIn('a.yml', parsed).map(one => one.key)).toEqual(['a.yml / build / First'])
   })
 
   it('records which way each boundary goes', () => {
-    const [parsed] = jobsIn(job(guarded('Check') + bare('Build') + guarded('Report')))
+    const parsed = onlyJob(job(guarded('Check') + bare('Build') + guarded('Report')))
 
     expect(boundariesIn('a.yml', parsed)).toEqual([
       { key: 'a.yml / build / Check', states: true },
@@ -163,7 +172,7 @@ describe('boundariesIn', () => {
   // implicit `success()` itself, and its `continue-on-error` is about the
   // publish below it.
   it('opens the region at a continue-on-error step that states nothing itself', () => {
-    const [parsed] = jobsIn(job(`${bare('Install')}${nonFatal('Draft')}${bare('Publish')}`))
+    const parsed = onlyJob(job(`${bare('Install')}${nonFatal('Draft')}${bare('Publish')}`))
 
     expect(boundariesIn('a.yml', parsed)).toEqual([{ key: 'a.yml / build / Draft', states: false }])
   })

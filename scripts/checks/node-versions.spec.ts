@@ -22,13 +22,13 @@ describe('hardcodedNodeVersions', () => {
   it('reads a quoted version', () => {
     const content = `          node-version: '22.22.2'\n`
 
-    expect(hardcodedNodeVersions('test.yml', content)[0].value).toBe('22.22.2')
+    expect(hardcodedNodeVersions('test.yml', content)[0]?.value).toBe('22.22.2')
   })
 
   it('stops at a trailing comment rather than swallowing it', () => {
     const content = '          node-version: 26 # the toolchain\n'
 
-    expect(hardcodedNodeVersions('test.yml', content)[0].value).toBe('26')
+    expect(hardcodedNodeVersions('test.yml', content)[0]?.value).toBe('26')
   })
 })
 

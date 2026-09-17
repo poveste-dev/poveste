@@ -31,6 +31,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -64,14 +65,13 @@ export interface NodeVersionUse {
 export function hardcodedNodeVersions(workflow: string, content: string): NodeVersionUse[] {
   return content.split('\n').flatMap((line, index) => {
     const match = /^\s*node-version:\s*['"]?([^'"\s#]+)/.exec(line)
-    return match ? [{ workflow, line: index + 1, value: match[1] }] : []
+    return match ? [{ workflow, line: index + 1, value: captured(match) }] : []
   })
 }
 
 /** Ascending, on the three numeric parts. No prereleases appear in an engines range here. */
 function compareVersions(a: string, b: string): number {
-  const [x, y] = [a.split('.').map(Number), b.split('.').map(Number)]
-  return x[0] - y[0] || x[1] - y[1] || x[2] - y[2]
+  return a.localeCompare(b, 'en', { numeric: true })
 }
 
 /**
@@ -121,7 +121,7 @@ export function nodeVersionProblems(
 
   for (const [workflow, count] of seen) {
     if (count > 1) {
-      problems.push(`${workflow} pins Node ${allowed[workflow].value} ${count} times; the allowance is for the one \`Node floor\` job, so the others have to read \`.node-version\``)
+      problems.push(`${workflow} pins Node ${allowed[workflow]?.value} ${count} times; the allowance is for the one \`Node floor\` job, so the others have to read \`.node-version\``)
     }
   }
 

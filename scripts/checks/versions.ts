@@ -20,6 +20,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -76,15 +77,16 @@ export function parseTable(file: string, markdown: string): Table {
     }
 
     const cells = line.split(/(?<!\\)\|/).slice(1, -1).map(cell => cell.replace(/\\\|/g, '|').trim())
-    if (cells.length < 2) {
+    const [labelCell, versionCell] = cells
+    if (labelCell === undefined || versionCell === undefined) {
       continue
     }
 
-    const label = cells[0]
+    const label = labelCell
       .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // markdown link → its text
       .replace(/[\\*]/g, '')
       .trim()
-    const version = cells[1].replace(/`/g, '').trim()
+    const version = versionCell.replace(/`/g, '').trim()
 
     if (label && version && !rows.has(label)) {
       rows.set(label, version)
@@ -261,7 +263,8 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
       continue
     }
 
-    for (const [, cited] of evidence.matchAll(/`([^`]+)`/g)) {
+    for (const match of evidence.matchAll(/`([^`]+)`/g)) {
+      const cited = captured(match)
       // Backticked tokens with a slash are paths, not job names.
       if (cited.includes('/') || jobs.has(cited)) {
         continue
@@ -299,7 +302,9 @@ export function nodeClaimProblems(pkg: string, readme: string, engines: string |
 export function readmeRangeProblems(pkg: string, readme: string, peers: Record<string, string>): string[] {
   const problems: string[] = []
 
-  for (const [, name, range] of readme.matchAll(/`(@?[\w./-]+)@([^`]+)`/g)) {
+  for (const match of readme.matchAll(/`(@?[\w./-]+)@([^`]+)`/g)) {
+    const name = captured(match, 1)
+    const range = captured(match, 2)
     if (peers[name] && peers[name] !== range) {
       problems.push(`packages/${pkg}/README.md says ${name}@${range}, but its own peerDependencies say ${peers[name]}`)
     }

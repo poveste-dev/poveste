@@ -10,8 +10,7 @@ interface AttwProblem { kind: string, entrypoint: string, resolutionKind: string
 function attwReport(...problems: AttwProblem[]): Record<string, AttwProblem[]> {
   const report: Record<string, AttwProblem[]> = {}
   for (const problem of problems) {
-    report[problem.kind] ??= []
-    report[problem.kind].push(problem)
+    (report[problem.kind] ??= []).push(problem)
   }
   return report
 }

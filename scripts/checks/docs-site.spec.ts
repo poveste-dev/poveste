@@ -54,13 +54,13 @@ describe('parseRedirects', () => {
   })
 
   it('reads force = true', () => {
-    expect(parseRedirects('[[redirects]]\nfrom = "/a.html"\nto = "/a"\nstatus = 301\nforce = true\n')[0].force).toBe(true)
+    expect(parseRedirects('[[redirects]]\nfrom = "/a.html"\nto = "/a"\nstatus = 301\nforce = true\n')[0]?.force).toBe(true)
   })
 
   it('defaults a rule with no status to a permanent redirect', () => {
     const redirects = parseRedirects('[[redirects]]\nfrom = "/a"\nto = "/b"\n')
 
-    expect(redirects[0].status).toBe(301)
+    expect(redirects[0]?.status).toBe(301)
   })
 })
 
@@ -706,7 +706,7 @@ describe('checkDocsSiteLive against a site that answers from a table', () => {
 describe('checkDocsSiteLive', () => {
   // Production by default; a deploy preview is named by `POVESTE_DOCS_SITE`.
   it('the deployed docs site answers correctly', { tags: ['check', 'docs', 'network'] }, async () => {
-    const result = await checkDocsSiteLive(process.env.POVESTE_DOCS_SITE ?? SITE)
+    const result = await checkDocsSiteLive(process.env['POVESTE_DOCS_SITE'] ?? SITE)
     process.stdout.write(`${result.notes.join('\n')}\n`)
     assertNoProblems(result)
   })

@@ -31,6 +31,7 @@ import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, relative, sep } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -45,7 +46,8 @@ export function parseRedirects(toml: string): Redirect[] {
   const redirects: Redirect[] = []
 
   for (const chunk of source.split(/^\[\[redirects\]\]\s*$/m).slice(1)) {
-    const body = chunk.split(/^\[/m)[0]
+    const nextTable = chunk.search(/^\[/m)
+    const body = nextTable === -1 ? chunk : chunk.slice(0, nextTable)
     const read = (key: string) => body.match(new RegExp(`^\\s*${key}\\s*=\\s*"?([^"\\n]+?)"?\\s*$`, 'm'))?.[1]
     const from = read('from')
     const to = read('to')
@@ -179,7 +181,7 @@ function decodeEntities(text: string): string {
 }
 
 export function sitemapLocations(xml: string): string[] {
-  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
+  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => captured(match))
 }
 
 /**
@@ -244,7 +246,7 @@ export const HOSTNAME_DECLARATIONS = [
   'config og:image',
 ] as const
 
-export interface Declaration { where: string, url: string, origin?: string }
+export interface Declaration { where: string, url: string, origin?: string | undefined }
 
 export function declaredOrigins(robots: string, config: string): Declaration[] {
   const found: Declaration[] = []
@@ -287,12 +289,12 @@ export interface BuiltPage { path: string, html: string }
  */
 export function documentTitles(html: string): string[] {
   const outside = html.replace(/<svg\b[\s\S]*?<\/svg>/gi, '')
-  return [...outside.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => match[1].trim())
+  return [...outside.matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => captured(match).trim())
 }
 
 export function svgTitles(html: string): string[] {
   return [...html.matchAll(/<svg\b[\s\S]*?<\/svg>/gi)]
-    .flatMap(svg => [...svg[0].matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => match[1].trim()))
+    .flatMap(svg => [...svg[0].matchAll(/<title[^>]*>([\s\S]*?)<\/title>/gi)].map(match => captured(match).trim()))
 }
 
 /**
@@ -336,9 +338,10 @@ export function titleProblems(pages: BuiltPage[]): string[] {
 export const REQUIRED_LD_FIELDS = ['@context', '@type', 'name', 'description', 'softwareVersion', 'codeRepository'] as const
 
 export function structuredDataProblems(html: string, version: string): string[] {
-  const blocks = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1])
+  const blocks = [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)].map(match => captured(match))
 
-  if (blocks.length === 0) {
+  const [block] = blocks
+  if (block === undefined) {
     return ['the home page carries no ld+json block, so nothing states what this software is']
   }
   if (blocks.length > 1) {
@@ -347,7 +350,7 @@ export function structuredDataProblems(html: string, version: string): string[] 
 
   let data: Record<string, unknown>
   try {
-    data = JSON.parse(blocks[0])
+    data = JSON.parse(block)
   }
   catch (error: any) {
     return [`the home page's ld+json does not parse (${error.message}) — a malformed block is ignored in silence`]
@@ -358,8 +361,8 @@ export function structuredDataProblems(html: string, version: string): string[] 
     .map(field => `the home page's ld+json states no \`${field}\``)
 
   // The one field that rots on its own, which is why it is read from a manifest.
-  if (data.softwareVersion !== undefined && data.softwareVersion !== version) {
-    problems.push(`the home page's ld+json says version ${String(data.softwareVersion)}, and the package is ${version}`)
+  if (data['softwareVersion'] !== undefined && data['softwareVersion'] !== version) {
+    problems.push(`the home page's ld+json says version ${String(data['softwareVersion'])}, and the package is ${version}`)
   }
 
   return problems
@@ -568,9 +571,9 @@ function checkConfig(root: string, problems: string[], built: Built | undefined)
   }
 
   const absolute = declared.filter(declaration => declaration.origin)
-  const canonical = absolute[0]
+  const [canonical] = absolute
   for (const { where, origin } of absolute) {
-    if (origin !== canonical.origin) {
+    if (canonical && origin !== canonical.origin) {
       problems.push(`${where} declares ${origin}, but ${canonical.where} declares ${canonical.origin}`)
     }
   }

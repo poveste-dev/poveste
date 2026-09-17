@@ -10,6 +10,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -110,12 +111,12 @@ export function configKeys(source: string): string[] {
 
 /** Keys the reference documents, from its `## \`key\`` headings. */
 export function documentedKeys(markdown: string): string[] {
-  return [...markdown.matchAll(/^## `([^`]+)`/gm)].map(match => match[1])
+  return [...markdown.matchAll(/^## `([^`]+)`/gm)].map(match => captured(match))
 }
 
 /** Sub-keys the reference documents, from its `### \`parent.child\`` headings. */
 export function documentedSubKeys(markdown: string): string[] {
-  return [...markdown.matchAll(/^### `([^`]+)`/gm)].map(match => match[1]).filter(entry => entry.includes('.'))
+  return [...markdown.matchAll(/^### `([^`]+)`/gm)].map(match => captured(match)).filter(entry => entry.includes('.'))
 }
 
 export function undocumentedKeys(source: string, markdown: string): string[] {
@@ -139,8 +140,9 @@ export function staleEntries(source: string, markdown: string): string[] {
   const stale = documentedKeys(markdown).filter(entry => !entry.includes('.') && !top.has(entry))
 
   for (const entry of documentedSubKeys(markdown)) {
-    const [parent, ...rest] = entry.split('.')
-    const child = rest.join('.')
+    const dot = entry.indexOf('.')
+    const parent = entry.slice(0, dot)
+    const child = entry.slice(dot + 1)
     if (!top.has(parent) || !(nested.get(parent) ?? []).includes(child)) {
       stale.push(entry)
     }

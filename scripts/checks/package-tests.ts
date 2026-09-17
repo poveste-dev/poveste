@@ -47,7 +47,7 @@ export function testScriptProblems(manifests: Manifest[], exempt: Record<string,
   const published = new Set(manifests.map(manifest => manifest.name))
 
   for (const manifest of manifests) {
-    const declares = Boolean(manifest.scripts?.test)
+    const declares = Boolean(manifest.scripts?.['test'])
     const reason = exempt[manifest.name]
 
     if (!declares && !reason) {

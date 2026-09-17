@@ -10,6 +10,7 @@ import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } f
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const DEP_KEYS = ['dependencies', 'peerDependencies', 'optionalDependencies']
@@ -145,7 +146,7 @@ export function walkProblems({ packages, skipped, entries }: Walk): string[] {
  * `published` is every non-private package; `listed` is what the table names.
  */
 export function packageTableProblems(markdown: string, published: string[], all: string[]): string[] {
-  const listed = [...markdown.matchAll(/^\|\s*\[(@?[\w./-]+)\]\(\.\/packages\//gm)].map(match => match[1])
+  const listed = [...markdown.matchAll(/^\|\s*\[(@?[\w./-]+)\]\(\.\/packages\//gm)].map(match => captured(match))
   if (listed.length === 0) {
     return ['CONTRIBUTING.md has no package table to read — the shape this check reads has changed']
   }

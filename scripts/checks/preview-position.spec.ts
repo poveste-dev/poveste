@@ -112,7 +112,7 @@ describe('groupsIn', () => {
     const groups = groupsIn(wrap('<a v-if="x" /><b v-else-if="y" /><c v-else />'))
 
     expect(groups).toHaveLength(1)
-    expect(groups[0].branches.map(b => b.tag)).toEqual(['a', 'b', 'c'])
+    expect(groups[0]?.branches.map(b => b.tag)).toEqual(['a', 'b', 'c'])
   })
 
   it('does not join two groups separated by an unconditional sibling', () => {

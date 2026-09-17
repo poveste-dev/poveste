@@ -31,6 +31,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 const WORKSPACE = 'pnpm-workspace.yaml'
@@ -65,7 +66,7 @@ export const AFTER_BUILD: Record<string, string> = {
 export function declaredTasks(workspace: string): string[] {
   const block = /^tasks:\n((?:[ \t].*\n|\n)*)/m.exec(workspace)?.[1] ?? ''
   // Task names contain colons (`test:tags`), so the name runs to the *last* colon.
-  return [...block.matchAll(/^ {2}(\S.*?):\s*$/gm)].map(match => match[1])
+  return [...block.matchAll(/^ {2}(\S.*?):\s*$/gm)].map(match => captured(match))
 }
 
 /** The names listed in one `pipelines:` entry. */

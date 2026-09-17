@@ -85,7 +85,7 @@ describe('measurements', () => {
       { name: 'vendor-b.js', kb: 1300 },
     ]
 
-    expect(measurements(split, [LIMITS[1]])).toEqual([
+    expect(measurements(split, LIMITS.slice(1, 2))).toEqual([
       'vendor-a.js 1400 KB / 1500 KB',
       'vendor-b.js 1300 KB / 1500 KB',
     ])

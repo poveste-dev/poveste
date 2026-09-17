@@ -75,7 +75,7 @@ describe('pinLatest', () => {
       devDependencies: { ...manifest.devDependencies, typescript: 'latest' },
     }
 
-    expect(pinLatest(withForeignLatest, '0.8.1').devDependencies.typescript).toBe('latest')
+    expect(pinLatest(withForeignLatest, '0.8.1').devDependencies['typescript']).toBe('latest')
   })
 
   it('does not touch anything outside the dependency maps', () => {

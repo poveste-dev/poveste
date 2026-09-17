@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, it } from 'vitest'
+import { captured } from './captured.ts'
 import { SUBJECT_TAGS } from './tag-names.mts'
 
 const SCRIPTS = join(import.meta.dirname, '..', '..')
@@ -15,14 +16,18 @@ const PER_CHECK = Object.entries(PACKAGE_SCRIPTS)
 
 function checkTagLists(file: string): string[][] {
   return [...readFileSync(join(CHECKS, file), 'utf8').matchAll(/\btags: \[([^\]]*)\]/g)]
-    .map(match => [...match[1].matchAll(/'([\w-]+)'/g)].map(tag => tag[1]))
+    .map(match => [...captured(match).matchAll(/'([\w-]+)'/g)].map(tag => captured(tag)))
     .filter(tags => tags.includes('check'))
 }
 
 const CHECK_TESTS = SPECS.flatMap(file => checkTagLists(file).map(tags => ({ file, tags })))
 
 // The tags `test:checks` excludes, read from its own filter so the two cannot disagree.
-const EXCLUDED_BY_TEST_CHECKS = [...PACKAGE_SCRIPTS['test:checks'].matchAll(/!([\w-]+)/g)].map(match => match[1])
+const TEST_CHECKS = PACKAGE_SCRIPTS['test:checks']
+if (TEST_CHECKS === undefined) {
+  throw new Error('package.json has no `test:checks` script to read the excluded tags from')
+}
+const EXCLUDED_BY_TEST_CHECKS = [...TEST_CHECKS.matchAll(/!([\w-]+)/g)].map(match => captured(match))
 const SELECTED_BY_TEST_CHECKS = [...new Set(CHECK_TESTS
   .filter(({ tags }) => !tags.some(tag => EXCLUDED_BY_TEST_CHECKS.includes(tag)))
   .map(({ file }) => file.replace(/\.spec\.ts$/, '')))].sort()
