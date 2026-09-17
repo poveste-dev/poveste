@@ -1,41 +1,36 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    // Volar
-    "jsx": "preserve",
     "lib": [
       "ESNext",
       "DOM"
     ],
     "rootDir": "src",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    // Alias
     "paths": {
-      "floating-vue": ["./node_modules/@poveste/vendors/floating-vue"],
-      "@iconify/vue": ["./node_modules/@poveste/vendors/iconify"],
-      "pinia": ["./node_modules/@poveste/vendors/pinia"],
-      "scroll-into-view-if-needed": ["./node_modules/@poveste/vendors/scroll"],
-      "vue-router": ["./node_modules/@poveste/vendors/vue-router"],
-      "@vueuse/core": ["./node_modules/@poveste/vendors/vue-use"],
-      "vue": ["./node_modules/@poveste/vendors/vue"]
+      "floating-vue": [
+        "./node_modules/@poveste/vendors/floating-vue"
+      ],
+      "@iconify/vue": [
+        "./node_modules/@poveste/vendors/iconify"
+      ],
+      "pinia": [
+        "./node_modules/@poveste/vendors/pinia"
+      ],
+      "scroll-into-view-if-needed": [
+        "./node_modules/@poveste/vendors/scroll"
+      ],
+      "vue-router": [
+        "./node_modules/@poveste/vendors/vue-router"
+      ],
+      "@vueuse/core": [
+        "./node_modules/@poveste/vendors/vue-use"
+      ],
+      "vue": [
+        "./node_modules/@poveste/vendors/vue"
+      ]
     },
-    "resolveJsonModule": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "alwaysStrict": true,
-    // Strict
-    "noImplicitAny": false,
-    "noImplicitThis": true,
-    // Output
     "declaration": true,
-    "outDir": "dist",
-    "removeComments": false,
-    "sourceMap": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "preserveWatchOutput": true
+    "outDir": "dist"
   },
   "include": [
     "src"

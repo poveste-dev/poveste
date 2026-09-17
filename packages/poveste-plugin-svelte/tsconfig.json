@@ -1,33 +1,16 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    // Volar
-    "jsx": "preserve",
     "lib": [
       "ESNext",
       "DOM"
     ],
     "rootDir": "src",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
     "types": [
       "node"
     ],
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "alwaysStrict": true,
-    // Strict
-    "noImplicitAny": false,
-    "noImplicitThis": true,
     "outDir": "dist",
-    "removeComments": false,
-    "sourceMap": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
-    "skipLibCheck": true,
-    "preserveWatchOutput": true
+    "verbatimModuleSyntax": true
   },
   "include": [
     "src"
