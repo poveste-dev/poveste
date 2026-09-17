@@ -13,10 +13,10 @@ pnpm bench:smoke                            # one asserted run: does the instrum
 
 | script | measures |
 | --- | --- |
-| `grid-fill.mjs <baseURL> <storyId> [runs]` | arrival time of each cell's `SANDBOX_READY` in the app window; long-task blocking |
+| `grid-fill.mjs <baseURL> <storyId> [runs]` | arrival time of each cell's `SANDBOX_READY` in the app window; main-thread script time from long animation frames, split host and sandbox |
 | `sandbox.mjs <baseURL> <storyId> <variantId> [runs] [--profile]` | one cold sandbox boot; `--profile` writes a CPU profile and prints top self-time frames |
 | `grid-scroll.mjs <baseURL> <storyId> [steps] [runs]` | paging: time per viewport-sized scroll step until the newly visible cells mount, and how many iframes were reused (#240) |
-| `grid-scroll.mjs <baseURL> <storyId> --fling [frames] [px] [runs]` | fling: a fixed distance per animation frame with no settle, then the cells mounted and the time taken to deliver the frames (#319) |
+| `grid-scroll.mjs <baseURL> <storyId> --fling [ms] [pxPerMs] [runs]` | fling: a constant velocity held for a fixed time with no settle, then the cells mounted, the velocity each scroll event measured, and long-animation-frame script time over the fling (#319, #872) |
 
 ## Bench stories
 
@@ -28,16 +28,20 @@ pnpm bench:smoke                            # one asserted run: does the instrum
 
 The failure it is placed for is the quiet one. The bench stories reach the book through `storyIgnored` in the example config, and if that stops letting them in the grid has no cells, every timing is null, and `run.mjs` still exits 0 with a report full of dashes.
 
+It also checks the instrument can see what it exists to see. The smoke run plants a 150ms busy loop in one sandbox's `requestAnimationFrame` during the fling and fails unless the longest sandbox script comes back at 150ms or more; a real retarget's longest is about 30ms, so only the plant reaches it. And it fails if no scroll event of the fling reached #301's 8 px/ms, since that fling would have measured the prompt path.
+
 It is not a measurement, and no baseline is committed. `--json` is for diffing two runs on one machine; a number from a shared CI runner would invite comparison against the M3 Pro figures below, which is exactly the comparability the paragraph above is trying to protect.
 
 ## Reading the numbers
 
 - Medians over fresh browser contexts, ranges reported. A single run on this suite had a measured ~26% spread before the #197 fixes, ~4% after; one run proves nothing.
 - Same machine for before/after. Headless Chromium, 1280×800 — an 18-cell window for the 200px grid.
-- `first`, `t10`, `last` are ms from navigation to the 1st/10th/last cell mounting. `blocked` is main-thread long-task time over the 50ms threshold.
+- `first`, `t10`, `last` are ms from navigation to the 1st/10th/last cell mounting.
+- Main-thread cost is read from long animation frames in the top window (#872). `sandbox` and `host` are script time split by `windowAttribution` (`descendant` and `self`), `longestSandboxScriptMs` is the longest single sandbox script, and `longFrames`/`worstFrameMs` count and size the frames over 50ms. Sandboxes are same-origin and share the host's main thread, and much of their work runs in a frame's rendering steps, which is why long tasks are the wrong instrument. Measured on `bench-grid-1000` during a fling with 150ms planted in a sandbox rAF, `longtask` reported one 62ms entry while long animation frames reported six frames over 50ms with 460ms of sandbox script. On an idle page `longtask` did report the same plant, so it is not blind to rAF work, only to most of it during scrolling. `blocked`, long-task time over 50ms, is still reported beside it for older reports.
 - Cells boot serially (same-origin iframes share the main thread), so `last ≈ cells × single-sandbox` is the sanity check; a big gap means cells are doing work beyond a cold boot.
 - The two scroll modes run on the largest grid only, since a smaller one fits the window. Paging settles for 1.5s after each step, about 0.5 px/ms, so it never reaches the fast-scroll path #301 added and cannot tell the two apart. Fling is the mode that does: in its report, `readyTotal` is the cells mounted across the fling and the settle, and `flingMs` is how long the page took to deliver the frames.
-- A fling is paced by frames, not by time, so a page that is slow to return frames flings slower. `fastEvents` counts the scroll events over #301's 8 px/ms threshold. A fling run with none of them never took the fast path, and it is not evidence of no difference.
+- A fling holds a velocity for a time: each frame sets `scrollTop = start + pxPerMs × elapsed`, so slow frames make each step larger rather than the fling slower. It added a fixed 200px per frame until #872, which at 130ms frames was about 1.5 px/ms: only 1–3 of 23 events reached #301's 8 px/ms, so the mode rarely entered the path it was added for. `fastEvents` counts the events over that threshold, and `velocitiesPerRun` in the JSON keeps every event's measured velocity, so a fling that did not fling shows in its own output.
+- **Figures from before #872 are not comparable with those after.** The long-task numbers under-read scrolling cost, and the old fling was slower, and slower still on a slower page. Compare only runs taken with the same instrument.
 
 ## Reference (M3 Pro, `conformance-huge-grid`, V=1000, 18 cells)
 

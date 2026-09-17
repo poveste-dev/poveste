@@ -8,6 +8,9 @@ import { runBench } from './run.mjs'
 // failure this is for is the quiet one. If POVESTE_BENCH stops letting `src/bench/**` past
 // `storyIgnored`, the grid has no cells, every timing is null, and `run.mjs`
 // still finishes with a report full of dashes.
+// Longer than any one script a real retarget runs, so only the plant can reach it.
+const PLANTED_MS = 150
+
 function reportProblems(report: Array<Record<string, any>>): string[] {
   const problems: string[] = []
 
@@ -40,8 +43,20 @@ function reportProblems(report: Array<Record<string, any>>): string[] {
   if (!fling) {
     problems.push('the report has no fling result')
   }
-  else if (!(fling.readyTotal > 0)) {
-    problems.push(`the fling mounted ${fling.readyTotal} cells, so the grid did not scroll — check the scroller selector in bench/grid-scroll.mjs`)
+  else {
+    if (!(fling.readyTotal > 0)) {
+      problems.push(`the fling mounted ${fling.readyTotal} cells, so the grid did not scroll — check the scroller selector in bench/grid-scroll.mjs`)
+    }
+    // A time-based fling holds its speed on a slow runner. One whose events stay
+    // under #301's threshold is not exercising the path the mode exists for.
+    if (!(fling.fastEvents > 0)) {
+      problems.push(`none of the fling's ${fling.scrollEvents} scroll events reached 8 px/ms (median ${fling.velocityMedian}), so it measured the prompt path, not a fling`)
+    }
+    // The work `longtask` read as nothing (#872): planted in a sandbox's rAF, it has
+    // to come back as sandbox script time.
+    if (!(fling.longestSandboxScriptMs >= PLANTED_MS)) {
+      problems.push(`${PLANTED_MS}ms planted in a sandbox's requestAnimationFrame read as a longest sandbox script of ${fling.longestSandboxScriptMs}ms, so the bench cannot see rendering-step work`)
+    }
   }
 
   if (!report.some(r => r.kind === 'scroll' && Number.isFinite(r.stepMs))) {
@@ -58,16 +73,25 @@ describe('reportProblems', () => {
     expect(reportProblems(report)).toContainEqual(expect.stringContaining('the grid filled 0 cells'))
   })
 
-  it('reports a fling that mounted nothing', () => {
-    const report = [{ kind: 'grid', cells: 18, first: 500, last: 2300 }, { kind: 'sandbox', median: 120 }, { kind: 'scroll', stepMs: 900 }, { kind: 'fling', readyTotal: 0, flingMs: 400 }]
+  const measured = [{ kind: 'grid', cells: 18, first: 500, last: 2300 }, { kind: 'sandbox', median: 120 }, { kind: 'scroll', stepMs: 900 }]
+  const fling = { kind: 'fling', readyTotal: 40, flingMs: 400, scrollEvents: 24, fastEvents: 20, velocityMedian: 12, sandboxScriptMs: 400, longestSandboxScriptMs: 160 }
 
-    expect(reportProblems(report)).toEqual([expect.stringContaining('the fling mounted 0 cells')])
+  it('reports a fling that mounted nothing', () => {
+    expect(reportProblems([...measured, { ...fling, readyTotal: 0 }])).toEqual([expect.stringContaining('the fling mounted 0 cells')])
+  })
+
+  it('reports a fling that never reached the fast-scroll threshold', () => {
+    expect(reportProblems([...measured, { ...fling, fastEvents: 0, velocityMedian: 1.5 }])).toEqual([expect.stringContaining('none of the fling\'s 24 scroll events reached 8 px/ms')])
+  })
+
+  it('reports planted sandbox work that the bench did not see', () => {
+    expect(reportProblems([...measured, { ...fling, longestSandboxScriptMs: 35 }])).toEqual([expect.stringContaining('read as a longest sandbox script of 35ms')])
   })
 })
 
 describe('runBench', () => {
   it('measures something over one book, one size and one run', async () => {
-    const report = await runBench({ examples: ['vue'], sizes: [1000], runs: 1 })
+    const report = await runBench({ examples: ['vue'], sizes: [1000], runs: 1, plant: { sandboxRafMs: PLANTED_MS } })
 
     assertNoProblems({ problems: reportProblems(report), remedy: 'The bench ran and measured nothing: `run.mjs` finished, but the report holds no numbers.', notes: [] })
   })
