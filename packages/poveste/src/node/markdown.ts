@@ -13,7 +13,7 @@ import attrs from 'markdown-it-attrs'
 import { full as emoji } from 'markdown-it-emoji'
 import path from 'pathe'
 import pc from 'picocolors'
-import { bundledLanguagesInfo, createHighlighter, isSpecialLang } from 'shiki'
+import { bundledLanguagesInfo, createHighlighter, guessEmbeddedLanguages, isSpecialLang } from 'shiki'
 import { addStory, notifyStoryChange, removeStory } from './stories.js'
 import { slugify } from './util/slugify.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
@@ -84,6 +84,16 @@ for (const { id, aliases } of bundledLanguagesInfo) {
  * no top-level await, so it can be required synchronously instead. A language
  * shiki does not bundle renders as plain text, where it used to throw.
  */
+function loadFence(highlighter: Highlighter, code: string, lang: string): string {
+  const id = loadGrammar(highlighter, lang)
+  // A grammar loads some of what it embeds only on request, such as a Vue
+  // block's `<style lang="scss">`; loading everything used to cover for that.
+  for (const embedded of guessEmbeddedLanguages(code, id)) {
+    loadGrammar(highlighter, embedded)
+  }
+  return id
+}
+
 function loadGrammar(highlighter: Highlighter, lang: string): string {
   if (isSpecialLang(lang)) {
     return lang
@@ -109,7 +119,7 @@ export async function createMarkdownRenderer(ctx: Context) {
      * block back *into* prose. These classes are generated because main.pcss
      * `@source`s this file — v4 auto-detection only scans the app package.
      */
-    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadGrammar(highlighter, lang) })}</div>`,
+    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang) })}</div>`,
     linkify: true,
     html: true,
     breaks: false,

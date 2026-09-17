@@ -76,6 +76,14 @@ describe('markdown', async () => {
     expect(html).toContain('<span style="color:#79B8FF">echo</span>')
   })
 
+  it('highlights a language a fence embeds, such as a Vue block\'s scss', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('```vue\n<style lang="scss">\n$gap: 4px;\n</style>\n```\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<span style="color:#FFAB70">$gap</span>')
+  })
+
   it('renders a fence in a language shiki does not bundle as plain text', async () => {
     const md = await createMarkdownRenderer(ctx)
 
