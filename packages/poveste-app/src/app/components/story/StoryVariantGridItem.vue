@@ -132,7 +132,7 @@ const useIframe = computed(() => {
       </RouterLink>
 
       <!-- Toolbar -->
-      <div class="flex-none ml-auto hidden group-hover:flex items-center">
+      <div class="flex-none ml-auto hidden group-hover:flex group-focus-within:flex items-center">
         <HstCopyIcon
           :content="() => getSourceCode(story, variant)"
         />

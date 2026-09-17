@@ -2,7 +2,7 @@
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
 import { applyState, clone } from '@poveste/shared'
-import { onClickOutside, useStorage, useTimeoutFn } from '@vueuse/core'
+import { onClickOutside, useLiveAnnouncer, useStorage, useTimeoutFn } from '@vueuse/core'
 import { computed, nextTick, onMounted, ref } from 'vue'
 import { toPresetState, toRawDeep } from '../../util/state'
 import BaseSelect from '../base/BaseSelect.vue'
@@ -102,6 +102,7 @@ const editingLabel = computed({
 })
 
 const savedNotif = ref(false)
+const { polite } = useLiveAnnouncer()
 const savedTimeout = useTimeoutFn(() => {
   savedNotif.value = false
 }, 1000)
@@ -114,6 +115,7 @@ async function savePreset() {
   preset.state = toPresetState(props.variant.state, omitKeys)
   savedNotif.value = true
   savedTimeout.start()
+  polite('Preset saved')
 }
 
 function deletePreset(id: string) {
@@ -205,28 +207,47 @@ onClickOutside(select, stopEditing)
         </template>
       </BaseSelect>
     </div>
-    <Icon
+    <button
       v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
+      type="button"
       data-testid="preset-save"
-      :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
-      class="cursor-pointer w-4 h-4 hover:text-primary-500 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
+      aria-label="Save to preset"
+      :disabled="!canEdit"
+      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
       :class="[
-        canEdit ? 'opacity-50 hover:opacity-100' : 'opacity-25 pointer-events-none',
+        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
       ]"
       @click="savePreset()"
-    />
-    <Icon
+    >
+      <Icon
+        :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
+        class="w-4 h-4"
+      />
+    </button>
+    <button
       v-tooltip="'Create new preset'"
+      type="button"
       data-testid="preset-create"
-      icon="carbon:add-alt"
-      class="cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
+      aria-label="Create new preset"
+      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
       @click="createPreset()"
-    />
-    <Icon
+    >
+      <Icon
+        icon="carbon:add-alt"
+        class="w-4 h-4"
+      />
+    </button>
+    <button
       v-tooltip="'Reset to initial state'"
-      icon="carbon:reset"
-      class="cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
+      type="button"
+      aria-label="Reset to initial state"
+      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
       @click="resetState()"
-    />
+    >
+      <Icon
+        icon="carbon:reset"
+        class="w-4 h-4"
+      />
+    </button>
   </div>
 </template>
