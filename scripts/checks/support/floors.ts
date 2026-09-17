@@ -18,6 +18,7 @@ export type Floor
     | { exempt: string }
 
 export const FLOORS: Record<string, Floor> = {
+  'audit': { guard: 'the walk found no shipped packages' },
   'bundle-size': { guard: 'no built book under' },
   'changelog': { exempt: 'reads one section of one named file: a missing file throws, and a missing section is the failure it exists to report' },
   'config-reference': { exempt: '`parseConfig` throws when the interface it reads is gone, and a reference that reads empty reports every key as undocumented' },
