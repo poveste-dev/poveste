@@ -49,7 +49,7 @@
     "@types/node": "^22.10.1",
     "@vue/devtools-api": "^8.1.5",
     "@vueuse/core": "catalog:",
-    "execa": "^9.5.1",
+    "execa": "^10.0.1",
     "floating-vue": "5.2.2",
     "fs-extra": "^11.2.0",
     "globby": "^16.2.4",
