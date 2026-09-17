@@ -67,6 +67,23 @@ describe('markdown', async () => {
     expect(html).toContain('<h2 id="install-1"')
   })
 
+  it('highlights a fence by its language or an alias, loading the grammar on first use', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('```ts\nconst a = 1\n```\n\n```sh\necho hi\n```\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html.match(/<span style="color:#F97583">const<\/span>/g)).toHaveLength(1)
+    expect(html).toContain('<span style="color:#79B8FF">echo</span>')
+  })
+
+  it('renders a fence in a language shiki does not bundle as plain text', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('```caddy\nexample.com\n```\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<span class="line"><span>example.com</span></span>')
+  })
+
   it('should throw error on missing [md] story file.', async () => {
     const testFile3 = '/markdown/test3.story.md'
     const writer = createWriteStream(__dirname.concat(testFile3))

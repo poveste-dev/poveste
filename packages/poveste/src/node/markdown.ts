@@ -2,6 +2,7 @@ import type { ServerMarkdownFile } from '@poveste/shared'
 import type { Highlighter } from 'shiki'
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
+import { createRequire } from 'node:module'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
 import fs from 'fs-extra'
@@ -12,7 +13,7 @@ import attrs from 'markdown-it-attrs'
 import { full as emoji } from 'markdown-it-emoji'
 import path from 'pathe'
 import pc from 'picocolors'
-import { bundledLanguages, createHighlighter } from 'shiki'
+import { bundledLanguagesInfo, createHighlighter, isSpecialLang } from 'shiki'
 import { addStory, notifyStoryChange, removeStory } from './stories.js'
 import { slugify } from './util/slugify.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
@@ -52,19 +53,49 @@ function notifyMarkdownFileChange(file: ServerMarkdownFile) {
 
 /**
  * Shared between the markdown Vite plugin and the markdown file watcher, which
- * both build a renderer — a `poveste build` reaches this three times. The
- * themes and langs are constant, and each instance eagerly loads every bundled
- * grammar, so the duplicates are pure waste.
+ * both build a renderer — a `poveste build` reaches this three times.
  */
 let highlighterPromise: Promise<Highlighter> | undefined
 
 function getHighlighter() {
   highlighterPromise ??= createHighlighter({
     themes: ['github-dark'],
-    langs: Object.keys(bundledLanguages), // not ideal but markdown-it does not provide async highlight
+    langs: [],
   })
 
   return highlighterPromise
+}
+
+const require = createRequire(import.meta.url)
+
+const grammarIds = new Map<string, string>()
+for (const { id, aliases } of bundledLanguagesInfo) {
+  grammarIds.set(id, id)
+  for (const alias of aliases ?? []) {
+    grammarIds.set(alias, id)
+  }
+}
+
+/**
+ * The grammar a fence names, loaded the first time one asks for it (#825).
+ *
+ * markdown-it's `highlight` is synchronous, which is why every bundled grammar
+ * used to load up front: 2.4 s and ~100 MB on each start. A grammar module has
+ * no top-level await, so it can be required synchronously instead. A language
+ * shiki does not bundle renders as plain text, where it used to throw.
+ */
+function loadGrammar(highlighter: Highlighter, lang: string): string {
+  if (isSpecialLang(lang)) {
+    return lang
+  }
+  const id = grammarIds.get(lang)
+  if (!id) {
+    return 'text'
+  }
+  if (!highlighter.getLoadedLanguages().includes(id)) {
+    highlighter.loadLanguageSync(require(`shiki/langs/${id}.mjs`).default)
+  }
+  return id
 }
 
 export async function createMarkdownRenderer(ctx: Context) {
@@ -78,7 +109,7 @@ export async function createMarkdownRenderer(ctx: Context) {
      * block back *into* prose. These classes are generated because main.pcss
      * `@source`s this file — v4 auto-detection only scans the app package.
      */
-    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang })}</div>`,
+    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadGrammar(highlighter, lang) })}</div>`,
     linkify: true,
     html: true,
     breaks: false,
