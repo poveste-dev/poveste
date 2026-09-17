@@ -45,7 +45,7 @@
   "devDependencies": {
     "@iconify/vue": "^5.0.1",
     "@rollup/plugin-commonjs": "^28.0.1",
-    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/node": "^22.10.1",
     "@vue/devtools-api": "^8.1.5",
     "@vueuse/core": "catalog:",
