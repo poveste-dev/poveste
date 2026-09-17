@@ -68,18 +68,18 @@ class InteropEvaluator implements ModuleEvaluator {
       set: (_, prop, value) => {
         if (prop === 'default' && !path.endsWith('.mjs') && cjsExports !== value) {
           exportAll(cjsExports, value)
-          exports.default = value
+          exports['default'] = value
           return true
         }
         if (!Reflect.has(exports, 'default')) {
-          exports.default = {}
+          exports['default'] = {}
         }
         if (assigned && isPrimitive(assignedExports)) {
           Object.defineProperty(exports, prop, { enumerable: true, configurable: true, get: () => undefined })
           return true
         }
-        if (!isPrimitive(exports.default)) {
-          exports.default[prop] = value
+        if (!isPrimitive(exports['default'])) {
+          exports['default'][prop] = value
         }
         if (prop !== 'default') {
           Object.defineProperty(exports, prop, { enumerable: true, configurable: true, get: () => value })
@@ -93,7 +93,7 @@ class InteropEvaluator implements ModuleEvaluator {
       },
       set exports(value) {
         exportAll(cjsExports, value)
-        exports.default = value
+        exports['default'] = value
         assignedExports = value
         assigned = true
       },

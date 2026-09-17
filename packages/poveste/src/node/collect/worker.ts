@@ -56,7 +56,7 @@ parentPort?.on('message', (message) => {
 
 export default async (payload: Payload): Promise<ReturnData> => {
   const startTime = performance.now()
-  process.env.HST_COLLECT = 'true'
+  process.env['HST_COLLECT'] = 'true'
 
   // Here rather than broadcast from the main thread: the pool dispatches tasks
   // on a different port from `broadcastMessage`, and nothing orders the two, so

@@ -36,7 +36,7 @@ export const RouterLinkStub = defineComponent({
   render() {
     const route = computed(() => defaultRoute)
     // mock reasonable return values to mimic vue-router's useLink
-    const children = this.$slots?.default?.({
+    const children = this.$slots?.['default']?.({
       route,
       href: computed(() => route.value.href),
       isActive: computed(() => false),

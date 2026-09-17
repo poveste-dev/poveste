@@ -9,9 +9,9 @@ export const useStoryStore = defineStore('story', () => {
     stories.value = value
   }
 
-  const currentStory = computed(() => stories.value.find(s => s.id === router.currentRoute.value.params.storyId))
+  const currentStory = computed(() => stories.value.find(s => s.id === router.currentRoute.value.params['storyId']))
 
-  const currentVariant = computed(() => currentStory.value?.variants.find(v => v.id === router.currentRoute.value.query.variantId))
+  const currentVariant = computed(() => currentStory.value?.variants.find(v => v.id === router.currentRoute.value.query['variantId']))
 
   const maps = computed(() => {
     const storyMap = new Map<string, Story>()

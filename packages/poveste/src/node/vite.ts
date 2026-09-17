@@ -188,7 +188,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             'vue',
           ],
           alias: {
-            'poveste-style': join(APP_PATH, process.env.POVESTE_DEV ? 'app/style/main.pcss' : 'style.css'),
+            'poveste-style': join(APP_PATH, process.env['POVESTE_DEV'] ? 'app/style/main.pcss' : 'style.css'),
           },
           ...(isServer
             ? {
@@ -225,7 +225,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
               // bundled font under the root `node_modules` was refused (#252).
               searchForWorkspaceRoot(process.cwd()),
               ...supportPluginAllowPaths,
-              ...process.env.POVESTE_DEV
+              ...process.env['POVESTE_DEV']
                 ? [
                     '../../packages/poveste-vendors',
                   ]
@@ -247,7 +247,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           // `bin.ts` sets this per command: development for `dev`, production
           // for `build` and `preview`. Every built book used to ship the
           // development build of Vue, Pinia, vue-router and VueUse.
-          'process.env.NODE_ENV': JSON.stringify(isServer ? 'production' : process.env.NODE_ENV ?? 'development'),
+          'process.env.NODE_ENV': JSON.stringify(isServer ? 'production' : process.env['NODE_ENV'] ?? 'development'),
           ...!isServer
             ? {
               // Collect flag
@@ -304,7 +304,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     }
   }
   </script>
-  <script type="module" src="/@fs/${APP_PATH}/bundle-sandbox${process.env.POVESTE_DEV ? '-dev' : ''}.js"></script>
+  <script type="module" src="/@fs/${APP_PATH}/bundle-sandbox${process.env['POVESTE_DEV'] ? '-dev' : ''}.js"></script>
 </body>
 </html>`
           html = await applyHeadTransform(html, ctx.config.head)
@@ -337,7 +337,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/@fs/${APP_PATH}/bundle-main${process.env.POVESTE_DEV ? '-dev' : ''}.js"></script>
+    <script type="module" src="/@fs/${APP_PATH}/bundle-main${process.env['POVESTE_DEV'] ? '-dev' : ''}.js"></script>
   </body>
 </html>`
             html = await applyHeadTransform(html, ctx.config.head)
@@ -430,7 +430,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     })
   }
 
-  if (process.env.POVESTE_DEV && !isServer) {
+  if (process.env['POVESTE_DEV'] && !isServer) {
     plugins.push({
       name: 'poveste-dev-plugin',
       config() {

@@ -7,23 +7,23 @@ export default {
     {
       title: 'Hello',
       onMount: ({ el, state, onUpdate }) => {
-        state.count = 0
+        state['count'] = 0
 
         const div = document.createElement('div')
         div.innerHTML = '<h1>Hello World</h1>'
         el.appendChild(div)
 
         const counter = document.createElement('pre')
-        counter.innerHTML = `Counter: ${state.counter}`
+        counter.innerHTML = `Counter: ${state['counter']}`
         div.appendChild(counter)
 
         onUpdate(() => {
-          counter.innerHTML = `Counter: ${state.count}`
+          counter.innerHTML = `Counter: ${state['count']}`
         })
       },
       onMountControls: ({ el, state, onUnmount }) => {
         const add = () => {
-          state.count++
+          state['count']++
         }
 
         Object.assign(el.style, {

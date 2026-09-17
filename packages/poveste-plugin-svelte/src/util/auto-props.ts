@@ -76,12 +76,12 @@ export async function transformStoryAutoProps(code: string, propsOf: PropsOf): P
 function importedComponents(body: Node[]): Map<string, string> {
   const found = new Map<string, string>()
   for (const node of body) {
-    if (node.type !== 'ImportDeclaration' || !/\.svelte$/.test(node.source?.value ?? '')) {
+    if (node.type !== 'ImportDeclaration' || !/\.svelte$/.test(node['source']?.value ?? '')) {
       continue
     }
-    for (const specifier of node.specifiers ?? []) {
+    for (const specifier of node['specifiers'] ?? []) {
       if (specifier.type === 'ImportDefaultSpecifier') {
-        found.set(specifier.local.name, node.source.value)
+        found.set(specifier.local.name, node['source'].value)
       }
     }
   }
@@ -95,14 +95,14 @@ function importedComponents(body: Node[]): Map<string, string> {
  */
 function collectTargets(fragment: Node, imported: Map<string, string>): Target[] | undefined {
   const story = findStory(fragment)
-  if (!story || blockWrapsAVariant(story.fragment)) {
+  if (!story || blockWrapsAVariant(story['fragment'])) {
     return undefined
   }
 
   // At any depth and in document order, matching how `collect/Variant.svelte`
   // registers them. A story with none renders its children as variant zero.
   const variants: Node[] = []
-  walk(story.fragment, (node) => {
+  walk(story['fragment'], (node) => {
     if (isHst(node, 'Variant')) {
       variants.push(node)
     }
@@ -112,7 +112,7 @@ function collectTargets(fragment: Node, imported: Map<string, string>): Target[]
   const targets: Target[] = []
   scopes.forEach((scope, variant) => {
     let index = 0
-    walk(scope.fragment, (node, ancestors) => {
+    walk(scope['fragment'], (node, ancestors) => {
       // The controls snippet builds the panel, not the preview. A component in
       // a block is skipped on its own.
       if (isControls(node)) {
@@ -121,7 +121,7 @@ function collectTargets(fragment: Node, imported: Map<string, string>): Target[]
       if (node.type !== 'Component' || insideBlock(ancestors)) {
         return undefined
       }
-      const specifier = imported.get(node.name)
+      const specifier = imported.get(node['name'])
       if (specifier) {
         targets.push({ node, variant, index: index++, specifier })
       }
@@ -157,14 +157,14 @@ function insideBlock(ancestors: Node[]): boolean {
 
 function isControls(node: Node): boolean {
   if (node.type === 'SnippetBlock') {
-    return node.expression?.name === 'controls'
+    return node['expression']?.name === 'controls'
   }
-  return (node.attributes ?? []).some((attribute: Node) =>
-    attribute.name === 'slot' && attribute.value?.[0]?.data === 'controls')
+  return (node['attributes'] ?? []).some((attribute: Node) =>
+    attribute['name'] === 'slot' && attribute['value']?.[0]?.data === 'controls')
 }
 
 function isHst(node: Node, member?: string): boolean {
-  return node.type === 'Component' && (member ? node.name === `${HST}.${member}` : node.name?.startsWith(`${HST}.`))
+  return node.type === 'Component' && (member ? node['name'] === `${HST}.${member}` : node['name']?.startsWith(`${HST}.`))
 }
 
 // `then`/`catch`/`pending` and `fallback` are branches a variant can hide in.
@@ -202,7 +202,7 @@ async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropCo
   for (const target of targets) {
     const props = await sources.get(target.specifier)
     if (props?.length) {
-      defs[target.variant].push({ name: target.node.name, index: target.index, props })
+      defs[target.variant].push({ name: target.node['name'], index: target.index, props })
     }
   }
   return defs
@@ -260,9 +260,9 @@ function literal(value: unknown): string {
 }
 
 function attributesEnd(code: string, node: Node): number {
-  const attributes = node.attributes ?? []
+  const attributes = node['attributes'] ?? []
   if (attributes.length > 0) {
     return Math.max(...attributes.map((attribute: Node) => attribute.end))
   }
-  return code.indexOf(node.name, node.start) + node.name.length
+  return code.indexOf(node['name'], node.start) + node['name'].length
 }

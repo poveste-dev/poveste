@@ -130,7 +130,7 @@ export default defineComponent({
 
     function renderVariantSlot(variant: Variant, context: PreviewRenderContext) {
       if (context.slotName === 'controls') {
-        return vm.slots.controls?.({
+        return vm.slots['controls']?.({
           state: context.externalState,
         }) ?? null
       }
@@ -139,7 +139,7 @@ export default defineComponent({
         return null
       }
 
-      const vnodes = vm.slots.default?.({
+      const vnodes = vm.slots['default']?.({
         state: context.externalState,
       }) ?? null
 

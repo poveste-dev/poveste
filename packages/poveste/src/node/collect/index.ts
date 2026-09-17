@@ -59,7 +59,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   const threadPool = new Tinypool({
     filename: new URL('./worker.js', import.meta.url).href,
     // WebContainer compatibility (Stackblitz)
-    useAtomics: typeof process.versions.webcontainer !== 'string',
+    useAtomics: typeof process.versions['webcontainer'] !== 'string',
     minThreads: threadsCount,
     maxThreads: threadsCount,
   })

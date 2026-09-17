@@ -42,6 +42,11 @@ export default antfu({
     // `<script setup>`. Reordering to satisfy the rule would put the setup
     // code below the plumbing it drives, which reads worse than the warning.
     'ts/no-use-before-define': 'warn',
+    // Core `dot-notation` cannot see types, so it demands `env.FOO` where
+    // `noPropertyAccessFromIndexSignature` demands `env['FOO']` (#782). The
+    // type-aware block below enforces the version that reads the compiler option.
+    'dot-notation': 'off',
+    'vue/dot-notation': 'off',
   },
 }, {
   files: ['**/*.vue'],
@@ -152,5 +157,6 @@ export default antfu({
   },
   rules: {
     'ts/no-deprecated': 'error',
+    'ts/dot-notation': 'error',
   },
 })

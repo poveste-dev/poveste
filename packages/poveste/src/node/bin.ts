@@ -7,9 +7,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const { version } = JSON.parse(fs.readFileSync(resolve(__dirname, '../../package.json'), 'utf8'))
 
-process.env.NODE_ENV = process.argv.includes('build') || process.argv.includes('preview') ? 'production' : 'development'
-process.env.HISTOIRE = 'true'
-process.env.POVESTE = 'true'
+process.env['NODE_ENV'] = process.argv.includes('build') || process.argv.includes('preview') ? 'production' : 'development'
+process.env['HISTOIRE'] = 'true'
+process.env['POVESTE'] = 'true'
 
 // sade does not await an action, so a rejected command was terminated only by
 // Node's default handling of the unhandled rejection it became. That is not the
@@ -51,7 +51,7 @@ process.env.POVESTE = 'true'
  * that ends and one that does not.
  */
 function proveItDrains(): boolean {
-  return !!process.env.POVESTE_NO_FORCE_EXIT
+  return !!process.env['POVESTE_NO_FORCE_EXIT']
 }
 
 function run(command: () => Promise<unknown>): Promise<void> {

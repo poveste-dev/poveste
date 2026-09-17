@@ -22,7 +22,7 @@ const innerOrientation = computed(() =>
 const route = useRoute()
 
 const panelContentComponent = computed(() => {
-  switch (route.query.tab) {
+  switch (route.query['tab']) {
     case 'docs':
       return StoryDocs
     case 'events':

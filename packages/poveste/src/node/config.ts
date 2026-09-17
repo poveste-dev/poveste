@@ -187,7 +187,7 @@ export async function loadConfigFile(configFile: string): Promise<Partial<Povest
       ? (String(e.message).match(/Cannot find module '([^']+)'/) ?? [])[1]
       : undefined
 
-    if (missing && !process.env.DEBUG) {
+    if (missing && !process.env['DEBUG']) {
       // The stack is all module-loader and jiti frames, which diagnose neither
       // an uninstalled package nor a typo (#324). `DEBUG=1` keeps it.
       console.error(pc.red(`Cannot find module '${missing}'`))

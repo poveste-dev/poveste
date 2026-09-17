@@ -16,13 +16,13 @@ export default {
       label: 'File name',
       type: 'text',
       required: true,
-      defaultValue: answers => answers.component?.replace(/[^/]+\/([^/]+)\.vue$/, '$1.story.vue'),
+      defaultValue: answers => answers['component']?.replace(/[^/]+\/([^/]+)\.vue$/, '$1.story.vue'),
     },
   ],
   clientAction: (params) => {
-    const index = params.component.lastIndexOf('/')
-    const dirname = params.component.substring(0, index + 1)
-    const file = `${dirname}${params.fileName}`
+    const index = params['component'].lastIndexOf('/')
+    const dirname = params['component'].substring(0, index + 1)
+    const file = `${dirname}${params['fileName']}`
     const storyId = kebabCase(file.toLowerCase())
     openStory(storyId)
   },

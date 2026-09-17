@@ -130,7 +130,7 @@ function wrapControlComponent(controlComponent: (typeof components)[keyof typeof
           ref: 'slotEl',
         }, this.slotCalls.map((props, index) => h('div', {
           renderSlotId: index,
-        }, this.$slots.default?.(props)))),
+        }, this.$slots['default']?.(props)))),
       ]
     },
   })

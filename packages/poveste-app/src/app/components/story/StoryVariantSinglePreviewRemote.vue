@@ -291,12 +291,12 @@ function previewStyle(isResponsiveEnabled: boolean, finalWidth: number | null, f
   const style: Record<string, string> = {}
 
   if (isResponsiveEnabled) {
-    if (finalWidth) style.width = `${finalWidth}px`
-    if (finalHeight) style.height = `${finalHeight}px`
+    if (finalWidth) style['width'] = `${finalWidth}px`
+    if (finalHeight) style['height'] = `${finalHeight}px`
   }
 
   if (props.autoHeight) {
-    style.height = `${Math.min(reportedHeight.value ?? placeholderHeight.value, MAX_AUTO_HEIGHT)}px`
+    style['height'] = `${Math.min(reportedHeight.value ?? placeholderHeight.value, MAX_AUTO_HEIGHT)}px`
   }
 
   return style

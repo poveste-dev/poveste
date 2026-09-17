@@ -145,11 +145,11 @@ export async function createMarkdownRenderer(ctx: Context) {
 
   // External links
   {
-    const defaultRender = md.renderer.rules.link_open || function (tokens, idx, options, env, self) {
+    const defaultRender = md.renderer.rules['link_open'] || function (tokens, idx, options, env, self) {
       return self.renderToken(tokens, idx, options)
     }
 
-    md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
+    md.renderer.rules['link_open'] = function (tokens, idx, options, env, self) {
       const token = tokens[idx]
       // markdown-it 15 types an attribute value as `string | number`.
       const href = token.attrGet('href')?.toString() ?? null
@@ -161,12 +161,12 @@ export async function createMarkdownRenderer(ctx: Context) {
           const query = queryIndex >= 0 ? href.slice(queryIndex) : ''
 
           // File lookup
-          const file = path.resolve(path.dirname(String(env?.file)), pathname)
+          const file = path.resolve(path.dirname(String(env?.['file'])), pathname)
           const storyFile = ctx.storyFiles.find(f => f.path === file)
           const mdFile = ctx.markdownFiles.find(f => f.absolutePath === file)
           const storyId = storyFile?.id ?? mdFile?.storyFile?.id
           if (!storyId) {
-            throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env?.file}`))
+            throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env?.['file']}`))
           }
 
           // Add attributes
@@ -228,11 +228,11 @@ export async function createMarkdownPlugins(ctx: Context) {
  */
 function derivedStoryCode(frontmatter: Record<string, any>): string {
   return `export default ${JSON.stringify({
-    id: frontmatter.id,
-    title: frontmatter.title,
-    icon: frontmatter.icon ?? 'carbon:document-blank',
-    iconColor: frontmatter.iconColor,
-    group: frontmatter.group,
+    id: frontmatter['id'],
+    title: frontmatter['title'],
+    icon: frontmatter['icon'] ?? 'carbon:document-blank',
+    iconColor: frontmatter['iconColor'],
+    group: frontmatter['group'],
     docsOnly: true,
     variants: [],
   })}`
