@@ -54,6 +54,12 @@ export interface ModuleLoader {
   destroy: () => void
 }
 
+/** What changed under a path passed to `api.watch`. */
+export type WatchEvent = 'add' | 'change' | 'unlink'
+
+/** Called by `api.watch` with what happened and the absolute path it happened to. */
+export type WatchCallback = (event: WatchEvent, path: string) => Awaitable<unknown>
+
 /**
  * What every plugin hook receives. `colors`, `path` and `fs` are Poveste's own
  * picocolors, pathe and fs-extra, handed over so a plugin can use them without
@@ -78,6 +84,20 @@ export interface PluginApiBase {
   addStoryFile: (file: string) => void
 
   getConfig: () => PovesteConfig
+
+  /**
+   * Calls `callback` when a file under `paths` is added, changed or removed after
+   * the call. What already exists raises nothing.
+   *
+   * Poveste owns the watcher and closes it with the dev server, however the server
+   * ends, so a plugin has nothing to release. The returned function stops watching
+   * sooner. A callback that throws or rejects is logged with the plugin's name.
+   *
+   * Only `poveste dev` watches. In a build this does nothing, because a watcher
+   * opened while a failed build closes its server is what kept that build's
+   * process alive (#434).
+   */
+  watch: (paths: string | string[], callback: WatchCallback) => () => Promise<void>
 }
 
 /**

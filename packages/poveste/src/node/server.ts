@@ -10,6 +10,7 @@ import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange 
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
 import { onStoryChange, onStoryListChange, watchStories } from './stories.js'
 import { wrapLogError } from './util/log.js'
+import { createManagedWatches } from './util/managed-watches.js'
 import * as VirtualFiles from './virtual/index.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
@@ -78,33 +79,48 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
     server: nodeServer,
   })
 
-  const pluginOnCleanups: (() => void | Promise<void>)[] = []
-  for (const plugin of ctx.config.plugins) {
-    if (plugin.onDev) {
-      const api = new DevPluginApi(ctx, plugin, moduleLoader)
-      const onCleanup = (cb: () => void | Promise<void>) => {
-        pluginOnCleanups.push(cb)
-      }
-      await plugin.onDev(api, onCleanup)
-    }
-  }
+  // Closed by `close` and nothing else. The process cleanup runs as soon as
+  // `devCommand` returns, which is while this server is still serving.
+  const watches = createManagedWatches()
 
-  // Custom dev events
-  server.ws.on(`poveste:dev-event`, async ({ event, payload }) => {
+  const pluginOnCleanups: (() => void | Promise<void>)[] = []
+  // A start that fails never hands back `close`, so what plugins opened is
+  // released here: the port being taken is enough to reach this.
+  try {
     for (const plugin of ctx.config.plugins) {
-      if (plugin.onDevEvent) {
-        const api = new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload)
-        const result = await plugin.onDevEvent(api)
-        if (!event.startsWith('on') && result !== undefined) {
-          server.ws.send(`poveste:dev-event-result`, { event, result })
-          break
+      if (plugin.onDev) {
+        const api = new DevPluginApi(ctx, plugin, moduleLoader, watches)
+        const onCleanup = (cb: () => void | Promise<void>) => {
+          pluginOnCleanups.push(cb)
+        }
+        await plugin.onDev(api, onCleanup)
+      }
+    }
+
+    // Custom dev events
+    server.ws.on(`poveste:dev-event`, async ({ event, payload }) => {
+      for (const plugin of ctx.config.plugins) {
+        if (plugin.onDevEvent) {
+          const api = new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload, watches)
+          const result = await plugin.onDevEvent(api)
+          if (!event.startsWith('on') && result !== undefined) {
+            server.ws.send(`poveste:dev-event-result`, { event, result })
+            break
+          }
         }
       }
-    }
-  })
+    })
 
-  // Wait for pre-bundling (in `listen()`)
-  await server.listen(options.port ?? server.config.server?.port)
+    // Wait for pre-bundling (in `listen()`)
+    await server.listen(options.port ?? server.config.server?.port)
+  }
+  catch (error) {
+    for (const cb of pluginOnCleanups) {
+      await wrapLogError('plugin.onDev.onCleanup', () => cb())
+    }
+    await wrapLogError('plugin watches', () => watches.close())
+    throw error
+  }
 
   const {
     clearCache,
@@ -248,6 +264,7 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
     for (const cb of pluginOnCleanups) {
       await wrapLogError('plugin.onDev.onCleanup', () => cb())
     }
+    await wrapLogError('plugin watches', () => watches.close())
     await wrapLogError('server.close', () => server.close())
     await wrapLogError('nodeServer', () => nodeServer.close())
     await wrapLogError('destroyCollectStories', () => destroyCollectStories())
