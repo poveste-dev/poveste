@@ -84,7 +84,7 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "chokidar": "^4.0.1",
+    "chokidar": "^5.0.0",
     "connect": "^3.7.0",
     "defu": "^6.1.4",
     "diacritics": "^1.3.0",
