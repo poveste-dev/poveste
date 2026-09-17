@@ -1,11 +1,12 @@
 import process from 'node:process'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   checkDocsSite,
   checkDocsSiteLive,
   declaredOrigins,
   deployMarker,
   documentTitles,
+  htmlTwinProblems,
   missingRedirectTargets,
   pageUrlPath,
   parseRedirects,
@@ -50,6 +51,10 @@ describe('parseRedirects', () => {
       { from: '/guide/vue3/*', to: '/guide/vue/:splat', status: 301 },
       { from: '/old-page.html', to: '/new.html', status: 301 },
     ])
+  })
+
+  it('reads force = true', () => {
+    expect(parseRedirects('[[redirects]]\nfrom = "/a.html"\nto = "/a"\nstatus = 301\nforce = true\n')[0].force).toBe(true)
   })
 
   it('defaults a rule with no status to a permanent redirect', () => {
@@ -102,7 +107,7 @@ describe('parseRedirectsFile', () => {
   })
 
   it('reads a forced status, which Netlify writes with a trailing bang', () => {
-    expect(parseRedirectsFile('/*  /index.html  200!')[0].status).toBe(200)
+    expect(parseRedirectsFile('/*  /index.html  200!')[0]).toEqual({ from: '/*', to: '/index.html', status: 200, force: true })
   })
 
   it('sees the soft 404 this project deleted from netlify.toml', () => {
@@ -416,6 +421,38 @@ describe('the address a built page is served at', () => {
   })
 })
 
+describe('htmlTwinProblems', () => {
+  const pages = ['/index.html', '/guide/index.html', '/guide/getting-started.html', '/404.html']
+
+  it('accepts a forced 301 from every page\'s .html twin to its address', () => {
+    const redirects = parseRedirectsFile('/index.html / 301!\n/guide/index.html /guide/ 301!\n/guide/getting-started.html /guide/getting-started 301!\n')
+
+    expect(htmlTwinProblems(pages, redirects)).toEqual([])
+  })
+
+  it('reports a page whose twin still answers, and leaves the 404 page alone', () => {
+    expect(htmlTwinProblems(pages, [])).toEqual([
+      '/index.html has no redirect, so it answers 200 beside /',
+      '/guide/index.html has no redirect, so it answers 200 beside /guide/',
+      '/guide/getting-started.html has no redirect, so it answers 200 beside /guide/getting-started',
+    ])
+  })
+
+  it('reports an unforced rule, which Netlify skips because the file exists', () => {
+    const redirects = parseRedirectsFile('/guide/getting-started.html /guide/getting-started 301\n')
+
+    expect(htmlTwinProblems(['/guide/getting-started.html'], redirects))
+      .toEqual(['/guide/getting-started.html redirects to `/guide/getting-started` with 301, not a forced 301 to `/guide/getting-started`'])
+  })
+
+  it('reports a directory index sent to /guide/index instead of /guide/', () => {
+    const redirects = parseRedirectsFile('/guide/index.html /guide/index 301!\n')
+
+    expect(htmlTwinProblems(['/guide/index.html'], redirects))
+      .toEqual(['/guide/index.html redirects to `/guide/index` with 301 forced, not a forced 301 to `/guide/`'])
+  })
+})
+
 describe('pages declaring their own address', () => {
   it('says nothing when each page states its own', () => {
     expect(selfDeclarationProblems([
@@ -597,6 +634,72 @@ describe('checkDocsSite', () => {
 
   it('the docs site config and build hold up', { tags: ['check', 'docs', 'build'] }, async () => {
     assertNoProblems(await checkDocsSite())
+  })
+})
+
+describe('checkDocsSiteLive against a site that answers from a table', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  // Everything the live check asks that is not about redirects, answered correctly.
+  const BASE: Record<string, [number, string?]> = {
+    '/robots.txt': [200],
+    '/sitemap.xml': [200],
+    '/this-path-does-not-exist-poveste-guard': [404],
+    '/': [200],
+  }
+
+  function site(routes: Record<string, [number, string?]>) {
+    const table = { ...BASE, ...routes }
+    vi.stubGlobal('fetch', async (url: string) => {
+      const [status, location] = table[new URL(url).pathname] ?? [404]
+      const body = new URL(url).pathname === '/robots.txt'
+        ? 'User-agent: *\nAllow: /\nSitemap: https://poveste.dev/sitemap.xml\n'
+        : new URL(url).pathname === '/sitemap.xml' ? '<?xml version="1.0"?><urlset/>' : ''
+      return new Response(body, { status, headers: location ? { location } : {} })
+    })
+  }
+
+  const FIXED: Record<string, [number, string?]> = {
+    '/guide/getting-started.html': [301, '/guide/getting-started'],
+    '/guide/getting-started': [200],
+    '/guide/index.html': [301, '/guide/'],
+    '/guide/': [200],
+    '/guide/vue3/stories.html': [301, '/guide/vue/stories.html'],
+    '/guide/vue/stories.html': [301, '/guide/vue/stories'],
+    '/guide/vue/stories': [200],
+  }
+
+  it('passes a site where every twin redirects to its page', async () => {
+    site(FIXED)
+
+    expect((await checkDocsSiteLive(SITE)).problems).toEqual([])
+  })
+
+  it('reports the twins answering 200, as production did before #811', async () => {
+    site({ ...FIXED, '/guide/getting-started.html': [200], '/guide/index.html': [200], '/guide/vue/stories.html': [200] })
+
+    expect((await checkDocsSiteLive(SITE)).problems).toEqual([
+      'live: /guide/getting-started.html answered 200, not 301 — its .html twin answers beside the page, and Google picks the twin (#811)',
+      'live: /guide/index.html answered 200, not 301 — its .html twin answers beside the page, and Google picks the twin (#811)',
+      'live: /guide/vue/stories.html answered 200, not 301 — a histoire-era path must keep redirecting',
+    ])
+  })
+
+  it('reports a page that redirects back to its twin, which is a loop', async () => {
+    site({ ...FIXED, '/guide/getting-started': [301, '/guide/getting-started.html'] })
+
+    expect((await checkDocsSiteLive(SITE)).problems).toEqual([
+      'live: /guide/getting-started.html ends at /guide/getting-started, which answers 301',
+      'live: /guide/getting-started ends at /guide/getting-started, which answers 301',
+    ])
+  })
+
+  it('reports a directory index sent to /guide/index', async () => {
+    site({ ...FIXED, '/guide/index.html': [301, '/guide/index'] })
+
+    expect((await checkDocsSiteLive(SITE)).problems).toEqual(['live: /guide/index.html ends at /guide/index, not /guide/'])
   })
 })
 
