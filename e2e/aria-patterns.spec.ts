@@ -107,10 +107,28 @@ test.describe('the panel actions', () => {
     await expect(page.locator('.poveste-story-source-code').getByRole('button', { name: 'Copy', exact: true })).toBeVisible()
   })
 
-  test('name the prop an override would be removed from', async ({ page }) => {
-    await openStory(page, 'conformance-auto-props', '?variantId=naked')
+  test('name the prop an override would be removed from, and leave the control\'s own name alone', async ({ page }) => {
+    await openStory(page, 'conformance-auto-props', '?variantId=declared')
 
-    await expect(page.getByRole('button', { name: 'Remove override of name', exact: true }).first()).toBeAttached()
+    await expect(page.getByRole('button', { name: 'Remove override of label', exact: true })).toBeAttached()
+    // Nested inside the control, the action's name was read as part of it:
+    // "label Remove override of label".
+    await expect(page.getByRole('textbox', { name: 'label', exact: true })).toBeAttached()
+    await expect(page.getByRole('checkbox', { name: 'enabled', exact: true })).toBeAttached()
+  })
+
+  // A boolean prop's control is a `role="checkbox"` element that toggles on
+  // Enter and Space, and the remove action used to sit inside it.
+  test('remove a checkbox override from the keyboard without toggling it back', async ({ page }) => {
+    await openStory(page, 'conformance-auto-props', '?variantId=declared')
+    const remove = page.getByRole('button', { name: 'Remove override of enabled', exact: true })
+    await page.getByRole('checkbox', { name: /^enabled/ }).click()
+    await expect(remove).toBeEnabled()
+
+    await remove.focus()
+    await page.keyboard.press('Space')
+
+    await expect(remove).toBeDisabled()
   })
 
   test('announce a saved preset', async ({ page }) => {

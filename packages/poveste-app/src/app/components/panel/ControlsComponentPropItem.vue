@@ -50,31 +50,35 @@ const canReset = computed(() => props.variant.state?._hPropState?.[props.compone
 </script>
 
 <template>
-  <component
-    :is="comp"
+  <!-- The remove action is beside the control, not in its actions slot. Inside
+       the control's <label> or checkbox, a label forwarded clicks to it, its
+       name joined the control's name, and Space on it toggled the checkbox (#827). -->
+  <div
     v-if="comp"
-    v-model="model"
-    :placeholder="model === undefined ? definition?.default : null"
-    class="poveste-controls-component-prop-item"
-    :title="`${definition.name}${canReset ? ' *' : ''}`"
+    class="flex items-end hover:bg-primary-100 dark:hover:bg-primary-800"
   >
-    <template #actions>
-      <button
-        v-tooltip="'Remove override'"
-        type="button"
-        :aria-label="`Remove override of ${definition.name}`"
-        :disabled="!canReset"
-        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
-        :class="[
-          canReset ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
-        ]"
-        @click.stop="reset()"
-      >
-        <Icon
-          icon="carbon:erase"
-          class="w-4 h-4"
-        />
-      </button>
-    </template>
-  </component>
+    <component
+      :is="comp"
+      v-model="model"
+      :placeholder="model === undefined ? definition?.default : null"
+      class="poveste-controls-component-prop-item grow min-w-0"
+      :title="`${definition.name}${canReset ? ' *' : ''}`"
+    />
+    <button
+      v-tooltip="'Remove override'"
+      type="button"
+      :aria-label="`Remove override of ${definition.name}`"
+      :disabled="!canReset"
+      class="flex-none flex mr-2 mb-[10px] p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+      :class="[
+        canReset ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+      ]"
+      @click="reset()"
+    >
+      <Icon
+        icon="carbon:erase"
+        class="w-4 h-4"
+      />
+    </button>
+  </div>
 </template>
