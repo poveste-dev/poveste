@@ -61,7 +61,7 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1",
+    "@types/node": "^26.5.1",
     "poveste": "workspace:*",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

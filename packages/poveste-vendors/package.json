@@ -46,7 +46,7 @@
     "@iconify/vue": "^5.0.1",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@rollup/plugin-node-resolve": "^15.3.0",
-    "@types/node": "^22.10.1",
+    "@types/node": "^26.5.1",
     "@vue/devtools-api": "^8.1.5",
     "@vueuse/core": "catalog:",
     "execa": "^9.5.1",
