@@ -76,10 +76,9 @@ describe('toRendered', () => {
 })
 
 describe('specProblems', () => {
-  const rendered = [
-    { bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' },
-    { bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' },
-  ]
+  const transparent = { bg: 'rgba(0, 0, 0, 0)', contrast: 'rgb(51, 51, 51)' }
+  const white = { bg: 'rgb(255, 255, 255)', contrast: 'rgb(51, 51, 51)' }
+  const rendered = [transparent, white]
 
   it('is silent when the spec matches the declared presets', () => {
     expect(specProblems(DEFAULTS, rendered)).toEqual([])
@@ -87,19 +86,19 @@ describe('specProblems', () => {
 
   // The state this exists for: the defaults move and the rgb list does not.
   it('names the preset whose color drifted', () => {
-    const drifted = [rendered[0], { bg: 'rgb(254, 255, 255)', contrast: 'rgb(51, 51, 51)' }]
+    const drifted = [transparent, { bg: 'rgb(254, 255, 255)', contrast: 'rgb(51, 51, 51)' }]
 
     expect(specProblems(DEFAULTS, drifted)[0]).toMatch(/preset 1 is rgb\(254, 255, 255\)/)
   })
 
   it('reports a count mismatch rather than comparing a short list position by position', () => {
-    expect(specProblems(DEFAULTS, [rendered[0]])[0]).toMatch(/asserts 1 presets and the books declare 2/)
+    expect(specProblems(DEFAULTS, [transparent])[0]).toMatch(/asserts 1 presets and the books declare 2/)
   })
 
   // The spec indexes by position, so a reorder keeps every value and asserts
   // the wrong button.
   it('catches a reorder, which a set comparison would pass', () => {
-    expect(specProblems(DEFAULTS, [rendered[1], rendered[0]])).toHaveLength(2)
+    expect(specProblems(DEFAULTS, [white, transparent])).toHaveLength(2)
   })
 
   it('reports a spec it cannot read rather than passing on an empty list', () => {

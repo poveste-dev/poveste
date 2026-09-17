@@ -170,11 +170,11 @@ export function jobsIn(source: string): Job[] {
   let propIndent = -1
   let step: Step | undefined
 
-  for (let i = 0; i < lines.length; i++) {
-    const body = lines[i].trim()
+  for (const line of lines) {
+    const body = line.trim()
     if (body === '' || body.startsWith('#')) continue
 
-    const indent = indentOf(lines[i])
+    const indent = indentOf(line)
 
     if (jobsIndent === -1) {
       if (/^jobs:$/.test(body)) jobsIndent = indent
@@ -249,11 +249,12 @@ export function boundariesIn(file: string, job: Job): Boundary[] {
   const found: Boundary[] = []
   let previous: boolean | undefined
 
-  for (let at = opens; at < job.steps.length; at++) {
-    const states = statesDependency(job.steps[at])
+  for (const [at, step] of job.steps.entries()) {
+    if (at < opens) continue
+    const states = statesDependency(step)
     if (states === previous) continue
     previous = states
-    found.push({ key: `${file} / ${job.id} / ${label(job.steps[at], at)}`, states })
+    found.push({ key: `${file} / ${job.id} / ${label(step, at)}`, states })
   }
 
   return found

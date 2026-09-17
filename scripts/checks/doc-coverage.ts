@@ -96,7 +96,7 @@ export interface Coverage {
 export function typesConditionOf(value: unknown): string | null {
   if (!value || typeof value !== 'object') return null
   const conditions = value as Record<string, unknown>
-  if (typeof conditions.types === 'string') return conditions.types
+  if (typeof conditions['types'] === 'string') return conditions['types']
   for (const nested of Object.values(conditions)) {
     const found = typesConditionOf(nested)
     if (found) return found

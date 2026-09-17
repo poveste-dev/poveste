@@ -33,6 +33,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -141,7 +142,8 @@ export function missingInstallLine(pkg: string, markdown: string): string[] {
 export function unrunnableFences(where: string, markdown: string): string[] {
   const problems: string[] = []
 
-  for (const [, body] of markdown.matchAll(/```(?:ts|js)\n([\s\S]*?)```/g)) {
+  for (const match of markdown.matchAll(/```(?:ts|js)\n([\s\S]*?)```/g)) {
+    const body = captured(match)
     if (/\bdefineConfig\(/.test(body) && !/import\s*\{[^}]*\bdefineConfig\b[^}]*\}\s*from/.test(body)) {
       problems.push(`${where} has a code block calling defineConfig without importing it — readers copy this`)
     }
@@ -272,7 +274,7 @@ export function referencedWorkflows(markdown: string): string[] {
   // CI names workflows that live in *their* repo, not this one.
   //
   // A badge names its workflow twice, in the image and in the link it wraps.
-  return [...new Set([...withoutFences(markdown).matchAll(/workflows\/([\w.-]+\.ya?ml)/g)].map(match => match[1]))]
+  return [...new Set([...withoutFences(markdown).matchAll(/workflows\/([\w.-]+\.ya?ml)/g)].map(match => captured(match)))]
 }
 
 /** Our own domain, whose URL shape we control. */
@@ -324,7 +326,7 @@ export function externalHosts(markdown: string): string[] {
     // Markdown ends sentences right after a bare URL, and the punctuation is
     // not part of the host — `vite.dev,` would fail an allowlist that has
     // `vite.dev`.
-    const host = match[1].toLowerCase().replace(/[.,;:!?]+$/, '')
+    const host = captured(match).toLowerCase().replace(/[.,;:!?]+$/, '')
     // A loopback example is not a link anyone follows.
     if (/^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) {
       continue

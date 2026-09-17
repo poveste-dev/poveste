@@ -66,7 +66,7 @@ describe('unpublishedReleases', () => {
 
   it('separates an unverifiable answer from a confirmed absence', () => {
     const problems = unpublishedReleases(
-      [RELEASES[0]],
+      RELEASES.slice(0, 1),
       () => 'npm error network timeout',
       options(2),
     )
@@ -161,7 +161,7 @@ describe('the latest dist-tag', () => {
   })
 
   it('says so when a package has no latest tag at all', () => {
-    const problems = unpublishedReleases([RELEASES[0]], () => 'untagged:latest:nothing', options())
+    const problems = unpublishedReleases(RELEASES.slice(0, 1), () => 'untagged:latest:nothing', options())
 
     expect(problems).toEqual([
       'poveste@0.7.0 is on the registry, but the latest dist-tag still points at nothing',

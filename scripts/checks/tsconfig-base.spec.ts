@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
-import { checkTsconfigBase, packageTsconfigs, reachesBase, unexplainedRelaxations } from './tsconfig-base.ts'
+import { checkTsconfigBase, HELD_BY_NAME, packageTsconfigs, reachesBase, unexplainedRelaxations } from './tsconfig-base.ts'
 
 const BASE = '{ "compilerOptions": { "strict": true } }\n'
+const SCRIPTS_EXTENDS_BASE = '{ "extends": "../tsconfig.base.json" }'
 const EXTENDS_BASE = '{\n  // a comment the parser has to skip\n  "extends": "../../tsconfig.base.json",\n  "compilerOptions": { "outDir": "dist", },\n}\n'
 
 describe('packageTsconfigs', () => {
@@ -87,6 +88,7 @@ describe('checkTsconfigBase', () => {
   it('names each package that drifted, and why', () => {
     const root = tree({
       'tsconfig.base.json': BASE,
+      'scripts/tsconfig.json': SCRIPTS_EXTENDS_BASE,
       'packages/one/tsconfig.json': EXTENDS_BASE,
       'packages/two/tsconfig.json': '{ "compilerOptions": { "noImplicitAny": false } }',
     })
@@ -94,6 +96,27 @@ describe('checkTsconfigBase', () => {
     expect(checkTsconfigBase(root).problems).toEqual([
       'packages/two/tsconfig.json does not extend tsconfig.base.json, so it checks at whatever level its own copy says',
       'packages/two/tsconfig.json sets `noImplicitAny` to false with no issue number saying why',
+    ])
+  })
+
+  it('holds the scripts\' tsconfig to the base too, which no walk of packages/ reaches', () => {
+    const root = tree({
+      'tsconfig.base.json': BASE,
+      'scripts/tsconfig.json': '{ "compilerOptions": { "strict": true } }',
+      'packages/one/tsconfig.json': EXTENDS_BASE,
+    })
+
+    expect(HELD_BY_NAME).toContain('scripts/tsconfig.json')
+    expect(checkTsconfigBase(root).problems).toEqual([
+      'scripts/tsconfig.json does not extend tsconfig.base.json, so it checks at whatever level its own copy says',
+    ])
+  })
+
+  it('reports a named tsconfig that is gone rather than holding nothing', () => {
+    const root = tree({ 'tsconfig.base.json': BASE, 'packages/one/tsconfig.json': EXTENDS_BASE })
+
+    expect(checkTsconfigBase(root).problems).toEqual([
+      'scripts/tsconfig.json is gone, and this check still holds it by name — take it out of HELD_BY_NAME if that was meant',
     ])
   })
 

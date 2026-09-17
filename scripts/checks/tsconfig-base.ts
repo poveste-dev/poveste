@@ -1,4 +1,4 @@
-// Holds every package's tsconfig to the shared base (#782).
+// Holds every package's tsconfig, and the scripts', to the shared base (#782, #860).
 //
 // Before #816 each package kept its own copy of the compiler options, and the
 // copies drifted until the workspace was not checked at one level: `strict` in
@@ -40,6 +40,12 @@ export const STRICTNESS_FLAGS = [
 ]
 
 const MAX_EXTENDS_DEPTH = 8
+
+/**
+ * Tsconfigs outside `packages/`, held by name because no walk reaches them.
+ * `scripts/` sat on `strict` alone through all of #782 for exactly that reason (#860).
+ */
+export const HELD_BY_NAME = ['scripts/tsconfig.json']
 
 /** Every tsconfig directly inside a package, as repository-relative paths. */
 export function packageTsconfigs(root = ROOT): string[] {
@@ -115,9 +121,13 @@ export function checkTsconfigBase(root = ROOT): CheckResult {
   if (!existsSync(join(root, BASE))) {
     return { problems: [`${BASE} is missing, and ${files.length} package tsconfigs are meant to extend it`], remedy: REMEDY, notes: [] }
   }
+  const named = HELD_BY_NAME.filter(file => existsSync(join(root, file)))
+  const gone = HELD_BY_NAME
+    .filter(file => !named.includes(file))
+    .map(file => `${file} is gone, and this check still holds it by name — take it out of HELD_BY_NAME if that was meant`)
   return {
-    problems: files.flatMap(file => tsconfigProblems(file, root)),
+    problems: [...gone, ...[...files, ...named].flatMap(file => tsconfigProblems(file, root))],
     remedy: REMEDY,
-    notes: [`${files.length} package tsconfigs held to ${BASE}`],
+    notes: [`${files.length} package tsconfigs and ${named.length} named one held to ${BASE}`],
   }
 }

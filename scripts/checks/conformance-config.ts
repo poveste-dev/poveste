@@ -22,6 +22,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { conformanceBooks } from './example-wiring.ts'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -63,7 +64,7 @@ export function presetsIn(source: string): Preset[] {
   }
   const block = source.slice(open, end + 1).replace(/\s+/g, ' ')
   return [...block.matchAll(/label:\s*'([^']*)',\s*color:\s*'([^']*)',\s*contrastColor:\s*'([^']*)'/g)]
-    .map(match => ({ label: match[1], color: match[2], contrastColor: match[3] }))
+    .map(match => ({ label: captured(match, 1), color: captured(match, 2), contrastColor: captured(match, 3) }))
 }
 
 /** What the spec asserts, in the rendered form it compares against. */
@@ -71,7 +72,7 @@ export function specPresets(source: string): { bg: string, contrast: string }[] 
   const block = source.slice(source.indexOf('const presets = ['))
   const end = block.indexOf(']')
   return [...block.slice(0, end).matchAll(/bg:\s*'([^']*)',\s*contrast:\s*'([^']*)'/g)]
-    .map(match => ({ bg: match[1], contrast: match[2] }))
+    .map(match => ({ bg: captured(match, 1), contrast: captured(match, 2) }))
 }
 
 /**
@@ -105,8 +106,12 @@ export function specProblems(expected: Preset[], spec: { bg: string, contrast: s
   return expected.flatMap((preset, index) => {
     const bg = toRendered(preset.color)
     const contrast = toRendered(preset.contrastColor)
-    if (spec[index].bg !== bg || spec[index].contrast !== contrast) {
-      return [`${SPEC} preset ${index} is ${spec[index].bg}/${spec[index].contrast}, and \`${preset.label}\` is ${bg}/${contrast}`]
+    const asserted = spec[index]
+    if (!asserted) {
+      return [`${SPEC} asserts no preset ${index}, and the books declare \`${preset.label}\` there`]
+    }
+    if (asserted.bg !== bg || asserted.contrast !== contrast) {
+      return [`${SPEC} preset ${index} is ${asserted.bg}/${asserted.contrast}, and \`${preset.label}\` is ${bg}/${contrast}`]
     }
     return []
   })

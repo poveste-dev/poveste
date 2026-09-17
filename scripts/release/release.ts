@@ -33,15 +33,17 @@ export function validateType(type: string | undefined): string {
  */
 export function selectReleaseTag(tagsAtHead: string[], version: string): string {
   const tags = tagsAtHead.filter(Boolean)
-  if (tags.length === 0) {
+  const [first] = tags
+  if (first === undefined) {
     throw new Error(`no tag points at the release commit for ${version} — check \`tag\` in bump.config.ts`)
   }
   if (tags.length === 1) {
-    return tags[0]
+    return first
   }
   const naming = tags.filter(tag => tag.includes(version))
-  if (naming.length === 1) {
-    return naming[0]
+  const [named] = naming
+  if (named !== undefined && naming.length === 1) {
+    return named
   }
   throw new Error(`more than one tag points at the release commit (${tags.join(', ')}) — push the right one by hand`)
 }

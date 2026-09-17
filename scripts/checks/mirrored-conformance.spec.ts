@@ -90,6 +90,14 @@ describe('mIRRORS', () => {
 
 const PAIR = [{ source: 'src/conformance', mirror: 'mirror/conformance' }]
 
+function onlyPair(walk: ReturnType<typeof collect>) {
+  const [pair] = walk.pairs
+  if (!pair) {
+    throw new Error('the walk found no pair')
+  }
+  return pair
+}
+
 describe('collect', () => {
   it('reads both directories of a pair', () => {
     const root = tree({
@@ -97,10 +105,10 @@ describe('collect', () => {
       'mirror/conformance/Button.story.vue': 'a',
     })
 
-    const { pairs } = collect(root, PAIR)
+    const pair = onlyPair(collect(root, PAIR))
 
-    expect(pairs[0].sourceFiles.get('Button.story.vue')).toBe('a')
-    expect(pairs[0].mirrorFiles.get('Button.story.vue')).toBe('a')
+    expect(pair.sourceFiles.get('Button.story.vue')).toBe('a')
+    expect(pair.mirrorFiles.get('Button.story.vue')).toBe('a')
   })
 
   // The invariant #719 asks every check for: it examined something, and can say
@@ -113,7 +121,7 @@ describe('collect', () => {
       'mirror/conformance/fixtures/Thing.vue': 'b',
     })
 
-    expect(collect(root, PAIR).pairs[0].examined).toEqual([
+    expect(onlyPair(collect(root, PAIR)).examined).toEqual([
       'src/conformance/Button.story.vue',
       'src/conformance/fixtures/Thing.vue',
       'mirror/conformance/Button.story.vue',
@@ -130,9 +138,9 @@ describe('collect', () => {
       'mirror/conformance/fixtures/Thing.vue': 'edited',
     })
 
-    const { pairs } = collect(root, PAIR)
+    const pair = onlyPair(collect(root, PAIR))
 
-    expect(compareMirror(pairs[0].sourceFiles, pairs[0].mirrorFiles)).toEqual([
+    expect(compareMirror(pair.sourceFiles, pair.mirrorFiles)).toEqual([
       { file: 'fixtures/Thing.vue', reason: 'differs' },
     ])
   })
@@ -140,7 +148,7 @@ describe('collect', () => {
   it('reports a directory that is not on disk rather than treating it as empty', () => {
     const root = tree({ 'src/conformance/Button.story.vue': 'a' })
 
-    expect(collect(root, PAIR).pairs[0].missing).toEqual(['mirror/conformance'])
+    expect(onlyPair(collect(root, PAIR)).missing).toEqual(['mirror/conformance'])
   })
 })
 
@@ -216,7 +224,9 @@ describe('walkProblems', () => {
 
     const walk = collect(root, PAIR)
 
-    expect(walk.pairs[0].examined).toHaveLength(walk.pairs[0].offered)
+    const pair = onlyPair(walk)
+
+    expect(pair.examined).toHaveLength(pair.offered)
     expect(walkProblems(walk)).toEqual([])
   })
 

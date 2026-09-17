@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { rootFromArgv } from './publishable.ts'
+import { captured } from './support/captured.ts'
 
 // `--root` so a spec can run this as a process over a tree where it has to
 // fail: the exit status is the verdict, and no spec reached it (#760).
@@ -66,13 +67,8 @@ export function sectionFor(changelog: string, version: string): string | undefin
     return undefined
   }
 
-  let end = lines.length
-  for (let index = start + 1; index < lines.length; index++) {
-    if (live[index] && endsSection(lines[index])) {
-      end = index
-      break
-    }
-  }
+  const next = lines.findIndex((line, index) => index > start && live[index] && endsSection(line))
+  const end = next === -1 ? lines.length : next
 
   const body = lines.slice(start + 1, end).join('\n').trim()
   return body.length > 0 ? body : undefined
@@ -143,7 +139,7 @@ export function freezeWarning(subjects: string[]): string[] {
 }
 
 export function releasedVersions(changelog: string): string[] {
-  return [...changelog.matchAll(/^## (v\d\S*)\s*$/gm)].map(match => match[1])
+  return [...changelog.matchAll(/^## (v\d\S*)\s*$/gm)].map(match => captured(match))
 }
 
 /**

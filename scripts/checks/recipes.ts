@@ -26,6 +26,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -67,7 +68,7 @@ export function section(markdown: string, heading: string): string | undefined {
 // fragment showing how to call something — and is not a file to match.
 export function tsBlocks(markdown: string): string[] {
   return [...markdown.matchAll(/```ts\n([\s\S]*?)```/g)]
-    .map(match => match[1].split('\n'))
+    .map(match => captured(match).split('\n'))
     .filter(lines => /^\/\/ [\w./-]+\.\w+$/.test(lines[0] ?? ''))
     .map(lines => lines.slice(1).join('\n'))
 }
@@ -118,6 +119,10 @@ function repositoryProblems(root = ROOT): string[] {
 
     blocks.forEach((block, index) => {
       const file = recipe.files[index]
+      if (file === undefined) {
+        problems.push(`${recipe.doc} "${recipe.heading}" block ${index} has no file matched against it`)
+        return
+      }
       const missing = missingLines(block, readFileSync(join(root, file), 'utf8'))
       if (missing.length > 0) {
         problems.push(`${file} no longer runs what "${recipe.heading}" publishes — the example guards a recipe nobody is being given. Missing: ${missing.map(line => JSON.stringify(line)).join(', ')}`)

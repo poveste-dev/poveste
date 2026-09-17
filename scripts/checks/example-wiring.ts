@@ -34,6 +34,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { captured } from './support/captured.ts'
 import { jobNames } from './versions.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
@@ -43,8 +44,8 @@ const REQUIRED = '.github/required-status-checks.txt'
 const BUILD_SCRIPT = 'story:build:e2e'
 
 export interface Ports {
-  preview?: number
-  dev?: number
+  preview?: number | undefined
+  dev?: number | undefined
 }
 
 interface WebServer {
@@ -59,7 +60,7 @@ export function matrixExamples(workflow: string): string[] {
 
 // `vue`, `vue:conformance` and `vue:dev` are one example with three projects.
 export function exampleNames(projects: string[]): string[] {
-  return [...new Set(projects.map(name => name.split(':')[0]))]
+  return [...new Set(projects.map(name => name.replace(/:.*$/s, '')))]
 }
 
 /**
@@ -78,7 +79,7 @@ export function conformanceBooks(projects: string[]): string[] {
 
 // pnpm takes `--filter=x` as well as `--filter x`.
 export function builtExamples(script: string | undefined): string[] {
-  return [...(script ?? '').matchAll(/--filter[= ]\.\/examples\/([\w.-]+)/g)].map(match => match[1])
+  return [...(script ?? '').matchAll(/--filter[= ]\.\/examples\/([\w.-]+)/g)].map(match => captured(match))
 }
 
 export function portOf(url: string | undefined): number | undefined {
@@ -155,7 +156,7 @@ export function duplicatePorts(ports: (number | undefined)[]): number[] {
  */
 export function guideExamples(markdown: string): { reference: string[], conformance: string[], fixtures: string[] } {
   const cell = (label: string) => markdown.match(new RegExp(`^\\| \\*\\*${label}\\*\\* \\|(.*)$`, 'm'))?.[1] ?? ''
-  const names = (row: string) => [...row.matchAll(/`([\w.-]+)`/g)].map(match => match[1])
+  const names = (row: string) => [...row.matchAll(/`([\w.-]+)`/g)].map(match => captured(match))
   return {
     reference: names(cell('Reference books')),
     conformance: names(cell('Conformance books')),
@@ -198,7 +199,7 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
 
   // The root config filters itself by this, and a CI job that sets it would make
   // every other example look missing.
-  delete process.env.POVESTE_E2E_EXAMPLE
+  delete process.env['POVESTE_E2E_EXAMPLE']
 
   const workflow = await readFile(join(root, WORKFLOW), 'utf8')
   const matrix = matrixExamples(workflow)

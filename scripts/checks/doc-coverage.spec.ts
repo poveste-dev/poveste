@@ -24,7 +24,7 @@ describe('entrypointsOf', () => {
 
     const entries = entrypointsOf('poveste', '/pkg', manifest, everythingExists)
 
-    expect(entries[0].specifier).toBe('poveste/client')
+    expect(entries[0]?.specifier).toBe('poveste/client')
   })
 
   it('skips a wildcard subpath rather than expanding it', () => {
@@ -66,7 +66,7 @@ describe('entrypointsOf', () => {
 
     const [entry] = entrypointsOf('@poveste/app', '/pkg', manifest, () => false)
 
-    expect(entry.resolved).toBe(false)
+    expect(entry?.resolved).toBe(false)
   })
 
   it('returns nothing for a package that declares no types at all', () => {
