@@ -1,12 +1,9 @@
 {
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
     "lib": [
       "ESNext"
     ],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
     "typeRoots": [
       "../packages/poveste/node_modules/@types"
     ],
@@ -14,9 +11,7 @@
       "node"
     ],
     "allowImportingTsExtensions": true,
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true
+    "noEmit": true
   },
   "include": [
     "*.ts",
