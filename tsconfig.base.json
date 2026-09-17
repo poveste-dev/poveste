@@ -10,7 +10,6 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "alwaysStrict": true,
-    "noImplicitAny": false,
     "noImplicitThis": true,
     "removeComments": false,
     "sourceMap": false,

@@ -268,7 +268,7 @@ const results = computed<SearchResult[]>(() => {
     ...commandResults.value,
     ...titleResults.value,
   ]
-  const seen = {}
+  const seen: Record<string, boolean> = {}
   for (const r of titleResults.value) {
     seen[r.id] = true
   }

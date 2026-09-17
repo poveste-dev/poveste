@@ -40,7 +40,7 @@ function printLines(lines: Line[]) {
   return lines.map(line => '  '.repeat(line.spaces) + line.line).join('\n')
 }
 
-function objectToSourceLines(object, seen: Set<unknown>, indentCount = 0) {
+function objectToSourceLines(object: object, seen: Set<unknown>, indentCount = 0): Array<Line> {
   if (seen.has(object)) {
     object = {}
   }
@@ -52,7 +52,7 @@ function objectToSourceLines(object, seen: Set<unknown>, indentCount = 0) {
     lines.push('{')
     lines.push(...createLines(1, (lines) => {
       for (const key in object) {
-        const value = object[key]
+        const value = Reflect.get(object, key)
 
         let printedKey = key
         if (KEY_ESCAPE_REG.test(key)) {
@@ -108,7 +108,7 @@ function createLines(indentCount: number, handler: (lines: any[]) => unknown): A
   })
 }
 
-function addLinesFromValue(lines: Line[], value, before, after, seen) {
+function addLinesFromValue(lines: Array<Line | string>, value: unknown, before: string, after: string, seen: Set<unknown>) {
   let result
   if (Array.isArray(value)) {
     lines.push(...wrap(arrayToSourceLines(value, seen), before, after))

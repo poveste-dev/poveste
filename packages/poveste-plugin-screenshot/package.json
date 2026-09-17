@@ -62,6 +62,7 @@
     "pathe": "^1.1.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.1",
     "poveste": "workspace:*",
     "typescript": "catalog:",

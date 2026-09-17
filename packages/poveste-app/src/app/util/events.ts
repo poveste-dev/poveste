@@ -1,7 +1,7 @@
 import { EVENT_SEND } from './const'
 import { occupant } from './occupant'
 
-export async function logEvent(name: string, argument) {
+export async function logEvent(name: string, argument: unknown) {
   const event = {
     name,
     argument: JSON.parse(stringifyEvent(argument)), // Needed for HTMLEvent that can't be cloned
@@ -20,10 +20,11 @@ export async function logEvent(name: string, argument) {
   }
 }
 
-function stringifyEvent(e) {
-  const obj = {}
-  for (const k in e) {
-    obj[k] = e[k]
+function stringifyEvent(e: unknown) {
+  const obj: Record<string, unknown> = {}
+  // `for...in` rather than `Object.entries`: an event's fields are inherited.
+  for (const k in e as object) {
+    obj[k] = Reflect.get(e as object, k)
   }
   return JSON.stringify(obj, (k, v) => {
     if (v instanceof Node) return 'Node'

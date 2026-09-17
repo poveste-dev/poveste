@@ -1,9 +1,9 @@
 import { clone, omit } from '@poveste/shared'
 import { isRef, unref } from 'vue'
 
-const isObject = val => val !== null && typeof val === 'object'
+const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
 
-export function toRawDeep(val, clean = false, seen = new WeakMap()) {
+export function toRawDeep(val: unknown, clean = false, seen = new WeakMap()): any {
   const unwrappedValue = isRef(val) ? unref(val) : val
 
   if (typeof unwrappedValue === 'symbol') {
@@ -31,7 +31,7 @@ export function toRawDeep(val, clean = false, seen = new WeakMap()) {
   else {
     const result = {}
     seen.set(unwrappedValue, result)
-    toRawObject(unwrappedValue, result, clean, seen)
+    toRawObject(unwrappedValue as Record<any, any>, result, clean, seen)
     return result
   }
 }

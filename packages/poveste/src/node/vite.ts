@@ -372,7 +372,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   }
 
   // Replace dev flag
-  const flags = {
+  const flags: Record<string, string> = {
     '_ctx.__POVESTE_DEV__': JSON.stringify(ctx.mode === 'dev'),
     '__POVESTE_DEV__': JSON.stringify(ctx.mode === 'dev'),
   }

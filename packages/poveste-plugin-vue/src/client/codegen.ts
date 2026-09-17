@@ -43,7 +43,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
     ]
 
     // Directives
-    function genDirective(dirName: string, dir, valueCode: string | null = null) {
+    function genDirective(dirName: string, dir: { arg?: string | null, modifiers?: Partial<Record<string, boolean>>, value: unknown }, valueCode: string | null = null) {
       let modifiers = ''
       for (const key in dir.modifiers) {
         if (dir.modifiers[key]) {

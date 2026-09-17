@@ -113,7 +113,7 @@ export default _defineComponent({
         },
       }
 
-      const onMount = props.variant.slots?.()[props.slotName] as VanillaApi['onMount'] | VanillaApi['onMountControls'] | undefined
+      const onMount = Reflect.get(props.variant.slots?.() ?? {}, props.slotName) as VanillaApi['onMount'] | VanillaApi['onMountControls'] | undefined
       await onMount?.(api)
 
       sandbox.value?.appendChild(app.el)

@@ -2,7 +2,7 @@ import { applyState, clone } from '@poveste/shared'
 import { watch as _watch } from '@poveste/vendors/vue'
 
 function cleanupState(state: Record<string, any>): Record<string, any> {
-  const result = {}
+  const result: Record<string, any> = {}
   for (const key in state) {
     if (key === 'Hst') continue
     const value = state[key]
@@ -15,7 +15,7 @@ function cleanupState(state: Record<string, any>): Record<string, any> {
   return result
 }
 
-export function syncState(variantState, onChange: (state) => unknown) {
+export function syncState(variantState: Record<string, any>, onChange: (state: Record<string, any>) => unknown) {
   // Same flag, same #95 caveat as `plugin-vue` and the sandbox bridge: `apply`
   // may only claim the next firing when its write will actually cause one, and
   // `applyState` reports that. It matters more here than anywhere else, because
@@ -45,7 +45,7 @@ export function syncState(variantState, onChange: (state) => unknown) {
     immediate: true,
   })
 
-  function apply(value) {
+  function apply(value: Record<string, any> | null | undefined) {
     if (value == null) return
     if (syncing) {
       syncing = false

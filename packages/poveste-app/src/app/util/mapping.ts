@@ -28,7 +28,7 @@ export function mapFile(file: StoryFile, existingFile?: StoryFile): StoryFile {
         }
       }
       else if (key !== 'component') {
-        result[key] = file[key]
+        Reflect.set(result, key, Reflect.get(file, key))
       }
     }
   }
@@ -58,7 +58,7 @@ export function mapVariant(variant: Variant, existingVariant?: Variant): Variant
     result = existingVariant
     for (const key in variant) {
       if (!copiedFromExistingVariant.includes(key)) {
-        result[key] = variant[key]
+        Reflect.set(result, key, Reflect.get(variant, key))
       }
     }
   }

@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 export const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://github.com/vitejs/vite/issues/9661
-const alias = {
+const alias: Record<string, string> = {
   '@poveste/vendors/vue': path.resolve(__dirname, '../vendors/vue.js'),
   '@poveste/controls': path.resolve(__dirname, '../vendors/controls.js'),
 }

@@ -54,7 +54,7 @@ export default _defineComponent({
 
     let tearDownHandlers: (() => void)[] = []
 
-    function documentOn(event, cb) {
+    function documentOn(event: string, cb: (event: Event) => void) {
       document.addEventListener(event, cb)
       const off = () => document.removeEventListener(event, cb)
       tearDownHandlers.push(off)
@@ -74,7 +74,8 @@ export default _defineComponent({
       // Svelte component instances, announced as they register.
       let components: any[] = []
       const { off: registerComponentOff } = documentOn('SvelteRegisterComponent', (e) => {
-        const { component } = e.detail
+        // Svelte's dev runtime dispatches this as a CustomEvent.
+        const { component } = (e as CustomEvent).detail
         components.push(component)
       })
 
@@ -108,7 +109,7 @@ export default _defineComponent({
           return
         }
 
-        appComponent.$replace = (...args) => {
+        appComponent.$replace = (...args: unknown[]) => {
           const result = origReplace.apply(appComponent, args)
           appComponent = result ?? appComponent
           return result
@@ -185,12 +186,12 @@ export default _defineComponent({
 
 function getControls() {
   const result: Record<string, any> = {}
-  for (const key in components) {
-    result[key.substring(3)] = wrapComponent(components[key])
+  for (const [key, component] of Object.entries(components)) {
+    result[key.substring(3)] = wrapComponent(component)
   }
   return result
 }
 
-function wrapComponent(controlComponent) {
+function wrapComponent(controlComponent: unknown) {
   return createWrappedComponent(Wrap, controlComponent)
 }

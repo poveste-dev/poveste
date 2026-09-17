@@ -21,10 +21,12 @@ const JSDOM_ERROR_UNHANDLED_EXCEPTION = 'unhandled-exception'
 function createVirtualConsole(): VirtualConsole | undefined {
   if (!console || !globalThis.console) return undefined
   const virtualConsole = new VirtualConsole().forwardTo(globalThis.console, { jsdomErrors: 'none' })
-  virtualConsole.on('jsdomError', (err: Error & { type?: string, cause?: { stack?: string } }) => {
-    if (err.type === JSDOM_ERROR_CSS_PARSING) return
-    if (err.type === JSDOM_ERROR_UNHANDLED_EXCEPTION) {
-      globalThis.console.error(err.cause?.stack ?? err.message)
+  virtualConsole.on('jsdomError', (err: Error) => {
+    // jsdom's own error types carry `type`, which its typings leave off `Error`.
+    const type = Reflect.get(err, 'type')
+    if (type === JSDOM_ERROR_CSS_PARSING) return
+    if (type === JSDOM_ERROR_UNHANDLED_EXCEPTION) {
+      globalThis.console.error((err.cause instanceof Error ? err.cause.stack : undefined) ?? err.message)
     }
     else {
       globalThis.console.error(err.message)
@@ -49,9 +51,9 @@ export function createDomEnv() {
   const { keys, originals } = populateGlobal(globalThis, dom.window, { bindFunctions: true })
 
   function destroy() {
-    keys.forEach(key => delete globalThis[key])
+    keys.forEach(key => Reflect.deleteProperty(globalThis, key))
     originals.forEach((v, k) => {
-      globalThis[k] = v
+      Reflect.set(globalThis, k, v)
     })
   }
 

@@ -33,9 +33,9 @@ const formattedOptions: ComputedRef<HstControlOption[]> = computed(() => {
     })
   }
   else {
-    return Object.keys(props.options).map((value: string) => ({
+    return Object.entries(props.options).map(([value, label]) => ({
       value,
-      label: props.options[value],
+      label: String(label),
     }))
   }
 })

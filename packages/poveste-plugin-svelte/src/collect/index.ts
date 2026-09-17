@@ -24,7 +24,7 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
       },
     },
     context: new Map(Object.entries({
-      __pvtAddStory(data) {
+      __pvtAddStory(data: (typeof storyData)[number]) {
         storyData.push(data)
       },
       __pvtStoryFile: file,

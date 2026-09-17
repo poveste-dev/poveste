@@ -292,18 +292,18 @@ const HSL = new RegExp(
   `^hsla?\\(\\s*(${VALUE}(?:deg|rad|grad|turn)?)${SEP}(${VALUE})${SEP}(${VALUE})(?:${ALPHA_SEP}(${VALUE}))?\\s*\\)$`,
 )
 
-export function parseColor(value) {
-  if (typeof value !== 'string') {
+export function parseColor(input: unknown) {
+  if (typeof input !== 'string') {
     return null
   }
 
-  value = value.trim()
+  const value = input.trim()
   if (value === 'transparent') {
     return { mode: 'rgb', color: ['0', '0', '0'], alpha: '0' }
   }
 
   const hex = value
-    .replace(SHORT_HEX, (_, r, g, b, a) => ['#', r, r, g, g, b, b, a ? a + a : ''].join(''))
+    .replace(SHORT_HEX, (_: string, r: string, g: string, b: string, a?: string) => ['#', r, r, g, g, b, b, a ? a + a : ''].join(''))
     .match(HEX)
 
   if (hex !== null) {

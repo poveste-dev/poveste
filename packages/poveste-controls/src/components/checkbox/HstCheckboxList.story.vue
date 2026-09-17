@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import HstCheckboxList from './HstCheckboxList.vue'
 
-const options = {
+const options: Record<string, string> = {
   'crash-bandicoot': 'Crash Bandicoot',
   'the-last-of-us': 'The Last of Us',
   'ghost-of-tsushima': 'Ghost of Tsushima',
