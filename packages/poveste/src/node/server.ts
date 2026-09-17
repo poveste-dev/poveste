@@ -145,13 +145,23 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     server: nodeServer,
     mainServer: server,
   }, ctx)
-  onOpen('destroyCollectStories', () => destroyCollectStories())
 
   // onStoryChange debouncing
   let queued = false
   let queuedFiles: ServerStoryFile[] = []
   let currentFiles: ServerStoryFile[] = []
   let queueTimer: ReturnType<typeof setTimeout> | undefined
+
+  // Collection stops with the server: no new pass starts, the one in flight is cut
+  // short and awaited, so nothing it does afterwards reaches a closed server (#878).
+  let closed = false
+  let inFlight: Promise<void> | undefined
+  onOpen('destroyCollectStories', async () => {
+    closed = true
+    clearTimeout(queueTimer)
+    await destroyCollectStories()
+    await inFlight
+  })
   let collecting = false
   let didAllStoriesYet = false
 
@@ -207,7 +217,15 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     }
   }))
 
-  async function collect() {
+  function collect(): Promise<void> {
+    if (closed) {
+      return Promise.resolve()
+    }
+    inFlight = runCollect()
+    return inFlight
+  }
+
+  async function runCollect() {
     collecting = true
 
     clearCache()
@@ -246,8 +264,14 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
         sendProgress()
       }))
 
+      if (closed) {
+        return
+      }
       didAllStoriesYet = true
       server.ws.send('poveste:all-stories-loaded', {})
+    }
+    if (closed) {
+      return
     }
     console.log(`Collect stories end ${pc.bold(pc.blue(Math.round(performance.now() - time)))}ms`)
 

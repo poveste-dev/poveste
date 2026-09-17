@@ -92,6 +92,8 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     })
   }
 
+  let destroying = false
+
   async function executeStoryFile(storyFile: ServerStoryFile) {
     // The channel belongs to this execution, and nothing used to close it. On a
     // build that fails, the executions still in flight are abandoned mid-run and
@@ -144,6 +146,11 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       finalData.title = storyFile.treePath.at(-1) ?? finalData.title
     }
     catch (e) {
+      // Work `destroy` cut short fails with whatever the pool or a closing server
+      // throws. That is the shutdown, not the story, so it is not reported (#878).
+      if (destroying && !options.throws) {
+        return
+      }
       // A Vite transform error carries the code frame on `frame`.
       const error = (e instanceof Error ? e : new Error(String(e))) as Error & { frame?: string }
       console.error(pc.red(`Error while collecting story ${storyFile.path}:\n${error.frame ? `${pc.bold(error.message)}\n${error.frame}` : error.stack}`))
@@ -157,6 +164,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   }
 
   async function destroy() {
+    destroying = true
     await threadPool.destroy()
   }
 
