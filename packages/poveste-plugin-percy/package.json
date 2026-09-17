@@ -65,7 +65,6 @@
   "dependencies": {
     "@percy/sdk-utils": "^1.30.4",
     "defu": "^6.1.4",
-    "fs-extra": "^11.2.0",
     "pathe": "^2.0.3"
   },
   "devDependencies": {
