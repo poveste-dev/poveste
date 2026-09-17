@@ -59,15 +59,22 @@ const canReset = computed(() => props.variant.state?._hPropState?.[props.compone
     :title="`${definition.name}${canReset ? ' *' : ''}`"
   >
     <template #actions>
-      <Icon
+      <button
         v-tooltip="'Remove override'"
-        icon="carbon:erase"
-        class="cursor-pointer w-4 h-4 hover:text-primary-500 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
+        type="button"
+        :aria-label="`Remove override of ${definition.name}`"
+        :disabled="!canReset"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
         :class="[
-          canReset ? 'opacity-50 hover:opacity-100' : 'opacity-25 pointer-events-none',
+          canReset ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
         ]"
         @click.stop="reset()"
-      />
+      >
+        <Icon
+          icon="carbon:erase"
+          class="w-4 h-4"
+        />
+      </button>
     </template>
   </component>
 </template>
