@@ -6,19 +6,23 @@
  * visible cell whatever the strategy; the pool's win is every cell that enters
  * the window afterwards, so this tells a cold-boot grid from a retargeting one.
  *
- * Fling: a fixed distance per animation frame with no settle between frames
- * (#319). Paging scrolls one viewport and then waits, about 0.5 px/ms, so every
- * scroll event takes the prompt path and #301's deferral during fast scroll is
- * never exercised. `fastEvents` counts the events over #301's threshold by its
- * own formula: a fling run with none measured the prompt path, not a fling.
+ * Fling: a constant velocity held for a fixed time, with no settle (#319).
+ * Paging scrolls one viewport and then waits, about 0.5 px/ms, so every scroll
+ * event takes the prompt path and #301's deferral during fast scroll is never
+ * exercised. The fling sets `scrollTop = start + velocity × elapsed` each frame,
+ * so it keeps its speed however slow the frames are; it added a fixed distance
+ * per frame until #872, which slowed with the page and mostly never reached the
+ * fast path. Every run records the velocity each scroll event measured, by #301's
+ * own formula, so a fling that did not fling shows in its own output.
  *
  *   node bench/grid-scroll.mjs <baseURL> <storyId> [steps=6] [runs=5]
- *   node bench/grid-scroll.mjs <baseURL> <storyId> --fling [frames=24] [px=200] [runs=5]
+ *   node bench/grid-scroll.mjs <baseURL> <storyId> --fling [ms=400] [pxPerMs=12] [runs=5]
  */
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { chromium } from '@playwright/test'
 import { median, range } from './grid-fill.mjs'
+import { LOAF_INIT, LOAF_KEYS, summarizeLoaf } from './loaf.mjs'
 
 // stdout is the interface: results are JSON or a table for the terminal.
 /* eslint-disable no-console */
@@ -116,7 +120,12 @@ export async function measureGridScroll({ baseURL, storyId, steps = 6, runs = 5,
   }
 }
 
-export async function measureGridFling({ baseURL, storyId, frames = 24, px = 200, runs = 5, viewport = { width: 1280, height: 800 }, log = () => {} }) {
+/**
+ * `plant` puts `sandboxRafMs` of busy work in one sandbox's `requestAnimationFrame`
+ * during the fling: the case `longtask` read as nothing, so the smoke check can
+ * assert the instrument still sees it (#872). Never set for a measurement.
+ */
+export async function measureGridFling({ baseURL, storyId, ms = 400, pxPerMs = 12, runs = 5, plant, viewport = { width: 1280, height: 800 }, log = () => {} }) {
   const browser = await chromium.launch()
   const perRun = []
   try {
@@ -124,10 +133,11 @@ export async function measureGridFling({ baseURL, storyId, frames = 24, px = 200
       const context = await browser.newContext({ viewport })
       const page = await context.newPage()
       await page.addInitScript(INIT)
+      await page.addInitScript(LOAF_INIT)
       await page.goto(`${baseURL}/story/${storyId}`, { waitUntil: 'commit' })
       await settle(page, () => window.__bench?.ready ?? 0, 3_000, 90_000)
 
-      const fling = await page.evaluate(async ({ selector, frames, px }) => {
+      const fling = await page.evaluate(async ({ selector, ms, pxPerMs, plant }) => {
         const scroller = document.querySelector(selector)
         if (!scroller) {
           return { error: `no element matches ${selector}` }
@@ -144,14 +154,24 @@ export async function measureGridFling({ baseURL, storyId, frames = 24, px = 200
           lastT = now
         }
         scroller.addEventListener('scroll', onScroll, { passive: true })
+        const start = scroller.scrollTop
+        const end = scroller.scrollHeight - scroller.clientHeight
         const t0 = performance.now()
-        // Paced by frames, not by time: a page slow to return frames flings
-        // slower, which is the cost a user feels rather than an artefact.
+        let planted = false
         await new Promise((resolve) => {
-          let n = 0
           const tick = () => {
-            scroller.scrollTop += px
-            if (++n < frames) {
+            const elapsed = performance.now() - t0
+            scroller.scrollTop = Math.min(end, start + pxPerMs * elapsed)
+            if (plant && !planted) {
+              // Built inside the sandbox's own realm, so the frame attributes it
+              // to the sandbox rather than to the host that asked for it.
+              const sandbox = document.querySelector('[data-testid="preview-iframe"]')?.contentWindow
+              if (sandbox) {
+                planted = true
+                sandbox.Function('ms', 'requestAnimationFrame(() => { const until = performance.now() + ms; while (performance.now() < until) {} })')(plant.sandboxRafMs)
+              }
+            }
+            if (elapsed < ms && scroller.scrollTop < end) {
               requestAnimationFrame(tick)
             }
             else {
@@ -162,35 +182,48 @@ export async function measureGridFling({ baseURL, storyId, frames = 24, px = 200
         })
         const t1 = performance.now()
         scroller.removeEventListener('scroll', onScroll)
-        return { t1, flingMs: t1 - t0, readyBefore, readyDuringFling: window.__bench.ready - readyBefore, velocities }
-      }, { selector: SCROLLER, frames, px })
+        // One more frame, so a planted callback queued on the last tick has run.
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        return { t0, t1, flingMs: t1 - t0, distance: scroller.scrollTop - start, planted, readyBefore, readyDuringFling: window.__bench.ready - readyBefore, velocities }
+      }, { selector: SCROLLER, ms, pxPerMs, plant })
       if (fling.error) {
         throw new Error(fling.error)
+      }
+      if (plant && !fling.planted) {
+        throw new Error('asked to plant sandbox work, but the grid had no sandbox iframe to plant it in')
       }
 
       const readyAfter = await settle(page, () => window.__bench?.ready ?? 0, 1_500, 30_000)
       const lastReadyAt = await page.evaluate(() => window.__bench.readyAt.at(-1))
+      // Frames that started while the fling ran, including the one it waited out.
+      const loaf = summarizeLoaf(await page.evaluate(() => window.__loaf), { from: fling.t0, to: fling.t1 + 100 })
       const run = {
         scrollEvents: fling.velocities.length,
         fastEvents: fling.velocities.filter(v => v > FAST_PX_PER_MS).length,
+        velocityMedian: fling.velocities.length ? Math.round(median(fling.velocities.map(v => v * 100)) / 100) : null,
+        velocities: fling.velocities.map(v => Math.round(v * 10) / 10),
+        distance: Math.round(fling.distance),
         readyTotal: readyAfter - fling.readyBefore,
         readyDuringFling: fling.readyDuringFling,
         flingMs: Math.round(fling.flingMs),
         settleMs: lastReadyAt > fling.t1 ? Math.round(lastReadyAt - fling.t1) : 0,
+        ...loaf,
       }
       perRun.push(run)
-      log(`  run ${i + 1}/${runs}: events=${run.scrollEvents} fast=${run.fastEvents} ready=${run.readyTotal} (during fling ${run.readyDuringFling}) fling=${run.flingMs}ms settle=${run.settleMs}ms`)
+      log(`  run ${i + 1}/${runs}: events=${run.scrollEvents} fast=${run.fastEvents} v=${run.velocityMedian}px/ms ready=${run.readyTotal} (during fling ${run.readyDuringFling}) fling=${run.flingMs}ms sandboxScript=${run.sandboxScriptMs}ms hostScript=${run.hostScriptMs}ms longFrames=${run.longFrames} worst=${run.worstFrameMs}ms`)
       await context.close()
     }
   }
   finally {
     await browser.close()
   }
-  const result = { storyId, frames, px, runs }
-  for (const key of ['scrollEvents', 'fastEvents', 'readyTotal', 'readyDuringFling', 'flingMs', 'settleMs']) {
+  const result = { storyId, ms, pxPerMs, runs }
+  for (const key of ['scrollEvents', 'fastEvents', 'velocityMedian', 'distance', 'readyTotal', 'readyDuringFling', 'flingMs', 'settleMs', ...LOAF_KEYS]) {
     result[key] = median(perRun.map(r => r[key]))
     result[`${key}Range`] = range(perRun.map(r => r[key]))
   }
+  // The manipulation check, kept whole: a median hides a run that never flung.
+  result.velocitiesPerRun = perRun.map(r => r.velocities)
   return result
 }
 
@@ -198,12 +231,12 @@ async function main() {
   const args = process.argv.slice(2)
   const [baseURL, storyId] = args
   if (!baseURL || !storyId) {
-    console.error('usage: node bench/grid-scroll.mjs <baseURL> <storyId> [steps] [runs]\n       node bench/grid-scroll.mjs <baseURL> <storyId> --fling [frames] [px] [runs]')
+    console.error('usage: node bench/grid-scroll.mjs <baseURL> <storyId> [steps] [runs]\n       node bench/grid-scroll.mjs <baseURL> <storyId> --fling [ms] [pxPerMs] [runs]')
     process.exit(2)
   }
   if (args[2] === '--fling') {
-    const [frames = '24', px = '200', runs = '5'] = args.slice(3)
-    console.log(JSON.stringify(await measureGridFling({ baseURL, storyId, frames: Number(frames), px: Number(px), runs: Number(runs), log: console.error })))
+    const [ms = '400', pxPerMs = '12', runs = '5'] = args.slice(3)
+    console.log(JSON.stringify(await measureGridFling({ baseURL, storyId, ms: Number(ms), pxPerMs: Number(pxPerMs), runs: Number(runs), log: console.error })))
     return
   }
   const [steps = '6', runs = '5'] = args.slice(2)

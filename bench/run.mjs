@@ -50,7 +50,7 @@ async function waitForHttp(url, timeoutMs = 60_000) {
  * Builds, serves and measures each example, and returns the report `--json` prints.
  * Exported so `smoke.spec.ts` runs the same instrument in-process.
  */
-export async function runBench({ examples, sizes, runs, log = console.error }) {
+export async function runBench({ examples, sizes, runs, plant, log = console.error }) {
   const report = []
 
   for (const [i, example] of examples.entries()) {
@@ -87,7 +87,7 @@ export async function runBench({ examples, sizes, runs, log = console.error }) {
       report.push({ example, kind: 'scroll', size: largest, ...paging })
 
       log(`--- ${example} grid scroll, fling, V=${largest}, ${runs} runs ---`)
-      const fling = await measureGridFling({ baseURL, storyId: `bench-grid-${largest}`, runs, log })
+      const fling = await measureGridFling({ baseURL, storyId: `bench-grid-${largest}`, runs, plant, log })
       report.push({ example, kind: 'fling', size: largest, ...fling })
     }
     finally {
@@ -104,30 +104,31 @@ export async function runBench({ examples, sizes, runs, log = console.error }) {
 
 function printTable(report) {
   const pad = (s, n) => String(s ?? '—').padStart(n)
-  console.log('\nexample    kind     V      cells  first   t10    last   blocked  last range')
+  console.log('\nexample    kind     V      cells  first   t10    last   sandbox  host   frames>50  blocked  last range')
   for (const r of report) {
     if (r.kind === 'grid') {
-      console.log(`${r.example.padEnd(10)} grid   ${pad(r.size, 5)}  ${pad(r.cells, 5)}  ${pad(r.first, 5)}  ${pad(r.t10, 5)}  ${pad(r.last, 5)}  ${pad(r.blocked, 7)}  ${r.lastRange}`)
+      console.log(`${r.example.padEnd(10)} grid   ${pad(r.size, 5)}  ${pad(r.cells, 5)}  ${pad(r.first, 5)}  ${pad(r.t10, 5)}  ${pad(r.last, 5)}  ${pad(r.sandboxScriptMs, 7)}  ${pad(r.hostScriptMs, 5)}  ${pad(r.longFrames, 9)}  ${pad(r.blocked, 7)}  ${r.lastRange}`)
     }
     else if (r.kind === 'sandbox') {
-      console.log(`${r.example.padEnd(10)} sandbox${pad(r.size, 5)}      —  ${pad(r.median, 5)}      —      —        —  ${r.range}`)
+      console.log(`${r.example.padEnd(10)} sandbox${pad(r.size, 5)}      —  ${pad(r.median, 5)}      —      —        —      —          —        —  ${r.range}`)
     }
   }
 
   const scrolls = report.filter(r => r.kind === 'scroll' || r.kind === 'fling')
   if (scrolls.length) {
-    console.log('\nexample    kind     V      ms     range        mounts  range    fast events')
+    console.log('\nexample    kind     V      ms     range        mounts  range    fast events  px/ms  sandbox  host   frames>50  worst')
     for (const r of scrolls) {
       if (r.kind === 'scroll') {
         console.log(`${r.example.padEnd(10)} scroll ${pad(r.size, 5)}  ${pad(r.stepMs, 5)}  ${pad(r.stepRange, 11)}  ${pad(r.newReadyPerStep, 6)}  ${pad('per step', 8)}  —`)
       }
       else {
-        console.log(`${r.example.padEnd(10)} fling  ${pad(r.size, 5)}  ${pad(r.flingMs, 5)}  ${pad(r.flingMsRange, 11)}  ${pad(r.readyTotal, 6)}  ${pad(r.readyTotalRange, 8)}  ${r.fastEvents} of ${r.scrollEvents}`)
+        console.log(`${r.example.padEnd(10)} fling  ${pad(r.size, 5)}  ${pad(r.flingMs, 5)}  ${pad(r.flingMsRange, 11)}  ${pad(r.readyTotal, 6)}  ${pad(r.readyTotalRange, 8)}  ${pad(`${r.fastEvents} of ${r.scrollEvents}`, 11)}  ${pad(r.velocityMedian, 5)}  ${pad(r.sandboxScriptMs, 7)}  ${pad(r.hostScriptMs, 5)}  ${pad(r.longFrames, 9)}  ${pad(r.worstFrameMs, 5)}`)
       }
     }
   }
-  console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport; "blocked" = long-task time over 50ms)')
-  console.log('(scroll: ms per paged step after the 1.5s settle; fling: ms to deliver its frames, mounts across fling and settle)')
+  console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport)')
+  console.log('("sandbox"/"host" = long-animation-frame script time by windowAttribution; "blocked" = long-task time over 50ms, which misses rendering-step work)')
+  console.log('(scroll: ms per paged step after the 1.5s settle; fling: its time-based duration, mounts across fling and settle, measured px/ms per event)')
 }
 
 async function main() {

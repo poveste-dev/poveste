@@ -3,13 +3,16 @@
  *
  * Records the arrival time of every SANDBOX_READY message in the app window,
  * in fresh browser contexts, and reports medians with ranges — a single run on
- * this suite has a measured ~26% spread.
+ * this suite has a measured ~26% spread. Main-thread cost is read from long
+ * animation frames (see loaf.mjs); `blocked`, from long tasks, stays beside it
+ * for comparison with older reports, and misses work in rendering steps.
  *
  *   node bench/grid-fill.mjs <baseURL> <storyId> [runs=7]
  */
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { chromium } from '@playwright/test'
+import { LOAF_INIT, LOAF_KEYS, summarizeLoaf } from './loaf.mjs'
 
 // stdout is the interface: results are JSON or a table for the terminal.
 /* eslint-disable no-console */
@@ -69,15 +72,17 @@ export async function measureGridFill({ baseURL, storyId, runs = 7, viewport = {
       const context = await browser.newContext({ viewport })
       const page = await context.newPage()
       await page.addInitScript(INIT)
+      await page.addInitScript(LOAF_INIT)
       await page.goto(`${baseURL}/story/${storyId}`, { waitUntil: 'commit' })
       await settle(page)
 
       const data = await page.evaluate(() => window.__bench)
       const ready = data.ready.slice().sort((a, b) => a - b)
       const at = n => (ready[n - 1] !== undefined ? Math.round(ready[n - 1]) : null)
-      const run = { cells: ready.length, first: at(1), t10: at(10), last: at(ready.length), blocked: Math.round(data.blocked) }
+      const loaf = summarizeLoaf(await page.evaluate(() => window.__loaf))
+      const run = { cells: ready.length, first: at(1), t10: at(10), last: at(ready.length), blocked: Math.round(data.blocked), ...loaf }
       results.push(run)
-      log(`  run ${i + 1}/${runs}: cells=${run.cells} first=${run.first} t10=${run.t10} last=${run.last} blocked=${run.blocked}ms`)
+      log(`  run ${i + 1}/${runs}: cells=${run.cells} first=${run.first} t10=${run.t10} last=${run.last} sandboxScript=${run.sandboxScriptMs}ms hostScript=${run.hostScriptMs}ms longFrames=${run.longFrames} blocked=${run.blocked}ms`)
       await context.close()
     }
   }
@@ -94,6 +99,7 @@ export async function measureGridFill({ baseURL, storyId, runs = 7, viewport = {
     t10: median(col('t10')),
     last: median(col('last')),
     blocked: median(col('blocked')),
+    ...Object.fromEntries(LOAF_KEYS.map(key => [key, median(col(key))])),
     lastRange: range(col('last')),
   }
 }
