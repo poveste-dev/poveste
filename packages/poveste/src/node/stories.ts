@@ -3,8 +3,8 @@ import type { Context } from './context.js'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
 import { globby } from 'globby'
-import micromatch from 'micromatch'
 import { basename, resolve } from 'pathe'
+import picomatch from 'picomatch'
 import { createWatchIgnore } from './util/watch-ignore.js'
 
 type StoryChangeHandler = (file?: ServerStoryFile) => unknown
@@ -99,7 +99,7 @@ export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
   let supportPluginId: string | undefined
 
   for (const p of context.config.supportMatch) {
-    if (micromatch.isMatch(absoluteFilePath, p.patterns, {
+    if (picomatch.isMatch(absoluteFilePath, p.patterns, {
       dot: true,
     })) {
       supportPluginId = p.pluginIds[0]
