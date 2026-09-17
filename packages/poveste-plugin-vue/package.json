@@ -85,9 +85,10 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "globby": "^16.2.4",
+    "ignore": "^7.0.6",
     "launch-editor": "^2.9.1",
-    "pathe": "^2.0.3"
+    "pathe": "^2.0.3",
+    "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

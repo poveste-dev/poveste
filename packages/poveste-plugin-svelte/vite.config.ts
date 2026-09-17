@@ -1,7 +1,7 @@
 import { escapeRegExp } from '@poveste/shared'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import fs from 'fs-extra'
-import { globbySync } from 'globby'
+import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 import pkg from './package.json'
 
@@ -20,7 +20,7 @@ export default defineConfig({
       },
       closeBundle() {
         try {
-          const rawSvelteFiles = globbySync([
+          const rawSvelteFiles = globSync([
             'src/client/**/*.svelte',
             'src/collect/**/*.svelte',
           ])
@@ -32,7 +32,7 @@ export default defineConfig({
             fs.copyFileSync(file, target)
           }
 
-          const files = globbySync('./dist/**/*.js')
+          const files = globSync('./dist/**/*.js')
           for (const file of files) {
             let content = fs.readFileSync(file, 'utf-8')
             let updated = false

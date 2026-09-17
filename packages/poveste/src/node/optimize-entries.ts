@@ -1,6 +1,6 @@
 import type { PovesteConfig } from '@poveste/shared'
-import { globbySync } from 'globby'
 import { resolve } from 'pathe'
+import { globSync } from 'tinyglobby'
 
 // Vite pre-bundles whatever its dependency scanner reaches by crawling
 // `optimizeDeps.entries`. Two things in a book route around that scan:
@@ -25,7 +25,7 @@ export function optimizeEntries(
 ): string[] {
   // Same call the collector makes, so the scanner sees exactly the story set the
   // book will load — no stale `dist/` copies the book itself excludes.
-  const stories = globbySync(config.storyMatch, {
+  const stories = globSync(config.storyMatch, {
     cwd: root,
     ignore: config.storyIgnored,
     absolute: true,

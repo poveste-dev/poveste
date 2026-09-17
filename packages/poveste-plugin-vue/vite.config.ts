@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { globbySync } from 'globby'
+import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
 
 // Externalize every declared dependency/peer so the lib build emits bare
@@ -23,7 +23,7 @@ export default defineConfig({
       },
       closeBundle() {
         try {
-          const files = globbySync('./dist/**/*.js')
+          const files = globSync('./dist/**/*.js')
           for (const file of files) {
             const content = fs.readFileSync(file, 'utf-8')
             if (content.includes('import__dyn')) {

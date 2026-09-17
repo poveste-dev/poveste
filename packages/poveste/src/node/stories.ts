@@ -2,9 +2,9 @@ import type { ServerStoryFile } from '@poveste/shared'
 import type { Context } from './context.js'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
-import { globby } from 'globby'
 import { basename, resolve } from 'pathe'
 import picomatch from 'picomatch'
+import { glob } from 'tinyglobby'
 import { createWatchIgnore } from './util/watch-ignore.js'
 
 type StoryChangeHandler = (file?: ServerStoryFile) => unknown
@@ -134,7 +134,7 @@ export function removeStory(relativeFilePath: string) {
 export async function findAllStories(newContext: Context) {
   context = newContext
 
-  const files = await globby(context.config.storyMatch, {
+  const files = await glob(context.config.storyMatch, {
     cwd: context.root,
     ignore: context.config.storyIgnored,
   })
