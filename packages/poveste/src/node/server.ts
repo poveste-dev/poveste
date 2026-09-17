@@ -20,7 +20,31 @@ export interface CreateServerOptions {
   host?: string | boolean | undefined
 }
 
+type OnOpen = (name: string, close: () => unknown) => void
+
+/**
+ * Starts the dev server. Everything it opens is recorded as it opens and released
+ * in reverse, by the returned `close` or by a start that fails before it could
+ * return one, so what is closed cannot drift from what was opened (#867).
+ */
 export async function createServer(ctx: Context, options: CreateServerOptions = {}) {
+  const opened: { name: string, close: () => unknown }[] = []
+  async function release() {
+    for (const { name, close } of opened.splice(0).reverse()) {
+      await wrapLogError(name, () => close())
+    }
+  }
+
+  try {
+    return await startServer(ctx, options, (name, close) => opened.push({ name, close }), release)
+  }
+  catch (error) {
+    await release()
+    throw error
+  }
+}
+
+async function startServer(ctx: Context, options: CreateServerOptions, onOpen: OnOpen, close: () => Promise<void>) {
   const getViteServer = async (collecting: boolean) => {
     const { viteConfig, viteConfigFile } = await getViteConfigWithPlugins(collecting, ctx)
     const serverConfig = viteConfig.server ??= {}
@@ -71,56 +95,49 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
 
   // Should be run sequentially to get a fresh vite.config.js each time
   const { server: nodeServer } = await getViteServer(true) // Run before normal vite to prevent breaking HMR in Nuxt
+  onOpen('nodeServer', () => nodeServer.close())
   const { server, viteConfigFile } = await getViteServer(false)
-  await watchStories(ctx)
+  onOpen('server.close', () => server.close())
+  const storyWatcher = await watchStories(ctx)
+  onOpen('storyWatcher', () => storyWatcher.close())
   const { stop: stopMdFileWatcher } = await createMarkdownFilesWatcher(ctx)
+  onOpen('stopMdFileWatcher', () => stopMdFileWatcher())
 
   const moduleLoader = useModuleLoader({
     server: nodeServer,
   })
 
-  // Closed by `close` and nothing else. The process cleanup runs as soon as
-  // `devCommand` returns, which is while this server is still serving.
+  // Not tied to the process cleanup, which runs as soon as `devCommand` returns,
+  // while this server is still serving.
   const watches = createManagedWatches()
+  onOpen('plugin watches', () => watches.close())
 
-  const pluginOnCleanups: (() => void | Promise<void>)[] = []
-  // A start that fails never hands back `close`, so what plugins opened is
-  // released here: the port being taken is enough to reach this.
-  try {
+  for (const plugin of ctx.config.plugins) {
+    if (plugin.onDev) {
+      const api = new DevPluginApi(ctx, plugin, moduleLoader, watches)
+      const onCleanup = (cb: () => void | Promise<void>) => {
+        onOpen('plugin.onDev.onCleanup', cb)
+      }
+      await plugin.onDev(api, onCleanup)
+    }
+  }
+
+  // Custom dev events
+  server.ws.on(`poveste:dev-event`, async ({ event, payload }) => {
     for (const plugin of ctx.config.plugins) {
-      if (plugin.onDev) {
-        const api = new DevPluginApi(ctx, plugin, moduleLoader, watches)
-        const onCleanup = (cb: () => void | Promise<void>) => {
-          pluginOnCleanups.push(cb)
-        }
-        await plugin.onDev(api, onCleanup)
-      }
-    }
-
-    // Custom dev events
-    server.ws.on(`poveste:dev-event`, async ({ event, payload }) => {
-      for (const plugin of ctx.config.plugins) {
-        if (plugin.onDevEvent) {
-          const api = new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload, watches)
-          const result = await plugin.onDevEvent(api)
-          if (!event.startsWith('on') && result !== undefined) {
-            server.ws.send(`poveste:dev-event-result`, { event, result })
-            break
-          }
+      if (plugin.onDevEvent) {
+        const api = new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload, watches)
+        const result = await plugin.onDevEvent(api)
+        if (!event.startsWith('on') && result !== undefined) {
+          server.ws.send(`poveste:dev-event-result`, { event, result })
+          break
         }
       }
-    })
-
-    // Wait for pre-bundling (in `listen()`)
-    await server.listen(options.port ?? server.config.server?.port)
-  }
-  catch (error) {
-    for (const cb of pluginOnCleanups) {
-      await wrapLogError('plugin.onDev.onCleanup', () => cb())
     }
-    await wrapLogError('plugin watches', () => watches.close())
-    throw error
-  }
+  })
+
+  // Wait for pre-bundling (in `listen()`)
+  await server.listen(options.port ?? server.config.server?.port)
 
   const {
     clearCache,
@@ -130,6 +147,7 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
     server: nodeServer,
     mainServer: server,
   }, ctx)
+  onOpen('destroyCollectStories', () => destroyCollectStories())
 
   // onStoryChange debouncing
   let queued = false
@@ -259,17 +277,6 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
   onMarkdownFileChange((file) => {
     invalidateModule(`/__resolved__virtual:md:${file.id}`)
   })
-
-  async function close() {
-    for (const cb of pluginOnCleanups) {
-      await wrapLogError('plugin.onDev.onCleanup', () => cb())
-    }
-    await wrapLogError('plugin watches', () => watches.close())
-    await wrapLogError('server.close', () => server.close())
-    await wrapLogError('nodeServer', () => nodeServer.close())
-    await wrapLogError('destroyCollectStories', () => destroyCollectStories())
-    await wrapLogError('stopMdFileWatcher', () => stopMdFileWatcher())
-  }
 
   collect()
 
