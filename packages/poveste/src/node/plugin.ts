@@ -10,8 +10,10 @@ import type {
   PovesteConfig,
   PreviewStoryCallback,
   ServerStory,
+  WatchCallback,
 } from '@poveste/shared'
 import type { Context } from './context.js'
+import type { ManagedWatches } from './util/managed-watches.js'
 import chokidar from 'chokidar'
 import fs from 'fs-extra'
 import path from 'pathe'
@@ -28,6 +30,8 @@ export class BasePluginApi implements PluginApiBase {
     protected ctx: Context,
     protected plugin: Plugin,
     public moduleLoader: ModuleLoader,
+    /** Absent where nothing should watch, which is a build. */
+    protected watches?: ManagedWatches,
   ) { }
 
   get pluginTempDir() {
@@ -57,6 +61,20 @@ export class BasePluginApi implements PluginApiBase {
 
   getConfig(): PovesteConfig {
     return this.ctx.config
+  }
+
+  watch(paths: string | string[], callback: WatchCallback): () => Promise<void> {
+    if (!this.watches) {
+      return async () => {}
+    }
+    return this.watches.watch(paths, async (event, path) => {
+      try {
+        await callback(event, path)
+      }
+      catch (e) {
+        this.error(e instanceof Error ? e.stack ?? e.message : String(e))
+      }
+    })
   }
 }
 
@@ -89,7 +107,8 @@ export class DevEventPluginApi extends BasePluginApi implements PluginApiDevEven
     moduleLoader: ModuleLoader,
     public event: string,
     public payload: any,
+    watches?: ManagedWatches,
   ) {
-    super(ctx, plugin, moduleLoader)
+    super(ctx, plugin, moduleLoader, watches)
   }
 }
