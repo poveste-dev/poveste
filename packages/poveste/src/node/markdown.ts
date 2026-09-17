@@ -84,11 +84,22 @@ export async function createMarkdownRenderer(ctx: Context) {
     breaks: false,
   })
 
+  // markdown-it 15's linkify-it 6 stopped linking bare domains such as
+  // `www.example.com` by default. Docs written against the previous release
+  // relied on it, so it stays on.
+  md.linkify.set({ fuzzyLink: true })
+
   md.use(anchor, {
     slugify,
     permalink: anchor.permalink.ariaHidden({}),
+    // A repeated `{#id}` threw and took the whole build down without naming the
+    // file. Suffixed instead, the way two headings with the same text already are.
+    failOnNonUnique: false,
   })
-    .use(attrs)
+    // markdown-it-attrs 5 moves a fence's `{.class}` to `<pre>`, but only when
+    // its own CommonJS copy of markdown-it's fence rule is the one installed, so
+    // from this ESM import it happens not to. Pinned to `<code>`, where 4 put it.
+    .use(attrs, { fenceAttrsOnPre: false })
     .use(emoji)
 
   // External links
@@ -99,7 +110,8 @@ export async function createMarkdownRenderer(ctx: Context) {
 
     md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
       const token = tokens[idx]
-      const href = token.attrGet('href')
+      // markdown-it 15 types an attribute value as `string | number`.
+      const href = token.attrGet('href')?.toString() ?? null
 
       if (href !== null) {
         if (href.startsWith('.')) {
@@ -108,12 +120,12 @@ export async function createMarkdownRenderer(ctx: Context) {
           const query = queryIndex >= 0 ? href.slice(queryIndex) : ''
 
           // File lookup
-          const file = path.resolve(path.dirname(env.file), pathname)
+          const file = path.resolve(path.dirname(String(env?.file)), pathname)
           const storyFile = ctx.storyFiles.find(f => f.path === file)
           const mdFile = ctx.markdownFiles.find(f => f.absolutePath === file)
           const storyId = storyFile?.id ?? mdFile?.storyFile?.id
           if (!storyId) {
-            throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env.file}`))
+            throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env?.file}`))
           }
 
           // Add attributes
@@ -121,7 +133,7 @@ export async function createMarkdownRenderer(ctx: Context) {
           token.attrSet('href', newHref)
           token.attrSet('data-route', 'true')
         }
-        else if (!href.startsWith('/') && !href.startsWith('#') && !token.attrGet('class')?.includes('header-anchor')) {
+        else if (!href.startsWith('/') && !href.startsWith('#') && !token.attrGet('class')?.toString().includes('header-anchor')) {
           // Add target="_blank" to external links, replacing any target already set
           token.attrSet('target', '_blank')
         }

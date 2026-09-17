@@ -3,7 +3,7 @@ import { createWriteStream, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createContext } from '../context.js'
-import { createMarkdownFilesWatcher } from '../markdown.js'
+import { createMarkdownFilesWatcher, createMarkdownRenderer } from '../markdown.js'
 import { watchStories } from '../stories.js'
 
 describe('markdown', async () => {
@@ -38,6 +38,33 @@ describe('markdown', async () => {
     const { stop } = await createMarkdownFilesWatcher(ctx)
     expect(ctx.markdownFiles[0].html).toContain('<p>')
     stop()
+  })
+
+  it('links a bare domain and renders emoji shortcodes', async () => {
+    // markdown-it 15 turned fuzzy links off by default, and markdown-it-emoji
+    // 3.0 threw on it; docs written before either still expect both.
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('Visit www.example.com :tada:', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<a href="http://www.example.com" target="_blank">www.example.com</a>')
+    expect(html).toContain('🎉')
+  })
+
+  it('puts a fenced block\'s attributes on its code element', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('```js {.wide data-demo=1}\nconst a = 1\n```\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<pre><code class="wide language-js" data-demo="1">')
+  })
+
+  it('suffixes a heading id that is written twice rather than throwing', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('## Setup {#install}\n\n## Again {#install}\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<h2 id="install-1"')
   })
 
   it('should throw error on missing [md] story file.', async () => {
