@@ -61,9 +61,7 @@ const ROOT = join(import.meta.dirname, '..', '..')
  *
  * An entry goes stale the moment the file appears, so that fails too.
  */
-export const UNRESOLVED: Record<string, string> = {
-  '@poveste/app': 'declares `./dist/index.d.ts` and emits no declarations at all — its `types` field points at `./src/index.ts`. Predates #302 and is tracked as #312, which is also why `checks/publishable.ts` holds its `attw` run back',
-}
+export const UNRESOLVED: Record<string, string> = {}
 
 export interface Entrypoint {
   /** What a consumer writes, e.g. `poveste/client`. */

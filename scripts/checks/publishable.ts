@@ -13,14 +13,15 @@ import { fileURLToPath } from 'node:url'
 import { captured } from './support/captured.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const PUBLINT_RUNNER = join(dirname(fileURLToPath(import.meta.url)), 'support', 'publint-tarball.ts')
 const DEP_KEYS = ['dependencies', 'peerDependencies', 'optionalDependencies']
 
-// Published only so the workspace can depend on them, and consumed through
-// bundler resolution alone; their resolution defects predate #302 and are #312.
-const BUNDLER_ONLY_PACKAGES = new Set([
-  '@poveste/app',
-  '@poveste/controls',
-  '@poveste/vendors',
+// Packages attw does not check, each with the reason (#312). publint still checks
+// every one of them. `@poveste/controls` was here until its declarations imported
+// `./types` without the extension Node's ESM resolution needs; it passes now.
+const ATTW_SKIPPED = new Map([
+  ['@poveste/app', 'an untyped app bundle by decision (#362): `.` has no types, so attw can only report that it is untyped'],
+  ['@poveste/vendors', 'its subpaths have no node10 fallback, and its declarations import the copies in `dist/client/node_modules` that rollup scavenges (#305), which attw does not follow; it is consumed only through poveste\'s own bundler-resolved client'],
 ])
 
 interface Pkg {
@@ -352,6 +353,20 @@ function entrypointResolutionProblems(tarball: string, dest: string): string[] {
   return unacceptedResolutionProblems(problems)
 }
 
+/**
+ * What publint reports as errors in a packed tarball.
+ *
+ * It asks whether the manifest agrees with what was packed, which none of attw's
+ * resolution modes does: `@poveste/app` pointed `exports["."].types` at a file it
+ * never shipped, and attw, skipped for it anyway, described that only as an untyped
+ * resolution (#362). The question does not depend on how a consumer resolves, so
+ * it runs on every package with no skip list, at `error` level.
+ */
+function manifestLintProblems(tarball: string): string[] {
+  const output = execFileSync(process.execPath, [PUBLINT_RUNNER, tarball], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+  return JSON.parse(output)
+}
+
 // execFileSync's message is only `Command failed: <argv>`; the reason is on stderr.
 function describeError(err: any): string {
   const stderr = String(err.stderr ?? '').trim()
@@ -433,7 +448,10 @@ function repositoryProblems(root: string, { offline = false }: { offline?: boole
           problems.push(`${pkg.name} declares \`${entry}\` in \`files\` but ships nothing for it; renamed or mistyped?`)
         }
       }
-      if (!BUNDLER_ONLY_PACKAGES.has(pkg.name)) {
+      for (const error of manifestLintProblems(packed.tarball)) {
+        problems.push(`${pkg.name} fails publint: ${error}`)
+      }
+      if (!ATTW_SKIPPED.has(pkg.name)) {
         for (const entrypoint of entrypointResolutionProblems(packed.tarball, packed.dest)) {
           problems.push(`${pkg.name} advertises an entrypoint whose types do not resolve: ${entrypoint}`)
         }

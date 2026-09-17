@@ -259,6 +259,9 @@ importers:
       postcss:
         specifier: 'catalog:'
         version: 8.5.26
+      publint:
+        specifier: ^0.3.24
+        version: 0.3.24
       rimraf:
         specifier: ^6.0.1
         version: 6.1.2
@@ -3198,6 +3201,10 @@ packages:
 
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
+
+  '@publint/pack@0.1.7':
+    resolution: {integrity: sha512-4EDEmvxWtgsCnnVeBvtFIFZtUhPPt1+bA9JrSwU4Sa//6oKtzCSlGGXYJr44OD9aGISymbieJ4mCKHUygUDU+g==}
+    engines: {node: '>=18'}
 
   '@puppeteer/browsers@2.13.2':
     resolution: {integrity: sha512-5EUZSUIc37H6aIXyWO0Z4y8NlF8NnjgmqeQgOGiswAU7pY0HOo16ho4+alIWmSfdZnjqBRawMsP3I5YqLSn6kw==}
@@ -7628,6 +7635,11 @@ packages:
   pstree.remy@1.1.8:
     resolution: {integrity: sha512-77DZwxQmxKnu3aR542U+X8FypNzbfJ+C5XQDk3uWjWxn6151aIMGthWYRXTqT1E5oJvg+ljaa2OJi+VfvCOQ8w==}
 
+  publint@0.3.24:
+    resolution: {integrity: sha512-9zS56KrKBoqi5Qt8h92uMP8TTM9AYZSgnmCo4u2priMqkOZvQnTsziZ2p5LJ2ywbYkAjoCDp2jda9u4cgFefIw==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   pump@3.0.3:
     resolution: {integrity: sha512-todwxLMY7/heScKmntwQG8CXVkWUOdYxIvY2s0VWAAMh/nd8SoYiRaKjlr7+iCs984f2P8zvrfWcDDYVb73NfA==}
 
@@ -11647,6 +11659,10 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.3': {}
+
+  '@publint/pack@0.1.7':
+    dependencies:
+      tinyexec: 1.3.1
 
   '@puppeteer/browsers@2.13.2(supports-color@10.2.2)':
     dependencies:
@@ -16743,6 +16759,13 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   pstree.remy@1.1.8: {}
+
+  publint@0.3.24:
+    dependencies:
+      '@publint/pack': 0.1.7
+      package-manager-detector: 1.8.0
+      picocolors: 1.1.1
+      sade: 1.8.1
 
   pump@3.0.3:
     dependencies:

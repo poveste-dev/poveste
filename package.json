@@ -80,6 +80,7 @@
     "floating-vue": "5.2.2",
     "lint-staged": "^17.5.1",
     "postcss": "catalog:",
+    "publint": "^0.3.24",
     "rimraf": "^6.0.1",
     "simple-git-hooks": "^2.14.0",
     "svelte-eslint-parser": "^1.8.0",

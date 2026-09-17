@@ -64,4 +64,4 @@ export const components = {
   HstColorSelect,
 }
 
-export * from './types'
+export * from './types.js'
