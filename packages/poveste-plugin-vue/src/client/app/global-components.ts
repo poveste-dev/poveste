@@ -1,5 +1,6 @@
 import type {
   App as _App,
+  Component as _Component,
 } from '@poveste/vendors/vue'
 import type {
   App,
@@ -33,6 +34,11 @@ export function registerGlobalComponents(app: App) {
 }
 
 function wrapControlComponent(controlComponent: (typeof components)[keyof typeof components]) {
+  // Which control this is decides at runtime, and its props are the story's untyped
+  // attrs, so it renders through Vue's dynamic `Component` rather than a union of every
+  // control's props, where a slider would be claimed renderable without `min` (#835).
+  const dynamicControl: _Component = controlComponent
+
   return defineComponent({
     name: controlComponent.name,
     inheritAttrs: false,
@@ -85,7 +91,7 @@ function wrapControlComponent(controlComponent: (typeof components)[keyof typeof
             newSlotCalls = []
           },
           render() {
-            return _h(controlComponent, {
+            return _h(dynamicControl, {
               ...state,
               key: 'component',
             }, {
