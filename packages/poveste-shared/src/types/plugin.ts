@@ -61,16 +61,31 @@ export type WatchEvent = 'add' | 'change' | 'unlink'
 export type WatchCallback = (event: WatchEvent, path: string) => Awaitable<unknown>
 
 /**
- * What every plugin hook receives. `colors`, `path` and `fs` are Poveste's own
- * picocolors, pathe and fs-extra, handed over so a plugin can use them without
- * adding a second copy to the tree.
+ * What every plugin hook receives.
  *
  * Prefer `log`/`warn`/`error` over `console`: they prefix the plugin's name, so
  * a line in a busy build says what printed it.
  */
 export interface PluginApiBase {
+  /**
+   * Poveste's own picocolors.
+   *
+   * @deprecated Import `picocolors` directly. Works for the rest of 0.x and is removable at 1.0 (#356).
+   */
   colors: typeof pc
+  /**
+   * Poveste's own pathe.
+   *
+   * @deprecated Import `node:path`, or `pathe` for forward slashes on Windows. Works for the rest of
+   * 0.x and is removable at 1.0 (#356).
+   */
   path: typeof path
+  /**
+   * Poveste's own fs-extra.
+   *
+   * @deprecated Import `node:fs` or `node:fs/promises` directly. Works for the rest of 0.x and is
+   * removable at 1.0 (#356).
+   */
   fs: typeof fs
   moduleLoader: ModuleLoader
 
@@ -101,10 +116,15 @@ export interface PluginApiBase {
 }
 
 /**
- * {@link PluginApiBase} plus the file watcher, passed to `onDev`. Only the dev
- * server has one — a build never watches.
+ * {@link PluginApiBase} as passed to `onDev`.
  */
 export interface PluginApiDev extends PluginApiBase {
+  /**
+   * Poveste's own chokidar module. A watcher opened from it is the plugin's to close.
+   *
+   * @deprecated Use {@link PluginApiBase.watch}, which Poveste closes with the dev server. Works for
+   * the rest of 0.x and is removable at 1.0 (#356).
+   */
   watcher: typeof chokidar
 }
 

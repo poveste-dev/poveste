@@ -39,15 +39,15 @@ export class BasePluginApi implements PluginApiBase {
   }
 
   log(...msg: unknown[]) {
-    console.log(this.colors.gray(`[Plugin:${this.plugin.name}]`), ...msg)
+    console.log(pc.gray(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 
   warn(...msg: unknown[]) {
-    console.warn(this.colors.yellow(`[Plugin:${this.plugin.name}]`), ...msg)
+    console.warn(pc.yellow(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 
   error(...msg: unknown[]) {
-    console.error(this.colors.red(`[Plugin:${this.plugin.name}]`), ...msg)
+    console.error(pc.red(`[Plugin:${this.plugin.name}]`), ...msg)
   }
 
   addStoryFile(file: string) {
