@@ -106,9 +106,11 @@ describe('entrypointsOf, with nested conditions', () => {
   })
 })
 
+// One test over the whole list rather than one per entry: the list is empty since
+// #362, and a suite generated from an empty list has no test in it, which CI fails.
 describe('the UNRESOLVED list', () => {
-  it.for(Object.entries(UNRESOLVED).map(([name, reason]) => ({ name, reason })))('$name has a reason, not just a name', ({ reason }) => {
-    expect(reason).not.toHaveLength(0)
+  it('gives every entry a reason, not just a name', () => {
+    expect(Object.entries(UNRESOLVED).filter(([, reason]) => reason.length === 0).map(([name]) => name)).toEqual([])
   })
 })
 
@@ -143,13 +145,12 @@ describe('summarise', () => {
 })
 
 describe('checkDocCoverage', () => {
-  // `@poveste/app` is published with types that do not resolve, which is exactly
-  // what `UNRESOLVED` excuses. An empty tree would not reach the floor at all:
-  // the excuse would be stale, and that problem is reported first.
+  // A published package that declares no types entrypoint, as `@poveste/app` does
+  // since #362: nothing to measure, so the floor is what gets reported.
   it('reports that nothing could be measured', () => {
     const root = tree({
       'CONTRIBUTING.md': '',
-      'packages/poveste-app/package.json': '{ "name": "@poveste/app", "version": "1.0.0", "types": "./dist/index.d.ts" }\n',
+      'packages/poveste-app/package.json': '{ "name": "@poveste/app", "version": "1.0.0" }\n',
     })
 
     expect(checkDocCoverage(root).problems).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))

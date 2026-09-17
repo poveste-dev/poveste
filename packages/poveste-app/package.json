@@ -23,13 +23,9 @@
     "access": "public"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/bundle-index.js"
-    },
+    ".": "./dist/bundle-index.js",
     "./*": "./*"
   },
-  "types": "./src/index.ts",
   "files": [
     "dist",
     "src"
