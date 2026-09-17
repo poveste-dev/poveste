@@ -6,12 +6,11 @@ import type {
 } from '@poveste/shared'
 import type { Context } from './context.js'
 import fs from 'node:fs'
-import { fileURLToPath } from 'node:url'
 import { createDefu } from 'defu'
-import { createJiti } from 'jiti'
 import path from 'pathe'
 import pc from 'picocolors'
 import {
+  loadConfigFromFile,
   mergeConfig as mergeViteConfig,
   resolveConfig as resolveViteConfig,
 } from 'vite'
@@ -19,8 +18,6 @@ import { vanillaSupport } from './builtin-plugins/vanilla-support/plugin.js'
 import { defaultColors } from './colors.js'
 import { configProblems } from './config-validation.js'
 import { findUp } from './util/find-up.js'
-
-const __filename = fileURLToPath(import.meta.url)
 
 export function getDefaultConfig(): PovesteConfig {
   return {
@@ -169,12 +166,36 @@ export function resolveConfigFile(cwd: string = process.cwd(), configFile?: stri
   }
 }
 
+/**
+ * The import a config could not resolve, from either shape Vite's bundling loader
+ * throws: Node's for a package, which says "package" where jiti said "module", and
+ * Rolldown's `UNRESOLVED_IMPORT` for a relative path.
+ */
+function missingImport(e: any): string | undefined {
+  if (e?.code === 'ERR_MODULE_NOT_FOUND' || e?.code === 'MODULE_NOT_FOUND') {
+    return String(e.message).match(/Cannot find (?:module|package) '([^']+)'/)?.[1]
+  }
+  const unresolved = (e?.errors as { code?: string, message?: string }[] | undefined)?.find(error => error?.code === 'UNRESOLVED_IMPORT')
+  return unresolved ? String(unresolved.message).match(/Could not resolve '([^']+)'/)?.[1] : undefined
+}
+
+/**
+ * Whether the config failed on top-level await. Vite bundles a config to CommonJS
+ * when its package is not `"type": "module"`, and CommonJS has no top-level await,
+ * which jiti allowed there (#870).
+ */
+function topLevelAwaitInCommonJs(e: any): boolean {
+  return (e?.errors as { code?: string, message?: string }[] | undefined)
+    ?.some(error => error?.code === 'UNSUPPORTED_FEATURE' && /Top-level await/.test(String(error.message))) ?? false
+}
+
 export async function loadConfigFile(configFile: string): Promise<Partial<PovesteConfig>> {
   try {
-    const jiti = createJiti(__filename, {
-      moduleCache: false,
-    })
-    const result = await jiti.import(configFile, { default: true }) as Partial<PovesteConfig>
+    // `bundle`, Vite's default, rather than `runner`, which has no `__dirname`, or
+    // `native`, which cannot find `./x` as `x.ts`. Each load bundles to a new
+    // timestamped file, so a config edited during `poveste dev` is read fresh (#870).
+    const loaded = await loadConfigFromFile({ command: 'serve', mode: 'development' }, configFile, path.dirname(configFile), 'silent', undefined, 'bundle')
+    const result = loaded?.config as Partial<PovesteConfig> | undefined
     if (!result) {
       throw new Error(`Expected default export in ${configFile}`)
     }
@@ -183,12 +204,14 @@ export async function loadConfigFile(configFile: string): Promise<Partial<Povest
   catch (e: any) {
     console.error(pc.red(`Error while loading ${configFile}`))
 
-    const missing = e?.code === 'ERR_MODULE_NOT_FOUND' || e?.code === 'MODULE_NOT_FOUND'
-      ? (String(e.message).match(/Cannot find module '([^']+)'/) ?? [])[1]
-      : undefined
+    if (topLevelAwaitInCommonJs(e)) {
+      throw new Error(`${configFile} uses top-level await, which a config only supports as an ES module: set "type": "module" in its package.json.`)
+    }
+
+    const missing = missingImport(e)
 
     if (missing && !process.env['DEBUG']) {
-      // The stack is all module-loader and jiti frames, which diagnose neither
+      // The stack is all bundler and module-loader frames, which diagnose neither
       // an uninstalled package nor a typo (#324). `DEBUG=1` keeps it.
       console.error(pc.red(`Cannot find module '${missing}'`))
       console.error(pc.dim('Is it installed, and is the name spelt correctly? Run with DEBUG=1 for the full stack.'))

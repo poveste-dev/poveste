@@ -689,9 +689,6 @@ importers:
       fs-extra:
         specifier: ^11.2.0
         version: 11.4.0
-      jiti:
-        specifier: ^2.4.1
-        version: 2.7.0
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1
