@@ -93,7 +93,10 @@ export async function createMarkdownRenderer(ctx: Context) {
     slugify,
     permalink: anchor.permalink.ariaHidden({}),
   })
-    .use(attrs)
+    // markdown-it-attrs 5 moves a fence's `{.class}` to `<pre>`, but only when
+    // its own CommonJS copy of markdown-it's fence rule is the one installed, so
+    // from this ESM import it happens not to. Pinned to `<code>`, where 4 put it.
+    .use(attrs, { fenceAttrsOnPre: false })
     .use(emoji)
 
   // External links

@@ -51,6 +51,14 @@ describe('markdown', async () => {
     expect(html).toContain('🎉')
   })
 
+  it('puts a fenced block\'s attributes on its code element', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('```js {.wide data-demo=1}\nconst a = 1\n```\n', { file: path.resolve(__dirname, './markdown/test1.story.md') })
+
+    expect(html).toContain('<pre><code class="wide language-js" data-demo="1">')
+  })
+
   it('should throw error on missing [md] story file.', async () => {
     const testFile3 = '/markdown/test3.story.md'
     const writer = createWriteStream(__dirname.concat(testFile3))
