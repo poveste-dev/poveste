@@ -53,5 +53,12 @@ function initState() {
     >
       <OptionsProps />
     </Variant>
+    <Variant
+      id="disabled"
+      title="Disabled"
+      auto-props-disabled
+    >
+      <DeclaredProps label="disabled" />
+    </Variant>
   </Story>
 </template>

@@ -16,6 +16,38 @@ import { expect } from '@playwright/test'
 const BOOK_LOAD_TIMEOUT = 60_000
 const STORY_RENDER_TIMEOUT = 20_000
 
+/**
+ * Records every sandbox's ready message, so a spec can wait for one variant's.
+ *
+ * A sandbox posts it once its story has mounted, and the state that mount publishes
+ * — a variant's auto-prop definitions among it — is posted before that. So a spec
+ * asserting the panel has no control for a variant can wait for this and know an
+ * absence is the answer rather than the question not being back yet.
+ *
+ * Call it before the page is opened: it listens from the first script onwards.
+ */
+export function recordSandboxReady(page: Page) {
+  return page.addInitScript(() => {
+    const seen: string[] = []
+    Reflect.set(window, '__povesteReadyVariants', seen)
+    window.addEventListener('message', (event) => {
+      // `SANDBOX_READY`, which this file cannot import: the app's source is not
+      // in the e2e project's graph.
+      if (event.data?.type === '__poveste:sandbox-ready' && typeof event.data.variantId === 'string') {
+        seen.push(event.data.variantId)
+      }
+    })
+  })
+}
+
+export function waitForSandboxReady(page: Page, variantId: string) {
+  return page.waitForFunction(
+    id => (Reflect.get(window, '__povesteReadyVariants') as string[] | undefined)?.includes(id) ?? false,
+    variantId,
+    { timeout: STORY_RENDER_TIMEOUT },
+  )
+}
+
 export function sandboxHtml(page: Page) {
   return page.getByTestId('preview-iframe').contentFrame().locator('html')
 }

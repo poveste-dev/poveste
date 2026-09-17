@@ -114,6 +114,32 @@ export default defineComponent({
       updateStory,
     }
 
+    /**
+     * What a `<Variant>` takes from its story: the attrs the story was given, then
+     * what the story carries, neither overriding what the variant set itself.
+     *
+     * Both render passes need it. `autoPropsDisabled` set on a story reached only
+     * the mount pass, so a story turning auto-props off still offered controls in
+     * the realm that renders it (#890).
+     */
+    function inheritedFromStory(vnode: VNode) {
+      const inherited: Record<string, any> = {}
+
+      for (const attr in vm.attrs) {
+        if (typeof vnode.props?.[attr] === 'undefined') {
+          inherited[attr] = vm.attrs[attr]
+        }
+      }
+
+      for (const attr in attrs.story) {
+        if (!omitInheritStoryProps.includes(attr) && typeof vnode.props?.[attr] === 'undefined') {
+          inherited[attr] = Reflect.get(attrs.story, attr)
+        }
+      }
+
+      return inherited
+    }
+
     function renderMountStory() {
       let index = 0
 
@@ -166,17 +192,7 @@ export default defineComponent({
               nextProps.initState = props.initState
             }
 
-            for (const attr in vm.attrs) {
-              if (typeof vnode.props?.[attr] === 'undefined') {
-                nextProps[attr] = vm.attrs[attr]
-              }
-            }
-
-            for (const attr in attrs.story) {
-              if (!omitInheritStoryProps.includes(attr) && typeof vnode.props?.[attr] === 'undefined') {
-                nextProps[attr] = Reflect.get(attrs.story, attr)
-              }
-            }
+            Object.assign(nextProps, inheritedFromStory(vnode))
 
             result.push(cloneVNode(vnode, nextProps))
             continue
@@ -254,7 +270,7 @@ export default defineComponent({
               // @ts-expect-error custom option
               if (vnode?.type?.__povesteType === 'variant') {
                 if (seen === targetIndex) {
-                  result.push(vnode)
+                  result.push(cloneVNode(vnode, inheritedFromStory(vnode)))
                   kept = true
                 }
                 seen++

@@ -32,4 +32,7 @@
   <Hst.Variant id="options" title="Options">
     <OptionsProps />
   </Hst.Variant>
+  <Hst.Variant id="disabled" title="Disabled" autoPropsDisabled>
+    <DeclaredProps label="disabled" />
+  </Hst.Variant>
 </Hst.Story>

@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { openStory } from './support.js'
+import { openStory, recordSandboxReady, waitForSandboxReady } from './support.js'
 
 // Shared because the plugins reach it differently (#233) and the panel must not
 // be able to tell.
@@ -12,6 +12,10 @@ function cell(page: Page, title: string) {
 
 function rendered(page: Page, title: string) {
   return cell(page, title).frameLocator('iframe').locator('body')
+}
+
+function anyControl(page: Page) {
+  return page.locator('.poveste-controls-component-props')
 }
 
 // Scoped to the group: Vue also exposes a component's data as state, so an
@@ -116,5 +120,32 @@ test.describe('auto-props', () => {
     await expect(rendered(page, 'Options')).toContainText('options/2')
     await control(page, 'OptionsProps', 'count').locator('input').fill('7')
     await expect(rendered(page, 'Options')).toContainText('options/7')
+  })
+
+  // An empty panel reads the same as one whose controls have not arrived yet, and
+  // `toHaveCount(0)` is true the moment it is asked — so both of these wait for the
+  // variant's sandbox to report ready, which it does after the render that would
+  // have published them. Asserting on the rendered cell alone caught the Svelte
+  // race below in 4 runs of 10.
+  test('offers no control for a variant that turns auto-props off', async ({ page }) => {
+    await recordSandboxReady(page)
+    await openStory(page, STORY, '?variantId=disabled')
+
+    await expect(rendered(page, 'Disabled')).toContainText('disabled/')
+    await waitForSandboxReady(page, 'disabled')
+
+    await expect(anyControl(page)).toHaveCount(0)
+  })
+
+  // Svelte's story props reach only an implicit variant, so a story-level flag over
+  // explicit ones has to be read off the story (#466).
+  test('offers no control for any variant of a story that turns auto-props off', async ({ page }) => {
+    await recordSandboxReady(page)
+    await openStory(page, 'conformance-auto-props-disabled', '?variantId=second')
+
+    await expect(rendered(page, 'Second')).toContainText('second/')
+    await waitForSandboxReady(page, 'second')
+
+    await expect(anyControl(page)).toHaveCount(0)
   })
 })
