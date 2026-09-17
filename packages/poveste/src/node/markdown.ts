@@ -92,6 +92,9 @@ export async function createMarkdownRenderer(ctx: Context) {
   md.use(anchor, {
     slugify,
     permalink: anchor.permalink.ariaHidden({}),
+    // A repeated `{#id}` threw and took the whole build down without naming the
+    // file. Suffixed instead, the way two headings with the same text already are.
+    failOnNonUnique: false,
   })
     // markdown-it-attrs 5 moves a fence's `{.class}` to `<pre>`, but only when
     // its own CommonJS copy of markdown-it's fence rule is the one installed, so
