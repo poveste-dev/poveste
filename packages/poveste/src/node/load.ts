@@ -31,7 +31,9 @@ export function useModuleLoader(options: UseModuleLoaderOptions): ModuleLoader {
       return result
     }
     catch (e) {
-      console.error(pc.red(`Error while loading module ${file}:\n${e.frame ? `${pc.bold(e.message)}\n${e.frame}` : e.stack}`))
+      // A Vite transform error carries the code frame on `frame`.
+      const error = (e instanceof Error ? e : new Error(String(e))) as Error & { frame?: string }
+      console.error(pc.red(`Error while loading module ${file}:\n${error.frame ? `${pc.bold(error.message)}\n${error.frame}` : error.stack}`))
       if (options.throws) {
         throw e
       }

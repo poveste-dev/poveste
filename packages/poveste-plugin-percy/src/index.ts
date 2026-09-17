@@ -161,8 +161,8 @@ export function HstPercy(options: PercyPluginOptions = {}): Plugin {
         }
 
         const pptrOptions = navigationOptions(finalOptions.pptrOptions, payload)
-        const pptrWait = resolveOptions(finalOptions.pptrWait, payload)
-        const percyOptions = resolveOptions(finalOptions.percyOptions, payload)
+        const pptrWait = resolveOptions(finalOptions.pptrWait ?? 0, payload)
+        const percyOptions = resolveOptions(finalOptions.percyOptions ?? {}, payload)
 
         const page = await browser.newPage()
         await page.goto(url, pptrOptions)

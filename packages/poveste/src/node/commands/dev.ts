@@ -20,7 +20,7 @@ export async function devCommand(options: DevOptions) {
   try {
     const port = resolvePort(options.port, 'dev')
 
-    let stop: () => Promise<void>
+    let stop: (() => Promise<void>) | null
 
     async function start() {
       const ctx = await createContext({

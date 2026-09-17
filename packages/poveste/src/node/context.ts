@@ -6,7 +6,7 @@ import type {
   ServerMarkdownFile,
   ServerStoryFile,
 } from '@poveste/shared'
-import type { ResolvedConfig } from 'vite'
+import type { InlineConfig, ResolvedConfig } from 'vite'
 import { resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
@@ -20,7 +20,7 @@ export interface Context {
   storyFiles: ServerStoryFile[]
   supportPlugins: FinalSupportPlugin[]
   markdownFiles: ServerMarkdownFile[]
-  registeredCommands?: PluginCommand[]
+  registeredCommands: PluginCommand[]
 }
 
 export interface CreateContextOptions {
@@ -37,12 +37,11 @@ export async function createContext(options: CreateContextOptions): Promise<Cont
   // A user config setting `base` by mode would otherwise disagree with itself.
   const viteConfig = await resolveViteConfig({}, command, viteMode(options.mode))
 
-  const supportPlugins = config.plugins.map(p => p.supportPlugin).filter(Boolean)
+  const supportPlugins = config.plugins.flatMap(p => p.supportPlugin ? [p.supportPlugin] : [])
 
-  const ctx = {
+  const partial = {
     root: viteConfig.root,
     config,
-    resolvedViteConfig: null,
     mode: options.mode,
     storyFiles: [],
     supportPlugins,
@@ -50,7 +49,13 @@ export async function createContext(options: CreateContextOptions): Promise<Cont
     registeredCommands: [],
   }
 
-  ctx.resolvedViteConfig = await mergePovesteViteConfig(viteConfig as unknown, ctx)
+  const ctx: Context = {
+    ...partial,
+    // The user's `vite` overrides merged into the resolved config, as for an
+    // inline one. Every resolved key survives the merge, so it is still read as
+    // a resolved config.
+    resolvedViteConfig: await mergePovesteViteConfig(viteConfig as unknown as InlineConfig, partial) as unknown as ResolvedConfig,
+  }
 
   await processConfig(ctx)
 

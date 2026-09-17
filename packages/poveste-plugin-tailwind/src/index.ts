@@ -99,19 +99,19 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
   // An explicit `cssFile` is the caller saying so, and is taken at their word.
   const tailwindCssFile = options.cssFile ?? findUp(process.cwd(), CSS_ENTRY_CANDIDATES, isTailwindEntry)
 
-  async function generate(api: PluginApiBase) {
+  async function generate(api: PluginApiBase, cssFile: string) {
     try {
       await api.fs.ensureDir(api.pluginTempDir)
       await api.fs.emptyDir(api.pluginTempDir)
       api.moduleLoader.clearCache()
       await api.fs.writeFile(api.path.resolve(api.pluginTempDir, 'style.css'), css)
-      const theme = await loadTailwindTheme(api, tailwindCssFile)
+      const theme = await loadTailwindTheme(api, cssFile)
       const storyFile = api.path.resolve(api.pluginTempDir, 'Tailwind.story.js')
       await api.fs.writeFile(storyFile, storyTemplate({ theme }))
       api.addStoryFile(storyFile)
     }
     catch (e) {
-      api.error(e.stack ?? e.message)
+      api.error(e instanceof Error ? e.stack ?? e.message : String(e))
     }
   }
 
@@ -145,11 +145,11 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
 
     async onDev(api, onCleanup) {
       if (tailwindCssFile) {
-        await generate(api)
+        await generate(api, tailwindCssFile)
 
         const watcher = api.watcher.watch(tailwindCssFile)
-          .on('change', () => generate(api))
-          .on('add', () => generate(api))
+          .on('change', () => generate(api, tailwindCssFile))
+          .on('add', () => generate(api, tailwindCssFile))
         onCleanup(() => {
           watcher.close()
         })
@@ -158,7 +158,7 @@ export function HstTailwind(options: TailwindTokensOptions = {}): Plugin {
 
     async onBuild(api) {
       if (tailwindCssFile) {
-        await generate(api)
+        await generate(api, tailwindCssFile)
       }
     },
   }

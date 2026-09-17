@@ -8,11 +8,13 @@ import type {
 import pc from 'picocolors'
 
 export function createPath(config: PovesteConfig, file: ServerTreeFile) {
-  if (config.tree.file === 'title') {
-    return file.title.split('/')
+  const treeFile = config.tree.file
+
+  if (typeof treeFile === 'function') {
+    return treeFile(file)
   }
 
-  if (config.tree.file === 'path') {
+  if (treeFile === 'path') {
     const paths = file.path.split('/').slice(0, -1)
 
     // check if tree file path is a plugin
@@ -25,7 +27,8 @@ export function createPath(config: PovesteConfig, file: ServerTreeFile) {
     return [...paths, file.title]
   }
 
-  return config.tree.file(file)
+  // `'title'`, which is also the default.
+  return file.title.split('/')
 }
 
 export function makeTree(config: PovesteConfig, files: ServerStoryFile[]) {
@@ -48,20 +51,24 @@ export function makeTree(config: PovesteConfig, files: ServerStoryFile[]) {
   groups.push(defaultGroup)
 
   files.forEach((file, index) => {
+    // A file only has a tree path once collection found its story.
+    if (!file.treePath) {
+      return
+    }
     const group = getGroup(file)
     setPath(file.treePath, index, group.treeObject)
   })
 
   let sortingFunction = (a: string, b: string) => a.localeCompare(b)
 
-  if (config.tree.order !== 'asc') {
+  if (typeof config.tree.order === 'function') {
     sortingFunction = config.tree.order
   }
 
   const result: ServerTree = []
 
   for (const group of groups) {
-    if (group === defaultGroup) {
+    if (!group.groupConfig) {
       result.push(...buildTree(group.treeObject))
     }
     else {
@@ -77,44 +84,45 @@ export function makeTree(config: PovesteConfig, files: ServerStoryFile[]) {
   return result
 
   function getGroup(file: ServerStoryFile): ITreeGroup {
-    if (file.story?.group) {
-      const group = groups.find(g => g.groupConfig?.id === file.story.group)
+    const groupId = file.story?.group
+    if (groupId) {
+      const group = groups.find(g => g.groupConfig?.id === groupId)
       if (group) {
         return group
       }
       else {
-        console.error(pc.red(`Group ${file.story.group} not found for story ${file.path}`))
+        console.error(pc.red(`Group ${groupId} not found for story ${file.path}`))
       }
     }
     for (const group of groups) {
-      if (group.groupConfig?.include && group.groupConfig.include(file.treeFile)) {
+      if (file.treeFile && group.groupConfig?.include && group.groupConfig.include(file.treeFile)) {
         return group
       }
     }
     return defaultGroup
   }
 
-  function setPath(path: string[], value: unknown, tree: unknown) {
-    path.reduce((subtree, key, i) => {
+  function setPath(path: string[], value: number, tree: ITreeObject) {
+    let subtree = tree
+    for (const [i, key] of path.entries()) {
       if (i === path.length - 1) {
         setKey(subtree, key, value)
+        break
       }
-      else if (isLeaf(subtree[key])) {
-        setKey(subtree, key, subtree[key])
-        subtree[key] = {}
+      let child = subtree[key]
+      if (typeof child !== 'object') {
+        // A leaf already at this key keeps its entry under a suffixed key, and
+        // the key becomes a folder.
+        if (typeof child === 'number') {
+          setKey(subtree, key, child)
+        }
+        child = subtree[key] = {}
       }
-      else if (!subtree[key]) {
-        subtree[key] = {}
-      }
-      return subtree[key]
-    }, tree)
-
-    function isLeaf(element) {
-      return !Number.isNaN(Number(element))
+      subtree = child
     }
   }
 
-  function setKey(tree, key, value) {
+  function setKey(tree: ITreeObject, key: string, value: number | ITreeObject) {
     if (isUndefined(tree[key])) {
       tree[key] = value
       return
@@ -128,7 +136,7 @@ export function makeTree(config: PovesteConfig, files: ServerStoryFile[]) {
 
     tree[`${key}-${copyNumber}`] = value
 
-    function isUndefined(element) {
+    function isUndefined(element: unknown) {
       return element === undefined
     }
   }

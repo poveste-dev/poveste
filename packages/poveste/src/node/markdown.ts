@@ -99,11 +99,9 @@ export async function createMarkdownRenderer(ctx: Context) {
 
     md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
       const token = tokens[idx]
-      const hrefIndex = token.attrIndex('href')
-      const classIndex = token.attrIndex('class')
+      const href = token.attrGet('href')
 
-      if (hrefIndex >= 0) {
-        const href = token.attrs[hrefIndex][1]
+      if (href !== null) {
         if (href.startsWith('.')) {
           const queryIndex = href.indexOf('?')
           const pathname = queryIndex >= 0 ? href.slice(0, queryIndex) : href
@@ -113,25 +111,19 @@ export async function createMarkdownRenderer(ctx: Context) {
           const file = path.resolve(path.dirname(env.file), pathname)
           const storyFile = ctx.storyFiles.find(f => f.path === file)
           const mdFile = ctx.markdownFiles.find(f => f.absolutePath === file)
-          if (!storyFile && !mdFile?.storyFile) {
+          const storyId = storyFile?.id ?? mdFile?.storyFile?.id
+          if (!storyId) {
             throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env.file}`))
           }
 
           // Add attributes
-          const newHref = `${ctx.resolvedViteConfig.base}story/${encodeURIComponent(storyFile?.id ?? mdFile.storyFile.id)}${query}`
+          const newHref = `${ctx.resolvedViteConfig.base}story/${encodeURIComponent(storyId)}${query}`
           token.attrSet('href', newHref)
           token.attrSet('data-route', 'true')
         }
-        else if (!href.startsWith('/') && !href.startsWith('#') && (classIndex < 0 || !token.attrs[classIndex][1].includes('header-anchor'))) {
-          // Add target="_blank" to external links
-          const aIndex = token.attrIndex('target')
-
-          if (aIndex < 0) {
-            token.attrPush(['target', '_blank']) // add new attribute
-          }
-          else {
-            token.attrs[aIndex][1] = '_blank' // replace value of existing attr
-          }
+        else if (!href.startsWith('/') && !href.startsWith('#') && !token.attrGet('class')?.includes('header-anchor')) {
+          // Add target="_blank" to external links, replacing any target already set
+          token.attrSet('target', '_blank')
         }
       }
 
@@ -263,7 +255,9 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     if (index !== -1) {
       const file = ctx.markdownFiles[index]
       if (!file.isRelatedToStory) {
-        removeStory(file.storyFile.relativePath)
+        if (file.storyFile) {
+          removeStory(file.storyFile.relativePath)
+        }
         notifyStoryChange()
       }
       ctx.markdownFiles.splice(index, 1)
@@ -333,7 +327,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
   try {
     // Render markdown after initial scan is complete.
     for (const mdFile of ctx.markdownFiles) {
-      mdFile.html = md.render(mdFile.content, {
+      mdFile.html = md.render(mdFile.content ?? '', {
         file: mdFile.absolutePath,
       })
     }

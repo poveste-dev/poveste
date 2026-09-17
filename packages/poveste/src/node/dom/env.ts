@@ -62,9 +62,10 @@ export function createDomEnv() {
   }
 
   window.IntersectionObserver = window.IntersectionObserver || class IntersectionObserver {
-    root: Element
-    rootMargin: string
-    thresholds: number[]
+    root: Element | null = null
+    rootMargin = '0px'
+    scrollMargin = '0px'
+    thresholds: number[] = [0]
     disconnect(): void { /* noop */ }
     observe = (_target: Element) => void { /* noop */ }
     unobserve(_target: Element): void { /* noop */ }

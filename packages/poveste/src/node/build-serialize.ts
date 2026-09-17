@@ -6,7 +6,7 @@ interface SerializedStory extends Omit<ServerStory, 'docsText'> {
   supportPluginId: string
   treePath?: string[]
   virtual?: boolean
-  markdownFile?: SerializedMarkdownFile
+  markdownFile: SerializedMarkdownFile | null
 }
 
 interface SerializedMarkdownFile {

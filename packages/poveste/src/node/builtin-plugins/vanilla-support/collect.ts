@@ -16,7 +16,7 @@ export async function run({ file, storyData }: ServerRunPayload) {
     }]
   }
   else {
-    rawVariants = options.variants
+    rawVariants = options.variants ?? []
   }
 
   const story: ServerStory = {
@@ -27,7 +27,7 @@ export async function run({ file, storyData }: ServerRunPayload) {
     icon: options.icon,
     iconColor: options.iconColor,
     docsOnly: options.docsOnly ?? false,
-    variants: null,
+    variants: [],
   }
 
   const variants: ServerVariant[] = rawVariants.map((v, index) => ({

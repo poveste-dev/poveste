@@ -36,6 +36,9 @@ export default defineComponent({
     const story = inject<ServerStory>('story')
 
     function generateId() {
+      if (!story) {
+        throw new Error('[poveste] a <Variant> with no `id` has to be inside a <Story>')
+      }
       return `${story.id}-${story.variants.length}`
     }
 

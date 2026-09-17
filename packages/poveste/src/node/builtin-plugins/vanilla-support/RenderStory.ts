@@ -42,7 +42,7 @@ export default _defineComponent({
   setup(props, { emit }) {
     const sandbox = _ref<HTMLDivElement>()
     let mounting = false
-    let app: App
+    let app: App | null = null
     let appHooks: Record<'onUpdate' | 'onUnmount', (() => unknown)[]>
 
     async function unmountVariant() {
@@ -54,7 +54,7 @@ export default _defineComponent({
           }
         }
 
-        app.el.parentNode.removeChild(app.el)
+        app.el.remove()
         app = null
       }
     }
@@ -113,10 +113,10 @@ export default _defineComponent({
         },
       }
 
-      const onMount = props.variant.slots()[props.slotName] as VanillaApi['onMount'] | VanillaApi['onMountControls']
-      await onMount(api)
+      const onMount = props.variant.slots?.()[props.slotName] as VanillaApi['onMount'] | VanillaApi['onMountControls'] | undefined
+      await onMount?.(api)
 
-      sandbox.value.appendChild(app.el)
+      sandbox.value?.appendChild(app.el)
 
       emit('ready')
     }

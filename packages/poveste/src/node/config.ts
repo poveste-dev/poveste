@@ -133,7 +133,7 @@ export function getDefaultConfig(): PovesteConfig {
         && !Array.isArray(plugin[0])
         // @ts-expect-error could have no property 'name'
         && plugin[0].name?.startsWith('vite:legacy'))
-      if (index !== -1) {
+      if (index !== undefined && index !== -1) {
         config.plugins?.splice(index, 1)
       }
 
@@ -159,7 +159,7 @@ export const configFileNames = [
   '.histoire.js',
 ]
 
-export function resolveConfigFile(cwd: string = process.cwd(), configFile?: string): string {
+export function resolveConfigFile(cwd: string = process.cwd(), configFile?: string): string | null {
   if (configFile) {
     // explicit config path is always resolved from cwd
     return path.resolve(configFile)
@@ -293,8 +293,17 @@ function reportConfigProblems(config: unknown, configFile: string): void {
   throw new Error(`Invalid Poveste config: ${problems.length} problem${problems.length === 1 ? '' : 's'} above.`)
 }
 
-export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMode, configFile: string): Promise<PovesteConfig> {
-  let result: Partial<PovesteConfig>
+/**
+ * `mergeConfig` onto a complete config. defu declares every merged key as
+ * possibly `null`, but it never keeps a nullish value over a default, so what
+ * comes back is as complete as `defaults`.
+ */
+function mergeOnto(source: Partial<PovesteConfig>, defaults: PovesteConfig): PovesteConfig {
+  return mergeConfig(source, defaults) as PovesteConfig
+}
+
+export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMode, configFile?: string): Promise<PovesteConfig> {
+  let result: Partial<PovesteConfig> = {}
   const resolvedConfigFile = resolveConfigFile(cwd, configFile)
   if (resolvedConfigFile) {
     result = await loadConfigFile(resolvedConfigFile)
@@ -319,10 +328,10 @@ export async function resolveConfig(cwd: string = process.cwd(), mode: ConfigMod
     viteConfig.configFile ? path.relative(cwd, viteConfig.configFile) : 'the vite config',
   )
 
-  const preUserConfig = mergeConfig(result, vitePovesteConfig)
+  const preUserConfig = mergeConfig(result, vitePovesteConfig) as Partial<PovesteConfig>
   const processedDefaultConfig = await processDefaultConfig(getDefaultConfig(), preUserConfig, mode, cwd)
 
-  return resolveConfigPlugins(mergeConfig(preUserConfig, processedDefaultConfig), mode)
+  return resolveConfigPlugins(mergeOnto(preUserConfig, processedDefaultConfig), mode)
 }
 
 async function resolveConfigPlugins(config: PovesteConfig, mode: ConfigMode): Promise<PovesteConfig> {
@@ -330,20 +339,20 @@ async function resolveConfigPlugins(config: PovesteConfig, mode: ConfigMode): Pr
     if (plugin.config) {
       const result = await plugin.config(config, mode)
       if (result) {
-        config = mergeConfig(result, config)
+        config = mergeOnto(result, config)
       }
     }
   }
   return config
 }
 
-async function processDefaultConfig(defaultConfig: PovesteConfig, preUserConfig: PovesteConfig, mode: ConfigMode, _cwd: string): Promise<PovesteConfig> {
+async function processDefaultConfig(defaultConfig: PovesteConfig, preUserConfig: Partial<PovesteConfig>, mode: ConfigMode, _cwd: string): Promise<PovesteConfig> {
   // Apply plugins
   for (const plugin of [...defaultConfig.plugins, ...preUserConfig.plugins ?? []]) {
     if (plugin.defaultConfig) {
       const result = await plugin.defaultConfig(defaultConfig, mode)
       if (result) {
-        defaultConfig = mergeConfig(result, defaultConfig)
+        defaultConfig = mergeOnto(result, defaultConfig)
       }
     }
   }

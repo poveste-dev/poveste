@@ -48,7 +48,7 @@ function invalidate(file: string) {
 }
 
 // Cleanup module cache
-parentPort.on('message', (message) => {
+parentPort?.on('message', (message) => {
   if (message?.kind === 'hst:invalidate') {
     invalidate(message.file)
   }
@@ -98,7 +98,7 @@ export default async (payload: Payload): Promise<ReturnData> => {
 
   if (payload.storyFile.markdownFile) {
     const el = document.createElement('div')
-    el.innerHTML = payload.storyFile.markdownFile.html
+    el.innerHTML = payload.storyFile.markdownFile.html ?? ''
     const text = el.textContent
     storyData.forEach((s) => {
       s.docsText = text

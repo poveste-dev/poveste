@@ -169,7 +169,7 @@ function normalizeVNodes(vnodes: any) {
     return vnodes == null ? [] : [vnodes]
   }
 
-  const result = []
+  const result: any[] = []
 
   for (const vnode of vnodes) {
     if (Array.isArray(vnode)) {

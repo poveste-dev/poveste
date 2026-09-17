@@ -165,14 +165,16 @@ export async function build(ctx: Context) {
       },
     })
 
+    const buildPlugins = buildViteConfig.plugins ??= []
+
     // For @vite/plugin-vue: Always put our vite server
     // Disable template inlining
     // (so that we no longer need defineExpose)
     // Nuxt: replaces the Nuxt vite dev server
-    buildViteConfig.plugins.push({
+    buildPlugins.push({
       name: 'poveste-vue-plugin-override',
       config(config) {
-        const vuePlugin = config.plugins.find((p: any) => p.name === 'vite:vue') as VitePlugin
+        const vuePlugin = config.plugins?.find((p: any) => p.name === 'vite:vue') as VitePlugin | undefined
         if (vuePlugin) {
           // @ts-expect-error vue plugin use function form
           const original = vuePlugin.configureServer.bind(vuePlugin)
@@ -194,15 +196,18 @@ export async function build(ctx: Context) {
       },
     })
 
-    buildViteConfig.plugins.push({
+    buildPlugins.push({
       name: 'poveste-build-config-override',
       enforce: 'post',
       config(config) {
+        const build = config.build ??= {}
+        const rolldownOptions = build.rolldownOptions ??= {}
+
         // Don't externalize
-        config.build.rolldownOptions.external = []
+        rolldownOptions.external = []
 
         // Force chunk strategy
-        config.build.rolldownOptions.output = {
+        rolldownOptions.output = {
           manualChunks(id) {
             // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
             // virtual modules, so the node_modules routing below never sees them
@@ -247,7 +252,7 @@ export async function build(ctx: Context) {
         }
 
         // Force vite build options
-        Object.assign(config.build, {
+        Object.assign(build, {
           outDir: ctx.config.outDir,
           emptyOutDir: true,
           // Re-merged per-entry by entry-css-merger.
@@ -261,14 +266,14 @@ export async function build(ctx: Context) {
           ssr: false,
         })
 
-        config.define.__HST_COLLECT__ = false
+        config.define = { ...config.define, __HST_COLLECT__: false }
       },
     })
 
     const isolate = ctx.config.isolateStyles !== false
-    buildViteConfig.plugins.push(userCssScopePlugin({ enabled: isolate }))
-    buildViteConfig.plugins.push(chromeCssScopePlugin({ enabled: isolate }))
-    buildViteConfig.plugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
+    buildPlugins.push(userCssScopePlugin({ enabled: isolate }))
+    buildPlugins.push(chromeCssScopePlugin({ enabled: isolate }))
+    buildPlugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
 
     for (const cb of changeViteConfigCallbacks) {
       await cb(buildViteConfig)
@@ -296,6 +301,11 @@ export async function build(ctx: Context) {
 
     // Index
     const indexOutput = result.output.find(o => o.type === 'chunk' && o.name === 'bundle-main')
+    const sandboxOutput = result.output.find(o => o.type === 'chunk' && o.name === 'bundle-sandbox')
+    if (!indexOutput || !sandboxOutput || !mainStyleOutput || !sandboxStyleOutput) {
+      const missing = { 'bundle-main.js': indexOutput, 'bundle-sandbox.js': sandboxOutput, 'bundle-main.css': mainStyleOutput }
+      throw new Error(`[poveste] the book build produced no ${Object.entries(missing).filter(([, output]) => !output).map(([name]) => name).join(', ')}`)
+    }
     let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
       HEAD: `${preloadHtml}${prefetchHtml}`,
     }, ctx)
@@ -303,7 +313,6 @@ export async function build(ctx: Context) {
     await writeFile('index.html', indexHtml, ctx)
 
     // Sandbox
-    const sandboxOutput = result.output.find(o => o.type === 'chunk' && o.name === 'bundle-sandbox')
     let sandboxHtml = generateEntryHtml(sandboxOutput.fileName, sandboxStyleOutput.fileName, {}, ctx)
     sandboxHtml = await applyHeadTransform(sandboxHtml, ctx.config.head)
     await writeFile('__sandbox.html', sandboxHtml, ctx)
@@ -328,6 +337,10 @@ export async function build(ctx: Context) {
       try {
         for (const storyFile of ctx.storyFiles) {
           const story = storyFile.story
+          // An empty story file collects no story, and there is nothing to render.
+          if (!story) {
+            continue
+          }
           for (const variant of story.variants) {
             const query = new URLSearchParams()
             query.append('storyId', story.id)

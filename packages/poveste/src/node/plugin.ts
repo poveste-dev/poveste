@@ -52,7 +52,7 @@ export class BasePluginApi implements PluginApiBase {
   }
 
   getStories(): ServerStory[] {
-    return this.ctx.storyFiles.map(f => f.story).filter(Boolean)
+    return this.ctx.storyFiles.flatMap(f => f.story ? [f.story] : [])
   }
 
   getConfig(): PovesteConfig {

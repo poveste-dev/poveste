@@ -22,12 +22,13 @@ export interface CreateServerOptions {
 export async function createServer(ctx: Context, options: CreateServerOptions = {}) {
   const getViteServer = async (collecting: boolean) => {
     const { viteConfig, viteConfigFile } = await getViteConfigWithPlugins(collecting, ctx)
+    const serverConfig = viteConfig.server ??= {}
 
     if (collecting) {
       // The collection server drives a module runner and has no browser, so it needs
       // no HMR socket. Left enabled, `@nuxt/vite-builder` gives it one on the
       // framework default port (24678) — see the book server below.
-      viteConfig.server.hmr = false
+      serverConfig.hmr = false
     }
     else {
       // `@nuxt/vite-builder` pins the HMR socket to the constant 24678 on every
@@ -37,21 +38,21 @@ export async function createServer(ctx: Context, options: CreateServerOptions = 
       // `defu`), so pin the socket to a port derived from this book's `--port`,
       // before the config is resolved: each dev server then owns a distinct one
       // (#175).
-      viteConfig.server.hmr = { port: hmrPortFor(options.port ?? viteConfig.server.port) }
+      serverConfig.hmr = { port: hmrPortFor(options.port ?? serverConfig.port) }
 
       if (options.open) {
-        viteConfig.server.open = true
+        serverConfig.open = true
       }
 
       if (options.host) {
-        viteConfig.server.host = options.host
+        serverConfig.host = options.host
       }
 
       // Same rule as `preview`: a port asked for by name is that port or
       // nothing. Floating to the next free one hands back a server nobody asked
       // for, and whoever opens the port they typed reads a different book.
       if (options.port != null) {
-        viteConfig.server.strictPort = true
+        serverConfig.strictPort = true
       }
     }
 

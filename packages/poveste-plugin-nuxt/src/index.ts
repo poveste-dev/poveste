@@ -1,6 +1,6 @@
 import type { Nuxt } from '@nuxt/schema'
 import type { Plugin } from 'poveste'
-import type { UserConfig as ViteConfig } from 'vite'
+import type { ResolvedConfig } from 'vite'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import replace from '@rollup/plugin-replace'
@@ -116,7 +116,7 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
           optimizeDeps: {
             ...viteConfig.optimizeDeps,
             exclude: [
-              ...viteConfig.optimizeDeps.exclude,
+              ...viteConfig.optimizeDeps.exclude ?? [],
               '@poveste/plugin-nuxt',
             ],
           },
@@ -248,7 +248,8 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[], isBuild: b
   })
 
   return {
-    viteConfig: await new Promise<ViteConfig>((resolve, reject) => {
+    // Captured from `vite:configResolved`, so it is the resolved config.
+    viteConfig: await new Promise<ResolvedConfig>((resolve, reject) => {
       nuxt.hook('modules:done', () => {
         nuxt.hook('components:extend', (components) => {
           for (const name of ['NuxtLink']) {
@@ -261,7 +262,8 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[], isBuild: b
 
         nuxt.hook('vite:configResolved', (config, { isClient }) => {
           if (isClient) {
-            resolve(config as any)
+            // Nuxt types the hook argument as its user config; at this hook it is resolved.
+            resolve(config as unknown as ResolvedConfig)
             // The resolved config is all this instance is for. Left running,
             // `buildNuxt` goes on to build the Nuxt client, start Nitro and
             // open Nuxt's own dev server — seconds of work on every `poveste

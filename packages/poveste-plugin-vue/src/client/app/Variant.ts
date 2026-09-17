@@ -1,10 +1,11 @@
 import type { Variant } from '@poveste/shared'
 import type { ComputedRef, PropType } from 'vue'
+import type { PreviewRenderContext } from './render-context.js'
 import { applyState, autoPropsStateKeys } from '@poveste/shared'
-import { computed, defineComponent, getCurrentInstance, inject, onBeforeUnmount, useAttrs } from 'vue'
+import { computed, defineComponent, inject, onBeforeUnmount, useAttrs } from 'vue'
 import { syncVariantAutoProps } from './auto-props.js'
 import { useRenderContext } from './render-context.js'
-import { syncStateBundledAndExternal, toRawDeep } from './util.js'
+import { syncStateBundledAndExternal, toRawDeep, useInstance } from './util.js'
 
 // const logLocation = location.href.includes('__sandbox') ? '[Sandbox]' : '[Host]'
 
@@ -54,14 +55,14 @@ export default defineComponent({
     const attrs = useAttrs() as {
       variant?: Variant
     }
-    const vm = getCurrentInstance()
+    const vm = useInstance('Variant')
     const story = inject<ComputedRef<any>>('story')
     const implicitState = inject<() => any>('implicitState')
     const renderContext = useRenderContext()
     let lastPropsTypesSnapshot: string
-    let renderVariant: Variant
-    let renderStateSync: ReturnType<typeof syncStateBundledAndExternal>
-    let mountStateSync: ReturnType<typeof syncStateBundledAndExternal>
+    let renderVariant: Variant | undefined
+    let renderStateSync: ReturnType<typeof syncStateBundledAndExternal> | null = null
+    let mountStateSync: ReturnType<typeof syncStateBundledAndExternal> | undefined
 
     // Registered before the first `await` below, and deliberately so. This is
     // an async setup(), and Vue drops any lifecycle hook registered after an
@@ -89,7 +90,7 @@ export default defineComponent({
 
     function updateVariant(variant: Variant) {
       Object.assign(variant, {
-        slots: () => vm.proxy.$slots,
+        slots: () => vm.slots,
         source: props.source,
         responsiveDisabled: props.responsiveDisabled,
         autoPropsDisabled: props.autoPropsDisabled,
@@ -98,12 +99,13 @@ export default defineComponent({
         configReady: true,
       })
 
-      if (!props.implicit && !story.value?.meta?.hasVariantChildComponents) {
-        if (!story.value.meta) {
-          story.value.meta = {}
+      const storyValue = story?.value
+      if (storyValue && !props.implicit && !storyValue.meta?.hasVariantChildComponents) {
+        if (!storyValue.meta) {
+          storyValue.meta = {}
         }
 
-        Object.assign(story.value.meta, {
+        Object.assign(storyValue.meta, {
           hasVariantChildComponents: true,
         })
       }
@@ -119,33 +121,33 @@ export default defineComponent({
       }
 
       if (!renderVariant) {
-        renderVariant = story.value?.variants[renderContext.nextVariantIndex.value]
+        renderVariant = story?.value?.variants[renderContext.nextVariantIndex.value]
         renderContext.nextVariantIndex.value++
       }
 
       return renderVariant
     }
 
-    function renderVariantSlot(variant: Variant) {
-      if (renderContext.slotName === 'controls') {
-        return vm.proxy.$slots.controls?.({
-          state: renderContext.externalState,
+    function renderVariantSlot(variant: Variant, context: PreviewRenderContext) {
+      if (context.slotName === 'controls') {
+        return vm.slots.controls?.({
+          state: context.externalState,
         }) ?? null
       }
 
-      if (renderContext.slotName !== 'default') {
+      if (context.slotName !== 'default') {
         return null
       }
 
-      const vnodes = vm.proxy.$slots.default?.({
-        state: renderContext.externalState,
+      const vnodes = vm.slots.default?.({
+        state: context.externalState,
       }) ?? null
 
       if (vnodes && !variant.autoPropsDisabled) {
         lastPropsTypesSnapshot = syncVariantAutoProps(
           variant,
           vnodes,
-          renderContext.externalState,
+          context.externalState,
           lastPropsTypesSnapshot,
         )
       }
@@ -193,14 +195,15 @@ export default defineComponent({
     this.updateVariant(variant)
     this.syncRenderVariantState(variant)
 
-    if (this.renderContext?.mode !== 'render') {
+    const renderContext = this.renderContext
+    if (renderContext?.mode !== 'render') {
       return null
     }
 
-    if (this.renderContext.currentVariant?.id !== variant.id) {
+    if (renderContext.currentVariant?.id !== variant.id) {
       return null
     }
 
-    return this.renderVariantSlot(variant)
+    return this.renderVariantSlot(variant, renderContext)
   },
 })
