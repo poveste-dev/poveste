@@ -17,7 +17,8 @@ It is a `minor` because two commits in the range are a `feat`: `api.watch` ([#86
 ### 🚨 Breaking Changes
 
 - **A Svelte setup file with two hook names now runs one of them, and says so** ([#157](https://github.com/poveste-dev/poveste/issues/157)). `@poveste/plugin-svelte` ran *every* setup hook it found in your setup file, one after another. A file exporting both `setupSvelte5` and the new `setupSvelte` would have applied your setup twice, silently — the exact failure the Vue pair exists to prevent. One hook runs now: the established name wins, and a warning names every hook present and which one ran. A file exporting a single name behaves exactly as it did.
-- **`api.path` is pathe 2** ([#356](https://github.com/poveste-dev/poveste/issues/356)). Four behaviours changed for a plugin calling through it: `basename` ignores a trailing separator, so `basename('/a/b/')` is `'b'` rather than `''`; `parse` of a Windows drive root reports `root: 'C:/'`; `join` keeps a leading `//` for a UNC path; and `delimiter` is `;` on Windows. Poveste's own calls are unaffected, and `posix`, `win32` and `matchesGlob` are now present.
+- **`api.path` is pathe 2** ([#356](https://github.com/poveste-dev/poveste/issues/356), [#847](https://github.com/poveste-dev/poveste/pull/847)). Four behaviours changed for a plugin calling through it: `basename` ignores a trailing separator, so `basename('/a/b/')` is `'b'` rather than `''`; `parse` of a Windows drive root reports `root: 'C:/'`; `join` keeps a leading `//` for a UNC path; and `delimiter` is `;` on Windows. Poveste's own calls are unaffected, and `posix`, `win32` and `matchesGlob` are now present.
+- **Published optional properties now declare `| undefined`** ([#782](https://github.com/poveste-dev/poveste/issues/782), [#857](https://github.com/poveste-dev/poveste/pull/857)). `exactOptionalPropertyTypes` is on across the workspace, so every optional property the code sets to `undefined` says so in its declaration. Nine published types carry it: `Variant`, `ServerStory`, `ServerVariant`, `ServerStoryFile`, `ServerMarkdownFile`, `StoryError` and `PropDefinition`, all exported from `poveste` and `@poveste/shared`, and `Vue3StorySetupApi` and `SvelteStorySetupApi` from the two framework plugins. These accept strictly more than before. Reading one is unchanged — an optional property already read as `T | undefined` — and writing `undefined` explicitly is now allowed. It is listed here for the one case that can stop compiling: if your own project has `exactOptionalPropertyTypes` on and you assign one of these objects into a type of your own that declares the same property without `| undefined`, that assignment is now rejected.
 
 ### 🚀 Enhancements
 
@@ -55,7 +56,7 @@ It is a `minor` because two commits in the range are a `feat`: `api.watch` ([#86
 ### 🏡 Chore
 
 - **A consumer install carries 15 fewer packages** ([#868](https://github.com/poveste-dev/poveste/issues/868)). `connect` and `sirv` were declared as runtime dependencies of `poveste` and have not been imported since #23.
-- **TypeScript 6, with strict on across the workspace** ([#817](https://github.com/poveste-dev/poveste/pull/817) and the flag-by-flag series that followed). `exactOptionalPropertyTypes` widened some optional properties in the published types to include `undefined`, which is what they always accepted.
+- **TypeScript 6, with strict on across the workspace** ([#817](https://github.com/poveste-dev/poveste/pull/817) and the flag-by-flag series that followed). `noImplicitAny`, `noImplicitOverride`, `noImplicitReturns`, `noUncheckedIndexedAccess`, `noPropertyAccessFromIndexSignature`, `noFallthroughCasesInSwitch`, `verbatimModuleSyntax` and `isolatedModules` are on everywhere, over one shared tsconfig base. The ninth flag of the series, `exactOptionalPropertyTypes`, is under Breaking Changes above, because it is the one a consumer can see.
 - **The dependency floor moved** under the plugin API (`chokidar` 5, `pathe` 2), the highlighter (`shiki` 4, `markdown-it` 15), the app (`vue-router` 5, `pinia` 4, `vueuse` 15) and the tooling (`pnpm` 12.4.1, Playwright 1.63).
 
 ### Upgrading
@@ -63,6 +64,8 @@ It is a `minor` because two commits in the range are a `feat`: `api.watch` ([#86
 **Most projects have nothing to do.** No configuration key changed, nothing was removed, and stories that worked on 0.14.0 work here unchanged. Rebuild your book to pick up the smaller bundle, the faster grid and the chrome fixes.
 
 **If you write a Svelte setup file that exports more than one hook name**, keep one. Both ran before; the established name runs now and the others are named in a warning. Exporting a single `setupSvelte3`, `setupSvelte4`, `setupSvelte5` or `setupSvelte` needs no change.
+
+**If you compile with `exactOptionalPropertyTypes`**, and you assign a `Variant`, a `ServerStory` or any of the other seven types above into a type of your own, add `| undefined` to the optional properties your type declares. Nothing else changes: the properties accept everything they did, plus an explicit `undefined`. Projects without that flag are unaffected.
 
 **If you maintain a plugin that calls `api.path`**, read the four pathe 2 behaviours above — `basename` with a trailing separator is the one most likely to reach you.
 
