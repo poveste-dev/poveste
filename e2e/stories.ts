@@ -25,6 +25,7 @@ export interface SharedStory {
 
 export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-auto-props', title: 'Auto State & Props' },
+  { id: 'conformance-auto-props-disabled', title: 'Auto props disabled' },
   { id: 'conformance-button', title: 'Button' },
   { id: 'conformance-concurrent-state', title: 'Concurrent state' },
   { id: 'conformance-contrast', title: 'Contrast' },
