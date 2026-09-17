@@ -107,8 +107,6 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     server: nodeServer,
   })
 
-  // Not tied to the process cleanup, which runs as soon as `devCommand` returns,
-  // while this server is still serving.
   const watches = createManagedWatches()
   onOpen('plugin watches', () => watches.close())
 
