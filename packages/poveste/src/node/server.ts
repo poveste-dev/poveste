@@ -179,7 +179,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     })
   }
 
-  onStoryChange(async (changedFile) => {
+  onOpen('onStoryChange', onStoryChange(async (changedFile) => {
     if (changedFile && !didAllStoriesYet) {
       return
     }
@@ -205,7 +205,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
         queued = false
       }
     }
-  })
+  }))
 
   async function collect() {
     collecting = true
@@ -261,20 +261,20 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     }
   }
 
-  onStoryListChange(() => {
+  onOpen('onStoryListChange', onStoryListChange(() => {
     invalidateModule(VirtualFiles.RESOLVED_STORIES_ID)
     invalidateModule(VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID)
-  })
+  }))
 
-  onMarkdownListChange(() => {
+  onOpen('onMarkdownListChange', onMarkdownListChange(() => {
     invalidateModule(VirtualFiles.RESOLVED_MARKDOWN_FILES)
-  })
+  }))
 
   // The list module is unchanged when a file is merely edited — the stale one is
   // that file's own module, which is what carries the rendered html (#370).
-  onMarkdownFileChange((file) => {
+  onOpen('onMarkdownFileChange', onMarkdownFileChange((file) => {
     invalidateModule(`/__resolved__virtual:md:${file.id}`)
-  })
+  }))
 
   collect()
 
