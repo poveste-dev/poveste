@@ -26,7 +26,7 @@ export interface ModuleServerOptions {
   transformMode?: {
     ssr?: RegExp[]
     web?: RegExp[]
-  }
+  } | undefined
 }
 
 const isWindows = process.platform === 'win32'

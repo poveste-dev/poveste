@@ -4,8 +4,8 @@ import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
   app: any
-  story?: Story
-  variant?: Variant
+  story?: Story | undefined
+  variant?: Variant | undefined
 }
 
 export type SvelteStorySetupHandler = (api: SvelteStorySetupApi) => Promise<void> | void

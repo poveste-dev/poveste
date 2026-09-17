@@ -3,8 +3,8 @@ import type { App, Component } from 'vue'
 
 export interface Vue3StorySetupApi {
   app: App
-  story?: Story
-  variant?: Variant
+  story?: Story | undefined
+  variant?: Variant | undefined
   addWrapper: (wrapper: Component) => void
 }
 

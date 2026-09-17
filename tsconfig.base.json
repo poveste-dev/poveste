@@ -10,6 +10,7 @@
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "alwaysStrict": true,
+    "exactOptionalPropertyTypes": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,

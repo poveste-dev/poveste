@@ -4,8 +4,8 @@ import type { Context } from './context.js'
 interface SerializedStory extends Omit<ServerStory, 'docsText'> {
   relativePath: string
   supportPluginId: string
-  treePath?: string[]
-  virtual?: boolean
+  treePath?: string[] | undefined
+  virtual?: boolean | undefined
   markdownFile: SerializedMarkdownFile | null
 }
 

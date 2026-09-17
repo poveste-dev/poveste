@@ -33,10 +33,10 @@ export interface SearchResultBase {
   rank: number
   id: string
   title: string
-  path?: string[]
-  icon?: string
-  iconColor?: string
-  type?: SearchResultType
+  path?: string[] | undefined
+  icon?: string | undefined
+  iconColor?: string | undefined
+  type?: SearchResultType | undefined
 }
 
 export type SearchResult = SearchResultBase & ({

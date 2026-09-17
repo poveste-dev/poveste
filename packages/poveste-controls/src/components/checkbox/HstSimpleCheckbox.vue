@@ -8,8 +8,8 @@ export default {
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
-  modelValue?: boolean
-  withToggle?: boolean
+  modelValue?: boolean | undefined
+  withToggle?: boolean | undefined
 }>()
 
 const emit = defineEmits({

@@ -8,8 +8,8 @@ export default {
 import { VTooltip as vTooltip } from 'floating-vue'
 
 withDefaults(defineProps<{
-  title?: string
-  tag?: string
+  title?: string | undefined
+  tag?: string | undefined
 }>(), {
   title: undefined,
   tag: 'label',

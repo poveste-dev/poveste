@@ -25,7 +25,7 @@ export interface Context {
 
 export interface CreateContextOptions {
   mode: Context['mode']
-  configFile?: string
+  configFile?: string | undefined
 }
 
 export async function createContext(options: CreateContextOptions): Promise<Context> {

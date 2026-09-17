@@ -40,7 +40,7 @@ function wrapControlComponent(controlComponent: (typeof components)[keyof typeof
   const dynamicControl: _Component = controlComponent
 
   return defineComponent({
-    name: controlComponent.name,
+    ...controlComponent.name ? { name: controlComponent.name } : {},
     inheritAttrs: false,
     setup(props, { attrs }) {
       const el = ref<HTMLDivElement>()
