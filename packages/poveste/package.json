@@ -78,6 +78,7 @@
     "vite": "^8.0.0"
   },
   "dependencies": {
+    "@11ty/gray-matter": "^3.0.0",
     "@akryum/tinypool": "^0.3.1",
     "@poveste/app": "workspace:^",
     "@poveste/controls": "workspace:^",
@@ -91,7 +92,6 @@
     "es-module-lexer": "^3.0.2",
     "fs-extra": "^11.2.0",
     "globby": "^16.2.4",
-    "gray-matter": "^4.0.3",
     "jiti": "^2.4.1",
     "jsdom": "^30.0.1",
     "lightningcss": "^1.32.0",
