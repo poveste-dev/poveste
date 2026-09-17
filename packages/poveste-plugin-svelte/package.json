@@ -92,7 +92,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@types/node": "^22.10.1",
-    "concurrently": "^9.1.0",
+    "concurrently": "^10.0.5",
     "fs-extra": "^11.2.0",
     "globby": "^16.2.4",
     "poveste": "workspace:*",
