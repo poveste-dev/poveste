@@ -237,11 +237,15 @@ jobs:
       # vue has 57, so a failure abandons executions mid-run — and collection ports
       # that are not closed then keep the process alive with nothing left to do
       # (#426). Measured: with the leak restored, vue hangs here and vike does not.
+      #
+      # nuxt is here for a third: a transform still in flight when the failed
+      # build closes its server re-adds a file to the closed watcher, and that
+      # opens a watcher nothing ever closes (#434).
       - name: Assert a broken component fails the book build
-        if: ${{ env.RUN == 'true' && (matrix.example == 'vike' || matrix.example == 'vue') }}
+        if: ${{ env.RUN == 'true' && (matrix.example == 'vike' || matrix.example == 'vue' || matrix.example == 'nuxt') }}
         working-directory: ./examples/${{ matrix.example }}
         env:
-          COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || 'src/components/InjectDemo.vue' }}
+          COMPONENT: ${{ matrix.example == 'vike' && 'src/Button.vue' || matrix.example == 'nuxt' && 'app/components/BaseButton.vue' || 'src/components/InjectDemo.vue' }}
           # Skips the forced exit in bin.ts, so a build that leaks hangs again and
           # `timeout` can see it. With the forced exit, a leak is indistinguishable
           # from a clean failure and this guard covers nothing (#433).
