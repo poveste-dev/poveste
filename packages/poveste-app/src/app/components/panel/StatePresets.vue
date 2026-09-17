@@ -75,6 +75,7 @@ onMounted(() => {
 
 const input = ref<HTMLInputElement>()
 const select = ref<HTMLInputElement>()
+const picker = ref<InstanceType<typeof BaseSelect>>()
 const canEdit = computed(() => selectedOption.value !== DEFAULT_ID)
 const isEditing = ref(false)
 
@@ -143,11 +144,20 @@ async function startEditing() {
   input.value?.select()
 }
 
-function stopEditing() {
+async function stopEditing(refocus = false) {
+  if (!isEditing.value) {
+    return
+  }
   isEditing.value = false
+  // Finishing a rename from the keyboard unmounts the field that had focus, so
+  // hand it to the picker, which now shows the new name.
+  if (refocus) {
+    await nextTick()
+    picker.value?.focus()
+  }
 }
 
-onClickOutside(select, stopEditing)
+onClickOutside(select, () => stopEditing())
 </script>
 
 <template>
@@ -156,57 +166,62 @@ onClickOutside(select, stopEditing)
       ref="select"
       class="flex-1 min-w-0"
     >
+      <!-- Swapped for the picker rather than put inside it: a text field inside a
+           combobox is a control nested in a control (#828). -->
+      <input
+        v-if="isEditing"
+        ref="input"
+        v-model="editingLabel"
+        type="text"
+        aria-label="Preset name"
+        class="text-inherit bg-transparent w-full px-2 h-[27px] -my-1 border border-solid border-primary-500 rounded-sm outline-none"
+        @keydown.enter="stopEditing(true)"
+        @keydown.escape="stopEditing(true)"
+      >
       <BaseSelect
+        v-else
+        ref="picker"
         v-model="selectedOption"
+        label="Preset"
         :options="presetsOptions"
         @dblclick="startEditing()"
-        @keydown.enter="stopEditing()"
-        @keydown.escape="stopEditing()"
         @select="id => applyPreset(id)"
-      >
-        <template #default="{ label }">
-          <input
-            v-if="isEditing"
-            ref="input"
-            v-model="editingLabel"
-            type="text"
-            class="text-inherit bg-transparent w-full h-full outline-none"
-            @click.stop.prevent
-          >
-
-          <div
-            v-else
-            class="flex items-center gap-2"
-          >
-            <span class="flex-1 truncate">
-              {{ label }}
-            </span>
-            <Icon
-              v-if="canEdit"
-              v-tooltip="'Rename this preset'"
-              icon="carbon:edit"
-              class="flex-none cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
-              @click.stop="startEditing()"
-            />
-          </div>
-        </template>
-
-        <template #option="{ label, value }">
-          <div class="flex gap-2 items-center">
-            <span
-              class="flex-1 truncate"
-            >{{ label }}</span>
-            <Icon
-              v-if="value !== DEFAULT_ID"
-              v-tooltip="'Delete this preset'"
-              icon="carbon:trash-can"
-              class="flex-none cursor-pointer w-4 h-4 hover:text-primary-500 opacity-50 hover:opacity-100 dark:hover:text-primary-400 text-gray-900 dark:text-gray-100"
-              @click.stop="deletePreset(value)"
-            />
-          </div>
-        </template>
-      </BaseSelect>
+      />
     </div>
+    <button
+      v-tooltip="canEdit ? 'Rename this preset' : null"
+      type="button"
+      data-testid="preset-rename"
+      aria-label="Rename preset"
+      :disabled="!canEdit"
+      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+      :class="[
+        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+      ]"
+      @click="startEditing()"
+    >
+      <Icon
+        icon="carbon:edit"
+        class="w-4 h-4"
+      />
+    </button>
+    <button
+      v-tooltip="canEdit ? 'Delete this preset' : null"
+      type="button"
+      data-testid="preset-delete"
+      aria-label="Delete preset"
+      :disabled="!canEdit"
+      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+      :class="[
+        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+      ]"
+      @click="deletePreset(selectedOption)"
+    >
+      <Icon
+        icon="carbon:trash-can"
+        class="w-4 h-4"
+      />
+    </button>
     <button
       v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
       type="button"

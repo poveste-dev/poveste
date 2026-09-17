@@ -150,3 +150,95 @@ test.describe('the panel actions', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Copied' })).toBeAttached()
   })
 })
+
+/*
+ * The preset picker was `<div>`s with click handlers, and rename and delete were
+ * icons inside it, so none of it could be reached from a keyboard (#828). axe
+ * passes on clickable divs, so these drive it with keys alone.
+ */
+test.describe('the preset picker', () => {
+  const PRESET_STORY = 'conformance-grid'
+
+  test('opens, moves and chooses from the keyboard, as a select-only combobox', async ({ page }) => {
+    await openStory(page, PRESET_STORY, '?variantId=one')
+    const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
+    await page.getByRole('button', { name: 'Create new preset', exact: true }).press('Enter')
+    await page.getByRole('textbox', { name: 'Preset name', exact: true }).press('Enter')
+    await expect(picker).toBeFocused()
+    await expect(picker).toHaveText('New preset')
+
+    // `page.keyboard` rather than `picker.press`: the latter focuses the combobox
+    // before every key, which hid the popup taking focus when it opened.
+    await page.keyboard.press('ArrowDown')
+    await expect(picker).toHaveAttribute('aria-expanded', 'true')
+    const listbox = page.getByRole('listbox', { name: 'Preset', exact: true })
+    await expect(listbox.getByRole('option')).toHaveText(['Initial state', 'New preset'])
+    await expect(listbox.getByRole('option', { name: 'New preset' })).toHaveAttribute('aria-selected', 'true')
+    await expect(picker).toBeFocused()
+
+    await page.keyboard.press('Home')
+    const active = await picker.getAttribute('aria-activedescendant')
+    await expect(page.locator(`[id="${active}"]`)).toHaveText('Initial state')
+
+    await page.keyboard.press('Enter')
+    await expect(picker).toHaveAttribute('aria-expanded', 'false')
+    await expect(picker).toHaveText('Initial state')
+    await expect(picker).toBeFocused()
+  })
+
+  test('moves to an option by typing the start of its name', async ({ page }) => {
+    await openStory(page, PRESET_STORY, '?variantId=one')
+    const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
+    const name = page.getByRole('textbox', { name: 'Preset name', exact: true })
+    for (const label of ['Wide', 'Narrow', 'Nested']) {
+      await page.getByRole('button', { name: 'Create new preset', exact: true }).press('Enter')
+      await name.fill(label)
+      await name.press('Enter')
+    }
+    await expect(picker).toBeFocused()
+    const active = async () => page.locator(`[id="${await picker.getAttribute('aria-activedescendant')}"]`)
+
+    // A closed picker opens on a typed character.
+    await page.keyboard.press('w')
+    await expect(picker).toHaveAttribute('aria-expanded', 'true')
+    await expect(await active()).toHaveText('Wide')
+
+    // After the buffer clears, one letter steps through the options it starts.
+    await page.waitForTimeout(600)
+    await page.keyboard.press('n')
+    await expect(await active()).toHaveText('Narrow')
+    await page.keyboard.press('n')
+    await expect(await active()).toHaveText('Nested')
+
+    // Characters typed together form one search.
+    await page.waitForTimeout(600)
+    await page.keyboard.type('nar')
+    await expect(await active()).toHaveText('Narrow')
+
+    await page.keyboard.press('Enter')
+    await expect(picker).toHaveText('Narrow')
+    await expect(picker).toBeFocused()
+  })
+
+  test('renames and deletes a preset from the keyboard, with neither nested in the picker', async ({ page }) => {
+    await openStory(page, PRESET_STORY, '?variantId=one')
+    const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
+    await page.getByRole('button', { name: 'Create new preset', exact: true }).press('Enter')
+    const name = page.getByRole('textbox', { name: 'Preset name', exact: true })
+    await name.fill('Wide')
+    await name.press('Enter')
+    await expect(picker).toHaveText('Wide')
+
+    await page.getByRole('button', { name: 'Rename preset', exact: true }).press('Enter')
+    await name.fill('Narrow')
+    await name.press('Enter')
+    await expect(picker).toHaveText('Narrow')
+    await expect(picker.getByRole('button')).toHaveCount(0)
+
+    page.once('dialog', dialog => dialog.accept())
+    await page.getByRole('button', { name: 'Delete preset', exact: true }).press('Enter')
+    await expect(picker).toHaveText('Initial state')
+    await picker.press('ArrowDown')
+    await expect(page.getByRole('listbox', { name: 'Preset', exact: true }).getByRole('option')).toHaveText(['Initial state'])
+  })
+})
