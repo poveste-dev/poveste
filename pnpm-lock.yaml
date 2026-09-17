@@ -723,8 +723,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.1
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -830,8 +830,8 @@ importers:
         specifier: ^16.2.4
         version: 16.2.4
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
       postcss:
         specifier: 'catalog:'
         version: 8.5.26
@@ -1013,8 +1013,8 @@ importers:
         specifier: ^11.2.0
         version: 11.4.0
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
       puppeteer:
         specifier: ^23.10.1 || ^24.0.0 || ^25.0.0
         version: 25.9.0(yauzl@2.10.0)
@@ -1041,8 +1041,8 @@ importers:
         specifier: workspace:*
         version: link:../poveste-shared
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@quasar/app-vite':
         specifier: ^3.8.1
@@ -1081,8 +1081,8 @@ importers:
         specifier: ^11.2.0
         version: 11.4.0
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@types/fs-extra':
         specifier: ^11.0.4
@@ -1124,8 +1124,8 @@ importers:
         specifier: ^2.9.1
         version: 2.14.1
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.0.0
@@ -1164,8 +1164,8 @@ importers:
         specifier: workspace:*
         version: link:../poveste-shared
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.1
@@ -1207,8 +1207,8 @@ importers:
         specifier: ^2.9.1
         version: 2.14.1
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.1
@@ -1247,8 +1247,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2
       pathe:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^2.0.3
+        version: 2.0.3
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -7307,9 +7307,6 @@ packages:
   path-scurry@2.0.1:
     resolution: {integrity: sha512-oWyT4gICAu+kaA7QWk/jvCHWarMKNs6pXOGWKDTr7cw4IGcUbW+PeTfbaQiLGheFRpjo6O9J0PmyMfQPjH71oA==}
     engines: {node: 20 || >=22}
-
-  pathe@1.1.2:
-    resolution: {integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==}
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -16520,8 +16517,6 @@ snapshots:
     dependencies:
       lru-cache: 11.5.2
       minipass: 7.1.2
-
-  pathe@1.1.2: {}
 
   pathe@2.0.3: {}
 

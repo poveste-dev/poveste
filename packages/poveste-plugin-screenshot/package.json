@@ -59,7 +59,7 @@
     "capture-website": "^5.1.0",
     "defu": "^6.1.4",
     "fs-extra": "^11.2.0",
-    "pathe": "^1.1.2"
+    "pathe": "^2.0.3"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
