@@ -48,6 +48,7 @@
     "release": "pnpm run release:check && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/release/release.ts",
     "release:report": "pnpm pipeline checks --full --no-cache --include-workspace-root",
     "test:task-graph": "vitest run --project scripts checks/task-graph",
+    "test:tsconfig-base": "vitest run --project scripts checks/tsconfig-base",
     "test:step-gates": "vitest run --project scripts checks/step-gates",
     "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:audit && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",

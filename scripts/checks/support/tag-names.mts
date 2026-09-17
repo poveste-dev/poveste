@@ -13,6 +13,7 @@ export const SUBJECT_TAGS = {
   docs: 'the docs site, the READMEs and the published recipes',
   examples: 'the example books and their wiring',
   release: 'what a release publishes',
+  toolchain: 'the compiler and lint settings every package shares',
   versions: 'the version tables and the Node pins',
 }
 
