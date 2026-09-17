@@ -9,8 +9,7 @@
     "types": [
       "node"
     ],
-    "outDir": "dist",
-    "verbatimModuleSyntax": true
+    "outDir": "dist"
   },
   "include": [
     "src"
