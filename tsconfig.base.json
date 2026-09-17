@@ -12,6 +12,7 @@
     "alwaysStrict": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
+    "noImplicitReturns": true,
     "noImplicitThis": true,
     "removeComments": false,
     "sourceMap": false,
