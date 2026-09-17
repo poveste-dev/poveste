@@ -85,7 +85,7 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "globby": "^14.0.2",
+    "globby": "^16.2.4",
     "launch-editor": "^2.9.1",
     "pathe": "^1.1.2"
   },
