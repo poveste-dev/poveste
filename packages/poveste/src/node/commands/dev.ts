@@ -29,7 +29,31 @@ export async function devCommand(options: DevOptions): Promise<{ stop: () => Pro
   const port = resolvePort(options.port, 'dev')
 
   let stopServer: (() => Promise<void>) | null = null
-  let restarting = false
+  let restarting: Promise<void> | undefined
+  let stopped = false
+
+  // Held across restarts rather than by each server: a restart that fails on the
+  // Vite config has no server to hand one back, and the save that fixes it has to
+  // be seen.
+  let viteConfigWatcher: FSWatcher | undefined
+  let watchedViteConfigFile: string | null = null
+
+  async function watchViteConfig(file: string | null) {
+    if (file === watchedViteConfigFile) {
+      return
+    }
+    await viteConfigWatcher?.close()
+    viteConfigWatcher = undefined
+    watchedViteConfigFile = file
+    if (file) {
+      viteConfigWatcher = chokidar.watch(file, {
+        ignoreInitial: true,
+      })
+      viteConfigWatcher.on('change', () => {
+        restart('Vite')
+      })
+    }
+  }
 
   async function stopSession() {
     const stopping = stopServer
@@ -49,49 +73,37 @@ export async function devCommand(options: DevOptions): Promise<{ stop: () => Pro
       host: options.host,
     })
     server.printUrls()
-
-    // Poveste config watcher
-    let watcher: FSWatcher
-    if (viteConfigFile) {
-      watcher = chokidar.watch(viteConfigFile, {
-        ignoreInitial: true,
-      })
-      watcher.on('change', () => {
-        restart('Vite')
-      })
-    }
-
-    return async () => {
-      await watcher?.close()
-      await close()
-    }
+    await watchViteConfig(viteConfigFile)
+    return close
   }
 
-  async function restart(source: string) {
-    if (restarting) {
+  function restart(source: string) {
+    if (restarting || stopped) {
       return
     }
-    restarting = true
     console.log(pc.blue(`${source} config changed, restarting...`))
-    try {
-      await stopSession()
-      stopServer = await start()
-    }
-    catch (error) {
-      // A config saved half-written fails to load. What that start registered is
-      // released, and the watcher stays, so the save that fixes it restarts again.
-      await runPovesteCleanups()
-      console.error(pc.red('Restart failed; save the config again once it is fixed.'), error)
-    }
-    finally {
-      restarting = false
-    }
+    restarting = (async () => {
+      try {
+        await stopSession()
+        stopServer = await start()
+      }
+      catch (error) {
+        // A config saved half-written fails to load. What that start registered is
+        // released, and the watchers stay, so the save that fixes it restarts again.
+        await runPovesteCleanups()
+        console.error(pc.red('Restart failed; save the config again once it is fixed.'), error)
+      }
+      finally {
+        restarting = undefined
+      }
+    })()
   }
 
   try {
     stopServer = await start()
   }
   catch (error) {
+    await watchViteConfig(null)
     await runPovesteCleanups()
     throw error
   }
@@ -108,9 +120,13 @@ export async function devCommand(options: DevOptions): Promise<{ stop: () => Pro
   }
 
   async function stop() {
+    stopped = true
     process.off('SIGINT', onSignal)
     process.off('SIGTERM', onSignal)
     await configWatcher?.close()
+    // A restart in flight would otherwise start a server after this one returned.
+    await restarting
+    await watchViteConfig(null)
     await stopSession()
   }
 
