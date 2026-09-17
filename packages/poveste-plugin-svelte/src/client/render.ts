@@ -22,8 +22,7 @@ import {
   getLegacyStateApi,
   mountSvelteComponent,
 } from '../util/svelte.js'
-import RenderStorySvelte from './RenderStory.svelte'
-import RenderVariantSvelte from './RenderVariant.svelte'
+import { renderStoryComponents } from './render-story-components.js'
 import { syncState } from './util.js'
 import Wrap from './Wrap.svelte'
 
@@ -83,8 +82,7 @@ export default _defineComponent({
         target,
         props: {
           Hst: {
-            Story: RenderStorySvelte,
-            Variant: RenderVariantSvelte,
+            ...renderStoryComponents(props.story, props.variant),
             ...getControls(),
           },
         },
