@@ -27,8 +27,8 @@ defineProps<{
         :stories="stories"
       />
       <StoryListItem
-        v-else
-        :story="stories[(element as TreeLeaf).index]"
+        v-else-if="stories[(element as TreeLeaf).index]"
+        :story="stories[(element as TreeLeaf).index]!"
       />
     </template>
   </div>

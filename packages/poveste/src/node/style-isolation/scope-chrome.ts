@@ -28,7 +28,7 @@ export function chromeCssScopePlugin(opts: ChromeCssScopePluginOptions): VitePlu
 // Stylesheets loaded only by the chrome page (bundle-main).
 function isMainChromeCss(id: string): boolean {
   if (!isChromeCss(id)) return false
-  const cleaned = id.split('?')[0]
+  const cleaned = id.replace(/\?.*$/s, '')
   return /(?:poveste-app|@poveste\/app)\/(?:dist\/style\.css|dist\/bundled\/[^/]+\.css|src\/app\/style\/main\.(?:css|pcss))$/.test(cleaned)
 }
 
@@ -36,7 +36,7 @@ function isMainChromeCss(id: string): boolean {
 // so they get a cascade-layer wrap rather than an @scope wrap.
 function isSandboxChromeCss(id: string): boolean {
   if (!isChromeCss(id)) return false
-  const cleaned = id.split('?')[0]
+  const cleaned = id.replace(/\?.*$/s, '')
   return /\/(?:poveste-app|@poveste\/app)\/(?:dist|src)\/.*\bsandbox\.css$/.test(cleaned)
     || /\/(?:poveste-controls|@poveste\/controls)\/dist\/index\.es\.css$/.test(cleaned)
 }

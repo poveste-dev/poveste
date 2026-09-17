@@ -11,7 +11,7 @@ export interface KeyboardShortcutOptions {
   event?: 'keyup' | 'keydown' | 'keypress'
 }
 
-const modifiers: { [i: string]: { key: string, pressed: boolean } } = {
+const modifiers = {
   ctrl: { key: 'Control', pressed: false },
   alt: { key: 'Alt', pressed: false },
   shift: { key: 'Shift', pressed: false },
@@ -24,8 +24,7 @@ const trackedWindows = shallowRef<Window[]>([])
 
 function bindTracking(target: Window) {
   const onKeydown = (event: KeyboardEvent) => {
-    for (const i in modifiers) {
-      const mod = modifiers[i]
+    for (const mod of Object.values(modifiers)) {
       if (mod.key === event.key) {
         mod.pressed = true
         return
@@ -36,8 +35,7 @@ function bindTracking(target: Window) {
   const onKeyup = (event: KeyboardEvent) => {
     requestAnimationFrame(() => {
       pressedKeys.clear()
-      for (const i in modifiers) {
-        const mod = modifiers[i]
+      for (const mod of Object.values(modifiers)) {
         if (mod.key === event.key) {
           mod.pressed = false
           break
@@ -47,8 +45,8 @@ function bindTracking(target: Window) {
   }
   const onBlur = () => {
     pressedKeys.clear()
-    for (const i in modifiers) {
-      modifiers[i].pressed = false
+    for (const mod of Object.values(modifiers)) {
+      mod.pressed = false
     }
   }
   target.addEventListener('keydown', onKeydown)
@@ -83,10 +81,10 @@ export function onKeyboardShortcut(shortcut: KeyboardShortcut | Ref<KeyboardShor
   useEventListener(trackedWindows, options.event ?? 'keydown', (event: KeyboardEvent) => {
     // Sync modifier state from the event so a blur-clear (e.g. focusing an
     // iframe while holding a modifier) doesn't drop the shortcut.
-    modifiers['ctrl'].pressed = event.ctrlKey
-    modifiers['alt'].pressed = event.altKey
-    modifiers['shift'].pressed = event.shiftKey
-    modifiers['meta'].pressed = event.metaKey
+    modifiers.ctrl.pressed = event.ctrlKey
+    modifiers.alt.pressed = event.altKey
+    modifiers.shift.pressed = event.shiftKey
+    modifiers.meta.pressed = event.metaKey
     if (isMatchingShortcut(isRef(shortcut) ? shortcut.value : shortcut)) {
       handler(event)
     }
@@ -108,10 +106,8 @@ function isMatchingCombination(combination: string): boolean {
   // `split` always yields at least one element, so this is unreachable for any
   // real combination — an empty or blank one matches nothing, which is right.
   if (!targetKey) return false
-  for (const mod in modifiers) {
-    const containsMod = splitted.includes(mod)
-    const isPressed = modifiers[mod].pressed
-    if (containsMod !== isPressed) {
+  for (const [name, mod] of Object.entries(modifiers)) {
+    if (splitted.includes(name) !== mod.pressed) {
       return false
     }
   }

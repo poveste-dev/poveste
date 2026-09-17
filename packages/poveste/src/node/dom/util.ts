@@ -27,7 +27,7 @@ export function getWindowKeys(global: any, win: any) {
 }
 
 function isClassLikeName(name: string) {
-  return name[0] === name[0].toUpperCase()
+  return name.charAt(0) === name.charAt(0).toUpperCase()
 }
 
 interface PopulateOptions {

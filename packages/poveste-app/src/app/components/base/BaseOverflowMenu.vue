@@ -12,9 +12,9 @@ const el = ref<HTMLDivElement>()
 
 const availableWidth = ref(0)
 
-useResizeObserver(el, (entries) => {
-  const containerWidth = entries[0].contentRect.width
-  availableWidth.value = containerWidth - overflowButtonWidth
+useResizeObserver(el, ([entry]) => {
+  if (!entry) return
+  availableWidth.value = entry.contentRect.width - overflowButtonWidth
 })
 
 // Children
@@ -29,8 +29,8 @@ const children = ref(new Map<HTMLElement, ChildState>())
 const visibleChildrenCount = computed(() => {
   let width = 0
   const c = [...children.value.values()].sort((a, b) => a.index - b.index)
-  for (let i = 0; i < c.length; i++) {
-    width += c[i].width
+  for (const [i, child] of c.entries()) {
+    width += child.width
     if (width > availableWidth.value) {
       return i
     }
@@ -49,13 +49,13 @@ const ChildWrapper = {
 
     const state = reactive({ width: 0, index: props.index })
 
-    useResizeObserver(el, (entries) => {
+    useResizeObserver(el, ([entry]) => {
       // The observer only fires for an element it is observing, so this is
       // never null here — but `children` is keyed by the element, and an
       // undefined key would silently make a second entry for the same child.
       const element = el.value
-      if (!element) return
-      const width = entries[0].contentRect.width
+      if (!element || !entry) return
+      const width = entry.contentRect.width
       if (!children.value.has(element)) {
         children.value.set(element, state)
       }

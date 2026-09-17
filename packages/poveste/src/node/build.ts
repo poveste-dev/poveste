@@ -289,12 +289,13 @@ export async function build(ctx: Context) {
 
     const results = await viteBuild(buildViteConfig)
     const result = Array.isArray(results) ? results[0] : results as Rolldown.RolldownOutput
-
-    function findEntryCss(entryName: string) {
-      return result.output.find(
-        o => o.type === 'asset' && o.fileName === `${entryName}.css`,
-      )
+    if (!result) {
+      throw new Error('[poveste] the book build produced no output')
     }
+
+    const findEntryCss = (entryName: string) => result.output.find(
+      o => o.type === 'asset' && o.fileName === `${entryName}.css`,
+    )
     const mainStyleOutput = findEntryCss('bundle-main')
       ?? result.output.find(o => o.type === 'asset' && o.names.includes('style.css'))
     const sandboxStyleOutput = findEntryCss('bundle-sandbox') ?? mainStyleOutput

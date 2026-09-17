@@ -47,7 +47,9 @@ watch(() => storyStore.currentVariant, (value) => {
 watch(() => [storyStore.currentStory, storyStore.currentVariant], () => {
   if (!storyStore.currentVariant && autoSelectsVariant(storyStore.currentStory)) {
     const variant = storyStore.currentStory.lastSelectedVariant ?? storyStore.currentStory.variants[0]
-    setVariant(variant.id)
+    if (variant) {
+      setVariant(variant.id)
+    }
   }
 }, {
   immediate: true,

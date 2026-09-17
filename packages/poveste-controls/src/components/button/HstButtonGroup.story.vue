@@ -10,9 +10,9 @@ const options: Record<string, string> = {
 
 const flatOptions = Object.keys(options)
 
-const objectOptions = Object.keys(options).map(key => ({
-  label: options[key],
-  value: key,
+const objectOptions = Object.entries(options).map(([value, label]) => ({
+  label,
+  value,
 }))
 
 function initState() {

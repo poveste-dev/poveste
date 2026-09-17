@@ -63,8 +63,8 @@ function toggleOpen() {
           :depth="0"
         />
         <StoryListItem
-          v-else
-          :story="stories[(element as TreeLeaf).index]"
+          v-else-if="stories[(element as TreeLeaf).index]"
+          :story="stories[(element as TreeLeaf).index]!"
           :depth="0"
         />
       </template>

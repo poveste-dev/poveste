@@ -309,9 +309,7 @@ export function parseColor(input: unknown) {
   if (hex !== null) {
     return {
       mode: 'rgb',
-      color: [Number.parseInt(hex[1], 16), Number.parseInt(hex[2], 16), Number.parseInt(hex[3], 16)].map(v =>
-        v.toString(),
-      ),
+      color: hex.slice(1, 4).map(v => Number.parseInt(v, 16).toString()),
       alpha: hex[4] ? (Number.parseInt(hex[4], 16) / 255).toString() : undefined,
     }
   }
@@ -321,7 +319,7 @@ export function parseColor(input: unknown) {
   if (rgbMatch !== null) {
     return {
       mode: 'rgb',
-      color: [rgbMatch[1], rgbMatch[2], rgbMatch[3]].map(v => v.toString()),
+      color: rgbMatch.slice(1, 4),
       alpha: rgbMatch[4]?.toString?.(),
     }
   }
@@ -331,7 +329,7 @@ export function parseColor(input: unknown) {
   if (hslMatch !== null) {
     return {
       mode: 'hsl',
-      color: [hslMatch[1], hslMatch[2], hslMatch[3]].map(v => v.toString()),
+      color: hslMatch.slice(1, 4),
       alpha: hslMatch[4]?.toString?.(),
     }
   }

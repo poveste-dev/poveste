@@ -14,7 +14,7 @@ export function svelteAutoProps() {
     enforce: 'pre' as const,
 
     async transform(this: any, code: string, id: string) {
-      if (!id.split('?')[0].endsWith('.svelte') || !code.includes(RENDERS_A_STORY) || !IMPORTS_A_COMPONENT.test(code)) {
+      if (!id.replace(/\?.*$/s, '').endsWith('.svelte') || !code.includes(RENDERS_A_STORY) || !IMPORTS_A_COMPONENT.test(code)) {
         return undefined
       }
 

@@ -20,9 +20,8 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
       function collectChunkCss(entryFileName: string, entryName: string, acc: Map<string, string[]>) {
         const seen = new Set<string>()
         const queue = [entryFileName]
-        let head = 0
-        while (head < queue.length) {
-          const cur = queue[head++]
+        // A `for...of` visits what the loop pushes onto the queue as it goes.
+        for (const cur of queue) {
           if (seen.has(cur)) continue
           seen.add(cur)
           const c = bundle[cur]

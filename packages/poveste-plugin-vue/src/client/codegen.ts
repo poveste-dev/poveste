@@ -85,7 +85,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
             const listenerSource = listener.toString()
             const result = /\(\$event\) => (.*?) = \$event/.exec(listenerSource)
             if (result) {
-              valueCode = result[1]
+              valueCode = result[1] ?? null
             }
           }
           genDirective('model', dir, valueCode)
@@ -128,7 +128,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
         if (prop.startsWith('on')) {
           directive = '@'
         }
-        const arg = directive === '@' ? `${prop[2].toLowerCase()}${prop.slice(3)}` : prop
+        const arg = directive === '@' ? `${prop.charAt(2).toLowerCase()}${prop.slice(3)}` : prop
 
         // v-model on component
         const vmodelListeners = [`onUpdate:${prop}`, `onUpdate:${camelCase(prop)}`]
@@ -142,7 +142,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
           let valueCode: string | null = null
           const result = /\(\$event\) => (.*?) = \$event/.exec(listenerSource)
           if (result) {
-            valueCode = result[1]
+            valueCode = result[1] ?? null
           }
 
           // Modifiers
@@ -170,10 +170,10 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
         }
         else if (typeof value === 'function') {
           let code = cleanupExpression(value.toString())
-          const testResult = /function (\S+)\(/.exec(code)
-          if (testResult) {
+          const functionName = /function (\S+)\(/.exec(code)?.[1]
+          if (functionName) {
             // Function name only
-            serialized = [testResult[1]]
+            serialized = [functionName]
           }
           else {
             if (code.startsWith('($event) => ')) {
@@ -254,7 +254,7 @@ async function printVNode(vnode: VNode, propsOverrides: Record<string, any> | nu
           if (isAllChildText === undefined) {
             isAllChildText = true
           }
-          const text = result.lines[0]
+          const text = result.lines[0] ?? ''
           if (!childLines.length || /^\s/.test(text)) {
             childLines.push(text.trim())
           }
@@ -428,9 +428,9 @@ export function getTagName(vnode: VNode) {
 }
 
 function getNameFromFile(file: string) {
-  const parts = /([^/]+)\.vue$/.exec(file)
-  if (parts) {
-    return pascalCase(parts[1])
+  const name = /([^/]+)\.vue$/.exec(file)?.[1]
+  if (name) {
+    return pascalCase(name)
   }
   return 'Anonymous'
 }

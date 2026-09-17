@@ -80,11 +80,11 @@ function arrayToSourceLines(array: any[], seen: Set<unknown>, indentCount = 0): 
         addLinesFromValue(lines, value, '', ',', seen)
       }
     })
-    if (contentLines.length === 0) {
+    const [first] = contentLines
+    if (!first) {
       lines.push('[]')
     }
     else if (contentLines.length <= MAX_SINGLE_LINE_ARRAY_LENGTH && !contentLines.some(line => line.spaces > 1)) {
-      const [first] = contentLines
       first.line = contentLines.map(({ line }) => line.substring(0, line.length - 1)).join(', ')
       first.line = `[${first.line}]`
       first.spaces--
@@ -137,7 +137,9 @@ function addLinesFromValue(lines: Array<Line | string>, value: unknown, before: 
 }
 
 function wrap(lines: Line[], before: string, after: string) {
-  lines[0].line = before + lines[0].line
-  lines[lines.length - 1].line += after
+  const first = lines[0]
+  const last = lines.at(-1)
+  if (first) first.line = before + first.line
+  if (last) last.line += after
   return lines
 }

@@ -8,9 +8,10 @@ defineProps<{
   selected: boolean
 }>()
 
-const defaultIcons: Record<string, string> = {
+const defaultIcons: Record<SearchResult['kind'], string> = {
   story: 'carbon:cube',
   variant: 'carbon:cube',
+  command: 'carbon:chevron-right',
 }
 
 const kindLabels = {
