@@ -82,7 +82,7 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
       return {
         vite: {
           server: {
-            watch: viteConfig.server.watch,
+            ...viteConfig.server.watch !== undefined ? { watch: viteConfig.server.watch } : {},
             fs: {
               allow: viteConfig.server.fs.allow,
             },

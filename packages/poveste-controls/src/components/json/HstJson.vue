@@ -98,7 +98,7 @@ onMounted(() => {
   editorView = new EditorView({
     doc: render(),
     extensions,
-    parent: editorElement.value,
+    ...editorElement.value ? { parent: editorElement.value } : {},
   })
 
   watchEffect(() => {

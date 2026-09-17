@@ -4,8 +4,8 @@ import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 
 const props = defineProps<{
-  variant?: Variant
-  story?: Story
+  variant?: Variant | undefined
+  story?: Story | undefined
 }>()
 
 const icon = computed(() => props.variant?.icon ?? props.story?.icon ?? 'carbon:cube')

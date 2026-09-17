@@ -2,9 +2,9 @@ import type { Context } from './context.js'
 import { preview } from 'vite'
 
 export interface StartPreviewOptions {
-  port?: number
-  host?: string | boolean
-  open?: boolean
+  port?: number | undefined
+  host?: string | boolean | undefined
+  open?: boolean | undefined
 }
 
 interface ReturnPayload {
@@ -24,8 +24,8 @@ export async function startPreview(options: StartPreviewOptions, ctx: Context): 
     },
     preview: {
       port,
-      host: options.host,
-      open: options.open,
+      ...options.host !== undefined ? { host: options.host } : {},
+      ...options.open !== undefined ? { open: options.open } : {},
       // A port asked for by name has to be that port or nothing. Moving to the
       // next free one serves the book where nobody is looking, and lands it on
       // whatever example owns that number, whose suite then adopts it (#175).

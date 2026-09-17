@@ -15,8 +15,8 @@ export interface MountApi {
 }
 
 export interface VanillaApi {
-  onMount?: (api: MountApi) => Awaitable<void>
-  onMountControls?: (api: MountApi) => Awaitable<void>
+  onMount?: ((api: MountApi) => Awaitable<void>) | undefined
+  onMountControls?: ((api: MountApi) => Awaitable<void>) | undefined
 }
 
 export type VanillaStorySetupHandler = (payload: { app: App, story: Story, variant: Variant }) => unknown

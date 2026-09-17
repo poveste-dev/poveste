@@ -11,13 +11,13 @@ export const SANDBOX_ERROR = '__poveste:sandbox-error'
 
 export interface StoryError {
   message: string
-  stack?: string
+  stack?: string | undefined
   /**
    * Which occupant threw. A warm realm is retargeted rather than reloaded
    * (#240), so the host has to reject a report from the previous one.
    */
-  storyId?: string
-  variantId?: string
+  storyId?: string | undefined
+  variantId?: string | undefined
 }
 
 export function toStoryError(error: unknown): Pick<StoryError, 'message' | 'stack'> {

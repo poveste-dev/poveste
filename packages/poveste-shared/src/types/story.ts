@@ -82,23 +82,23 @@ export interface VariantMeta extends CommonMeta {}
 export interface Variant {
   id: string
   title: string
-  icon?: string
-  iconColor?: string
-  setupApp?: (payload: any) => unknown
-  slots?: () => { default: any, controls: any, source: any }
+  icon?: string | undefined
+  iconColor?: string | undefined
+  setupApp?: ((payload: any) => unknown) | undefined
+  slots?: (() => { default: any, controls: any, source: any }) | undefined
   state: any
-  source?: string
-  responsiveDisabled?: boolean
-  autoPropsDisabled?: boolean
-  configReady?: boolean
-  previewReady?: boolean
-  meta?: VariantMeta
+  source?: string | undefined
+  responsiveDisabled?: boolean | undefined
+  autoPropsDisabled?: boolean | undefined
+  configReady?: boolean | undefined
+  previewReady?: boolean | undefined
+  meta?: VariantMeta | undefined
 }
 
 export interface PropDefinition {
   name: string
-  types?: string[]
-  required?: boolean
+  types?: string[] | undefined
+  required?: boolean | undefined
   default?: any
 }
 
@@ -131,7 +131,7 @@ export interface ServerStoryFile {
   /**
    * Generated path for tree UI
    */
-  treePath?: string[]
+  treePath?: string[] | undefined
   /**
    * Use the module id in imports to allow HMR
    */
@@ -139,23 +139,23 @@ export interface ServerStoryFile {
   /**
    * Resolved story data from story file execution
    */
-  story?: ServerStory
+  story?: ServerStory | undefined
   /**
    * Data sent to user tree config functions
    */
-  treeFile?: ServerTreeFile
+  treeFile?: ServerTreeFile | undefined
   /**
    * Is virtual module
    */
-  virtual?: boolean
+  virtual?: boolean | undefined
   /**
    * Virtual module code
    */
-  moduleCode?: string
+  moduleCode?: string | undefined
   /**
    * Related markdown docs
    */
-  markdownFile?: ServerMarkdownFile
+  markdownFile?: ServerMarkdownFile | undefined
 }
 
 export interface ServerMarkdownFile {
@@ -164,30 +164,30 @@ export interface ServerMarkdownFile {
   absolutePath: string
   isRelatedToStory: boolean
   frontmatter?: any
-  html?: string
-  content?: string
-  storyFile?: ServerStoryFile
+  html?: string | undefined
+  content?: string | undefined
+  storyFile?: ServerStoryFile | undefined
 }
 
 export interface ServerStory {
   id: string
   title: string
-  group?: string
+  group?: string | undefined
   variants: ServerVariant[]
-  layout?: StoryLayout
-  icon?: string
-  iconColor?: string
-  docsOnly?: boolean
-  docsText?: string
-  meta?: StoryMeta
+  layout?: StoryLayout | undefined
+  icon?: string | undefined
+  iconColor?: string | undefined
+  docsOnly?: boolean | undefined
+  docsText?: string | undefined
+  meta?: StoryMeta | undefined
 }
 
 export interface ServerVariant {
   id: string
   title: string
-  icon?: string
-  iconColor?: string
-  meta?: VariantMeta
+  icon?: string | undefined
+  iconColor?: string | undefined
+  meta?: VariantMeta | undefined
 }
 
 export interface ServerTreeFile {

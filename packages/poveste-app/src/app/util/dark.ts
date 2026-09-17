@@ -4,7 +4,7 @@ import { povesteConfig } from './config.js'
 
 export const isDark = useDark({
   valueDark: 'ptw-dark',
-  initialValue: povesteConfig.theme.defaultColorScheme,
+  ...povesteConfig.theme.defaultColorScheme ? { initialValue: povesteConfig.theme.defaultColorScheme } : {},
   storageKey: 'poveste-color-scheme',
   storage: povesteConfig.theme.storeColorScheme ? localStorage : sessionStorage,
 })

@@ -14,9 +14,9 @@ import * as VirtualFiles from './virtual/index.js'
 import { getViteConfigWithPlugins } from './vite.js'
 
 export interface CreateServerOptions {
-  port?: number
-  open?: boolean
-  host?: string | boolean
+  port?: number | undefined
+  open?: boolean | undefined
+  host?: string | boolean | undefined
 }
 
 export async function createServer(ctx: Context, options: CreateServerOptions = {}) {

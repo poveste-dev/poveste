@@ -267,7 +267,7 @@ export default defineComponent({
     if (firstVariant?.id === '_default') {
       return h(Variant, {
         variant: firstVariant,
-        initState: this.initState,
+        ...this.initState ? { initState: this.initState } : {},
         implicit: true,
         ...this.$attrs,
       }, this.$slots)
