@@ -8,8 +8,9 @@ const RELEASES = [
   { name: '@poveste/plugin-vue', version: '0.7.0' },
 ]
 
-// No real waiting, and no registry.
-const options = (attempts = 3) => ({ attempts, waitMs: 0, sleep: () => {} })
+// No real waiting, and no registry. The budget is spent in simulated waits, so a
+// probe that never resolves ends the loop rather than spinning on a free retry.
+const options = (budgetMs = 20_000) => ({ budgetMs, waitMs: 6_000, maxWaitMs: 6_000, sleep: () => {} })
 
 describe('unpublishedReleases', () => {
   it('reports a release the registry does not have', () => {
@@ -68,7 +69,7 @@ describe('unpublishedReleases', () => {
     const problems = unpublishedReleases(
       RELEASES.slice(0, 1),
       () => 'npm error network timeout',
-      options(2),
+      options(6_000),
     )
 
     expect(problems).toEqual(['poveste@0.7.0 could not be verified: npm error network timeout'])
@@ -93,11 +94,13 @@ describe('the default retry window', () => {
     expect(problems).toEqual([])
   })
 
-  it('still reports the gap it exists for', () => {
-    // #327 was ten minutes and never resolved. Widening the window must not
-    // turn this gate into one that waits out a real half-publish.
+  // The tail that failed v0.15.0: the verify step gave up after about 3m30s and
+  // two packages were on the registry minutes later. This is the case the old
+  // seven-attempt window could not hold and a deadline can.
+  it('tolerates a tail longer than the window that failed v0.15.0', () => {
     let waited = 0
-    const probe = (): string => (waited < 10 * 60_000 ? 'missing' : 'present')
+    const probe = (name: string): string =>
+      name === '@poveste/plugin-vue' && waited < 6 * 60_000 ? 'missing' : 'present'
 
     const problems = unpublishedReleases(RELEASES, probe, {
       sleep: (ms: number) => {
@@ -105,7 +108,22 @@ describe('the default retry window', () => {
       },
     })
 
+    expect(problems).toEqual([])
+  })
+
+  it('still reports the gap it exists for, and stops asking', () => {
+    // #327: a package the registry never recorded. Widening the window must not
+    // turn this gate into one that waits forever for something that never comes.
+    let waited = 0
+
+    const problems = unpublishedReleases(RELEASES, () => 'missing', {
+      sleep: (ms: number) => {
+        waited += ms
+      },
+    })
+
     expect(problems).toHaveLength(2)
+    expect(waited).toBeLessThanOrEqual(15 * 60_000)
   })
 })
 
