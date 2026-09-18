@@ -285,6 +285,30 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
  * installs the published tarballs on (#389). A range narrower than what is
  * supported breaks nobody, which is why nothing caught it — it only costs users.
  */
+/**
+ * A published `engines.node` must be one `>=` floor, with nothing above it.
+ *
+ * npm resolves backwards when no published version satisfies the running Node: it
+ * walks back to the newest release with no `engines` field at all, which for this
+ * package is `0.6.1` from before the field existed, and installs it with only a
+ * deprecation notice. So a range that rejects any version above its own floor —
+ * `^22.22.2 || ^24.15.0 || >=26.0.0` rejected every 24.x below 24.15, which is
+ * what `fnm` installs as `lts-latest` — hands that reader a nine-minor-old
+ * package silently (#901).
+ *
+ * Reproduced on 24.13.0 and, below the floor, on 20.19.0: `npm i poveste` added
+ * `poveste@0.6.1` on both. Naming a version explicitly (`poveste@latest`) installs
+ * the real one and warns instead, which is the only mitigation left for a Node
+ * below the floor.
+ */
+export function engineFloorProblems(pkg: string, engines: string | undefined): string[] {
+  if (!engines || /^>=\d+\.\d+\.\d+$/.test(engines.trim())) {
+    return []
+  }
+
+  return [`packages/${pkg}/package.json declares engines.node \`${engines}\`, which is not a single \`>=\` floor: a Node above it that the range rejects installs an ancient version instead of failing (#901)`]
+}
+
 export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
   const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
   if (!claimed || !engines || claimed === engines) {
@@ -384,6 +408,7 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
   for (const { entry, readme, manifest } of walk.packages) {
     problems.push(...readmeRangeProblems(entry, readme, manifest.peerDependencies ?? {}))
     problems.push(...nodeClaimProblems(entry, readme, manifest.engines?.node))
+    problems.push(...engineFloorProblems(entry, manifest.engines?.node))
   }
 
   return problems
