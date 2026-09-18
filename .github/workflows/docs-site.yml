@@ -14,6 +14,13 @@ name: Check the deployed docs site
 # true report aimed at the wrong person. The build-side half of the same contract
 # runs on every PR as `test:docs-site`, and a redirect change is proved against
 # its deploy preview with `POVESTE_DOCS_SITE`.
+#
+# **The cron does not start when this merges.** GitHub runs a scheduled workflow
+# from the default branch only, and this repository's is `main`, which moves at a
+# release. So between merging to `next` and the next cut, this runs only when
+# someone dispatches it — `gh workflow run "Check the deployed docs site"`. That
+# is the same hand-run gap #911 is about, narrowed to one cycle rather than
+# closed, and it is why the workflow carries `workflow_dispatch`.
 on:
   schedule:
     - cron: '0 8 * * *'
