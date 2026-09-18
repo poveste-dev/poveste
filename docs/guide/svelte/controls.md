@@ -131,9 +131,9 @@ The source panel shows the `source` prop. Because props are evaluated in your `<
 
 ```svelte
 <script lang="ts">
-  import type { Hst, StoryState } from '@poveste/plugin-svelte'
+  import type { Hst as HstType, StoryState } from '@poveste/plugin-svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 
   const initState = () => ({ disabled: false })
 

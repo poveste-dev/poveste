@@ -13,10 +13,10 @@ This will display variants as separate pages that you can navigate into. This vi
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story title="MyStory">
@@ -35,10 +35,10 @@ This will display variants in a grid for you to visualize all the variants on th
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story
@@ -60,10 +60,10 @@ When you have a lot of variants to test, it can be easier to generate them with 
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 
   const args = ['hello', 'world', 'etc', '...']
 </script>
@@ -86,10 +86,10 @@ When your variants have a lot of arguments, you can spread them.
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 
   const propsVariants = [
     { argument: 'hello', color: 'red', count: 4 },
