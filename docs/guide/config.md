@@ -259,7 +259,7 @@ export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
 })
 ```
 
-Unlike the Vue pair, where the first name found wins, **every accepted Svelte name you export runs** — so export one of the three, not several. `app` is the mounted component instance, not an application object, and the hook runs after mount.
+`setupSvelte3`, `setupSvelte4` and `setupSvelte5` are accepted too. They are aliases of one hook, so the first name Poveste finds runs and a warning names the rest — the same rule as the Vue pair. `app` is the mounted component instance, not an application object, and the hook runs after mount.
 
 [Learn more](./svelte/app-setup.md)
 
