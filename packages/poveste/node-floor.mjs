@@ -15,7 +15,7 @@
 // failure it exists for can be the import of `dist/`, and syntax this file
 // cannot parse on an old Node would be the same defect wearing a different hat.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeSync } from 'node:fs'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -53,20 +53,35 @@ export function nodeProblem(version, range) {
   return floor && isBelow(version, floor) ? unsupportedNodeMessage(version, range) : null
 }
 
-/** Exits 1, before the CLI is loaded, when this Node is below the declared floor. */
-export function assertSupportedNode(manifestUrl = new URL('./package.json', import.meta.url)) {
+/**
+ * Whether this Node may run the CLI, saying so on stderr when it may not.
+ *
+ * `writeSync` and `process.exitCode`, not `console.error` and `process.exit`: a
+ * write to a piped stderr is asynchronous and `process.exit` does not wait for it.
+ * `src/node/bin.ts` delays its own forced exit 500ms for that hazard, after a
+ * framed compiler error came out cut in half.
+ *
+ * Measured here, this message survived both shapes — 112 bytes is small enough to
+ * land in one write. So this is the shape that cannot lose it rather than a fix for
+ * an observed loss, and it costs nothing: there is nothing to flush and nothing
+ * left to do but exit.
+ */
+export function supportedNode(manifestUrl = new URL('./package.json', import.meta.url)) {
   let range
   try {
     range = JSON.parse(readFileSync(fileURLToPath(manifestUrl), 'utf8')).engines?.node
   }
   catch {
     // A manifest this cannot read is not the reader's problem to be told about.
-    return
+    return true
   }
 
   const problem = nodeProblem(process.versions.node, range)
-  if (problem) {
-    console.error(problem)
-    process.exit(1)
+  if (!problem) {
+    return true
   }
+
+  writeSync(2, `${problem}\n`)
+  process.exitCode = 1
+  return false
 }
