@@ -26,6 +26,19 @@ Before writing anything, open an existing conformance story in each book and cop
 
 Then the spec itself in `e2e/<name>.spec.ts`.
 
+## Two counts move with it
+
+Two books assert how many stories their sidebar lists, and a story added to the contract moves both:
+
+| | |
+| --- | --- |
+| `examples/vue/playwright/stories-list.spec.ts` | `toHaveCount(39)` |
+| `examples/nuxt/playwright/all-stories.spec.ts` | `toHaveCount(38)` |
+
+They count what the sidebar renders with folders collapsed, not the contract, which is why they are literals rather than derived from `SHARED_STORIES` — the number is a property of that book's tree, and deriving it would assert less than it does.
+
+Bump both in the same change. Miss them and Playwright fails in a book you did not touch, reading `Expected: 39 / Received: 40` (#906).
+
 Fixtures — `quasar`, `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify` — are **not** in this contract. Adding the story to one only slows it down.
 
 ## Ids
