@@ -171,6 +171,12 @@ own page: **[Getting started with Nuxt](../nuxt/getting-started.md)**.
 
 Learn more about configuring Poveste [here](../config.md).
 
+## Write your first story
+
+Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
+
+**[Writing Vue stories](../vue/stories.md)** is the page that shows one.
+
 ## Community
 
 If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions).
