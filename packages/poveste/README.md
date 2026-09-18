@@ -47,7 +47,7 @@ Run `npx poveste --help` for the full list of options.
 
 ## Requirements
 
-Node `^22.22.2 || ^24.15.0 || >=26.0.0` and Vite `^8.0.0`. See
+Node `>=22.22.2` and Vite `^8.0.0`. See
 [supported versions](https://poveste.dev/guide/getting-started#supported-versions) for
 what proves each range.
 

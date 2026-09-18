@@ -67,7 +67,7 @@ is wider than the CI job behind it, the range is the bug.
 
 | | Supported | Proven by |
 | --- | --- | --- |
-| [Node](https://nodejs.org) | `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` | `Node floor` — installs the tarballs and builds a book on 22.22.2 |
+| [Node](https://nodejs.org) | `>=22.22.2` | `Node floor` — installs the tarballs and builds a book on 22.22.2 |
 | [Vite](https://vite.dev) | `^8.0.0` | every example |
 | [Vue](https://vuejs.org) | `^3.5.26` | `Example e2e (vue)` — builds that book and runs Playwright against it |
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `Example e2e (nuxt)` — builds that book and runs Playwright against it |

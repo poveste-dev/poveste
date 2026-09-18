@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
-import { checkVersions, citedJobProblems, collect, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './versions.ts'
+import { checkVersions, citedJobProblems, collect, engineFloorProblems, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './versions.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`
 // while the plugin declared `^5.46.4`, inviting a combination that cannot be
@@ -299,5 +299,32 @@ describe('checkVersions', () => {
 
   it('the version tables match what the packages declare', { tags: ['check', 'versions'] }, async () => {
     assertNoProblems(await checkVersions())
+  })
+})
+
+describe('engineFloorProblems', () => {
+  it('accepts a single `>=` floor, which no Node above it can fall out of', () => {
+    expect(engineFloorProblems('poveste', '>=22.22.2')).toEqual([])
+  })
+
+  // The range 0.15.0 published. `24.13.0`, what fnm installs as `lts-latest`, sits
+  // between its second and third clause, and npm answered with `poveste@0.6.1`.
+  it('rejects a range with a gap a released Node falls into', () => {
+    expect(engineFloorProblems('poveste', '^22.22.2 || ^24.15.0 || >=26.0.0')).toEqual([
+      'packages/poveste/package.json declares engines.node `^22.22.2 || ^24.15.0 || >=26.0.0`, which is not a single `>=` floor: a Node above it that the range rejects installs an ancient version instead of failing (#901)',
+    ])
+  })
+
+  it('rejects an upper bound, which dates the same way', () => {
+    expect(engineFloorProblems('poveste', '>=22.22.2 <30')).toHaveLength(1)
+  })
+
+  // A published package with no field at all is what npm resolves *back to*: the
+  // absent `engines` is read as accepting every Node, which is why `0.6.1` is the
+  // version #901 lands on.
+  it('rejects a published package that declares no engines at all', () => {
+    expect(engineFloorProblems('poveste-plugin-vue', undefined)).toEqual([
+      'packages/poveste-plugin-vue/package.json declares no engines.node: npm reads that as accepting every Node, which is what makes a published version the one an unsupported Node resolves back to (#901)',
+    ])
   })
 })
