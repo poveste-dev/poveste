@@ -1,0 +1,54 @@
+name: Check the deployed docs site
+
+# The contract `test:docs-site` holds the build to, asked of production instead.
+#
+# A PR cannot prove production — poveste.dev deploys from `main` (#321) — so the
+# check was left for someone to run after a deploy. Nobody did: #840's redirects
+# shipped in 0.15.0 and the site was still serving the 0.14.0 deploy a day later,
+# with every `.html` twin answering 200, which is the state #811 was closed for
+# fixing (#911).
+#
+# Scheduled rather than tied to the release, because a deploy can fail or be
+# skipped at any time, not only at a cut, and the site is what readers have in
+# between.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - netlify.toml
+      - scripts/checks/docs-site.ts
+      - scripts/checks/docs-site.spec.ts
+      - .github/workflows/docs-site.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    name: Check the deployed docs site
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # On a pull request this asks production, which that PR has not changed —
+      # it says whether the site is healthy now, which is the question. A
+      # redirect change is proved against its deploy preview with
+      # `POVESTE_DOCS_SITE`, as `scripts/checks/docs-site.ts` says.
+      - name: poveste.dev answers a crawler correctly
+        run: pnpm run test:docs-site:live
