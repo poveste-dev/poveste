@@ -1,6 +1,6 @@
 import type { ServerStoryFile } from '@poveste/shared'
 import { describe, expect, it } from 'vitest'
-import { buildCounts, buildSummary, builtSomething } from '../build-counts.js'
+import { buildCounts, buildSummary, builtSomething, storyGuideUrl } from '../build-counts.js'
 
 function storyFile(relativePath: string, story: unknown): ServerStoryFile {
   return { relativePath, story } as ServerStoryFile
@@ -111,7 +111,7 @@ describe('buildSummary', () => {
     it('says where it looked instead of ticking', () => {
       expect(buildSummary(nothing, 0.4, ['**/*.story.vue', '**/*.story.md'])).toEqual([
         'Built 0 stories in 0.4s — nothing matched **/*.story.vue, **/*.story.md',
-        'Write a story file and run this again: https://poveste.dev/guide/',
+        'Write a story file and run this again: https://poveste.dev/guide/getting-started',
       ])
     })
 
@@ -130,7 +130,7 @@ describe('buildSummary', () => {
     it('says the files matched, rather than that nothing did', () => {
       expect(buildSummary(empty, 0.4, ['**/*.story.vue'])).toEqual([
         'Built 0 stories in 0.4s — 1 file matched **/*.story.vue and produced no story',
-        'A story file needs a <Story> in it: https://poveste.dev/guide/',
+        'A story file needs a <Story> in it: https://poveste.dev/guide/getting-started',
       ])
     })
 
@@ -147,5 +147,28 @@ describe('buildSummary', () => {
     it('does not tick', () => {
       expect(buildSummary(empty, 0.4, ['**/*.story.vue']).join('\n')).not.toContain('✅')
     })
+  })
+})
+
+// The link the reader is handed when they have no stories. It used to be
+// `/guide/`, which says what a story is rather than showing one (#905).
+describe('storyGuideUrl', () => {
+  it('sends a Svelte book to the page that shows a Svelte story', () => {
+    expect(storyGuideUrl(['@poveste/plugin-svelte'])).toBe('https://poveste.dev/guide/svelte/stories')
+  })
+
+  it('sends a Vue book to the Vue one', () => {
+    expect(storyGuideUrl(['@poveste/plugin-vue'])).toBe('https://poveste.dev/guide/vue/stories')
+  })
+
+  // Nuxt and Quasar books are written in Vue, and neither has a stories page of
+  // its own.
+  it('sends Nuxt and Quasar books there too', () => {
+    expect(storyGuideUrl(['@poveste/plugin-nuxt'])).toBe('https://poveste.dev/guide/vue/stories')
+    expect(storyGuideUrl(['@poveste/plugin-quasar'])).toBe('https://poveste.dev/guide/vue/stories')
+  })
+
+  it('falls back to the page that lists the frameworks when it recognises none', () => {
+    expect(storyGuideUrl(['@acme/plugin-elm'])).toBe('https://poveste.dev/guide/getting-started')
   })
 })
