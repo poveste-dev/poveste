@@ -6,7 +6,10 @@ test.describe('stories list', () => {
     await page.localStorage.clear()
     await page.reload()
 
-    await expect(page.getByTestId('story-list-item')).toHaveCount(39)
+    // Counts what the sidebar lists, folders collapsed, so it cannot be derived
+    // from `SHARED_STORIES`: adding a story to the conformance set moves it, and
+    // `/add-conformance-story` says so.
+    await expect(page.getByTestId('story-list-item'), 'the sidebar lists a different number of stories — a story added to the conformance set moves this count').toHaveCount(39)
     await expect(page.getByTestId('story-list-item').filter({ hasText: '🐱 Meow' })).toBeVisible()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()
