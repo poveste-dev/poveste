@@ -1,0 +1,54 @@
+name: Check the deployed docs site
+
+# The contract `test:docs-site` holds the build to, asked of production instead.
+#
+# It was left for someone to run after a deploy, and nobody did: #840's redirects
+# shipped in 0.15.0 and the site was still serving the 0.14.0 deploy a day later,
+# with every `.html` twin answering 200 — the state #811 was closed for fixing
+# (#911).
+#
+# Scheduled rather than tied to the release, because a deploy can fail or be
+# skipped at any time, not only at a cut, and the site is what readers have in
+# between. Not on pull requests: this asks production, which a pull request
+# cannot change — the site deploys from `main` (#321) — so a red run there is a
+# true report aimed at the wrong person. The build-side half of the same contract
+# runs on every PR as `test:docs-site`, and a redirect change is proved against
+# its deploy preview with `POVESTE_DOCS_SITE`.
+#
+# **The cron does not start when this merges.** GitHub runs a scheduled workflow
+# from the default branch only, and this repository's is `main`, which moves at a
+# release. So between merging to `next` and the next cut, this runs only when
+# someone dispatches it — `gh workflow run "Check the deployed docs site"`. That
+# is the same hand-run gap #911 is about, narrowed to one cycle rather than
+# closed, and it is why the workflow carries `workflow_dispatch`.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    name: Check the deployed docs site
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.0.10
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: poveste.dev answers a crawler correctly
+        run: pnpm run test:docs-site:live
