@@ -319,7 +319,12 @@ describe('engineFloorProblems', () => {
     expect(engineFloorProblems('poveste', '>=22.22.2 <30')).toHaveLength(1)
   })
 
-  it('says nothing about a package that declares no engines', () => {
-    expect(engineFloorProblems('poveste', undefined)).toEqual([])
+  // A published package with no field at all is what npm resolves *back to*: the
+  // absent `engines` is read as accepting every Node, which is why `0.6.1` is the
+  // version #901 lands on.
+  it('rejects a published package that declares no engines at all', () => {
+    expect(engineFloorProblems('poveste-plugin-vue', undefined)).toEqual([
+      'packages/poveste-plugin-vue/package.json declares no engines.node: npm reads that as accepting every Node, which is what makes a published version the one an unsupported Node resolves back to (#901)',
+    ])
   })
 })

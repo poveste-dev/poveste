@@ -285,6 +285,15 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
  * installs the published tarballs on (#389). A range narrower than what is
  * supported breaks nobody, which is why nothing caught it — it only costs users.
  */
+export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
+  const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
+  if (!claimed || !engines || claimed === engines) {
+    return []
+  }
+
+  return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
+}
+
 /**
  * A published `engines.node` must be one `>=` floor, with nothing above it.
  *
@@ -302,20 +311,19 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
  * below the floor.
  */
 export function engineFloorProblems(pkg: string, engines: string | undefined): string[] {
-  if (!engines || /^>=\d+\.\d+\.\d+$/.test(engines.trim())) {
+  // No field at all is the shape that makes a version the *target* of that walk
+  // back, rather than its victim: `0.6.1` is where npm lands precisely because it
+  // predates the field, and npm reads an absent `engines` as accepting every Node.
+  // Only `packages/poveste` was guarded against losing it, in `expectations()`.
+  if (!engines) {
+    return [`packages/${pkg}/package.json declares no engines.node: npm reads that as accepting every Node, which is what makes a published version the one an unsupported Node resolves back to (#901)`]
+  }
+
+  if (/^>=\d+\.\d+\.\d+$/.test(engines.trim())) {
     return []
   }
 
   return [`packages/${pkg}/package.json declares engines.node \`${engines}\`, which is not a single \`>=\` floor: a Node above it that the range rejects installs an ancient version instead of failing (#901)`]
-}
-
-export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
-  const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
-  if (!claimed || !engines || claimed === engines) {
-    return []
-  }
-
-  return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
 }
 
 /**
