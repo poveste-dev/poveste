@@ -37,6 +37,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
+        # Rewrites the lockfile under pnpm 12; see the note in `release.yml` (#711).
         run: pnpm install --frozen-lockfile
 
       - name: No high or critical advisory reaches a consumer

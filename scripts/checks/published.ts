@@ -36,8 +36,7 @@ function sleepSync(ms: number): void {
 // The wait doubles up to a ceiling, so a release that propagates in seconds still
 // exits in seconds while a slow one is tolerated. A flat 6s x 5 gave up 31s before
 // v0.8.1's last package landed and failed a release that was entirely healthy
-// (#401); the gap this gate exists for (#327) was ten minutes and never resolved,
-// so widening to ~3.5 minutes keeps the two far apart.
+// (#401); the gap this gate exists for (#327) was ten minutes and never resolved.
 export function backoffMs(attempt: number, waitMs: number, maxWaitMs: number): number {
   return Math.min(maxWaitMs, waitMs * 2 ** (attempt - 2))
 }
@@ -45,17 +44,36 @@ export function backoffMs(attempt: number, waitMs: number, maxWaitMs: number): n
 // Releases the registry cannot account for. Only the still-unaccounted-for are
 // retried, and every one is reported, so recovery is a single operation rather
 // than one per run.
+//
+// Bounded by a deadline rather than by a number of attempts, because the tail this
+// waits out has already moved by a factor of three across five releases — 1m36s to
+// 4m46s, `@poveste/plugin-vue` last in all five (#458). Seven attempts came to
+// about 3m30s, which covered four of those five; v0.15.0 lost to it again, giving
+// up on two packages that were on the registry minutes later. A number of attempts
+// is a bet on the shape of that distribution, and a deadline is not: a healthy
+// release still exits as soon as the last package answers, and only a genuinely
+// missing one waits out the budget before failing with its name.
 export function unpublishedReleases(
   releases: Release[],
   probe: Probe,
-  { attempts = 7, waitMs = 6_000, maxWaitMs = 60_000, sleep = sleepSync } = {},
+  { budgetMs = 15 * 60_000, waitMs = 6_000, maxWaitMs = 60_000, sleep = sleepSync } = {},
 ): string[] {
   let pending = releases
   let problems: string[] = []
+  // Time spent waiting, not wall clock: the probes themselves are the registry
+  // answering, and a slow answer is not a reason to stop asking.
+  let waitedMs = 0
 
-  for (let attempt = 1; attempt <= attempts && pending.length > 0; attempt++) {
+  for (let attempt = 1; pending.length > 0; attempt++) {
     if (attempt > 1) {
-      sleep(backoffMs(attempt, waitMs, maxWaitMs))
+      // A non-positive wait would spend no budget and never end the loop, so it
+      // means "do not retry" rather than "retry for free".
+      const wait = backoffMs(attempt, waitMs, maxWaitMs)
+      if (wait <= 0 || waitedMs + wait > budgetMs) {
+        break
+      }
+      sleep(wait)
+      waitedMs += wait
     }
     const unresolved: Release[] = []
     problems = []

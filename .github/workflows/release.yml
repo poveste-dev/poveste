@@ -38,6 +38,15 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
 
+      # `--frozen-lockfile` rewrites `pnpm-lock.yaml` under pnpm 12 rather than
+      # refusing to touch it: it adds pnpm's own `packageManagerDependencies`
+      # entry, which no other command writes. The committed lockfile is the
+      # install-produced state — what every developer command and the other CI
+      # installs produce — and that is the deliberate choice, not an oversight
+      # (#711). Nothing here reads the tree for cleanliness and the runner is
+      # discarded, so the rewrite reaches nothing; the flag stays for what its
+      # name promises about resolution. Re-check on the next pnpm minor: this is
+      # pnpm's behaviour, and 12.3.4 had a worse version of it.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
