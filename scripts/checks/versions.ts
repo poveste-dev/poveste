@@ -295,6 +295,38 @@ export function nodeClaimProblems(pkg: string, readme: string, engines: string |
 }
 
 /**
+ * A published `engines.node` must be one `>=` floor, with nothing above it.
+ *
+ * npm resolves backwards when no published version satisfies the running Node: it
+ * walks back to the newest release with no `engines` field at all, which for this
+ * package is `0.6.1` from before the field existed, and installs it with only a
+ * deprecation notice. So a range that rejects any version above its own floor —
+ * `^22.22.2 || ^24.15.0 || >=26.0.0` rejected every 24.x below 24.15, which is
+ * what `fnm` installs as `lts-latest` — hands that reader a nine-minor-old
+ * package silently (#901).
+ *
+ * Reproduced on 24.13.0 and, below the floor, on 20.19.0: `npm i poveste` added
+ * `poveste@0.6.1` on both. Naming a version explicitly (`poveste@latest`) installs
+ * the real one and warns instead, which is the only mitigation left for a Node
+ * below the floor.
+ */
+export function engineFloorProblems(pkg: string, engines: string | undefined): string[] {
+  // No field at all is the shape that makes a version the *target* of that walk
+  // back, rather than its victim: `0.6.1` is where npm lands precisely because it
+  // predates the field, and npm reads an absent `engines` as accepting every Node.
+  // Only `packages/poveste` was guarded against losing it, in `expectations()`.
+  if (!engines) {
+    return [`packages/${pkg}/package.json declares no engines.node: npm reads that as accepting every Node, which is what makes a published version the one an unsupported Node resolves back to (#901)`]
+  }
+
+  if (/^>=\d+\.\d+\.\d+$/.test(engines.trim())) {
+    return []
+  }
+
+  return [`packages/${pkg}/package.json declares engines.node \`${engines}\`, which is not a single \`>=\` floor: a Node above it that the range rejects installs an ancient version instead of failing (#901)`]
+}
+
+/**
  * Each plugin's README states its own floor — the most useful fact on its npm
  * page, and one more hand-written copy of a peer range. Any `name@range` in a
  * package README that names one of that package's own peers must match it.
@@ -384,6 +416,7 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
   for (const { entry, readme, manifest } of walk.packages) {
     problems.push(...readmeRangeProblems(entry, readme, manifest.peerDependencies ?? {}))
     problems.push(...nodeClaimProblems(entry, readme, manifest.engines?.node))
+    problems.push(...engineFloorProblems(entry, manifest.engines?.node))
   }
 
   return problems
