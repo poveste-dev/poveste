@@ -2,7 +2,7 @@
 'use strict'
 
 import process from 'node:process'
-import { assertSupportedNode } from './node-floor.mjs'
+import { supportedNode } from './node-floor.mjs'
 
 // Before the CLI is imported, not inside it: on a Node below the floor the import
 // itself is one of the things that can fail, and it fails naming neither Node nor
@@ -12,9 +12,11 @@ import { assertSupportedNode } from './node-floor.mjs'
 // Imported dynamically for the same reason. A static import is parsed with this
 // module, before a line of it runs, so syntax `dist/` may carry would win the race
 // against the message explaining it.
-assertSupportedNode()
-
-import('./dist/node/bin.js').catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+if (supportedNode()) {
+  import('./dist/node/bin.js').catch((error) => {
+    // `exitCode`, not `exit`: the error is the last thing written, and forcing the
+    // process out on the same tick truncates it on a pipe.
+    process.exitCode = 1
+    console.error(error)
+  })
+}

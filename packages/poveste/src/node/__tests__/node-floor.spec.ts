@@ -85,6 +85,11 @@ const OLD_NODE = oldNodeBinary()
  * node-versions.ts` is what keeps it that way. The cases above run there, and
  * they exercise the same function this reaches through the binary.
  */
+/** The same run with stderr on a pipe rather than captured directly. */
+function pipedStderr(): string {
+  return execFileSync('/bin/sh', ['-c', `"${OLD_NODE}" "${path.join(PACKAGE, 'bin.mjs')}" --version 2>&1 | cat`], { encoding: 'utf8' })
+}
+
 describe.skipIf(!OLD_NODE)('running `poveste` on an unsupported Node', () => {
   it('exits 1 naming Node and Poveste, before loading the CLI', () => {
     let status = 0
@@ -100,6 +105,11 @@ describe.skipIf(!OLD_NODE)('running `poveste` on an unsupported Node', () => {
 
     expect(status).toBe(1)
     expect(stderr).toContain('Poveste requires Node.js version')
+    // And through a pipe, which is the path `process.exit` can truncate. This does
+    // not discriminate: at this length the old `console.error` + `exit` shape
+    // printed all 112 bytes too, on macOS and Linux. It asserts the outcome that
+    // matters rather than the mechanism.
+    expect(pipedStderr()).toContain('Poveste requires Node.js version')
     // The CLI was never reached: its own failure on an old Node names neither it
     // nor Node, which is the whole reason this check is in `bin.mjs`.
     expect(stderr).not.toContain('dist/node/bin.js')
