@@ -76,7 +76,31 @@ export function builtSomething(counts: BuildCounts): boolean {
  * Documents count as content: a book of `.story.md` pages with no variants has
  * something in it, and telling its author nothing was found would be wrong.
  */
-export function buildSummary(counts: BuildCounts, seconds: number, storyMatch: string[]): string[] {
+/**
+ * The page that shows a story in the framework this book uses.
+ *
+ * The message used to send everyone to `/guide/`, which explains what a story is
+ * for a second time rather than showing one — two hops of misdirection for a
+ * reader who has just been told they have no stories (#905). Nuxt and Quasar
+ * write Vue stories, SvelteKit writes Svelte ones, so the plugin names map onto
+ * the two pages that exist.
+ */
+export function storyGuideUrl(pluginNames: string[]): string {
+  const vue = ['@poveste/plugin-vue', '@poveste/plugin-nuxt', '@poveste/plugin-quasar']
+  const svelte = ['@poveste/plugin-svelte']
+
+  if (pluginNames.some(name => svelte.includes(name))) {
+    return 'https://poveste.dev/guide/svelte/stories'
+  }
+  if (pluginNames.some(name => vue.includes(name))) {
+    return 'https://poveste.dev/guide/vue/stories'
+  }
+
+  // A book with neither, such as vanilla: the framework list is the next step.
+  return 'https://poveste.dev/guide/getting-started'
+}
+
+export function buildSummary(counts: BuildCounts, seconds: number, storyMatch: string[], guideUrl = 'https://poveste.dev/guide/getting-started'): string[] {
   const took = `in ${seconds}s`
   const globs = storyMatch.join(', ')
 
@@ -85,13 +109,13 @@ export function buildSummary(counts: BuildCounts, seconds: number, storyMatch: s
       const files = `${counts.empty.length} file${counts.empty.length === 1 ? '' : 's'}`
       return [
         `Built 0 stories ${took} — ${files} matched ${globs} and produced no story`,
-        'A story file needs a <Story> in it: https://poveste.dev/guide/',
+        `A story file needs a <Story> in it: ${guideUrl}`,
       ]
     }
 
     return [
       `Built 0 stories ${took} — nothing matched ${globs}`,
-      'Write a story file and run this again: https://poveste.dev/guide/',
+      `Write a story file and run this again: ${guideUrl}`,
     ]
   }
 

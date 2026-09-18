@@ -12,7 +12,7 @@ import {
   build as viteBuild,
 } from 'vite'
 import { APP_PATH } from './alias.js'
-import { buildCounts, buildSummary, builtSomething } from './build-counts.js'
+import { buildCounts, buildSummary, builtSomething, storyGuideUrl } from './build-counts.js'
 import { getSerializedStoryData } from './build-serialize.js'
 import { useCollectStories } from './collect/index.js'
 import { useModuleLoader } from './load.js'
@@ -336,7 +336,7 @@ export async function build(ctx: Context) {
     // Green only when something was built. A tick over nothing is the claim
     // #624 is about, and it is the first command the guide asks for.
     const paint = builtSomething(counts) ? pc.green : pc.yellow
-    for (const line of buildSummary(counts, Math.round(duration / 1000 * 100) / 100, ctx.config.storyMatch)) {
+    for (const line of buildSummary(counts, Math.round(duration / 1000 * 100) / 100, ctx.config.storyMatch, storyGuideUrl(ctx.config.plugins.map(plugin => plugin.name)))) {
       console.log(paint(line))
     }
 
