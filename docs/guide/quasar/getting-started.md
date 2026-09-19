@@ -90,3 +90,9 @@ Two adjustments, both of which exist so you do not have to make them.
 `ssr.noExternal: [/quasar/]` is set for story collection. Quasar's own Vite plugin writes `__QUASAR_VERSION__` while transforming its source, so that source has to be transformed rather than externalised — otherwise the marker never lands. This is an implementation detail rather than something to copy into your own config, and [#365](https://github.com/poveste-dev/poveste/issues/365) may change it.
 
 The config itself comes from an entrypoint whose own header says it is used exclusively by Quasar's testing app extensions. That is the same footing as Tailwind's `__unstable__loadDesignSystem`: usable, and not something to ask every reader to import from their own config. The plugin does it once so your config stays a normal Quasar config.
+
+## Write your first story
+
+Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
+
+**[Writing Vue stories](../vue/stories.md)** is the page that shows one.

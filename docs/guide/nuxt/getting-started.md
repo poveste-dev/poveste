@@ -147,3 +147,9 @@ export default defineConfig({
 
 Your patterns are added **on top of** the built-in defaults (which already drop
 `@nuxtjs/i18n`'s client plugins), not in place of them.
+
+## Write your first story
+
+Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
+
+**[Writing Vue stories](../vue/stories.md)** is the page that shows one.
