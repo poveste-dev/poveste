@@ -10,13 +10,13 @@
     "story:preview": "poveste preview --port 4572"
   },
   "dependencies": {
-    "vike": "0.4.260",
-    "vue": "^3.5.26"
+    "vike": "0.4.266",
+    "vue": "^3.5.42"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@poveste/plugin-vue": "workspace:*",
-    "@vitejs/plugin-vue": "^6.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }

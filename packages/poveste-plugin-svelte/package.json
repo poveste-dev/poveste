@@ -71,7 +71,7 @@
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.53.0",
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "poveste": "workspace:^",
     "svelte": "^5.46.4"
   },
@@ -85,21 +85,21 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "ignore": "^7.0.6",
+    "ignore": "^7.0.9",
     "launch-editor": "^2.9.1",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@types/node": "^22.10.1",
     "concurrently": "^10.0.5",
     "fs-extra": "^11.2.0",
     "poveste": "workspace:*",
-    "svelte": "5.55.0",
-    "svelte-preprocess": "^6.0.3",
+    "svelte": "5.57.0",
+    "svelte-preprocess": "^6.0.5",
     "typescript": "catalog:",
-    "vite": "^8.0.0",
+    "vite": "^8.3.0",
     "vitest": "catalog:"
   }
 }
