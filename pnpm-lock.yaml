@@ -1272,8 +1272,8 @@ importers:
         specifier: ^5.0.1
         version: 5.0.1(vue@3.5.41(typescript@6.0.3))
       '@rollup/plugin-commonjs':
-        specifier: ^28.0.1
-        version: 28.0.9(rollup@4.62.4)
+        specifier: ^29.0.3
+        version: 29.0.3(rollup@4.62.4)
       '@rollup/plugin-node-resolve':
         specifier: ^15.3.0
         version: 15.3.1(rollup@4.62.4)
@@ -3496,15 +3496,6 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       rollup: '>=4.0.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-
-  '@rollup/plugin-commonjs@28.0.9':
-    resolution: {integrity: sha512-PIR4/OHZ79romx0BVVll/PkwWpJ7e5lsqFa3gFfcrFPWwLXLV39JVUzQV9RKjWerE7B845Hqjj9VYlQeieZ2dA==}
-    engines: {node: '>=16.0.0 || 14 >= 14.17'}
-    peerDependencies:
-      rollup: ^2.68.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
         optional: true
@@ -11871,18 +11862,6 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@rollup/plugin-alias@6.0.0(rollup@4.62.4)':
-    optionalDependencies:
-      rollup: 4.62.4
-
-  '@rollup/plugin-commonjs@28.0.9(rollup@4.62.4)':
-    dependencies:
-      '@rollup/pluginutils': 5.3.0(rollup@4.62.4)
-      commondir: 1.0.1
-      estree-walker: 2.0.2
-      fdir: 6.5.0(picomatch@4.0.5)
-      is-reference: 1.2.1
-      magic-string: 0.30.21
-      picomatch: 4.0.5
     optionalDependencies:
       rollup: 4.62.4
 
