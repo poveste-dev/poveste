@@ -13,10 +13,10 @@ This will display your component inside an iframe to be able to test the respons
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story title="MyStory">
@@ -32,10 +32,10 @@ This will integrate your component directly in the app. The advantage being that
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story

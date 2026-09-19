@@ -116,10 +116,10 @@ export const myValue = writable(10)
 ```svelte
 <!-- Store.story.svelte -->
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import Store from './Store.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story title="Store">
@@ -160,11 +160,11 @@ Set it from the story instead, in a wrapper component:
 ```svelte
 <!-- MyComponent.story.svelte -->
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
   import ThemeProvider from './ThemeProvider.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story title="With context">
