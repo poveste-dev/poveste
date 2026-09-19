@@ -17,11 +17,11 @@ For a wrapper you want around one story, wrap the markup yourself:
 
 ```svelte
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
   import ThemeProvider from './ThemeProvider.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <Hst.Story title="MyStory">
