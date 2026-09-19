@@ -97,3 +97,9 @@ Add the scripts to your `package.json`, alongside the ones SvelteKit already gav
   }
 }
 ```
+
+## Write your first story
+
+Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
+
+**[Writing Svelte stories](../svelte/stories.md)** is the page that shows one.
