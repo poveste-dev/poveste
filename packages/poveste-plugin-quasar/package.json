@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@quasar/app-vite": "^3.8.1",
-    "@types/node": "^22.10.1",
+    "@types/node": "^26.5.1",
     "poveste": "workspace:*",
     "quasar": "^2.27.0",
     "typescript": "catalog:",
