@@ -62,6 +62,7 @@
     "client.js",
     "dist",
     "index.d.ts",
+    "node-floor.mjs",
     "plugin.d.ts",
     "plugin.js"
   ],
