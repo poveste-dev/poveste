@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { applyState, clone } from '@poveste/shared'
 import { onClickOutside, useLiveAnnouncer, useStorage, useTimeoutFn } from '@vueuse/core'
 import { computed, nextTick, onMounted, ref } from 'vue'
@@ -188,81 +189,86 @@ onClickOutside(select, () => stopEditing())
         @select="id => applyPreset(id)"
       />
     </div>
-    <button
-      v-tooltip="canEdit ? 'Rename this preset' : null"
-      type="button"
-      data-testid="preset-rename"
-      aria-label="Rename preset"
-      :disabled="!canEdit"
-      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
-      :class="[
-        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
-      ]"
-      @click="startEditing()"
-    >
-      <Icon
-        icon="carbon:edit"
-        class="w-4 h-4"
-      />
-    </button>
-    <button
-      v-tooltip="canEdit ? 'Delete this preset' : null"
-      type="button"
-      data-testid="preset-delete"
-      aria-label="Delete preset"
-      :disabled="!canEdit"
-      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
-      :class="[
-        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
-      ]"
-      @click="deletePreset(selectedOption)"
-    >
-      <Icon
-        icon="carbon:trash-can"
-        class="w-4 h-4"
-      />
-    </button>
-    <button
-      v-tooltip="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null"
-      type="button"
-      data-testid="preset-save"
-      aria-label="Save to preset"
-      :disabled="!canEdit"
-      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
-      :class="[
-        canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
-      ]"
-      @click="savePreset()"
-    >
-      <Icon
-        :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
-        class="w-4 h-4"
-      />
-    </button>
-    <button
-      v-tooltip="'Create new preset'"
-      type="button"
-      data-testid="preset-create"
-      aria-label="Create new preset"
-      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
-      @click="createPreset()"
-    >
-      <Icon
-        icon="carbon:add-alt"
-        class="w-4 h-4"
-      />
-    </button>
-    <button
-      v-tooltip="'Reset to initial state'"
-      type="button"
-      aria-label="Reset to initial state"
-      class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
-      @click="resetState()"
-    >
-      <Icon
-        icon="carbon:reset"
-        class="w-4 h-4"
-      />
-    </button>
+    <HstTooltip :content="canEdit ? 'Rename this preset' : null">
+      <button
+        type="button"
+        data-testid="preset-rename"
+        aria-label="Rename preset"
+        :disabled="!canEdit"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+        :class="[
+          canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+        ]"
+        @click="startEditing()"
+      >
+        <Icon
+          icon="carbon:edit"
+          class="w-4 h-4"
+        />
+      </button>
+    </HstTooltip>
+    <HstTooltip :content="canEdit ? 'Delete this preset' : null">
+      <button
+        type="button"
+        data-testid="preset-delete"
+        aria-label="Delete preset"
+        :disabled="!canEdit"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+        :class="[
+          canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+        ]"
+        @click="deletePreset(selectedOption)"
+      >
+        <Icon
+          icon="carbon:trash-can"
+          class="w-4 h-4"
+        />
+      </button>
+    </HstTooltip>
+    <HstTooltip :content="savedNotif ? 'Saved!' : canEdit ? 'Save to preset' : null">
+      <button
+        type="button"
+        data-testid="preset-save"
+        aria-label="Save to preset"
+        :disabled="!canEdit"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400"
+        :class="[
+          canEdit ? 'opacity-50 hover:opacity-100 focus-visible:opacity-100' : 'opacity-25 pointer-events-none',
+        ]"
+        @click="savePreset()"
+      >
+        <Icon
+          :icon="savedNotif ? 'carbon:checkmark' : 'carbon:save'"
+          class="w-4 h-4"
+        />
+      </button>
+    </HstTooltip>
+    <HstTooltip content="Create new preset">
+      <button
+        type="button"
+        data-testid="preset-create"
+        aria-label="Create new preset"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
+        @click="createPreset()"
+      >
+        <Icon
+          icon="carbon:add-alt"
+          class="w-4 h-4"
+        />
+      </button>
+    </HstTooltip>
+    <HstTooltip content="Reset to initial state">
+      <button
+        type="button"
+        aria-label="Reset to initial state"
+        class="flex-none flex p-0 bg-transparent border-0 cursor-pointer text-gray-900 dark:text-gray-100 hover:text-primary-500 dark:hover:text-primary-400 opacity-50 hover:opacity-100 focus-visible:opacity-100"
+        @click="resetState()"
+      >
+        <Icon
+          icon="carbon:reset"
+          class="w-4 h-4"
+        />
+      </button>
+    </HstTooltip>
   </div>
 </template>

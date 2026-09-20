@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Variant } from '@poveste/shared'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { computed } from 'vue'
 import ControlsComponentStateItem from './ControlsComponentStateItem.vue'
 
@@ -15,11 +16,12 @@ const stateKeys = computed(() => Object.keys(props.variant.state || {})
 <template>
   <div class="poveste-controls-component-init-state">
     <div class="p-2 flex items-center gap-1">
-      <Icon
-        v-tooltip="'Auto-detected state'"
-        icon="carbon:data-vis-1"
-        class="w-4 h-4 text-primary-500 flex-none"
-      />
+      <HstTooltip content="Auto-detected state">
+        <Icon
+          icon="carbon:data-vis-1"
+          class="w-4 h-4 text-primary-500 flex-none"
+        />
+      </HstTooltip>
       <div>
         State
       </div>
