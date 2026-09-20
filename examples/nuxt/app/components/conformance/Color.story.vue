@@ -17,6 +17,15 @@ function initState() {
   >
     <template #default="{ state }">
       <pre class="conformance-color-state">{{ JSON.stringify(state, null, 2) }}</pre>
+
+      <!-- The same control in the story's own realm. It is lazily loaded, and a
+           dynamic import resolved against the wrong base would fail here and
+           nowhere else — a control that never appears, with nothing in the
+           console of the page being looked at (#63). -->
+      <HstColor
+        v-model="state.tint"
+        title="Sandbox"
+      />
     </template>
 
     <template #controls="{ state }">

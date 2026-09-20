@@ -25,9 +25,7 @@
   "exports": {
     "./floating-vue": "./dist/client/b-floating-vue.js",
     "./iconify": "./dist/client/b-iconify.js",
-    "./internationalized-date": "./dist/client/b-internationalized-date.js",
     "./pinia": "./dist/client/b-pinia.js",
-    "./reka-ui": "./dist/client/b-reka-ui.js",
     "./scroll": "./dist/client/b-scroll.js",
     "./vue-router": "./dist/client/b-vue-router.js",
     "./vue-use": "./dist/client/b-vue-use.js",
@@ -46,7 +44,6 @@
   },
   "devDependencies": {
     "@iconify/vue": "^5.0.1",
-    "@internationalized/date": "^3.12.4",
     "@rollup/plugin-commonjs": "^28.0.1",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@types/node": "^22.10.1",
@@ -57,7 +54,6 @@
     "fs-extra": "^11.2.0",
     "globby": "^16.2.4",
     "pinia": "^4.0.3",
-    "reka-ui": "^2.10.4",
     "rollup": "^4.28.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "scroll-into-view-if-needed": "^3.1.0",
