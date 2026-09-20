@@ -68,13 +68,13 @@ describe('measurements', () => {
   it('reports every ceiling', () => {
     expect(measurements(chunks, LIMITS)).toEqual(expect.arrayContaining([
       'highlighter-abc.js 1344 KB / 3000 KB',
-      'vendor-def.js 1413 KB / 1800 KB',
-      'whole book 2957 KB / 5500 KB',
+      'vendor-def.js 1413 KB / 1850 KB',
+      'whole book 2957 KB / 5550 KB',
     ]))
   })
 
   it('totals the whole book for the ceiling that has no prefix', () => {
-    expect(measurements(chunks, LIMITS)).toContain('whole book 2957 KB / 5500 KB')
+    expect(measurements(chunks, LIMITS)).toContain('whole book 2957 KB / 5550 KB')
   })
 
   // `overLimit` applies a prefix ceiling per chunk, so a joined line would read
@@ -86,8 +86,8 @@ describe('measurements', () => {
     ]
 
     expect(measurements(split, LIMITS.slice(1, 2))).toEqual([
-      'vendor-a.js 1400 KB / 1800 KB',
-      'vendor-b.js 1300 KB / 1800 KB',
+      'vendor-a.js 1400 KB / 1850 KB',
+      'vendor-b.js 1300 KB / 1850 KB',
     ])
   })
 

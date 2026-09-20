@@ -103,6 +103,10 @@ export interface Hst {
     options: HstControlOption[]
     title?: string
   }>
+  Color: Component<{
+    value?: string
+    title?: string
+  }>
   Date: Component<{
     value?: string
     title?: string

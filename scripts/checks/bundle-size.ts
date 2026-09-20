@@ -55,8 +55,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 1800, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB); 1500 until Reka UI arrived, and 1650 until its date stack — the calendar, the field and `@internationalized/date` — took the chunk from 1525 KB to 1726 KB (#63)' },
-  { prefix: '', max: 5500, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and 5100 held that until Reka UI arrived; the date control alone is 215 KB of the 414 KB since (#63)' },
+  { prefix: 'vendor', max: 1850, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB); 1500 until Reka UI arrived, 1650 until its date stack, and 1800 until the colour picker took the chunk to 1816 KB. Both new controls are eager for one more commit and then lazy, so this comes down rather than up (#63)' },
+  { prefix: '', max: 5550, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and 5100 held that until Reka UI arrived; the date control is 215 KB of the 515 KB since and the colour picker 101 KB, which is why both become lazy in the next commit (#63)' },
 ]
 
 export interface Chunk { name: string, kb: number }
