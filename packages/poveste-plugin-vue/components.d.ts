@@ -18,6 +18,7 @@ import type {
   HstTextarea,
   HstSelect,
   HstRadio,
+  HstDate,
   HstJson,
   HstColorShades,
   HstTokenList,
@@ -229,6 +230,7 @@ declare module 'vue' {
     HstTextarea: typeof HstTextarea
     HstSelect: typeof HstSelect
     HstRadio: typeof HstRadio
+    HstDate: typeof HstDate
     HstJson: typeof HstJson
     HstColorShades: typeof HstColorShades
     HstTokenList: typeof HstTokenList
