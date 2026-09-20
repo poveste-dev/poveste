@@ -16,6 +16,9 @@
       "pinia": [
         "./node_modules/@poveste/vendors/pinia"
       ],
+      "reka-ui": [
+        "./node_modules/@poveste/vendors/reka-ui"
+      ],
       "scroll-into-view-if-needed": [
         "./node_modules/@poveste/vendors/scroll"
       ],
