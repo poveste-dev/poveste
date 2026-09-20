@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script lang="ts" setup>
-import { VTooltip as vTooltip } from 'floating-vue'
+import HstTooltip from './HstTooltip.vue'
 
 withDefaults(defineProps<{
   title?: string | undefined
@@ -21,16 +21,15 @@ withDefaults(defineProps<{
     :is="tag"
     class="poveste-wrapper histoire-wrapper p-2 hover:bg-primary-100 dark:hover:bg-primary-800 flex gap-2 flex-wrap"
   >
-    <span
-      v-tooltip="{
-        content: title,
-        placement: 'left',
-        distance: 12,
-      }"
-      class="w-28 whitespace-nowrap text-ellipsis overflow-hidden shrink-0"
+    <HstTooltip
+      :content="title"
+      side="left"
+      :offset="12"
     >
-      {{ title }}
-    </span>
+      <span class="w-28 whitespace-nowrap text-ellipsis overflow-hidden shrink-0">
+        {{ title }}
+      </span>
+    </HstTooltip>
     <span class="grow max-w-full flex items-center gap-1">
       <span class="block grow max-w-full">
         <slot />
