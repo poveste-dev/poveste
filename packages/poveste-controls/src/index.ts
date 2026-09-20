@@ -95,4 +95,15 @@ export const components = {
   HstColorSelect,
 }
 
+export { portalTarget } from './portal-target.js'
 export * from './types.js'
+/**
+ * Reka's popover primitives, for `@poveste/app`.
+ *
+ * Re-exported rather than imported there directly so a book carries one copy of
+ * Reka: both packages bundle their own dependencies, and `@poveste/vendors`
+ * cannot help — Reka ships a single barrel, and anything an eager import reaches
+ * through it stops being splittable, which is what the date and colour controls
+ * are lazy for (#918).
+ */
+export { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'

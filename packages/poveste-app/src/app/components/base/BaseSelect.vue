@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { ComputedRef } from 'vue'
 import { Icon } from '@iconify/vue'
+import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot, portalTarget } from '@poveste/controls'
 import { refAutoReset } from '@vueuse/core'
-import { Dropdown as VDropdown } from 'floating-vue'
-import { computed, ref, useId } from 'vue'
+import { computed, nextTick, onMounted, ref, shallowRef, useId, watch } from 'vue'
 
 /*
  * The WAI-ARIA select-only combobox: the trigger keeps focus and names the active
@@ -156,76 +156,149 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+// After mount, not during setup: the chrome's root is only in the document once
+// the tree it wraps has been inserted.
+const target = shallowRef<HTMLElement>()
+onMounted(() => {
+  target.value = portalTarget()
+})
+
+/*
+ * Reka spares its own trigger from the dismiss it fires on any pointer or focus
+ * landing outside the popup — but only a `PopoverTrigger` registers as one, and
+ * this trigger cannot be that: `PopoverTrigger` writes its own `aria-expanded`,
+ * `aria-controls` and `aria-haspopup="dialog"` over the listbox wiring the
+ * combobox pattern is built on. So the dismiss is declined here instead.
+ *
+ * Without it the popup is impossible to close by clicking the picker: the
+ * dismiss lands on `pointerdown`, the handler below then reads `open` as false
+ * and opens it again, and the whole thing looks like a click that did nothing.
+ * Neither aria spec catches it — both drive this from the keyboard, on purpose.
+ */
+function keepOpenOnTheTrigger(event: Event) {
+  if (combobox.value?.contains(event.target as Node)) {
+    event.preventDefault()
+  }
+}
+
+/*
+ * A capped list scrolls, and `aria-activedescendant` moves an option the browser
+ * has no reason to reveal — the focus never leaves the trigger, so nothing
+ * scrolls on its own.
+ */
+watch([open, activeIndex], async ([isOpen, index]) => {
+  if (!isOpen || index < 0) {
+    return
+  }
+  await nextTick()
+  target.value?.ownerDocument.getElementById(optionId(index))?.scrollIntoView({ block: 'nearest' })
+})
+
 defineExpose({
   focus: () => combobox.value?.focus(),
 })
 </script>
 
 <template>
-  <!-- `no-auto-focus`: floating-vue otherwise moves focus into the popup once it
-       shows, and the combobox pattern keeps it on the trigger, which owns the keys. -->
-  <VDropdown
-    v-model:shown="open"
-    class="poveste-base-select"
-    :triggers="[]"
-    no-auto-focus
-    auto-size
-    auto-boundary-max-size
-  >
-    <div
-      ref="combobox"
-      role="combobox"
-      tabindex="0"
-      :aria-label="label"
-      aria-haspopup="listbox"
-      :aria-expanded="open"
-      :aria-controls="open ? listboxId : undefined"
-      :aria-activedescendant="open && activeIndex >= 0 ? optionId(activeIndex) : undefined"
-      class="cursor-pointer w-full outline-none focus-visible:border-primary-500 px-2 h-[27px] -my-1 border border-solid border-black/25 dark:border-white/25 hover:border-primary-500 dark:hover:border-primary-500 rounded-sm flex gap-2 items-center leading-normal"
-      @click="open ? close() : openList()"
-      @keydown="onKeydown"
+  <PopoverRoot v-model:open="open">
+    <PopoverAnchor
+      as-child
+      class="poveste-base-select"
     >
-      <div class="flex-1 truncate">
-        <slot :label="selectedLabel">
-          {{ selectedLabel }}
-        </slot>
-      </div>
-      <Icon
-        icon="carbon:chevron-sort"
-        class="w-4 h-4 flex-none ml-auto"
-      />
-    </div>
-    <template #popper>
       <div
-        :id="listboxId"
-        role="listbox"
+        ref="combobox"
+        role="combobox"
+        tabindex="0"
         :aria-label="label"
-        class="flex flex-col bg-gray-50 dark:bg-gray-700"
+        aria-haspopup="listbox"
+        :aria-expanded="open"
+        :aria-controls="open ? listboxId : undefined"
+        :aria-activedescendant="open && activeIndex >= 0 ? optionId(activeIndex) : undefined"
+        class="cursor-pointer w-full outline-none focus-visible:border-primary-500 px-2 h-[27px] -my-1 border border-solid border-black/25 dark:border-white/25 hover:border-primary-500 dark:hover:border-primary-500 rounded-sm flex gap-2 items-center leading-normal"
+        @click="open ? close() : openList()"
+        @keydown="onKeydown"
       >
-        <div
-          v-for="([value, optionLabel], index) of entries"
-          :id="optionId(index)"
-          :key="value"
-          role="option"
-          :aria-selected="value === modelValue"
-          class="px-2 py-1 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-700"
-          :class="{
-            'bg-primary-200 dark:bg-primary-800': value === modelValue,
-            'outline outline-2 -outline-offset-2 outline-primary-500': index === activeIndex,
-          }"
-          @mousedown.prevent
-          @mousemove="activeIndex = index"
-          @click="choose(index)"
-        >
-          <slot
-            name="option"
-            :label="optionLabel"
-            :value="value"
-          >
-            {{ optionLabel }}
+        <div class="flex-1 truncate">
+          <slot :label="selectedLabel">
+            {{ selectedLabel }}
           </slot>
         </div>
+        <Icon
+          icon="carbon:chevron-sort"
+          class="w-4 h-4 flex-none ml-auto"
+        />
       </div>
-    </template>
-  </VDropdown>
+    </PopoverAnchor>
+
+    <PopoverPortal
+      v-if="target"
+      :to="target"
+    >
+      <!-- The popup takes no focus at either end: the combobox pattern keeps it on
+           the trigger, which owns the keys. Deliberate rather than load-bearing
+           today — Reka moves focus into the content on open, and only skips it
+           here because the options are divs with nothing focusable in them. The
+           aria specs cannot fail on this, so removing it would look safe. -->
+      <PopoverContent
+        class="poveste-base-select-popper"
+        align="start"
+        :side-offset="6"
+        :collision-padding="8"
+        @open-auto-focus.prevent
+        @close-auto-focus.prevent
+        @interact-outside="keepOpenOnTheTrigger"
+      >
+        <div
+          :id="listboxId"
+          role="listbox"
+          :aria-label="label"
+          class="poveste-base-select-options flex flex-col bg-gray-50 dark:bg-gray-700"
+        >
+          <div
+            v-for="([value, optionLabel], index) of entries"
+            :id="optionId(index)"
+            :key="value"
+            role="option"
+            :aria-selected="value === modelValue"
+            class="px-2 py-1 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-700"
+            :class="{
+              'bg-primary-200 dark:bg-primary-800': value === modelValue,
+              'outline outline-2 -outline-offset-2 outline-primary-500': index === activeIndex,
+            }"
+            @mousedown.prevent
+            @mousemove="activeIndex = index"
+            @click="choose(index)"
+          >
+            <slot
+              name="option"
+              :label="optionLabel"
+              :value="value"
+            >
+              {{ optionLabel }}
+            </slot>
+          </div>
+        </div>
+      </PopoverContent>
+    </PopoverPortal>
+  </PopoverRoot>
 </template>
+
+<style lang="pcss">
+.poveste-base-select-popper {
+  /* The trigger's own width, which is what floating-vue's `auto-size` gave. */
+  min-width: var(--reka-popper-anchor-width);
+  z-index: 100;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.poveste-base-select-options {
+  /* The room Reka measured between the trigger and the viewport edge, which is
+     what `auto-boundary-max-size` gave: a story with more presets than fit below
+     its picker otherwise drew them off the screen, reachable by nothing. */
+  max-height: var(--reka-popover-content-available-height);
+  overflow-y: auto;
+}
+</style>
