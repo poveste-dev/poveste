@@ -7,9 +7,6 @@
     ],
     "rootDir": "src",
     "paths": {
-      "floating-vue": [
-        "./node_modules/@poveste/vendors/floating-vue"
-      ],
       "@iconify/vue": [
         "./node_modules/@poveste/vendors/iconify"
       ],

@@ -11,7 +11,6 @@ export default defineConfig({
     alias: process.env.VITEST
       ? {}
       : {
-          'floating-vue': '@poveste/vendors/floating-vue',
           '@iconify/vue': '@poveste/vendors/iconify',
           'pinia': '@poveste/vendors/pinia',
           'reka-ui': '@poveste/vendors/reka-ui',
