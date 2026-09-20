@@ -38,6 +38,14 @@ function initState() {
   >
     <template #default="{ state }">
       <pre class="conformance-controls-state">{{ JSON.stringify(state, null, 2) }}</pre>
+
+      <!-- The same control in the story's own realm, which has no chrome root:
+           its popper has to mount against this document's body instead (#63). -->
+      <HstSelect
+        v-model="state.game"
+        :options="games"
+        title="Sandbox"
+      />
     </template>
 
     <template #controls="{ state }">

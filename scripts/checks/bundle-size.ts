@@ -41,6 +41,12 @@ export interface Limit {
  * headroom for ordinary growth — raise them with a measurement and a reason
  * rather than to make a red run green.
  *
+ * Both are mid-migration. #63 moves the controls onto Reka UI a step at a time
+ * and #918 takes floating-vue out of the app afterwards, so between the two
+ * every popper library ships at once. These hold the measured number of the step
+ * that last moved them; the peak is re-set once #63's last control lands, and
+ * #918 takes them back down.
+ *
  * What a book weighs *now* is not recorded here. It used to be, and it went
  * stale from a change in another package — #374 moved CodeMirror out of
  * `vendor`, and nothing in this file could notice (#601). A run prints every
@@ -49,8 +55,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 1500, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB)' },
-  { prefix: '', max: 5100, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and this holds that' },
+  { prefix: 'vendor', max: 1650, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB); 1500 until Reka UI\'s popover took the chunk from 1406 KB to 1577 KB (#63)' },
+  { prefix: '', max: 5250, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and 5100 held that until Reka UI\'s popover took it from 4996 KB to 5167 KB (#63)' },
 ]
 
 export interface Chunk { name: string, kb: number }
