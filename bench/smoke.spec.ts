@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from '../scripts/checks/support/assert-no-problems.ts'
 import { runBench } from './run.mjs'
@@ -10,6 +11,21 @@ import { runBench } from './run.mjs'
 // still finishes with a report full of dashes.
 // Longer than any one script a real retarget runs, so only the plant can reach it.
 const PLANTED_MS = 150
+
+/** The two ends of the state axis. The other eight cost minutes and prove no more here. */
+const STATE_SMOKE_STORIES = ['bench-state-control', 'bench-state-64k']
+
+/**
+ * The floor the size axis has to clear over the control. Measured on an M3 Pro
+ * it is ~670× — 3ms a keystroke against 2021ms — so this catches an instrument
+ * that has gone blind rather than a slow runner, and a slow runner widens the
+ * gap, since the control's cost is the typing pacing and does not move.
+ */
+const STATE_GAP = 10
+
+/** The one story allowed `useTemplateRef`, because #959 is what it is for. */
+const USE_TEMPLATE_REF_STORY = 'StateBenchUseTemplateRef.story.vue'
+const BENCH_STORIES = new URL('../examples/vue/src/bench/', import.meta.url)
 
 function reportProblems(report: Array<Record<string, any>>): string[] {
   const problems: string[] = []
@@ -63,7 +79,45 @@ function reportProblems(report: Array<Record<string, any>>): string[] {
     problems.push('the report has no paging scroll result with a step time')
   }
 
+  const state = new Map(report.filter(r => r.kind === 'state').map(r => [r.storyId, r]))
+  for (const storyId of STATE_SMOKE_STORIES) {
+    const result = state.get(storyId)
+    if (!result) {
+      problems.push(`the report has no state result for ${storyId}`)
+    }
+    else if (!result.found) {
+      problems.push(`${storyId} had no input to type into, so nothing was measured — check that POVESTE_BENCH still lets src/bench/** past storyIgnored`)
+    }
+    else if (!result.typed) {
+      problems.push(`${storyId} never finished the burst, so nothing was measured — it did not give the main thread back`)
+    }
+    else if (result.readonlyWarnings > 0) {
+      // Dev-only: Vue compiles the warning out, so a built book cannot raise
+      // this and the file check below is what holds the rule there.
+      problems.push(`${storyId} logged ${result.readonlyWarnings} readonly-ref warnings, so it measured #959's loop rather than the walk`)
+    }
+  }
+
+  const control = state.get('bench-state-control')
+  const graph = state.get('bench-state-64k')
+  if (control?.typed && graph?.typed) {
+    // A control measuring as free is the expected case, so the floor keeps the
+    // ratio finite rather than turning the comparison off.
+    const floor = Math.max(control.busyPerKeystrokeMs, 1)
+    if (!(graph.busyPerKeystrokeMs >= STATE_GAP * floor)) {
+      problems.push(`a keystroke cost bench-state-64k ${graph.busyPerKeystrokeMs}ms against the control's ${control.busyPerKeystrokeMs}ms, under the ${STATE_GAP}× the instrument exists to see`)
+    }
+  }
+
   return problems
+}
+
+/** Story files whose `<script setup>` calls `useTemplateRef`, rather than naming it in a comment. */
+function useTemplateRefStories(dir: URL): string[] {
+  return readdirSync(dir)
+    .filter(file => file.endsWith('.story.vue'))
+    .filter(file => readFileSync(new URL(file, dir), 'utf8').includes('useTemplateRef('))
+    .sort()
 }
 
 describe('reportProblems', () => {
@@ -73,7 +127,11 @@ describe('reportProblems', () => {
     expect(reportProblems(report)).toContainEqual(expect.stringContaining('the grid filled 0 cells'))
   })
 
-  const measured = [{ kind: 'grid', cells: 18, first: 500, last: 2300 }, { kind: 'sandbox', median: 120 }, { kind: 'scroll', stepMs: 900 }]
+  const state = [
+    { kind: 'state', storyId: 'bench-state-control', found: true, typed: true, busyPerKeystrokeMs: 3, readonlyWarnings: 0 },
+    { kind: 'state', storyId: 'bench-state-64k', found: true, typed: true, busyPerKeystrokeMs: 2021, readonlyWarnings: 0 },
+  ]
+  const measured = [{ kind: 'grid', cells: 18, first: 500, last: 2300 }, { kind: 'sandbox', median: 120 }, { kind: 'scroll', stepMs: 900 }, ...state]
   const fling = { kind: 'fling', readyTotal: 40, flingMs: 400, scrollEvents: 24, fastEvents: 20, velocityMedian: 12, sandboxScriptMs: 400, longestSandboxScriptMs: 160 }
 
   it('reports a fling that mounted nothing', () => {
@@ -87,11 +145,44 @@ describe('reportProblems', () => {
   it('reports planted sandbox work that the bench did not see', () => {
     expect(reportProblems([...measured, { ...fling, longestSandboxScriptMs: 35 }])).toEqual([expect.stringContaining('read as a longest sandbox script of 35ms')])
   })
+
+  it('reports a state story that never reached the book', () => {
+    const missing = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, found: false } : r))
+
+    expect(reportProblems([...missing, fling])).toEqual([expect.stringContaining('bench-state-64k had no input to type into')])
+  })
+
+  it('reports a state axis that measured no more than the control', () => {
+    const blind = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, busyPerKeystrokeMs: 6 } : r))
+
+    expect(reportProblems([...blind, fling])).toEqual([expect.stringContaining('cost bench-state-64k 6ms against the control\'s 3ms')])
+  })
+
+  it('reports a state story that never gave the main thread back', () => {
+    const stuck = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, typed: false, busyPerKeystrokeMs: null } : r))
+
+    expect(reportProblems([...stuck, fling])).toEqual([expect.stringContaining('bench-state-64k never finished the burst')])
+  })
+
+  it('reports a size-axis story that logged a readonly-ref warning', () => {
+    const readonly = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, readonlyWarnings: 3 } : r))
+
+    expect(reportProblems([...readonly, fling])).toEqual([expect.stringContaining('bench-state-64k logged 3 readonly-ref warnings')])
+  })
+})
+
+describe('the state stories', () => {
+  // Someone will eventually modernise these, and every number off a modernised
+  // size-axis story would silently be a measurement of #959's loop. The built
+  // book cannot say so — Vue compiles the warning out — so the source does.
+  it('call useTemplateRef in one story only, the one placed to hold #959 failing', () => {
+    expect(useTemplateRefStories(BENCH_STORIES)).toEqual([USE_TEMPLATE_REF_STORY])
+  })
 })
 
 describe('runBench', () => {
   it('measures something over one book, one size and one run', async () => {
-    const report = await runBench({ examples: ['vue'], sizes: [1000], runs: 1, plant: { sandboxRafMs: PLANTED_MS } })
+    const report = await runBench({ examples: ['vue'], sizes: [1000], runs: 1, plant: { sandboxRafMs: PLANTED_MS }, stateStories: STATE_SMOKE_STORIES })
 
     assertNoProblems({ problems: reportProblems(report), remedy: 'The bench ran and measured nothing: `run.mjs` finished, but the report holds no numbers.', notes: [] })
   })
