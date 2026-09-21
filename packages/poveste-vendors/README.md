@@ -1,6 +1,7 @@
 # @poveste/vendors
 
-Third-party dependencies, pre-bundled so they resolve identically in the app and the sandbox.
+Poveste's own copies of the libraries its chrome runs on, behind names a consumer's
+bundler will not redirect at their copies.
 
 Internal to [Poveste](https://github.com/poveste-dev/poveste): it is installed as a
 dependency of `poveste` and there is nothing to install or configure directly. Install

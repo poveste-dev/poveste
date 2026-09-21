@@ -7,29 +7,6 @@
       "DOM.Iterable"
     ],
     "rootDir": "src",
-    "paths": {
-      "floating-vue": [
-        "./node_modules/@poveste/vendors/floating-vue"
-      ],
-      "@iconify/vue": [
-        "./node_modules/@poveste/vendors/iconify"
-      ],
-      "pinia": [
-        "./node_modules/@poveste/vendors/pinia"
-      ],
-      "scroll-into-view-if-needed": [
-        "./node_modules/@poveste/vendors/scroll"
-      ],
-      "vue-router": [
-        "./node_modules/@poveste/vendors/vue-router"
-      ],
-      "@vueuse/core": [
-        "./node_modules/@poveste/vendors/vue-use"
-      ],
-      "vue": [
-        "./node_modules/@poveste/vendors/vue"
-      ]
-    },
     "types": [
       "node"
     ],

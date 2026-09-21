@@ -2,7 +2,7 @@
   "name": "@poveste/vendors",
   "type": "module",
   "version": "0.15.0",
-  "description": "Bundled vendors for Poveste",
+  "description": "Poveste-owned copies of the libraries its chrome runs on",
   "author": {
     "name": "Sorin Gitlan",
     "url": "https://x.com/50rayn"
@@ -23,42 +23,61 @@
   },
   "sideEffects": false,
   "exports": {
-    "./floating-vue": "./dist/client/b-floating-vue.js",
-    "./iconify": "./dist/client/b-iconify.js",
-    "./pinia": "./dist/client/b-pinia.js",
-    "./scroll": "./dist/client/b-scroll.js",
-    "./vue-router": "./dist/client/b-vue-router.js",
-    "./vue-use": "./dist/client/b-vue-use.js",
-    "./vue": "./dist/client/b-vue.js",
-    "./*": "./*"
+    "./floating-vue": {
+      "types": "./floating-vue.d.ts",
+      "default": "./floating-vue.js"
+    },
+    "./iconify": {
+      "types": "./iconify.d.ts",
+      "default": "./iconify.js"
+    },
+    "./pinia": {
+      "types": "./pinia.d.ts",
+      "default": "./pinia.js"
+    },
+    "./scroll": {
+      "types": "./scroll.d.ts",
+      "default": "./scroll.js"
+    },
+    "./vue-router": {
+      "types": "./vue-router.d.ts",
+      "default": "./vue-router.js"
+    },
+    "./vue-use": {
+      "types": "./vue-use.d.ts",
+      "default": "./vue-use.js"
+    },
+    "./vue": {
+      "types": "./vue.d.ts",
+      "default": "./vue.js"
+    }
   },
   "files": [
-    "dist",
-    "src"
+    "floating-vue.d.ts",
+    "floating-vue.js",
+    "iconify.d.ts",
+    "iconify.js",
+    "pinia.d.ts",
+    "pinia.js",
+    "scroll.d.ts",
+    "scroll.js",
+    "vue-router.d.ts",
+    "vue-router.js",
+    "vue-use.d.ts",
+    "vue-use.js",
+    "vue.d.ts",
+    "vue.js"
   ],
   "engines": {
     "node": ">=22.22.2"
   },
-  "scripts": {
-    "build": "rimraf dist && rollup -c rollup.config.mjs"
-  },
-  "devDependencies": {
-    "@iconify/vue": "^5.0.1",
-    "@rollup/plugin-commonjs": "^28.0.1",
-    "@rollup/plugin-node-resolve": "^15.3.0",
-    "@types/node": "^22.10.1",
-    "@vue/devtools-api": "^8.1.5",
-    "@vueuse/core": "catalog:",
-    "execa": "^9.5.1",
-    "floating-vue": "5.2.2",
-    "fs-extra": "^11.2.0",
-    "globby": "^16.2.4",
-    "pinia": "^4.0.3",
-    "rollup": "^4.28.0",
-    "rollup-plugin-typescript2": "^0.36.0",
-    "scroll-into-view-if-needed": "^3.1.0",
-    "typescript": "catalog:",
-    "vue": "^3.5.26",
-    "vue-router": "^5.3.1"
+  "dependencies": {
+    "poveste-floating-vue": "npm:floating-vue@5.2.2",
+    "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
+    "poveste-pinia": "npm:pinia@^4.0.3",
+    "poveste-scroll-into-view": "npm:scroll-into-view-if-needed@^3.1.0",
+    "poveste-vue": "npm:vue@^3.5.26",
+    "poveste-vue-router": "npm:vue-router@^5.3.1",
+    "poveste-vueuse-core": "npm:@vueuse/core@^15.0.0"
   }
 }
