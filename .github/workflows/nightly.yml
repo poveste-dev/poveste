@@ -27,7 +27,7 @@ jobs:
           node-version-file: .node-version
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.10
+        uses: pnpm/action-setup@v6.1.0
 
       - name: Get pnpm store directory
         id: pnpm-cache
