@@ -31,7 +31,10 @@
 # Netlify detects pnpm from pnpm-lock.yaml and runs `pnpm install` before the
 # build command below.
 [build]
-command = "pnpm docs:build"
+# `--pm-on-fail=ignore` for the same reason as `PNPM_FLAGS` below: pnpm 11 refuses
+# to run a project pinned to 12 when Corepack invoked it, and every pnpm call here
+# is a Corepack shim.
+command = "pnpm --pm-on-fail=ignore run docs:build"
 publish = "docs/.vitepress/dist"
 # Skip the build when nothing the docs site is made of changed. Nothing under
 # packages/ can affect it — docs/package.json depends only on vue, and the
@@ -43,9 +46,60 @@ publish = "docs/.vitepress/dist"
 ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- docs/ netlify.toml package.json pnpm-lock.yaml"
 
 [build.environment]
-# Node 24 LTS — VitePress builds fine on it and it's reliably available on
-# Netlify's build image. (The repo/CI run Node 26; the docs don't need it.)
-NODE_VERSION = "24"
+# Node 26, matching `.node-version` and `engines.node`.
+#
+# This used to read 24, with a comment saying that is what ran. It never was: a
+# `.node-version` file overrides `NODE_VERSION`, so the repo's 26 won every
+# build — the logs say `Now using node v26.9.0`. And 24 could not have worked,
+# because `engines.node` is `>=26`. Kept rather than deleted: it is the fallback
+# if `.node-version` ever goes.
+NODE_VERSION = "26"
+
+# The deploy installs with pnpm 11 while the repo is on 12, because Corepack —
+# the only way Netlify installs pnpm — cannot run pnpm 12 at all (#911).
+#
+# pnpm 12 is not a Node script. Its `bin` field is `{"pnpm": "pnpm"}`, naming a
+# platform binary that arrives as an optional dependency (`@pnpm/exe.linux-x64`
+# and eleven siblings), which Corepack does not install. So pnpm ships a Node
+# wrapper for Corepack to load instead, at `bin/pnpm.mjs` — where pnpm <= 11 had
+# `bin/pnpm.cjs`. Corepack holds that path itself rather than reading the `bin`
+# field, and the 0.34.0 on the build image knows only `>=6.0.0` -> `bin/pnpm.cjs`:
+#
+#   Error: Cannot find module '.../corepack/v1/pnpm/12.4.1/bin/pnpm.cjs'
+#
+# Corepack 0.35.0 added the `>=11.0.0` -> `bin/pnpm.mjs` range that runs pnpm 12,
+# so this is fixed upstream and pinned here only because of the Corepack the image
+# installs — which it installs before this file's command runs, so nothing here
+# selects it. Drop all three settings once Netlify ships Corepack 0.35.0 or later.
+#
+# `PNPM_VERSION` is what the build image reads before falling back to the version
+# it parsed from `packageManager` — undocumented on the docs page, but it is the
+# `: ${PNPM_VERSION="$defaultPnpmVersion"}` in `run-build-functions.sh`.
+#
+# `COREPACK_ENABLE_PROJECT_SPEC=0` is what makes it stick. Without it Corepack
+# re-reads `packageManager` on every call from inside the repo and goes back to
+# 12.4.1, whatever was activated.
+#
+# `PNPM_FLAGS` carries pnpm's own escape hatch, which it names in the error it
+# raises here:
+#
+#   [ERROR] This project is configured to use 12.4.1 of pnpm. Your current pnpm
+#   is v11.27.1. Corepack invoked pnpm with this version, and pnpm does not
+#   switch versions when running under corepack.
+#
+# Run directly, pnpm 11 reads `packageManager` and fetches 12.4.1 itself — its
+# downloader does install the platform binary Corepack skips. Under Corepack it
+# refuses instead, and `pmOnFail` is what it offers in place of that.
+#
+# The lockfile is `lockfileVersion: '9.0'`, which pnpm 11 reads: installing this
+# tree with 11.27.1 resolves nothing and rewrites nothing. The one warning is
+# `pipelines`, a pnpm 12 workspace setting that only `release:report` uses. What
+# this cannot survive is the lockfile needing something only pnpm 12 writes —
+# then the site breaks here again, and the answer is a package manager Corepack
+# can run, not a newer pin.
+PNPM_VERSION = "11.27.1"
+PNPM_FLAGS = "--pm-on-fail=ignore"
+COREPACK_ENABLE_PROJECT_SPEC = "0"
 
 # The framework URL segments carried histoire-era major versions (`/guide/svelte3/`
 # documenting Svelte 5) and were renamed in #120. These are permanent: the old paths have
