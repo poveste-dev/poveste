@@ -3,29 +3,32 @@
 </script>
 
 <!--
-  The vue book renders a real floating-vue dropdown here, because a Vue
-  consumer can use the same popover library poveste's own chrome does. A Svelte
-  consumer cannot, so the popover is hand-rolled — but it carries the same class
-  names, which is the part that matters: the restyling below targets the
-  selectors poveste's toolbar menus use, and it must not reach them.
+  `poveste-dropdown` is the class the chrome's own toolbar menus carry, and that
+  is the point: a reader's CSS names whatever it likes, including a name we also
+  use, and must still not reach the chrome. The vue book proves the harder half
+  of this with a popper that teleports out of the story; a Svelte consumer has no
+  equivalent library in the book, so this one is inline.
+
+  It used to name floating-vue's classes, which the chrome stopped using in #918
+  — so the story went on rendering and stopped colliding with anything.
+  `popover-theming.spec.ts` now asserts the collision, so the next rename fails
+  rather than quietly emptying this out.
 -->
 <div class="user-card">
   <button class="trigger" onclick={() => (open = !open)}>Open user dropdown</button>
 
   {#if open}
-    <div class="v-popper--theme-dropdown">
-      <div class="v-popper__inner">
-        <div class="user-popper">
-          <p>This dropdown is owned by the user.</p>
-          <p>Background and font should follow user theme, not Poveste's.</p>
-        </div>
+    <div class="poveste-dropdown">
+      <div class="user-popper">
+        <p>This dropdown is owned by the user.</p>
+        <p>Background and font should follow user theme, not Poveste's.</p>
       </div>
     </div>
   {/if}
 </div>
 
 <style>
-  :global(.v-popper--theme-dropdown) :global(.v-popper__inner) {
+  :global(.poveste-dropdown) {
     background: navy;
     color: lime;
     border: 3px solid tomato;

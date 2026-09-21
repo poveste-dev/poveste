@@ -5,7 +5,7 @@
   export let Hst: Hst
 </script>
 
-<Hst.Story title="Style Isolation/Popover theming" layout={{ type: 'grid', width: 360 }}>
+<Hst.Story id="isolation-popover-theming" title="Style Isolation/Popover theming" layout={{ type: 'grid', width: 360 }}>
   <Hst.Variant title="user-themed">
     <PopoverTheming />
   </Hst.Variant>

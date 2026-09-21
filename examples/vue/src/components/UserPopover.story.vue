@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import FloatingVue from './FloatingVue.vue'
+import UserPopover from './UserPopover.vue'
 </script>
 
 <template>
   <Story
+    id="isolation-popover-theming"
     title="Style Isolation/Popover theming"
     :layout="{
       type: 'grid',
@@ -11,7 +12,7 @@ import FloatingVue from './FloatingVue.vue'
     }"
   >
     <Variant title="user-themed">
-      <FloatingVue />
+      <UserPopover />
     </Variant>
   </Story>
 </template>
