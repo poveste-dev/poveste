@@ -10,14 +10,8 @@
       "@iconify/vue": [
         "./node_modules/@poveste/vendors/iconify"
       ],
-      "@internationalized/date": [
-        "./node_modules/@poveste/vendors/internationalized-date"
-      ],
       "pinia": [
         "./node_modules/@poveste/vendors/pinia"
-      ],
-      "reka-ui": [
-        "./node_modules/@poveste/vendors/reka-ui"
       ],
       "scroll-into-view-if-needed": [
         "./node_modules/@poveste/vendors/scroll"
