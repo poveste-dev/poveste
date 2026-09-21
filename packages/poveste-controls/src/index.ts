@@ -3,6 +3,7 @@ import HstButtonVue from './components/button/HstButton.vue'
 import HstButtonGroupVue from './components/button/HstButtonGroup.vue'
 import HstCheckboxVue from './components/checkbox/HstCheckbox.vue'
 import HstCheckboxListVue from './components/checkbox/HstCheckboxList.vue'
+import HstColorVue from './components/color/HstColor.vue'
 import HstColorSelectVue from './components/colorselect/HstColorSelect.vue'
 import HstDateVue from './components/date/HstDate.vue'
 import HstColorShadesVue from './components/design-tokens/HstColorShades.vue'
@@ -25,6 +26,7 @@ export const HstNumber = HstNumberVue
 export const HstSlider = HstSliderVue
 export const HstTextarea = HstTextareaVue
 export const HstSelect = HstSelectVue
+export const HstColor = HstColorVue
 export const HstDate = HstDateVue
 export const HstColorShades = HstColorShadesVue
 export const HstTokenList = HstTokenListVue
@@ -58,6 +60,7 @@ export const components = {
   HstTextarea,
   HstSelect,
   HstRadio,
+  HstColor,
   HstDate,
   HstJson,
   HstColorShades,
