@@ -3,9 +3,7 @@ import HstButtonVue from './components/button/HstButton.vue'
 import HstButtonGroupVue from './components/button/HstButtonGroup.vue'
 import HstCheckboxVue from './components/checkbox/HstCheckbox.vue'
 import HstCheckboxListVue from './components/checkbox/HstCheckboxList.vue'
-import HstColorVue from './components/color/HstColor.vue'
 import HstColorSelectVue from './components/colorselect/HstColorSelect.vue'
-import HstDateVue from './components/date/HstDate.vue'
 import HstColorShadesVue from './components/design-tokens/HstColorShades.vue'
 import HstTokenGridVue from './components/design-tokens/HstTokenGrid.vue'
 import HstTokenListVue from './components/design-tokens/HstTokenList.vue'
@@ -26,26 +24,43 @@ export const HstNumber = HstNumberVue
 export const HstSlider = HstSliderVue
 export const HstTextarea = HstTextareaVue
 export const HstSelect = HstSelectVue
-export const HstColor = HstColorVue
-export const HstDate = HstDateVue
 export const HstColorShades = HstColorShadesVue
 export const HstTokenList = HstTokenListVue
 export const HstTokenGrid = HstTokenGridVue
 export const HstCopyIcon = HstCopyIconVue
 export const HstRadio = HstRadioVue
 /**
- * Lazy because it is a CodeMirror editor — 430 KB of this package's 460 (#374).
+ * The three controls a book pays for only when it uses one.
+ *
+ * `HstJson` is a CodeMirror editor — 430 KB of this package's 460 (#374).
+ * `HstDate` and `HstColor` are Reka's date and colour stacks, 215 KB and 101 KB
+ * of a built book, and a book with no date in it was downloading both.
+ *
  * Needs `inlineDynamicImports: false` in the build config to mean anything: a
  * single-entry lib build flattens dynamic imports back into one file.
+ *
+ * Nothing renders until the chunk arrives — no spinner, no reserved box. That is
+ * what `HstJson` has always done, and a controls panel is already laid out one
+ * row at a time, so a row appearing is the same motion as a row of a longer
+ * panel arriving.
+ *
+ * `name` and `emits` are put back on each wrapper, which carries neither.
+ * `@poveste/plugin-svelte`'s Wrap.svelte reads both: it builds its Vue listeners
+ * by iterating `controlComponent.emits`, so without this the control renders and
+ * edits in a Svelte book and never writes back. `index.spec.ts` pins them against
+ * the real components so these copies cannot drift.
  */
-// `name` and `emits` are put back on the wrapper, which carries neither.
-// `@poveste/plugin-svelte`'s Wrap.svelte reads both: it builds its Vue
-// listeners by iterating `controlComponent.emits`, so without this the JSON
-// control renders and edits in a Svelte book and never writes back. `index.spec.ts`
-// pins them against the real component so this copy cannot drift.
 export const HstJson = Object.assign(
   defineAsyncComponent(() => import('./components/json/HstJson.vue')),
   { name: 'HstJson', emits: ['update:modelValue'] },
+)
+export const HstDate = Object.assign(
+  defineAsyncComponent(() => import('./components/date/HstDate.vue')),
+  { name: 'HstDate', emits: ['update:modelValue'] },
+)
+export const HstColor = Object.assign(
+  defineAsyncComponent(() => import('./components/color/HstColor.vue')),
+  { name: 'HstColor', emits: ['update:modelValue'] },
 )
 export const HstColorSelect = HstColorSelectVue
 

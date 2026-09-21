@@ -12,9 +12,7 @@ export default defineConfig({
       ? {}
       : {
           '@iconify/vue': '@poveste/vendors/iconify',
-          '@internationalized/date': '@poveste/vendors/internationalized-date',
           'pinia': '@poveste/vendors/pinia',
-          'reka-ui': '@poveste/vendors/reka-ui',
           'scroll-into-view-if-needed': '@poveste/vendors/scroll',
           'vue-router': '@poveste/vendors/vue-router',
           '@vueuse/core': '@poveste/vendors/vue-use',

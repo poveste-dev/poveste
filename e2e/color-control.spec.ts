@@ -68,6 +68,20 @@ test.describe('colour control', () => {
     await expect(state, 'the same ten steps back up land on the same colour').toContainText('"tint": "#3366ff"')
   })
 
+  // Lazily loaded, so the chunk has to arrive in both realms. A dynamic import
+  // resolved against the wrong base fails only inside a sandbox, and fails as a
+  // control that never appears rather than as an error on the page being read.
+  test('arrives in a sandbox, not only in the chrome', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('svelte'), 'a built-in control in the default slot does not collect under Svelte')
+
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+
+    await expect(preview.locator('.poveste-color .poveste-color-swatch')).toBeVisible()
+
+    await preview.getByLabel('Open the colour picker').click()
+    await expect(preview.locator('.poveste-color-picker')).toBeVisible()
+  })
+
   test('opens the picker into the app root, not the body', async ({ page }) => {
     const tint = page.getByTestId('story-controls').locator('.poveste-wrapper').filter({ hasText: 'Tint' })
 
