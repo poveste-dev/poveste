@@ -908,9 +908,6 @@ importers:
       concurrently:
         specifier: ^10.0.5
         version: 10.0.5
-      floating-vue:
-        specifier: 5.2.2
-        version: 5.2.2(@nuxt/kit@3.20.2(magicast@0.5.4))(vue@3.5.41(typescript@6.0.3))
       jsdom:
         specifier: ^30.0.1
         version: 30.0.1
