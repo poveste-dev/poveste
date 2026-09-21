@@ -23,9 +23,12 @@
 //
 // `pnpm run test:docs-site:live` runs the same contract against a deployed site
 // instead of the build: production by default, a deploy preview when
-// `POVESTE_DOCS_SITE` names one. It is not wired into CI: poveste.dev deploys
-// from `main` (#321), so a PR cannot prove production. Run it against a deploy
-// preview before a redirect change lands, and against production after.
+// `POVESTE_DOCS_SITE` names one. A PR cannot prove production — poveste.dev
+// deploys from `main` (#321) — so it asks production on a schedule instead, in
+// `.github/workflows/docs-site.yml`, which lives on `main` for the same reason.
+// Leaving it to be run by hand after a deploy meant it was not: #840's redirects
+// shipped in 0.15.0 and the site served the previous deploy for ten days (#911).
+// Run it against a deploy preview before a redirect change lands.
 
 import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readFileSync } from 'node:fs'
