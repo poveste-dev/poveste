@@ -33,7 +33,11 @@ Two things about those stories are load-bearing and neither is visible in a diff
 
 **The size axis uses a writable `ref(null)`, never `useTemplateRef`.** `useTemplateRef` returns a readonly ref in a dev build, the state setter's write is refused, and the sandbox never settles — that is #959, and every number off such a story measures the loop rather than the walk. `bench-state-usetemplateref` exists to hold it failing and is the only story that may call it. Vue compiles the warning out of a built book, so nothing at runtime can catch a second story being modernised into that shape; `smoke.spec.ts` reads the files instead.
 
-Only `examples/vue` carries this axis. `plugin-svelte` still syncs with the `wrote` flag rather than a baseline, so a Svelte figure would be of a different mechanism, not the same one in another book.
+Only `examples/vue` carries this axis, and the reason is that the cost has one home. What the bench measures is `addImplicitState` registering every top-level `<script setup>` binding of a story, and that function exists in `plugin-vue` alone.
+
+`examples/nuxt` and `examples/quasar` would run the identical code — `plugin-nuxt` depends on `@poveste/plugin-vue` and the Quasar book uses it directly — so a mirror there re-measures this walk plus that framework's boot, and tells you nothing further about the walk itself.
+
+`examples/svelte` and `examples/sveltekit` have no equivalent to mirror. `plugin-svelte` never imports `toRawDeep`, and its only state-sync path, `syncState`, is reachable only through Svelte 4's `$capture_state` via `getLegacyStateApi` — the books are on Svelte 5, where it is dead code. A Svelte story's state holds what `initState` put there and nothing else, so there is no graph behind a binding to walk. #960 gives a different reason, that `plugin-svelte` "still uses the `wrote` flag rather than a baseline"; that flag is `applyState`'s return value in `poveste-shared` and `plugin-vue`'s own bridge uses it the same way, so it is not what separates them.
 
 ## Does it still run
 

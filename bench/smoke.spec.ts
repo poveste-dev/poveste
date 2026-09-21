@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from '../scripts/checks/support/assert-no-problems.ts'
@@ -231,6 +232,20 @@ describe('measureStateSync', () => {
     await expect(measureStateSync({ baseURL: 'http://localhost:1', storyId: 'bench-state-control', runs }))
       .rejects
       .toThrow(/positive integer/)
+  })
+})
+
+describe('the bench scripts', () => {
+  /*
+   * `node -e` leaves `process.argv[1]` undefined, and each script's main-module
+   * check reads it, so an unguarded one throws at import rather than exporting
+   * anything. `run.mjs` guarded it and the four scripts it imports did not,
+   * which defeated its guard too — so importing `run.mjs` covers all five.
+   */
+  it('import without a process.argv[1] to compare against', () => {
+    const entry = JSON.stringify(new URL('./run.mjs', import.meta.url).href)
+
+    expect(() => execFileSync(process.execPath, ['-e', `import(${entry})`], { stdio: 'pipe' })).not.toThrow()
   })
 })
 

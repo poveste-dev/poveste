@@ -39,9 +39,10 @@ export const STATE_STORIES = [
   'bench-state-usetemplateref',
 ]
 
-// Only `examples/vue` carries the state stories. `plugin-svelte` still syncs
-// with the `wrote` flag rather than a baseline, so the Svelte figure would be
-// of a different mechanism rather than the same one in another book (#960).
+// Only `examples/vue` carries the state stories. What they measure is
+// `addImplicitState`, which lives in `plugin-vue` alone: nuxt and quasar sit on
+// that same package and would re-measure it, and the Svelte books have no
+// equivalent at all on Svelte 5. See `bench/README.md`.
 const STATE_AXIS_EXAMPLES = new Set(['vue'])
 
 const env = { ...process.env, POVESTE_BENCH: '1' }
