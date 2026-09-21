@@ -2,10 +2,8 @@
    this file is compiled by the postcss CLI into dist/style.css, which rebases
    font URLs relative to the *source* and ships a path into node_modules. Vite
    processes the entries and hashes the files into the book (#219). */
-@import 'floating-vue/dist/style.css';
 @import '@poveste/controls/dist/index.es.css';
 
-@import './floating.pcss';
 @import './transitions.pcss';
 
 /*
@@ -170,7 +168,7 @@
     background-repeat: no-repeat;
     background-position: right;
 
-    /* Subject-side, not `.ptw-dark &` — see the note in floating.pcss. */
+    /* Subject-side, not `.ptw-dark &` — see the note in BaseDropdown.vue. */
     &:where(.ptw-dark, .ptw-dark *) {
       background-image: linear-gradient(to left, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
     }
