@@ -3,6 +3,7 @@ import type { SetupContext, VNode } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, h, onBeforeUnmount, reactive, ref } from 'vue'
+import BaseDropdown from './BaseDropdown.vue'
 
 // Container
 
@@ -99,18 +100,22 @@ function ChildrenSlice(props: { start?: number, end?: number }, { slots }: Setup
       <slot />
     </ChildrenRender>
 
-    <VDropdown
+    <BaseDropdown
       v-if="visibleChildrenCount < children.size"
     >
-      <div
-        role="button"
+      <!-- A `<button>`, where this was a `role="button"` div with no `tabindex`:
+      the popover writes `aria-expanded` onto whatever it is given, and axe
+      rejects that on an element with no role it can name (#924). A keyboard
+      reaches the hidden tabs now, which it could not before. -->
+      <button
+        aria-label="More"
         class="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 w-8 h-full flex items-center justify-center absolute top-0 right-0"
       >
         <Icon
           icon="carbon:caret-down"
           class="w-4 h-4 opacity-50 group-hover:opacity-100"
         />
-      </div>
+      </button>
 
       <template #popper>
         <div class="flex flex-col items-stretch">
@@ -121,6 +126,6 @@ function ChildrenSlice(props: { start?: number, end?: number }, { slots }: Setup
           </ChildrenSlice>
         </div>
       </template>
-    </VDropdown>
+    </BaseDropdown>
   </div>
 </template>

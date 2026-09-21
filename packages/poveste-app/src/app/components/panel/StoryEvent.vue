@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { HstEvent } from '../../stores/events'
 import { computed } from 'vue'
+import BaseDropdown from '../base/BaseDropdown.vue'
 
 const props = defineProps<{
   event: HstEvent
@@ -24,21 +25,21 @@ const formattedArgument = computed(() => {
 </script>
 
 <template>
-  <VDropdown
+  <BaseDropdown
+    side="right"
     class="poveste-story-event group"
-    placement="right"
     data-testid="event-item"
   >
-    <template #default="{ shown }">
-      <div
-        class="group-hover:bg-primary-100 dark:group-hover:bg-primary-700 cursor-pointer py-2 px-4 flex items-baseline gap-1 leading-normal"
+    <template #default="{ open }">
+      <button
+        class="group-hover:bg-primary-100 dark:group-hover:bg-primary-700 cursor-pointer py-2 px-4 w-full text-left flex items-baseline gap-1 leading-normal"
         :class="[
-          shown ? 'bg-primary-50 dark:bg-primary-600' : 'group-odd:bg-gray-100/50 dark:group-odd:bg-gray-750/40',
+          open ? 'bg-primary-50 dark:bg-primary-600' : 'group-odd:bg-gray-100/50 dark:group-odd:bg-gray-750/40',
         ]"
       >
         <span
           :class="{
-            'text-primary-500': shown,
+            'text-primary-500': open,
           }"
         >
           {{ event.name }}
@@ -47,7 +48,7 @@ const formattedArgument = computed(() => {
           v-if="event.argument"
           class="text-xs opacity-50 truncate"
         >{{ formattedArgument }}</span>
-      </div>
+      </button>
     </template>
 
     <template #popper>
@@ -55,5 +56,5 @@ const formattedArgument = computed(() => {
         <pre class="p-4">{{ event.argument }}</pre>
       </div>
     </template>
-  </VDropdown>
+  </BaseDropdown>
 </template>

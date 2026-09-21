@@ -35,6 +35,6 @@ test.describe('events', () => {
 
     await iframe.locator('.conformance-event-button').click()
     await page.getByTestId('event-item').filter({ hasText: 'conformance-click' }).click()
-    await expect(page.locator('.v-popper__popper')).toContainText('"source": "button"')
+    await expect(page.locator('.poveste-dropdown')).toContainText('"source": "button"')
   })
 })
