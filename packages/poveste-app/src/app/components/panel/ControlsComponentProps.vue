@@ -2,6 +2,7 @@
 import type { AutoPropComponentDefinition } from '@poveste/shared'
 import type { Variant } from '../../types'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import ControlsComponentPropItem from './ControlsComponentPropItem.vue'
 
 defineProps<{
@@ -13,11 +14,12 @@ defineProps<{
 <template>
   <div class="poveste-controls-component-props">
     <div class="font-mono p-2 flex items-center gap-1">
-      <Icon
-        v-tooltip="'Auto-detected props'"
-        icon="carbon:flash"
-        class="w-4 h-4 text-primary-500 flex-none"
-      />
+      <HstTooltip content="Auto-detected props">
+        <Icon
+          icon="carbon:flash"
+          class="w-4 h-4 text-primary-500 flex-none"
+        />
+      </HstTooltip>
       <div>
         <span class="opacity-30">&lt;</span>{{ definition.name }}<span class="opacity-30">&gt;</span>
       </div>

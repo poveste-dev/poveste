@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import TopBarChipItem from '../app/TopBarChipItem.vue'
 
@@ -7,15 +8,18 @@ const settings = usePreviewSettingsStore().currentSettings
 </script>
 
 <template>
-  <TopBarChipItem
-    v-tooltip="`Switch to text direction ${settings.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right'}`"
-    aria-label="Toggle text direction"
-    class="poveste-toolbar-text-direction"
-    @click="settings.textDirection = settings.textDirection === 'ltr' ? 'rtl' : 'ltr'"
+  <HstTooltip
+    :content="`Switch to text direction ${settings.textDirection === 'ltr' ? 'Right to Left' : 'Left to Right'}`"
   >
-    <Icon
-      :icon="settings.textDirection === 'ltr' ? 'fluent:text-paragraph-direction-right-16-regular' : 'fluent:text-paragraph-direction-left-16-regular'"
-      class="w-4 h-4"
-    />
-  </TopBarChipItem>
+    <TopBarChipItem
+      aria-label="Toggle text direction"
+      class="poveste-toolbar-text-direction"
+      @click="settings.textDirection = settings.textDirection === 'ltr' ? 'rtl' : 'ltr'"
+    >
+      <Icon
+        :icon="settings.textDirection === 'ltr' ? 'fluent:text-paragraph-direction-right-16-regular' : 'fluent:text-paragraph-direction-left-16-regular'"
+        class="w-4 h-4"
+      />
+    </TopBarChipItem>
+  </HstTooltip>
 </template>

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { SandboxColorScheme } from '../../types'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
@@ -31,19 +32,20 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets?.lengt
     <!-- The tooltip would sit on top of the first row of the dropdown, so drop
     it while the dropdown is open. -->
     <template #default="{ shown }">
-      <div
-        v-tooltip="shown ? '' : 'Preview appearance'"
-        class="flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors group"
-      >
-        <Icon
-          icon="carbon:color-palette"
-          class="w-4 h-4"
-        />
-        <Icon
-          icon="carbon:chevron-down"
-          class="w-3 h-3 opacity-40 group-hover:opacity-70"
-        />
-      </div>
+      <HstTooltip :content="shown ? '' : 'Preview appearance'">
+        <div
+          class="flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors group"
+        >
+          <Icon
+            icon="carbon:color-palette"
+            class="w-4 h-4"
+          />
+          <Icon
+            icon="carbon:chevron-down"
+            class="w-3 h-3 opacity-40 group-hover:opacity-70"
+          />
+        </div>
+      </HstTooltip>
     </template>
 
     <template #popper="{ hide }">

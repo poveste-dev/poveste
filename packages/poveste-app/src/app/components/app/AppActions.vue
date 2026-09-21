@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { povesteConfig } from '../../util/config'
 import { isDark, toggleDark } from '../../util/dark'
 import { isMobile } from '../../util/responsive'
-import { makeTooltip } from '../../util/tooltip'
+import ShortcutTooltip from './ShortcutTooltip.vue'
 import TopBarChip from './TopBarChip.vue'
 import TopBarChipItem from './TopBarChipItem.vue'
 
@@ -20,41 +20,53 @@ const themeIcon = computed(() => {
 
 <template>
   <TopBarChip>
-    <TopBarChipItem
+    <ShortcutTooltip
       v-if="!isMobile"
-      v-tooltip="makeTooltip('Layout', ({ isMac }) => isMac ? 'meta+shift+l' : 'ctrl+shift+l')"
-      aria-label="Open layout customization"
-      data-testid="layout-btn"
-      @click="$emit('layout')"
+      description="Layout"
+      :shortcut="({ isMac }) => isMac ? 'meta+shift+l' : 'ctrl+shift+l'"
     >
-      <Icon
-        icon="carbon:panel-expansion"
-        class="w-4 h-4"
-      />
-    </TopBarChipItem>
+      <TopBarChipItem
+        aria-label="Open layout customization"
+        data-testid="layout-btn"
+        @click="$emit('layout')"
+      >
+        <Icon
+          icon="carbon:panel-expansion"
+          class="w-4 h-4"
+        />
+      </TopBarChipItem>
+    </ShortcutTooltip>
 
-    <TopBarChipItem
-      v-tooltip="makeTooltip('Search', ({ isMac }) => isMac ? 'meta+k' : 'ctrl+k')"
-      aria-label="Search stories"
-      data-testid="search-btn"
-      @click="$emit('search')"
+    <ShortcutTooltip
+      description="Search"
+      :shortcut="({ isMac }) => isMac ? 'meta+k' : 'ctrl+k'"
     >
-      <Icon
-        icon="carbon:search"
-        class="w-4 h-4"
-      />
-    </TopBarChipItem>
+      <TopBarChipItem
+        aria-label="Search stories"
+        data-testid="search-btn"
+        @click="$emit('search')"
+      >
+        <Icon
+          icon="carbon:search"
+          class="w-4 h-4"
+        />
+      </TopBarChipItem>
+    </ShortcutTooltip>
 
-    <TopBarChipItem
+    <ShortcutTooltip
       v-if="!povesteConfig.theme.hideColorSchemeSwitch"
-      v-tooltip="makeTooltip('Toggle dark mode', ({ isMac }) => isMac ? 'meta+shift+d' : 'ctrl+shift+d')"
-      aria-label="Toggle dark mode"
-      @click="toggleDark()"
+      description="Toggle dark mode"
+      :shortcut="({ isMac }) => isMac ? 'meta+shift+d' : 'ctrl+shift+d'"
     >
-      <Icon
-        :icon="themeIcon"
-        class="w-4 h-4"
-      />
-    </TopBarChipItem>
+      <TopBarChipItem
+        aria-label="Toggle dark mode"
+        @click="toggleDark()"
+      >
+        <Icon
+          :icon="themeIcon"
+          class="w-4 h-4"
+        />
+      </TopBarChipItem>
+    </ShortcutTooltip>
   </TopBarChip>
 </template>
