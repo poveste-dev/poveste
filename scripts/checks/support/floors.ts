@@ -39,6 +39,7 @@ export const FLOORS: Record<string, Floor> = {
   'starters': { guard: 'declares no starters' },
   'step-gates': { walk: true },
   'task-graph': { guard: 'declares no `tasks:`' },
+  'theme-tokens': { guard: 'bridges no token to' },
   'tsconfig-base': { guard: 'no package tsconfig' },
   'versions': { walk: true },
 }

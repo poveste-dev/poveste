@@ -281,7 +281,14 @@ export const defaultColors = {
 }
 
 const HEX = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i
-const SHORT_HEX = /^#([a-f\d]){3,4}$/i
+/*
+ * Four groups, not one group repeated. `([a-f\d]){3,4}` captures only the last
+ * character it matched, so the expansion below received `#0f0` as one group and
+ * built `#00undefinedundefined` — which `HEX` then rejected, and every shorthand
+ * colour a config used came back unreadable (#955).
+ */
+// eslint-disable-next-line regexp/optimal-quantifier-concatenation -- `{1,2}` here is the bug above
+const SHORT_HEX = /^#([a-f\d])([a-f\d])([a-f\d])([a-f\d])?$/i
 const VALUE = `(?:\\d+|\\d*\\.\\d+)%?`
 const SEP = `(?:\\s*,\\s*|\\s+)`
 const ALPHA_SEP = `\\s*[,/]\\s*`

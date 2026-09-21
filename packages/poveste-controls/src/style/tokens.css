@@ -1,0 +1,69 @@
+/*
+ * The chrome's design tokens, for both packages that compile them.
+ *
+ * `@theme` is a build-time input rather than a stylesheet: Tailwind needs these
+ * to know that `bg-primary-500` is a utility at all, so importing the other
+ * package's *built* CSS is not enough and `@poveste/controls` and
+ * `@poveste/app` both have to read this file. It is imported rather than
+ * copied because the two copies had already drifted — the app bridged `primary`
+ * and `gray` to the runtime config and this package did not, so which colours a
+ * control rendered in depended on which stylesheet the book loaded last.
+ *
+ * `resolved-theme.ts` injects `--_poveste-color-<name>-<key>` per book from
+ * `theme.colors`, as the colour the config wrote. That is what makes these
+ * follow a reader's configuration.
+ *
+ * A colour rather than the RGB channels it used to hold: the channel form was
+ * v3's `withOpacityValue` shim, which v4 replaced with `color-mix`, and keeping
+ * it meant rebuilding every colour from three numbers. That lost the alpha of
+ * `#10b98180` and turned `hsl(160 84% 39%)` into `rgb(160 84% 39%)`, which is
+ * not a colour — so the declaration was dropped and the token quietly fell back
+ * to the default below (#955).
+ *
+ * The fallbacks are `defaultColors.emerald` and `defaultColors.zinc` from
+ * `packages/poveste/src/node/colors.ts` — the same values `getDefaultConfig()`
+ * puts in `theme.colors`, so a book and the standalone stylesheet agree. They
+ * are not Tailwind's own `emerald` and `zinc`, which this file used to borrow:
+ * v4 moved those to OKLCH, so `style-standalone.css` was painting
+ * `oklch(69.6% 0.17 162.48)` where every book painted `#10b981`.
+ *
+ * Every colour here bridges, with no exceptions to remember —
+ * `scripts/checks/theme-tokens.ts` is what keeps it that way, in both
+ * directions.
+ */
+@theme {
+  --color-primary-50: var(--_poveste-color-primary-50, #ecfdf5);
+  --color-primary-100: var(--_poveste-color-primary-100, #d1fae5);
+  --color-primary-200: var(--_poveste-color-primary-200, #a7f3d0);
+  --color-primary-300: var(--_poveste-color-primary-300, #6ee7b7);
+  --color-primary-400: var(--_poveste-color-primary-400, #34d399);
+  --color-primary-500: var(--_poveste-color-primary-500, #10b981);
+  --color-primary-600: var(--_poveste-color-primary-600, #059669);
+  --color-primary-700: var(--_poveste-color-primary-700, #047857);
+  --color-primary-800: var(--_poveste-color-primary-800, #065f46);
+  --color-primary-900: var(--_poveste-color-primary-900, #064e3b);
+
+  --color-gray-50: var(--_poveste-color-gray-50, #fafafa);
+  --color-gray-100: var(--_poveste-color-gray-100, #f4f4f5);
+  --color-gray-200: var(--_poveste-color-gray-200, #e4e4e7);
+  --color-gray-300: var(--_poveste-color-gray-300, #d4d4d8);
+  --color-gray-400: var(--_poveste-color-gray-400, #a1a1aa);
+  --color-gray-500: var(--_poveste-color-gray-500, #71717a);
+  --color-gray-600: var(--_poveste-color-gray-600, #52525b);
+  --color-gray-700: var(--_poveste-color-gray-700, #3f3f46);
+  --color-gray-750: var(--_poveste-color-gray-750, #323238);
+  --color-gray-800: var(--_poveste-color-gray-800, #27272a);
+  --color-gray-850: var(--_poveste-color-gray-850, #1f1f21);
+  --color-gray-900: var(--_poveste-color-gray-900, #18181b);
+  --color-gray-950: var(--_poveste-color-gray-950, #101012);
+
+  /* Border radius, ported from the root v3 config. Not themable, and here
+     rather than in either package for the same reason as the colours. */
+  --radius-sm: 0.25rem;
+  --radius: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
