@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^22.10.1",
+    "@types/node": "^26.6.1",
     "poveste": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
