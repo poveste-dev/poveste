@@ -59,6 +59,48 @@ test.describe('preview overflow', () => {
 
     await expect(page.locator('.conformance-tall-story-end')).toBeInViewport()
   })
+
+  /*
+   * The other half, which had no test and so was traded away for the one above:
+   * #259 gave the background box `min-h-full` so a tall story's background
+   * reaches the bottom of it, and a percentage height cannot resolve against a
+   * parent whose specified height is `auto`. Every `h-full` below it collapsed,
+   * and the iframe fell back to 150px — the HTML default for a replaced element
+   * with no resolved height. Every story taller than that was clipped, on the
+   * screen a reader spends all their time on, for a month (#949).
+   */
+  test('a story shorter than the preview fills it, rather than a 150px box (#949)', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await openStory(page, 'conformance-button')
+    await expect(page.getByTestId('preview-iframe')).toBeVisible()
+
+    const box = await page.evaluate(() => {
+      const frame = document.querySelector('[data-testid="preview-iframe"]')
+      const background = document.querySelector('[data-testid="responsive-preview-bg"]')
+
+      // Summed off the elements rather than assumed. `p-8` is 28px a side here,
+      // not the 32 a reader of the class would expect, so a hardcoded gap is
+      // both wrong today and stale the day the spacing scale moves.
+      let padding = 0
+      for (let node = frame?.parentElement; node && node !== background; node = node.parentElement) {
+        const style = getComputedStyle(node)
+        padding += Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom)
+      }
+
+      return {
+        padding,
+        frame: frame ? frame.getBoundingClientRect().height : 0,
+        background: background ? background.getBoundingClientRect().height : 0,
+      }
+    })
+
+    // Not `> 150`: a story that happens to be 200px tall would pass that while
+    // still being sized by nothing. What says it is sized by its container is
+    // that it fills the box it sits in, less the padding between them.
+    expect(box.background, 'the preview box is not collapsed').toBeGreaterThan(400)
+    expect(box.frame, 'the story fills the preview box rather than the iframe default')
+      .toBeGreaterThanOrEqual(box.background - box.padding - 1)
+  })
 })
 
 test.describe('preview resize handles', () => {

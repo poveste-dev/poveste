@@ -201,9 +201,18 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
              preview would otherwise be shown against the bare box below the
              first screenful. The checkerboard is measured against this for the
              same reason — but the draggers are not, since they belong to the
-             visible box rather than to the story's full height. -->
+             visible box rather than to the story's full height.
+             `flex`, and `flex-1` rather than `h-full` below, because that is the
+             half `min-h-full` costs: a percentage height resolves against a
+             parent's *specified* height, and this one's is `auto`. So `h-full`
+             collapsed all the way down to the iframe, which then fell back to
+             its own default of 150px and clipped every story taller than that
+             (#949). A flex child reads the used height instead, which
+             `min-height` does give it — and with `min-height: auto` it still
+             refuses to shrink below its content, so a tall story pushes this box
+             taller exactly as it did. -->
         <div
-          class="rounded-lg min-h-full relative"
+          class="rounded-lg min-h-full relative flex flex-col"
           :class="responsive ? 'bind-preview-bg' : ''"
           :data-testid="responsive ? 'responsive-preview-bg' : undefined"
         >
@@ -212,10 +221,17 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
             class="absolute inset-0 w-full h-full text-gray-500/20"
           />
           <div
-            class="h-full relative"
+            class="flex-1 relative flex flex-col"
             :class="responsive ? 'p-8' : ''"
           >
-            <div class="w-full h-full relative">
+            <!-- `grid`, so the one in-flow child stretches to this box without
+                 asking for a percentage of it. `h-full` here read a height that
+                 is decided by flex, which Chrome treats as indefinite for
+                 percentage resolution — the same wall one level up. Stretching
+                 is not shrinking: the child keeps its `min-height: auto`, so an
+                 inline story taller than the preview still grows this and the
+                 box above it (#258). -->
+            <div class="w-full flex-1 relative grid">
               <div class="absolute inset-0" />
 
               <slot
