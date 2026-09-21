@@ -23,7 +23,7 @@ html.my-dark {
 }
 
 /*
- * Opt-in user styling, used by the floating-vue story. Scoped to elements that
+ * Opt-in user styling, used by the `UserPopover` story. Scoped to elements that
  * ask for it by class, so it does not restyle the rest of the example.
  */
 :root {

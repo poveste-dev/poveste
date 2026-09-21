@@ -4,8 +4,8 @@ import { expect, test } from '@playwright/test'
 // it so the iframe no longer 500s, and the example installs vue-i18n into the
 // story app in `poveste.setup.ts` so `$t`/`useI18n` still work (#65).
 test.describe('nuxt i18n', () => {
-  // HstSelect is a custom floating-vue dropdown, not a native <select>: click the
-  // trigger (showing the current label), then the option in the teleported popper.
+  // HstSelect is a popover of divs, not a native <select>: click the trigger
+  // (showing the current label), then the option in the teleported popper.
   async function pickLocale(page: import('@playwright/test').Page, current: string, next: string) {
     await page.locator('[data-testid="story-controls"]').getByText(current, { exact: true }).click()
     await page.locator('.poveste-select-popper').getByText(next, { exact: true }).click()
