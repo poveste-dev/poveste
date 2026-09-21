@@ -2,7 +2,7 @@
 import type { PropType } from 'vue'
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
-import { HstCopyIcon } from '@poveste/controls'
+import { HstCopyIcon, HstTooltip } from '@poveste/controls'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -111,25 +111,26 @@ const useIframe = computed(() => {
   >
     <!-- Header -->
     <div class="flex-none flex items-center">
-      <RouterLink
-        v-tooltip="variant.title"
-        :to="targetRoute"
-        class="rounded w-max px-2 py-0.5 min-w-16 cursor-pointer flex items-center gap-1 flex-shrink"
-        :class="{
-          'hover:bg-gray-200 text-gray-500 dark:hover:bg-gray-800': !isActive,
-          'bg-primary-200 hover:bg-primary-300 text-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800 dark:text-primary-200': isActive,
-        }"
-      >
-        <Icon
-          :icon="variant.icon ?? 'carbon:cube'"
-          class="w-4 h-4 opacity-50"
+      <HstTooltip :content="variant.title">
+        <RouterLink
+          :to="targetRoute"
+          class="rounded w-max px-2 py-0.5 min-w-16 cursor-pointer flex items-center gap-1 flex-shrink"
           :class="{
-            'text-gray-500': !isActive && !variant.iconColor,
-            'bind-icon-color': !isActive && variant.iconColor,
+            'hover:bg-gray-200 text-gray-500 dark:hover:bg-gray-800': !isActive,
+            'bg-primary-200 hover:bg-primary-300 text-primary-800 dark:bg-primary-700 dark:hover:bg-primary-800 dark:text-primary-200': isActive,
           }"
-        />
-        <span class="truncate flex-1">{{ variant.title }}</span>
-      </RouterLink>
+        >
+          <Icon
+            :icon="variant.icon ?? 'carbon:cube'"
+            class="w-4 h-4 opacity-50"
+            :class="{
+              'text-gray-500': !isActive && !variant.iconColor,
+              'bind-icon-color': !isActive && variant.iconColor,
+            }"
+          />
+          <span class="truncate flex-1">{{ variant.title }}</span>
+        </RouterLink>
+      </HstTooltip>
 
       <!-- Toolbar -->
       <div class="flex-none ml-auto hidden group-hover:flex group-focus-within:flex items-center">

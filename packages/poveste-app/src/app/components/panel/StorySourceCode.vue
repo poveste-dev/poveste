@@ -2,7 +2,7 @@
 import type { HighlighterCore } from 'shiki/core'
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
-import { HstCopyIcon } from '@poveste/controls'
+import { HstCopyIcon, HstTooltip } from '@poveste/controls'
 import { unindent } from '@poveste/shared'
 import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
@@ -151,50 +151,56 @@ watch(sourceHtml, async () => {
 
       <!-- Display source modes -->
       <div class="flex flex-none gap-px h-full py-2">
-        <button
-          v-tooltip="!dynamicSourceCode ? 'Dynamic source code is not available' : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
-          class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
-          :class="[
-            displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-800 dark:text-primary-400',
-            dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'dynamic' && 'opacity-50',
-          ]"
-          @click="dynamicSourceCode && (displayedSource = 'dynamic')"
+        <HstTooltip
+          :content="!dynamicSourceCode ? 'Dynamic source code is not available' : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
         >
-          <Icon
-            icon="carbon:flash"
-            class="w-4 h-4 flex-none"
-          />
-          <span
-            class="transition-opacity duration-300"
-            :class="{
-              'opacity-0': displayedSource !== 'dynamic',
-            }"
+          <button
+            class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
+            :class="[
+              displayedSource !== 'dynamic' ? 'max-w-6 opacity-70' : 'max-w-[82px] text-primary-800 dark:text-primary-400',
+              dynamicSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'dynamic' && 'opacity-50',
+            ]"
+            @click="dynamicSourceCode && (displayedSource = 'dynamic')"
           >
-            Dynamic
-          </span>
-        </button>
-        <button
-          v-tooltip="!staticSourceCode ? 'Static source code is not available' : displayedSource !== 'static' ? 'Switch to static source' : null"
-          class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-r transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
-          :class="[
-            displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-800 dark:text-primary-400',
-            staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'static' && 'opacity-50',
-          ]"
-          @click="staticSourceCode && (displayedSource = 'static')"
+            <Icon
+              icon="carbon:flash"
+              class="w-4 h-4 flex-none"
+            />
+            <span
+              class="transition-opacity duration-300"
+              :class="{
+                'opacity-0': displayedSource !== 'dynamic',
+              }"
+            >
+              Dynamic
+            </span>
+          </button>
+        </HstTooltip>
+        <HstTooltip
+          :content="!staticSourceCode ? 'Static source code is not available' : displayedSource !== 'static' ? 'Switch to static source' : null"
         >
-          <Icon
-            icon="carbon:document"
-            class="w-4 h-4 flex-none"
-          />
-          <span
-            class="transition-opacity duration-300"
-            :class="{
-              'opacity-0': displayedSource !== 'static',
-            }"
+          <button
+            class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-r transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"
+            :class="[
+              displayedSource !== 'static' ? 'max-w-6 opacity-70' : 'max-w-[63px] text-primary-800 dark:text-primary-400',
+              staticSourceCode ? 'cursor-pointer hover:bg-gray-500/30 active:bg-gray-600/50' : displayedSource !== 'static' && 'opacity-50',
+            ]"
+            @click="staticSourceCode && (displayedSource = 'static')"
           >
-            Static
-          </span>
-        </button>
+            <Icon
+              icon="carbon:document"
+              class="w-4 h-4 flex-none"
+            />
+            <span
+              class="transition-opacity duration-300"
+              :class="{
+                'opacity-0': displayedSource !== 'static',
+              }"
+            >
+              Static
+            </span>
+          </button>
+        </HstTooltip>
       </div>
 
       <HstCopyIcon

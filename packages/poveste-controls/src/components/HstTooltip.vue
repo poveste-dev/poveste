@@ -6,12 +6,15 @@ export default {
 
 <script lang="ts" setup>
 import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, shallowRef, useSlots } from 'vue'
 import { portalTarget } from '../portal-target'
 
 const props = withDefaults(defineProps<{
-  /** Nothing renders without one, which is how the truncation tooltips opt out. */
-  content?: string | undefined
+  /**
+   * Nothing renders without one, which is how the truncation tooltips opt out.
+   * `null` counts as nothing, since that is what a `x ? 'Label' : null` reads as.
+   */
+  content?: string | null | undefined
   side?: 'top' | 'right' | 'bottom' | 'left'
   /** Gap from the trigger — floating-vue's `distance`. */
   offset?: number
@@ -23,6 +26,13 @@ const props = withDefaults(defineProps<{
   offset: 5,
   open: undefined,
 })
+
+const slots = useSlots()
+
+// A `content` slot for the few tooltips that are more than a line of text — the
+// chrome's keyboard shortcuts render a styled key beside their description, and
+// that used to be an HTML string handed to `v-html`.
+const hasContent = computed(() => Boolean(props.content) || Boolean(slots['content']))
 
 // The timings are floating-vue's tooltip theme, not Reka's: 700ms to open and
 // 300ms of grouping between neighbours would be a visible change of behaviour
@@ -51,7 +61,7 @@ onMounted(() => {
         <slot />
       </TooltipTrigger>
       <TooltipPortal
-        v-if="content && target"
+        v-if="hasContent && target"
         :to="target"
       >
         <TooltipContent
@@ -59,7 +69,9 @@ onMounted(() => {
           :side="side"
           :side-offset="offset"
         >
-          {{ content }}
+          <slot name="content">
+            {{ content }}
+          </slot>
           <TooltipArrow
             class="poveste-tooltip-arrow"
             :width="10"

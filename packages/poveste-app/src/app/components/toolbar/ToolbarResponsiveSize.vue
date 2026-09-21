@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
@@ -35,22 +36,23 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
     :disabled="!povesteConfig.responsivePresets?.length"
     class="poveste-toolbar-responsive-size flex-none"
   >
-    <div
-      v-tooltip="'Responsive sizes'"
-      class="flex items-center gap-1 px-2.5 py-1.5 text-gray-900 dark:text-gray-100 transition-colors group"
-      :class="{
-        'hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer': povesteConfig.responsivePresets?.length,
-      }"
-    >
-      <Icon
-        icon="carbon:devices"
-        class="w-4 h-4"
-      />
-      <Icon
-        icon="carbon:chevron-down"
-        class="w-3 h-3 opacity-40 group-hover:opacity-70"
-      />
-    </div>
+    <HstTooltip content="Responsive sizes">
+      <div
+        class="flex items-center gap-1 px-2.5 py-1.5 text-gray-900 dark:text-gray-100 transition-colors group"
+        :class="{
+          'hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer': povesteConfig.responsivePresets?.length,
+        }"
+      >
+        <Icon
+          icon="carbon:devices"
+          class="w-4 h-4"
+        />
+        <Icon
+          icon="carbon:chevron-down"
+          class="w-3 h-3 opacity-40 group-hover:opacity-70"
+        />
+      </div>
+    </HstTooltip>
 
     <template #popper="{ hide }">
       <div class="flex flex-col items-stretch">
@@ -59,23 +61,25 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
         </BaseCheckbox>
 
         <div class="flex items-center gap-2 px-4 py-3">
-          <input
-            v-model="responsiveWidth"
-            v-tooltip="'Responsive width (px)'"
-            type="number"
-            class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"
-            step="16"
-            placeholder="Auto"
-          >
+          <HstTooltip content="Responsive width (px)">
+            <input
+              v-model="responsiveWidth"
+              type="number"
+              class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"
+              step="16"
+              placeholder="Auto"
+            >
+          </HstTooltip>
           <span class="opacity-50">×</span>
-          <input
-            v-model="responsiveHeight"
-            v-tooltip="'Responsive height (px)'"
-            type="number"
-            class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"
-            step="16"
-            placeholder="Auto"
-          >
+          <HstTooltip content="Responsive height (px)">
+            <input
+              v-model="responsiveHeight"
+              type="number"
+              class="bg-transparent border border-gray-200 dark:border-gray-850 rounded w-20 opacity-50 focus:opacity-100 flex-1 min-w-0"
+              step="16"
+              placeholder="Auto"
+            >
+          </HstTooltip>
         </div>
 
         <button

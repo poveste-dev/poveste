@@ -2,8 +2,8 @@
 import type { Ref } from 'vue'
 import type { Variant } from '../../types'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { useEventListener } from '@vueuse/core'
-import { VTooltip as vTooltip } from 'floating-vue'
 import { computed, onUnmounted, ref } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import CheckerboardPattern from '../misc/CheckerboardPattern.vue'
@@ -243,31 +243,43 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
 
         <!-- Resize Dragger -->
         <template v-if="isResponsiveEnabled">
-          <div
-            ref="horizontalDragger"
-            v-tooltip.right="sizeTooltip"
-            class="absolute w-4 top-0 bottom-4 right-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ew-resize group hover:text-primary-500"
+          <HstTooltip
+            :content="sizeTooltip"
+            side="right"
           >
-            <Icon
-              icon="mdi:drag-vertical-variant"
-              class="w-4 h-4 opacity-20 group-hover:opacity-90"
-            />
-          </div>
-          <div
-            ref="verticalDragger"
-            v-tooltip.bottom="sizeTooltip"
-            class="absolute h-4 left-0 right-4 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ns-resize group hover:text-primary-500"
+            <div
+              ref="horizontalDragger"
+              class="absolute w-4 top-0 bottom-4 right-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ew-resize group hover:text-primary-500"
+            >
+              <Icon
+                icon="mdi:drag-vertical-variant"
+                class="w-4 h-4 opacity-20 group-hover:opacity-90"
+              />
+            </div>
+          </HstTooltip>
+          <HstTooltip
+            :content="sizeTooltip"
+            side="bottom"
           >
-            <Icon
-              icon="mdi:drag-horizontal-variant"
-              class="w-4 h-4 opacity-20 group-hover:opacity-90"
+            <div
+              ref="verticalDragger"
+              class="absolute h-4 left-0 right-4 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-ns-resize group hover:text-primary-500"
+            >
+              <Icon
+                icon="mdi:drag-horizontal-variant"
+                class="w-4 h-4 opacity-20 group-hover:opacity-90"
+              />
+            </div>
+          </HstTooltip>
+          <HstTooltip
+            :content="sizeTooltip"
+            side="bottom"
+          >
+            <div
+              ref="cornerDragger"
+              class="absolute w-4 h-4 right-0 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-nwse-resize group hover:text-primary-500"
             />
-          </div>
-          <div
-            ref="cornerDragger"
-            v-tooltip.bottom="sizeTooltip"
-            class="absolute w-4 h-4 right-0 bottom-0 hover:bg-primary-500/30 flex items-center justify-center cursor-nwse-resize group hover:text-primary-500"
-          />
+          </HstTooltip>
         </template>
       </div>
     </div>
