@@ -53,6 +53,7 @@ const RELEASE_GATE_CHECKS = [
   'recipes',
   'step-gates',
   'task-graph',
+  'theme-tokens',
   'tsconfig-base',
   'versions',
 ]

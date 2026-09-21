@@ -71,7 +71,7 @@ export interface Limit {
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
   { prefix: 'vendor', max: 1450, because: 'what a reader downloads before anything renders, so this is the one #63 tracks: 1395 KB with the date and colour controls lazy and floating-vue out of the chrome (#918). Deliberately tighter than the others — either control becoming eager again is 90 KB or 201 KB and both land here, so this has to stay under 1485 to catch the smaller one (#63). Also the devtools payload #791 removed coming back, which put this chunk at 1519 KB' },
-  { prefix: '', max: 5220, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, 5388 KB with it and two new controls (#63), and 5114 KB once the vendors prebundle went (#347) and the chrome stopped installing floating-vue (#918). Has to stay under 5367 to catch the 257 KB of devtools payload #791 removed coming back' },
+  { prefix: '', max: 5220, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, 5388 KB with it and two new controls (#63), and 5114 KB once the vendors prebundle went (#347) and the chrome stopped installing floating-vue (#918), then 5111 KB with each colour token holding a colour rather than three numbers wrapped in `rgb()` (#955). Has to stay under 5367 to catch the 257 KB of devtools payload #791 removed coming back' },
 ]
 
 export interface Chunk { name: string, kb: number }
