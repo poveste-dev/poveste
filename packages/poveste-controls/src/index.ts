@@ -106,4 +106,4 @@ export * from './types.js'
  * through it stops being splittable, which is what the date and colour controls
  * are lazy for (#918).
  */
-export { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
+export { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
