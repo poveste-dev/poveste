@@ -41,9 +41,21 @@ export interface Limit {
  * headroom for ordinary growth — raise them with a measurement and a reason
  * rather than to make a red run green.
  *
- * Still mid-migration: #63 has moved the controls onto Reka UI, and #918 takes
- * floating-vue out of the app next, so both popper libraries ship at once until
- * it does. These hold #63's finished numbers, and #918 takes them down again.
+ * The migration is done: #63 moved the controls onto Reka UI and #918 took
+ * floating-vue out of the chrome, so these hold the finished numbers.
+ *
+ * They came down by less than that sounds, and the reason is worth knowing
+ * before anyone reads a small drop as a small win. The book measured is
+ * `examples/vue`, which depends on floating-vue itself for the story about
+ * restyling a consumer's own teleported popper — so the library still ships
+ * here and always will. What these numbers show is the chrome's own install
+ * and theme leaving, not the library.
+ *
+ * The margins matter more than the drop. Each ceiling sits close enough to the
+ * measurement that the regression it names still trips it: at the old 1560 KB,
+ * `vendor` had 165 KB of slack and a control quietly becoming eager costs 90 —
+ * so it would have passed. A ceiling re-set after a win has to be re-set far
+ * enough, or the win silently buys room for the thing it was guarding against.
  *
  * The two say different things and the difference is the point. The whole book
  * is every chunk a host serves, so a lazily loaded control is in it either way.
@@ -58,8 +70,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 1560, because: 'what a reader downloads before anything renders, so this is the one #63 tracks: 1506 KB with the date and colour controls lazy. Deliberately tighter than the others — either of them becoming eager again is 90 KB or 201 KB, and both land here (#63). Also the devtools payload #791 removed coming back, which put this chunk at 1519 KB' },
-  { prefix: '', max: 5500, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, and 5388 KB with it, two new controls and the two stories that exercise them (#63); #791 took it from 5210 KB before any of that' },
+  { prefix: 'vendor', max: 1450, because: 'what a reader downloads before anything renders, so this is the one #63 tracks: 1395 KB with the date and colour controls lazy and floating-vue out of the chrome (#918). Deliberately tighter than the others — either control becoming eager again is 90 KB or 201 KB and both land here, so this has to stay under 1485 to catch the smaller one (#63). Also the devtools payload #791 removed coming back, which put this chunk at 1519 KB' },
+  { prefix: '', max: 5220, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, 5388 KB with it and two new controls (#63), and 5114 KB once the vendors prebundle went (#347) and the chrome stopped installing floating-vue (#918). Has to stay under 5367 to catch the 257 KB of devtools payload #791 removed coming back' },
 ]
 
 export interface Chunk { name: string, kb: number }
