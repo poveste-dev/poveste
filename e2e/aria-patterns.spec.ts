@@ -186,6 +186,53 @@ test.describe('the preset picker', () => {
     await expect(picker).toBeFocused()
   })
 
+  /*
+   * The pointer, which the two either side of this avoid on purpose. Reka
+   * dismisses a popup on any pointerdown outside it and spares only its own
+   * `PopoverTrigger` — which this cannot be, since that component writes its own
+   * `aria-controls` and `aria-haspopup="dialog"` over the listbox wiring above.
+   * Unspared, the dismiss lands on `pointerdown` and the picker's click handler
+   * then reads a closed popup and opens it again, so clicking an open picker
+   * leaves it open and looks like a click that did nothing (#918).
+   *
+   * Opened from the keyboard and closed with one click: two clicks in a row are
+   * a double click, which renames the preset.
+   */
+  test('closes when the picker that opened it is clicked', async ({ page }) => {
+    await openStory(page, PRESET_STORY, '?variantId=one')
+    const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
+
+    await picker.focus()
+    await page.keyboard.press('ArrowDown')
+    await expect(picker).toHaveAttribute('aria-expanded', 'true')
+
+    await picker.click()
+
+    await expect(picker).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  // A list longer than the room below the picker used to draw off the screen:
+  // `auto-boundary-max-size` capped it and scrolled the rest, and the port to
+  // Reka replaced that with nothing (#918).
+  test('caps the list at the room it has, and scrolls the rest', async ({ page }) => {
+    await openStory(page, PRESET_STORY, '?variantId=one')
+    const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
+
+    await picker.click()
+    const options = page.locator('.poveste-base-select-options')
+    await expect(options).toBeVisible()
+
+    const box = await options.evaluate(node => ({
+      maxHeight: getComputedStyle(node).maxHeight,
+      overflowY: getComputedStyle(node).overflowY,
+      viewport: window.innerHeight,
+    }))
+
+    expect(box.overflowY, 'the presets scroll rather than run off the screen').toBe('auto')
+    expect(box.maxHeight, 'the list is capped at all').not.toBe('none')
+    expect(Number.parseFloat(box.maxHeight), 'the cap fits on the screen').toBeLessThanOrEqual(box.viewport)
+  })
+
   test('moves to an option by typing the start of its name', async ({ page }) => {
     await openStory(page, PRESET_STORY, '?variantId=one')
     const picker = page.getByRole('combobox', { name: 'Preset', exact: true })
