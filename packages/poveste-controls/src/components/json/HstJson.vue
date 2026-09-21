@@ -30,9 +30,9 @@ import {
   keymap,
 } from '@codemirror/view'
 import { Icon } from '@iconify/vue'
-import { VTooltip as vTooltip } from 'floating-vue'
 import { onMounted, ref, watch, watchEffect } from 'vue'
 import { isDark } from '../../utils'
+import HstTooltip from '../HstTooltip.vue'
 import HstWrapper from '../HstWrapper.vue'
 import { serializeState, stringifyState } from './serialize.js'
 
@@ -157,12 +157,15 @@ watch(() => internalValue.value, () => {
     />
 
     <template #actions>
-      <Icon
+      <HstTooltip
         v-if="invalidValue"
-        v-tooltip="'JSON error'"
-        icon="carbon:warning-alt"
-        class="text-orange-500"
-      />
+        content="JSON error"
+      >
+        <Icon
+          icon="carbon:warning-alt"
+          class="text-orange-500"
+        />
+      </HstTooltip>
 
       <slot name="actions" />
     </template>

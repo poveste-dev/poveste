@@ -6,9 +6,9 @@ export default {
 
 <script lang="ts" setup>
 import type { CSSProperties } from 'vue'
-import { VTooltip as vTooltip } from 'floating-vue'
 import { computed, ref } from 'vue'
 import HstCopyIcon from '../HstCopyIcon.vue'
+import HstTooltip from '../HstTooltip.vue'
 
 const props = defineProps<{
   shades: Record<string, any>
@@ -74,10 +74,9 @@ const hover = ref<string | null>(null)
       </slot>
       <div>
         <div class="flex gap-1">
-          <pre
-            v-tooltip="shade.name.length > 23 ? shade.name : ''"
-            class="my-0 truncate shrink"
-          >{{ shade.name }}</pre>
+          <HstTooltip :content="shade.name.length > 23 ? shade.name : ''">
+            <pre class="my-0 truncate shrink">{{ shade.name }}</pre>
+          </HstTooltip>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.name"
@@ -85,10 +84,9 @@ const hover = ref<string | null>(null)
           />
         </div>
         <div class="flex gap-1">
-          <pre
-            v-tooltip="shade.color.length > 23 ? shade.color : ''"
-            class="my-0 opacity-50 truncate shrink"
-          >{{ shade.color }}</pre>
+          <HstTooltip :content="shade.color.length > 23 ? shade.color : ''">
+            <pre class="my-0 opacity-50 truncate shrink">{{ shade.color }}</pre>
+          </HstTooltip>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.color"
