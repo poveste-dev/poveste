@@ -119,6 +119,12 @@ export async function runBench({ examples, sizes, runs, plant, stateStories = ST
           report.push({ example, kind: 'state', ...state })
         }
       }
+      else if (stateStories.length) {
+        // Said rather than skipped in silence: `--state-stories` names a
+        // measurement, and a book without the axis would otherwise answer it
+        // with an absence.
+        log(`--- ${example}: no state axis here, so ${stateStories.length} state stories were not run (it lives in examples/vue only) ---`)
+      }
     }
     finally {
       // Detached so the whole pnpm → poveste tree goes with it.

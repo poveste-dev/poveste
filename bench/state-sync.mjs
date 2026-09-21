@@ -58,7 +58,14 @@ const INIT = `
 function read(page, fn, ms = READ_TIMEOUT) {
   const value = page.evaluate(fn)
   value.catch(() => {})
-  return Promise.race([value, new Promise(resolve => setTimeout(resolve, ms, null))])
+  // Cleared rather than left to fire: `waitForQuiet` polls every 100ms, and a
+  // timer that outlives its race holds the event loop open after the browser
+  // has closed — measured at a ten-second wait before the process would exit.
+  let timer
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(resolve, ms, null)
+  })
+  return Promise.race([value, deadline]).finally(() => clearTimeout(timer))
 }
 
 /** The same read, for a value the run cannot go on without. */
@@ -118,6 +125,14 @@ function nothingMeasured(fields) {
 }
 
 export async function measureStateSync({ baseURL, storyId, runs = 5, burst = BURST, keyDelayMs = KEY_DELAY_MS, viewport = { width: 1280, height: 800 }, log = () => {} }) {
+  // A loop that never runs leaves `results` empty, and `every` on an empty array
+  // is true — so `found`, `typed` and `quiet` would all report success over a
+  // browser that never opened, which is the one failure this script exists to
+  // catch. `Number('abc')` reaching here as NaN is how that happens.
+  if (!Number.isInteger(runs) || runs < 1) {
+    throw new TypeError(`runs must be a positive integer, got ${String(runs)}`)
+  }
+
   const browser = await chromium.launch()
   const keystrokes = burst.length
   const idealMs = keystrokes * keyDelayMs
@@ -227,11 +242,12 @@ export async function measureStateSync({ baseURL, storyId, runs = 5, burst = BUR
 
 async function main() {
   const [baseURL, storyId, runs = '5'] = process.argv.slice(2)
-  if (!baseURL || !storyId) {
+  const runCount = Number(runs)
+  if (!baseURL || !storyId || !Number.isInteger(runCount) || runCount < 1) {
     console.error('usage: node bench/state-sync.mjs <baseURL> <storyId> [runs]')
     process.exit(2)
   }
-  const result = await measureStateSync({ baseURL, storyId, runs: Number(runs), log: console.error })
+  const result = await measureStateSync({ baseURL, storyId, runs: runCount, log: console.error })
   console.log(JSON.stringify(result))
 }
 

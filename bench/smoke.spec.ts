@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from '../scripts/checks/support/assert-no-problems.ts'
 import { runBench } from './run.mjs'
+import { measureStateSync } from './state-sync.mjs'
 
 // One book, one size, one run (#666). The size is the largest grid, because the
 // scroll modes run on it and a smaller one fits the window. Not a measurement:
@@ -25,9 +26,10 @@ const STATE_GAP = 10
 
 /** The one story allowed `useTemplateRef`, because #959 is what it is for. */
 const USE_TEMPLATE_REF_STORY = 'StateBenchUseTemplateRef.story.vue'
+const USE_TEMPLATE_REF_ID = 'bench-state-usetemplateref'
 const BENCH_STORIES = new URL('../examples/vue/src/bench/', import.meta.url)
 
-function reportProblems(report: Array<Record<string, any>>): string[] {
+function reportProblems(report: Array<Record<string, any>>, stories: string[] = STATE_SMOKE_STORIES): string[] {
   const problems: string[] = []
 
   const grid = report.find(r => r.kind === 'grid')
@@ -80,7 +82,7 @@ function reportProblems(report: Array<Record<string, any>>): string[] {
   }
 
   const state = new Map(report.filter(r => r.kind === 'state').map(r => [r.storyId, r]))
-  for (const storyId of STATE_SMOKE_STORIES) {
+  for (const storyId of stories) {
     const result = state.get(storyId)
     if (!result) {
       problems.push(`the report has no state result for ${storyId}`)
@@ -91,9 +93,10 @@ function reportProblems(report: Array<Record<string, any>>): string[] {
     else if (!result.typed) {
       problems.push(`${storyId} never finished the burst, so nothing was measured — it did not give the main thread back`)
     }
-    else if (result.readonlyWarnings > 0) {
+    else if (result.readonlyWarnings > 0 && storyId !== USE_TEMPLATE_REF_ID) {
       // Dev-only: Vue compiles the warning out, so a built book cannot raise
-      // this and the file check below is what holds the rule there.
+      // this and the file check below is what holds the rule there. The one
+      // story exempted is the one placed to produce them (#959).
       problems.push(`${storyId} logged ${result.readonlyWarnings} readonly-ref warnings, so it measured #959's loop rather than the walk`)
     }
   }
@@ -112,11 +115,28 @@ function reportProblems(report: Array<Record<string, any>>): string[] {
   return problems
 }
 
-/** Story files whose `<script setup>` calls `useTemplateRef`, rather than naming it in a comment. */
+/**
+ * A story's `<script setup>` with its comments removed.
+ *
+ * Whole-file text will not do: every story on the size axis carries a comment
+ * warning against `useTemplateRef`, so matching the raw source fails the check
+ * on the very lines that state the rule.
+ */
+export function scriptOf(source: string): string {
+  // Every block, not the first: a story may carry a plain `<script>` beside its
+  // `<script setup>`, and reading one of the two is a false clean bill.
+  return [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(block => block[1])
+    .join('\n')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+}
+
+/** Story files whose `<script setup>` names `useTemplateRef`, rather than a comment doing so. */
 function useTemplateRefStories(dir: URL): string[] {
   return readdirSync(dir)
     .filter(file => file.endsWith('.story.vue'))
-    .filter(file => readFileSync(new URL(file, dir), 'utf8').includes('useTemplateRef('))
+    .filter(file => /\buseTemplateRef\b/.test(scriptOf(readFileSync(new URL(file, dir), 'utf8'))))
     .sort()
 }
 
@@ -168,6 +188,49 @@ describe('reportProblems', () => {
     const readonly = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, readonlyWarnings: 3 } : r))
 
     expect(reportProblems([...readonly, fling])).toEqual([expect.stringContaining('bench-state-64k logged 3 readonly-ref warnings')])
+  })
+
+  // It is the story placed to produce them, so its warnings are the point.
+  it('allows readonly-ref warnings from the useTemplateRef story', () => {
+    const loop = { kind: 'state', storyId: 'bench-state-usetemplateref', found: true, typed: true, busyPerKeystrokeMs: 2059, readonlyWarnings: 100 }
+
+    expect(reportProblems([...measured, fling, loop], [...STATE_SMOKE_STORIES, 'bench-state-usetemplateref'])).toEqual([])
+  })
+})
+
+describe('scriptOf', () => {
+  it('drops a line comment that names useTemplateRef', () => {
+    const story = '<script lang="ts" setup>\n// Never `useTemplateRef` here.\nconst graph = ref(null)\n</script>'
+
+    expect(scriptOf(story)).not.toMatch(/useTemplateRef/)
+  })
+
+  it('drops a block comment that names useTemplateRef', () => {
+    const story = '<script setup>\n/* useTemplateRef is readonly in a dev build */\nconst graph = ref(null)\n</script>'
+
+    expect(scriptOf(story)).not.toMatch(/useTemplateRef/)
+  })
+
+  it('reads a second script block, not only the first', () => {
+    const story = '<script>\nexport default {}\n</script>\n<script setup>\nconst graph = useTemplateRef(\'graph\')\n</script>'
+
+    expect(scriptOf(story)).toMatch(/\buseTemplateRef\b/)
+  })
+
+  it('keeps the call when the story really makes one', () => {
+    const story = '<script setup>\nimport { useTemplateRef } from \'vue\'\nconst graph = useTemplateRef(\'graph\')\n</script>'
+
+    expect(scriptOf(story)).toMatch(/\buseTemplateRef\b/)
+  })
+})
+
+describe('measureStateSync', () => {
+  // `every` on an empty array is true, so a loop that never runs would report
+  // found, typed and quiet over a browser that never opened.
+  it.each([0, -1, 1.5, Number('abc')])('refuses runs=%s, which would measure nothing', async (runs) => {
+    await expect(measureStateSync({ baseURL: 'http://localhost:1', storyId: 'bench-state-control', runs }))
+      .rejects
+      .toThrow(/positive integer/)
   })
 })
 
