@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
+import { recordSandboxReady, waitForAnySandboxReady } from '../../../e2e/support'
 
 /*
  * Poveste building a book inside a Vike project (#369, inherited from
@@ -27,14 +28,42 @@ import { expect, test } from '@playwright/test'
 const STORY_URL = '/story/src-button-story-vue'
 const BUTTON = '.vike-example-button'
 
-// Both tests assert an *absence*, and Vike fails after the component mounts — so
-// checking when the button appears would confirm "no error yet", not "no error".
+/*
+ * Absence is only worth asserting once the page has stopped working, and what
+ * that means here is the sandbox reporting its story mounted — not the network
+ * going quiet.
+ *
+ * `waitForLoadState('networkidle')` was this wait, and against a dev server it
+ * waits for something that need not happen. Measured on `quasar:dev`, one
+ * worker, nothing else running: it resolved on 27 of 30 navigations and did not
+ * resolve inside 25 seconds on the other three, and the slowest of the 27 took
+ * 17.5 seconds. One run in ten, before CI's three shared workers are anywhere
+ * near it — which is how two of eighteen PRs lost this job on one push, one of
+ * them through all three attempts (#774).
+ *
+ * The trace of a failed attempt says why it is not the page's fault: every HTTP
+ * request finished 26 seconds before the 30 the test spent waiting, and what is
+ * left open is Vite's HMR socket, twice, on the same token — a reconnect, which
+ * Playwright counts as a live connection and cannot tell from work.
+ *
+ * `__poveste:sandbox-ready` is posted once the story has mounted and the state
+ * that mount publishes has gone out, so it is later than the component being
+ * visible and it arrives whatever the dev server's sockets are doing. A story
+ * that never gets there fails here, which is the same answer the assertions
+ * below would have given.
+ *
+ * Both tests here assert an absence and Vike fails after the component mounts,
+ * so the button appearing would confirm "no error yet" rather than "no error".
+ * The ready message is past that: dropping the `POVESTE` condition from
+ * `vite.config.ts` still reds both of them.
+ */
 async function settle(page: Page) {
-  await page.waitForLoadState('networkidle')
+  await waitForAnySandboxReady(page)
 }
 
 test.describe('poveste inside a Vike project', () => {
   test('renders a story instead of the framework runtime error', async ({ page }) => {
+    await recordSandboxReady(page)
     await page.goto(STORY_URL)
 
     const button = page.getByTestId('preview-iframe').contentFrame().locator(BUTTON)
@@ -59,6 +88,7 @@ test.describe('poveste inside a Vike project', () => {
     })
     page.on('pageerror', error => errors.push(error.message))
 
+    await recordSandboxReady(page)
     await page.goto(STORY_URL)
     await expect(page.getByTestId('preview-iframe').contentFrame().locator(BUTTON)).toBeVisible()
 

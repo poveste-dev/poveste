@@ -48,6 +48,22 @@ export function waitForSandboxReady(page: Page, variantId: string) {
   )
 }
 
+/**
+ * The same message, from whichever variant is there.
+ *
+ * The one above wants an id, which the interop fixtures cannot give: their
+ * stories declare a single variant and name no id, so "the one that rendered" is
+ * the only thing they can ask for — and it is the whole question, since those
+ * specs open a story rather than pick a variant of one.
+ */
+export function waitForAnySandboxReady(page: Page) {
+  return page.waitForFunction(
+    () => ((Reflect.get(window, '__povesteReadyVariants') as string[] | undefined)?.length ?? 0) > 0,
+    undefined,
+    { timeout: STORY_RENDER_TIMEOUT },
+  )
+}
+
 export function sandboxHtml(page: Page) {
   return page.getByTestId('preview-iframe').contentFrame().locator('html')
 }
