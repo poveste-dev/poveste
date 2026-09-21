@@ -77,6 +77,9 @@ overrides:
   # that state fail rather than commit. `picomatch@4` is unaffected and separate.
   picomatch@^2: ^2.3.2
   '@humanfs/node': ^0.16.8
+  '@vueuse/core': ^15.0.0
+  '@vueuse/shared': ^15.0.0
+  '@floating-ui/vue': ^2.0.1
 
 # The checks that run before the build, declared as a task graph so one run
 # reports every failure instead of stopping at the first (#716).
