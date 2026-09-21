@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { SandboxColorScheme } from '../../types'
 import { Icon } from '@iconify/vue'
-import { HstTooltip } from '@poveste/controls'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
+import BaseDropdown from '../base/BaseDropdown.vue'
 
 const previewSettings = usePreviewSettingsStore()
 const settings = previewSettings.currentSettings
@@ -22,33 +22,30 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets?.lengt
 </script>
 
 <template>
-  <VDropdown
+  <BaseDropdown
     v-if="showDropdown"
-    placement="bottom-end"
-    :skidding="6"
+    side="bottom"
+    align="end"
+    :align-offset="6"
+    tooltip="Preview appearance"
     class="poveste-toolbar-background flex-none"
     data-testid="toolbar-background"
   >
-    <!-- The tooltip would sit on top of the first row of the dropdown, so drop
-    it while the dropdown is open. -->
-    <template #default="{ shown }">
-      <HstTooltip :content="shown ? '' : 'Preview appearance'">
-        <div
-          class="flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors group"
-        >
-          <Icon
-            icon="carbon:color-palette"
-            class="w-4 h-4"
-          />
-          <Icon
-            icon="carbon:chevron-down"
-            class="w-3 h-3 opacity-40 group-hover:opacity-70"
-          />
-        </div>
-      </HstTooltip>
-    </template>
+    <button
+      class="flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors group"
+      aria-label="Preview appearance"
+    >
+      <Icon
+        icon="carbon:color-palette"
+        class="w-4 h-4"
+      />
+      <Icon
+        icon="carbon:chevron-down"
+        class="w-3 h-3 opacity-40 group-hover:opacity-70"
+      />
+    </button>
 
-    <template #popper="{ hide }">
+    <template #popper="{ close }">
       <div
         class="flex flex-col items-stretch"
         data-testid="background-popper"
@@ -91,7 +88,7 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets?.lengt
               ? 'bg-primary-500 hover:bg-primary-600 text-white dark:text-black'
               : 'bg-transparent hover:bg-primary-100 dark:hover:bg-primary-700',
           ]"
-          @click="previewSettings.setBackgroundColor(option.color);hide()"
+          @click="previewSettings.setBackgroundColor(option.color);close()"
         >
           <span class="mr-auto">{{ option.label }}</span>
           <template v-if="option.color !== '$checkerboard'">
@@ -109,5 +106,5 @@ const showDropdown = showColorScheme || !!povesteConfig.backgroundPresets?.lengt
         </button>
       </div>
     </template>
-  </VDropdown>
+  </BaseDropdown>
 </template>

@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { povesteConfig } from '../../util/config'
 import BaseCheckbox from '../base/BaseCheckbox.vue'
+import BaseDropdown from '../base/BaseDropdown.vue'
 
 const settings = usePreviewSettingsStore().currentSettings
 
@@ -30,31 +31,32 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
 
 <template>
   <!-- Responsive size -->
-  <VDropdown
-    placement="bottom-end"
-    :skidding="6"
+  <BaseDropdown
+    side="bottom"
+    align="end"
+    :align-offset="6"
     :disabled="!povesteConfig.responsivePresets?.length"
+    tooltip="Responsive sizes"
     class="poveste-toolbar-responsive-size flex-none"
   >
-    <HstTooltip content="Responsive sizes">
-      <div
-        class="flex items-center gap-1 px-2.5 py-1.5 text-gray-900 dark:text-gray-100 transition-colors group"
-        :class="{
-          'hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer': povesteConfig.responsivePresets?.length,
-        }"
-      >
-        <Icon
-          icon="carbon:devices"
-          class="w-4 h-4"
-        />
-        <Icon
-          icon="carbon:chevron-down"
-          class="w-3 h-3 opacity-40 group-hover:opacity-70"
-        />
-      </div>
-    </HstTooltip>
+    <button
+      class="flex items-center gap-1 px-2.5 py-1.5 text-gray-900 dark:text-gray-100 transition-colors group"
+      aria-label="Responsive sizes"
+      :class="{
+        'hover:bg-white/50 dark:hover:bg-white/10 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer': povesteConfig.responsivePresets?.length,
+      }"
+    >
+      <Icon
+        icon="carbon:devices"
+        class="w-4 h-4"
+      />
+      <Icon
+        icon="carbon:chevron-down"
+        class="w-3 h-3 opacity-40 group-hover:opacity-70"
+      />
+    </button>
 
-    <template #popper="{ hide }">
+    <template #popper="{ close }">
       <div class="flex flex-col items-stretch">
         <BaseCheckbox v-model="settings.rotate">
           Rotate
@@ -91,7 +93,7 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
               ? 'bg-primary-500 hover:bg-primary-600 text-white dark:text-black'
               : 'bg-transparent hover:bg-primary-100 dark:hover:bg-primary-700',
           ]"
-          @click="settings.responsiveWidth = preset.width;settings.responsiveHeight = preset.height ?? null;hide()"
+          @click="settings.responsiveWidth = preset.width;settings.responsiveHeight = preset.height ?? null;close()"
         >
           {{ preset.label }}
           <span class="ml-auto opacity-70 flex gap-1">
@@ -102,5 +104,5 @@ const responsiveHeight = autoWhenEmpty('responsiveHeight')
         </button>
       </div>
     </template>
-  </VDropdown>
+  </BaseDropdown>
 </template>
