@@ -78,14 +78,14 @@
   },
   "peerDependencies": {
     "poveste": "workspace:^",
-    "vue": "^3.5.26"
+    "vue": "^3.5.43"
   },
   "dependencies": {
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "ignore": "^7.0.6",
+    "ignore": "^7.0.9",
     "launch-editor": "^2.9.1",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17"
@@ -97,6 +97,6 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vue": "^3.5.26"
+    "vue": "^3.5.43"
   }
 }
