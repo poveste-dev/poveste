@@ -41,11 +41,14 @@ export interface Limit {
  * headroom for ordinary growth — raise them with a measurement and a reason
  * rather than to make a red run green.
  *
- * Both are mid-migration. #63 moves the controls onto Reka UI a step at a time
- * and #918 takes floating-vue out of the app afterwards, so between the two
- * every popper library ships at once. These hold the measured number of the step
- * that last moved them; the peak is re-set once #63's last control lands, and
- * #918 takes them back down.
+ * Still mid-migration: #63 has moved the controls onto Reka UI, and #918 takes
+ * floating-vue out of the app next, so both popper libraries ship at once until
+ * it does. These hold #63's finished numbers, and #918 takes them down again.
+ *
+ * The two say different things and the difference is the point. The whole book
+ * is every chunk a host serves, so a lazily loaded control is in it either way.
+ * `vendor` is what a reader downloads before anything renders, which is where
+ * laziness shows and where a control that quietly stops being lazy reappears.
  *
  * What a book weighs *now* is not recorded here. It used to be, and it went
  * stale from a change in another package — #374 moved CodeMirror out of
@@ -55,8 +58,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 1850, because: 'a dependency inlined into the shared chunk rather than split out of it, or the devtools payload #791 removed coming back (it put this chunk at 1519 KB); 1500 until Reka UI arrived, 1650 until its date stack, and 1800 until the colour picker took the chunk to 1816 KB. Both new controls are eager for one more commit and then lazy, so this comes down rather than up (#63)' },
-  { prefix: '', max: 5550, because: 'the whole book, which a user uploads and their host serves; #791 took it from 5210 KB, and 5100 held that until Reka UI arrived; the date control is 215 KB of the 515 KB since and the colour picker 101 KB, which is why both become lazy in the next commit (#63)' },
+  { prefix: 'vendor', max: 1560, because: 'what a reader downloads before anything renders, so this is the one #63 tracks: 1506 KB with the date and colour controls lazy. Deliberately tighter than the others — either of them becoming eager again is 90 KB or 201 KB, and both land here (#63). Also the devtools payload #791 removed coming back, which put this chunk at 1519 KB' },
+  { prefix: '', max: 5500, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, and 5388 KB with it, two new controls and the two stories that exercise them (#63); #791 took it from 5210 KB before any of that' },
 ]
 
 export interface Chunk { name: string, kb: number }
