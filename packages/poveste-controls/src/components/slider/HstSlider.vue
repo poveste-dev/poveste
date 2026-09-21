@@ -7,8 +7,8 @@ export default {
 
 <script lang="ts" setup>
 import type { CSSProperties } from 'vue'
-import { VTooltip as vTooltip } from 'floating-vue'
 import { computed, ref } from 'vue'
+import HstTooltip from '../HstTooltip.vue'
 import HstWrapper from '../HstWrapper.vue'
 
 const props = defineProps<{
@@ -68,12 +68,17 @@ const tooltipStyle = computed<CSSProperties>(() => {
         @mouseover="showTooltip = true"
         @mouseleave="showTooltip = false"
       >
-      <div
+      <HstTooltip
         v-if="showTooltip"
-        v-tooltip="{ content: String(modelValue ?? ''), shown: true, distance: 16, delay: 0 }"
-        class="absolute"
-        :style="tooltipStyle"
-      />
+        :content="String(modelValue ?? '')"
+        :open="true"
+        :offset="16"
+      >
+        <div
+          class="absolute"
+          :style="tooltipStyle"
+        />
+      </HstTooltip>
     </div>
   </HstWrapper>
 </template>

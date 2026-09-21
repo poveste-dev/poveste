@@ -8,7 +8,7 @@ export default {
 import type { Awaitable } from '@poveste/shared'
 import { Icon } from '@iconify/vue'
 import { useClipboard, useLiveAnnouncer } from '@vueuse/core'
-import { VTooltip as vTooltip } from 'floating-vue'
+import HstTooltip from './HstTooltip.vue'
 
 const props = defineProps<{
   content: string | (() => Awaitable<string>)
@@ -29,22 +29,21 @@ async function action() {
 </script>
 
 <template>
-  <button
-    v-tooltip="{
-      content: 'Copied!',
-      triggers: [],
-      shown: copied,
-      distance: 12,
-      delay: 0,
-    }"
-    type="button"
-    aria-label="Copy"
-    class="flex p-0 bg-transparent border-0 text-inherit opacity-50 hover:opacity-100 focus-visible:opacity-100 hover:text-primary-500 cursor-pointer"
-    @click="action()"
+  <HstTooltip
+    content="Copied!"
+    :open="copied"
+    :offset="12"
   >
-    <Icon
-      icon="carbon:copy-file"
-      class="w-4 h-4"
-    />
-  </button>
+    <button
+      type="button"
+      aria-label="Copy"
+      class="flex p-0 bg-transparent border-0 text-inherit opacity-50 hover:opacity-100 focus-visible:opacity-100 hover:text-primary-500 cursor-pointer"
+      @click="action()"
+    >
+      <Icon
+        icon="carbon:copy-file"
+        class="w-4 h-4"
+      />
+    </button>
+  </HstTooltip>
 </template>
