@@ -56,6 +56,7 @@
   "devDependencies": {
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vue-router": "^5.3.1"
   }
 }

@@ -65,6 +65,7 @@
     "@poveste/vendors": "workspace:^"
   },
   "devDependencies": {
+    "@iconify/vue": "^5.0.1",
     "@internationalized/date": "^3.12.4",
     "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "catalog:",

@@ -180,6 +180,8 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
  * files (measured — zero diagnostics against a tree that was missing a
  * directory), and turning it off means matching on message text.
  */
+const ASSET = /\.(?:css|pcss|postcss|scss|sass|less|styl|svg|png|jpe?g|gif|webp|woff2?)$/
+
 function unresolvedRelativeModules(program: ts.Program): string[] {
   const host = ts.createCompilerHost(COMPILER_OPTIONS)
   const missing: string[] = []
@@ -189,6 +191,11 @@ function unresolvedRelativeModules(program: ts.Program): string[] {
       const specifier = statement.moduleSpecifier
       if (!specifier || !ts.isStringLiteral(specifier)) continue
       if (!specifier.text.startsWith('.')) continue
+      // A stylesheet is not a module this can follow, and a published `.d.ts`
+      // may still import one: `floating-vue/dist/index.d.ts` imports
+      // `./style.css`, which is a side effect a bundler resolves and TypeScript
+      // never will. Reading that as a half-built tree fails on a healthy one.
+      if (ASSET.test(specifier.text)) continue
       if (ts.resolveModuleName(specifier.text, file.fileName, COMPILER_OPTIONS, host).resolvedModule) continue
       missing.push(`${relative(ROOT, file.fileName)} imports ${specifier.text}`)
     }

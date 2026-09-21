@@ -146,16 +146,18 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   // published book is Poveste's own stores, so the 200 KB buys them nothing
   // (#791).
   //
-  // Two copies reach a book. A consumer's stories resolve their own pinia, which
-  // imports `@vue/devtools-api` by name; Poveste's own stores use
-  // `@poveste/vendors`, which keeps the real module as `devtools-api.js` so that
-  // `poveste dev` still registers them. Both are stubbed here.
+  // One rule reaches both copies now. A consumer's stories resolve their own
+  // pinia and Poveste's stores resolve its own, and since #347 both import
+  // `@vue/devtools-api` by name rather than one of them carrying it inside a
+  // prebundled chunk — so the name is the whole of it.
   //
-  // `apply: 'build'` is what keeps dev registering — the vendored chunk is the
-  // real module until a book is built.
+  // `apply: 'build'` keeps dev registering. Note that it is not what makes the
+  // real module reach a dev browser: Vite's dep optimiser bakes it into a chunk
+  // before this plugin sees the id, and flipping this to `'serve'` leaves dev
+  // serving it regardless. Measured while rewriting the spec that used to claim
+  // otherwise.
   if (!isServer) {
     const STUB = '\0poveste:devtools-api'
-    const VENDORED = /[\\/](?:poveste-vendors|@poveste[\\/]vendors)[\\/]dist[\\/]client[\\/]devtools-api\.js(?:\?.*)?$/
 
     plugins.push({
       name: 'poveste-devtools-api-stub',
@@ -169,9 +171,9 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
       load(id) {
         // Not an empty module: pinia and vue-router *call* this, so the export
         // has to exist or the book throws where it used to register nothing.
-        // Both spellings, because `b-pinia` and `b-vue-router` import different
-        // ones of the two the package exports.
-        return id === STUB || VENDORED.test(id)
+        // Both spellings, because pinia and vue-router import different ones of
+        // the two the package exports.
+        return id === STUB
           ? 'export function setupDevtoolsPlugin() {}\nexport { setupDevtoolsPlugin as setupDevToolsPlugin }\n'
           : undefined
       },

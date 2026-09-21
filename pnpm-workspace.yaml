@@ -65,6 +65,11 @@ overrides:
   # bump escapes it (#569). It arrives under `capture-website`, whose own latest
   # still caps puppeteer at 24, and `@puppeteer/browsers` only dropped the
   # dependency at 3.0.0, which puppeteer 25 is the first to pull.
+  # `nanoid@3` reaches a consumer through Vue's own `@vue/compiler-sfc` and
+  # through `unhead`, both by way of `postcss`. Invisible until #347 made
+  # `@poveste/vendors`' seven libraries ordinary dependencies; the prebundle hid
+  # the graph rather than the risk.
+  nanoid@^3: ^3.3.18
   js-yaml@^3: ^3.15.1
   js-yaml@^4: ^4.3.1
   basic-ftp: ^5.3.1
