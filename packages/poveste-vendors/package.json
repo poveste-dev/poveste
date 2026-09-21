@@ -23,10 +23,6 @@
   },
   "sideEffects": false,
   "exports": {
-    "./floating-vue": {
-      "types": "./floating-vue.d.ts",
-      "default": "./floating-vue.js"
-    },
     "./iconify": {
       "types": "./iconify.d.ts",
       "default": "./iconify.js"
@@ -53,8 +49,6 @@
     }
   },
   "files": [
-    "floating-vue.d.ts",
-    "floating-vue.js",
     "iconify.d.ts",
     "iconify.js",
     "pinia.d.ts",
@@ -72,7 +66,6 @@
     "node": ">=22.22.2"
   },
   "dependencies": {
-    "poveste-floating-vue": "npm:floating-vue@5.2.2",
     "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
     "poveste-pinia": "npm:pinia@^4.0.3",
     "poveste-scroll-into-view": "npm:scroll-into-view-if-needed@^3.1.0",
