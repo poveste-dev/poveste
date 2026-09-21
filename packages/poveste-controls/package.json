@@ -76,6 +76,7 @@
     "floating-vue": "5.2.2",
     "jsdom": "^30.0.1",
     "postcss": "catalog:",
+    "reka-ui": "^2.10.4",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
