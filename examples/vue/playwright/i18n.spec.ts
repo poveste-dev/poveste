@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 test.describe('vue i18n', () => {
   async function pickLocale(page: import('@playwright/test').Page, current: string, next: string) {
     await page.locator('[data-testid="story-controls"]').getByText(current, { exact: true }).click()
-    await page.locator('.v-popper__popper').getByText(next, { exact: true }).click()
+    await page.locator('.poveste-select-popper').getByText(next, { exact: true }).click()
   }
 
   test('renders and switches a translation', async ({ page }) => {

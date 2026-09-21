@@ -8,7 +8,7 @@ test.describe('nuxt i18n', () => {
   // trigger (showing the current label), then the option in the teleported popper.
   async function pickLocale(page: import('@playwright/test').Page, current: string, next: string) {
     await page.locator('[data-testid="story-controls"]').getByText(current, { exact: true }).click()
-    await page.locator('.v-popper__popper').getByText(next, { exact: true }).click()
+    await page.locator('.poveste-select-popper').getByText(next, { exact: true }).click()
   }
 
   test('renders a translated story instead of a 500', async ({ page }) => {
