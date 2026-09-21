@@ -39,6 +39,10 @@
       "types": "./scroll.d.ts",
       "default": "./scroll.js"
     },
+    "./vue": {
+      "types": "./vue.d.ts",
+      "default": "./vue.js"
+    },
     "./vue-router": {
       "types": "./vue-router.d.ts",
       "default": "./vue-router.js"
@@ -46,10 +50,6 @@
     "./vue-use": {
       "types": "./vue-use.d.ts",
       "default": "./vue-use.js"
-    },
-    "./vue": {
-      "types": "./vue.d.ts",
-      "default": "./vue.js"
     }
   },
   "files": [
