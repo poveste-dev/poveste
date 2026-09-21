@@ -827,9 +827,6 @@ importers:
       concurrently:
         specifier: ^10.0.5
         version: 10.0.5
-      floating-vue:
-        specifier: 5.2.2
-        version: 5.2.2(@nuxt/kit@3.20.2(magicast@0.5.4))(vue@3.5.41(typescript@6.0.3))
       fs-extra:
         specifier: ^11.2.0
         version: 11.4.0
@@ -1296,9 +1293,6 @@ importers:
 
   packages/poveste-vendors:
     dependencies:
-      poveste-floating-vue:
-        specifier: npm:floating-vue@5.2.2
-        version: floating-vue@5.2.2(@nuxt/kit@3.20.2(magicast@0.5.4))(vue@3.5.41(typescript@6.0.3))
       poveste-iconify-vue:
         specifier: npm:@iconify/vue@^5.0.1
         version: '@iconify/vue@5.0.1(vue@3.5.41(typescript@6.0.3))'

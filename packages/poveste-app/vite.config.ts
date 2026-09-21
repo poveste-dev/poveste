@@ -36,7 +36,6 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      'floating-vue': '@poveste/vendors/floating-vue',
       '@iconify/vue': '@poveste/vendors/iconify',
       'pinia': '@poveste/vendors/pinia',
       'scroll-into-view-if-needed': '@poveste/vendors/scroll',

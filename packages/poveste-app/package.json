@@ -65,7 +65,6 @@
     "@vueuse/core": "^15.0.0",
     "chokidar": "^5.0.0",
     "concurrently": "^10.0.5",
-    "floating-vue": "5.2.2",
     "fs-extra": "^11.2.0",
     "globby": "^16.2.4",
     "pathe": "^2.0.3",
