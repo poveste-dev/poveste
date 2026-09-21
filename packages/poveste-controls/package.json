@@ -73,7 +73,6 @@
     "@vue/test-utils": "^2.4.6",
     "@vueuse/core": "catalog:",
     "concurrently": "^10.0.5",
-    "floating-vue": "5.2.2",
     "jsdom": "^30.0.1",
     "postcss": "catalog:",
     "reka-ui": "^2.10.4",

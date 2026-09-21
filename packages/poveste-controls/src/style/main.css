@@ -1,5 +1,3 @@
-@import 'floating-vue/dist/style.css';
-
 /*
  * Tailwind v4. Preflight is intentionally omitted (was `corePlugins.preflight:
  * false` in v3) by importing the theme + utilities layers individually. The
