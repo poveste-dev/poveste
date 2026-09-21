@@ -441,8 +441,6 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           resolve: {
             alias: [
               ...([
-                ['floating-vue/dist/style.css', 'node_modules/floating-vue/dist/style.css'],
-                ['floating-vue', 'floating-vue'],
                 ['@iconify/vue', 'iconify'],
                 ['pinia', 'pinia'],
                 ['scroll-into-view-if-needed', 'scroll'],
