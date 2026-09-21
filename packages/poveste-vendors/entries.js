@@ -1,6 +1,7 @@
 export const entries = [
   'src/client/b-floating-vue.ts',
   'src/client/b-iconify.ts',
+  'src/client/b-internationalized-date.ts',
   'src/client/b-pinia.ts',
   'src/client/b-reka-ui.ts',
   'src/client/b-scroll.ts',

@@ -884,6 +884,9 @@ importers:
         specifier: workspace:^
         version: link:../poveste-vendors
     devDependencies:
+      '@internationalized/date':
+        specifier: ^3.12.4
+        version: 3.12.4
       '@tailwindcss/cli':
         specifier: ^4.3.3
         version: 4.3.3
@@ -1271,6 +1274,9 @@ importers:
       '@iconify/vue':
         specifier: ^5.0.1
         version: 5.0.1(vue@3.5.41(typescript@6.0.3))
+      '@internationalized/date':
+        specifier: ^3.12.4
+        version: 3.12.4
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
         version: 28.0.9(rollup@4.62.4)

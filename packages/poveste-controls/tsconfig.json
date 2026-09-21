@@ -10,6 +10,9 @@
       "@iconify/vue": [
         "./node_modules/@poveste/vendors/iconify"
       ],
+      "@internationalized/date": [
+        "./node_modules/@poveste/vendors/internationalized-date"
+      ],
       "pinia": [
         "./node_modules/@poveste/vendors/pinia"
       ],

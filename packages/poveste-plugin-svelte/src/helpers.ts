@@ -103,6 +103,11 @@ export interface Hst {
     options: HstControlOption[]
     title?: string
   }>
+  Date: Component<{
+    value?: string
+    title?: string
+    time?: boolean
+  }>
   Json: Component<{
     value: unknown
     title: string
