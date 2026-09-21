@@ -62,12 +62,69 @@ test.describe('controls', () => {
 
     await expect(state).toContainText('"game": "crash-bandicoot"')
 
-    // Not a native `<select>` — it is a floating-vue dropdown of divs, so the
-    // option is picked by clicking its label in the popper.
+    // Not a native `<select>` — it is a popover of divs, so the option is picked
+    // by clicking its label in the popper.
     await controls.locator('.poveste-wrapper').filter({ hasText: 'Game' }).click()
-    await page.locator('.v-popper__popper').getByText('The Last of Us').click()
+    await page.locator('.poveste-select-popper').getByText('The Last of Us').click()
 
     await expect(state).toContainText('"game": "the-last-of-us"')
+  })
+
+  // A control renders in two realms, and the popper's target differs between
+  // them: the chrome has `.poveste-app-root`, a sandbox has no such element and
+  // tags its own body as the render root instead. A fixed selector passes the
+  // first of these and renders *nothing* in the second — `aria-expanded` goes
+  // true and no popper appears — which a production build does not even warn
+  // about. Both are asserted because only the pair catches that (#63).
+  test('opens the chrome popper inside the app root', async ({ page }) => {
+    const controls = page.getByTestId('story-controls')
+
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Game' }).click()
+
+    await expect(page.locator('.poveste-select-popper')).toBeVisible()
+    await expect(page.locator('.poveste-app-root [data-reka-popper-content-wrapper]')).toHaveCount(1)
+  })
+
+  test('opens the sandbox popper against that document\'s body', async ({ page }, testInfo) => {
+    // Svelte's collector renders the default slot with an `Hst` carrying only
+    // `Story` and `Variant`, so a built-in control there fails collection
+    // outright — the Svelte books cannot host this one. What is under test is
+    // the same `@poveste/controls` build in every book.
+    test.skip(testInfo.project.name.startsWith('svelte'), 'a built-in control in the default slot does not collect under Svelte')
+
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+
+    // The trigger rather than the wrapper around it: this one is laid out wide,
+    // so the wrapper's centre is the gap beside the control.
+    await preview.locator('.poveste-select [aria-expanded]').click()
+
+    await expect(preview.locator('.poveste-select-popper')).toBeVisible()
+    await expect(preview.locator('body > [data-reka-popper-content-wrapper]')).toHaveCount(1)
+  })
+
+  // floating-vue capped the popper against the boundary and scrolled what did
+  // not fit. Nothing replaced that, so a list longer than the room below the
+  // trigger ran off the screen and the options past the edge could not be
+  // reached at all — by pointer or by scroll (#63).
+  test('caps the popper at the room it has, and scrolls the rest', async ({ page }) => {
+    const controls = page.getByTestId('story-controls')
+
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Game' }).click()
+    const options = page.locator('.poveste-app-root .poveste-select-options')
+    await expect(options).toBeVisible()
+
+    const box = await options.evaluate(node => ({
+      maxHeight: getComputedStyle(node).maxHeight,
+      overflowY: getComputedStyle(node).overflowY,
+      viewport: window.innerHeight,
+    }))
+
+    // Read off the element rather than compared with a number: what the cap
+    // should be is Reka's measurement, and asserting that it exists and fits on
+    // the screen is the part a missing rule breaks.
+    expect(box.overflowY, 'the options scroll rather than run off the screen').toBe('auto')
+    expect(box.maxHeight, 'the list is capped at all').not.toBe('none')
+    expect(Number.parseFloat(box.maxHeight), 'the cap fits on the screen').toBeLessThanOrEqual(box.viewport)
   })
 
   test('writes a colour back to the state', async ({ page }) => {
