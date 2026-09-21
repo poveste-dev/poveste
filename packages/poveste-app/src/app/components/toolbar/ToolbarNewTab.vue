@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
+import { HstTooltip } from '@poveste/controls'
 import { computed } from 'vue'
 import { getSandboxUrl } from '../../util/sandbox'
 import TopBarChipItem from '../app/TopBarChipItem.vue'
@@ -16,16 +17,17 @@ const sandboxUrl = computed(() => {
 </script>
 
 <template>
-  <TopBarChipItem
-    v-tooltip="'Open variant in new tab'"
-    :href="sandboxUrl"
-    target="_blank"
-    aria-label="Open variant in new tab"
-    class="poveste-toolbar-new-tab"
-  >
-    <Icon
-      icon="carbon:launch"
-      class="w-4 h-4"
-    />
-  </TopBarChipItem>
+  <HstTooltip content="Open variant in new tab">
+    <TopBarChipItem
+      :href="sandboxUrl"
+      target="_blank"
+      aria-label="Open variant in new tab"
+      class="poveste-toolbar-new-tab"
+    >
+      <Icon
+        icon="carbon:launch"
+        class="w-4 h-4"
+      />
+    </TopBarChipItem>
+  </HstTooltip>
 </template>

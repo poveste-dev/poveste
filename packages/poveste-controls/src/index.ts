@@ -8,6 +8,7 @@ import HstColorShadesVue from './components/design-tokens/HstColorShades.vue'
 import HstTokenGridVue from './components/design-tokens/HstTokenGrid.vue'
 import HstTokenListVue from './components/design-tokens/HstTokenList.vue'
 import HstCopyIconVue from './components/HstCopyIcon.vue'
+import HstTooltipVue from './components/HstTooltip.vue'
 import HstNumberVue from './components/number/HstNumber.vue'
 import HstRadioVue from './components/radio/HstRadio.vue'
 import HstSelectVue from './components/select/HstSelect.vue'
@@ -28,6 +29,15 @@ export const HstColorShades = HstColorShadesVue
 export const HstTokenList = HstTokenListVue
 export const HstTokenGrid = HstTokenGridVue
 export const HstCopyIcon = HstCopyIconVue
+/**
+ * Public because `@poveste/app` uses it too: one wrapper for the whole chrome
+ * rather than one per package, which is what floating-vue's single theme was.
+ *
+ * Deliberately absent from `components` below. That list is the controls a story
+ * book registers globally and the Svelte bridge mirrors as `Hst.*`; a tooltip is
+ * not a control and has no state to bind.
+ */
+export const HstTooltip = HstTooltipVue
 export const HstRadio = HstRadioVue
 /**
  * The three controls a book pays for only when it uses one.
