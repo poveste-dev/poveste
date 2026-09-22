@@ -81,7 +81,7 @@ The figures on #957 and #960 were taken with a throwaway harness that set `el.va
 
 | | throwaway harness | this bench |
 | --- | --- | --- |
-| wall, 10 keystrokes | 17.5s | 21.2s |
+| wall, 10 keystrokes | 17.5s (taken under load; not a baseline) | 21.2s |
 | longest blocked frame | 1.8s | 1.57s |
 | frames over 50ms | 10 | 20 |
 | values visited per keystroke | 2,620,000 | not measurable here |
@@ -128,7 +128,11 @@ A hundred warnings is Vue's recursive-update ceiling, and the page never comes b
 
 **`shallowRef` buys nothing**, which agrees with the patched-walker figures: it stops Vue tracking the graph deeply and does not stop our own walkers reading it.
 
-**`markRaw` is worth much less here than #957 records, and that gap is not explained.** 2255 → 1627 is a 28% cut; the figure on that issue is 1.75s → 0.52s, about 70%, attributed there to Vue's `traverse` skipping and the proxy reads going away — which its dev-server CPU profile put at two thirds of the busy time. A built book does not pay the dev-only bookkeeping inside those, which would be the obvious explanation — except that it measures the same either way. Against a `poveste dev` server on the same machine: `bench-state-ref` 2016 against 2021 built, `bench-state-raw` 1615 against 1627, `bench-state-plain` 2332 against 2255. Dev-mode overhead is not what separates the two figures, which leaves the cost sitting somewhere other than Vue's reactivity — where `markRaw` cannot reach it. The 28% is the number this bench stands behind. Until someone accounts for the rest, the 70% should not be quoted as evidence for what an escape hatch is worth.
+**`markRaw` buys about a quarter, and both instruments now agree on that.** 2255 → 1627 here is 28%; #957 carried 70%, has withdrawn it, and re-measures at 18–25% across both modes, both fixture shapes and both instruments. The 70% came from two stories loaded minutes apart on a machine at load average 8–11 without interleaving — a path already recorded as swinging 5× under load alone. Nothing about the code differed between the two numbers.
+
+The axis reads the same against a dev server as against a built book, which is worth knowing when a figure looks mode-dependent: `bench-state-ref` 2016 against 2021 built, `bench-state-raw` 1615 against 1627, `bench-state-plain` 2332 against 2255.
+
+**What none of these numbers measure is the thing the fix turns on.** Every one of them is what `markRaw` buys *while the walkers ignore it*. #957 reports that honouring `__v_skip` takes the marked story from 1639 to 132ms a keystroke — control cost, and twenty long frames to none. A quarter is what the escape hatch is worth today, not what the direction is worth.
 
 ## Reference (M3 Pro, `conformance-huge-grid`, V=1000, 18 cells)
 
