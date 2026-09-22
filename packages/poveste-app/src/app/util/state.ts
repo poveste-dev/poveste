@@ -29,7 +29,7 @@ const DROP = Symbol('poveste.drop')
  * reference. That is what the two Vues' bridge wants: an identity both sides
  * share, which `isEquivalent` then settles by `Object.is` instead of walking.
  */
-export function toRawDeep(val: unknown, clean = false, seen = new WeakMap()): any {
+export function toRawDeep(val: unknown, clean = false, seen: WeakMap<object, any> = new WeakMap()): any {
   const value = walk(val, clean, seen)
 
   // Only a nested key is ever dropped. A state object that is itself marked
