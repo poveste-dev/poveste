@@ -33,7 +33,10 @@ const emit = defineEmits({
  *
  * `trueValue`/`falseValue` carry the `Booleanish` case: a story that writes
  * `'true'`/`'false'` as strings keeps getting them back, which used to be a
- * branch in a hand-written toggle.
+ * branch in a hand-written toggle. The model has to go in wearing the same
+ * shape, because the root reads its state from `isEqual(modelValue, trueValue)`
+ * — a boolean under a string `trueValue` reads as unchecked forever, and every
+ * click then emits `trueValue` again.
  *
  * Nothing may sit above the root in the template — a comment there makes the
  * component a fragment, and a fragment takes no fallthrough attrs, so the root
@@ -56,7 +59,7 @@ const isTrue = computed(() => {
     :title="title"
   >
     <CheckboxRoot
-      :model-value="isTrue"
+      :model-value="isString ? String(isTrue) : isTrue"
       :true-value="isString ? 'true' : true"
       :false-value="isString ? 'false' : false"
       class="poveste-checkbox-box"

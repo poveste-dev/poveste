@@ -52,10 +52,24 @@ describe('hstCheckbox', () => {
   })
 
   it('keeps a string model a string, both ways', async () => {
-    const wrapper = mount(HstCheckbox, { props: { modelValue: 'false' as const, title: 'Enabled' } })
-    await wrapper.trigger('click')
+    const off = mount(HstCheckbox, { props: { modelValue: 'false' as const, title: 'Enabled' } })
+    await off.trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['true'])
+    expect(off.emitted('update:modelValue')?.[0]).toEqual(['true'])
+
+    // The other direction is the one a primitive gets wrong: the root compares
+    // the model against `trueValue`, so a boolean model under a string
+    // `trueValue` never reads as checked and the control cannot be turned off.
+    const on = mount(HstCheckbox, { props: { modelValue: 'true' as const, title: 'Enabled' } })
+    await on.trigger('click')
+
+    expect(on.emitted('update:modelValue')?.[0]).toEqual(['false'])
+  })
+
+  it('announces a string model as checked', () => {
+    const wrapper = mount(HstCheckbox, { props: { modelValue: 'true' as const, title: 'Enabled' } })
+
+    expect(wrapper.get('[role="checkbox"]').attributes('aria-checked')).toBe('true')
   })
 })
 
@@ -79,6 +93,26 @@ describe('hstCheckboxList', () => {
 
     expect(boxes).toHaveLength(3)
     expect(boxes.map(b => b.attributes('aria-checked'))).toEqual(['false', 'true', 'false'])
+  })
+
+  it('gives every option a real button, so space and enter reach it', () => {
+    const wrapper = mount(HstCheckboxList, { props: { modelValue: [], options, title: 'Letters' } })
+    const box = wrapper.get('[role="checkbox"]')
+
+    // `CheckboxRoot` binds a click handler and nothing else: its only keydown
+    // handler is an empty one that prevents Enter's default, and roving focus
+    // covers Tab and the arrows. A non-button root has no keyboard at all.
+    expect(box.element.tagName).toBe('BUTTON')
+    expect(box.attributes('type')).toBe('button')
+  })
+
+  it('toggles an option from its text, not only from the box', async () => {
+    const wrapper = mount(HstCheckboxList, { props: { modelValue: [], options, title: 'Letters' } })
+    // A label forwards a click only to a labelable element, which a `span` is
+    // not: the whole row is clickable because the box is a button.
+    await wrapper.get('label.poveste-checkbox-list-option').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([['a']])
   })
 
   it('writes the option back when one is picked', async () => {

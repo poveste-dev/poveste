@@ -117,7 +117,6 @@ const emit = defineEmits({
   path {
     stroke: #fff;
     stroke-width: 2;
-    transition: none;
   }
 }
 

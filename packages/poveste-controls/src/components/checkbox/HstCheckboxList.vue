@@ -31,6 +31,11 @@ const emit = defineEmits<{
  *
  * `CheckboxGroupRoot` brings roving focus, so arrow keys move between options
  * and the group is one tab stop rather than one per option.
+ *
+ * Each option's root stays a button. `CheckboxRoot` binds a click handler and
+ * an Enter handler that only prevents the default, and roving focus covers Tab
+ * and the arrows — so a non-button root has no keyboard at all, and a `label`
+ * forwards a click to nothing, since only a labelable element receives one.
  */
 const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   if (Array.isArray(props.options)) {
@@ -66,7 +71,6 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
         class="poveste-checkbox-list-option"
       >
         <CheckboxRoot
-          as="span"
           :value="value"
           class="poveste-checkbox-list-box"
         >
@@ -102,6 +106,9 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
 
 .poveste-checkbox-list-box {
   display: block;
+  padding: 0;
+  border: 0;
+  background: none;
 
   &:focus-visible {
     outline: 2px solid var(--color-primary-500);
