@@ -27,9 +27,8 @@ export function syncState(variantState: Record<string, any>, onChange: (state: R
   // whether handing the state to the component changed anything, so the same
   // hazard remains on that side. It cannot be exercised today: `syncState` is
   // only reachable through `getLegacyStateApi`, which needs Svelte 4's
-  // `$capture_state`/`$inject_state`, and the Svelte example is on 5 with both
-  // state-sync specs already `fixme` under #81. Whoever revives that path
-  // inherits this note.
+  // `$capture_state`/`$inject_state`, and the Svelte example is on 5. Whoever
+  // revives that path inherits this note.
   let syncing = false
 
   const _stop = _watch(() => variantState, (value) => {
