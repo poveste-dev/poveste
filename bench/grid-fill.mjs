@@ -114,6 +114,6 @@ async function main() {
   console.log(JSON.stringify(result))
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   main()
 }

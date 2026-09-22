@@ -1,10 +1,12 @@
 /*
- * Runs the grid benchmarks end to end for one or more examples (#197): builds
- * the example's book with the bench stories included, serves it, and measures
- * grid fill at each variant count, a single cold sandbox boot, and scrolling
- * the largest grid by paging and by fling (#319).
+ * Runs the benchmarks end to end for one or more examples (#197): builds the
+ * example's book with the bench stories included, serves it, and measures grid
+ * fill at each variant count, a single cold sandbox boot, scrolling the largest
+ * grid by paging and by fling (#319), and typing into a story that holds a
+ * large object graph (#960).
  *
- *   node bench/run.mjs [--examples vue,svelte] [--sizes 10,100,1000] [--runs 7] [--json]
+ *   node bench/run.mjs [--examples vue,svelte] [--sizes 10,100,1000] [--runs 7]
+ *                      [--state-stories bench-state-64k,bench-state-control] [--json]
  *
  * The bench stories live in each example under `src/bench/` and are ignored by
  * the example's config unless POVESTE_BENCH=1, so normal books, dev servers and
@@ -16,11 +18,32 @@ import { pathToFileURL } from 'node:url'
 import { measureGridFill } from './grid-fill.mjs'
 import { measureGridFling, measureGridScroll } from './grid-scroll.mjs'
 import { measureSandbox } from './sandbox.mjs'
+import { measureStateSync } from './state-sync.mjs'
 
 // stdout is the interface: results are JSON or a table for the terminal.
 /* eslint-disable no-console */
 
 const BASE_PORT = 4990
+
+/** Size axis, then kind axis — see `bench/README.md`. */
+export const STATE_STORIES = [
+  'bench-state-0',
+  'bench-state-512',
+  'bench-state-8k',
+  'bench-state-64k',
+  'bench-state-control',
+  'bench-state-plain',
+  'bench-state-raw',
+  'bench-state-shallow',
+  'bench-state-ref',
+  'bench-state-usetemplateref',
+]
+
+// Only `examples/vue` carries the state stories. What they measure is
+// `addImplicitState`, which lives in `plugin-vue` alone: nuxt and quasar sit on
+// that same package and would re-measure it, and the Svelte books have no
+// equivalent at all on Svelte 5. See `bench/README.md`.
+const STATE_AXIS_EXAMPLES = new Set(['vue'])
 
 const env = { ...process.env, POVESTE_BENCH: '1' }
 
@@ -50,7 +73,7 @@ async function waitForHttp(url, timeoutMs = 60_000) {
  * Builds, serves and measures each example, and returns the report `--json` prints.
  * Exported so `smoke.spec.ts` runs the same instrument in-process.
  */
-export async function runBench({ examples, sizes, runs, plant, log = console.error }) {
+export async function runBench({ examples, sizes, runs, plant, stateStories = STATE_STORIES, log = console.error }) {
   const report = []
 
   for (const [i, example] of examples.entries()) {
@@ -89,6 +112,20 @@ export async function runBench({ examples, sizes, runs, plant, log = console.err
       log(`--- ${example} grid scroll, fling, V=${largest}, ${runs} runs ---`)
       const fling = await measureGridFling({ baseURL, storyId: `bench-grid-${largest}`, runs, plant, log })
       report.push({ example, kind: 'fling', size: largest, ...fling })
+
+      if (STATE_AXIS_EXAMPLES.has(example)) {
+        for (const storyId of stateStories) {
+          log(`--- ${example} state sync, ${storyId}, ${runs} runs ---`)
+          const state = await measureStateSync({ baseURL, storyId, runs, log })
+          report.push({ example, kind: 'state', ...state })
+        }
+      }
+      else if (stateStories.length) {
+        // Said rather than skipped in silence: `--state-stories` names a
+        // measurement, and a book without the axis would otherwise answer it
+        // with an absence.
+        log(`--- ${example}: no state axis here, so ${stateStories.length} state stories were not run (it lives in examples/vue only) ---`)
+      }
     }
     finally {
       // Detached so the whole pnpm → poveste tree goes with it.
@@ -126,9 +163,18 @@ function printTable(report) {
       }
     }
   }
+  const states = report.filter(r => r.kind === 'state')
+  if (states.length) {
+    console.log('\nexample    story                        wall   per key   busy  syncs  sandbox   host  frames>50  worst  quiet  wall range')
+    for (const r of states) {
+      console.log(`${r.example.padEnd(10)} ${r.storyId.padEnd(27)}  ${pad(r.wallMs, 5)}  ${pad(r.perKeystrokeMs, 7)}  ${pad(r.busyPerKeystrokeMs, 5)}  ${pad(r.syncs, 5)}  ${pad(r.sandboxScriptMs, 7)}  ${pad(r.hostScriptMs, 5)}  ${pad(r.longFrames, 9)}  ${pad(r.worstFrameMs, 5)}  ${pad(r.quiet, 5)}  ${r.wallRange}`)
+    }
+  }
+
   console.log('\n(ms; medians over fresh browser contexts; 1280×800 viewport)')
   console.log('("sandbox"/"host" = long-animation-frame script time by windowAttribution; "blocked" = long-task time over 50ms, which misses rendering-step work)')
   console.log('(scroll: ms per paged step after the 1.5s settle; fling: its time-based duration, mounts across fling and settle, measured px/ms per event)')
+  console.log('(state: 10 keystrokes 120ms apart, so 1.2s of the wall is deliberate pacing — "busy" is per keystroke with that taken off; "syncs" is the sandbox\'s own STATE_SYNC count and is the load-independent column)')
 }
 
 async function main() {
@@ -141,6 +187,7 @@ async function main() {
     examples: opt('examples', 'vue,svelte').split(',').map(s => s.trim()).filter(Boolean),
     sizes: opt('sizes', '10,100,1000').split(',').map(Number),
     runs: Number(opt('runs', '7')),
+    stateStories: opt('state-stories', STATE_STORIES.join(',')).split(',').map(s => s.trim()).filter(Boolean),
   })
   if (args.includes('--json')) {
     console.log(JSON.stringify(report, null, 2))
