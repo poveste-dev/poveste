@@ -14,12 +14,25 @@ import { measureStateSync } from './state-sync.mjs'
 // Longer than any one script a real retarget runs, so only the plant can reach it.
 const PLANTED_MS = 150
 
+/**
+ * The expensive end of the state axis, and it is deliberately not a size-axis
+ * story.
+ *
+ * The size axis binds its graph through a template ref, and Vue marks a
+ * component's exposed object raw — so since #957 the walkers stop at it and
+ * every size story costs what the control costs. `bench-state-plain` binds the
+ * graph directly and unmarked, which is the shape #957 did not aim at (#964)
+ * and the one still worth a smoke test: it is what a blind instrument fails to
+ * see.
+ */
+const STATE_COST_STORY = 'bench-state-plain'
+
 /** The two ends of the state axis. The other eight cost minutes and prove no more here. */
-const STATE_SMOKE_STORIES = ['bench-state-control', 'bench-state-64k']
+const STATE_SMOKE_STORIES = ['bench-state-control', STATE_COST_STORY]
 
 /**
- * The floor the size axis has to clear over the control. Measured on an M3 Pro
- * it is ~670× — 3ms a keystroke against 2021ms — so this catches an instrument
+ * The floor the cost story has to clear over the control. Measured on an M3 Pro
+ * it is ~1000× — 2ms a keystroke against 2020ms — so this catches an instrument
  * that has gone blind rather than a slow runner, and a slow runner widens the
  * gap, since the control's cost is the typing pacing and does not move.
  */
@@ -103,13 +116,13 @@ function reportProblems(report: Array<Record<string, any>>, stories: string[] = 
   }
 
   const control = state.get('bench-state-control')
-  const graph = state.get('bench-state-64k')
+  const graph = state.get(STATE_COST_STORY)
   if (control?.typed && graph?.typed) {
     // A control measuring as free is the expected case, so the floor keeps the
     // ratio finite rather than turning the comparison off.
     const floor = Math.max(control.busyPerKeystrokeMs, 1)
     if (!(graph.busyPerKeystrokeMs >= STATE_GAP * floor)) {
-      problems.push(`a keystroke cost bench-state-64k ${graph.busyPerKeystrokeMs}ms against the control's ${control.busyPerKeystrokeMs}ms, under the ${STATE_GAP}× the instrument exists to see`)
+      problems.push(`a keystroke cost ${STATE_COST_STORY} ${graph.busyPerKeystrokeMs}ms against the control's ${control.busyPerKeystrokeMs}ms, under the ${STATE_GAP}× the instrument exists to see`)
     }
   }
 
@@ -150,7 +163,7 @@ describe('reportProblems', () => {
 
   const state = [
     { kind: 'state', storyId: 'bench-state-control', found: true, typed: true, busyPerKeystrokeMs: 3, readonlyWarnings: 0 },
-    { kind: 'state', storyId: 'bench-state-64k', found: true, typed: true, busyPerKeystrokeMs: 2021, readonlyWarnings: 0 },
+    { kind: 'state', storyId: STATE_COST_STORY, found: true, typed: true, busyPerKeystrokeMs: 2021, readonlyWarnings: 0 },
   ]
   const measured = [{ kind: 'grid', cells: 18, first: 500, last: 2300 }, { kind: 'sandbox', median: 120 }, { kind: 'scroll', stepMs: 900 }, ...state]
   const fling = { kind: 'fling', readyTotal: 40, flingMs: 400, scrollEvents: 24, fastEvents: 20, velocityMedian: 12, sandboxScriptMs: 400, longestSandboxScriptMs: 160 }
@@ -168,27 +181,27 @@ describe('reportProblems', () => {
   })
 
   it('reports a state story that never reached the book', () => {
-    const missing = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, found: false } : r))
+    const missing = measured.map(r => (r.storyId === STATE_COST_STORY ? { ...r, found: false } : r))
 
-    expect(reportProblems([...missing, fling])).toEqual([expect.stringContaining('bench-state-64k had no input to type into')])
+    expect(reportProblems([...missing, fling])).toEqual([expect.stringContaining(`${STATE_COST_STORY} had no input to type into`)])
   })
 
   it('reports a state axis that measured no more than the control', () => {
-    const blind = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, busyPerKeystrokeMs: 6 } : r))
+    const blind = measured.map(r => (r.storyId === STATE_COST_STORY ? { ...r, busyPerKeystrokeMs: 6 } : r))
 
-    expect(reportProblems([...blind, fling])).toEqual([expect.stringContaining('cost bench-state-64k 6ms against the control\'s 3ms')])
+    expect(reportProblems([...blind, fling])).toEqual([expect.stringContaining(`cost ${STATE_COST_STORY} 6ms against the control's 3ms`)])
   })
 
   it('reports a state story that never gave the main thread back', () => {
-    const stuck = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, typed: false, busyPerKeystrokeMs: null } : r))
+    const stuck = measured.map(r => (r.storyId === STATE_COST_STORY ? { ...r, typed: false, busyPerKeystrokeMs: null } : r))
 
-    expect(reportProblems([...stuck, fling])).toEqual([expect.stringContaining('bench-state-64k never finished the burst')])
+    expect(reportProblems([...stuck, fling])).toEqual([expect.stringContaining(`${STATE_COST_STORY} never finished the burst`)])
   })
 
   it('reports a size-axis story that logged a readonly-ref warning', () => {
-    const readonly = measured.map(r => (r.storyId === 'bench-state-64k' ? { ...r, readonlyWarnings: 3 } : r))
+    const readonly = measured.map(r => (r.storyId === STATE_COST_STORY ? { ...r, readonlyWarnings: 3 } : r))
 
-    expect(reportProblems([...readonly, fling])).toEqual([expect.stringContaining('bench-state-64k logged 3 readonly-ref warnings')])
+    expect(reportProblems([...readonly, fling])).toEqual([expect.stringContaining(`${STATE_COST_STORY} logged 3 readonly-ref warnings`)])
   })
 
   // It is the story placed to produce them, so its warnings are the point.
