@@ -7,7 +7,8 @@ export default {
 <script lang="ts" setup>
 import type { ComputedRef } from 'vue'
 import type { HstControlOption } from '../../types'
-import { computed, ref } from 'vue'
+import { Label, RadioGroupItem, RadioGroupRoot } from 'reka-ui'
+import { computed } from 'vue'
 import HstWrapper from '../HstWrapper.vue'
 
 const props = defineProps<{
@@ -20,6 +21,28 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
+/*
+ * Every option used to carry a `name` containing its own value, so no two were
+ * ever in one radio group: nothing excluded anything natively, and the arrow
+ * keys a radio group owes a reader did nothing. `RadioGroupRoot` is one group
+ * by construction, and brings the roving focus with it.
+ *
+ * The wrapper is a `div`. Its default is a `label`, which with `role="group"`
+ * rendered a label wrapping one label per option — nested labels are invalid,
+ * and a label over several controls is #928's trap.
+ *
+ * Each option's root stays a button, which is `RadioGroupItem`'s default and
+ * avoids two of #969's three regressions at once: a button has space and enter
+ * natively, and a `Label` forwards a click only to a labelable element.
+ *
+ * Nothing may sit above the root in the template — a comment there makes the
+ * component a fragment, a fragment takes no fallthrough attrs, and the root
+ * silently stops being the control.
+ *
+ * `?? null` rather than `?? undefined` on the model: `exactOptionalPropertyTypes`
+ * refuses `undefined` for an optional prop that does not name it, and `null` is
+ * in Reka's `AcceptableValue` and is what "nothing selected" means anyway.
+ */
 const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   if (Array.isArray(props.options)) {
     return Object.fromEntries(props.options.map((value: string | HstControlOption) => {
@@ -33,77 +56,112 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   }
   return props.options
 })
-
-function selectOption(value: string) {
-  emit('update:modelValue', value)
-  animationEnabled.value = true
-}
-
-// animationEnabled prevents the animation from triggering on mounted
-const animationEnabled = ref(false)
 </script>
 
 <template>
   <HstWrapper
-    role="group"
+    tag="div"
     :title="title"
-    class="poveste-radio cursor-text"
+    class="poveste-radio"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <div class="-my-1">
-      <template
+    <RadioGroupRoot
+      :model-value="modelValue ?? null"
+      class="poveste-radio-options"
+      @update:model-value="(value: unknown) => emit('update:modelValue', value as string)"
+    >
+      <Label
         v-for="(label, value) in formattedOptions"
         :key="value"
+        class="poveste-radio-option"
       >
-        <input
-          :id="`${value}-radio_${title}`"
-          type="radio"
-          :name="`${value}-radio_${title}`"
+        <RadioGroupItem
           :value="value"
-          :checked="value === modelValue"
-          class="hidden!"
-          @change="selectOption(value)"
+          class="poveste-radio-box"
         >
-        <label
-          tabindex="0"
-          :for="`${value}-radio_${title}`"
-          class="cursor-pointer flex items-center relative py-1 group"
-          @keydown.enter.prevent="selectOption(value)"
-          @keydown.space.prevent="selectOption(value)"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="-12 -12 24 24"
-            class="relative z-10 border border-solid  text-inherit rounded-full box-border inset-0 transition-border duration-150 ease-out mr-2 group-hover:border-primary-500"
-            :class="[
-              modelValue === value
-                ? 'border-primary-500'
-                : 'border-black/25 dark:border-white/25',
-            ]"
-          >
-            <circle
-              r="7"
-              class="will-change-transform"
-              :class="[
-                animationEnabled ? 'transition-all' : 'transition-none',
-                {
-                  'delay-150': modelValue === value,
-                },
-                modelValue === value
-                  ? 'fill-primary-500'
-                  : 'fill-transparent scale-0',
-              ]"
-            />
-          </svg>
-          {{ label }}
-        </label>
-      </template>
-    </div>
+          <span class="poveste-radio-dot" />
+        </RadioGroupItem>
+        {{ label }}
+      </Label>
+    </RadioGroupRoot>
 
     <template #actions>
       <slot name="actions" />
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-radio {
+  cursor: text;
+}
+
+.poveste-radio-options {
+  margin-block: -.25rem;
+}
+
+.poveste-radio-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding-block: .25rem;
+  cursor: pointer;
+}
+
+.poveste-radio-box {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: 9999px;
+  background: none;
+
+  /* Opt in, matching `HomeCounter`: an engine without the query animates
+     nothing, rather than animating for someone who asked it not to. */
+  @media (prefers-reduced-motion: no-preference) {
+    transition: border-color .15s ease-out;
+  }
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:hover,
+  &[data-state='checked'] {
+    border-color: var(--color-primary-500);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+}
+
+.poveste-radio-dot {
+  position: absolute;
+  inset: 3px;
+  display: block;
+  border-radius: 9999px;
+  background: var(--color-primary-500);
+  transform: scale(0);
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: transform .2s ease-in-out;
+  }
+
+  [data-state='checked'] > & {
+    transform: scale(1);
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition-delay: .15s;
+    }
+  }
+}
+</style>
