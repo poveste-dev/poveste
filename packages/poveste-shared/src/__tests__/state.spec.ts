@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyState, createStateBaseline, diffState, isEquivalent } from '../state.js'
+import { applyState, createStateBaseline, diffState, isEquivalent, isMarkedRaw } from '../state.js'
 
 describe('isEquivalent', () => {
   it('compares primitives the way Vue decides whether to trigger', () => {
@@ -349,5 +349,71 @@ describe('createStateBaseline', () => {
     // detected — below that the value is carried whole, cycle and all.
     expect(baseline.take(second)).toEqual({ name: 'b', self: { name: 'b', self: second } })
     expect(baseline.take(second)).toBeNull()
+  })
+})
+
+/**
+ * `markRaw` without importing Vue: the flag is a non-enumerable `__v_skip`, and
+ * this package has no Vue to ask. Defined exactly as Vue defines it, so a test
+ * that passes here is a test about the real shape.
+ */
+function marked<T extends object>(value: T): T {
+  Object.defineProperty(value, '__v_skip', { value: true, enumerable: false, configurable: true })
+  return value
+}
+
+describe('a value Vue has marked raw', () => {
+  it('is not enumerable, so nothing downstream can see the mark', () => {
+    const value = marked({ a: 1 })
+
+    expect(Object.keys(value)).toEqual(['a'])
+    expect(isMarkedRaw(value)).toBe(true)
+    // The whole reason the bridge drops the key instead of passing the value.
+    expect('__v_skip' in structuredClone(value)).toBe(false)
+  })
+
+  it('looks plain to every other predicate here', () => {
+    // Which is why the guard has to be asked explicitly: a marked plain object
+    // and a component's exposed object both have `Object.prototype`.
+    expect(Object.getPrototypeOf(marked({ a: 1 }))).toBe(Object.prototype)
+  })
+
+  it('is compared by identity rather than walked', () => {
+    const graph = marked({ nodes: { deep: 1 } })
+
+    expect(isEquivalent(graph, graph)).toBe(true)
+    // Distinct marked values are not equivalent even with matching keys — the
+    // same answer this gives a `Date` or a class instance, and for the same
+    // reason.
+    expect(isEquivalent(marked({ nodes: { deep: 1 } }), marked({ nodes: { deep: 1 } }))).toBe(false)
+    // Unmarked, these two are equivalent, which is what makes the case above
+    // a property of the mark rather than of the shape.
+    expect(isEquivalent({ nodes: { deep: 1 } }, { nodes: { deep: 1 } })).toBe(true)
+  })
+
+  it('is recorded by reference, so nothing inside it is tracked afterwards', () => {
+    const baseline = createStateBaseline()
+    const graph: any = marked({ nodes: { deep: 1 } })
+
+    expect(baseline.take({ graph })).toEqual({ graph })
+
+    graph.nodes.deep = 2
+
+    // The mark is the author saying "do not look inside this", and this is the
+    // half of that bargain worth stating: a structural copy in the baseline
+    // would spot that mutation, which means it walked the graph to find it.
+    expect(baseline.take({ graph })).toBeNull()
+  })
+
+  it('is not mistaken for marked when a proxy refuses the read', () => {
+    const hostile = new Proxy({}, {
+      get() {
+        throw new Error('nope')
+      },
+    })
+
+    expect(isMarkedRaw(hostile)).toBe(false)
+    expect(isMarkedRaw(null)).toBe(false)
+    expect(isMarkedRaw(1)).toBe(false)
   })
 })

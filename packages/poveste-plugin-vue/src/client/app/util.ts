@@ -1,5 +1,5 @@
 import type { ComponentInternalInstance } from 'vue'
-import { applyState, createStateBaseline } from '@poveste/shared'
+import { applyState, createStateBaseline, isMarkedRaw } from '@poveste/shared'
 import {
   isRef as _isRef,
   unref as _unref,
@@ -9,6 +9,19 @@ import { getCurrentInstance, isReadonly, isRef, unref, watch } from 'vue'
 
 const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
 
+/**
+ * A value Vue has marked raw is carried by reference rather than rebuilt.
+ *
+ * Both sides of this bridge live in one realm, so the reference is the useful
+ * thing to hand over: the baseline then holds the same identity the next pass
+ * reads, `isEquivalent` settles it by `Object.is`, and nothing walks whatever
+ * is behind it. Rebuilding it was ten of the twenty traversals a keystroke
+ * cost (#957).
+ *
+ * The bridge that leaves this realm cannot do the same — see `toRawDeep` in
+ * `poveste-app`, where the mark does not survive the crossing and the key is
+ * dropped instead.
+ */
 /**
  * Using external/user Vue
  */
@@ -20,6 +33,10 @@ export function toRawDeep(val: unknown, seen = new WeakMap()): any {
   }
 
   if (!isObject(unwrappedValue)) {
+    return unwrappedValue
+  }
+
+  if (isMarkedRaw(unwrappedValue)) {
     return unwrappedValue
   }
 
@@ -58,6 +75,10 @@ export function _toRawDeep(val: unknown, seen = new WeakMap()): any {
   }
 
   if (!isObject(unwrappedValue)) {
+    return unwrappedValue
+  }
+
+  if (isMarkedRaw(unwrappedValue)) {
     return unwrappedValue
   }
 

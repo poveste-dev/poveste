@@ -1,7 +1,7 @@
 import { autoPropsStateKeys } from '@poveste/shared'
 import { nextTick as bundledNextTick, reactive as bundledReactive } from '@poveste/vendors/vue'
 import { describe, expect, it } from 'vitest'
-import { nextTick, reactive, watch } from 'vue'
+import { markRaw, nextTick, reactive, watch } from 'vue'
 import { syncStateBundledAndExternal } from '../util.js'
 
 // These run against both Vue copies for real: `@poveste/vendors/vue` is the one
@@ -382,6 +382,41 @@ describe('keys the sync is told to omit', () => {
 
     expect(external.fromStory).toBe('yes')
 
+    sync.stop()
+  })
+})
+
+describe('a binding Vue has marked raw', () => {
+  // Not `setup()` above: that clones its argument, and `structuredClone` is
+  // exactly what a mark does not survive.
+  function setupWithGraph() {
+    const graph = markRaw({ nodes: { deep: 1 } })
+    const bundled = bundledReactive<Record<string, any>>({ text: '', graph })
+    const external = reactive<Record<string, any>>({ text: '' })
+    const sync = syncStateBundledAndExternal(bundled, external)
+    return { bundled, external, sync, graph }
+  }
+
+  it('crosses between the two Vues as itself, not as a rebuilt copy', async () => {
+    const { external, sync, graph } = setupWithGraph()
+    await settle()
+
+    // Both sides live in one realm, so the reference is the useful thing to
+    // hand over — and handing it over is what lets the compare settle on
+    // identity instead of walking whatever is behind it (#957).
+    expect(external.graph).toBe(graph)
+    sync.stop()
+  })
+
+  it('stays that object over later passes, and does not hold up the keys beside it', async () => {
+    const { bundled, external, sync, graph } = setupWithGraph()
+    await settle()
+
+    bundled.text = 'a'
+    await settle()
+
+    expect(external.graph).toBe(graph)
+    expect(external.text).toBe('a')
     sync.stop()
   })
 })
