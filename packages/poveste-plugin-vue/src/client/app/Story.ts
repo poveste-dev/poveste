@@ -4,7 +4,7 @@ import type { PreviewRenderContext } from './render-context.js'
 import { omitInheritStoryProps } from '@poveste/shared'
 import { cloneVNode, computed, defineComponent, h, isRef, provide, reactive, useAttrs } from 'vue'
 import { useRenderContext } from './render-context.js'
-import { useInstance } from './util.js'
+import { isWritableBinding, useInstance } from './util.js'
 import Variant from './Variant.js'
 
 export default defineComponent({
@@ -53,6 +53,10 @@ export default defineComponent({
       const value = source[key]
 
       if (typeof value === 'function' || (value?.__file) || typeof value?.render === 'function' || typeof value?.setup === 'function') {
+        return
+      }
+
+      if (!isWritableBinding(value)) {
         return
       }
 

@@ -5,7 +5,7 @@ import {
   unref as _unref,
   watch as _watch,
 } from '@poveste/vendors/vue'
-import { getCurrentInstance, isRef, unref, watch } from 'vue'
+import { getCurrentInstance, isReadonly, isRef, unref, watch } from 'vue'
 
 const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
 
@@ -149,6 +149,28 @@ export function syncStateBundledAndExternal(bundledState: Record<string, any>, e
 }
 
 /** The component being set up. Throws outside `setup`, where Vue returns null. */
+/**
+ * Whether a `<script setup>` binding can be story state a control drives.
+ *
+ * A readonly ref cannot: the write-back is refused, so the two sides of the
+ * bridge never agree on it and the sync re-walks forever (#959). `useTemplateRef`
+ * returns one — in dev builds only, which is why a built book is quiet and the
+ * mode story authors work in is not.
+ *
+ * It has to be asked of the ref rather than of what the ref holds. The guard
+ * beside this one tests the value, and a value test cannot classify a template
+ * ref at all: at setup time it holds `null`, and what it will hold later is not
+ * knowable from here. Readonly-ness is a property of the ref itself and is
+ * settled by the time the binding is registered.
+ *
+ * A `computed` is caught by the same rule and for the same reason — it is a
+ * derived value, and a control that cannot write is not a control. Before this
+ * it appeared in the panel and warned when written.
+ */
+export function isWritableBinding(value: unknown): boolean {
+  return !(isRef(value) && isReadonly(value))
+}
+
 export function useInstance(name: string): ComponentInternalInstance {
   const vm = getCurrentInstance()
   if (!vm) {
