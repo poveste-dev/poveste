@@ -42,6 +42,7 @@ const SELECTED_BY_TEST_CHECKS = [...new Set(CHECK_TESTS
 const RELEASE_GATE_CHECKS = [
   'config-reference',
   'conformance-config',
+  'control-conventions',
   'docs-svelte-fences',
   'example-wiring',
   'local-tags',

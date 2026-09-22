@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { checkControlConventions, NOT_YET_MIGRATED, problemsIn } from './control-conventions.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
+import { tree } from './support/fixture-tree.ts'
 
 function control(template: string, style = '') {
   return `<template>${template}</template><style lang="postcss">${style}</style>`
@@ -75,6 +76,24 @@ describe('the not-yet-migrated list', () => {
     for (const migrated of ['HstCheckbox.vue', 'HstCheckboxList.vue', 'HstSimpleCheckbox.vue', 'HstButton.vue']) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }
+  })
+})
+
+describe('checkControlConventions', () => {
+  it('reports that it found no controls, rather than passing over an empty walk', () => {
+    const root = tree({ 'packages/poveste-controls/src/components/': '' })
+
+    expect(checkControlConventions(root).problems).toEqual([
+      'no controls found under packages/poveste-controls/src/components — this check is looking in the wrong place',
+    ])
+  })
+
+  it('reports a list that has swallowed every control', () => {
+    const root = tree({ 'packages/poveste-controls/src/components/text/HstText.vue': '<template><input></template>' })
+
+    expect(checkControlConventions(root).problems).toEqual([
+      'every control is on the not-yet-migrated list — this check is asserting nothing',
+    ])
   })
 })
 

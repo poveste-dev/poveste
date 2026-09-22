@@ -23,6 +23,7 @@ export const FLOORS: Record<string, Floor> = {
   'changelog': { exempt: 'reads one section of one named file: a missing file throws, and a missing section is the failure it exists to report' },
   'config-reference': { exempt: '`parseConfig` throws when the interface it reads is gone, and a reference that reads empty reports every key as undocumented' },
   'conformance-config': { guard: 'defines no `:conformance` project' },
+  'control-conventions': { guard: 'no controls found under' },
   'doc-coverage': { guard: 'no entrypoint was measured at all' },
   'docs-site': { guard: 'no build at' },
   'docs-svelte-fences': { guard: 'no `svelte` fence under' },
