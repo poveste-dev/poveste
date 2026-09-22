@@ -17,6 +17,7 @@ allowBuilds:
   # would do it again on every dependency install.
   simple-git-hooks: false
 catalog:
+  '@types/node': ^22.10.1
   '@vueuse/core': ^15.0.0
   '@tailwindcss/postcss': ^4.3.3
   '@tailwindcss/vite': ^4.3.3

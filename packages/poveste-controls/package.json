@@ -69,7 +69,7 @@
     "@internationalized/date": "^3.12.4",
     "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "catalog:",
-    "@types/node": "^22.10.1",
+    "@types/node": "catalog:",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/runtime-dom": "^3.5.26",
     "@vue/test-utils": "^2.4.6",
