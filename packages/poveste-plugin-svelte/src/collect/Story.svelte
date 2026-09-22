@@ -1,5 +1,5 @@
 <script>
-  import { getContext, setContext } from 'svelte'
+  import { addStoryContext, addVariantContext, collectStoryContext, storyFileContext } from '../contexts.js'
 
   export let title = null
   export let id = null
@@ -11,12 +11,22 @@
   export let autoPropsDisabled = null
   export let initState = null
 
-  const addStory = getContext('__pvtAddStory')
-  const file = getContext('__pvtStoryFile')
+  const addStory = addStoryContext.getOptional()
+  const file = storyFileContext.getOptional()
+
+  // Guarded the way `plugin-vue` guards it: collected outside a run there is no
+  // file to fall back on, and reading `file.id` off `undefined` said nothing
+  // about stories (#981).
+  const storyId = id ?? file?.id
+  const storyTitle = title ?? file?.fileName
+
+  if (!storyId || storyTitle === undefined) {
+    throw new Error('[poveste] a <Story> collected outside a story file needs an `id` and a `title`')
+  }
 
   const story = {
-    id: id ?? file.id,
-    title: title ?? file.fileName,
+    id: storyId,
+    title: storyTitle,
     group,
     layout,
     icon,
@@ -29,7 +39,7 @@
     variants: [],
   }
 
-  addStory(story)
+  addStory?.(story)
 
   // Collection renders the story's markup purely to discover its variants, but
   // that markup now reads `state`. Without a value here every expression
@@ -37,8 +47,8 @@
   // `Cannot read properties of undefined` (#81).
   const state = initState ? initState() : {}
 
-  setContext('__pvtStory', story)
-  setContext('__pvtAddVariant', (variant) => {
+  collectStoryContext.set(story)
+  addVariantContext.set((variant) => {
     story.variants.push(variant)
   })
 </script>

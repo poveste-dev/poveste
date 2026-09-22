@@ -1,8 +1,8 @@
 import type { AutoPropComponentDefinition } from '@poveste/shared'
 import { applyState } from '@poveste/shared'
 import { watch as _watch } from '@poveste/vendors/vue'
-import { getContext } from 'svelte'
 import { readable } from 'svelte/store'
+import { storyContext, variantContext } from '../contexts.js'
 
 type Values = Record<string, any>[][]
 
@@ -13,13 +13,16 @@ const EMPTY: Record<string, any> = Object.freeze({})
  * the reader has set, which the rewritten markup spreads onto each component.
  */
 export function autoProps(defs: AutoPropComponentDefinition[][]) {
-  const story = getContext<any>('__pvtStory')
-  const variant = getContext<any>('__pvtVariant')
+  const story = storyContext.getOptional()
+  const variant = variantContext.getOptional()
 
   const index = variantToDrive(story, variant)
   const inert: Values = defs.map(perVariant => Array.from({ length: slots(perVariant) }).fill(EMPTY) as Record<string, any>[])
 
-  if (index < 0) {
+  // `variantToDrive` already returns -1 without a variant, so the second test
+  // is redundant at runtime and is the point: the invariant everything below
+  // relies on lived in another function, where nothing here could see it.
+  if (index < 0 || !variant) {
     retract(variant)
     return readable(inert)
   }
@@ -33,7 +36,9 @@ export function autoProps(defs: AutoPropComponentDefinition[][]) {
   }
 
   let publishedInto: any = null
-  function publish() {
+  // An arrow rather than a declaration, so the narrowing above reaches inside
+  // it: a hoisted function is not narrowed by a guard it sits below.
+  const publish = () => {
     // Identity of the state object, never of the definitions: reading those back
     // returns a reactive proxy that cannot equal what was written.
     if (!variant.state || (publishedInto === variant.state && variant.state._hPropDefs?.length)) {

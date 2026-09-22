@@ -16,6 +16,7 @@ import {
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
 import * as setup from 'virtual:$poveste-setup'
+import { slotNameContext, storyContext, variantContext } from '../contexts.js'
 import {
   callSetupFunctions,
   createWrappedComponent,
@@ -86,11 +87,11 @@ export default _defineComponent({
             ...getControls(),
           },
         },
-        context: new Map(Object.entries({
-          __pvtStory: props.story,
-          __pvtVariant: props.variant,
-          __pvtSlot: props.slotName,
-        })),
+        context: new Map<symbol, unknown>([
+          [storyContext.key, props.story],
+          [variantContext.key, props.variant],
+          [slotNameContext.key, props.slotName],
+        ]),
       }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
       app = mountedApp.app
       tearDownHandlers.push(() => {

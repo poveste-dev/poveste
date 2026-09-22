@@ -1,16 +1,16 @@
 <script>
   import { omitInheritStoryProps } from '@poveste/shared'
-  import { getContext, setContext } from 'svelte'
+  import { slotsContext, storyContext, storyPropsContext, variantIndexContext } from '../contexts.js'
   import MountVariant from './MountVariant.svelte'
 
-  const story = getContext('__pvtStory')
+  const story = storyContext.get('<Story>')
   const index = { value: 0 }
-  setContext('__pvtIndex', index)
-  setContext('__pvtSlots', $$slots)
+  variantIndexContext.set(index)
+  slotsContext.set($$slots)
   // Slots were given this treatment and props never were, so a story-level prop
   // reached an implicit variant and was dropped the moment a story declared
   // explicit ones — `$$restProps` is only spread in the branch below (#466).
-  setContext('__pvtStoryProps', $$restProps)
+  storyPropsContext.set($$restProps)
 
   // Not `$:`: Svelte invalidates a reactive statement when a variable it
   // references is reassigned, and `story` is a const read from context that

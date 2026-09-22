@@ -1,6 +1,6 @@
 import type { Story, Variant } from '@poveste/shared'
 import { toRaw } from '@poveste/vendors/vue'
-import { getContext } from 'svelte'
+import { variantIndexContext } from '../contexts.js'
 import RenderStorySvelte from './RenderStory.svelte'
 import RenderVariantSvelte from './RenderVariant.svelte'
 
@@ -31,7 +31,7 @@ export function renderStoryComponents(story: Story, variant: Variant) {
       return
     }
     // `RenderVariant` finds its variant at the position `RenderStory` counts.
-    getContext<{ value: number }>('__pvtIndex').value = shownIndex
+    variantIndexContext.get('<Story>').value = shownIndex
     return (RenderVariantSvelte as unknown as SvelteComponentFunction)(anchor, props)
   }
 
