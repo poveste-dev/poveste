@@ -1,6 +1,6 @@
 # Poveste + Vue 3
 
-Requires `vue@^3.5.26`.
+Requires `vue@^3.5.43`.
 
 ```bash
 pnpm add -D poveste @poveste/plugin-vue
