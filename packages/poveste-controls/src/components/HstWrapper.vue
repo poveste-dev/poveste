@@ -5,11 +5,14 @@ export default {
 </script>
 
 <script lang="ts" setup>
+import type { Component } from 'vue'
 import HstTooltip from './HstTooltip.vue'
 
 withDefaults(defineProps<{
   title?: string | undefined
-  tag?: string | undefined
+  /* A component, not only a tag name: a control whose whole row is the control
+     passes its own root here — see `HstCheckbox` (#955). */
+  tag?: string | Component | undefined
 }>(), {
   title: undefined,
   tag: 'label',
