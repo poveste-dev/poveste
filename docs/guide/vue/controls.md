@@ -11,6 +11,24 @@ Controls give you the ability to interact with your components arguments.
 
 The first step is to define the state that will be shared to your story. Poveste will automatically synchronize the `data` or reactive data returned in your `setup`. Then you can proceed using your state as usual.
 
+### Keeping a binding out of the sync
+
+Everything the story exposes is walked on every change, in both directions, so a binding that reaches a large object graph — a map, a chart, a template ref onto a component that holds one — makes every keystroke expensive.
+
+Mark it raw, and Poveste leaves it alone:
+
+```vue
+<script lang="ts" setup>
+import { markRaw, ref } from 'vue'
+
+const map = ref(markRaw(createMap()))
+</script>
+```
+
+[`markRaw`](https://vuejs.org/api/reactivity-advanced.html#markraw) is Vue's own way of saying "do not look inside this", and Poveste reads it the same way: the value is not walked, not copied, and not sent between your story and the panel. It still shows up in the controls panel, but editing it there will not reach your story, and changes you make inside it are not synchronized back. That is the same bargain Vue makes, and it is what makes the binding cheap.
+
+A template ref onto a component you called `defineExpose` in is **already** marked, by Vue, so it costs nothing and needs nothing from you.
+
 Example with Option API:
 
 ```vue{11-18}

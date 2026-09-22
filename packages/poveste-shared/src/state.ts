@@ -26,6 +26,37 @@ export function omit(data: any, keys: string[]): Record<string, any> {
   return copy
 }
 
+/**
+ * Whether Vue has marked this value raw, and the walkers must stop here.
+ *
+ * Read as a property rather than through Vue's `isReactive`, because this
+ * package does not depend on Vue — and because the flag is what has to be
+ * asked anyway: `markRaw` defines `__v_skip` **non-enumerable**, so it crosses
+ * neither `structuredClone` nor JSON, and by the time a value has been through
+ * the sandbox bridge the mark is gone (#957).
+ *
+ * A marked value looks plain to every predicate here: a component's exposed
+ * object and `markRaw({ … })` both have `Object.prototype` and own enumerable
+ * keys, so without this the compare and the copy descend into whatever is
+ * behind them.
+ *
+ * The read is guarded because state is user data and may be a proxy with a
+ * throwing trap; an unanswerable value is treated as unmarked, which is the
+ * behaviour this had before.
+ */
+export function isMarkedRaw(value: any): boolean {
+  if (value === null || typeof value !== 'object') {
+    return false
+  }
+
+  try {
+    return value.__v_skip === true
+  }
+  catch {
+    return false
+  }
+}
+
 function isPlainObject(value: any) {
   if (value === null || typeof value !== 'object') {
     return false
@@ -52,6 +83,13 @@ function isPlainObject(value: any) {
 export function isEquivalent(a: any, b: any, seen?: WeakMap<object, WeakSet<object>>): boolean {
   if (Object.is(a, b)) {
     return true
+  }
+
+  // Same reason as the prototype test below, reached differently: a marked
+  // value is one Vue itself refuses to look inside, and two distinct ones are
+  // not the same value whatever their keys say.
+  if (isMarkedRaw(a) || isMarkedRaw(b)) {
+    return false
   }
 
   const bothArrays = Array.isArray(a) && Array.isArray(b)
@@ -273,7 +311,7 @@ export function diffState(baseline: any, next: any): Record<string, any> | null 
  * `Object.is`, so a reference is the identity the comparison is about.
  */
 function copyState(value: any, seen = new WeakMap<object, any>()) {
-  if (!Array.isArray(value) && !isPlainObject(value)) {
+  if (isMarkedRaw(value) || (!Array.isArray(value) && !isPlainObject(value))) {
     return value
   }
 
