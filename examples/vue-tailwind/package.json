@@ -9,13 +9,13 @@
     "story:preview": "poveste preview --port 4571"
   },
   "dependencies": {
-    "vue": "^3.5.26"
+    "vue": "^3.5.43"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/postcss": "catalog:",
-    "@vitejs/plugin-vue": "^6.0.0",
+    "@vitejs/plugin-vue": "^6.0.9",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }

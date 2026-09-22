@@ -1,6 +1,6 @@
 # Poveste + Svelte 5 and SvelteKit
 
-Requires `svelte@^5.46.4` and `@sveltejs/vite-plugin-svelte@^7.0.0`. SvelteKit is supported
+Requires `svelte@^5.46.4` and `@sveltejs/vite-plugin-svelte@^7.3.0`. SvelteKit is supported
 by this same package — there is no separate plugin — through an optional
 `@sveltejs/kit@^2.53.0` peer.
 
