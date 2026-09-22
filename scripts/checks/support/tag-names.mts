@@ -10,6 +10,7 @@ export const CHECK_TAG = {
 export const SUBJECT_TAGS = {
   app: 'the app a book is built from',
   ci: 'the workflows and the task graph',
+  controls: 'the builtin controls and how they are written',
   docs: 'the docs site, the READMEs and the published recipes',
   examples: 'the example books and their wiring',
   release: 'what a release publishes',

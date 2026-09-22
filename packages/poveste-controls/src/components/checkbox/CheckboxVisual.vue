@@ -29,13 +29,20 @@ watch(path, () => {
 </script>
 
 <template>
-  <span class="poveste-checkbox-visual">
-    <span class="poveste-checkbox-visual-box" />
+  <span
+    class="poveste-checkbox-visual"
+    data-slot="visual"
+  >
+    <span
+      class="poveste-checkbox-visual-box"
+      data-slot="visual-box"
+    />
     <svg
       width="16"
       height="16"
       viewBox="0 0 24 24"
       class="poveste-checkbox-visual-check"
+      data-slot="visual-check"
     >
       <path
         ref="path"

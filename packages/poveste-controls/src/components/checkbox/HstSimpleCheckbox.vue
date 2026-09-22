@@ -30,6 +30,7 @@ const emit = defineEmits({
     v-if="withToggle"
     :model-value="modelValue ?? false"
     class="poveste-simple-checkbox poveste-simple-checkbox-interactive"
+    data-slot="box"
     :data-checked="modelValue ? '' : undefined"
     @update:model-value="(value: unknown) => emit('update:modelValue', value === true)"
   >
@@ -38,6 +39,7 @@ const emit = defineEmits({
   <span
     v-else
     class="poveste-simple-checkbox"
+    data-slot="box"
     :data-checked="modelValue ? '' : undefined"
   >
     <CheckboxVisual :model-value="modelValue" />
@@ -54,7 +56,7 @@ const emit = defineEmits({
   padding: 0;
   border: 0;
   background: none;
-  color: #fff;
+  color: var(--color-white);
 
   &:focus-visible {
     outline: 2px solid var(--color-primary-500);
@@ -115,7 +117,7 @@ const emit = defineEmits({
   z-index: 10;
 
   path {
-    stroke: #fff;
+    stroke: var(--color-white);
     stroke-width: 2;
   }
 }
