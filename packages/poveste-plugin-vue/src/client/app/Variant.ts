@@ -1,9 +1,10 @@
 import type { Variant } from '@poveste/shared'
-import type { ComputedRef, PropType } from 'vue'
+import type { PropType } from 'vue'
 import type { PreviewRenderContext } from './render-context.js'
 import { applyState, autoPropsStateKeys } from '@poveste/shared'
-import { computed, defineComponent, inject, onBeforeUnmount, useAttrs } from 'vue'
+import { computed, defineComponent, onBeforeUnmount, useAttrs } from 'vue'
 import { syncVariantAutoProps } from './auto-props.js'
+import { implicitStateContext, storyContext } from './context.js'
 import { useRenderContext } from './render-context.js'
 import { syncStateBundledAndExternal, toRawDeep, useInstance } from './util.js'
 
@@ -56,8 +57,8 @@ export default defineComponent({
       variant?: Variant
     }
     const vm = useInstance('Variant')
-    const story = inject<ComputedRef<any>>('story')
-    const implicitState = inject<() => any>('implicitState')
+    const story = storyContext.injectOptional()
+    const implicitState = implicitStateContext.injectOptional()
     const renderContext = useRenderContext()
     let lastPropsTypesSnapshot: string
     let renderVariant: Variant | undefined

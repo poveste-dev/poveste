@@ -7,6 +7,7 @@ import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 import * as setup from 'virtual:$poveste-setup'
 import { createApp, h } from 'vue'
 import { VUE_SETUP_HOOK_NAMES } from '../../setup-hooks.js'
+import { addStoryContext, storyFileContext } from './context.js'
 import Story from './Story.js'
 import Variant from './Variant.js'
 
@@ -14,11 +15,13 @@ export async function run({ file, storyData, el }: ServerRunPayload) {
   const { default: Comp } = await import(/* @vite-ignore */ file.moduleId)
 
   const app = createApp({
-    provide: {
-      addStory(data: ServerStory) {
+    // Provided from `setup` rather than the options object so the keys can be
+    // the symbols the components inject; the options form takes string keys.
+    setup() {
+      addStoryContext.provide((data: ServerStory) => {
         storyData.push(data)
-      },
-      hstStoryFile: file,
+      })
+      storyFileContext.provide(file)
     },
     render() {
       return h(Comp)

@@ -1,6 +1,7 @@
-import type { ServerStory, ServerVariant } from '@poveste/shared'
+import type { ServerVariant } from '@poveste/shared'
 import type { PropType } from 'vue'
-import { defineComponent, inject } from 'vue'
+import { defineComponent } from 'vue'
+import { addVariantContext, serverStoryContext } from './context.js'
 
 export default defineComponent({
   name: 'PovesteVariant',
@@ -33,25 +34,20 @@ export default defineComponent({
   },
 
   setup(props) {
-    const story = inject<ServerStory>('story')
+    // Asked for before anything reads it, so a missing `<Story>` is reported
+    // once and the same way whether or not the variant carries an `id`. The
+    // guard this replaces sat inside the branch that generates one, so an
+    // explicit `id` skipped it and reached `undefined(variant)` instead (#981).
+    const story = serverStoryContext.inject('<Variant>')
+    const addVariant = addVariantContext.inject('<Variant>')
 
-    function generateId() {
-      if (!story) {
-        throw new Error('[poveste] a <Variant> with no `id` has to be inside a <Story>')
-      }
-      return `${story.id}-${story.variants.length}`
-    }
-
-    const variant: ServerVariant = {
-      id: props.id ?? generateId(),
+    addVariant({
+      id: props.id ?? `${story.id}-${story.variants.length}`,
       title: props.title,
       icon: props.icon,
       iconColor: props.iconColor,
       meta: props.meta,
-    }
-
-    const addVariant = inject('addVariant') as (variant: ServerVariant) => void
-    addVariant(variant)
+    })
   },
 
   render() {
