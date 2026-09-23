@@ -111,6 +111,7 @@ function scrollDocsToTop() {
     <BaseSplitPane
       v-else
       :save-id="`story-main-${placement}`"
+      label="Resize the preview"
       :orientation="splitOrientation"
       :min="30"
       :max="95"

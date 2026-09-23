@@ -53,6 +53,7 @@ const panelContentComponent = computed(() => {
       <BaseSplitPane
         v-else
         :save-id="`story-sidepane-${innerOrientation}`"
+        label="Resize the controls panel"
         :orientation="innerOrientation"
         class="poveste-story-side-panel poveste-loaded h-full"
         data-testid="story-side-panel"
