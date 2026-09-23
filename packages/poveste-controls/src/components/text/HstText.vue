@@ -1,6 +1,7 @@
 <script lang="ts">
 export default {
   name: 'HstText',
+  inheritAttrs: false,
 }
 </script>
 
@@ -23,7 +24,7 @@ const input = ref<HTMLInputElement>()
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-text cursor-text items-center"
+    class="poveste-text"
     :class="$attrs.class"
     :style="$attrs.style"
     @click="input?.focus()"
@@ -32,8 +33,9 @@ const input = ref<HTMLInputElement>()
       ref="input"
       v-bind="{ ...$attrs, class: null, style: null }"
       type="text"
+      class="poveste-text-input"
+      data-slot="control"
       :value="modelValue"
-      class="text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     >
 
@@ -42,3 +44,32 @@ const input = ref<HTMLInputElement>()
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-text {
+  align-items: center;
+  cursor: text;
+}
+
+.poveste-text-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: .25rem .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  outline: none;
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-500);
+  }
+}
+</style>
