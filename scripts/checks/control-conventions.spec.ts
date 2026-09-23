@@ -63,6 +63,37 @@ describe('a colour a book cannot theme', () => {
   })
 })
 
+describe('a dark variant that compiles to nothing', () => {
+  it('fails on a `dark:` inside `@apply`', () => {
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x::-webkit-slider-thumb { @apply bg-white dark:bg-gray-700; }') }]
+
+    expect(problemsIn(files)).toEqual([
+      'a/HstThing.vue: a `dark:` variant inside `@apply`, which compiles to a selector that matches nothing and says so nowhere',
+    ])
+  })
+
+  it('passes the same colours written as CSS on the subject', () => {
+    const style = `.x:where(.ptw-dark, .ptw-dark *)::-webkit-slider-thumb { background: var(--color-gray-700); }`
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', style) }]
+
+    expect(problemsIn(files)).toEqual([])
+  })
+
+  it('says nothing about an `@apply` with no dark variant in it', () => {
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x { @apply flex items-center; }') }]
+
+    expect(problemsIn(files)).toEqual([])
+  })
+
+  // The codebase writes `dark:` in prose constantly, including in the comments
+  // explaining why not to use it.
+  it('does not read a `dark:` in a comment as one in an `@apply`', () => {
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '/* never `@apply dark:bg-gray-700` here */ .x { color: var(--color-white); }') }]
+
+    expect(problemsIn(files)).toEqual([])
+  })
+})
+
 describe('the not-yet-migrated list', () => {
   it('exempts a control on it', () => {
     const files = [{ file: 'json/HstJson.vue', source: control('<div class="poveste-json">', '.poveste-json { color: #333; }') }]
@@ -83,8 +114,8 @@ describe('the not-yet-migrated list', () => {
       'HstButtonGroup.vue',
       'HstSelect.vue',
       'CustomSelect.vue',
-      'HstSlider.vue',
       'HstNumber.vue',
+      'HstSlider.vue',
     ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }
