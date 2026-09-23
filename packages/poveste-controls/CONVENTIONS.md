@@ -56,7 +56,11 @@ Written down because it was not, anywhere, and ten controls each resolving it by
 
 ## Two things deliberately declined
 
-**Tailwind Variants (`tv()`).** It formalises exactly the variant map `HstButton` used to carry, so it is a fair suggestion. Declined on the bundle ceiling: `vendor` has about 8 KB of headroom against 1450, and #955 needs ten Reka components inside it. A dependency that buys syntax for something `&[data-color='primary']` already expresses is not what that headroom is for.
+**Tailwind Variants (`tv()`).** It formalises exactly the variant map `HstButton` used to carry, so it is a fair suggestion. Declined on rule 1 rather than on anything measurable: `tv()` is machinery for composing utility strings in `class`, which is the styling this document did not choose. Adopting it would settle the question the other way in a footnote. Nothing about it is unsound — it is a good answer to a question rule 1 already answers.
+
+It also does not reach the thing that made rule 1 worth writing. Reka's states arrive as `data-state`, `data-disabled`, `data-highlighted`; `&[data-state='checked']` is one selector and `data-[state=checked]:` is a variant repeated on every utility that changes. `tv()` organises that repetition, it does not remove it.
+
+An earlier draft declined this on the bundle ceiling instead — so many kilobytes of headroom against so many Reka components. That reason is deliberately gone. The number it rested on has since moved, and a rule whose argument has expired is worse than no rule, because it reads as settled and nothing says the ground went out from under it.
 
 **`reactivePick` + `useForwardProps`.** Reka's own way of forwarding props to a primitive while keeping proxy awareness. Declined because our controls pass primitives an explicit, named set of props rather than arbitrary pass-through, so there is nothing to filter. Worth adopting the first time a control actually forwards, rather than carrying a composable nine controls ignore.
 
