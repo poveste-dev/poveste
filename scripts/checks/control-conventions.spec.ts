@@ -68,7 +68,7 @@ describe('a dark variant that compiles to nothing', () => {
     const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x::-webkit-slider-thumb { @apply bg-white dark:bg-gray-700; }') }]
 
     expect(problemsIn(files)).toEqual([
-      'a/HstThing.vue: a `dark:` variant inside `@apply`, which compiles to a selector that matches nothing and says so nowhere',
+      'a/HstThing.vue: a `dark:` variant inside `@apply`, which composes into the surrounding selector and fails silently where it cannot — after a pseudo-element, and under `@scope`',
     ])
   })
 
@@ -117,6 +117,8 @@ describe('the not-yet-migrated list', () => {
       'HstNumber.vue',
       'HstSlider.vue',
       'HstRadio.vue',
+      'HstColor.vue',
+      'HstDate.vue',
     ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }

@@ -32,9 +32,7 @@ export const CONTROLS = 'packages/poveste-controls/src/components'
  */
 export const NOT_YET_MIGRATED = new Set([
   'HstColorSelect.vue',
-  'HstDate.vue',
   'HstJson.vue',
-  'HstColor.vue',
   'HstColorShades.vue',
   'HstTokenGrid.vue',
   'HstTokenList.vue',
@@ -85,6 +83,12 @@ function styleBlocks(source: string): string {
  *
  * Neither failure announces itself, and the two have different mechanisms, so
  * the rule is on the form rather than on either mechanism.
+ *
+ * Most instances of the form do work: `HstColor` and `HstDate` carried six
+ * between them on ordinary selectors, and all six were measured applying in a
+ * browser before those controls were migrated. That is why the message names
+ * the positions it fails in rather than asserting the rule is dead — a check
+ * that overstates on the common case is one a reader learns to discount.
  */
 const APPLY_WITH_DARK = /@apply[^;}]*\sdark:/g
 
@@ -121,7 +125,7 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
     }
 
     if (darkInsideApply(style).length) {
-      problems.push(`${file}: a \`dark:\` variant inside \`@apply\`, which compiles to a selector that matches nothing and says so nowhere`)
+      problems.push(`${file}: a \`dark:\` variant inside \`@apply\`, which composes into the surrounding selector and fails silently where it cannot — after a pseudo-element, and under \`@scope\``)
     }
   }
 
