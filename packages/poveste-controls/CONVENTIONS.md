@@ -1,6 +1,6 @@
 # Writing a control
 
-Five rules, each with the reason it exists. `scripts/checks/control-conventions.ts` fails CI on the two that can be checked mechanically; the other three are here because a reader will meet them before they meet a reviewer.
+Six rules, each with the reason it exists. `scripts/checks/control-conventions.ts` fails CI on the two that can be checked mechanically; the other four are here because a reader will meet them before they meet a reviewer.
 
 Settled in #978, before #955 wrote ten more controls against whichever convention happened to be copied. Two existed at the time and disagreed.
 
@@ -66,6 +66,24 @@ variant prop  →  story attr  →  story property  →  poveste.config defaultS
 `inheritedFromStory` in `plugin-vue/src/client/app/Story.ts` fills only where the variant left a prop `undefined`; `collect/index.ts` applies `defaultStoryProps` only where the collected value is `null` or `undefined`.
 
 Written down because it was not, anywhere, and ten controls each resolving it by feel is how two of them end up disagreeing.
+
+## 6. A control shares the main thread with the story it is editing
+
+A control is not the page. It sits beside a live preview, and every edit crosses a realm boundary into the sandbox, so work a control does on the main thread is work the story being edited does not get.
+
+The budget is not ours to set: a frame is about 16ms and the room in it is roughly 10ms at 60Hz and 5ms at 120Hz, and anything holding the thread for 50ms is a long task by definition. Background work should aim at around half a frame.
+
+Three things follow, in the order they come up here.
+
+**An event that fires at device rate gets one update per frame, not one per event.** `mousemove`, `pointermove`, `wheel`, `scroll` and `input` all fire faster than the screen changes, and a high-polling mouse fires several times per frame. Coalesce with `requestAnimationFrame` — take the latest event, do the work once. `HstNumber`'s drag is the live instance: `onMouseMove` writes the model on every event, and each write crosses the bridge to the sandbox. The shape is the named anti-pattern; the cost here has not been measured, and the rule is written from the shape rather than from a number nobody has taken.
+
+**Animate what the compositor can animate.** `transform` and `opacity` are composited and cost the main thread nothing. Anything that changes size, position or colour — `width`, `border-width`, `background` — is layout or paint on every frame. `poveste-radio-dot` and the checkbox tick are already `transform: scale()`, which is why they are the pattern to copy.
+
+**Do not split what cannot be split.** A single `JSON.parse` or one Reka mount is atomic; chopping it up adds scheduling overhead and moves nothing. Splitting too finely is its own anti-pattern.
+
+Where a control genuinely has heavy work, `scheduler.yield()` is the current way to hand the thread back, with `requestAnimationFrame` as the portable fallback. Neither is in this package yet, and neither should be added before something is measured.
+
+From [The Expensive Main Thread](https://kciter.so/posts/the-expensive-main-thread/en/), which is worth reading once rather than summarising twice.
 
 ## Two things deliberately declined
 
