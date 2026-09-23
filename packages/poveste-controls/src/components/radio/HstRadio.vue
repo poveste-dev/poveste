@@ -42,6 +42,13 @@ const emit = defineEmits<{
  * `?? null` rather than `?? undefined` on the model: `exactOptionalPropertyTypes`
  * refuses `undefined` for an optional prop that does not name it, and `null` is
  * in Reka's `AcceptableValue` and is what "nothing selected" means anyway.
+ *
+ * No deselect guard here, unlike the button group and the select beside it.
+ * `ToggleGroupRoot` and `ListboxRoot` both default to toggling — a second click
+ * on the value they already hold emits `undefined`, which writes a story prop
+ * away. `RadioGroupRoot` does not: its `changeModelValue` is a plain
+ * assignment, with no comparison against the current value. Written down
+ * because three guarded controls make the fourth look like an oversight.
  */
 const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   if (Array.isArray(props.options)) {
@@ -69,18 +76,24 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
     <RadioGroupRoot
       :model-value="modelValue ?? null"
       class="poveste-radio-options"
+      data-slot="options"
       @update:model-value="(value: unknown) => emit('update:modelValue', value as string)"
     >
       <Label
         v-for="(label, value) in formattedOptions"
         :key="value"
         class="poveste-radio-option"
+        data-slot="option"
       >
         <RadioGroupItem
           :value="value"
           class="poveste-radio-box"
+          data-slot="control"
         >
-          <span class="poveste-radio-dot" />
+          <span
+            class="poveste-radio-dot"
+            data-slot="dot"
+          />
         </RadioGroupItem>
         {{ label }}
       </Label>

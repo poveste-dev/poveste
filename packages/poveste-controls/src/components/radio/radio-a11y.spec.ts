@@ -53,6 +53,20 @@ describe('hstRadio', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['c'])
   })
 
+  // Not a guard the control carries, but a default it depends on. The button
+  // group and the select both had to drop an `undefined`, because
+  // `ToggleGroupRoot` and `ListboxRoot` toggle by default and a second click
+  // clears them. `RadioGroupRoot` assigns instead. If that ever changes, this
+  // is what says so rather than a story prop quietly disappearing.
+  it('keeps the held option when it is clicked again', async () => {
+    const wrapper = mount(HstRadio, { props: { modelValue: 'b', options, title: 'Letters' } })
+    await wrapper.findAll('[role="radio"]')[1].trigger('click')
+
+    for (const emitted of wrapper.emitted('update:modelValue') ?? []) {
+      expect(emitted).toEqual(['b'])
+    }
+  })
+
   // The whole row was clickable before too, by a native `label`/`for` pair, so
   // this is behaviour to keep rather than to add. It is not written as a parity
   // assertion because jsdom does not fire `change` for a label activating a
