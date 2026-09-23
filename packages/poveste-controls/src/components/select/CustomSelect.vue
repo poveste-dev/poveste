@@ -8,7 +8,7 @@ export default {
 import type { ComputedRef } from 'vue'
 import type { HstControlOption } from '../../types'
 import { Icon } from '@iconify/vue'
-import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { ListboxContent, ListboxItem, ListboxRoot, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { computed, onMounted, ref, shallowRef } from 'vue'
 import { portalTarget } from '../../portal-target'
 
@@ -48,8 +48,15 @@ const formattedOptions: ComputedRef<[any, string][]> = computed(() => {
 
 const selectedLabel = computed(() => formattedOptions.value.find(([value]) => value === props.modelValue)?.[1])
 
-function selectValue(value: any) {
-  emit('update:modelValue', value)
+function selectValue(value: unknown) {
+  // `ListboxRoot` is asked to replace rather than toggle, so this is only ever
+  // reached with a value. The guard is for the one case `replace` does not
+  // cover: a `null` model reaching `update:modelValue` would write the story
+  // prop away, and a select has no unselected position.
+  if (value == null) {
+    return
+  }
+  emit('update:modelValue', value as string)
   open.value = false
 }
 </script>
@@ -62,16 +69,20 @@ function selectValue(value: any) {
            div was never reachable by keyboard either. -->
       <button
         type="button"
-        class="cursor-pointer w-full text-left bg-transparent outline-none px-2 h-[27px] -my-1 border border-solid border-black/25 dark:border-white/25 hover:border-primary-500 dark:hover:border-primary-500 rounded-sm flex gap-2 items-center leading-normal"
+        class="poveste-select-trigger"
+        data-slot="trigger"
       >
-        <span class="flex-1 truncate">
+        <span
+          class="poveste-select-label"
+          data-slot="value"
+        >
           <slot :label="selectedLabel">
             {{ selectedLabel }}
           </slot>
         </span>
         <Icon
           icon="carbon:chevron-sort"
-          class="w-4 h-4 flex-none ml-auto"
+          class="poveste-select-chevron"
         />
       </button>
     </PopoverTrigger>
@@ -85,28 +96,77 @@ function selectValue(value: any) {
         :side-offset="6"
         :collision-padding="8"
       >
-        <div class="poveste-select-options flex flex-col bg-gray-50 dark:bg-gray-700 border border-solid border-gray-200 dark:border-gray-850 rounded-sm shadow-md">
-          <div
-            v-for="[value, label] of formattedOptions"
-            v-bind="{ ...$attrs, class: null, style: null }"
-            :key="label"
-            class="px-2 py-1 cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-700"
-            :class="{
-              'bg-primary-200 dark:bg-primary-800': props.modelValue === value,
-            }"
-            @click="selectValue(value)"
+        <ListboxRoot
+          class="poveste-select-options"
+          data-slot="options"
+          selection-behavior="replace"
+          highlight-on-hover
+          :model-value="modelValue"
+          @update:model-value="selectValue"
+        >
+          <ListboxContent
+            class="poveste-select-list"
+            data-slot="listbox"
           >
-            {{ label }}
-          </div>
-        </div>
+            <ListboxItem
+              v-for="[value, label] of formattedOptions"
+              :key="label"
+              class="poveste-select-option"
+              data-slot="option"
+              :value="value"
+            >
+              {{ label }}
+            </ListboxItem>
+          </ListboxContent>
+        </ListboxRoot>
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>
 </template>
 
 <style lang="postcss">
-/* v4: @apply in a component <style> needs the theme referenced explicitly. */
-@reference "../../style/main.css";
+.poveste-select-trigger {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  width: 100%;
+  height: 27px;
+  padding-inline: .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: normal;
+  text-align: left;
+  outline: none;
+  cursor: pointer;
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:hover {
+    border-color: var(--color-primary-500);
+  }
+}
+
+.poveste-select-label {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.poveste-select-chevron {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+}
 
 .poveste-select-popper {
   /* The trigger's own width, so the options line up under it as before. */
@@ -136,6 +196,52 @@ function selectValue(value: any) {
    */
   max-height: var(--reka-popover-content-available-height);
   overflow-y: auto;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-50);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: var(--color-gray-850);
+    background: var(--color-gray-700);
+  }
+}
+
+.poveste-select-list {
+  display: flex;
+  flex-direction: column;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.poveste-select-option {
+  padding: .25rem .5rem;
+  cursor: pointer;
+  outline: none;
+
+  &[data-state='checked'] {
+    background: var(--color-primary-200);
+
+    &:where(.ptw-dark, .ptw-dark *) {
+      background: var(--color-primary-800);
+    }
+  }
+
+  /*
+   * `data-highlighted` rather than `:hover`, which is the whole point of the
+   * move: Reka sets it for the pointer and for the arrow keys alike, so the row
+   * a keyboard is on is the row that looks picked. `:hover` showed nothing at
+   * all to a keyboard, because there was no keyboard.
+   */
+  &[data-highlighted] {
+    background: var(--color-primary-100);
+
+    &:where(.ptw-dark, .ptw-dark *) {
+      background: var(--color-primary-700);
+    }
+  }
 }
 
 @keyframes poveste-select-in {

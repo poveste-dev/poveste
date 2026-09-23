@@ -81,6 +81,8 @@ describe('the not-yet-migrated list', () => {
       'HstText.vue',
       'HstTextarea.vue',
       'HstButtonGroup.vue',
+      'HstSelect.vue',
+      'CustomSelect.vue',
     ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }

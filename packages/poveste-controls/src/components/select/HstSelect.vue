@@ -23,7 +23,8 @@ const emit = defineEmits<{
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-select cursor-text items-center"
+    class="poveste-select"
+    data-slot="control"
     :class="$attrs.class"
     :style="$attrs.style"
   >
@@ -38,3 +39,10 @@ const emit = defineEmits<{
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-select {
+  align-items: center;
+  cursor: text;
+}
+</style>

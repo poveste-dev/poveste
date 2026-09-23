@@ -35,7 +35,6 @@ export const NOT_YET_MIGRATED = new Set([
   'HstJson.vue',
   'HstNumber.vue',
   'HstRadio.vue',
-  'HstSelect.vue',
   'HstSlider.vue',
   'HstColor.vue',
   'HstColorShades.vue',
@@ -44,7 +43,6 @@ export const NOT_YET_MIGRATED = new Set([
   'HstCopyIcon.vue',
   'HstTooltip.vue',
   'HstWrapper.vue',
-  'CustomSelect.vue',
 ])
 
 /** A hex, or an `rgb()`/`hsl()` with no alpha channel. */
