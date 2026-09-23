@@ -23,7 +23,6 @@ const emit = defineEmits({
 })
 
 const showTooltip = ref(false)
-const input = ref<HTMLInputElement | null>(null)
 
 const numberModel = computed({
   get: () => props.modelValue,
@@ -36,16 +35,22 @@ const percentage = computed(() => {
   return ((props.modelValue ?? props.min) - props.min) / (props.max - props.min)
 })
 
-const tooltipStyle = computed<CSSProperties>(() => {
-  const gap = 8
-  if (input.value) {
-    const position = gap + ((input.value.clientWidth - 2 * gap) * percentage.value)
-    return {
-      left: `${position}px`,
-    }
-  }
-  return {}
-})
+/*
+ * A unitless fraction handed to CSS, not a pixel offset computed here.
+ *
+ * This used to read `input.clientWidth` inside a computed whose dependencies
+ * were the element ref, set once on mount, and the model. `clientWidth` is not
+ * reactive, so nothing invalidated it when the element changed size — and the
+ * controls panel is resizable. Measured: the input went from 154px to 131px and
+ * the tooltip stayed at 35.6px, where 31px was correct (#996).
+ *
+ * `calc()` does the same arithmetic against a live `100%`, so it is right at
+ * every width with nothing to invalidate, no `ResizeObserver`, and no layout
+ * read on the main thread at all — CONVENTIONS.md rule 6.
+ */
+const tooltipStyle = computed<CSSProperties>(() => ({
+  '--_poveste-slider-fraction': String(percentage.value),
+}))
 </script>
 
 <template>
@@ -66,7 +71,6 @@ const tooltipStyle = computed<CSSProperties>(() => {
         />
       </div>
       <input
-        ref="input"
         v-model.number="numberModel"
         class="poveste-slider-input"
         data-slot="control"
@@ -96,6 +100,10 @@ const tooltipStyle = computed<CSSProperties>(() => {
 }
 
 .poveste-slider-field {
+  /* One definition for the thumb, read by the thumb rules and by the tooltip's
+     travel. Two numbers that have to agree are two numbers that drift. */
+  --_poveste-slider-thumb: .75rem;
+
   position: relative;
   display: flex;
   align-items: center;
@@ -122,6 +130,16 @@ const tooltipStyle = computed<CSSProperties>(() => {
 
 .poveste-slider-tooltip-anchor {
   position: absolute;
+
+  /*
+   * Where the thumb's centre actually is. A range thumb travels from half its
+   * own width to the track's width less that half, so the old constant 8px was
+   * 2px inboard of a 12px thumb at each end even before any resize.
+   */
+  left: calc(
+    var(--_poveste-slider-fraction, 0) * (100% - var(--_poveste-slider-thumb))
+    + var(--_poveste-slider-thumb) / 2
+  );
 }
 
 /*
@@ -154,8 +172,8 @@ const tooltipStyle = computed<CSSProperties>(() => {
   cursor: pointer;
 
   &::-webkit-slider-thumb {
-    width: .75rem;
-    height: .75rem;
+    width: var(--_poveste-slider-thumb);
+    height: var(--_poveste-slider-thumb);
     appearance: none;
     border: 1px solid rgb(0 0 0 / .25);
     border-radius: 9999px;
@@ -175,8 +193,8 @@ const tooltipStyle = computed<CSSProperties>(() => {
   /* Separate rules per prefix: Safari drops the whole list if one selector in it
      is unknown, so a grouped `::-webkit-…, ::-moz-…` loses both. */
   &::-moz-range-thumb {
-    width: .75rem;
-    height: .75rem;
+    width: var(--_poveste-slider-thumb);
+    height: var(--_poveste-slider-thumb);
     appearance: none;
     border: 1px solid rgb(0 0 0 / .25);
     border-radius: 9999px;
