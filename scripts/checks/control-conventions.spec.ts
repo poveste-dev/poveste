@@ -65,7 +65,7 @@ describe('a colour a book cannot theme', () => {
 
 describe('the not-yet-migrated list', () => {
   it('exempts a control on it', () => {
-    const files = [{ file: 'slider/HstSlider.vue', source: control('<input class="poveste-slider">', '.poveste-slider { color: #333; }') }]
+    const files = [{ file: 'json/HstJson.vue', source: control('<div class="poveste-json">', '.poveste-json { color: #333; }') }]
 
     expect(problemsIn(files)).toEqual([])
   })
@@ -83,6 +83,7 @@ describe('the not-yet-migrated list', () => {
       'HstButtonGroup.vue',
       'HstSelect.vue',
       'CustomSelect.vue',
+      'HstSlider.vue',
     ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }
@@ -99,7 +100,7 @@ describe('checkControlConventions', () => {
   })
 
   it('reports a list that has swallowed every control', () => {
-    const root = tree({ 'packages/poveste-controls/src/components/slider/HstSlider.vue': '<template><input></template>' })
+    const root = tree({ 'packages/poveste-controls/src/components/json/HstJson.vue': '<template><div></div></template>' })
 
     expect(checkControlConventions(root).problems).toEqual([
       'every control is on the not-yet-migrated list — this check is asserting nothing',
