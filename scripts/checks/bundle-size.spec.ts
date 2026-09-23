@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { barrelImport, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit } from './bundle-size.ts'
+import { barrelImport, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit, report } from './bundle-size.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -165,34 +165,41 @@ describe('checkBundleSize', () => {
 })
 
 describe('the ceilings while they are not enforced', () => {
-  // A ceiling nothing can breach is the same shape of failure as a prefix that
-  // matches nothing: silent, and green. So the breach still has to arrive, in
-  // the notes, and the run has to say it is not enforcing.
-  const impossible = [{ prefix: '', max: 0, because: 'nothing fits in zero kilobytes' }]
+  // Pure over chunks, with no book on disk: `pnpm test:scripts` runs everything
+  // *not* tagged `check`, and that job has no built book. A version of these
+  // that called `checkBundleSize()` asserted "no built book" there instead.
+  const over = [{ name: 'vendor-a.js', kb: 9999 }]
+  const ceiling = [{ prefix: 'vendor', max: 10, because: 'a ceiling to breach' }]
 
   it('routes a breach to the notes rather than to the problems', () => {
-    const result = checkBundleSize(undefined, false, impossible)
+    const { problems, notes } = report(over, ceiling, false)
 
-    expect(result.problems).toEqual([])
-    expect(result.notes).toContainEqual(expect.stringContaining('not failing: the build is'))
+    expect(problems).toEqual([])
+    expect(notes).toContainEqual(expect.stringContaining('not failing: vendor-a.js is 9999 KB'))
   })
 
   it('routes the same breach to the problems when enforced', () => {
-    const result = checkBundleSize(undefined, true, impossible)
+    const { problems, notes } = report(over, ceiling, true)
 
-    expect(result.problems).toContainEqual(expect.stringContaining('the build is'))
-    expect(result.notes).not.toContainEqual(expect.stringContaining('not failing'))
+    expect(problems).toContainEqual(expect.stringContaining('vendor-a.js is 9999 KB'))
+    expect(notes).not.toContainEqual(expect.stringContaining('not failing'))
   })
 
   it('says it is not enforcing, so a green run is not read as under', () => {
-    expect(checkBundleSize(undefined, false).notes).toContainEqual(NOT_ENFORCING)
-    expect(checkBundleSize(undefined, true).notes).not.toContainEqual(NOT_ENFORCING)
+    expect(report(over, ceiling, false).notes).toContainEqual(NOT_ENFORCING)
+    expect(report(over, ceiling, true).notes).not.toContainEqual(NOT_ENFORCING)
   })
 
-  // Turning it back on is this constant and nothing else. If that stops being
-  // true, this is what says so.
-  it('is off, and the switch is the only thing holding it off', () => {
+  // Still prints the measurement either way — the point of leaving it off is
+  // that the number stays visible, not that it goes quiet.
+  it('measures the chunk whichever way the switch is set', () => {
+    for (const enforced of [true, false]) {
+      expect(report(over, ceiling, enforced).notes).toContainEqual('vendor-a.js 9999 KB / 10 KB')
+    }
+  })
+
+  // Turning it back on is this constant and nothing else (#992).
+  it('is off', () => {
     expect(CEILINGS_ENFORCED).toBe(false)
-    expect(checkBundleSize().problems).toEqual([])
   })
 })
