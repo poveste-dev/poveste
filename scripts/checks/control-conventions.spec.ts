@@ -73,7 +73,7 @@ describe('the not-yet-migrated list', () => {
   it('still holds every control #955 has moved', () => {
     // A control leaves the list when it migrates. If one that has already moved
     // is still on it, the check is exempting something it should be holding.
-    for (const migrated of ['HstCheckbox.vue', 'HstCheckboxList.vue', 'HstSimpleCheckbox.vue', 'HstButton.vue']) {
+    for (const migrated of ['HstCheckbox.vue', 'HstCheckboxList.vue', 'HstSimpleCheckbox.vue', 'HstButton.vue', 'HstButtonGroup.vue']) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }
   })
