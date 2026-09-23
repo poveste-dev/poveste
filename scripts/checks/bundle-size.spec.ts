@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { barrelImport, checkBundleSize, findBook, LIMITS, measurements, overLimit } from './bundle-size.ts'
+import { barrelImport, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit } from './bundle-size.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -156,10 +156,43 @@ describe('checkBundleSize', () => {
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue'))
   })
 
-  it('the built vue book is within every size ceiling', { tags: ['check', 'app', 'build'] }, () => {
+  it('measures the built vue book, and reports rather than fails while #955 runs', { tags: ['check', 'app', 'build'] }, () => {
     const result = checkBundleSize()
     process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 
     assertNoProblems(result)
+  })
+})
+
+describe('the ceilings while they are not enforced', () => {
+  // A ceiling nothing can breach is the same shape of failure as a prefix that
+  // matches nothing: silent, and green. So the breach still has to arrive, in
+  // the notes, and the run has to say it is not enforcing.
+  const impossible = [{ prefix: '', max: 0, because: 'nothing fits in zero kilobytes' }]
+
+  it('routes a breach to the notes rather than to the problems', () => {
+    const result = checkBundleSize(undefined, false, impossible)
+
+    expect(result.problems).toEqual([])
+    expect(result.notes).toContainEqual(expect.stringContaining('not failing: the build is'))
+  })
+
+  it('routes the same breach to the problems when enforced', () => {
+    const result = checkBundleSize(undefined, true, impossible)
+
+    expect(result.problems).toContainEqual(expect.stringContaining('the build is'))
+    expect(result.notes).not.toContainEqual(expect.stringContaining('not failing'))
+  })
+
+  it('says it is not enforcing, so a green run is not read as under', () => {
+    expect(checkBundleSize(undefined, false).notes).toContainEqual(NOT_ENFORCING)
+    expect(checkBundleSize(undefined, true).notes).not.toContainEqual(NOT_ENFORCING)
+  })
+
+  // Turning it back on is this constant and nothing else. If that stops being
+  // true, this is what says so.
+  it('is off, and the switch is the only thing holding it off', () => {
+    expect(CEILINGS_ENFORCED).toBe(false)
+    expect(checkBundleSize().problems).toEqual([])
   })
 })
