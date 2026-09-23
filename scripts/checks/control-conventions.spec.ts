@@ -84,6 +84,7 @@ describe('the not-yet-migrated list', () => {
       'HstSelect.vue',
       'CustomSelect.vue',
       'HstSlider.vue',
+      'HstNumber.vue',
     ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }

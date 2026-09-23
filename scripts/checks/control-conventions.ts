@@ -33,7 +33,6 @@ export const NOT_YET_MIGRATED = new Set([
   'HstColorSelect.vue',
   'HstDate.vue',
   'HstJson.vue',
-  'HstNumber.vue',
   'HstRadio.vue',
   'HstColor.vue',
   'HstColorShades.vue',
