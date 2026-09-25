@@ -22,6 +22,15 @@
     'the-last-of-us': 'The Last of Us',
   }
 
+  const sizes = [
+    { value: 'sm', label: 'Small' },
+    { value: 'md', label: 'Medium' },
+    { value: 'lg', label: 'Large' },
+  ]
+
+  const toppings = ['cheese', 'basil']
+  const alignments = ['left', 'center', 'right']
+
   const initState = () => ({
     label: 'Hello',
     enabled: false,
@@ -29,6 +38,10 @@
     notes: 'Longer text...',
     game: 'crash-bandicoot',
     tint: '#000000',
+    opacity: 50,
+    size: 'md',
+    pizza: ['cheese'],
+    align: 'left',
   })
 </script>
 
@@ -40,6 +53,10 @@
     <Hst.Textarea bind:value={state.notes} title="Notes" />
     <Hst.Select bind:value={state.game} options={games} title="Game" />
     <Hst.ColorSelect bind:value={state.tint} title="Tint" />
+    <Hst.Slider bind:value={state.opacity} title="Opacity" min={0} max={100} />
+    <Hst.Radio bind:value={state.size} options={sizes} title="Size" />
+    <Hst.CheckboxList bind:value={state.pizza} options={toppings} title="Toppings" />
+    <Hst.ButtonGroup bind:value={state.align} options={alignments} title="Align" />
   {/snippet}
 
   {#snippet children({ state })}

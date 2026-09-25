@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test'
+import { openStory } from './support.js'
 
 // The unit specs assert the fraction; this asserts the geometry it resolves to,
 // which is the half `calc()` does and jsdom cannot. The regression is a resize:
 // the offset this replaced was computed once from `clientWidth` and nothing
 // invalidated it, so the tooltip drifted off the thumb (#996).
+//
+// In `e2e/` since the slider joined the conformance set — it was in one book's
+// own directory only because no conformance story rendered a slider.
 test.describe('the slider tooltip', () => {
   async function anchorAt(page: import('@playwright/test').Page) {
     const field = page.getByTestId('story-controls').locator('.poveste-slider-field').first()
@@ -12,6 +16,7 @@ test.describe('the slider tooltip', () => {
 
     return field.evaluate((el) => {
       const anchor = el.querySelector('.poveste-slider-tooltip-anchor') as HTMLElement
+
       // Resolved rather than parsed: the property is `.75rem`, and
       // `parseFloat` on that reads 0.75.
       const probe = document.createElement('div')
@@ -19,6 +24,7 @@ test.describe('the slider tooltip', () => {
       el.append(probe)
       const thumb = probe.getBoundingClientRect().width
       probe.remove()
+
       const fraction = Number.parseFloat(getComputedStyle(anchor).getPropertyValue('--_poveste-slider-fraction'))
       const width = el.getBoundingClientRect().width
 
@@ -33,8 +39,7 @@ test.describe('the slider tooltip', () => {
 
   test('sits on the thumb, and still does after the panel is resized', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 })
-    await page.goto('/story/src-components-controls-story-vue')
-    await expect(page.getByTestId('story-controls')).toBeVisible()
+    await openStory(page, 'conformance-controls')
 
     const wide = await anchorAt(page)
     expect(wide.left, 'on the thumb at the width it was laid out in').toBeCloseTo(wide.expected, 0)

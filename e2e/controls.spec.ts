@@ -168,6 +168,62 @@ test.describe('controls', () => {
     expect(Number.parseFloat(box.maxHeight), 'the cap fits on the screen').toBeLessThanOrEqual(box.viewport)
   })
 
+  // The four below joined the conformance story with this suite (#971). Being
+  // rendered in five books is what #672 gave the controls book and was told in
+  // terms was not a substitute for asserting their behaviour, so each of these
+  // drives the control and reads the state back.
+
+  test('writes a radio back to the state', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    await expect(state).toContainText('"size": "md"')
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Size' }).getByText('Large').click()
+    await expect(state).toContainText('"size": "lg"')
+  })
+
+  test('writes a checkbox list back to the state, and keeps what was already in it', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Toppings' }).getByText('basil').click()
+
+    // Both, in order: a list control that replaces rather than appends passes a
+    // check that only looks for the one just clicked.
+    await expect(state).toContainText(/"pizza":\s*\[\s*"cheese",\s*"basil"\s*\]/)
+  })
+
+  test('writes a button group back to the state', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    const group = controls.locator('.poveste-wrapper').filter({ hasText: 'Align' })
+    await expect(state).toContainText('"align": "left"')
+    await group.getByRole('button', { name: 'center' }).click()
+    await expect(state).toContainText('"align": "center"')
+
+    // Clicking the held option again must not clear it: `ToggleGroupRoot`
+    // deselects by default and emits `undefined`, which would write the prop
+    // away (#985).
+    await group.getByRole('button', { name: 'center' }).click()
+    await expect(state).toContainText('"align": "center"')
+  })
+
+  // Not a tooltip test — `slider-tooltip.spec.ts` covers that. This is the
+  // claim #989 rests on: a native `input[type=range]` already has the arrow
+  // keys, so the control did not need `SliderRoot` to gain them.
+  test('moves the slider from the keyboard, and writes that back', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    await expect(state).toContainText('"opacity": 50')
+    await controls.locator('.poveste-slider-input').first().focus()
+    await page.keyboard.press('ArrowRight')
+
+    // Unquoted: a control that writes the string "51" still renders as 51.
+    await expect(state).toContainText('"opacity": 51')
+  })
+
   test('writes a colour back to the state', async ({ page }) => {
     const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
     const controls = page.getByTestId('story-controls')

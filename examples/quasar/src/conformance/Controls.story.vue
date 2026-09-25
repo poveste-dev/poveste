@@ -18,6 +18,15 @@ const games = {
   'the-last-of-us': 'The Last of Us',
 }
 
+const sizes = [
+  { value: 'sm', label: 'Small' },
+  { value: 'md', label: 'Medium' },
+  { value: 'lg', label: 'Large' },
+]
+
+const toppings = ['cheese', 'basil']
+const alignments = ['left', 'center', 'right']
+
 function initState() {
   return {
     label: 'Hello',
@@ -26,6 +35,10 @@ function initState() {
     notes: 'Longer text...',
     game: 'crash-bandicoot',
     tint: '#000000',
+    opacity: 50,
+    size: 'md',
+    pizza: ['cheese'],
+    align: 'left',
   }
 }
 </script>
@@ -73,6 +86,27 @@ function initState() {
       <HstColorSelect
         v-model="state.tint"
         title="Tint"
+      />
+      <HstSlider
+        v-model="state.opacity"
+        title="Opacity"
+        :min="0"
+        :max="100"
+      />
+      <HstRadio
+        v-model="state.size"
+        :options="sizes"
+        title="Size"
+      />
+      <HstCheckboxList
+        v-model="state.pizza"
+        :options="toppings"
+        title="Toppings"
+      />
+      <HstButtonGroup
+        v-model="state.align"
+        :options="alignments"
+        title="Align"
       />
     </template>
   </Story>
