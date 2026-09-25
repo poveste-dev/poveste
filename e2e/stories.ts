@@ -38,6 +38,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-events', title: 'Events' },
   { id: 'conformance-first-variant', title: 'First variant' },
   { id: 'conformance-grid', title: 'Grid' },
+  { id: 'conformance-init-state-controls', title: 'Init state controls' },
   { id: 'conformance-grid-state', title: 'Grid state' },
   { id: 'conformance-huge-grid', title: 'Huge grid' },
   { id: 'conformance-inline-grid', title: 'Inline grid' },

@@ -11,6 +11,7 @@
   export let autoPropsDisabled = false
   export let setupApp = null
   export let implicit = false
+  export let initState = null
 
   const story = storyContext.get('<Variant>')
   const index = variantIndexContext.get('<Variant>')
@@ -50,9 +51,35 @@
     }
   }
 
+  /**
+   * Seeds `variant.state`, which is not only the render mounts' business.
+   *
+   * The app mounts the current story hidden and never renders a slot for it
+   * unless the story has one — so a story with `initState` and no controls
+   * snippet left the state empty, and the panel, which builds a control per key
+   * out of it, said there were no controls at all. `plugin-vue` seeds from its
+   * mount pass for exactly this reason.
+   *
+   * Guarded by the flag the render mounts already share, so whichever pass
+   * arrives first wins and a reader's edit is never seeded over.
+   *
+   * Read off the story props as well as this variant's own, because a
+   * story-level `initState` reaches an explicit variant only through the
+   * context — the spread in `MountStory` covers the implicit one alone.
+   */
+  function seedState() {
+    const seed = initState ?? storyProps.initState ?? null
+
+    if (!seed || !variant || variant.__pvtStateSeeded) return
+
+    variant.__pvtStateSeeded = true
+    variant.state = { ...variant.state, ...seed() }
+  }
+
   function becomeTarget() {
     if (isTarget) return
     isTarget = true
+    seedState()
     updateVariant()
   }
 
