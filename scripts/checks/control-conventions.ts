@@ -11,6 +11,7 @@
 // Assertions:
 //   1. every control carries `data-slot` on the parts a consumer can reach
 //   2. no opaque colour literal in a control's styles — those are tokens
+//   3. no `dark:` inside an `@apply` — the one rule with a shipped bug behind it
 //
 // Both lists below are skip-lists with a reason each, in the style of
 // `preview-position.ts`: a control nobody has classified fails rather than
@@ -33,9 +34,7 @@ export const NOT_YET_MIGRATED = new Set([
   'HstColorSelect.vue',
   'HstDate.vue',
   'HstJson.vue',
-  'HstNumber.vue',
   'HstRadio.vue',
-  'HstSlider.vue',
   'HstColor.vue',
   'HstColorShades.vue',
   'HstTokenGrid.vue',
@@ -68,6 +67,32 @@ function styleBlocks(source: string): string {
     .replace(/\/\*[\s\S]*?\*\//g, '')
 }
 
+/**
+ * A `dark:` variant inside `@apply`, which CONVENTIONS.md rule 3 forbids.
+ *
+ * The rule was written against `@scope`: `.ptw-dark` sits above the scope root,
+ * so a descendant rule keyed on it never matches. `HstSlider` then found a
+ * second way for the same line to fail, and this is the one that had actually
+ * shipped. `@apply ... dark:bg-gray-700` inside a `::-webkit-slider-thumb`
+ * block compiled to
+ *
+ *   .range-input::-webkit-slider-thumb:where(.ptw-dark, .ptw-dark *)
+ *
+ * and nothing may follow a pseudo-element but a user-action pseudo-class.
+ * Chrome does not drop the rule, because `:where()` is forgiving — it discards
+ * the arguments and keeps `:where()`, which matches nothing. So six rules sat
+ * in the stylesheet, visible in devtools, applying to no element, and the thumb
+ * stayed white on a dark UI for the life of the control.
+ *
+ * Neither failure announces itself, and the two have different mechanisms, so
+ * the rule is on the form rather than on either mechanism.
+ */
+const APPLY_WITH_DARK = /@apply[^;}]*\sdark:/g
+
+function darkInsideApply(style: string): string[] {
+  return [...style.matchAll(APPLY_WITH_DARK)].map(match => match[0].trim())
+}
+
 function templateBlock(source: string): string {
   return [...source.matchAll(/<template>([\s\S]*?)<\/template>/g)].map(block => block[1]).join('\n')
 }
@@ -89,10 +114,15 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
       problems.push(`${file}: no \`data-slot\` on any part, so a consumer has only our class names to target`)
     }
 
-    const literals = opaqueLiterals(styleBlocks(source))
+    const style = styleBlocks(source)
+    const literals = opaqueLiterals(style)
 
     if (literals.length) {
       problems.push(`${file}: opaque colour literal ${literals.map(l => `\`${l}\``).join(', ')} — no book can theme that`)
+    }
+
+    if (darkInsideApply(style).length) {
+      problems.push(`${file}: a \`dark:\` variant inside \`@apply\`, which compiles to a selector that matches nothing and says so nowhere`)
     }
   }
 
@@ -117,7 +147,7 @@ function repositoryProblems(root = ROOT): string[] {
   return problemsIn(files)
 }
 
-const REMEDY = 'See packages/poveste-controls/CONVENTIONS.md. A part a consumer can reach carries `data-slot="<part>"`, and a colour comes from `var(--color-…)` rather than a literal — `@scope` removes a consumer\'s CSS from our markup, so the attribute is the only seam they have.'
+const REMEDY = 'See packages/poveste-controls/CONVENTIONS.md. A part a consumer can reach carries `data-slot="<part>"`, a colour comes from `var(--color-…)` rather than a literal, and dark mode is written as `&:where(.ptw-dark, .ptw-dark *)` in CSS rather than as a `dark:` variant inside `@apply` — `@scope` removes a consumer\'s CSS from our markup, so the attribute is the only seam they have.'
 
 export function checkControlConventions(root = ROOT): CheckResult {
   return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }

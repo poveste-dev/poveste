@@ -67,13 +67,11 @@ onUnmounted(() => {
 
 <template>
   <HstWrapper
-    class="poveste-number cursor-ew-resize items-center"
+    class="poveste-number"
     :title="title"
-    :class="[
-      $attrs.class,
-      { 'select-none': isDragging },
-    ]"
+    :class="$attrs.class"
     :style="$attrs.style"
+    :data-dragging="isDragging ? '' : undefined"
     @click="focusAndSelect"
     @mousedown="onMouseDown"
   >
@@ -82,10 +80,8 @@ onUnmounted(() => {
       v-bind="{ ...$attrs, class: null, style: null }"
       v-model.number="numberModel"
       type="number"
-      :class="{
-        'select-none': isDragging,
-      }"
-      class="text-inherit bg-transparent w-full outline-none pl-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm cursor-ew-resize box-border"
+      class="poveste-number-input"
+      data-slot="control"
     >
 
     <template #actions>
@@ -93,3 +89,43 @@ onUnmounted(() => {
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-number {
+  align-items: center;
+  cursor: ew-resize;
+
+  /*
+   * On the wrapper, so the selection the drag would otherwise make is
+   * suppressed for the label and the field together. A drag that starts on the
+   * label crosses the input, and selecting text under the pointer while the
+   * number is changing looks like the control has lost it.
+   */
+  &[data-dragging] {
+    user-select: none;
+  }
+}
+
+.poveste-number-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: .25rem 0 .25rem .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: ew-resize;
+  outline: none;
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-500);
+  }
+}
+</style>

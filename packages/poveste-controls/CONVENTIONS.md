@@ -32,6 +32,19 @@ A literal is fine where no token exists and none should — a tooltip's transluc
 
 The `dark:` **utility** is safe — `@custom-variant dark (&:where(.ptw-dark, .ptw-dark *))` in `main.css` compiles it to exactly the form above. `@apply` with a `dark:` variant inside a component `<style>` is what fails, and it fails silently: the control keeps its light colours on a dark UI and nothing says so.
 
+**On a pseudo-element the variant goes before it, not after.** This is the same rule with a second way of failing, and it is the one that had already shipped. `HstSlider` wrote `@apply … dark:bg-gray-700` inside a `::-webkit-slider-thumb` block; the variant is appended to the end of the compound, and nothing may follow a pseudo-element but a user-action pseudo-class:
+
+```css
+/* What it compiled to. `:where()` is forgiving, so the browser kept the rule
+   and discarded the arguments — leaving a selector that matches nothing. */
+.range-input::-webkit-slider-thumb:where()
+
+/* What matches: the variant on the subject, the pseudo-element last. */
+.poveste-slider-input:where(.ptw-dark, .ptw-dark *)::-webkit-slider-thumb
+```
+
+Six rules across both vendor prefixes sat in the stylesheet, visible in devtools, applying to nothing, and the thumb stayed white on a dark UI for the life of the control. `scripts/checks/control-conventions.ts` fails on a `dark:` inside `@apply` for this reason, and `e2e/dead-selectors.spec.ts` fails on any rule the parser emptied out, whatever produced it.
+
 ## 4. Every part a consumer might target carries `data-slot`
 
 ```vue
