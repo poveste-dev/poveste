@@ -103,21 +103,27 @@ function write(value: Color) {
   <HstWrapper
     tag="div"
     :title="title"
-    class="poveste-color items-center"
+    class="poveste-color"
+    data-slot="control"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <span class="flex gap-2 items-center w-full">
+    <span
+      class="poveste-color-row"
+      data-slot="row"
+    >
       <PopoverRoot v-model:open="open">
         <PopoverTrigger as-child>
           <button
             type="button"
             class="poveste-color-swatch"
+            data-slot="swatch"
             aria-label="Open the colour picker"
           >
             <ColorSwatch
               :color="modelValue || FALLBACK"
-              class="w-full h-full rounded-sm"
+              class="poveste-color-swatch-fill"
+              data-slot="preview"
             />
           </button>
         </PopoverTrigger>
@@ -128,6 +134,7 @@ function write(value: Color) {
         >
           <PopoverContent
             class="poveste-color-picker"
+            data-slot="picker"
             align="start"
             :side-offset="6"
             :collision-padding="8"
@@ -140,9 +147,10 @@ function write(value: Color) {
               x-channel="saturation"
               y-channel="brightness"
               class="poveste-color-area"
+              data-slot="area"
               @update:color="write"
             >
-              <ColorAreaArea class="w-full h-full rounded-sm">
+              <ColorAreaArea class="poveste-color-area-surface">
                 <ColorAreaThumb class="poveste-color-thumb" />
               </ColorAreaArea>
             </ColorAreaRoot>
@@ -153,9 +161,10 @@ function write(value: Color) {
               channel="hue"
               orientation="horizontal"
               class="poveste-color-hue"
+              data-slot="hue"
               @update:color="write"
             >
-              <ColorSliderTrack class="w-full h-full rounded-full">
+              <ColorSliderTrack class="poveste-color-hue-track">
                 <ColorSliderThumb class="poveste-color-thumb" />
               </ColorSliderTrack>
             </ColorSliderRoot>
@@ -165,11 +174,12 @@ function write(value: Color) {
 
       <ColorFieldRoot
         :model-value="modelValue || FALLBACK"
-        class="grow"
+        class="poveste-color-field-root"
         @update:color="write"
       >
         <ColorFieldInput
           class="poveste-color-field"
+          data-slot="field"
           aria-label="Colour"
         />
       </ColorFieldRoot>
@@ -182,33 +192,117 @@ function write(value: Color) {
 </template>
 
 <style lang="postcss">
-@reference "../../style/main.css";
+.poveste-color {
+  align-items: center;
+}
+
+.poveste-color-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+}
 
 .poveste-color-swatch {
-  @apply w-[27px] h-[27px] -my-1 flex-none p-0.5 rounded-sm cursor-pointer bg-transparent border border-solid border-black/25 dark:border-white/25 hover:border-primary-500 dark:hover:border-primary-500;
+  box-sizing: border-box;
+  flex: none;
+  width: 27px;
+  height: 27px;
+  padding: .125rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:hover {
+    border-color: var(--color-primary-500);
+  }
+}
+
+.poveste-color-swatch-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.poveste-color-field-root {
+  flex-grow: 1;
 }
 
 .poveste-color-field {
-  @apply text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm;
+  box-sizing: border-box;
+  width: 100%;
+  padding: .25rem .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  outline: none;
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-500);
+  }
 }
 
 .poveste-color-picker {
-  @apply flex flex-col gap-2 p-2 bg-gray-50 dark:bg-gray-700 border border-solid border-gray-200 dark:border-gray-850 rounded-sm shadow-md;
-
   z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .5rem;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-50);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: var(--color-gray-850);
+    background: var(--color-gray-700);
+  }
 }
 
 .poveste-color-area {
-  @apply w-40 h-32;
+  width: 10rem;
+  height: 8rem;
+}
+
+.poveste-color-area-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
 }
 
 .poveste-color-hue {
-  @apply w-40 h-3;
+  width: 10rem;
+  height: .75rem;
+}
+
+.poveste-color-hue-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
 }
 
 .poveste-color-thumb {
-  @apply w-3 h-3 rounded-full border-2 border-solid border-white;
+  width: .75rem;
+  height: .75rem;
+  border: 2px solid var(--color-white);
+  border-radius: 9999px;
 
+  /* A ring rather than a token: this separates the thumb from whatever colour is
+     under it, which is every colour, so no palette value is the right one. */
   box-shadow: 0 0 0 1px rgb(0 0 0 / .5);
 }
 </style>

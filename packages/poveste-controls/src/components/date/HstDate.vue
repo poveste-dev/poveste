@@ -86,9 +86,6 @@ const target = shallowRef<HTMLElement>()
 onMounted(() => {
   target.value = portalTarget()
 })
-
-const SEGMENT = 'px-0.5 rounded-sm focus:outline-none focus:bg-primary-500 focus:text-white data-[placeholder]:opacity-50'
-const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid border-black/25 dark:border-white/25 focus-within:border-primary-500 dark:focus-within:border-primary-500 rounded-sm'
 </script>
 
 <template>
@@ -98,34 +95,41 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
   <HstWrapper
     tag="div"
     :title="title"
-    class="poveste-date items-center"
+    class="poveste-date"
+    data-slot="control"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <span class="flex gap-2 items-center flex-wrap">
+    <span
+      class="poveste-date-row"
+      data-slot="row"
+    >
       <DatePickerRoot
         :model-value="date ?? null"
         @update:model-value="writeDate($event)"
       >
         <DatePickerField
           v-slot="{ segments }"
-          :class="FIELD"
+          class="poveste-date-field"
+          data-slot="field"
         >
           <DatePickerInput
             v-for="item of segments"
             :key="item.part"
             :part="item.part"
-            :class="item.part === 'literal' ? 'opacity-50' : SEGMENT"
+            :class="item.part === 'literal' ? 'poveste-date-separator' : 'poveste-date-segment'"
+            data-slot="segment"
           >
             {{ item.value }}
           </DatePickerInput>
           <DatePickerTrigger
-            class="ml-1 flex p-0 bg-transparent border-0 text-inherit opacity-50 hover:opacity-100 hover:text-primary-500 cursor-pointer"
+            class="poveste-date-trigger"
+            data-slot="trigger"
             aria-label="Open the calendar"
           >
             <Icon
               icon="carbon:calendar"
-              class="w-4 h-4"
+              class="poveste-date-icon"
             />
           </DatePickerTrigger>
         </DatePickerField>
@@ -136,24 +140,25 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
         >
           <DatePickerContent
             class="poveste-date-calendar"
+            data-slot="calendar"
             :side-offset="6"
           >
             <DatePickerCalendar
               v-slot="{ weekDays, grid }"
-              class="p-2"
+              class="poveste-date-calendar-body"
             >
-              <DatePickerHeader class="flex items-center justify-between pb-2">
+              <DatePickerHeader class="poveste-date-header">
                 <DatePickerPrev class="poveste-date-step">
                   <Icon
                     icon="carbon:chevron-left"
-                    class="w-4 h-4"
+                    class="poveste-date-icon"
                   />
                 </DatePickerPrev>
                 <DatePickerHeading />
                 <DatePickerNext class="poveste-date-step">
                   <Icon
                     icon="carbon:chevron-right"
-                    class="w-4 h-4"
+                    class="poveste-date-icon"
                   />
                 </DatePickerNext>
               </DatePickerHeader>
@@ -161,14 +166,14 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
               <DatePickerGrid
                 v-for="month of grid"
                 :key="month.value.toString()"
-                class="border-collapse"
+                class="poveste-date-grid"
               >
                 <DatePickerGridHead>
                   <DatePickerGridRow>
                     <DatePickerHeadCell
                       v-for="day of weekDays"
                       :key="day"
-                      class="w-7 text-xs font-normal opacity-50"
+                      class="poveste-date-weekday"
                     >
                       {{ day }}
                     </DatePickerHeadCell>
@@ -188,6 +193,7 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
                         :day="cell"
                         :month="month.value"
                         class="poveste-date-day"
+                        data-slot="day"
                       />
                     </DatePickerCell>
                   </DatePickerGridRow>
@@ -203,14 +209,16 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
         v-slot="{ segments }"
         :model-value="clock ?? null"
         granularity="minute"
-        :class="FIELD"
+        class="poveste-date-field"
+        data-slot="time"
         @update:model-value="writeTime($event as Time | undefined)"
       >
         <TimeFieldInput
           v-for="item of segments"
           :key="item.part"
           :part="item.part"
-          :class="item.part === 'literal' ? 'opacity-50' : SEGMENT"
+          :class="item.part === 'literal' ? 'poveste-date-separator' : 'poveste-date-segment'"
+          data-slot="segment"
         >
           {{ item.value }}
         </TimeFieldInput>
@@ -224,35 +232,167 @@ const FIELD = 'flex items-center h-[27px] -my-1 px-2 gap-px border border-solid 
 </template>
 
 <style lang="postcss">
-@reference "../../style/main.css";
+.poveste-date {
+  align-items: center;
+}
+
+.poveste-date-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+.poveste-date-field {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: 27px;
+  padding-inline: .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus-within {
+    border-color: var(--color-primary-500);
+  }
+}
+
+.poveste-date-segment {
+  padding-inline: .125rem;
+  border-radius: var(--radius-sm);
+
+  &:focus {
+    outline: none;
+    background: var(--color-primary-500);
+    color: var(--color-white);
+  }
+
+  &[data-placeholder] {
+    opacity: .5;
+  }
+}
+
+.poveste-date-separator {
+  opacity: .5;
+}
+
+.poveste-date-trigger {
+  display: flex;
+  padding: 0;
+  margin-left: .25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: .5;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+    color: var(--color-primary-500);
+  }
+}
+
+.poveste-date-icon {
+  width: 1rem;
+  height: 1rem;
+}
 
 .poveste-date-calendar {
-  @apply bg-gray-50 dark:bg-gray-700 border border-solid border-gray-200 dark:border-gray-850 rounded-sm shadow-md;
-
   z-index: 100;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--color-gray-50);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: var(--color-gray-850);
+    background: var(--color-gray-700);
+  }
+}
+
+.poveste-date-calendar-body {
+  padding: .5rem;
+}
+
+.poveste-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: .5rem;
 }
 
 .poveste-date-step {
-  @apply flex p-1 bg-transparent border-0 text-inherit rounded-sm cursor-pointer hover:bg-primary-100 dark:hover:bg-primary-800;
+  display: flex;
+  padding: .25rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-primary-100);
+
+    &:where(.ptw-dark, .ptw-dark *) {
+      background: var(--color-primary-800);
+    }
+  }
+}
+
+.poveste-date-grid {
+  border-collapse: collapse;
+}
+
+.poveste-date-weekday {
+  width: 1.75rem;
+  font-size: .75rem;
+  font-weight: 400;
+  opacity: .5;
 }
 
 .poveste-date-day {
-  @apply flex items-center justify-center w-7 h-7 rounded-sm cursor-pointer bg-transparent border-0 text-inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 
   &[data-outside-view] {
-    @apply opacity-30;
+    opacity: .3;
   }
 
   &[data-today] {
-    @apply text-primary-500 font-bold;
-  }
-
-  &[data-selected] {
-    @apply bg-primary-500 text-white;
+    color: var(--color-primary-500);
+    font-weight: 700;
   }
 
   &:hover:not([data-selected]) {
-    @apply bg-primary-100 dark:bg-primary-800;
+    background: var(--color-primary-100);
+
+    &:where(.ptw-dark, .ptw-dark *) {
+      background: var(--color-primary-800);
+    }
+  }
+
+  /* After the hover rule and at the same specificity, so a selected day keeps
+     its fill while the pointer is over it — which is what the `:not()` in the
+     hover rule was for. */
+  &[data-selected] {
+    background: var(--color-primary-500);
+    color: var(--color-white);
   }
 }
 </style>
