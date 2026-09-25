@@ -443,7 +443,6 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
               ...([
                 ['@iconify/vue', 'iconify'],
                 ['pinia', 'pinia'],
-                ['scroll-into-view-if-needed', 'scroll'],
                 ['vue-router', 'vue-router'],
                 ['@vueuse/core', 'vue-use'],
                 ['vue', 'vue'],

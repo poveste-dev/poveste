@@ -13,7 +13,6 @@ export default defineConfig({
       : {
           '@iconify/vue': '@poveste/vendors/iconify',
           'pinia': '@poveste/vendors/pinia',
-          'scroll-into-view-if-needed': '@poveste/vendors/scroll',
           'vue-router': '@poveste/vendors/vue-router',
           '@vueuse/core': '@poveste/vendors/vue-use',
           'vue': '@poveste/vendors/vue',

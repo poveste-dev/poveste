@@ -31,10 +31,6 @@
       "types": "./pinia.d.ts",
       "default": "./pinia.js"
     },
-    "./scroll": {
-      "types": "./scroll.d.ts",
-      "default": "./scroll.js"
-    },
     "./vue": {
       "types": "./vue.d.ts",
       "default": "./vue.js"
@@ -53,8 +49,6 @@
     "iconify.js",
     "pinia.d.ts",
     "pinia.js",
-    "scroll.d.ts",
-    "scroll.js",
     "vue-router.d.ts",
     "vue-router.js",
     "vue-use.d.ts",
@@ -68,7 +62,6 @@
   "dependencies": {
     "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
     "poveste-pinia": "npm:pinia@^4.0.3",
-    "poveste-scroll-into-view": "npm:scroll-into-view-if-needed@^3.1.0",
     "poveste-vue": "npm:vue@^3.5.26",
     "poveste-vue-router": "npm:vue-router@^5.3.1",
     "poveste-vueuse-core": "npm:@vueuse/core@^15.0.0"
