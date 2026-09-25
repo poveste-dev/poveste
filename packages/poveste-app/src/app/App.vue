@@ -186,41 +186,50 @@ const storyListVisible = computed(() => !!layoutStore.settings.storyListVisible)
           it. The settings toggles were #596; `isMobile` is a live media query,
           so this one fired on a window resize (#600).
         -->
-        <BaseSplitPane
-          save-id="main-horiz"
-          :min="5"
-          :max="50"
-          :default-split="15"
-          :show-first="!isMobile && storyListVisible"
-          class="flex-1 min-h-0"
-        >
-          <template #first>
-            <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
-              <AppHeader class="flex-none" />
-              <nav
-                aria-label="Stories"
-                class="flex-1 flex flex-col min-h-0"
-              >
-                <StoryList
-                  :tree="tree"
-                  :stories="stories"
-                  class="flex-1"
-                />
-              </nav>
-            </div>
-          </template>
+        <!-- `<main>` wraps the split rather than sitting in its last pane. The
+             divider is perceivable now, and it is a sibling of the slot, so it
+             belongs to no landmark unless one contains the whole split. Inside
+             `<main>` the sidebar's `<header>` is a generic header rather than a
+             banner, which is what `landmark-banner-is-top-level` objects to
+             when a landmark is put around that pane instead (#995). -->
+        <main class="flex-1 min-h-0 flex flex-col">
+          <BaseSplitPane
+            save-id="main-horiz"
+            label="Resize the story list"
+            :min="5"
+            :max="50"
+            :default-split="15"
+            :show-first="!isMobile && storyListVisible"
+            class="flex-1 min-h-0"
+          >
+            <template #first>
+              <div class="flex flex-col h-full bg-gray-100 dark:bg-gray-750 __poveste-pane-shadow-from-right">
+                <AppHeader class="flex-none" />
+                <nav
+                  aria-label="Stories"
+                  class="flex-1 flex flex-col min-h-0"
+                >
+                  <StoryList
+                    :tree="tree"
+                    :stories="stories"
+                    class="flex-1"
+                  />
+                </nav>
+              </div>
+            </template>
 
-          <template #last>
-            <main class="flex flex-col h-full">
-              <TopBar
-                v-if="!isMobile"
-                @layout="isLayoutOpen = true"
-                @search="isSearchOpen = true"
-              />
-              <RouterView class="flex-1 min-h-0" />
-            </main>
-          </template>
-        </BaseSplitPane>
+            <template #last>
+              <div class="flex flex-col h-full">
+                <TopBar
+                  v-if="!isMobile"
+                  @layout="isLayoutOpen = true"
+                  @search="isSearchOpen = true"
+                />
+                <RouterView class="flex-1 min-h-0" />
+              </div>
+            </template>
+          </BaseSplitPane>
+        </main>
       </div>
 
       <LayoutModal

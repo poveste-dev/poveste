@@ -36,6 +36,7 @@ const showsPreview = computed(() => !!variant.value || autoSelectsVariant(storyS
   -->
   <BaseSplitPane
     save-id="story-single-main-split"
+    label="Resize the variant list"
     :min="5"
     :max="40"
     :default-split="17"

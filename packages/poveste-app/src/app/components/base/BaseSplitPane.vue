@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, useId, watch } from 'vue'
 
 const props = defineProps({
   orientation: {
@@ -47,6 +47,17 @@ const props = defineProps({
   showDivider: {
     type: Boolean,
     default: true,
+  },
+
+  /**
+   * What the divider is called to a screen reader.
+   *
+   * Four are on screen at once and they resize different things, so a shared
+   * default would announce four identical separators.
+   */
+  label: {
+    type: String,
+    default: 'Resize panels',
   },
 
   /**
@@ -225,6 +236,56 @@ watch(hasBothPanes, (both) => {
   }
 })
 
+/*
+ * The keyboard half, which the divider had none of: it was a `div` with a
+ * `mousedown` handler, so the layout could only be changed with a pointer and a
+ * screen reader was told nothing was there (#995).
+ *
+ * The arrow step is one unit of whatever `split` is measured in — percent
+ * normally, pixels under `fixed` — and `PageUp`/`PageDown` move by ten, because
+ * one pixel per press is not a usable way to move a pixel-sized pane.
+ */
+const STEP = 1
+const PAGE_STEP = 10
+
+function moveBy(amount: number) {
+  currentSplit.value = Math.min(props.max, Math.max(props.min, boundSplit.value + amount))
+}
+
+function onKeydown(event: KeyboardEvent) {
+  const back = props.orientation === 'landscape' ? 'ArrowLeft' : 'ArrowUp'
+  const forward = props.orientation === 'landscape' ? 'ArrowRight' : 'ArrowDown'
+
+  switch (event.key) {
+    case back:
+      moveBy(-STEP)
+      break
+    case forward:
+      moveBy(STEP)
+      break
+    case 'PageUp':
+      moveBy(-PAGE_STEP)
+      break
+    case 'PageDown':
+      moveBy(PAGE_STEP)
+      break
+    case 'Home':
+      currentSplit.value = props.min
+      break
+    case 'End':
+      currentSplit.value = props.max
+      break
+    default:
+      return
+  }
+
+  // Only for a key this handles: the arrows scroll the pane otherwise, and a
+  // blanket `prevent` would stop that everywhere the divider has focus.
+  event.preventDefault()
+}
+
+const firstPaneId = useId()
+
 function removeDragListeners() {
   window.removeEventListener('mousemove', dragMove)
   window.removeEventListener('mouseup', dragEnd)
@@ -248,6 +309,7 @@ onUnmounted(() => {
   >
     <div
       v-if="showFirst"
+      :id="firstPaneId"
       class="relative top-0 left-0 z-20"
       :class="{
         'pointer-events-none': dragging,
@@ -260,7 +322,15 @@ onUnmounted(() => {
 
       <div
         v-if="hasBothPanes"
-        class="dragger absolute z-100 hover:bg-primary-500/50 transition-colors duration-150 delay-150"
+        role="separator"
+        tabindex="0"
+        :aria-label="label"
+        :aria-orientation="orientation === 'landscape' ? 'vertical' : 'horizontal'"
+        :aria-controls="firstPaneId"
+        :aria-valuenow="Math.round(boundSplit)"
+        :aria-valuemin="min"
+        :aria-valuemax="max"
+        class="dragger absolute z-100 hover:bg-primary-500/50 focus-visible:bg-primary-500/50 focus-visible:outline-2 focus-visible:outline-primary-500 transition-colors duration-150 delay-150"
         :class="{
           'top-0 bottom-0 cursor-ew-resize': orientation === 'landscape',
           'left-0 right-0 cursor-ns-resize': orientation === 'portrait',
@@ -268,6 +338,7 @@ onUnmounted(() => {
           'bg-primary-500/25': dragging,
         }"
         @mousedown.prevent="dragStart"
+        @keydown="onKeydown"
       />
     </div>
     <div
