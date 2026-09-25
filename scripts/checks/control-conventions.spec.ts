@@ -65,7 +65,7 @@ describe('a colour a book cannot theme', () => {
 
 describe('the not-yet-migrated list', () => {
   it('exempts a control on it', () => {
-    const files = [{ file: 'text/HstText.vue', source: control('<input class="poveste-text">', '.poveste-text { color: #333; }') }]
+    const files = [{ file: 'slider/HstSlider.vue', source: control('<input class="poveste-slider">', '.poveste-slider { color: #333; }') }]
 
     expect(problemsIn(files)).toEqual([])
   })
@@ -73,7 +73,15 @@ describe('the not-yet-migrated list', () => {
   it('still holds every control #955 has moved', () => {
     // A control leaves the list when it migrates. If one that has already moved
     // is still on it, the check is exempting something it should be holding.
-    for (const migrated of ['HstCheckbox.vue', 'HstCheckboxList.vue', 'HstSimpleCheckbox.vue', 'HstButton.vue']) {
+    for (const migrated of [
+      'HstCheckbox.vue',
+      'HstCheckboxList.vue',
+      'HstSimpleCheckbox.vue',
+      'HstButton.vue',
+      'HstText.vue',
+      'HstTextarea.vue',
+      'HstButtonGroup.vue',
+    ]) {
       expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
     }
   })
@@ -89,7 +97,7 @@ describe('checkControlConventions', () => {
   })
 
   it('reports a list that has swallowed every control', () => {
-    const root = tree({ 'packages/poveste-controls/src/components/text/HstText.vue': '<template><input></template>' })
+    const root = tree({ 'packages/poveste-controls/src/components/slider/HstSlider.vue': '<template><input></template>' })
 
     expect(checkControlConventions(root).problems).toEqual([
       'every control is on the not-yet-migrated list — this check is asserting nothing',

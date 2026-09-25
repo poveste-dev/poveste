@@ -18,13 +18,13 @@ const emit = defineEmits({
   'update:modelValue': (newValue: string) => true,
 })
 
-const input = ref<HTMLInputElement>()
+const input = ref<HTMLTextAreaElement>()
 </script>
 
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-textarea cursor-text"
+    class="poveste-textarea"
     :class="$attrs.class"
     :style="$attrs.style"
     @click="input?.focus()"
@@ -32,9 +32,10 @@ const input = ref<HTMLInputElement>()
     <textarea
       ref="input"
       v-bind="{ ...$attrs, class: null, style: null }"
+      class="poveste-textarea-input"
+      data-slot="control"
       :value="modelValue"
-      class="text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm box-border resize-y min-h-[26px]"
-      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @input="emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
 
     <template #actions>
@@ -42,3 +43,31 @@ const input = ref<HTMLInputElement>()
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-textarea {
+  cursor: text;
+}
+
+.poveste-textarea-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 26px;
+  padding: .25rem .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  outline: none;
+  resize: vertical;
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus {
+    border-color: var(--color-primary-500);
+  }
+}
+</style>
