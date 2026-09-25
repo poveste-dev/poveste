@@ -62,10 +62,51 @@ test.describe('controls', () => {
 
     await expect(state).toContainText('"game": "crash-bandicoot"')
 
-    // Not a native `<select>` — it is a popover of divs, so the option is picked
-    // by clicking its label in the popper.
+    // Not a native `<select>` — it is a popover, so the option is picked by
+    // clicking its label in the popper.
     await controls.locator('.poveste-wrapper').filter({ hasText: 'Game' }).click()
     await page.locator('.poveste-select-popper').getByText('The Last of Us').click()
+
+    await expect(state).toContainText('"game": "the-last-of-us"')
+  })
+
+  // The five tests around this one drive the select entirely by clicking, and
+  // every one of them passed while the options were bare `div`s with an
+  // `@click` — no role, no `aria-selected`, no key handler (#955). A control
+  // that looks well covered is exactly the one nobody re-reads, which is how
+  // the same omission shipped in #969's checkbox list.
+  test('offers the options as a listbox rather than as a stack of divs', async ({ page }) => {
+    const controls = page.getByTestId('story-controls')
+
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Game' }).click()
+
+    const listbox = page.locator('.poveste-select-popper [role="listbox"]')
+    await expect(listbox).toBeVisible()
+
+    const options = listbox.getByRole('option')
+    expect(await options.count()).toBeGreaterThan(1)
+
+    // The held one says so, and only it: a listbox where every row reads
+    // unselected tells a screen reader nothing about the current value.
+    await expect(listbox.locator('[aria-selected="true"]')).toHaveCount(1)
+    await expect(listbox.locator('[aria-selected="true"]')).toHaveText('Crash Bandicoot')
+  })
+
+  test('picks an option from the keyboard, without a pointer anywhere', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    await expect(state).toContainText('"game": "crash-bandicoot"')
+
+    // Focused and opened by key rather than clicked, so nothing in this test
+    // reaches the control the way the tests above it do.
+    await controls.locator('.poveste-select [aria-expanded]').focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('.poveste-select-popper')).toBeVisible()
+
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
 
     await expect(state).toContainText('"game": "the-last-of-us"')
   })
