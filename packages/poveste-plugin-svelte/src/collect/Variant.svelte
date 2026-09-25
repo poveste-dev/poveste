@@ -1,5 +1,5 @@
 <script>
-  import { getContext } from 'svelte'
+  import { addVariantContext, collectStoryContext } from '../contexts.js'
 
   export let title = 'untitled'
   export let id = null
@@ -14,15 +14,15 @@
   // svelte-ignore export_let_unused
   export let initState = null
 
-  const story = getContext('__pvtStory')
-  const addVariant = getContext('__pvtAddVariant')
-
-  function generateId() {
-    return `${story.id}-${story.variants.length}`
-  }
+  // Asked for before anything reads them, so a missing `<Story>` is reported
+  // once and the same way whether or not the variant carries an `id`. Reading
+  // `story.id` inside `generateId` meant the no-id path died on `undefined`
+  // and the id path died on `addVariant` not being a function (#981).
+  const story = collectStoryContext.get('<Variant>')
+  const addVariant = addVariantContext.get('<Variant>')
 
   const variant = {
-    id: id ?? generateId(),
+    id: id ?? `${story.id}-${story.variants.length}`,
     title,
     icon,
     iconColor,

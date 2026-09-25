@@ -1,6 +1,5 @@
 import type { Variant } from '@poveste/shared'
-import type { InjectionKey } from 'vue'
-import { inject, provide } from 'vue'
+import { createContext } from '../context.js'
 
 export interface PreviewRenderContext {
   mode: 'mount' | 'render'
@@ -18,12 +17,19 @@ export interface PreviewRenderContext {
   }
 }
 
-const previewRenderContextKey: InjectionKey<PreviewRenderContext> = Symbol('poveste-preview-render-context')
+/*
+ * This one was already a typed symbol with its provide and inject together —
+ * it was the pattern the other six were measured against (#981). It goes
+ * through the shared helper so the package has one shape rather than two,
+ * which is the mistake #978 is about, in miniature.
+ */
+const renderContext = createContext<PreviewRenderContext>('poveste-preview-render-context', '<Story>')
 
 export function provideRenderContext(value: PreviewRenderContext) {
-  provide(previewRenderContextKey, value)
+  renderContext.provide(value)
 }
 
+/** Null outside a preview, which several call sites read with `?.`. */
 export function useRenderContext() {
-  return inject(previewRenderContextKey, null)
+  return renderContext.injectOptional()
 }

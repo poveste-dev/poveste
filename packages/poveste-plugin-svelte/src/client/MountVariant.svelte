@@ -1,5 +1,6 @@
 <script>
-  import { afterUpdate, getContext, onDestroy } from 'svelte'
+  import { afterUpdate, onDestroy } from 'svelte'
+  import { slotsContext, storyContext, storyPropsContext, targetVariantIdContext, variantIndexContext } from '../contexts.js'
 
   export let source = null
   // `null` rather than `false`/a handler: these two inherit from the story, and
@@ -11,14 +12,14 @@
   export let setupApp = null
   export let implicit = false
 
-  const story = getContext('__pvtStory')
-  const index = getContext('__pvtIndex')
-  const storySlots = getContext('__pvtSlots')
-  const storyProps = getContext('__pvtStoryProps') ?? {}
+  const story = storyContext.get('<Variant>')
+  const index = variantIndexContext.get('<Variant>')
+  const storySlots = slotsContext.getOptional()
+  const storyProps = storyPropsContext.getOptional() ?? {}
   // A store: a sandbox sets it to the one variant this realm serves and changes
   // it when the realm is retargeted (#240). Null in the app realm, which keeps
   // every variant's bookkeeping.
-  const targetVariantId = getContext('__pvtTargetVariantId') ?? null
+  const targetVariantId = targetVariantIdContext.getOptional()
 
   const variant = story.variants[index.value]
   index.value++

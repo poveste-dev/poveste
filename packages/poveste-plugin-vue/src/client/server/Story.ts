@@ -1,6 +1,7 @@
-import type { ServerStory, ServerStoryFile, ServerVariant } from '@poveste/shared'
+import type { ServerStory, ServerVariant } from '@poveste/shared'
 import type { PropType } from 'vue'
-import { defineComponent, inject, onMounted, provide } from 'vue'
+import { defineComponent, onMounted } from 'vue'
+import { addStoryContext, addVariantContext, serverStoryContext, storyFileContext } from './context.js'
 import { autoStubComponents } from './stub.js'
 
 export default defineComponent({
@@ -51,7 +52,7 @@ export default defineComponent({
   },
 
   setup(props) {
-    const file = inject<ServerStoryFile>('hstStoryFile')
+    const file = storyFileContext.injectOptional()
 
     // Story
 
@@ -72,14 +73,13 @@ export default defineComponent({
       meta: props.meta,
       variants: [],
     }
-    const addStory = inject<((story: ServerStory) => void) | null>('addStory', null)
-    addStory?.(story)
+    addStoryContext.injectOptional()?.(story)
 
     // Variants
 
-    provide('story', story)
+    serverStoryContext.provide(story)
 
-    provide('addVariant', (variant: ServerVariant) => {
+    addVariantContext.provide((variant: ServerVariant) => {
       story.variants.push(variant)
     })
 

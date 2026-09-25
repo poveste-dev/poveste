@@ -1,18 +1,19 @@
 <script>
   import { watch as _watch } from '@poveste/vendors/vue'
-  import { getContext, onDestroy, setContext } from 'svelte'
+  import { onDestroy } from 'svelte'
+  import { slotNameContext, storyContext, storyPropsContext, variantContext, variantIndexContext } from '../contexts.js'
 
-  const story = getContext('__pvtStory')
-  const currentVariant = getContext('__pvtVariant')
-  const slotName = getContext('__pvtSlot')
+  const story = storyContext.get('<Story>')
+  const currentVariant = variantContext.getOptional()
+  const slotName = slotNameContext.getOptional()
 
   const index = { value: 0 }
-  setContext('__pvtIndex', index)
+  variantIndexContext.set(index)
   // The sandbox realm's half of story-prop inheritance. `MountStory` does this
   // for the app realm, and the bridge carries only `variant.state` across the
   // iframe — so without it a story-level prop reaches the sandbox by accident,
   // when a grid cell happens to render in the same realm (#466).
-  setContext('__pvtStoryProps', $$restProps)
+  storyPropsContext.set($$restProps)
 
   // A story with no `<Hst.Variant>` children has no `RenderVariant` to write the
   // handler, so the story is the only place it can come from — and without this

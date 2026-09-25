@@ -17,6 +17,7 @@ import { writable } from 'svelte/store'
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
 import * as setup from 'virtual:$poveste-setup'
+import { storyContext, targetVariantIdContext } from '../contexts.js'
 import {
   callSetupFunctions,
   mountSvelteComponent,
@@ -74,10 +75,10 @@ export default _defineComponent({
             ...getControls(),
           },
         },
-        context: new Map(Object.entries({
-          __pvtStory: props.story,
-          __pvtTargetVariantId: targetVariantId,
-        })),
+        context: new Map<symbol, unknown>([
+          [storyContext.key, props.story],
+          [targetVariantIdContext.key, targetVariantId],
+        ]),
       }, 'client', { storyId: props.story.id, variantId: props.targetVariantId ?? undefined })
       app = mountedApp.app
       destroyApp = mountedApp.destroy

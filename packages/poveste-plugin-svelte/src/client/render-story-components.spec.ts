@@ -1,6 +1,7 @@
 import { render } from 'svelte/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ManyVariants from '../__fixtures__/ManyVariants.svelte'
+import { slotNameContext, storyContext, variantContext } from '../contexts.js'
 import { renderStoryComponents } from './render-story-components'
 
 const created = vi.hoisted(() => ({ count: 0 }))
@@ -29,7 +30,7 @@ function variantsDrawn(html: string): string[] {
 }
 
 function renderWith(Hst: unknown, story: any, variant: any) {
-  const context = new Map<string, unknown>([['__pvtStory', story], ['__pvtVariant', variant], ['__pvtSlot', 'default']])
+  const context = new Map<symbol, unknown>([[storyContext.key, story], [variantContext.key, variant], [slotNameContext.key, 'default']])
   return render(ManyVariants as any, { props: { Hst, count: story.variants.length }, context }).body
 }
 

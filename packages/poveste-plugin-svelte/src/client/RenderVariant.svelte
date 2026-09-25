@@ -1,13 +1,14 @@
 <script>
   import { watch as _watch } from '@poveste/vendors/vue'
-  import { getContext, onDestroy } from 'svelte'
+  import { onDestroy } from 'svelte'
+  import { slotNameContext, storyContext, storyPropsContext, variantContext, variantIndexContext } from '../contexts.js'
   import { shouldWarnAboutMissingInitState } from '../util/init-state-warning.js'
 
-  const story = getContext('__pvtStory')
-  const currentVariant = getContext('__pvtVariant')
-  const slotName = getContext('__pvtSlot')
-  const index = getContext('__pvtIndex')
-  const storyProps = getContext('__pvtStoryProps') ?? {}
+  const story = storyContext.get('<Variant>')
+  const currentVariant = variantContext.getOptional()
+  const slotName = slotNameContext.getOptional()
+  const index = variantIndexContext.get('<Variant>')
+  const storyProps = storyPropsContext.getOptional() ?? {}
 
   const variant = story.variants[index.value]
   index.value++

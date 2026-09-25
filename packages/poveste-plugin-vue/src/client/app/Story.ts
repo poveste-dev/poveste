@@ -2,7 +2,8 @@ import type { Story } from '@poveste/shared'
 import type { PropType, VNode } from 'vue'
 import type { PreviewRenderContext } from './render-context.js'
 import { omitInheritStoryProps } from '@poveste/shared'
-import { cloneVNode, computed, defineComponent, h, isRef, provide, reactive, useAttrs } from 'vue'
+import { cloneVNode, computed, defineComponent, h, isRef, reactive, useAttrs } from 'vue'
+import { implicitStateContext, storyContext } from './context.js'
 import { useRenderContext } from './render-context.js'
 import { isWritableBinding, useInstance } from './util.js'
 import Variant from './Variant.js'
@@ -35,7 +36,7 @@ export default defineComponent({
 
     const renderContext = useRenderContext()
     const story = computed(() => attrs.story)
-    provide('story', story)
+    storyContext.provide(story)
 
     const storyComponent: any = vm.parent
     const implicitState = reactive<Record<string, any>>({})
@@ -94,7 +95,7 @@ export default defineComponent({
     for (const key in storyComponent.data) {
       addImplicitState(storyComponent.data, key)
     }
-    provide('implicitState', () => implicitState)
+    implicitStateContext.provide(() => implicitState)
 
     function updateStory() {
       if (props.meta) {

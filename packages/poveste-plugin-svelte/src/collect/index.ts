@@ -5,6 +5,7 @@ import { tick } from 'svelte'
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
 import * as setup from 'virtual:$poveste-setup'
+import { addStoryContext, storyFileContext } from '../contexts.js'
 import {
   callSetupFunctions,
   mountSvelteComponent,
@@ -23,12 +24,14 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
         Variant,
       },
     },
-    context: new Map(Object.entries({
-      __pvtAddStory(data: (typeof storyData)[number]) {
+    // Keyed by the same symbols the components read, through the map `mount`
+    // takes — a runner is not a component, so it cannot call `set` (#981).
+    context: new Map<symbol, unknown>([
+      [addStoryContext.key, (data: (typeof storyData)[number]) => {
         storyData.push(data)
-      },
-      __pvtStoryFile: file,
-    })),
+      }],
+      [storyFileContext.key, file],
+    ]),
   }, 'client')
   const app = mountedApp.app
 
