@@ -85,7 +85,11 @@ export default defineComponent({
       applyState(mountVariant.value.state, toRawDeep(state))
     }
 
-    if (renderContext?.mode !== 'render' && mountVariant.value && implicitState) {
+    // `syncState` is false in a sandbox realm, where the render tree beside this
+    // one already syncs the same `variant.state` against the same story's
+    // bindings. Both were live, so an edit walked the graph twice over for one
+    // copy of it (#964).
+    if (renderContext?.mode !== 'render' && renderContext?.syncState !== false && mountVariant.value && implicitState) {
       mountStateSync = syncStateBundledAndExternal(mountVariant.value.state, implicitState(), autoPropsStateKeys)
     }
 

@@ -26,6 +26,11 @@ export default _defineComponent({
       type: String,
       default: null,
     },
+
+    syncState: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   setup(props) {
@@ -35,6 +40,7 @@ export default _defineComponent({
       slotName: 'default',
       currentVariant: null,
       targetVariantId: props.targetVariantId,
+      syncState: props.syncState,
       externalState: null,
       nextVariantIndex: {
         value: 0,
