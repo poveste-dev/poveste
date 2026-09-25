@@ -130,13 +130,19 @@ watch(() => props.modelValue, () => {
 }, { deep: true })
 
 watch(() => internalValue.value, () => {
+  // Cleared before the returns below, not after them. A reader who typed
+  // something unparseable and then watched the row turn read-only — because
+  // the story put a `Date` there — could otherwise never clear the warning:
+  // the early return skips the reset, and a read-only editor takes no edit
+  // that would reach it.
+  invalidValue.value = false
+
   // Our own render coming back round. The model already holds this, and parsing
   // it would hand back the markers instead of the values they stand for.
   if (internalValue.value === renderedDoc || !faithful.value) {
     return
   }
 
-  invalidValue.value = false
   try {
     emit('update:modelValue', JSON.parse(internalValue.value))
   }

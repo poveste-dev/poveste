@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick, reactive, ref } from 'vue'
 import HstJson from './HstJson.vue'
 import { serializeState, stringifyState } from './serialize.js'
 
@@ -107,20 +107,47 @@ describe('stringifyState', () => {
     expect(serializeState({ a: 1, action: () => {} }).faithful).toBe(false)
   })
 
-  it('survives a holder that answers the second read differently', () => {
-    // Recovering what `toJSON` hid means reading the holder a second time, and
-    // state is user data: a getter is free to throw the second time round, or a
-    // proxy to refuse the read outright. `JSON.stringify` has already had its
-    // answer by then, so falling back to it costs only the type.
+  it('reads a getter once, however many times the replacer looks', () => {
+    // Recovering what `toJSON` hid must not cost a second invocation. State is
+    // user data: a getter is free to count its reads, to throw the second time
+    // round, or to be a `computed` whose recomputation is the expensive thing.
     let reads = 0
-    const hostile = {
+    const counted = {
       get once() {
-        if (++reads > 1) throw new Error('nope')
+        reads++
         return 1
       },
     }
 
-    expect(JSON.parse(stringifyState(hostile))).toEqual({ once: 1 })
+    expect(JSON.parse(stringifyState(counted))).toEqual({ once: 1 })
+    expect(reads).toBe(1)
+  })
+
+  it('names a Date a reactive proxy unwrapped out of a ref', () => {
+    // Story state is reactive, and `reactive` unwraps a `ref` on `get` — so the
+    // property descriptor behind the proxy holds the `ref`, not the `Date`.
+    // Reading the descriptor's value instead of the holder would name it after
+    // Vue's wrapper class.
+    const state = reactive({ at: ref(new Date(1790071200000)) })
+
+    expect(JSON.parse(stringifyState(state))).toEqual({ at: '[Date 2026-09-22T10:00:00.000Z]' })
+  })
+
+  it('names a cycle reached through a holder that answers twice differently', () => {
+    // The replacer records the value it *returns*, because that is what
+    // `JSON.stringify` walks and hands to the children as their holder.
+    // Recording anything else — the second read of a getter handing back a
+    // fresh array each time — unwinds the stack against a node that is not on
+    // it, pops the real ancestors with it, and leaves the guard blind. The
+    // cycle below then reaches `JSON.stringify`'s own detection, which throws
+    // from inside a lifecycle hook: the exact failure this file exists to stop.
+    const root: any = { name: 'root' }
+    const inner: any = { back: root }
+    root.branch = {
+      get list() { return [inner] },
+    }
+
+    expect(stringifyState(root)).toContain('[Circular]')
   })
 })
 
@@ -172,6 +199,27 @@ describe('hstJson round-trip', () => {
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(view.state.facet(EditorView.editable)).toBe(false)
+    expect(wrapper.find('.poveste-json-read-only').exists()).toBe(true)
+  })
+
+  it('clears a stale JSON error when the document turns read-only', async () => {
+    // Typing something unparseable sets the warning. If the story then puts a
+    // `Date` in that key the row goes read-only, and no edit can reach the
+    // reset any more — so the reset has to happen before the early return, or
+    // the row keeps a warning it can never lose.
+    const wrapper = mount(HstJson, { props: { modelValue: { a: 1 }, title: 'Plain' } })
+    await nextTick()
+
+    const view = EditorView.findFromDOM(wrapper.find('.cm-content').element as HTMLElement)!
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '{ "a": ' } })
+    await nextTick()
+    expect(wrapper.find('.poveste-json-invalid').exists()).toBe(true)
+
+    await wrapper.setProps({ modelValue: { a: new Date(1790071200000) } })
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(wrapper.find('.poveste-json-invalid').exists()).toBe(false)
     expect(wrapper.find('.poveste-json-read-only').exists()).toBe(true)
   })
 

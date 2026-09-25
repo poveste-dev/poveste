@@ -108,11 +108,18 @@ export function serializeState(value: unknown, space?: number): { doc: string, f
       return named(describe(raw, current))
     }
 
+    // `current`, not `raw`. This stack has to hold exactly the objects that
+    // become `this` for their children, and what a child sees is the value
+    // *returned* here — so recording anything else unwinds the stack against a
+    // node that is not on it, pops the real ancestors with it, and leaves the
+    // guard blind for the rest of the walk. `JSON.stringify` then meets the
+    // cycle itself and throws, out of a lifecycle hook, which is the failure
+    // this whole replacer exists to avoid.
     while (ancestors.length > 0 && ancestors[ancestors.length - 1] !== this) {
       ancestors.pop()
     }
 
-    if (ancestors.includes(raw)) {
+    if (ancestors.includes(current)) {
       return named('Circular')
     }
 
@@ -120,7 +127,7 @@ export function serializeState(value: unknown, space?: number): { doc: string, f
       return named('Truncated')
     }
 
-    ancestors.push(raw)
+    ancestors.push(current)
 
     return current
   }, space)
@@ -130,17 +137,36 @@ export function serializeState(value: unknown, space?: number): { doc: string, f
 
 /**
  * The value the holder keeps under `key`, which is not always the one the
- * replacer was handed.
+ * replacer was handed: `JSON.stringify` calls `toJSON` first, so a `Date` and a
+ * `URL` arrive flattened into the string that hides them.
  *
- * Guarded because state is user data: a getter may throw, and a proxy may
- * refuse the read outright. Falling back to what the replacer was given loses
- * the type, which is the pre-#977 behaviour and never worse than it.
+ * Only a primitive can be `toJSON` output standing in for something — an object
+ * `current` is the value itself — so that is the only case worth looking up,
+ * which keeps every object and array to the single read `JSON.stringify`
+ * already made. That matters here: this runs on the thread the preview shares,
+ * over graphs the size of a `useNuxtApp()` (#788).
+ *
+ * And the descriptor is consulted before the read, because `holder[key]` would
+ * run an accessor a second time. State is user data and a getter is free to
+ * count its reads, to throw on the second, or to be a `computed` whose
+ * recomputation is the expensive thing — none of which may happen because a
+ * control is drawing itself. An inherited or accessor property therefore keeps
+ * the name it had before #977, which is the honest trade.
  */
 function held(holder: any, key: string, current: unknown) {
+  if (current === null || typeof current === 'object') {
+    return current
+  }
+
   try {
-    return holder == null ? current : holder[key]
+    // The descriptor decides whether the read is safe; the read itself still
+    // goes through the holder, because a reactive proxy unwraps a `ref` on
+    // `get` and the descriptor behind it would hand back the `ref` object.
+    const own = Object.getOwnPropertyDescriptor(holder, key)
+    return own && 'value' in own ? holder[key] : current
   }
   catch {
+    // A proxy refusing the lookup outright.
     return current
   }
 }
