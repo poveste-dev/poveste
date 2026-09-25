@@ -1,7 +1,7 @@
 import { autoPropsStateKeys } from '@poveste/shared'
-import { nextTick as bundledNextTick, reactive as bundledReactive } from '@poveste/vendors/vue'
+import { nextTick as bundledNextTick, reactive as bundledReactive, ref as bundledRef } from '@poveste/vendors/vue'
 import { describe, expect, it } from 'vitest'
-import { markRaw, nextTick, reactive, watch } from 'vue'
+import { markRaw, nextTick, reactive, ref, watch } from 'vue'
 import { syncStateBundledAndExternal } from '../util.js'
 
 // These run against both Vue copies for real: `@poveste/vendors/vue` is the one
@@ -37,6 +37,27 @@ describe('syncStateBundledAndExternal', () => {
     bundled.count = 2
     await settle()
     expect(external.count).toBe(2)
+
+    sync.stop()
+  })
+
+  // Each side's walker recurses with its own copy's `isRef`, and the bundled
+  // one used to hand its whole subtree to the external walker — so below the
+  // first level, bundled state was walked by the wrong copy of Vue. Nothing
+  // observable came of it, because `isRef` reads `__v_isRef` rather than an
+  // identity and either copy answers for the other's ref; this pins the
+  // recursion either way, which is coverage the bridge did not have.
+  it('unwraps a ref nested below the first level, on both sides', async () => {
+    const { bundled, external, sync } = setup({ count: 0 })
+    await settle()
+
+    bundled.deep = { inner: { value: bundledRef('from bundled') } }
+    await settle()
+    expect(external.deep.inner.value).toBe('from bundled')
+
+    external.other = { inner: { value: ref('from external') } }
+    await settle()
+    expect(bundled.other.inner.value).toBe('from external')
 
     sync.stop()
   })

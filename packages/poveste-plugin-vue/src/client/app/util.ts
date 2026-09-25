@@ -129,9 +129,22 @@ export function _toRawDeep(val: unknown, seen = new WeakMap()): any {
   }
 }
 
+/**
+ * `_toRawDeep`, not `toRawDeep`: this is the bundled Vue's walker, and handing
+ * the subtree to the external one meant only the top level was ever walked by
+ * the copy of Vue that owns it.
+ *
+ * Nothing observable changes today, which is why it survived. The two walkers
+ * differ only in whose `isRef`/`unref` they call, and `isRef` is a read of
+ * `__v_isRef` — a property, not an identity — so either copy answers correctly
+ * for a ref the other created. It is fixed as a trap rather than as a defect:
+ * the next rule that lands on one walker and not the other would apply to the
+ * first level of bundled state and to nothing beneath it, and the diff would
+ * look right.
+ */
 function _toRawObject(obj: Record<any, any>, target: Record<any, any>, seen = new WeakMap()) {
   Object.keys(obj).forEach((key) => {
-    target[key] = toRawDeep(obj[key], seen)
+    target[key] = _toRawDeep(obj[key], seen)
   })
 }
 
