@@ -158,6 +158,12 @@ The source panel shows the `source` prop. Because props are evaluated in your `<
 </Hst.Story>
 ```
 
+### Controls without a snippet
+
+A story that declares `initState` and writes no `controls` snippet still gets a panel: Poveste builds one control per state key, picking it from the value — a text field for a string, a number field for a number, a checkbox for a boolean, and the JSON editor for anything else.
+
+Write the snippet when you want to choose the controls or their labels. Leave it out when the defaults will do.
+
 ## Automatic controls
 
 Poveste reads the props a component declares and builds a control for each one,
