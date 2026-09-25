@@ -11,6 +11,20 @@ export interface PreviewRenderContext {
    * app realm, where the story view needs all of them mounted.
    */
   targetVariantId?: string | null
+  /**
+   * Whether this mount pass owns the live state sync for its variants.
+   *
+   * False in a sandbox realm, where the render tree beside it already syncs the
+   * same `variant.state` against the same story's bindings. Two syncs over one
+   * state is two deep watchers walking the whole graph on every edit, and a
+   * story holding a large one pays for both: #964 measured the sandbox running
+   * three syncs where the app realm runs one.
+   *
+   * The app realm keeps it. Its mount pass is the only thing that fills
+   * `variant.state` there — with no controls slot nothing renders, so nothing
+   * else would — and that is what the controls panel builds from.
+   */
+  syncState?: boolean
   externalState: Variant['state'] | null
   nextVariantIndex: {
     value: number

@@ -134,6 +134,26 @@ The axis reads the same against a dev server as against a built book, which is w
 
 **What none of these numbers measure is the thing the fix turns on.** Every one of them is what `markRaw` buys *while the walkers ignore it*. #957 reports that honouring `__v_skip` takes the marked story from 1639 to 132ms a keystroke — control cost, and twenty long frames to none. A quarter is what the escape hatch is worth today, not what the direction is worth.
 
+## Reference, state sync before and after #964 (built book, medians over 5 runs)
+
+Taken on a different machine from the tables above, so these two rows are comparable to each other and to nothing further up — both arms ran minutes apart with the same instrument and the same book.
+
+`bench-state-plain`, the unmarked large binding:
+
+| | wall | per keystroke | busy | frames >50ms | worst frame | host script | sandbox script |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| before | 24859 | 2486 | 2366 | 20 | 1940 | 8415 | 15966 |
+| after | 18328 | 1833 | 1713 | 19 | 1086 | 7711 | 9500 |
+| | −26% | −26% | −28% | | −44% | −8% | **−40%** |
+
+The ranges do not overlap — 22938–26695 before, 17982–19876 after — which is what makes this readable at all: the run-to-run spread on this story is about ±8%, so anything under that is not a result.
+
+`bench-state-control` is 123 against 122 across the same pair, which is the instrument saying it did not move.
+
+**The saving is in the sandbox, and only there.** The fix stops the sandbox's hidden mount pass owning a live state sync, because the render tree beside it already syncs the same `variant.state`. The app realm keeps its one — its mount pass is the only thing that fills `variant.state` there, and the controls panel is built from it. Host script time moving 8% is that realm being untouched; the 40% is the change.
+
+**A walker probe under-predicted this by three times**, and the reason is worth keeping. Counters patched into the four walkers put the sandbox's mount sync at 188ms of a 1064ms probed total, which read as ~8% of the 2366ms busy — inside the spread, and nearly a reason not to try it. But a sync costs more than its walker: removing one also removes Vue's own `deep: true` traversal for two watchers, the `applyState` writes, and the echo, none of which a walker counter can see. Size a sync by removing it, not by timing what happens inside it.
+
 ## Reference (M3 Pro, `conformance-huge-grid`, V=1000, 18 cells)
 
 | | first | t10 | last | blocked |

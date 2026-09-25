@@ -210,6 +210,13 @@ const app = createApp({
           // GenericMountStory as an attr, so plugins that don't know the prop
           // ignore it.
           targetVariantId: variantId.value,
+          // And it does not own the state here. The render tree below syncs the
+          // same `variant.state` against the same story, so a live sync from
+          // this pass walks the whole graph a second time for every edit — two
+          // of the sandbox's three syncs, where the app realm runs one (#964).
+          // Same attr fall-through, so a plugin that does not know it ignores it
+          // and keeps the behaviour it had.
+          syncState: false,
         }),
       ]),
       this.story && this.variant
