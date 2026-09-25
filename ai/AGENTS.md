@@ -132,7 +132,6 @@ Much of `docs/` is still hard-wrapped, inherited from histoire. Leave it that wa
 ## Files that are not yours to edit
 
 - `packages/poveste-app/src/app/util/icons.generated.ts` — generated; refresh with `pnpm --filter @poveste/app icons`
-- `packages/poveste-vendors/dist/client/node_modules/` — scavenged at build time by `rollup.config.mjs` (#305)
 - `CHANGELOG.md` — written by hand as release prep, and published verbatim as the GitHub release body. Nothing generates it and nothing can. See CONTRIBUTING.md.
 
 ## What is not settled
