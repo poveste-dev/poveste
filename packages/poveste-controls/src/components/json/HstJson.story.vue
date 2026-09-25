@@ -10,6 +10,20 @@ function initState() {
     },
   }
 }
+
+// A `Date` writes out as a quoted ISO string and a `Map` as `{}`, so a document
+// holding one is a view of the value rather than the value. The editor names
+// them and refuses the write-back that would replace each with its label.
+function namedState() {
+  return {
+    film: {
+      released: new Date(1509321600000),
+      cast: new Map([['K', 'Ryan Gosling'], ['Deckard', 'Harrison Ford']]),
+      rating: /^\d(\.\d)?$/,
+      onPick: () => {},
+    },
+  }
+}
 </script>
 
 <template>
@@ -34,6 +48,18 @@ function initState() {
         <HstJson
           v-model="state.film"
           title="Text"
+        />
+      </template>
+    </Variant>
+
+    <Variant
+      title="values JSON cannot carry"
+      :init-state="namedState"
+    >
+      <template #default="{ state }">
+        <HstJson
+          v-model="state.film"
+          title="Named"
         />
       </template>
     </Variant>

@@ -52,9 +52,12 @@ let editorView: EditorView
 // our own document replaces a cycle in the story's state with the string
 // `[Circular]`, and a function with `[Function]`.
 let renderedDoc: string | undefined
-// Past the serialiser's budget the document is a partial view. Editing it would
-// write `[Truncated]` over every object it left out, so it is read-only.
-const truncated = ref(false)
+// Whether the document is the value, or a view of it: the serialiser named
+// something rather than writing it out, or its budget cut the rest short. Such
+// a document is read-only, because parsing it back writes each marker's label
+// over the thing it stands for — a string over a `Date`, `[Truncated]` over
+// every object left out (#977).
+const faithful = ref(true)
 const internalValue = ref('')
 const invalidValue = ref(false)
 const editorElement = ref<HTMLInputElement>()
@@ -90,7 +93,7 @@ const extensions = [
 function render() {
   const result = serializeState(props.modelValue, 2)
   renderedDoc = result.doc
-  truncated.value = result.truncated
+  faithful.value = result.faithful
   return result.doc
 }
 
@@ -105,7 +108,7 @@ onMounted(() => {
     editorView.dispatch({
       effects: [
         themeConfig.reconfigure(themes[isDark.value ? 'dark' : 'light']),
-        editableConfig.reconfigure(EditorView.editable.of(!truncated.value)),
+        editableConfig.reconfigure(EditorView.editable.of(faithful.value)),
       ],
     })
   })
@@ -127,13 +130,19 @@ watch(() => props.modelValue, () => {
 }, { deep: true })
 
 watch(() => internalValue.value, () => {
+  // Cleared before the returns below, not after them. A reader who typed
+  // something unparseable and then watched the row turn read-only — because
+  // the story put a `Date` there — could otherwise never clear the warning:
+  // the early return skips the reset, and a read-only editor takes no edit
+  // that would reach it.
+  invalidValue.value = false
+
   // Our own render coming back round. The model already holds this, and parsing
   // it would hand back the markers instead of the values they stand for.
-  if (internalValue.value === renderedDoc || truncated.value) {
+  if (internalValue.value === renderedDoc || !faithful.value) {
     return
   }
 
-  invalidValue.value = false
   try {
     emit('update:modelValue', JSON.parse(internalValue.value))
   }
@@ -156,6 +165,10 @@ watch(() => internalValue.value, () => {
       v-bind="{ ...$attrs, class: null, style: null }"
     />
 
+    <!-- `flex-none` on both: the actions row is a flex line whose other child is
+         the editor, at `grow max-w-full`, and a 1em icon left shrinkable is
+         squeezed to zero width. The JSON error icon had been rendering at 0×14
+         since it was added — present in the DOM, and never once seen. -->
     <template #actions>
       <HstTooltip
         v-if="invalidValue"
@@ -163,7 +176,17 @@ watch(() => internalValue.value, () => {
       >
         <Icon
           icon="carbon:warning-alt"
-          class="text-orange-500"
+          class="poveste-json-invalid flex-none text-orange-500"
+        />
+      </HstTooltip>
+
+      <HstTooltip
+        v-else-if="!faithful"
+        content="Read-only: the bracketed entries name values JSON cannot carry"
+      >
+        <Icon
+          icon="carbon:view"
+          class="poveste-json-read-only flex-none text-gray-500 dark:text-gray-400"
         />
       </HstTooltip>
 
