@@ -5,7 +5,7 @@ import {
   unref as _unref,
   watch as _watch,
 } from '@poveste/vendors/vue'
-import { getCurrentInstance, isReadonly, isRef, unref, watch } from 'vue'
+import { getCurrentInstance, isReadonly, isRef, markRaw, unref, watch } from 'vue'
 
 const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
 
@@ -47,12 +47,19 @@ export function toRawDeep(val: unknown, seen = new WeakMap()): any {
   if (!Array.isArray(unwrappedValue) && !isPlainObject(unwrappedValue)) {
     // A `Date`, a `Map`, a class instance. Both sides of this bridge live in
     // one realm, so the reference is the useful thing to hand over — the same
-    // answer given to a marked value just above, and the same one `copyState`
-    // in `@poveste/shared` gives. Rebuilding it as a plain object emptied it: a
-    // `Date` has no own enumerable keys, so it arrived as `{}`, and the
-    // baseline's `isEquivalent` was handed two of those and called them
-    // equivalent (#977).
-    return unwrappedValue
+    // answer `copyState` in `@poveste/shared` gives. Rebuilding it as a plain
+    // object emptied it: a `Date` has no own enumerable keys, so it arrived as
+    // `{}`, and the baseline's `isEquivalent` was handed two of those and
+    // called them equivalent (#977).
+    //
+    // Marked on the way through, which is not decoration. `applyState` writes
+    // this into the other Vue's reactive graph, and a reference to something
+    // like a Nuxt app instance — which a `<script setup>` binding can be — is
+    // then deep-watched: `useNuxtApp()` in a story recursed until the stack
+    // gave out. Flattening used to bound that by accident. `markRaw` bounds it
+    // deliberately, and is the treatment #974 already gives a value that must
+    // cross by reference.
+    return markRaw(unwrappedValue)
   }
 
   if (Array.isArray(unwrappedValue)) {
@@ -104,8 +111,8 @@ export function _toRawDeep(val: unknown, seen = new WeakMap()): any {
     // in `@poveste/shared` gives. Rebuilding it as a plain object emptied it: a
     // `Date` has no own enumerable keys, so it arrived as `{}`, and the
     // baseline's `isEquivalent` was handed two of those and called them
-    // equivalent (#977).
-    return unwrappedValue
+    // equivalent (#977). Marked for the reason given on the walker above.
+    return markRaw(unwrappedValue)
   }
 
   if (Array.isArray(unwrappedValue)) {
