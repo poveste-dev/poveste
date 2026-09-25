@@ -1,5 +1,5 @@
 import type { ComponentInternalInstance } from 'vue'
-import { applyState, createStateBaseline, isMarkedRaw } from '@poveste/shared'
+import { applyState, createStateBaseline, isMarkedRaw, isPlainObject } from '@poveste/shared'
 import {
   isRef as _isRef,
   unref as _unref,
@@ -44,6 +44,17 @@ export function toRawDeep(val: unknown, seen = new WeakMap()): any {
     return seen.get(unwrappedValue)
   }
 
+  if (!Array.isArray(unwrappedValue) && !isPlainObject(unwrappedValue)) {
+    // A `Date`, a `Map`, a class instance. Both sides of this bridge live in
+    // one realm, so the reference is the useful thing to hand over — the same
+    // answer given to a marked value just above, and the same one `copyState`
+    // in `@poveste/shared` gives. Rebuilding it as a plain object emptied it: a
+    // `Date` has no own enumerable keys, so it arrived as `{}`, and the
+    // baseline's `isEquivalent` was handed two of those and called them
+    // equivalent (#977).
+    return unwrappedValue
+  }
+
   if (Array.isArray(unwrappedValue)) {
     const result: unknown[] = []
     seen.set(unwrappedValue, result)
@@ -84,6 +95,17 @@ export function _toRawDeep(val: unknown, seen = new WeakMap()): any {
 
   if (seen.has(unwrappedValue)) {
     return seen.get(unwrappedValue)
+  }
+
+  if (!Array.isArray(unwrappedValue) && !isPlainObject(unwrappedValue)) {
+    // A `Date`, a `Map`, a class instance. Both sides of this bridge live in
+    // one realm, so the reference is the useful thing to hand over — the same
+    // answer given to a marked value just above, and the same one `copyState`
+    // in `@poveste/shared` gives. Rebuilding it as a plain object emptied it: a
+    // `Date` has no own enumerable keys, so it arrived as `{}`, and the
+    // baseline's `isEquivalent` was handed two of those and called them
+    // equivalent (#977).
+    return unwrappedValue
   }
 
   if (Array.isArray(unwrappedValue)) {
