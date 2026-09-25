@@ -57,7 +57,14 @@ export function isMarkedRaw(value: any): boolean {
   }
 }
 
-function isPlainObject(value: any) {
+/**
+ * Exported because `poveste-app`'s walker has to draw the same line. The two
+ * disagreeing about what a non-plain value is was #977: the walker flattened a
+ * `Date` to `{}` before `isEquivalent` ever saw it, so the defence below —
+ * written for exactly that case — was handed two empty plain objects and
+ * reported them equivalent.
+ */
+export function isPlainObject(value: any) {
   if (value === null || typeof value !== 'object') {
     return false
   }

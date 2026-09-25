@@ -32,6 +32,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-color', title: 'Colour picker' },
   { id: 'conformance-controls', title: 'Control bindings' },
   { id: 'conformance-date', title: 'Date control' },
+  { id: 'conformance-state-types', title: 'State types' },
   { id: 'conformance-dark', title: 'Dark' },
   { id: 'conformance-docs', title: 'Documentation' },
   { id: 'conformance-events', title: 'Events' },

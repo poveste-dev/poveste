@@ -41,6 +41,61 @@ describe('syncStateBundledAndExternal', () => {
     sync.stop()
   })
 
+  // Both walkers rebuilt every object from its own enumerable keys, so a `Date`
+  // crossed as `{}` — and the baseline's `isEquivalent`, which refuses to
+  // compare anything that is not plain precisely so two distinct `Date`s are
+  // never called equal, was handed two empty plain objects instead (#977).
+  it('carries a Date across, rather than emptying it', async () => {
+    const { bundled, external, sync } = setup({ count: 0 })
+    await settle()
+
+    external.at = new Date(1790071200000)
+    await settle()
+
+    expect(bundled.at).toBeInstanceOf(Date)
+    expect(bundled.at.getTime()).toBe(1790071200000)
+
+    sync.stop()
+  })
+
+  it('carries a Map and a class instance the same way', async () => {
+    class Point {
+      constructor(public x: number, public y: number) {}
+      get len() { return Math.hypot(this.x, this.y) }
+    }
+    const { bundled, external, sync } = setup({ count: 0 })
+    await settle()
+
+    external.m = new Map([['a', 1]])
+    external.p = new Point(3, 4)
+    await settle()
+
+    expect(bundled.m).toBeInstanceOf(Map)
+    expect(bundled.m.get('a')).toBe(1)
+    // In one realm the reference crosses, so the prototype survives too — which
+    // the sandbox bridge cannot promise and does not (#977).
+    expect(bundled.p.len).toBe(5)
+
+    sync.stop()
+  })
+
+  // The half the walker was destroying upstream of: two different dates must
+  // not settle as equivalent, or an edit is dropped rather than mirrored.
+  it('mirrors a change from one Date to another', async () => {
+    const { bundled, external, sync } = setup({ count: 0 })
+    await settle()
+
+    external.at = new Date(1790071200000)
+    await settle()
+
+    external.at = new Date(0)
+    await settle()
+
+    expect(bundled.at.getTime()).toBe(0)
+
+    sync.stop()
+  })
+
   it('stops mirroring once stopped', async () => {
     const { bundled, external, sync } = setup({ count: 0 })
     await settle()

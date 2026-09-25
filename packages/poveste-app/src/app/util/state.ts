@@ -1,4 +1,4 @@
-import { clone, isMarkedRaw, omit } from '@poveste/shared'
+import { clone, isMarkedRaw, isPlainObject, omit } from '@poveste/shared'
 import { isRef, unref } from 'vue'
 
 const isObject = (val: unknown): val is object => val !== null && typeof val === 'object'
@@ -56,6 +56,10 @@ function walk(val: unknown, clean: boolean, seen: WeakMap<object, any>): any {
     return seen.get(unwrappedValue)
   }
 
+  if (!Array.isArray(unwrappedValue) && !isPlainObject(unwrappedValue)) {
+    return notPlain(unwrappedValue, clean, seen)
+  }
+
   if (Array.isArray(unwrappedValue)) {
     const result: unknown[] = []
     seen.set(unwrappedValue, result)
@@ -75,6 +79,87 @@ function walk(val: unknown, clean: boolean, seen: WeakMap<object, any>): any {
     toRawObject(unwrappedValue as Record<any, any>, result, clean, seen)
     return result
   }
+}
+
+/**
+ * A value with a prototype of its own — a `Date`, a `Map`, a class instance.
+ *
+ * These used to fall past every branch into `toRawObject`, whose `Object.keys`
+ * is empty for most of them, so they arrived as `{}` with no error and no
+ * warning (#977). `postMessage` is structured clone, and structured clone
+ * carries `Date`, `Map`, `Set`, `RegExp`, `Error`, typed arrays and `BigInt`
+ * intact — so they were being destroyed here, before the transport that would
+ * have carried them was ever reached.
+ *
+ * Structured clone is therefore the line, rather than a list authored here:
+ * it is the boundary that actually exists, it needs no maintaining as the
+ * platform adds types, and adopting it is what makes this walk agree with
+ * `isEquivalent`, which refuses to compare anything that is not plain.
+ *
+ * Without `clean` the copy stays in this realm, so the value is carried by
+ * reference — the same answer `copyState` in `@poveste/shared` gives, and the
+ * identity `isEquivalent` then settles by `Object.is`.
+ */
+function notPlain(value: object, clean: boolean, seen: WeakMap<object, any>): any {
+  if (!clean) {
+    return value
+  }
+
+  if (value instanceof Map || value instanceof Set) {
+    return walkCollection(value, seen)
+  }
+
+  try {
+    const copy = structuredClone(value)
+    seen.set(value, copy)
+    return copy
+  }
+  catch {
+    // `URL`, a DOM node, a `Promise`: structured clone refuses them, so passing
+    // one through would turn a silent flattening into a thrown `DataCloneError`
+    // mid-sync. Dropped the way a function is, and the key does not arrive.
+    return DROP
+  }
+}
+
+/**
+ * `Map` and `Set`, walked rather than handed to `structuredClone`, for two
+ * measured reasons.
+ *
+ * They hold user values, so this walk's own rules have to reach inside them: a
+ * function or a marked value in a `Map` is the same problem it is in an array,
+ * and an array already comes out shorter for it. Cloning the whole container
+ * would carry a function straight into a `DataCloneError`, and would strip a
+ * marked value's `__v_skip` and hand the far side a plain graph to deep-watch
+ * — which is the hazard #974 exists to prevent.
+ *
+ * And these are the only types here that Vue proxies. `structuredClone` throws
+ * `DataCloneError` on a reactive `Map` while the raw one clones fine, so a
+ * `Map` in reactive state would be refused and dropped — a second silence
+ * rather than a fix for the first. `Date`, `RegExp`, `Error` and typed arrays
+ * are not proxied, so the path below never meets a proxy and needs no `toRaw`.
+ */
+function walkCollection(value: Map<any, any> | Set<any>, seen: WeakMap<object, any>): any {
+  const keep = (walked: any) => walked !== DROP && typeof walked !== 'function'
+
+  if (value instanceof Set) {
+    const copy = new Set()
+    seen.set(value, copy)
+    for (const entry of value) {
+      const walked = walk(entry, true, seen)
+      if (keep(walked)) copy.add(walked)
+    }
+    return copy
+  }
+
+  const copy = new Map()
+  seen.set(value, copy)
+  for (const [key, entry] of value) {
+    const walkedKey = walk(key, true, seen)
+    const walked = walk(entry, true, seen)
+    if (keep(walkedKey) && keep(walked)) copy.set(walkedKey, walked)
+  }
+  return copy
 }
 
 function toRawObject(obj: Record<any, any>, target: Record<any, any>, clean: boolean, seen: WeakMap<object, any>) {
