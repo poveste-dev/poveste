@@ -63,16 +63,19 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
     <CheckboxGroupRoot
       :model-value="modelValue"
       class="poveste-checkbox-list-options"
+      data-slot="options"
       @update:model-value="(value: unknown) => emit('update:modelValue', value as string[])"
     >
       <Label
         v-for="(label, value) in formattedOptions"
         :key="value"
         class="poveste-checkbox-list-option"
+        data-slot="option"
       >
         <CheckboxRoot
           :value="value"
           class="poveste-checkbox-list-box"
+          data-slot="control"
         >
           <HstSimpleCheckbox :model-value="modelValue.includes(value)" />
         </CheckboxRoot>

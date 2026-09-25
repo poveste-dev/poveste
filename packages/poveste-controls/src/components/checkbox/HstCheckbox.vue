@@ -63,6 +63,7 @@ const isTrue = computed(() => {
       :true-value="isString ? 'true' : true"
       :false-value="isString ? 'false' : false"
       class="poveste-checkbox-box"
+      data-slot="control"
       @update:model-value="(value: Booleanish) => emit('update:modelValue', value)"
     >
       <HstSimpleCheckbox :model-value="isTrue" />

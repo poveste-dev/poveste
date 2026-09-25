@@ -242,6 +242,14 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:preview-position
 
+      # Two controls on Reka disagreed about how a control is styled, with ten
+      # more about to be written against whichever was copied (#978). `data-slot`
+      # is the part that cannot be retrofitted: it is the only seam a consumer
+      # has once `@scope` removes their CSS from our markup.
+      - name: Check the control conventions
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run test:control-conventions
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes

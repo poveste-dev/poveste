@@ -68,6 +68,18 @@ The middle row is the distinction to keep: a book can carry the conformance cont
 
 **Renaming an example is a two-part change.** The e2e job name is built from the matrix entry, so `examples/vue3` becoming `examples/vue` renamed the required check `Example e2e (vue3)` on `main` — and a required check that is never reported is never satisfied, so the next release push to `main` is refused. `next` is unprotected, so nothing before that push says a word. `.github/required-status-checks.txt` records what `main` requires and the wiring check holds it to the matrix; GitHub holds the real list and reading it needs admin, so the settings page and that file are edited together, by hand (#795).
 
+## How the chrome is styled
+
+Plain CSS over the `@theme` custom properties, in the component's own `<style>` block. Not Tailwind utilities in `class`, and not a variant map in script.
+
+Two controls disagreed about this while ten more were about to be written against whichever was copied (#978). The rules, each with the reason it exists, are in [`packages/poveste-controls/CONVENTIONS.md`](../packages/poveste-controls/CONVENTIONS.md), and `scripts/checks/control-conventions.ts` fails CI on the two a script can hold.
+
+Two of them are worth knowing before you open a control, because both fail quietly rather than loudly:
+
+**Dark mode goes on the subject.** `.ptw-dark` sits on `<html>`, above the `@scope` root the chrome is wrapped in, so a descendant rule keyed on it never matches from inside a control (#101). Write `&:where(.ptw-dark, .ptw-dark *)`. The `dark:` *utility* is safe and compiles to exactly that; `@apply` with a `dark:` variant is what breaks, and it breaks by keeping the light colours with nothing reported.
+
+**`data-slot` is the consumer's only seam.** `@scope` removes a consumer's CSS from our markup, so a stable attribute is all they have left to target. It cannot be retrofitted once a component has shipped without it, which is why the check refuses a control that names no part.
+
 ## Commands that do less than their name
 
 | Command | What it actually covers |
