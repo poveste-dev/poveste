@@ -53,10 +53,25 @@ function probe(value: any, read: (v: any) => unknown) {
       </p>
     </template>
 
+    <!-- The JSON editor is what the panel reaches for when it cannot switch on
+         the type, so the typed values are bound to it directly: what it does
+         with one of them is the second half of #977. -->
     <template #controls="{ state }">
       <HstText
         v-model="state.label"
         title="Label"
+      />
+      <HstJson
+        v-model="state.at"
+        title="at"
+      />
+      <HstJson
+        v-model="state.m"
+        title="m"
+      />
+      <HstJson
+        v-model="state.re"
+        title="re"
       />
     </template>
   </Story>

@@ -37,8 +37,14 @@
 </script>
 
 <Hst.Story id="conformance-state-types" title="Conformance/State types" {initState}>
+  <!-- The JSON editor is what the panel reaches for when it cannot switch on the
+       type, so the typed values are bound to it directly: what it does with one
+       of them is the second half of #977. -->
   {#snippet controls({ state })}
     <Hst.Text bind:value={state.label} title="Label" />
+    <Hst.Json bind:value={state.at} title="at" />
+    <Hst.Json bind:value={state.m} title="m" />
+    <Hst.Json bind:value={state.re} title="re" />
   {/snippet}
 
   <Hst.Variant id="default" title="default">

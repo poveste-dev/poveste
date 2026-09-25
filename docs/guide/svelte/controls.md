@@ -56,6 +56,14 @@ A story that has controls but no `initState` logs an error in the console saying
 Values that are genuinely local — a `bind:this` node, a DOM ref — should stay in the component.
 Only what your controls drive needs to be state.
 
+### What state may hold
+
+State reaches the preview through `postMessage`, which is [structured clone](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm), and that is the contract: a `Date`, a `Map`, a `Set`, a `RegExp`, an `Error`, a typed array and a `BigInt` arrive on the other side as themselves.
+
+A class instance crosses as a plain object — structured clone carries the data and drops the prototype, so its methods and accessors do not come with it. A `URL`, a DOM node, a `Promise` and a function do not cross at all, and the key simply does not arrive.
+
+The controls panel drives what it can write back faithfully: strings, numbers, booleans, plain objects and arrays. Everything else is named in the JSON editor and left read-only — `[Date 2026-09-20T14:30:00.000Z]`, `[Map(2)]`, `[RegExp /ab+c/gi]` — because that editor writes back whatever it parses, and parsing `"2026-09-20T14:30:00.000Z"` would put a string where your `Date` was ([#977](https://github.com/poveste-dev/poveste/issues/977)).
+
 ## Controls panel
 
 To create the control panel, Poveste provides a `controls` snippet on `<Hst.Variant>` (and

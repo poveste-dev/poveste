@@ -1,3 +1,5 @@
+import { isPlainObject } from '@poveste/shared'
+
 /**
  * `JSON.stringify` for values that were never promised to be JSON.
  *
@@ -16,6 +18,13 @@
  * time it appears, so an app instance such as `useNuxtApp()` expands without
  * end, and this runs synchronously on the thread the preview iframe shares
  * (#788).
+ *
+ * Every other type with a prototype of its own is named as well — a `Date`, a
+ * `Map`, a `RegExp`, a class instance. Those *are* expressible as JSON in the
+ * sense that `JSON.stringify` produces something for them, which is exactly the
+ * problem: a `Date` renders as a quoted ISO string and a `Map` as `{}`, neither
+ * distinguishable from a value the reader may edit. Parsing that back writes a
+ * string over the `Date` and a plain object over the `Map` (#977).
  */
 const MAX_OBJECTS = 5000
 
@@ -24,53 +33,141 @@ export function stringifyState(value: unknown, space?: number) {
 }
 
 /**
- * `stringifyState`, and whether the budget cut the document short. A truncated
- * document is not the value, so nothing may parse it back into the model.
+ * `stringifyState`, and whether the document *is* the value.
+ *
+ * `faithful` is false as soon as anything was named rather than written out —
+ * a marker, or the budget cutting the rest short. Such a document is a view of
+ * the value and not the value, so nothing may parse it back into the model:
+ * doing so replaces whatever each marker stands for with its label.
  */
-export function serializeState(value: unknown, space?: number): { doc: string, truncated: boolean } {
+export function serializeState(value: unknown, space?: number): { doc: string, faithful: boolean } {
   // Ancestors, not everything seen: the same object appearing twice as a
   // sibling is a shared reference, not a cycle, and is perfectly serialisable.
   // The replacer's `this` is the holder, which is what lets the stack unwind.
   const ancestors: any[] = []
   let walked = 0
+  let faithful = true
 
-  const doc = JSON.stringify(value, function (this: any, _key, current) {
-    if (typeof current === 'function') {
-      return '[Function]'
+  const named = (label: string) => {
+    faithful = false
+    return `[${label}]`
+  }
+
+  const doc = JSON.stringify(value, function (this: any, key, current) {
+    // What the holder actually keeps. `JSON.stringify` calls `toJSON` before the
+    // replacer, so a `Date` and a `URL` arrive here already flattened into the
+    // string that hides them. The root is reachable the same way: the spec hands
+    // the replacer a `{ '': value }` wrapper as `this`.
+    const raw = held(this, key, current)
+
+    if (typeof raw === 'function') {
+      return named('Function')
     }
 
-    if (typeof current === 'bigint') {
-      return current.toString()
+    if (typeof raw === 'bigint') {
+      return named(`BigInt ${raw}`)
     }
 
-    if (current === null || typeof current !== 'object') {
+    if (raw === null || typeof raw !== 'object') {
       return current
     }
 
-    if (typeof Node !== 'undefined' && current instanceof Node) {
-      return '[Node]'
+    if (typeof Node !== 'undefined' && raw instanceof Node) {
+      return named('Node')
     }
 
-    if (typeof Window !== 'undefined' && current instanceof Window) {
-      return '[Window]'
+    if (typeof Window !== 'undefined' && raw instanceof Window) {
+      return named('Window')
+    }
+
+    // Named with what the type is about rather than by name alone: a `Map` and
+    // a `Set` both write out as `{}`, and a `RegExp` too, so the size and the
+    // pattern are the whole of what the reader came for.
+    if (raw instanceof Map) {
+      return named(`Map(${raw.size})`)
+    }
+
+    if (raw instanceof Set) {
+      return named(`Set(${raw.size})`)
+    }
+
+    if (raw instanceof RegExp) {
+      return named(`RegExp ${raw}`)
+    }
+
+    if (raw instanceof Error) {
+      return named(`${raw.name}: ${raw.message}`)
+    }
+
+    if (ArrayBuffer.isView(raw)) {
+      const view = raw as ArrayBufferView & { length?: number }
+      return named(`${typeName(view)}(${view.length ?? view.byteLength})`)
+    }
+
+    if (!Array.isArray(raw) && !isPlainObject(raw)) {
+      return named(describe(raw, current))
     }
 
     while (ancestors.length > 0 && ancestors[ancestors.length - 1] !== this) {
       ancestors.pop()
     }
 
-    if (ancestors.includes(current)) {
-      return '[Circular]'
+    if (ancestors.includes(raw)) {
+      return named('Circular')
     }
 
     if (++walked > MAX_OBJECTS) {
-      return '[Truncated]'
+      return named('Truncated')
     }
 
-    ancestors.push(current)
+    ancestors.push(raw)
 
     return current
   }, space)
 
-  return { doc, truncated: walked > MAX_OBJECTS }
+  return { doc, faithful }
+}
+
+/**
+ * The value the holder keeps under `key`, which is not always the one the
+ * replacer was handed.
+ *
+ * Guarded because state is user data: a getter may throw, and a proxy may
+ * refuse the read outright. Falling back to what the replacer was given loses
+ * the type, which is the pre-#977 behaviour and never worse than it.
+ */
+function held(holder: any, key: string, current: unknown) {
+  try {
+    return holder == null ? current : holder[key]
+  }
+  catch {
+    return current
+  }
+}
+
+/**
+ * A class instance, a typed array, a `URL` — anything else carrying a prototype
+ * of its own.
+ *
+ * `toJSON` output is kept beside the constructor name where it is legible. A
+ * `URL` reads out as its href and a `Date` as its ISO string, and the panel
+ * showed exactly that before this: naming the type has to add to what the
+ * reader could see, not replace it.
+ */
+function describe(value: object, current: unknown): string {
+  const name = typeName(value)
+
+  return typeof current === 'string' || typeof current === 'number'
+    ? `${name} ${current}`
+    : name
+}
+
+/** Guarded: a proxy is free to refuse the read, and the generic name is then the honest answer. */
+function typeName(value: object): string {
+  try {
+    return value.constructor?.name || 'Object'
+  }
+  catch {
+    return 'Object'
+  }
 }
