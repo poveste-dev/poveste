@@ -185,7 +185,52 @@ export function findBook(example: string): string | undefined {
 
 const REMEDY = 'Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.'
 
-export function checkBundleSize(root = ROOT): CheckResult {
+/**
+ * Whether a chunk over its ceiling fails the run, or is only reported.
+ *
+ * **Off for the duration of #955's control migration, by decision, and to be
+ * turned back on when it lands — see #992, which is what turns it back on.**
+ * The ceilings are still measured and every breach is still printed — going
+ * quiet on the number is the failure #601 was, and a check that reports nothing
+ * is indistinguishable from one that passes.
+ *
+ * Why it is off rather than raised again: the migration moved `vendor` from
+ * 1436 to 1461 across five PRs and 1450 to 1470 once, and the honest number to
+ * set it against is the one the migration finishes on, which nobody has yet. A
+ * ceiling raised per PR to whatever the PR needs is the thing this file's own
+ * comment calls "raised without being read".
+ *
+ * Off is not the same as gone. The breach lines move into the notes, so a run
+ * says exactly how far over it is and says it in the same place the
+ * measurements already print.
+ */
+export const CEILINGS_ENFORCED = false
+
+/** Printed whenever the ceilings are not failing, so nobody reads green as under. */
+export const NOT_ENFORCING = 'ceilings are MEASURED BUT NOT ENFORCED while #955 runs — see #992, and `CEILINGS_ENFORCED` in scripts/checks/bundle-size.ts'
+
+/**
+ * Where a breach goes, and what a run says about it.
+ *
+ * Pure over chunks rather than reading the book, so it is reachable from
+ * `pnpm test:scripts`, which runs everything *not* tagged `check` and therefore
+ * runs with no built book under `examples/`. A test of this routing that called
+ * `checkBundleSize()` would assert "no built book" there instead, which is how
+ * the first version of it went red.
+ */
+export function report(chunks: Chunk[], limits: Limit[], enforced: boolean): { problems: string[], notes: string[] } {
+  const breaches = overLimit(chunks, limits)
+
+  return {
+    problems: enforced ? [...breaches] : [],
+    notes: [
+      ...measurements(chunks, limits),
+      ...enforced ? [] : [NOT_ENFORCING, ...breaches.map(breach => `not failing: ${breach}`)],
+    ],
+  }
+}
+
+export function checkBundleSize(root = ROOT, enforced = CEILINGS_ENFORCED, limits = LIMITS): CheckResult {
   let book: string | undefined
   try {
     book = findBook(join(root, EXAMPLE))
@@ -201,13 +246,16 @@ export function checkBundleSize(root = ROOT): CheckResult {
     return { problems: [`no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`], remedy: REMEDY, notes: [] }
   }
 
-  const chunks = chunksIn(book)
-  const problems = overLimit(chunks, LIMITS)
+  const { problems, notes } = report(chunksIn(book), limits, enforced)
 
+  // Not a ceiling and not covered by the switch: this reads the source for the
+  // barrel entry that shipped 9957 KB of grammars (#304). It is a different
+  // regression from the one the migration is pushing against, and turning it
+  // off with the ceilings would be collateral.
   const barrel = barrelImport(readFileSync(join(root, HIGHLIGHTER), 'utf8'))
   if (barrel !== undefined) {
     problems.push(`${HIGHLIGHTER} has \`${barrel}\` — the full-bundle entry, which ships every grammar and theme (#304)`)
   }
 
-  return { problems, remedy: REMEDY, notes: measurements(chunks, LIMITS) }
+  return { problems, remedy: REMEDY, notes }
 }

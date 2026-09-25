@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { barrelImport, checkBundleSize, findBook, LIMITS, measurements, overLimit } from './bundle-size.ts'
+import { barrelImport, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit, report } from './bundle-size.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -156,10 +156,50 @@ describe('checkBundleSize', () => {
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue'))
   })
 
-  it('the built vue book is within every size ceiling', { tags: ['check', 'app', 'build'] }, () => {
+  it('measures the built vue book, and reports rather than fails while #955 runs', { tags: ['check', 'app', 'build'] }, () => {
     const result = checkBundleSize()
     process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 
     assertNoProblems(result)
+  })
+})
+
+describe('the ceilings while they are not enforced', () => {
+  // Pure over chunks, with no book on disk: `pnpm test:scripts` runs everything
+  // *not* tagged `check`, and that job has no built book. A version of these
+  // that called `checkBundleSize()` asserted "no built book" there instead.
+  const over = [{ name: 'vendor-a.js', kb: 9999 }]
+  const ceiling = [{ prefix: 'vendor', max: 10, because: 'a ceiling to breach' }]
+
+  it('routes a breach to the notes rather than to the problems', () => {
+    const { problems, notes } = report(over, ceiling, false)
+
+    expect(problems).toEqual([])
+    expect(notes).toContainEqual(expect.stringContaining('not failing: vendor-a.js is 9999 KB'))
+  })
+
+  it('routes the same breach to the problems when enforced', () => {
+    const { problems, notes } = report(over, ceiling, true)
+
+    expect(problems).toContainEqual(expect.stringContaining('vendor-a.js is 9999 KB'))
+    expect(notes).not.toContainEqual(expect.stringContaining('not failing'))
+  })
+
+  it('says it is not enforcing, so a green run is not read as under', () => {
+    expect(report(over, ceiling, false).notes).toContainEqual(NOT_ENFORCING)
+    expect(report(over, ceiling, true).notes).not.toContainEqual(NOT_ENFORCING)
+  })
+
+  // Still prints the measurement either way — the point of leaving it off is
+  // that the number stays visible, not that it goes quiet.
+  it('measures the chunk whichever way the switch is set', () => {
+    for (const enforced of [true, false]) {
+      expect(report(over, ceiling, enforced).notes).toContainEqual('vendor-a.js 9999 KB / 10 KB')
+    }
+  })
+
+  // Turning it back on is this constant and nothing else (#992).
+  it('is off', () => {
+    expect(CEILINGS_ENFORCED).toBe(false)
   })
 })
