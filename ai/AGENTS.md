@@ -40,6 +40,8 @@ Branching off `main` for anything multi-step is wrong before it starts.
 
 Stacked PRs are normal for a queue of related work: base each branch on the previous one and say so in the body, since the GitHub diff otherwise shows the whole stack.
 
+A stack merges as **one ref update** — `gh stack link --base next <prs, bottom to top>` then `gh stack merge <stack>` — never PR by PR. `delete_branch_on_merge` is on deliberately, so merged branches do not accumulate on the remote; the cost lands only on a sequential merge, which deletes the base of the PR above it, retargets that PR to `next`, and leaves the squash conflicting. `--base next` is required because `link` defaults to the repository default, which is `main`; the stack number is required because the shared checkout sits on `main`, which is in no stack. Recovering a stack already broken this way is in `/open-pr`.
+
 ## The conformance contract
 
 A story that proves a behaviour goes in **all four** reference books — `vue`, `nuxt`, `svelte`, `sveltekit` — under each one's `conformance/` directory, with the spec in `e2e/` and the id and title in [`e2e/stories.ts`](../e2e/stories.ts).
