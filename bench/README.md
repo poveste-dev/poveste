@@ -47,7 +47,7 @@ The failure it is placed for is the quiet one. The bench stories reach the book 
 
 It also checks the instrument can see what it exists to see. The smoke run plants a 150ms busy loop in one sandbox's `requestAnimationFrame` during the fling and fails unless the longest sandbox script comes back at 150ms or more; a real retarget's longest is about 30ms, so only the plant reaches it. And it fails if no scroll event of the fling reached #301's 8 px/ms, since that fling would have measured the prompt path.
 
-The state axis adds three of its own, and they are the three ways it goes quietly wrong. The stories have to have **reached the book** — a story that did not leaves no input to type into, and `state-sync.mjs` reports a run with nulls rather than raising, so the report would otherwise read as dashes again. `bench-state-64k` has to cost at least **ten times** the control per keystroke — the measured gap is about 670×, so the floor catches an instrument that has gone blind, not a slow runner, and a slow runner widens it because the control's cost is the typing pacing and does not move. And **only `StateBenchUseTemplateRef.story.vue` may call `useTemplateRef`**, which is read from the files rather than from the run, for the reason in the previous section.
+The state axis adds three of its own, and they are the three ways it goes quietly wrong. The stories have to have **reached the book** — a story that did not leaves no input to type into, and `state-sync.mjs` reports a run with nulls rather than raising, so the report would otherwise read as dashes again. `bench-state-plain` has to cost at least **ten times** the control in `busy` — the measured gap is about 280×, so the floor catches an instrument that has gone blind, not a slow runner, and a slow runner widens it because the control's cost is the typing pacing and does not move. It reads `plain` rather than `bench-state-64k` because #974 made a marked binding free, which left the whole size axis reading as the control until #976 rebound it; the guard moved in the same commit that made the move necessary, which is why nothing ever went red. And **only `StateBenchUseTemplateRef.story.vue` may call `useTemplateRef`**, which is read from the files rather than from the run, for the reason in the previous section.
 
 It is not a measurement, and no baseline is committed. `--json` is for diffing two runs on one machine; a number from a shared CI runner would invite comparison against the M3 Pro figures below, which is exactly the comparability the paragraph above is trying to protect.
 
@@ -73,7 +73,7 @@ The visit counts on #957 and #960 — 2,620,000 values per keystroke at 65,535 o
 
 Two things stand in for them, and both are load-independent, which no time on this page is. `syncs` is the sandbox's own STATE_SYNC count — one per keystroke on a healthy story, on any machine. And the object arithmetic in `state-graph.ts` falls out of the fixture's shape before anything runs: depth 15 is 65,535 objects carrying 32,767 `d` numbers and 32,768 `leaf` booleans, so 131,070 values a walk. That is the cheapest check there is on a new instrument — it matched the patched walkers' figure exactly.
 
-The cost of the boundary, stated plainly: linear scaling shows less cleanly in time than in counts. The walkers' counts are exactly linear in objects; the clock here is not. Measured below, 511 → 8,191 objects is ×16 in objects and ×12 in time, and 8,191 → 65,535 is ×8 and ×15. **A count this bench does not print is a count it was never able to print.** It is not a number that went missing.
+The cost of the boundary, stated plainly: linear scaling shows less cleanly in time than in counts. The walkers' counts are exactly linear in objects; the clock here is not. Measured below, 511 → 8,191 objects is ×16 in objects and ×5 in time, and 8,191 → 65,535 is ×8 and ×14. **A count this bench does not print is a count it was never able to print.** It is not a number that went missing.
 
 ### The before-figures came from a different instrument
 
@@ -88,35 +88,43 @@ The figures on #957 and #960 were taken with a throwaway harness that set `el.va
 
 Real typing runs the key pipeline the synthetic path skips, which is why the wall is higher. The frame count is doubled for the same reason long tasks under-read scrolling (#872): a heartbeat samples, and rendering-step work falls between its samples.
 
-## Reference, state sync (M3 Pro, built book, medians over 3 runs)
+## Reference, state sync (built book, medians over 7 runs)
 
-Ten real keystrokes 120ms apart, so 1.2s of every wall time is pacing rather than work. `busy` is per keystroke with that taken off. Every story reported 10 STATE_SYNC messages — one per keystroke — and went quiet afterwards.
+Re-recorded whole at `635ca10a`, on one machine in one sitting, because four rows had stopped describing any code that exists — #974 made a marked binding free and the size axis was bound through one. The figures this replaces were an M3 Pro's, taken before #974 and before #1009; they are in this file's history if a comparison needs them, and nothing here is comparable to them or to the M3 Pro grid table below. Compare within one table.
 
-Size, behind one writable `ref(null)` template ref:
+Ten real keystrokes 120ms apart, so 1.2s of every wall time is pacing rather than work. `busy` is per keystroke with that taken off. Every story reported one STATE_SYNC per keystroke and went quiet afterwards, in all seven runs.
+
+Size, the graph bound directly and unmarked:
 
 | story | objects | wall | per keystroke | busy | frames over 50ms | longest |
 | --- | --- | --- | --- | --- | --- | --- |
-| `bench-state-0` | 1 | 1235 | 124 | 4 | 0 | — |
-| `bench-state-512` | 511 | 1305 | 131 | 11 | 0 | — |
-| `bench-state-8k` | 8,191 | 2563 | 256 | 136 | 20 | 137 |
-| `bench-state-64k` | 65,535 | 21409 | 2141 | 2021 | 20 | 1386 |
+| `bench-state-0` | 1 | 1252 | 125 | 5 | 0 | — |
+| `bench-state-512` | 511 | 1396 | 140 | 20 | 0 | — |
+| `bench-state-8k` | 8,191 | 2190 | 219 | 99 | 20 | 138 |
+| `bench-state-64k` | 65,535 | 15135 | 1514 | 1394 | 20 | 929 |
 
 Kind, all holding 65,535 objects:
 
 | story | binding | wall | per keystroke | busy | longest |
 | --- | --- | --- | --- | --- | --- |
-| `bench-state-control` | none beyond the input | 1231 | 123 | 3 | — |
-| `bench-state-plain` | `ref(tree)` | 23745 | 2375 | 2255 | 1703 |
-| `bench-state-raw` | `ref(markRaw(tree))` | 17467 | 1747 | 1627 | 1189 |
-| `bench-state-shallow` | `shallowRef(tree)` | 24316 | 2432 | 2312 | 1753 |
-| `bench-state-ref` | writable template ref | 21565 | 2157 | 2037 | 1373 |
-| `bench-state-usetemplateref` | `useTemplateRef` | 21789 | 2179 | 2059 | 1422 |
+| `bench-state-control` | none beyond the input | 1250 | 125 | 5 | — |
+| `bench-state-plain` | `ref(tree)` | 15200 | 1520 | 1400 | 916 |
+| `bench-state-raw` | `ref(markRaw(tree))` | 1252 | 125 | 5 | — |
+| `bench-state-shallow` | `shallowRef(tree)` | 15221 | 1522 | 1402 | 944 |
+| `bench-state-ref` | writable template ref | 1260 | 126 | 6 | — |
+| `bench-state-usetemplateref` | `useTemplateRef` | 1260 | 126 | 6 | — |
 
-Four things to read out of those, in order of how easily each is misread.
+Five things to read out of those, in order of how easily each is misread.
 
-**`bench-state-ref` and `bench-state-64k` are the same story in two tables.** 2037 against 2021 is the spread to expect between two measurements of one thing on this machine, and it is the cheapest calibration available — a gap much wider than that is the instrument, not the binding.
+**`bench-state-plain` and `bench-state-64k` are the same story in two tables.** 1520 against 1514 is the spread to expect between two measurements of one thing on this machine, and it is the cheapest calibration available — a gap much wider than that is the instrument, not the binding. It used to be `bench-state-ref` that paired with `64k`; #976 bound the size axis directly, so the pair that is one story moved with it. A calibration note naming the wrong pair is worse than none, because it reads as a check that passed.
 
-**`bench-state-usetemplateref` matching them is correct here and does not mean #959 is fixed.** Vue returns a readonly ref from `useTemplateRef` only in a dev build and compiles both the wrapper and its warning out of a built book, so against `poveste build` output the story is `bench-state-ref` under another name. Point it at a `poveste dev` server to see the defect it was placed for. Measured there:
+**Three rows now read as the control, and that is the fix rather than damage.** `raw`, `ref` and `usetemplateref` are all bindings Vue marks — explicitly in the first, and by exposing an object in the other two — and #974 taught the walkers to stop at `__v_skip`. 1400 → 5 in `busy` is the escape hatch working. All three walked and read about 2000 before it.
+
+**`markRaw` buys about 12×**, and this is the first measurement of it in the committed instrument rather than in a prototype. The figure it replaces said *about a quarter*, which was honest when taken: a quarter is what marking bought **while the walkers ignored the mark**. #957 carried 70% before that, withdrew it, and settled at 18–25%. Three numbers for one thing, and only this one describes the code that ships.
+
+**`shallowRef` buys nothing**, the one row that has moved through none of this: 1522 against `plain`'s 1520. It stops Vue tracking the graph deeply and does not stop our own walkers reading it.
+
+**`bench-state-usetemplateref` reading as ordinary does not mean #959 is fixed.** Vue returns a readonly ref from `useTemplateRef` only in a dev build and compiles both the wrapper and its warning out of a built book, so against `poveste build` output the story is `bench-state-ref` under another name — which is why the two agree to 1ms above. Point it at a `poveste dev` server to see the defect it was placed for. Measured there, before #974:
 
 ```
 run 1/1: the burst did not finish (locator.click: Timeout 60000ms exceeded.)
@@ -124,15 +132,7 @@ run 1/1: the burst did not finish (locator.click: Timeout 60000ms exceeded.)
 {"found":true,"typed":false,"quiet":false,"readonlyWarnings":100, ...}
 ```
 
-A hundred warnings is Vue's recursive-update ceiling, and the page never comes back far enough to accept a click, let alone a keystroke. That is the whole of #959 in one line of output, and it is why the same story reads as ordinary above.
-
-**`shallowRef` buys nothing**, which agrees with the patched-walker figures: it stops Vue tracking the graph deeply and does not stop our own walkers reading it.
-
-**`markRaw` buys about a quarter, and both instruments now agree on that.** 2255 → 1627 here is 28%; #957 carried 70%, has withdrawn it, and re-measures at 18–25% across both modes, both fixture shapes and both instruments. The 70% came from two stories loaded minutes apart on a machine at load average 8–11 without interleaving — a path already recorded as swinging 5× under load alone. Nothing about the code differed between the two numbers.
-
-The axis reads the same against a dev server as against a built book, which is worth knowing when a figure looks mode-dependent: `bench-state-ref` 2016 against 2021 built, `bench-state-raw` 1615 against 1627, `bench-state-plain` 2332 against 2255.
-
-**What none of these numbers measure is the thing the fix turns on.** Every one of them is what `markRaw` buys *while the walkers ignore it*. #957 reports that honouring `__v_skip` takes the marked story from 1639 to 132ms a keystroke — control cost, and twenty long frames to none. A quarter is what the escape hatch is worth today, not what the direction is worth.
+A hundred warnings is Vue's recursive-update ceiling, and the page never comes back far enough to accept a click, let alone a keystroke. That is the whole of #959 in one line of output.
 
 ## Reference, state sync before and after #964 (built book, medians over 5 runs)
 
