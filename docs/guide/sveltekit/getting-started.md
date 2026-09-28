@@ -103,3 +103,7 @@ Add the scripts to your `package.json`, alongside the ones SvelteKit already gav
 Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
 
 **[Writing Svelte stories](../svelte/stories.md)** is the page that shows one.
+
+## Community
+
+If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions/new?category=q-a).
