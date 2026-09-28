@@ -49,6 +49,8 @@ It also checks the instrument can see what it exists to see. The smoke run plant
 
 The state axis adds three of its own, and they are the three ways it goes quietly wrong. The stories have to have **reached the book** — a story that did not leaves no input to type into, and `state-sync.mjs` reports a run with nulls rather than raising, so the report would otherwise read as dashes again. `bench-state-plain` has to cost at least **ten times** the control in `busy` — the measured gap is about 280×, so the floor catches an instrument that has gone blind, not a slow runner, and a slow runner widens it because the control's cost is the typing pacing and does not move. It reads `plain` rather than `bench-state-64k` because #974 made a marked binding free, which left the whole size axis reading as the control until #976 rebound it; the guard moved in the same commit that made the move necessary, which is why nothing ever went red. And **only `StateBenchUseTemplateRef.story.vue` may call `useTemplateRef`**, which is read from the files rather than from the run, for the reason in the previous section.
 
+**`bench-state-plain` is the only row in either table that still walks.** `raw`, `ref` and `usetemplateref` sit at the control because Vue marks all three and #974 taught the walkers to stop there, and the size axis is `plain`'s shape at four sizes. So the guard rests on one story, and if a later change makes an *unmarked* binding free as well, no row in this file is left that would notice. That is the property to check before trusting a green smoke run, and it is why the floor was moved to `plain` rather than widened.
+
 It is not a measurement, and no baseline is committed. `--json` is for diffing two runs on one machine; a number from a shared CI runner would invite comparison against the M3 Pro figures below, which is exactly the comparability the paragraph above is trying to protect.
 
 ## Reading the numbers
@@ -114,13 +116,15 @@ Kind, all holding 65,535 objects:
 | `bench-state-ref` | writable template ref | 1260 | 126 | 6 | — |
 | `bench-state-usetemplateref` | `useTemplateRef` | 1260 | 126 | 6 | — |
 
-Five things to read out of those, in order of how easily each is misread.
+Six things to read out of those, in order of how easily each is misread.
 
 **`bench-state-plain` and `bench-state-64k` are the same story in two tables.** 1520 against 1514 is the spread to expect between two measurements of one thing on this machine, and it is the cheapest calibration available — a gap much wider than that is the instrument, not the binding. It used to be `bench-state-ref` that paired with `64k`; #976 bound the size axis directly, so the pair that is one story moved with it. A calibration note naming the wrong pair is worse than none, because it reads as a check that passed.
 
 **Three rows now read as the control, and that is the fix rather than damage.** `raw`, `ref` and `usetemplateref` are all bindings Vue marks — explicitly in the first, and by exposing an object in the other two — and #974 taught the walkers to stop at `__v_skip`. 1400 → 5 in `busy` is the escape hatch working. All three walked and read about 2000 before it.
 
-**`markRaw` buys about 12×**, and this is the first measurement of it in the committed instrument rather than in a prototype. The figure it replaces said *about a quarter*, which was honest when taken: a quarter is what marking bought **while the walkers ignored the mark**. #957 carried 70% before that, withdrew it, and settled at 18–25%. Three numbers for one thing, and only this one describes the code that ships.
+**`markRaw` collapses the story to the control.** `busy` goes 1400ms to 5, which is `bench-state-control`'s own cost — the walk stops at the mark and there is nothing left to price. That is the same collapse the smoke floor reads as about 280× above, and it is not worth quoting more tightly than two orders of magnitude: the remainder sits on the instrument's floor, where 3ms of control on the M3 Pro against 5ms here moves the ratio from 467× to 280× with nothing in the code differing.
+
+**Read that off `busy`, never off per keystroke.** Both per-keystroke terms carry the bench's own 120ms of pacing, so 1520 ÷ 125 is bounded above by 1520 ÷ 120 = **12.7× however good the fix is** — a perfect fix reads 12.7 and a merely good one reads 12.2. An earlier draft of this table said *about 12×* and was measuring the pacing, forty lines under a note saying `busy` is the column for a story that costs nothing. The figures before that — *about a quarter* here, 70% then 18–25% on #957 — were honest when taken: a quarter is what marking bought **while the walkers ignored the mark**.
 
 **`shallowRef` buys nothing**, the one row that has moved through none of this: 1522 against `plain`'s 1520. It stops Vue tracking the graph deeply and does not stop our own walkers reading it.
 
