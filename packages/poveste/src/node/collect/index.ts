@@ -12,7 +12,7 @@ import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
 import { createModuleServer } from './module-server.js'
 import { createPool } from './pool.js'
-import { INVALIDATE } from './task.js'
+import { INVALIDATE, INVALIDATE_ALL } from './task.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -60,6 +60,10 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   function clearCache() {
     server.moduleGraph.invalidateAll()
     node.clearCache()
+    // Both of those make every module read again, and a worker told nothing would
+    // discover that one at a time, dropping each as some story asks for it — which
+    // is how one run ends up holding two instances of a module.
+    threadPool.broadcast({ kind: INVALIDATE_ALL })
   }
 
   if (mainServer) {

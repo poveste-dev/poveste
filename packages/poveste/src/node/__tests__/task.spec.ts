@@ -1,15 +1,15 @@
 import type { Payload, ReturnData } from '../collect/worker.js'
 import { MessageChannel } from 'node:worker_threads'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DONE, FAILED, serveTasks, TASK } from '../collect/task.js'
+import { DONE, FAILED, INVALIDATE_ALL, serveTasks, TASK } from '../collect/task.js'
 
 const channels: MessageChannel[] = []
 
-function served(collect: (payload: Payload) => Promise<ReturnData>, invalidate = vi.fn()) {
+function served(collect: (payload: Payload) => Promise<ReturnData>, invalidate = vi.fn(), invalidateAll = vi.fn()) {
   const channel = new MessageChannel()
   channels.push(channel)
-  serveTasks(channel.port1, { invalidate, collect })
-  return { port: channel.port2, invalidate }
+  serveTasks(channel.port1, { invalidate, invalidateAll, collect })
+  return { port: channel.port2, invalidate, invalidateAll }
 }
 
 function answer(port: MessagePort | import('node:worker_threads').MessagePort) {
@@ -80,6 +80,143 @@ describe('serveTasks', () => {
     await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
 
     expect(answered, 'a broadcast was answered as though it were a task').not.toHaveBeenCalled()
+  })
+
+  it('holds an invalidation that arrives while a story is running', async () => {
+    // Applied mid-story it re-evaluates modules the run is already using, and the
+    // halves of a framework then disagree about which instance is current.
+    const invalidate = vi.fn()
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => new Promise<ReturnData>((resolve) => {
+      finish = resolve
+    }), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(invalidate, 'a story was collected against a graph being invalidated under it').not.toHaveBeenCalled()
+  })
+
+  it('applies a held invalidation before the next story starts', async () => {
+    const order: string[] = []
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => {
+      order.push('collect')
+      return new Promise<ReturnData>((resolve) => {
+        finish = resolve
+      })
+    }, (file) => {
+      order.push(`invalidate ${file}`)
+    })
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    // Delivered before the story settles, which is the case the deferral is for.
+    await new Promise(resolve => setImmediate(resolve))
+    finish!(storyData)
+    await answer(port)
+    order.push('answered')
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(order).toHaveLength(4))
+
+    expect(order, 'the held file was invalidated under the story that was still running').toEqual(['collect', 'answered', 'invalidate /src/Button.vue', 'collect'])
+  })
+
+  it('does not drain under a story just because a second one started', async () => {
+    // Nothing in `serveTasks` stops two tasks overlapping, and the id test above
+    // drives two on purpose. Draining on the second one's arrival would invalidate
+    // modules the first is still holding — the case this file exists for.
+    const invalidate = vi.fn()
+    const finish: ((value: ReturnData) => void)[] = []
+    const { port } = served(() => new Promise<ReturnData>(resolve => finish.push(resolve)), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(1))
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(2))
+
+    expect(invalidate, 'the second task invalidated under the first').not.toHaveBeenCalled()
+  })
+
+  it('drains once both overlapping stories have settled', async () => {
+    const invalidate = vi.fn()
+    const finish: ((value: ReturnData) => void)[] = []
+    const { port } = served(() => new Promise<ReturnData>(resolve => finish.push(resolve)), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(1))
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(2))
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    finish[0]!(storyData)
+    finish[1]!(storyData)
+    await new Promise(resolve => setImmediate(resolve))
+    port.postMessage({ kind: TASK, id: 3, payload: {} })
+
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
+  })
+
+  it('invalidates at once when no story is running', async () => {
+    // The common case: a watcher event between passes has nothing to wait for.
+    const invalidate = vi.fn()
+    const { port } = served(async () => storyData, invalidate)
+
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
+  })
+
+  it('holds a whole-graph drop that arrives while a story is running', async () => {
+    // The pass's own clear, which lands on a busy worker whenever one pass follows
+    // another. Taken mid-story it re-reads modules the story is holding.
+    let finish: (value: ReturnData) => void
+    const { port, invalidateAll } = served(() => new Promise<ReturnData>((resolve) => {
+      finish = resolve
+    }))
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: INVALIDATE_ALL })
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(invalidateAll, 'the graph was dropped out from under a running story').not.toHaveBeenCalled()
+  })
+
+  it('drops the graph once, before the next story, not once per file held with it', async () => {
+    // A held drop covers every held file, so replaying them after it would re-read
+    // what was just dropped.
+    const order: string[] = []
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => {
+      order.push('collect')
+      return new Promise<ReturnData>((resolve) => {
+        finish = resolve
+      })
+    }, file => order.push(`invalidate ${file}`), () => order.push('invalidate all'))
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    port.postMessage({ kind: INVALIDATE_ALL })
+    await new Promise(resolve => setImmediate(resolve))
+    finish!(storyData)
+    await answer(port)
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(order).toHaveLength(3))
+
+    expect(order).toEqual(['collect', 'invalidate all', 'collect'])
+  })
+
+  it('drops the graph at once when no story is running', async () => {
+    const { port, invalidateAll } = served(async () => storyData)
+
+    port.postMessage({ kind: INVALIDATE_ALL })
+
+    await vi.waitFor(() => expect(invalidateAll).toHaveBeenCalledTimes(1))
   })
 
   it('leaves a message that is not its own alone', async () => {

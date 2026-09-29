@@ -45,6 +45,21 @@ function invalidate(file: string) {
   }
 }
 
+// The whole graph, dropped at a task boundary. The server clears its own cache
+// once per pass, so this is re-read in that pass anyway — what changes is whether
+// a story can be halfway through when its turn comes.
+//
+// Everything, with nothing held back. Vitest skips its own `dist` from the reset
+// it does between test files, and the same shape here re-broke Svelte: keeping a
+// module while dropping what it imports leaves it holding the dropped instances.
+// Vitest's skipped set imports only itself; the plugin runtime imports the
+// framework, which is in this graph.
+function invalidateAll() {
+  for (const node of _evaluatedModules.idToModuleMap.values()) {
+    _evaluatedModules.invalidateModule(node)
+  }
+}
+
 if (!parentPort) {
   throw new Error('[poveste] the collection worker was started outside a worker thread')
 }
@@ -53,7 +68,7 @@ if (!parentPort) {
 // per story.
 const _invoke: Invoke = invokeOver(parentPort)
 
-serveTasks(parentPort, { invalidate, collect })
+serveTasks(parentPort, { invalidate, invalidateAll, collect })
 
 async function collect(payload: Payload): Promise<ReturnData> {
   const startTime = performance.now()

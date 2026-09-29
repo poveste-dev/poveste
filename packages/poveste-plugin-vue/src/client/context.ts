@@ -29,12 +29,20 @@ export interface Context<T> {
  * `description` is what a symbol shows in a stack; `provider` is the component
  * a reader has to go and add, and is the only part of the error they can act on.
  *
+ * The key comes from the global registry rather than being minted here, because
+ * this module is evaluated more than once. A collection worker's module graph is
+ * invalidated while a story is mid-run, so `provide` and `inject` can each hold
+ * their own instance of this file — a plain `Symbol()` then differs between them
+ * and the injection misses, which reads as a `<Variant>` outside its `<Story>`.
+ * Every description here is already unique, so the registry cannot re-collide
+ * the way the string keys in #981 did.
+ *
  * Absence is read as `null` rather than `undefined` so that a provider passing
  * `undefined` on purpose is still a provider. None does today, and this is the
  * cheaper of the two mistakes to have made.
  */
 export function createContext<T>(description: string, provider: string): Context<T> {
-  const key: InjectionKey<T> = Symbol(description)
+  const key: InjectionKey<T> = Symbol.for(description)
 
   return {
     provide(value) {

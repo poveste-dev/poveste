@@ -153,6 +153,18 @@ The fork is no longer a dependency, so redoing it means linking it from the pnpm
 
 **Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 
+### A clock in an unfronted pane is not a clock
+
+These benches drive headless Chromium, so this does not reach them. It reaches anything measured by hand through the desktop app's browser pane, which is how the dev and preview books get looked at, and it is worth knowing before those figures are believed.
+
+**A tab that is not the fronted one has its timers clamped to about a second — `requestAnimationFrame` and `setTimeout` alike.** Frame gaps in the top window, from one call, while the sandbox iframe in the same document held a steady 16ms: `3807, 6000, 24, 18, 15, 1419, 16, 17`. A long-task observer recorded nothing over the same idle stretch, so the main thread was never blocked. The clock was.
+
+What that produces is worse than noise, because it is regular: story-to-story navigation read as 1000, 1001, 2001, 2002ms across runs. Round, repeatable figures look like a timer in the code, and the hunt for the one-second constant that explains them comes up empty — there is none. The same navigations with the tab fronted read 12, 17 and 24ms.
+
+**So a probe has to report its own poll rate.** Count the polls and divide: ask for 4ms and read back 6–12ms and the clock was running; read back several hundred and the run is void, whatever it says. A figure taken through the pane without that check says nothing about the code.
+
+The same applies to `first-contentful-paint`, for a different reason — a tab that is not compositing never records one, so a paint entry is simply absent rather than late, and reading the absence as a slow paint is the same mistake in the other direction.
+
 ## Reference, state sync (built book, medians over 7 runs)
 
 Re-recorded whole at `635ca10a`, on one machine in one sitting, because four rows had stopped describing any code that exists — #974 made a marked binding free and the size axis was bound through one. The figures this replaces were an M3 Pro's, taken before #974 and before #1009; they are in this file's history if a comparison needs them, and nothing here is comparable to them or to the M3 Pro grid table below. Compare within one table.
