@@ -405,6 +405,43 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # The other half of the same promise. The build above compiles the node
+      # source against the catalog's `@types/node`, which tracks `.node-version`
+      # and is 26 — so an API that exists in 26 and not in the floor compiles
+      # clean and ships, and the smoke test below only catches it if the two
+      # books it builds happen to execute that line. Measured on this repo: 23
+      # exports that `node:worker_threads`, `node:fs`, `node:crypto` and friends
+      # gained between 22.21.1 and 26.7.0, none of which the build can see.
+      #
+      # The major comes out of `engines.node`, so this adds no second place to
+      # bump — the floor is still declared once, in the manifest.
+      #
+      # Only `packages/poveste`: 38 of its files import a `node:` builtin across
+      # 13 distinct modules, where no other package reaches 8 files. Extending it
+      # to the others is a loop, not a redesign.
+      #
+      # It cannot see globals. `packages/poveste/tsconfig.json` sets
+      # `lib: ["ESNext", "DOM"]`, so `URLPattern` and friends come from the DOM
+      # lib whatever `@types/node` says. This constrains the `node:` module
+      # surface and nothing else.
+      - name: Typecheck the published source against the floor's types
+        run: |
+          set -eu
+          FLOOR_MAJOR="$(node -p "require('./packages/poveste/package.json').engines.node.replace(/[^0-9.]/g,'').split('.')[0]")"
+          TYPES_DIR="$(mktemp -d)"
+          ( cd "${TYPES_DIR}" && npm init -y > /dev/null && npm i --silent --no-package-lock "@types/node@^${FLOOR_MAJOR}" > /dev/null )
+          echo "floor types: @types/node@$(node -p "require('${TYPES_DIR}/node_modules/@types/node/package.json').version")"
+          LINK="packages/poveste/node_modules/@types/node"
+          mv "${LINK}" "${TYPES_DIR}/ceiling"
+          cp -R "${TYPES_DIR}/node_modules/@types/node" "${LINK}"
+          set +e
+          npx tsc -p packages/poveste --noEmit
+          STATUS=$?
+          set -e
+          rm -rf "${LINK}"
+          mv "${TYPES_DIR}/ceiling" "${LINK}"
+          exit "${STATUS}"
+
       # The lowest version `engines.node` admits. Bump both together.
       - name: Switch to the declared minimum
         uses: actions/setup-node@v7
