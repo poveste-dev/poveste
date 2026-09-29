@@ -1,5 +1,4 @@
 import type { ServerRunPayload, ServerStory, ServerStoryFile } from '@poveste/shared'
-import type { MessagePort } from 'node:worker_threads'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Invoke } from './runner.js'
 import { performance } from 'node:perf_hooks'
@@ -9,6 +8,7 @@ import { dirname, resolve } from 'pathe'
 import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
+import { DONE, FAILED, TASK } from './pool.js'
 import { invokeOver } from './rpc.js'
 import { createRunner } from './runner.js'
 
@@ -17,7 +17,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 export interface Payload {
   root: string
   base: string
-  port: MessagePort
   storyFile: ServerStoryFile
   defineGlobals?: Record<string, unknown>
 }
@@ -31,7 +30,6 @@ let _runner: ModuleRunner | undefined
 // Worker-lifetime: externalised runtimes cache the DOM they first saw, so one
 // per story broke re-collection.
 let _domEnv: ReturnType<typeof createDomEnv> | undefined
-let _invoke: Invoke
 
 // A virtual module is cached under the id the plugin resolved it to, not the one
 // it was asked for, so both forms have to go.
@@ -47,21 +45,38 @@ function invalidate(file: string) {
   }
 }
 
-// Cleanup module cache
-parentPort?.on('message', (message) => {
+if (!parentPort) {
+  throw new Error('[poveste] the collection worker was started outside a worker thread')
+}
+
+// One `invoke` for the worker's lifetime: the port it answers over is the same
+// one tasks arrive on, so nothing has to be handed over per story.
+const _invoke: Invoke = invokeOver(parentPort)
+
+parentPort.on('message', (message) => {
   if (message?.kind === 'hst:invalidate') {
     invalidate(message.file)
+    return
   }
+  if (message?.kind !== TASK) {
+    return
+  }
+  collect(message.payload as Payload).then(
+    result => parentPort!.postMessage({ kind: DONE, result }),
+    // Thrown as-is: structured clone is what carried this before the pool was
+    // ours, and matching it keeps the message the collector prints unchanged.
+    error => parentPort!.postMessage({ kind: FAILED, error }),
+  )
 })
 
-export default async (payload: Payload): Promise<ReturnData> => {
+async function collect(payload: Payload): Promise<ReturnData> {
   const startTime = performance.now()
   process.env['HST_COLLECT'] = 'true'
 
-  // Here rather than broadcast from the main thread: the pool dispatches tasks
-  // on a different port from `broadcastMessage`, and nothing orders the two, so
-  // a busy worker could start the task first and read its own stale cache. A
-  // story being re-executed is being re-read by definition (#557).
+  // A story being re-executed is being re-read by definition (#557). Tasks and
+  // broadcasts now share one port and so arrive in order, but this still has to
+  // run: a story re-collected without an intervening watcher event gets no
+  // broadcast at all.
   invalidate(payload.storyFile.moduleId)
 
   // Before any module runs: an externalised dep reads these at import time.
@@ -69,10 +84,7 @@ export default async (payload: Payload): Promise<ReturnData> => {
     ;(globalThis as Record<string, unknown>)[key] = value
   }
 
-  _invoke = invokeOver(payload.port)
-
-  // One runner for the worker's lifetime, reaching the server through whichever
-  // port the current task brought.
+  // One runner for the worker's lifetime, over the worker's own port.
   const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), _evaluatedModules))
 
   if (_domEnv) {

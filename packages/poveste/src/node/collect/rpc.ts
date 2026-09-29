@@ -1,49 +1,69 @@
-import type { MessagePort } from 'node:worker_threads'
 import type { Invoke } from './runner.js'
 
 /*
- * The one call a collection worker makes to the main thread, over the
- * `MessagePort` each task brings. It replaced birpc (#344): after #167 the
- * channel carries a single method, and a dependency that ships in `poveste` was
- * three majors behind to carry it.
+ * The one call a collection worker makes to the main thread. It replaced birpc
+ * (#344): after #167 the channel carries a single method, and a dependency that
+ * ships in `poveste` was three majors behind to carry it.
+ *
+ * The channel is shared with task dispatch (#1020), so both sides tag what they
+ * send and ignore what is not theirs.
  */
 
 // What birpc waited before rejecting a call, kept so a stuck transform still
 // fails the story rather than holding its worker forever.
 const TIMEOUT_MS = 60_000
 
+const REQUEST = 'pvt:invoke'
+const RESPONSE = 'pvt:invoked'
+
+/** A `MessagePort` or a `Worker` — the two ends this runs over. */
+export interface PortLike {
+  on: (event: 'message', listener: (value: any) => void) => unknown
+  postMessage: (value: any) => void
+}
+
 interface Request {
+  kind: typeof REQUEST
   id: number
   name: string
   data: unknown[]
 }
 
 interface Response {
+  kind: typeof RESPONSE
   id: number
   result?: unknown
   error?: unknown
 }
 
 /** Answers `invoke` requests arriving on `port`. */
-export function serveInvoke(port: MessagePort, invoke: Invoke) {
-  port.on('message', async ({ id, name, data }: Request) => {
+export function serveInvoke(port: PortLike, invoke: Invoke) {
+  port.on('message', async (message: Request) => {
+    if (message?.kind !== REQUEST) {
+      return
+    }
+    const { id, name, data } = message
     let response: Response
     try {
-      response = { id, result: await invoke(name, data) }
+      response = { kind: RESPONSE, id, result: await invoke(name, data) }
     }
     catch (error) {
-      response = { id, error }
+      response = { kind: RESPONSE, id, error }
     }
     port.postMessage(response)
   })
 }
 
 /** An `invoke` that sends its calls over `port`. */
-export function invokeOver(port: MessagePort): Invoke {
+export function invokeOver(port: PortLike): Invoke {
   let nextId = 0
   const pending = new Map<number, { resolve: (value: unknown) => void, reject: (reason: unknown) => void, timeout: NodeJS.Timeout }>()
 
-  port.on('message', ({ id, result, error }: Response) => {
+  port.on('message', (message: Response) => {
+    if (message?.kind !== RESPONSE) {
+      return
+    }
+    const { id, result, error } = message
     const call = pending.get(id)
     if (!call) {
       return
@@ -66,6 +86,6 @@ export function invokeOver(port: MessagePort): Invoke {
     }, TIMEOUT_MS)
     timeout.unref()
     pending.set(id, { resolve, reject, timeout })
-    port.postMessage({ id, name, data } satisfies Request)
+    port.postMessage({ kind: REQUEST, id, name, data } satisfies Request)
   })
 }

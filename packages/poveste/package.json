@@ -80,7 +80,6 @@
   },
   "dependencies": {
     "@11ty/gray-matter": "^3.0.0",
-    "@akryum/tinypool": "^0.3.1",
     "@poveste/app": "workspace:^",
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",

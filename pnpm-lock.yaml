@@ -667,9 +667,6 @@ importers:
       '@11ty/gray-matter':
         specifier: ^3.0.0
         version: 3.0.0
-      '@akryum/tinypool':
-        specifier: ^0.3.1
-        version: 0.3.1
       '@poveste/app':
         specifier: workspace:^
         version: link:../poveste-app
@@ -1321,10 +1318,6 @@ packages:
   '@11ty/gray-matter@3.0.0':
     resolution: {integrity: sha512-mi6KB36DZCpCfCb9XP3NtDDNXe1N0jKtuFj9mTCZNy5H7vTabODyMgFmmOiGIGJKt+i8mJqEb/REtK+JTEzlpQ==}
     engines: {node: '>=11'}
-
-  '@akryum/tinypool@0.3.1':
-    resolution: {integrity: sha512-nznEC1ZA/m3hQDEnrGQ4c5gkaa9pcaVnw4LFJyzBAaR7E3nfiAPEHS3otnSafpZouVnoKeITl5D+2LsnwlnK8g==}
-    engines: {node: '>=14.0.0'}
 
   '@algolia/abtesting@1.12.2':
     resolution: {integrity: sha512-oWknd6wpfNrmRcH0vzed3UPX0i17o4kYLM5OMITyMVM2xLgaRbIafoxL0e8mcrNNb0iORCJA0evnNDKRYth5WQ==}
@@ -9803,8 +9796,6 @@ snapshots:
     dependencies:
       js-yaml: 5.4.2
       section-matter: 1.0.0
-
-  '@akryum/tinypool@0.3.1': {}
 
   '@algolia/abtesting@1.12.2':
     dependencies:

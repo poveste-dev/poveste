@@ -3,8 +3,6 @@ import type { ViteDevServer } from 'vite'
 import type { Context } from '../context.js'
 import type { Payload, ReturnData } from './worker.js'
 import { cpus } from 'node:os'
-import { MessageChannel } from 'node:worker_threads'
-import Tinypool from '@akryum/tinypool'
 import { escapeRegExp } from '@poveste/shared'
 import path, { relative } from 'pathe'
 import pc from 'picocolors'
@@ -13,7 +11,7 @@ import { createPath } from '../tree.js'
 import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
 import { createModuleServer } from './module-server.js'
-import { serveInvoke } from './rpc.js'
+import { createPool } from './pool.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -56,12 +54,10 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     : Math.max(Math.min(maxThreads, cpus().length - 1), 1)
   console.log(pc.blue(`Using ${threadsCount} thread${threadsCount === 1 ? '' : 's'} for story collection`))
 
-  const threadPool = new Tinypool({
-    filename: new URL('./worker.js', import.meta.url).href,
-    // WebContainer compatibility (Stackblitz)
-    useAtomics: typeof process.versions['webcontainer'] !== 'string',
-    minThreads: threadsCount,
-    maxThreads: threadsCount,
+  const threadPool = createPool<Payload, ReturnData>({
+    filename: new URL('./worker.js', import.meta.url),
+    threads: threadsCount,
+    invoke: (name, data) => node.invoke(name, data),
   })
 
   function clearCache() {
@@ -69,23 +65,10 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     node.clearCache()
   }
 
-  function createChannel() {
-    const channel = new MessageChannel()
-    const port = channel.port2
-    const workerPort = channel.port1
-
-    serveInvoke(port, (name, data) => node.invoke(name, data))
-
-    return {
-      port,
-      workerPort,
-    }
-  }
-
   if (mainServer) {
     mainServer.watcher.on('change', (file) => {
       file = slash(file)
-      threadPool.broadcastMessage({
+      threadPool.broadcast({
         kind: 'hst:invalidate',
         file,
       })
@@ -95,29 +78,14 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
   let destroying = false
 
   async function executeStoryFile(storyFile: ServerStoryFile) {
-    // The channel belongs to this execution, and nothing used to close it. On a
-    // build that fails, the executions still in flight are abandoned mid-run and
-    // their main-thread ports stay open and listening — enough live handles to
-    // keep the process alive with nothing left to do (#426).
-    let channel: ReturnType<typeof createChannel> | undefined
     try {
-      channel = createChannel()
       const payload: Payload = {
         root: server.config.root,
         base: server.config.base,
         storyFile,
-        port: channel.workerPort,
         defineGlobals,
       }
-      const { storyData } = await threadPool.run(payload, {
-        transferList: [
-          channel.workerPort,
-        ],
-        // Tinypool types this option by inferring the second parameter of
-        // `MessagePort.postMessage`; `@types/node` 26 gave that method a second overload and
-        // `infer` takes the last one, so the option types as `StructuredSerializeOptions`.
-        // The runtime reads `transferList` either way.
-      } as unknown as Parameters<typeof threadPool.run>[1]) as ReturnData
+      const { storyData } = await threadPool.run(payload)
       const finalData = storyData[0]
       if (!finalData) {
         console.warn(pc.yellow(`⚠️  No story found for ${storyFile.path}`))
@@ -161,9 +129,6 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       if (options.throws) {
         throw e
       }
-    }
-    finally {
-      channel?.port.close()
     }
   }
 
