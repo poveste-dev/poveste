@@ -1,5 +1,6 @@
 import type { Invoke } from './runner.js'
 import { Worker } from 'node:worker_threads'
+import { deserializeError } from './error.js'
 import { serveInvoke } from './rpc.js'
 
 /*
@@ -68,7 +69,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
         task.resolve(message.result as R)
       }
       else {
-        task.reject(message.error)
+        task.reject(deserializeError(message.error))
       }
       release(handle)
     })

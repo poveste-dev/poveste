@@ -8,6 +8,7 @@ import { dirname, resolve } from 'pathe'
 import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
+import { serializeError } from './error.js'
 import { DONE, FAILED, TASK } from './pool.js'
 import { invokeOver } from './rpc.js'
 import { createRunner } from './runner.js'
@@ -63,9 +64,7 @@ parentPort.on('message', (message) => {
   }
   collect(message.payload as Payload).then(
     result => parentPort!.postMessage({ kind: DONE, result }),
-    // Thrown as-is: structured clone is what carried this before the pool was
-    // ours, and matching it keeps the message the collector prints unchanged.
-    error => parentPort!.postMessage({ kind: FAILED, error }),
+    error => parentPort!.postMessage({ kind: FAILED, error: serializeError(error) }),
   )
 })
 

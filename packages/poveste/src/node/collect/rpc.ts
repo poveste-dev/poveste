@@ -1,4 +1,5 @@
 import type { Invoke } from './runner.js'
+import { deserializeError, serializeError } from './error.js'
 
 /*
  * The one call a collection worker makes to the main thread. It replaced birpc
@@ -48,7 +49,7 @@ export function serveInvoke(port: PortLike, invoke: Invoke) {
       response = { kind: RESPONSE, id, result: await invoke(name, data) }
     }
     catch (error) {
-      response = { kind: RESPONSE, id, error }
+      response = { kind: RESPONSE, id, error: serializeError(error) }
     }
     port.postMessage(response)
   })
@@ -71,7 +72,7 @@ export function invokeOver(port: PortLike): Invoke {
     pending.delete(id)
     clearTimeout(call.timeout)
     if (error) {
-      call.reject(error)
+      call.reject(deserializeError(error))
     }
     else {
       call.resolve(result)
