@@ -2,7 +2,6 @@ import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from '../scripts/checks/support/assert-no-problems.ts'
-import { runCollectPoolBench } from './collect-pool.mjs'
 import { runBench } from './run.mjs'
 import { measureStateSync } from './state-sync.mjs'
 
@@ -269,25 +268,6 @@ describe('the state stories', () => {
   // book cannot say so — Vue compiles the warning out — so the source does.
   it('call useTemplateRef in one story only, the one placed to hold #959 failing', () => {
     expect(useTemplateRefStories(BENCH_STORIES)).toEqual([USE_TEMPLATE_REF_STORY])
-  })
-})
-
-describe('runCollectPoolBench', () => {
-  /*
-   * The pool bench measures a scheduler with nothing in front of it, so every
-   * figure is a rate that a broken harness reports as zero rather than as an
-   * error. Not a measurement — a shared runner's timings are noise — so this
-   * asserts the shapes that go to zero when the instrument stops working:
-   * a task that never settles, and a broadcast that reaches nobody.
-   */
-  it('measures the pool over two workers and one run', async () => {
-    const { results } = await runCollectPoolBench({ threads: 2, tasks: 50, runs: 1 })
-
-    for (const name of ['throughput', 'rpc', 'payload'] as const) {
-      expect(results[name].perSecond, `${name} measured no tasks`).toBeGreaterThan(0)
-    }
-    expect(results.broadcast.reached, 'the broadcast reached no busy worker').toBe(results.broadcast.of)
-    expect(results.latency.ms, 'a task never settled').toBeGreaterThanOrEqual(0)
   })
 })
 

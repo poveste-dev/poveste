@@ -6,7 +6,7 @@ Repeatable measurements for the sandbox iframe path: filling and scrolling a gri
 node bench/run.mjs                          # vue + svelte, V=10/100/1000, 7 runs each
 node bench/run.mjs --examples vue --runs 3 # quick look
 node bench/run.mjs --json > after.json      # machine-readable, diff against a baseline
-node bench/collect-pool.mjs --stress        # the collector's worker pool, on its own
+pnpm bench:pool                             # the collector's worker pool, on its own
 pnpm bench:smoke                            # one asserted run: does the instrument still work
 ```
 
@@ -91,22 +91,32 @@ The figures on #957 and #960 were taken with a throwaway harness that set `el.va
 
 Real typing runs the key pipeline the synthetic path skips, which is why the wall is higher. The frame count is doubled for the same reason long tasks under-read scrolling (#872): a heartbeat samples, and rendering-step work falls between its samples.
 
-## Reference, collection pool (M3 Pro, 12 cores, `003c343b`, 9 interleaved pairs)
+## Reference, collection pool (M3 Pro, 12 cores, `003c343b`)
 
-The pool that replaced `@akryum/tinypool` (#1020), measured against it.
+The pool that replaced `@akryum/tinypool` (#1020). `bench/collect-pool.bench.ts` is a vitest benchmark, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
 
-**Interleaved, not sequential.** A first attempt ran all seven of one and then all seven of the other, and reported the new pool 2.6x *slower* end to end. Re-run alternating, the same comparison came out ahead — the machine had drifted between the two blocks. Every figure below alternates implementations run by run, and `wins` counts the pairs where ours came out ahead, which is the part drift cannot fake.
+```bash
+pnpm bench:pool            # every measure, against the committed tinypool baselines
+pnpm bench:pool -t rpc     # one of them
+```
 
-| measure | tinypool | ours | ratio | wins |
+### Faster in every shape collection uses, slower in one it does not
+
+| measure | what it does | tinypool | ours | |
 | --- | --- | --- | --- | --- |
-| `throughput` | 144,709/s | 216,933/s | 1.50x | 9/9 |
-| `rpc` | 45,701/s | 116,478/s | **2.55x** | 9/9 |
-| `payload` | 165,357/s | 215,033/s | 1.30x | 9/9 |
-| `latency` | 0.014ms | 0.013ms | 1.03x | 6/9 |
+| `collecting` | a queue of story-sized tasks | 11,686/s | 14,617/s | **1.25x** |
+| `saturated` | a queue of scalar tasks | 12,510/s | 17,008/s | **1.36x** |
+| `rpc` | a worker calling back mid-task | 30,394/s | 44,985/s | **1.48x** |
+| `dispatch` | one scalar task at a time | 87,109/s | 90,046/s | 1.03x |
+| `payload` | one story-sized task at a time | 94,189/s | 79,498/s | **0.84x** |
 
-`rpc` is the change itself: tinypool got a `MessageChannel` per task, created, transferred and closed for every story. The new pool answers on the worker's own port, so a story's module fetches cost one channel per worker for the run rather than one per story. `latency` is two numbers a hair apart and 6/9 — read it as no difference.
+`collecting` is the one to believe: a build hands the pool every story at once — 63 against 11 workers in the vue book — and that is what it measures.
 
-### End to end, the gain is small and real
+`rpc` is the change itself. Tinypool built, transferred and closed a `MessageChannel` for every task; this pool answers on the port the task arrived on.
+
+**`payload` is a real regression and is left alone deliberately.** Tinypool's worker blocks on `Atomics.wait` and drains with `receiveMessageOnPort`, taking a message without an event-loop turn; this pool waits on `parentPort`'s `message` event. One turn per round trip shows when a round trip is all there is — `dispatch`, the same shape with a scalar, is level at 1.03x. Collection never runs one story at a time, so the gap is recorded rather than chased.
+
+### End to end it is a few percent, and that is the whole claim
 
 `examples/vue` — 63 stories, 2248 variants — built nine times alternating:
 
@@ -115,15 +125,23 @@ The pool that replaced `@akryum/tinypool` (#1020), measured against it.
 | tinypool | 1.89s | 1.83s | 2.20s |
 | ours | 1.81s | 1.76s | 1.94s |
 
-1.04x on medians, **8/9 paired wins**, a mean of 93ms off each build. The ratio is small because a probe puts worker saturation at 74–79% during a build: the wall clock is story execution, and a scheduler twice as quick at RPC moves it by a few percent. The win count is what says the few percent is real rather than noise.
+1.04x on medians, **8/9 paired wins**, a mean of 93ms off each build. A probe puts worker saturation at 74–79% during a build: the wall clock is story execution, so a scheduler half again as quick moves it by a few percent. The win count is what says the few percent is real.
 
-### Load matters more than it looks
+### Two kinds of assertion, and only one of them travels
 
-The same interleaved comparison at load average 28 gave 1.16x throughput at 5/7 and 1.04x end to end at 5/7; at load average 19 it gave 1.50x at 9/9 and the same 1.04x at 8/9. The medians move, the direction does not. Quote the win counts alongside any ratio from this bench.
+`bench.from` reads tinypool's numbers off disk while ours are measured live, so nothing cancels a machine that drifted since the baseline was taken. Measured ten minutes apart on the same laptop, `dispatch` moved from 1.03x to 0.90x against the same file while tinybench reported a 0.2% margin of error both times — **precise, and not comparable.** Those assertions are therefore a wide structural floor at 0.5x, which catches a pool that has fallen over and nothing finer.
 
-### Stress
+The ratio worth gating is measured inside one run, where both terms meet the same machine: an `invoke` round trip against a bare dispatch. Tinypool sat at 2.87x because of the per-task channel; ours is near 2x, which is one extra round trip and nothing else. The bench fails above 2.5x.
 
-`--stress` runs a queue ten times the task count with a broadcast per ten tasks landing throughout, and reports throughput held against the quiet figure. It sits near **0.42x**, which is the broadcast work showing up rather than queue depth costing anything — every task settles, and `pool.spec.ts` is where that is asserted rather than timed.
+That is also why this is not a CI job. The baselines are an M3 Pro, and a slower runner would fail them for saying nothing about the code.
+
+### Redoing the head-to-head
+
+The comparison above is interleaved — implementations alternate run by run — because a first attempt ran all of one and then all of the other and reported the new pool **2.6x slower** end to end, which was the machine drifting between the blocks. The direction reverses when you alternate.
+
+The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `bench/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
+
+**Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 
 ## Reference, state sync (built book, medians over 7 runs)
 

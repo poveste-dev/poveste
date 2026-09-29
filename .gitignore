@@ -16,3 +16,8 @@ playwright-results.json
 bench/sandbox.cpuprofile
 .DS_Store
 .eslintcache
+
+# Bench results are written on every run; only the tinypool baselines, which
+# cannot be regenerated without the removed fork, are committed (#1020).
+bench/baselines/*.json
+!bench/baselines/*.tinypool.json

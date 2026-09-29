@@ -34,6 +34,9 @@ export default defineConfig({
         test: {
           name: 'scripts',
           include: SCRIPTS_INCLUDE,
+          // A bench run applies `benchmark.include` to every project, so without
+          // this the pool bench loads here too and runs twice.
+          benchmark: { include: [] },
           environment: 'node',
           // Measured −22% on the test phase by `vitest doctor`. It also stops the
           // forks pool reporting the worker's own stdin pipe as an async leak
@@ -51,6 +54,7 @@ export default defineConfig({
         test: {
           name: 'bench',
           include: ['bench/*.spec.ts'],
+          benchmark: { include: ['bench/*.bench.ts'] },
           environment: 'node',
           // Forks: `run.mjs` hands child output to `process.stderr`, which a
           // worker thread does not have as a real file descriptor.
