@@ -2,6 +2,7 @@ import type { Invoke } from './runner.js'
 import { Worker } from 'node:worker_threads'
 import { deserializeError } from './error.js'
 import { serveInvoke } from './rpc.js'
+import { DONE, FAILED, TASK } from './task.js'
 
 /*
  * One channel per worker rather than one port per task (#1020): tasks, results and
@@ -9,10 +10,6 @@ import { serveInvoke } from './rpc.js'
  * the hazard #557 worked around, where a broadcast and a task went out on two
  * channels with nothing sequencing them.
  */
-
-export const TASK = 'pvt:task'
-export const DONE = 'pvt:done'
-export const FAILED = 'pvt:failed'
 
 interface Task<P, R> {
   id: number

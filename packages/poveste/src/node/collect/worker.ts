@@ -8,10 +8,9 @@ import { dirname, resolve } from 'pathe'
 import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
-import { serializeError } from './error.js'
-import { DONE, FAILED, TASK } from './pool.js'
 import { invokeOver } from './rpc.js'
 import { createRunner } from './runner.js'
+import { serveTasks } from './task.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -54,20 +53,7 @@ if (!parentPort) {
 // per story.
 const _invoke: Invoke = invokeOver(parentPort)
 
-parentPort.on('message', (message) => {
-  if (message?.kind === 'hst:invalidate') {
-    invalidate(message.file)
-    return
-  }
-  if (message?.kind !== TASK) {
-    return
-  }
-  const { id } = message
-  collect(message.payload as Payload).then(
-    result => parentPort!.postMessage({ kind: DONE, id, result }),
-    error => parentPort!.postMessage({ kind: FAILED, id, error: serializeError(error) }),
-  )
-})
+serveTasks(parentPort, { invalidate, collect })
 
 async function collect(payload: Payload): Promise<ReturnData> {
   const startTime = performance.now()

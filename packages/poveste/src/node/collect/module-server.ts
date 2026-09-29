@@ -65,12 +65,12 @@ function cleanUrl(url: string) {
   return url.replace(/[?#].*$/, '')
 }
 
-function isInternalRequest(id: string) {
+export function isInternalRequest(id: string) {
   return /^\/?@vite\/(?:client|env)$/.test(id)
 }
 
 /** A request id as the transformed code wrote it, back to a module id. */
-function normalizeRequestId(id: string, base?: string) {
+export function normalizeRequestId(id: string, base?: string) {
   if (base && base !== '/' && id.startsWith(withTrailingSlash(base))) {
     id = `/${id.slice(base.length)}`
   }
@@ -125,7 +125,7 @@ function toFilePath(id: string, root: string): { path: string, exists: boolean }
   }
 }
 
-function matches(id: string, patterns: (string | RegExp)[] | undefined) {
+export function matches(id: string, patterns: (string | RegExp)[] | undefined) {
   return (patterns ?? []).some(pattern => typeof pattern === 'string'
     ? MODULE_DIRECTORIES.some(dir => id.includes(join(dir, pattern)))
     : pattern.test(id))

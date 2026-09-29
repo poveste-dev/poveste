@@ -2,7 +2,8 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { createPool, DONE, FAILED, TASK } from '../collect/pool.js'
+import { createPool } from '../collect/pool.js'
+import { DONE, FAILED, TASK } from '../collect/task.js'
 
 const dir = mkdtempSync(join(tmpdir(), 'poveste-pool-'))
 const pools: { destroy: () => Promise<void> }[] = []
