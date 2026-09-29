@@ -1,15 +1,15 @@
 import type { Payload, ReturnData } from '../collect/worker.js'
 import { MessageChannel } from 'node:worker_threads'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DONE, FAILED, serveTasks, TASK } from '../collect/task.js'
+import { DONE, FAILED, INVALIDATE_ALL, serveTasks, TASK } from '../collect/task.js'
 
 const channels: MessageChannel[] = []
 
-function served(collect: (payload: Payload) => Promise<ReturnData>, invalidate = vi.fn()) {
+function served(collect: (payload: Payload) => Promise<ReturnData>, invalidate = vi.fn(), invalidateAll = vi.fn()) {
   const channel = new MessageChannel()
   channels.push(channel)
-  serveTasks(channel.port1, { invalidate, collect })
-  return { port: channel.port2, invalidate }
+  serveTasks(channel.port1, { invalidate, invalidateAll, collect })
+  return { port: channel.port2, invalidate, invalidateAll }
 }
 
 function answer(port: MessagePort | import('node:worker_threads').MessagePort) {
@@ -133,6 +133,55 @@ describe('serveTasks', () => {
     port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
 
     await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
+  })
+
+  it('holds a whole-graph drop that arrives while a story is running', async () => {
+    // The pass's own clear, which lands on a busy worker whenever one pass follows
+    // another. Taken mid-story it re-reads modules the story is holding.
+    let finish: (value: ReturnData) => void
+    const { port, invalidateAll } = served(() => new Promise<ReturnData>((resolve) => {
+      finish = resolve
+    }))
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: INVALIDATE_ALL })
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(invalidateAll, 'the graph was dropped out from under a running story').not.toHaveBeenCalled()
+  })
+
+  it('drops the graph once, before the next story, not once per file held with it', async () => {
+    // A held drop covers every held file, so replaying them after it would re-read
+    // what was just dropped.
+    const order: string[] = []
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => {
+      order.push('collect')
+      return new Promise<ReturnData>((resolve) => {
+        finish = resolve
+      })
+    }, file => order.push(`invalidate ${file}`), () => order.push('invalidate all'))
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    port.postMessage({ kind: INVALIDATE_ALL })
+    await new Promise(resolve => setImmediate(resolve))
+    finish!(storyData)
+    await answer(port)
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(order).toHaveLength(3))
+
+    expect(order).toEqual(['collect', 'invalidate all', 'collect'])
+  })
+
+  it('drops the graph at once when no story is running', async () => {
+    const { port, invalidateAll } = served(async () => storyData)
+
+    port.postMessage({ kind: INVALIDATE_ALL })
+
+    await vi.waitFor(() => expect(invalidateAll).toHaveBeenCalledTimes(1))
   })
 
   it('leaves a message that is not its own alone', async () => {

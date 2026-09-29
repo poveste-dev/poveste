@@ -16,9 +16,11 @@ export const FAILED = 'pvt:failed'
    kind is dropped in silence by design, so a typo here stops invalidation
    without failing anything. */
 export const INVALIDATE = 'hst:invalidate'
+export const INVALIDATE_ALL = 'pvt:invalidate-all'
 
 export interface TaskHandlers {
   invalidate: (file: string) => void
+  invalidateAll: () => void
   collect: (payload: Payload) => Promise<ReturnData>
 }
 
@@ -26,9 +28,21 @@ export interface TaskHandlers {
 export function serveTasks(port: PortLike, handlers: TaskHandlers) {
   // Invalidations that arrived while a story was running, held until it is not.
   const deferred = new Set<string>()
+  let dropEverything = false
   let running = false
 
   port.on('message', (message) => {
+    // Sent once per collection pass, when the server clears its own cache. Every
+    // module is read again either way; applying it here rather than one module at
+    // a time as each is next asked for is what stops a run straddling the two.
+    if (message?.kind === INVALIDATE_ALL) {
+      if (running) {
+        dropEverything = true
+        return
+      }
+      handlers.invalidateAll()
+      return
+    }
     if (message?.kind === INVALIDATE) {
       // Applied mid-story it re-evaluates modules that story is already using,
       // and the two halves of a framework then disagree about which instance is
@@ -47,6 +61,11 @@ export function serveTasks(port: PortLike, handlers: TaskHandlers) {
     }
     const { id } = message
     running = true
+    if (dropEverything) {
+      dropEverything = false
+      deferred.clear()
+      handlers.invalidateAll()
+    }
     for (const file of deferred) {
       handlers.invalidate(file)
     }

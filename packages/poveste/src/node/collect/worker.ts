@@ -45,6 +45,13 @@ function invalidate(file: string) {
   }
 }
 
+// The whole graph, dropped at a task boundary. The server clears its own cache
+// once per pass, so every module is re-read in that pass anyway — what changes is
+// whether a story can be halfway through when its turn comes.
+function invalidateAll() {
+  _evaluatedModules.clear()
+}
+
 if (!parentPort) {
   throw new Error('[poveste] the collection worker was started outside a worker thread')
 }
@@ -53,7 +60,7 @@ if (!parentPort) {
 // per story.
 const _invoke: Invoke = invokeOver(parentPort)
 
-serveTasks(parentPort, { invalidate, collect })
+serveTasks(parentPort, { invalidate, invalidateAll, collect })
 
 async function collect(payload: Payload): Promise<ReturnData> {
   const startTime = performance.now()
