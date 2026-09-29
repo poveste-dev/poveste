@@ -26,7 +26,4 @@ export default defineConfig({
       { name: 'theme-color', content: '#10b981' },
     ],
   },
-  theme: {
-    darkClass: 'my-dark',
-  },
 })

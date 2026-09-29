@@ -13,12 +13,15 @@
 }
 
 /*
- * Consumer-side dark styling for the story itself. `my-dark` is this example's
+ * Consumer-side dark styling for the story itself, on the default
  * `theme.darkClass`; the chrome's own class (`ptw-dark`, on the document root)
  * is not reachable from here and never was — see #123.
+ *
+ * No background: this is the layer the preview's background picker paints
+ * behind, and a consumer background on `html` covers whatever the reader picked,
+ * transparent included. Colour alone still shows the rule reaching the story.
  */
-html.my-dark {
-  background: #27272a;
+html.dark {
   color: #e9e9ed;
 }
 
