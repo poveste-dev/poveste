@@ -54,6 +54,7 @@
     "unhead": "^3.4.1"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
