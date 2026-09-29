@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { isInternalRequest, matches, normalizeRequestId } from '../collect/module-server.js'
 
@@ -32,8 +31,18 @@ describe('matches', () => {
   it('reads a string pattern as a package name under node_modules', () => {
     // This is what `viteNodeInlineDeps` is held against, so a bare name has to
     // mean the package rather than the substring.
-    expect(matches(join('/repo/node_modules/vuetify/lib/index.mjs'), ['vuetify'])).toBe(true)
+    //
+    // Written with forward slashes and no `join`: the id under test is one Vite
+    // produced and `module-server.ts` builds its pattern with `pathe`, so both
+    // sides are POSIX on every platform. A `node:path` join here passed locally
+    // and failed on Windows, which is the test being wrong rather than the code.
+    expect(matches('/repo/node_modules/vuetify/lib/index.mjs', ['vuetify'])).toBe(true)
     expect(matches('/repo/src/vuetify-theme.ts', ['vuetify'])).toBe(false)
+  })
+
+  it('reads the same id whatever separator the platform would use', () => {
+    // `pathe` is what keeps this from depending on where it runs.
+    expect(matches('D:/a/poveste/node_modules/vuetify/lib/index.mjs', ['vuetify'])).toBe(true)
   })
 
   it('reads a regular expression against the whole id', () => {
