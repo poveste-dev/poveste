@@ -145,6 +145,7 @@ export default antfu({
   files: ['packages/*/src/**/*.ts'],
   ignores: [
     '**/*.spec.ts',
+    '**/*.bench.ts',
     '**/__tests__/**',
   ],
   languageOptions: {

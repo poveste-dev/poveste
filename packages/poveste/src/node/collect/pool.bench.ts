@@ -4,7 +4,7 @@
  *
  * The pool replaced `@akryum/tinypool`, and each measure is one thing the old pool
  * also did. The old one cannot be a live participant — it is no longer a
- * dependency — so its numbers sit under `bench/baselines/` and come back through
+ * dependency — so its numbers sit under `baselines/` and come back through
  * `bench.from`.
  *
  * **Two kinds of assertion, and only one of them travels.**
@@ -28,6 +28,10 @@
  *
  *   pnpm bench:pool                 # every measure
  *   pnpm bench:pool -t rpc          # one of them
+ *
+ * It lives beside the pool rather than under `bench/`, which is the sandbox iframe
+ * path and needs a built book, a browser and no timeout. This needs a worker
+ * thread and nothing else, so it runs as part of this package.
  */
 // `bench.compare()` reads to `test/consistent-test-it` as a test call it wants
 // renamed, which it is not.
@@ -37,7 +41,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { expect, it } from 'vitest'
-import { createPool, DONE, TASK } from '../packages/poveste/dist/node/collect/pool.js'
+import { createPool, DONE, TASK } from './pool.js'
 
 const RPC_REQUEST = 'pvt:invoke'
 const RPC_RESPONSE = 'pvt:invoked'
@@ -140,10 +144,10 @@ function atLeastFloor(result: { get: (name: string) => { throughput: { mean: num
 it('dispatch: a task out and its result back', async ({ bench }) => {
   await withPool(ECHO, noInvoke, async (pool) => {
     const result = await bench.compare(
-      bench('ours', { writeResult: './bench/baselines/dispatch.json' }, async () => {
+      bench('ours', { writeResult: './src/node/collect/baselines/dispatch.json' }, async () => {
         await pool.run(0)
       }),
-      bench.from('tinypool', './bench/baselines/dispatch.tinypool.json'),
+      bench.from('tinypool', './src/node/collect/baselines/dispatch.tinypool.json'),
       { time: TIME_MS },
     )
 
@@ -164,10 +168,10 @@ it('rpc: a worker calling back mid-task costs about one more round trip', async 
 
   await withPool(CALLS_BACK, async () => 'transformed', async (pool) => {
     const result = await bench.compare(
-      bench('ours', { writeResult: './bench/baselines/rpc.json' }, async () => {
+      bench('ours', { writeResult: './src/node/collect/baselines/rpc.json' }, async () => {
         await pool.run(0)
       }),
-      bench.from('tinypool', './bench/baselines/rpc.tinypool.json'),
+      bench.from('tinypool', './src/node/collect/baselines/rpc.tinypool.json'),
       { time: TIME_MS },
     )
 
@@ -182,10 +186,10 @@ it('rpc: a worker calling back mid-task costs about one more round trip', async 
 it('collecting: a queue of story-sized tasks, which is the real shape', async ({ bench }) => {
   await withPool(ECHO, noInvoke, async (pool) => {
     const result = await bench.compare(
-      bench('ours', { writeResult: './bench/baselines/collecting.json' }, async () => {
+      bench('ours', { writeResult: './src/node/collect/baselines/collecting.json' }, async () => {
         await Promise.all(Array.from({ length: QUEUED }, () => pool.run(STORY_PAYLOAD)))
       }),
-      bench.from('tinypool', './bench/baselines/collecting.tinypool.json'),
+      bench.from('tinypool', './src/node/collect/baselines/collecting.tinypool.json'),
       { time: TIME_MS },
     )
 
@@ -196,10 +200,10 @@ it('collecting: a queue of story-sized tasks, which is the real shape', async ({
 it('saturated: a queue of scalar tasks, the same shape without the payload', async ({ bench }) => {
   await withPool(ECHO, noInvoke, async (pool) => {
     const result = await bench.compare(
-      bench('ours', { writeResult: './bench/baselines/saturated.json' }, async () => {
+      bench('ours', { writeResult: './src/node/collect/baselines/saturated.json' }, async () => {
         await Promise.all(Array.from({ length: QUEUED }, () => pool.run(0)))
       }),
-      bench.from('tinypool', './bench/baselines/saturated.tinypool.json'),
+      bench.from('tinypool', './src/node/collect/baselines/saturated.tinypool.json'),
       { time: TIME_MS },
     )
 
@@ -215,10 +219,10 @@ it('payload: one story-sized task at a time, which tinypool wins', async ({ benc
   // Collection never runs this way, so the gap is recorded rather than chased.
   await withPool(ECHO, noInvoke, async (pool) => {
     const result = await bench.compare(
-      bench('ours', { writeResult: './bench/baselines/payload.json' }, async () => {
+      bench('ours', { writeResult: './src/node/collect/baselines/payload.json' }, async () => {
         await pool.run(STORY_PAYLOAD)
       }),
-      bench.from('tinypool', './bench/baselines/payload.tinypool.json'),
+      bench.from('tinypool', './src/node/collect/baselines/payload.tinypool.json'),
       { time: TIME_MS },
     )
 

@@ -2,11 +2,13 @@
 
 Repeatable measurements for the sandbox iframe path: filling and scrolling a grid (#197, #319), and syncing state into one story (#960). The numbers that attributed the cost there, and the before/after for its fixes, came from these scripts — keep using the same instrument so results stay comparable.
 
+This directory is the browser half, and it is also where the project's recorded performance figures live, including for benches that run elsewhere. The collector's worker pool is one of those: it needs a worker thread and nothing else, so `pool.bench.ts` sits beside the pool in `packages/poveste/src/node/collect/` and runs with `pnpm bench:pool`. Its figures are below.
+
 ```bash
 node bench/run.mjs                          # vue + svelte, V=10/100/1000, 7 runs each
 node bench/run.mjs --examples vue --runs 3 # quick look
 node bench/run.mjs --json > after.json      # machine-readable, diff against a baseline
-pnpm bench:pool                             # the collector's worker pool, on its own
+pnpm bench:pool                             # the collector's worker pool (lives in packages/poveste)
 pnpm bench:smoke                            # one asserted run: does the instrument still work
 ```
 
@@ -93,7 +95,7 @@ Real typing runs the key pipeline the synthetic path skips, which is why the wal
 
 ## Reference, collection pool (M3 Pro, 12 cores, `003c343b`)
 
-The pool that replaced `@akryum/tinypool` (#1020). `bench/collect-pool.bench.ts` is a vitest benchmark, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
+The pool that replaced `@akryum/tinypool` (#1020). `packages/poveste/src/node/collect/pool.bench.ts` is a vitest benchmark measuring the source beside it, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
 
 ```bash
 pnpm bench:pool            # every measure, against the committed tinypool baselines
@@ -139,7 +141,7 @@ That is also why this is not a CI job. The baselines are an M3 Pro, and a slower
 
 The comparison above is interleaved — implementations alternate run by run — because a first attempt ran all of one and then all of the other and reported the new pool **2.6x slower** end to end, which was the machine drifting between the blocks. The direction reverses when you alternate.
 
-The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `bench/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
+The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `packages/poveste/src/node/collect/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
 
 **Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 
