@@ -19,7 +19,6 @@
     "node_modules",
     "generated/**/*",
     "dist/**/*",
-    "src/**/*.spec.ts",
-    "src/**/*.bench.ts"
+    "src/**/__tests__/**"
   ]
 }

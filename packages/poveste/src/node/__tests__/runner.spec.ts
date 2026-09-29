@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRunner } from './runner.js'
+import { createRunner } from '../collect/runner.js'
 
 // A module server that answers with fixed code, so the evaluator is what runs.
 function runnerFor(code: string) {

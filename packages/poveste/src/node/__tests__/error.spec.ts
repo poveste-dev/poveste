@@ -1,6 +1,6 @@
 import { MessageChannel } from 'node:worker_threads'
 import { describe, expect, it } from 'vitest'
-import { deserializeError, serializeError } from './error.js'
+import { deserializeError, serializeError } from '../collect/error.js'
 
 /** Sends a value through a real structured clone, as a worker boundary does. */
 function overAChannel(value: unknown) {

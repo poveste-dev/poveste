@@ -2,7 +2,7 @@
 
 Repeatable measurements for the sandbox iframe path: filling and scrolling a grid (#197, #319), and syncing state into one story (#960). The numbers that attributed the cost there, and the before/after for its fixes, came from these scripts — keep using the same instrument so results stay comparable.
 
-This directory is the browser half, and it is also where the project's recorded performance figures live, including for benches that run elsewhere. The collector's worker pool is one of those: it needs a worker thread and nothing else, so `pool.bench.ts` sits beside the pool in `packages/poveste/src/node/collect/` and runs with `pnpm bench:pool`. Its figures are below.
+This directory is the browser half, and it is also where the project's recorded performance figures live, including for benches that run elsewhere. The collector's worker pool is one of those: it needs a worker thread and nothing else, so its benches sit with that package's other tests in `packages/poveste/src/node/__tests__/`, paired with the specs they match — `pool.spec.ts` beside `pool.bench.ts`, and the same for `rpc` and `error`. They run with `pnpm bench:pool`. The figures are below.
 
 ```bash
 node bench/run.mjs                          # vue + svelte, V=10/100/1000, 7 runs each
@@ -95,7 +95,7 @@ Real typing runs the key pipeline the synthetic path skips, which is why the wal
 
 ## Reference, collection pool (M3 Pro, 12 cores, `003c343b`)
 
-The pool that replaced `@akryum/tinypool` (#1020). `packages/poveste/src/node/collect/pool.bench.ts` is a vitest benchmark measuring the source beside it, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
+The pool that replaced `@akryum/tinypool` (#1020). `pool.bench.ts`, `rpc.bench.ts` and `error.bench.ts` are vitest benchmarks measuring the source rather than a build, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
 
 ```bash
 pnpm bench:pool            # every measure, against the committed tinypool baselines
@@ -129,19 +129,27 @@ pnpm bench:pool -t rpc     # one of them
 
 1.04x on medians, **8/9 paired wins**, a mean of 93ms off each build. A probe puts worker saturation at 74–79% during a build: the wall clock is story execution, so a scheduler half again as quick moves it by a few percent. The win count is what says the few percent is real.
 
-### Two kinds of assertion, and only one of them travels
+### They report; they do not gate
 
-`bench.from` reads tinypool's numbers off disk while ours are measured live, so nothing cancels a machine that drifted since the baseline was taken. Measured ten minutes apart on the same laptop, `dispatch` moved from 1.03x to 0.90x against the same file while tinybench reported a 0.2% margin of error both times — **precise, and not comparable.** Those assertions are therefore a wide structural floor at 0.5x, which catches a pool that has fallen over and nothing finer.
+None of these benches asserts a timing. Three attempts said otherwise and each one failed on this machine:
 
-The ratio worth gating is measured inside one run, where both terms meet the same machine: an `invoke` round trip against a bare dispatch. Tinypool sat at 2.87x because of the per-task channel; ours is near 2x, which is one extra round trip and nothing else. The bench fails above 2.5x.
+| gate | idle | under load |
+| --- | --- | --- |
+| ours against the recorded tinypool baseline | 1.25x on `collecting` | 0.44x, straight after a lint and a test suite |
+| workers a queue keeps fed, out of 4 | ~3.0 | 1.84 |
+| an `invoke` round trip against a bare dispatch, both arms paired on one pool | 1.6–2.1x | 5.07x |
 
-That is also why this is not a CI job. The baselines are an M3 Pro, and a slower runner would fail them for saying nothing about the code.
+The first cannot work by construction: ours is measured live and tinypool's comes off disk, so nothing cancels drift. The second measures how many cores are free as much as how the pool schedules. The third is properly paired and still spiked.
+
+So each bench asserts only that it measured something, which is what `smoke.spec.ts` says about this project's other instruments, and the numbers are for a person to read against the table above. What gates is `pool.spec.ts`, where the properties are correctness and a mutation makes them fail.
+
+That is also why none of this is a CI job.
 
 ### Redoing the head-to-head
 
 The comparison above is interleaved — implementations alternate run by run — because a first attempt ran all of one and then all of the other and reported the new pool **2.6x slower** end to end, which was the machine drifting between the blocks. The direction reverses when you alternate.
 
-The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `packages/poveste/src/node/collect/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
+The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `packages/poveste/src/node/__tests__/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
 
 **Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 

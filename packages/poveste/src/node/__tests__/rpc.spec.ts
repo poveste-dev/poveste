@@ -1,6 +1,6 @@
 import { MessageChannel } from 'node:worker_threads'
 import { afterEach, describe, expect, it } from 'vitest'
-import { invokeOver, serveInvoke } from './rpc.js'
+import { invokeOver, serveInvoke } from '../collect/rpc.js'
 
 const channels: MessageChannel[] = []
 

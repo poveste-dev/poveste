@@ -19,5 +19,5 @@ bench/sandbox.cpuprofile
 
 # Bench results are written on every run; only the tinypool baselines, which
 # cannot be regenerated without the removed fork, are committed (#1020).
-packages/poveste/src/node/collect/baselines/*.json
-!packages/poveste/src/node/collect/baselines/*.tinypool.json
+packages/poveste/src/node/__tests__/baselines/*.json
+!packages/poveste/src/node/__tests__/baselines/*.tinypool.json
