@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@poveste/plugin-vue": "workspace:*",
+    "@types/node": "catalog:",
     "@vitejs/plugin-vue": "^6.0.9",
     "poveste": "workspace:*",
     "vite": "catalog:"

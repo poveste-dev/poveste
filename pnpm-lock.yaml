@@ -971,6 +971,9 @@ importers:
       '@poveste/plugin-vue':
         specifier: workspace:*
         version: link:../poveste-plugin-vue
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.3
       '@vitejs/plugin-vue':
         specifier: ^6.0.9
         version: 6.0.9(vite@8.3.0(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.103.1)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
@@ -1279,6 +1282,9 @@ importers:
         specifier: ^3.4.1
         version: 3.4.1(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.62.4)(vite@8.3.0(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.103.1)(sass@1.97.2)(terser@5.44.1)(yaml@2.9.1))
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.19.3
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
