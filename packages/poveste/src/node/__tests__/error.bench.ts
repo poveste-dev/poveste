@@ -1,23 +1,15 @@
 /*
  * What carrying an error across the worker boundary costs (#1020).
  *
- * `serializeError` walks an error's own properties and tests each one with a
- * `structuredClone` before keeping it, because a property the clone rejects takes
- * the whole `postMessage` down. That probe is the thing worth measuring: it runs
- * once per failed story, and it is the price of the code frame surviving.
- *
- * Both terms are measured here against each other, so the ratio is at least paired
- * — but it is reported rather than gated, for the reason in `pool.bench.ts`.
- *
- *   pnpm bench:pool -t serializing
+ * `serializeError` probes each own property with a `structuredClone` before
+ * keeping it, because one the clone rejects takes the whole `postMessage` down —
+ * and that probe runs per failed story. Reported, not gated; see `pool.bench.ts`.
  */
-// `bench.compare()` reads to `test/consistent-test-it` as a test call it wants
-// renamed, which it is not.
+// `bench.compare()` reads to this rule as a test call it wants renamed.
 /* eslint-disable test/consistent-test-it */
 import { expect, it } from 'vitest'
 import { deserializeError, serializeError } from '../collect/error.js'
 
-/** What a failed story actually throws: a Vite transform error with its frame. */
 function transformError() {
   return Object.assign(new SyntaxError('Unexpected token, expected ","'), {
     frame: '2 |   <Story id="broken">\n3 |     <span>{{ oops( }}</span>\n  |              ^',
@@ -47,8 +39,7 @@ it('reports what serializing an error costs against cloning it', async ({ bench 
 })
 
 it('keeps the frame a bare clone drops, which is what the cost buys', async ({ bench }) => {
-  // The measure above is only worth having if the thing it measures still works,
-  // and a serializer that quietly stopped copying properties would look fastest.
+  // A serializer that quietly stopped copying properties would measure fastest.
   const result = await bench('round trip', { time: 100 }, () => {
     deserializeError(structuredClone(serializeError(transformError())))
   }).run()

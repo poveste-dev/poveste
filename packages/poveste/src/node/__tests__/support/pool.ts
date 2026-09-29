@@ -1,7 +1,4 @@
-/*
- * What `pool.bench.ts` and `rpc.bench.ts` both need: workers that answer on the
- * pool's protocol, and a pool warmed so spawn is not part of a measurement.
- */
+/* Workers that answer on the pool's protocol, and a pool warmed before it is measured. */
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,7 +10,7 @@ export const RPC_RESPONSE = 'pvt:invoked'
 
 export const THREADS = 4
 
-/** A build hands the pool every story at once, so a queue is the normal path. */
+/** A build hands the pool every story at once. */
 export const QUEUED = THREADS * 4
 
 /** Long enough for tinybench's margin of error to settle under a percent. */
@@ -42,12 +39,7 @@ export const ECHO = workerFile('echo', `
   })
 `)
 
-/**
- * Answers directly on payload `0` and calls back first on `1`, so both shapes can
- * be measured against each other on one pool, adjacently. Measured on two pools in
- * sequence the ratio drifts with whatever the machine did in between, which is
- * what it exists to rule out.
- */
+/** Answers directly on payload `0`, calls back first on `1`, so one pool measures both. */
 export const EITHER = workerFile('either', `
   let nextId = 0
   const pending = new Map()
@@ -89,7 +81,6 @@ async function withPool(filename: URL, invoke: (name: string, data: unknown[]) =
   }
 }
 
-/** `withPool`, for a body whose value the caller needs. */
 export async function withPoolResult<T>(filename: URL, invoke: (name: string, data: unknown[]) => Promise<unknown>, body: (pool: ReturnType<typeof createPool>) => Promise<T>): Promise<T> {
   let value!: T
   await withPool(filename, invoke, async (pool) => {
