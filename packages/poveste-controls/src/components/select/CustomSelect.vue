@@ -199,11 +199,16 @@ function selectValue(value: unknown) {
   border: 1px solid var(--color-gray-200);
   border-radius: var(--radius-sm);
   background: var(--color-gray-50);
+  /* Stated rather than inherited: the popper is portalled to `body`, so it is
+     outside the panel whose colour the trigger picks up, and `body` carries
+     none — which left the options at the UA default, black on the dark panel. */
+  color: var(--color-gray-900);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
 
   &:where(.ptw-dark, .ptw-dark *) {
     border-color: var(--color-gray-850);
     background: var(--color-gray-700);
+    color: var(--color-gray-100);
   }
 }
 

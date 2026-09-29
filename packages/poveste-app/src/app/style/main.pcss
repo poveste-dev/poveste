@@ -70,6 +70,18 @@
     font-family: inherit;
   }
 
+  /* Preflight resets these and the replacement above left them out, so a button
+     carrying no background utility painted the UA `ButtonFace`: grey, near enough
+     to light chrome to pass, a white panel against dark. */
+  button,
+  [type='button'],
+  [type='reset'],
+  [type='submit'] {
+    appearance: button;
+    background-color: transparent;
+    background-image: none;
+  }
+
   a,
   button {
     user-select: none;

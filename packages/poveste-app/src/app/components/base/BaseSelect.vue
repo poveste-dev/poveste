@@ -252,7 +252,7 @@ defineExpose({
           :id="listboxId"
           role="listbox"
           :aria-label="label"
-          class="poveste-base-select-options flex flex-col bg-gray-50 dark:bg-gray-700"
+          class="poveste-base-select-options flex flex-col bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         >
           <div
             v-for="([value, optionLabel], index) of entries"
