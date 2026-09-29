@@ -135,6 +135,128 @@ describe('createPool', () => {
     await expect(pool(file).run('Button.story.vue')).rejects.toThrow(/exited before its story finished|every collection worker is gone/)
   })
 
+  it('drains a queue many times the worker count without losing a task', async () => {
+    // The collector queues every story at once — 63 in the vue book against 11
+    // workers — so the queue, not the dispatch, is the normal path.
+    const file = workerFile('numbered', `
+      parentPort.on('message', (m) => {
+        if (m?.kind !== TASK) return
+        parentPort.postMessage({ kind: DONE, result: m.payload })
+      })
+    `)
+    const created = pool<number, number>(file, 4)
+
+    const results = await Promise.all(Array.from({ length: 500 }, (_, i) => created.run(i)))
+
+    expect(results).toEqual(Array.from({ length: 500 }, (_, i) => i))
+  })
+
+  it('keeps answering while a worker dies under load', async () => {
+    // One story in ten takes its worker down. The rest still have to settle, and
+    // the pool has to keep dispatching on what is left.
+    const file = workerFile('flaky', `
+      parentPort.on('message', (m) => {
+        if (m?.kind !== TASK) return
+        if (m.payload % 10 === 9) process.exit(1)
+        parentPort.postMessage({ kind: DONE, result: m.payload })
+      })
+    `)
+    const created = pool<number, number>(file, 6)
+
+    const settled = await Promise.allSettled(Array.from({ length: 60 }, (_, i) => created.run(i)))
+
+    // Every task settles — the failure this guards is one that never does.
+    expect(settled).toHaveLength(60)
+    expect(settled.every(r => r.status === 'fulfilled' || r.reason instanceof Error)).toBe(true)
+    expect(settled.filter(r => r.status === 'fulfilled').length).toBeGreaterThan(0)
+  })
+
+  it('settles every task when a broadcast storm runs alongside dispatch', async () => {
+    // A watcher firing on a large rebuild interleaves broadcasts with task
+    // traffic on the same port, which is the arrangement this pool introduced.
+    const file = workerFile('storm', `
+      let seen = 0
+      parentPort.on('message', (m) => {
+        if (m?.kind === 'hst:invalidate') { seen++; return }
+        if (m?.kind !== TASK) return
+        parentPort.postMessage({ kind: DONE, result: seen })
+      })
+    `)
+    const created = pool<number, number>(file, 4)
+
+    const running = Promise.all(Array.from({ length: 200 }, (_, i) => created.run(i)))
+    for (let i = 0; i < 200; i++) {
+      created.broadcast({ kind: 'hst:invalidate', file: `/src/File${i}.vue` })
+    }
+    const results = await running
+
+    expect(results).toHaveLength(200)
+    expect(results.every(n => typeof n === 'number')).toBe(true)
+  })
+
+  it('settles the whole queue when every task fails', async () => {
+    const file = workerFile('all-fail', `
+      parentPort.on('message', (m) => {
+        if (m?.kind !== TASK) return
+        parentPort.postMessage({ kind: FAILED, error: new Error('story ' + m.payload) })
+      })
+    `)
+    const created = pool<number, number>(file, 3)
+
+    const settled = await Promise.allSettled(Array.from({ length: 120 }, (_, i) => created.run(i)))
+
+    expect(settled.every(r => r.status === 'rejected')).toBe(true)
+    expect((settled[0] as PromiseRejectedResult).reason.message).toBe('story 0')
+  })
+
+  it('settles what is in flight when destroy lands mid-queue', async () => {
+    // A build that fails tears the pool down with stories still running (#878).
+    // Those have to settle, one way or the other, or the process hangs.
+    const file = workerFile('slow-queue', `
+      parentPort.on('message', async (m) => {
+        if (m?.kind !== TASK) return
+        await new Promise(r => setTimeout(r, 30))
+        parentPort.postMessage({ kind: DONE, result: m.payload })
+      })
+    `)
+    const created = pool<number, number>(file, 2)
+
+    const running = Promise.allSettled(Array.from({ length: 100 }, (_, i) => created.run(i)))
+    await new Promise(resolve => setTimeout(resolve, 20))
+    await created.destroy()
+
+    const settled = await running
+    expect(settled).toHaveLength(100)
+    expect(settled.every(r => r.status === 'fulfilled' || r.status === 'rejected')).toBe(true)
+  })
+
+  it('answers a long chain of `invoke` calls from one task', async () => {
+    // Collecting one story walks its module graph, so a single task makes many
+    // sequential calls over the channel it also received the task on.
+    const file = workerFile('chain', `
+      let nextId = 0
+      const pending = new Map()
+      parentPort.on('message', async (m) => {
+        if (m?.kind === 'pvt:invoked') { pending.get(m.id)?.(m.result); pending.delete(m.id); return }
+        if (m?.kind !== TASK) return
+        let last
+        for (let i = 0; i < m.payload; i++) {
+          const id = nextId++
+          last = await new Promise((resolve) => {
+            pending.set(id, resolve)
+            parentPort.postMessage({ kind: 'pvt:invoke', id, name: 'fetchModule', data: [i] })
+          })
+        }
+        parentPort.postMessage({ kind: DONE, result: last })
+      })
+    `)
+    const created = pool<number, string>(file, 2, async (_, data) => `module-${data[0]}`)
+
+    const results = await Promise.all([created.run(200), created.run(200)])
+
+    expect(results).toEqual(['module-199', 'module-199'])
+  })
+
   it('refuses to start work once destroyed', async () => {
     const file = workerFile('idle', `parentPort.on('message', () => {})`)
     const created = pool(file)

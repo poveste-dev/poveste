@@ -6,6 +6,7 @@ Repeatable measurements for the sandbox iframe path: filling and scrolling a gri
 node bench/run.mjs                          # vue + svelte, V=10/100/1000, 7 runs each
 node bench/run.mjs --examples vue --runs 3 # quick look
 node bench/run.mjs --json > after.json      # machine-readable, diff against a baseline
+node bench/collect-pool.mjs --stress        # the collector's worker pool, on its own
 pnpm bench:smoke                            # one asserted run: does the instrument still work
 ```
 
@@ -89,6 +90,36 @@ The figures on #957 and #960 were taken with a throwaway harness that set `el.va
 | values visited per keystroke | 2,620,000 | not measurable here |
 
 Real typing runs the key pipeline the synthetic path skips, which is why the wall is higher. The frame count is doubled for the same reason long tasks under-read scrolling (#872): a heartbeat samples, and rendering-step work falls between its samples.
+
+## Reference, collection pool (M3 Pro, 12 cores, `73d67ea9`, 7 interleaved pairs)
+
+The pool that replaced `@akryum/tinypool` (#1020), measured against it.
+
+**Interleaved, not sequential.** A first attempt ran all seven of one and then all seven of the other, and reported the new pool 2.6× *slower* end to end. Re-run alternating, the same comparison came out at parity — the machine had drifted between the two blocks. Every figure below alternates implementations run by run, and `wins` counts the pairs where ours came out ahead, which is the part drift cannot fake.
+
+| measure | tinypool | ours | ratio | wins |
+| --- | --- | --- | --- | --- |
+| `throughput` | 111,446/s | 129,189/s | 1.16× | 5/7 |
+| `rpc` | 39,559/s | 87,020/s | **2.20×** | 7/7 |
+| `payload` | 117,671/s | 139,542/s | 1.19× | 6/7 |
+| `latency` | 0.018ms | 0.014ms | 1.25× | 5/7 |
+
+`rpc` is the one that is not noise, and it is the change itself: tinypool got a `MessageChannel` per task, created, transferred and closed for every story. The new pool answers on the worker's own port, so a story's module fetches cost one channel per worker for the run rather than one per story.
+
+### End to end it is parity, and that is the honest claim
+
+`examples/vue` — 63 stories, 2248 variants — built seven times alternating:
+
+| | median | min | max |
+| --- | --- | --- | --- |
+| tinypool | 2.24s | 2.08s | 3.29s |
+| ours | 2.16s | 2.05s | 3.19s |
+
+1.04× on medians, 5/7 paired wins. **Read that as no regression, not as faster.** A probe on the pool puts worker saturation at 74–79% during a build, so the wall clock is story execution, not scheduling, and a scheduler twice as quick at RPC moves it by a few percent. The microbenchmark is where the difference is visible because that is where the scheduler is the whole workload.
+
+### Stress
+
+`--stress` runs a queue ten times the task count with a broadcast per ten tasks landing throughout, and reports throughput held against the quiet figure. It sits near **0.5×**, which is the broadcast work showing up rather than queue depth costing anything — every task settles, and `pool.spec.ts` is where that is asserted rather than timed.
 
 ## Reference, state sync (built book, medians over 7 runs)
 
