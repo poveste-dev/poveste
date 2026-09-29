@@ -113,7 +113,11 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         transferList: [
           channel.workerPort,
         ],
-      }) as ReturnData
+        // Tinypool types this option by inferring the second parameter of
+        // `MessagePort.postMessage`; `@types/node` 26 gave that method a second overload and
+        // `infer` takes the last one, so the option types as `StructuredSerializeOptions`.
+        // The runtime reads `transferList` either way.
+      } as unknown as Parameters<typeof threadPool.run>[1]) as ReturnData
       const finalData = storyData[0]
       if (!finalData) {
         console.warn(pc.yellow(`⚠️  No story found for ${storyFile.path}`))
