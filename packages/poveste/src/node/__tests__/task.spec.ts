@@ -82,6 +82,59 @@ describe('serveTasks', () => {
     expect(answered, 'a broadcast was answered as though it were a task').not.toHaveBeenCalled()
   })
 
+  it('holds an invalidation that arrives while a story is running', async () => {
+    // Applied mid-story it re-evaluates modules the run is already using, and the
+    // halves of a framework then disagree about which instance is current.
+    const invalidate = vi.fn()
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => new Promise<ReturnData>((resolve) => {
+      finish = resolve
+    }), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    await new Promise(resolve => setImmediate(resolve))
+
+    expect(invalidate, 'a story was collected against a graph being invalidated under it').not.toHaveBeenCalled()
+  })
+
+  it('applies a held invalidation before the next story starts', async () => {
+    const order: string[] = []
+    let finish: (value: ReturnData) => void
+    const { port } = served(() => {
+      order.push('collect')
+      return new Promise<ReturnData>((resolve) => {
+        finish = resolve
+      })
+    }, (file) => {
+      order.push(`invalidate ${file}`)
+    })
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    // Delivered before the story settles, which is the case the deferral is for.
+    await new Promise(resolve => setImmediate(resolve))
+    finish!(storyData)
+    await answer(port)
+    order.push('answered')
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(order).toHaveLength(4))
+
+    expect(order, 'the held file was invalidated under the story that was still running').toEqual(['collect', 'answered', 'invalidate /src/Button.vue', 'collect'])
+  })
+
+  it('invalidates at once when no story is running', async () => {
+    // The common case: a watcher event between passes has nothing to wait for.
+    const invalidate = vi.fn()
+    const { port } = served(async () => storyData, invalidate)
+
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
+  })
+
   it('leaves a message that is not its own alone', async () => {
     // The port carries `invoke` traffic too, which `rpc.ts` answers.
     const collect = vi.fn(async () => storyData)

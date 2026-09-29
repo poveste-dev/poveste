@@ -24,8 +24,21 @@ export interface TaskHandlers {
 
 /** Answers task dispatch and invalidation arriving on `port`. */
 export function serveTasks(port: PortLike, handlers: TaskHandlers) {
+  // Invalidations that arrived while a story was running, held until it is not.
+  const deferred = new Set<string>()
+  let running = false
+
   port.on('message', (message) => {
     if (message?.kind === INVALIDATE) {
+      // Applied mid-story it re-evaluates modules that story is already using,
+      // and the two halves of a framework then disagree about which instance is
+      // current: Vue injects a key its provider never used, Svelte reads a
+      // component context outside any component. The invalidation is for the
+      // *next* run of the file anyway, so it waits for one.
+      if (running) {
+        deferred.add(message.file)
+        return
+      }
       handlers.invalidate(message.file)
       return
     }
@@ -33,9 +46,23 @@ export function serveTasks(port: PortLike, handlers: TaskHandlers) {
       return
     }
     const { id } = message
+    running = true
+    for (const file of deferred) {
+      handlers.invalidate(file)
+    }
+    deferred.clear()
+    const settle = () => {
+      running = false
+    }
     handlers.collect(message.payload as Payload).then(
-      result => port.postMessage({ kind: DONE, id, result }),
-      error => port.postMessage({ kind: FAILED, id, error: serializeError(error) }),
+      (result) => {
+        settle()
+        port.postMessage({ kind: DONE, id, result })
+      },
+      (error) => {
+        settle()
+        port.postMessage({ kind: FAILED, id, error: serializeError(error) })
+      },
     )
   })
 }
