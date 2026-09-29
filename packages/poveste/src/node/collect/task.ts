@@ -1,5 +1,5 @@
 import type { PortLike } from './rpc.js'
-import type { Payload, ReturnData } from './worker.js'
+import type { Payload, ReturnData } from './types.js'
 import { serializeError } from './error.js'
 
 /*

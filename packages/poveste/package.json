@@ -73,7 +73,8 @@
     "build": "rimraf dist && tsc",
     "watch": "tsc -w --sourceMap",
     "test": "vitest run",
-    "test:dev": "vitest"
+    "test:dev": "vitest",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit"
   },
   "peerDependencies": {
     "vite": "^8.0.0"
