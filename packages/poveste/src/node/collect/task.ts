@@ -26,17 +26,22 @@ export interface TaskHandlers {
 
 /** Answers task dispatch and invalidation arriving on `port`. */
 export function serveTasks(port: PortLike, handlers: TaskHandlers) {
-  // Invalidations that arrived while a story was running, held until it is not.
+  // Invalidations that arrived while a story was running, held until none is.
   const deferred = new Set<string>()
   let dropEverything = false
-  let running = false
+  // A count rather than a flag: nothing here stops a second task arriving before
+  // the first settles — the pool sends one at a time, and the spec beside this
+  // one drives two deliberately — and under a flag the second task's own drain
+  // would invalidate modules the first is still holding, which is the thing this
+  // whole file is arranging not to do.
+  let running = 0
 
   port.on('message', (message) => {
     // Sent once per collection pass, when the server clears its own cache. Every
     // module is read again either way; applying it here rather than one module at
     // a time as each is next asked for is what stops a run straddling the two.
     if (message?.kind === INVALIDATE_ALL) {
-      if (running) {
+      if (running > 0) {
         dropEverything = true
         return
       }
@@ -49,7 +54,7 @@ export function serveTasks(port: PortLike, handlers: TaskHandlers) {
       // current: Vue injects a key its provider never used, Svelte reads a
       // component context outside any component. The invalidation is for the
       // *next* run of the file anyway, so it waits for one.
-      if (running) {
+      if (running > 0) {
         deferred.add(message.file)
         return
       }
@@ -60,18 +65,22 @@ export function serveTasks(port: PortLike, handlers: TaskHandlers) {
       return
     }
     const { id } = message
-    running = true
-    if (dropEverything) {
-      dropEverything = false
+    // Only with the graph to itself: a task starting beside another cannot take
+    // modules out from under it.
+    if (running === 0) {
+      if (dropEverything) {
+        dropEverything = false
+        deferred.clear()
+        handlers.invalidateAll()
+      }
+      for (const file of deferred) {
+        handlers.invalidate(file)
+      }
       deferred.clear()
-      handlers.invalidateAll()
     }
-    for (const file of deferred) {
-      handlers.invalidate(file)
-    }
-    deferred.clear()
+    running++
     const settle = () => {
-      running = false
+      running--
     }
     handlers.collect(message.payload as Payload).then(
       (result) => {

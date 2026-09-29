@@ -125,6 +125,41 @@ describe('serveTasks', () => {
     expect(order, 'the held file was invalidated under the story that was still running').toEqual(['collect', 'answered', 'invalidate /src/Button.vue', 'collect'])
   })
 
+  it('does not drain under a story just because a second one started', async () => {
+    // Nothing in `serveTasks` stops two tasks overlapping, and the id test above
+    // drives two on purpose. Draining on the second one's arrival would invalidate
+    // modules the first is still holding — the case this file exists for.
+    const invalidate = vi.fn()
+    const finish: ((value: ReturnData) => void)[] = []
+    const { port } = served(() => new Promise<ReturnData>(resolve => finish.push(resolve)), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(1))
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(2))
+
+    expect(invalidate, 'the second task invalidated under the first').not.toHaveBeenCalled()
+  })
+
+  it('drains once both overlapping stories have settled', async () => {
+    const invalidate = vi.fn()
+    const finish: ((value: ReturnData) => void)[] = []
+    const { port } = served(() => new Promise<ReturnData>(resolve => finish.push(resolve)), invalidate)
+
+    port.postMessage({ kind: TASK, id: 1, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(1))
+    port.postMessage({ kind: TASK, id: 2, payload: {} })
+    await vi.waitFor(() => expect(finish).toHaveLength(2))
+    port.postMessage({ kind: 'hst:invalidate', file: '/src/Button.vue' })
+    finish[0]!(storyData)
+    finish[1]!(storyData)
+    await new Promise(resolve => setImmediate(resolve))
+    port.postMessage({ kind: TASK, id: 3, payload: {} })
+
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalledWith('/src/Button.vue'))
+  })
+
   it('invalidates at once when no story is running', async () => {
     // The common case: a watcher event between passes has nothing to wait for.
     const invalidate = vi.fn()
