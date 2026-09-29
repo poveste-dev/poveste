@@ -61,19 +61,6 @@ export const EITHER = workerFile('either', `
   })
 `)
 
-/** Calls back once before answering, the way a worker fetches a module. */
-export const CALLS_BACK = workerFile('calls-back', `
-  let nextId = 0
-  const pending = new Map()
-  parentPort.on('message', (m) => {
-    if (m?.kind === RPC_RESPONSE) { pending.get(m.id)?.(); pending.delete(m.id); return }
-    if (m?.kind !== TASK) return
-    const id = nextId++
-    pending.set(id, () => parentPort.postMessage({ kind: DONE, result: 1 }))
-    parentPort.postMessage({ kind: RPC_REQUEST, id, name: 'fetchModule', data: ['/src/Button.vue'] })
-  })
-`)
-
 /** The collector hands its worker a file record, not a scalar. */
 export const STORY_PAYLOAD = {
   root: '/repo',
@@ -90,7 +77,7 @@ export const STORY_PAYLOAD = {
 
 export const noInvoke = async () => undefined
 
-export async function withPool(filename: URL, invoke: (name: string, data: unknown[]) => Promise<unknown>, body: (pool: ReturnType<typeof createPool>) => Promise<void>) {
+async function withPool(filename: URL, invoke: (name: string, data: unknown[]) => Promise<unknown>, body: (pool: ReturnType<typeof createPool>) => Promise<void>) {
   const pool = createPool({ filename, threads: THREADS, invoke })
   // One task through every worker first, so spawn and module load are not measured.
   await Promise.all(Array.from({ length: THREADS }, () => pool.run(0)))

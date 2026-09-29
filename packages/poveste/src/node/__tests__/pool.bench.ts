@@ -1,27 +1,23 @@
 /*
  * What the pool's scheduling costs, with no story in front of it (#1020).
  *
- * The pool replaced `@akryum/tinypool`, which cannot be a live participant any
- * more — it is no longer a dependency — so its numbers sit under `baselines/` and
- * come back through `bench.from`. The round trip a worker makes mid-task is in
- * `rpc.bench.ts`, beside the code that carries it.
+ * The round trip a worker makes mid-task is in `rpc.bench.ts`, beside the code
+ * that carries it.
  *
- * **The tinypool column is printed, not asserted.** Ours is measured live while
- * tinypool's comes off disk, so nothing cancels a machine that has drifted since
- * the baseline was taken — running this straight after a lint and a test suite put
- * `collecting` at 0.44x, and the same code minutes earlier at 1.25x. A floor wide
- * enough to survive that catches nothing worth catching.
- *
- * Paired ratios measured inside one run are better, and are what the other benches
- * report — but not reliable enough to gate on either: the `invoke` round trip
- * reads 1.6–2.1x idle and has been seen at 5.07x under load. So **nothing here
- * asserts a timing.** Every bench asserts only that it measured something, which
- * is what `bench/smoke.spec.ts` says about this project's other instruments, and
- * the numbers are for a person to read against `bench/README.md`.
+ * **Nothing here asserts a timing.** Three attempts at a threshold each failed on a
+ * laptop — the tightest, an `invoke` round trip against a bare dispatch with both
+ * arms paired on one pool, reads 1.6–2.1x idle and has been seen at 5.07x under
+ * load. So every bench asserts only that it measured something, which is what
+ * `bench/smoke.spec.ts` says about this project's other instruments, and the
+ * numbers are for a person to read against `bench/README.md`.
  *
  * What does gate is in `pool.spec.ts`, where the properties are correctness and a
- * mutation makes them fail. The honest head-to-head comes from interleaving the
- * two implementations run by run; `bench/README.md` records it and the method.
+ * mutation makes them fail.
+ *
+ * The comparison against `@akryum/tinypool`, which this pool replaced, was a
+ * one-off: the fork is no longer a dependency, and a recorded baseline cannot be
+ * compared against a live run on a different machine anyway. `bench/README.md` has
+ * the numbers and how they were taken.
  *
  *   pnpm bench:pool                  # every bench in this package
  *   pnpm bench:pool -t collecting    # one measure
@@ -30,7 +26,7 @@
 // renamed, which it is not.
 /* eslint-disable test/consistent-test-it */
 import { expect, it } from 'vitest'
-import { ECHO, noInvoke, QUEUED, STORY_PAYLOAD, THREADS, TIME_MS, withPool, withPoolResult } from './support/pool.js'
+import { ECHO, noInvoke, QUEUED, STORY_PAYLOAD, THREADS, TIME_MS, withPoolResult } from './support/pool.js'
 
 /*
  * Reported, not asserted: how many workers the queue kept fed is bounded by how
@@ -68,39 +64,23 @@ it('reports what a story-sized payload costs against a scalar', async ({ bench }
   expect(cost, `a story-sized payload cost ${cost.toFixed(2)}x a scalar`).toBeGreaterThan(0)
 })
 
-/*
- * The four shapes against tinypool's recorded numbers. Read the printed columns;
- * nothing here asserts on them, for the reason in the header.
- */
-it('reports the four shapes against the recorded tinypool baselines', async ({ bench }) => {
-  await withPool(ECHO, noInvoke, async (pool) => {
-    await bench.compare(
-      bench('ours', { writeResult: './src/node/__tests__/baselines/collecting.json' }, async () => {
+/** The four shapes, side by side, in the order a build leans on them. */
+it('reports the four shapes a build puts through the pool', async ({ bench }) => {
+  const measured = await withPoolResult(ECHO, noInvoke, async (pool) => {
+    return bench.compare(
+      bench('collecting', async () => {
         await Promise.all(Array.from({ length: QUEUED }, () => pool.run(STORY_PAYLOAD)))
       }),
-      bench.from('tinypool', './src/node/__tests__/baselines/collecting.tinypool.json'),
-      { time: TIME_MS },
-    )
-    await bench.compare(
-      bench('ours', { writeResult: './src/node/__tests__/baselines/saturated.json' }, async () => {
+      bench('saturated', async () => {
         await Promise.all(Array.from({ length: QUEUED }, () => pool.run(0)))
       }),
-      bench.from('tinypool', './src/node/__tests__/baselines/saturated.tinypool.json'),
-      { time: TIME_MS },
-    )
-    await bench.compare(
-      bench('ours', { writeResult: './src/node/__tests__/baselines/dispatch.json' }, async () => {
-        await pool.run(0)
-      }),
-      bench.from('tinypool', './src/node/__tests__/baselines/dispatch.tinypool.json'),
-      { time: TIME_MS },
-    )
-    await bench.compare(
-      bench('ours', { writeResult: './src/node/__tests__/baselines/payload.json' }, async () => {
-        await pool.run(STORY_PAYLOAD)
-      }),
-      bench.from('tinypool', './src/node/__tests__/baselines/payload.tinypool.json'),
+      bench('dispatch', async () => { await pool.run(0) }),
+      bench('payload', async () => { await pool.run(STORY_PAYLOAD) }),
       { time: TIME_MS },
     )
   })
+
+  for (const name of ['collecting', 'saturated', 'dispatch', 'payload']) {
+    expect(measured.get(name).throughput.mean, `${name} measured nothing`).toBeGreaterThan(0)
+  }
 })

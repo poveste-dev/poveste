@@ -7,8 +7,8 @@
  *
  * Reported, not gated. The round trip against a bare dispatch reads 1.6–2.1x on an
  * idle laptop, where tinypool's per-task channel put it at 2.87x — but under load
- * it has been seen at 5.07x, and a threshold that survives that separates nothing.
- * See `pool.bench.ts` for why none of these numbers are assertions.
+ * it has been seen at 5.07x, and a threshold surviving that separates nothing. See
+ * `pool.bench.ts`.
  *
  *   pnpm bench:pool -t rpc
  */
@@ -16,7 +16,7 @@
 // renamed, which it is not.
 /* eslint-disable test/consistent-test-it */
 import { expect, it } from 'vitest'
-import { CALLS_BACK, EITHER, TIME_MS, withPool, withPoolResult } from './support/pool.js'
+import { EITHER, TIME_MS, withPoolResult } from './support/pool.js'
 
 it('reports what a worker calling back mid-task costs against a bare dispatch', async ({ bench }) => {
   // Both arms on one pool, run adjacently, so the ratio is not a measure of what
@@ -31,18 +31,4 @@ it('reports what a worker calling back mid-task costs against a bare dispatch', 
 
   const cost = paired.get('dispatch').throughput.mean / paired.get('invoke').throughput.mean
   expect(cost, `an invoke round trip cost ${cost.toFixed(2)}x a bare dispatch, which is reported rather than gated`).toBeGreaterThan(0)
-})
-
-it('reports the round trip against the recorded tinypool baseline', async ({ bench }) => {
-  await withPool(CALLS_BACK, async () => 'transformed', async (pool) => {
-    const result = await bench.compare(
-      bench('ours', { writeResult: './src/node/__tests__/baselines/rpc.json' }, async () => {
-        await pool.run(0)
-      }),
-      bench.from('tinypool', './src/node/__tests__/baselines/rpc.tinypool.json'),
-      { time: TIME_MS },
-    )
-
-    expect(result.get('ours').throughput.mean, 'the rpc bench measured nothing').toBeGreaterThan(0)
-  })
 })

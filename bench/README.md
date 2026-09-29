@@ -95,7 +95,7 @@ Real typing runs the key pipeline the synthetic path skips, which is why the wal
 
 ## Reference, collection pool (M3 Pro, 12 cores, `003c343b`)
 
-The pool that replaced `@akryum/tinypool` (#1020). `pool.bench.ts`, `rpc.bench.ts` and `error.bench.ts` are vitest benchmarks measuring the source rather than a build, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%.
+The pool that replaced `@akryum/tinypool` (#1020). `pool.bench.ts`, `rpc.bench.ts` and `error.bench.ts` are vitest benchmarks measuring the source rather than a build, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%. They measure this pool only; the tinypool column below came from a one-off exercise described at the end of this section, and nothing in the tree reproduces it.
 
 ```bash
 pnpm bench:pool            # every measure, against the committed tinypool baselines
@@ -149,7 +149,7 @@ That is also why none of this is a CI job.
 
 The comparison above is interleaved — implementations alternate run by run — because a first attempt ran all of one and then all of the other and reported the new pool **2.6x slower** end to end, which was the machine drifting between the blocks. The direction reverses when you alternate.
 
-The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. The committed `packages/poveste/src/node/__tests__/baselines/*.tinypool.json` are the output of that exercise; nothing in the tree regenerates them.
+The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. Its recorded numbers were briefly committed as baselines and then removed: with no assertion resting on them they only printed a column, and a file recorded on one machine cannot be compared against a live run on another. This table is the record.
 
 **Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 
