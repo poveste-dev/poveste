@@ -27,6 +27,26 @@
 // would have to walk anyway, and the question here is only whether a literal
 // appears. No install, no network — it sits with the manifest checks at the
 // front of `release:check`.
+//
+// What proves the floor, since this file is where that gets asked (#1027). Two
+// things do, at different levels, and neither is this check:
+//
+//   running   `Node floor` switches to the literal above and runs `test:smoke` —
+//             pack, install, build a real book (#303).
+//   compiling the same job typechecks `packages/poveste` against
+//             `@types/node@^<major of engines.node>` before it switches.
+//
+// The second exists because #1017 moved the catalog's `@types/node` from ^22 to
+// ^26 in one line. The catalog is a single pin by design (#900, #963) and tracks
+// `.node-version`, so after that bump the only compile of the published source
+// ran against 26 alone: a 26-only API became something no check could see, and
+// the runtime proof above only catches one if the two books it builds happen to
+// execute that line. `node:worker_threads`, `node:fs` and `node:crypto` gained
+// 23 exports between 22.21.1 and 26.7.0.
+//
+// It is a CI step rather than a check here because it needs an install this file
+// deliberately does not do, and because the floor it reads is `engines.node`
+// itself — adding it here would make this file assert a version it also fetches.
 
 import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
