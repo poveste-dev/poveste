@@ -31,9 +31,16 @@ export interface Context<T> {
  *
  * `key` is exposed because the collect runner seeds its contexts through a
  * `Map` handed to `mount`, which is not a component and so cannot call `set`.
+ *
+ * The key comes from the global registry rather than being minted here, because
+ * this module is evaluated more than once. A collection worker's module graph is
+ * invalidated while a story is mid-run, so `set` and `get` can each hold their
+ * own instance of this file — a plain `Symbol()` then differs between them and
+ * the lookup misses. Every description here is unique, so the registry cannot
+ * put two contexts on one key.
  */
 export function createContext<T>(description: string, provider: string): Context<T> {
-  const key = Symbol(description)
+  const key = Symbol.for(description)
 
   return {
     key,
