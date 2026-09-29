@@ -56,6 +56,18 @@ describe('serializeError', () => {
     expect(received.cause?.frame).toBe('x')
   })
 
+  it('leaves a stackless error with the stack it was rebuilt with', async () => {
+    // `stack` is writable and can be absent; assigning `undefined` would erase the
+    // one `new Error` just produced and leave nothing to print.
+    const thrown = new Error('no stack here')
+    delete (thrown as { stack?: string }).stack
+
+    const received = await roundTrip(thrown) as Error
+
+    expect(received.message).toBe('no stack here')
+    expect(typeof received.stack).toBe('string')
+  })
+
   it('drops a property the clone would reject rather than losing the error', async () => {
     // A function on an error takes the whole `postMessage` down with a
     // DataCloneError, which is a worse outcome than losing the property.

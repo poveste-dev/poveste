@@ -35,7 +35,7 @@ ${body}
 export const ECHO = workerFile('echo', `
   parentPort.on('message', (m) => {
     if (m?.kind !== TASK) return
-    parentPort.postMessage({ kind: DONE, result: 1 })
+    parentPort.postMessage({ kind: DONE, id: m.id, result: 1 })
   })
 `)
 
@@ -46,9 +46,10 @@ export const EITHER = workerFile('either', `
   parentPort.on('message', (m) => {
     if (m?.kind === RPC_RESPONSE) { pending.get(m.id)?.(); pending.delete(m.id); return }
     if (m?.kind !== TASK) return
-    if (!m.payload) { parentPort.postMessage({ kind: DONE, result: 1 }); return }
+    if (!m.payload) { parentPort.postMessage({ kind: DONE, id: m.id, result: 1 }); return }
+    const taskId = m.id
     const id = nextId++
-    pending.set(id, () => parentPort.postMessage({ kind: DONE, result: 1 }))
+    pending.set(id, () => parentPort.postMessage({ kind: DONE, id: taskId, result: 1 }))
     parentPort.postMessage({ kind: RPC_REQUEST, id, name: 'fetchModule', data: ['/src/Button.vue'] })
   })
 `)

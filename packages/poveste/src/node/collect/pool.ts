@@ -15,6 +15,7 @@ export const DONE = 'pvt:done'
 export const FAILED = 'pvt:failed'
 
 interface Task<P, R> {
+  id: number
   payload: P
   resolve: (value: R) => void
   reject: (reason: unknown) => void
@@ -45,18 +46,22 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
     current: Task<P, R> | undefined
   }
 
+  let nextId = 0
+
   for (let i = 0; i < options.threads; i++) {
     const worker = new Worker(options.filename, { stdout: false, stderr: false })
     const handle: WorkerHandle = { worker, current: undefined }
 
     serveInvoke(worker, options.invoke)
 
-    worker.on('message', (message: { kind?: string, result?: R, error?: unknown }) => {
+    worker.on('message', (message: { kind?: string, id?: number, result?: R, error?: unknown }) => {
       if (message?.kind !== DONE && message?.kind !== FAILED) {
         return
       }
       const task = handle.current
-      if (!task) {
+      // A late or repeated answer is for a task this worker has already finished,
+      // and without the id it would settle whichever one it is running now.
+      if (!task || message.id !== task.id) {
         return
       }
       handle.current = undefined
@@ -118,7 +123,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
 
   function dispatch(handle: WorkerHandle, task: Task<P, R>) {
     handle.current = task
-    handle.worker.postMessage({ kind: TASK, payload: task.payload })
+    handle.worker.postMessage({ kind: TASK, id: task.id, payload: task.payload })
   }
 
   function run(payload: P) {
@@ -127,7 +132,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
         reject(new Error('[poveste] the collection pool is destroyed'))
         return
       }
-      const task: Task<P, R> = { payload, resolve, reject }
+      const task: Task<P, R> = { id: nextId++, payload, resolve, reject }
       const handle = idle.shift()
       if (handle) {
         dispatch(handle, task)

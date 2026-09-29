@@ -62,9 +62,10 @@ parentPort.on('message', (message) => {
   if (message?.kind !== TASK) {
     return
   }
+  const { id } = message
   collect(message.payload as Payload).then(
-    result => parentPort!.postMessage({ kind: DONE, result }),
-    error => parentPort!.postMessage({ kind: FAILED, error: serializeError(error) }),
+    result => parentPort!.postMessage({ kind: DONE, id, result }),
+    error => parentPort!.postMessage({ kind: FAILED, id, error: serializeError(error) }),
   )
 })
 

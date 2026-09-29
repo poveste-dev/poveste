@@ -1,5 +1,5 @@
 import { MessageChannel } from 'node:worker_threads'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { invokeOver, serveInvoke } from '../collect/rpc.js'
 
 const channels: MessageChannel[] = []
@@ -46,5 +46,59 @@ describe('invokeOver', () => {
     const results = await Promise.all([invoke('fetchModule', [30, 'slow']), invoke('fetchModule', [0, 'fast'])])
 
     expect(results).toEqual(['slow', 'fast'])
+  })
+})
+
+describe('sharing the channel with task dispatch', () => {
+  it('ignores a message that is not its own', async () => {
+    // The channel carries task dispatch too (#1020), so anything untagged or
+    // tagged for the pool has to fall through both ends untouched.
+    const channel = new MessageChannel()
+    channels.push(channel)
+    const served: string[] = []
+    serveInvoke(channel.port1, async (name) => {
+      served.push(name)
+      return 'ok'
+    })
+    const invoke = invokeOver(channel.port2)
+
+    channel.port2.postMessage({ kind: 'pvt:task', payload: 1 })
+    channel.port2.postMessage({ nothing: true })
+    const answered = await invoke('fetchModule', ['/src/Button.vue'])
+
+    expect(answered).toBe('ok')
+    expect(served, 'a foreign message reached the invoke server').toEqual(['fetchModule'])
+  })
+
+  it('drops a response for a call it is no longer holding', async () => {
+    const channel = new MessageChannel()
+    channels.push(channel)
+    const invoke = invokeOver(channel.port2)
+
+    // An id nothing is waiting on, answered before any real call.
+    channel.port1.postMessage({ kind: 'pvt:invoked', id: 99, result: 'stray' })
+    serveInvoke(channel.port1, async () => 'real')
+
+    await expect(invoke('fetchModule', [])).resolves.toBe('real')
+  })
+})
+
+describe('the answer that never comes', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('rejects rather than holding its worker forever', async () => {
+    // A stuck transform must fail the story instead of keeping a worker busy.
+    vi.useFakeTimers()
+    const channel = new MessageChannel()
+    channels.push(channel)
+    const invoke = invokeOver(channel.port2)
+
+    const call = invoke('fetchModule', ['/src/Stuck.vue'])
+    const settled = expect(call).rejects.toThrow(/got no answer in 60s/)
+    await vi.advanceTimersByTimeAsync(60_000)
+
+    await settled
   })
 })

@@ -35,7 +35,7 @@ describe('createPool', () => {
     const file = workerFile('echo', `
       parentPort.on('message', (m) => {
         if (m?.kind !== TASK) return
-        parentPort.postMessage({ kind: DONE, result: { got: m.payload } })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: { got: m.payload } })
       })
     `)
 
@@ -48,7 +48,7 @@ describe('createPool', () => {
     const file = workerFile('throws', `
       parentPort.on('message', (m) => {
         if (m?.kind !== TASK) return
-        parentPort.postMessage({ kind: FAILED, error: new Error('transform failed') })
+        parentPort.postMessage({ kind: FAILED, id: m.id, error: new Error('transform failed') })
       })
     `)
 
@@ -62,7 +62,7 @@ describe('createPool', () => {
       parentPort.on('message', async (m) => {
         if (m?.kind !== TASK) return
         await new Promise(r => setTimeout(r, m.payload.delay))
-        parentPort.postMessage({ kind: DONE, result: m.payload.name })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: m.payload.name })
       })
     `)
     const created = pool<{ name: string, delay: number }, string>(file, 2)
@@ -88,8 +88,9 @@ describe('createPool', () => {
           return
         }
         if (m?.kind !== TASK) return
+        const taskId = m.id
         const id = nextId++
-        pending.set(id, (result) => parentPort.postMessage({ kind: DONE, result }))
+        pending.set(id, (result) => parentPort.postMessage({ kind: DONE, id: taskId, result }))
         parentPort.postMessage({ kind: 'pvt:invoke', id, name: 'fetchModule', data: [m.payload] })
       })
     `)
@@ -109,7 +110,7 @@ describe('createPool', () => {
         if (m?.kind === 'hst:invalidate') { seen++; return }
         if (m?.kind !== TASK) return
         await new Promise(r => setTimeout(r, m.payload))
-        parentPort.postMessage({ kind: DONE, result: seen })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: seen })
       })
     `)
     const created = pool<number, number>(file, 2)
@@ -141,7 +142,7 @@ describe('createPool', () => {
     const file = workerFile('numbered', `
       parentPort.on('message', (m) => {
         if (m?.kind !== TASK) return
-        parentPort.postMessage({ kind: DONE, result: m.payload })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: m.payload })
       })
     `)
     const created = pool<number, number>(file, 4)
@@ -158,7 +159,7 @@ describe('createPool', () => {
       parentPort.on('message', (m) => {
         if (m?.kind !== TASK) return
         if (m.payload % 10 === 9) process.exit(1)
-        parentPort.postMessage({ kind: DONE, result: m.payload })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: m.payload })
       })
     `)
     const created = pool<number, number>(file, 6)
@@ -179,7 +180,7 @@ describe('createPool', () => {
       parentPort.on('message', (m) => {
         if (m?.kind === 'hst:invalidate') { seen++; return }
         if (m?.kind !== TASK) return
-        parentPort.postMessage({ kind: DONE, result: seen })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: seen })
       })
     `)
     const created = pool<number, number>(file, 4)
@@ -198,7 +199,7 @@ describe('createPool', () => {
     const file = workerFile('all-fail', `
       parentPort.on('message', (m) => {
         if (m?.kind !== TASK) return
-        parentPort.postMessage({ kind: FAILED, error: new Error('story ' + m.payload) })
+        parentPort.postMessage({ kind: FAILED, id: m.id, error: new Error('story ' + m.payload) })
       })
     `)
     const created = pool<number, number>(file, 3)
@@ -216,7 +217,7 @@ describe('createPool', () => {
       parentPort.on('message', async (m) => {
         if (m?.kind !== TASK) return
         await new Promise(r => setTimeout(r, 30))
-        parentPort.postMessage({ kind: DONE, result: m.payload })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: m.payload })
       })
     `)
     const created = pool<number, number>(file, 2)
@@ -247,7 +248,7 @@ describe('createPool', () => {
             parentPort.postMessage({ kind: 'pvt:invoke', id, name: 'fetchModule', data: [i] })
           })
         }
-        parentPort.postMessage({ kind: DONE, result: last })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: last })
       })
     `)
     const created = pool<number, string>(file, 2, async (_, data) => `module-${data[0]}`)
@@ -255,6 +256,37 @@ describe('createPool', () => {
     const results = await Promise.all([created.run(200), created.run(200)])
 
     expect(results).toEqual(['module-199', 'module-199'])
+  })
+
+  it('rejects the task of a worker that throws, not only one that exits', async () => {
+    // An uncaught throw reaches `error`, where `process.exit` reaches `exit`, and
+    // only one of the two was covered. Either way the story must settle.
+    const file = workerFile('throws-uncaught', `
+      parentPort.on('message', (m) => {
+        if (m?.kind !== TASK) return
+        throw new Error('worker blew up')
+      })
+    `)
+
+    await expect(pool(file).run('Button.story.vue')).rejects.toThrow(/worker blew up|every collection worker is gone/)
+  })
+
+  it('ignores a result that matches no task it is waiting on', async () => {
+    // A worker that answers twice, or answers after a teardown, must not settle
+    // whatever the pool happens to be holding next.
+    const file = workerFile('answers-twice', `
+      parentPort.on('message', (m) => {
+        if (m?.kind !== TASK) return
+        parentPort.postMessage({ kind: DONE, id: m.id, result: m.payload })
+        parentPort.postMessage({ kind: DONE, id: m.id, result: 'stray' })
+      })
+    `)
+    const created = pool<string, string>(file, 1)
+
+    const first = await created.run('a')
+    const second = await created.run('b')
+
+    expect([first, second]).toEqual(['a', 'b'])
   })
 
   it('refuses to start work once destroyed', async () => {
