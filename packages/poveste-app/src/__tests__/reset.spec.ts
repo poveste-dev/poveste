@@ -13,11 +13,16 @@ import { describe, expect, it } from 'vitest'
  */
 // `__dirname` rather than `import.meta.url`, which vitest's transform does not
 // leave intact here — the same trap `icons.spec.ts` records.
-const source = readFileSync(resolve(__dirname, '../app/style/main.pcss'), 'utf8')
+//
+// Line endings normalised, and the anchor below is a single line: matching a
+// selector list *across* its own line break reads the file as the checkout wrote
+// it, which on Windows is CRLF. This found nothing there and passed everywhere
+// else, which is the worst way for a check to be wrong.
+const source = readFileSync(resolve(__dirname, '../app/style/main.pcss'), 'utf8').replace(/\r\n/g, '\n')
 
-/** The declarations inside the first rule whose selector list matches. */
-function rule(selector: string) {
-  const start = source.indexOf(selector)
+/** The declarations of the first rule whose selector list contains `anchor`. */
+function rule(anchor: string) {
+  const start = source.indexOf(anchor)
   if (start === -1) {
     return null
   }
@@ -25,14 +30,17 @@ function rule(selector: string) {
   return source.slice(open + 1, source.indexOf('}', open))
 }
 
+/** The last line of the button reset's selector list. */
+const BUTTON_RESET = '[type=\'submit\']'
+
 describe('the manual Preflight replacement', () => {
   it('clears the UA background off a button', () => {
-    expect(rule('button,\n  [type=\'button\']')).toContain('background-color: transparent')
+    expect(rule(BUTTON_RESET)).toContain('background-color: transparent')
   })
 
   it('clears the UA background image too', () => {
     // Preflight resets both; a gradient theme would otherwise come back.
-    expect(rule('button,\n  [type=\'button\']')).toContain('background-image: none')
+    expect(rule(BUTTON_RESET)).toContain('background-image: none')
   })
 
   it('stays inside `@layer base`, where a utility can still win', () => {
