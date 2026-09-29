@@ -1,0 +1,33 @@
+// The same source as `tsconfig.json`, minus the DOM. `tsconfig.json` has to keep
+// `"DOM"` for `builtin-plugins/vanilla-support/**`, which is browser code, and a
+// `lib` applies to a whole program — so with one program a browser global is
+// legal everywhere, and `document` in `collect/` compiles and throws under Node.
+//
+// Two files are excluded because they genuinely own DOM globals: `dom/env.ts`
+// builds the jsdom environment, and `collect/worker.ts` runs after
+// `createDomEnv()` has populated `globalThis`, so `document` there is real. The
+// boundary is that function's reach, not a directory.
+//
+// Excluding them only works because `collect/types.ts` exists. `exclude` does
+// not outrank an import, and `collect/index.ts` and `collect/task.ts` used to
+// take `Payload` and `ReturnData` from `worker.js` — which pulled `worker.ts`
+// back in, and `dom/env.ts` and `@types/jsdom` with it. `@types/jsdom` opens
+// with `/// <reference lib="dom" />`, and a `reference lib` loads that lib
+// whatever `lib` says here, so one type-only import undid the whole file.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": [
+      "ESNext"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "generated/**/*",
+    "dist/**/*",
+    "src/**/__tests__/**",
+    "src/node/builtin-plugins/vanilla-support/**",
+    "src/node/collect/worker.ts",
+    "src/node/dom/env.ts"
+  ]
+}

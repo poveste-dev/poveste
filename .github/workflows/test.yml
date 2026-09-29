@@ -324,6 +324,13 @@ jobs:
       - name: Type-check the app
         run: pnpm --filter @poveste/app run typecheck
 
+      # After `build` for the same reason as the app: `@poveste/shared` resolves
+      # through the workspace symlink to `dist/*.d.ts`. This is the DOM-free half
+      # of `poveste` — it fails on a browser global in server code, which
+      # `tsconfig.json` cannot, having to keep `"DOM"` for `vanilla-support`.
+      - name: Type-check the server half of `poveste`
+        run: pnpm --filter poveste run typecheck:server
+
       # The offline half of the release preflight. Here too, not just at release:
       # there the same failure lands after the bump is already on `main` (#302).
       - name: Check the published package surface
@@ -437,6 +444,10 @@ jobs:
           set +e
           npx tsc -p packages/poveste --noEmit
           STATUS=$?
+          # `tsconfig.json` keeps `"DOM"` for the browser code it also covers, and
+          # a DOM global is whatever the DOM lib says on every Node version. Only
+          # the server program constrains a global to the floor's `@types/node`.
+          npx tsc -p packages/poveste/tsconfig.server.json --noEmit || STATUS=$?
           set -e
           rm -rf "${LINK}"
           mv "${TYPES_DIR}/ceiling" "${LINK}"

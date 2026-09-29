@@ -1,6 +1,7 @@
-import type { ServerRunPayload, ServerStory, ServerStoryFile } from '@poveste/shared'
+import type { ServerRunPayload, ServerStory } from '@poveste/shared'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { Invoke } from './runner.js'
+import type { Payload, ReturnData } from './types.js'
 import { performance } from 'node:perf_hooks'
 import { fileURLToPath } from 'node:url'
 import { parentPort } from 'node:worker_threads'
@@ -13,17 +14,6 @@ import { createRunner } from './runner.js'
 import { serveTasks } from './task.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-
-export interface Payload {
-  root: string
-  base: string
-  storyFile: ServerStoryFile
-  defineGlobals?: Record<string, unknown>
-}
-
-export interface ReturnData {
-  storyData: ServerStory[]
-}
 
 const _evaluatedModules = new EvaluatedModules()
 let _runner: ModuleRunner | undefined

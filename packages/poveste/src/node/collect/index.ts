@@ -1,7 +1,7 @@
 import type { ServerStoryFile } from '@poveste/shared'
 import type { ViteDevServer } from 'vite'
 import type { Context } from '../context.js'
-import type { Payload, ReturnData } from './worker.js'
+import type { Payload, ReturnData } from './types.js'
 import { cpus } from 'node:os'
 import { escapeRegExp } from '@poveste/shared'
 import path, { relative } from 'pathe'
