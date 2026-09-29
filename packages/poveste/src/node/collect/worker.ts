@@ -46,10 +46,18 @@ function invalidate(file: string) {
 }
 
 // The whole graph, dropped at a task boundary. The server clears its own cache
-// once per pass, so every module is re-read in that pass anyway — what changes is
-// whether a story can be halfway through when its turn comes.
+// once per pass, so this is re-read in that pass anyway — what changes is whether
+// a story can be halfway through when its turn comes.
+//
+// Everything, with nothing held back. Vitest skips its own `dist` from the reset
+// it does between test files, and the same shape here re-broke Svelte: keeping a
+// module while dropping what it imports leaves it holding the dropped instances.
+// Vitest's skipped set imports only itself; the plugin runtime imports the
+// framework, which is in this graph.
 function invalidateAll() {
-  _evaluatedModules.clear()
+  for (const node of _evaluatedModules.idToModuleMap.values()) {
+    _evaluatedModules.invalidateModule(node)
+  }
 }
 
 if (!parentPort) {
