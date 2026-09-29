@@ -6,8 +6,7 @@ import { deserializeError, serializeError } from './error.js'
  * (#344): after #167 the channel carries a single method, and a dependency that
  * ships in `poveste` was three majors behind to carry it.
  *
- * The channel is shared with task dispatch (#1020), so both sides tag what they
- * send and ignore what is not theirs.
+ * Task dispatch shares the channel (#1020), so both sides tag what they send.
  */
 
 // What birpc waited before rejecting a call, kept so a stuck transform still

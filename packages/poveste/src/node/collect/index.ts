@@ -24,11 +24,8 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
 
   const node = createModuleServer(server, {
     inline: [
-      // Published layout: `poveste` and scoped `@poveste/*` packages. These
-      // MUST be inlined so collection transforms them and resolves their
-      // `virtual:` imports; otherwise they're loaded via native Node ESM,
-      // which throws ERR_UNSUPPORTED_ESM_URL_SCHEME on `virtual:` and breaks
-      // story collection for any fresh npm install.
+      // Must be inlined: loaded through native Node ESM instead, their `virtual:`
+      // imports throw ERR_UNSUPPORTED_ESM_URL_SCHEME on any fresh npm install.
       /\/poveste\/dist/,
       /\/poveste\/client/,
       /@poveste\/[\w-]+\/dist/,
@@ -44,7 +41,6 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     transformMode: ctx.config.viteNodeTransformMode,
   })
 
-  // Same values a real build substitutes, so externalised deps see their flags.
   const defineGlobals = globalsFromDefine(server.config.define)
 
   const maxThreads = ctx.config.collectMaxThreads ?? cpus().length
@@ -95,7 +91,6 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         console.warn(pc.yellow(`⚠️  Multiple stories not supported: ${storyFile.path}`))
       }
 
-      // Default props
       if (ctx.config.defaultStoryProps) {
         for (const [key, value] of Object.entries(ctx.config.defaultStoryProps)) {
           if (Reflect.get(finalData, key) == null) {

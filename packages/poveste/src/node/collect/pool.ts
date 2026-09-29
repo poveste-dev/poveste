@@ -4,14 +4,10 @@ import { deserializeError } from './error.js'
 import { serveInvoke } from './rpc.js'
 
 /*
- * The collector's worker pool (#1020). It replaced `@akryum/tinypool`, a fork
- * whose last publish was 0.3.1 and whose option types were derived by matching
- * the shape of `MessagePort.postMessage`, so a Node types bump broke the build.
- *
- * One channel per worker rather than one port per task. Tasks, results and the
- * worker's `invoke` calls all ride the worker's own port, which is what removes
- * the ordering hazard #557 worked around: a broadcast and a task dispatched on
- * two different channels had nothing sequencing them.
+ * One channel per worker rather than one port per task (#1020): tasks, results and
+ * the worker's `invoke` calls all ride the worker's own port. That is what removes
+ * the hazard #557 worked around, where a broadcast and a task went out on two
+ * channels with nothing sequencing them.
  */
 
 export const TASK = 'pvt:task'
@@ -25,7 +21,6 @@ interface Task<P, R> {
 }
 
 export interface PoolOptions {
-  /** The worker entrypoint. */
   filename: string | URL
   threads: number
   /** Answers the `invoke` calls workers make while they run. */
@@ -34,7 +29,7 @@ export interface PoolOptions {
 
 export interface Pool<P, R> {
   run: (payload: P) => Promise<R>
-  /** Sends a message to every worker, whatever each one is doing. */
+  /** Reaches every worker, busy ones included. */
   broadcast: (message: unknown) => void
   destroy: () => Promise<void>
 }

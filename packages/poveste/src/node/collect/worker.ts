@@ -50,8 +50,8 @@ if (!parentPort) {
   throw new Error('[poveste] the collection worker was started outside a worker thread')
 }
 
-// One `invoke` for the worker's lifetime: the port it answers over is the same
-// one tasks arrive on, so nothing has to be handed over per story.
+// The port it answers over is the one tasks arrive on, so nothing is handed over
+// per story.
 const _invoke: Invoke = invokeOver(parentPort)
 
 parentPort.on('message', (message) => {
@@ -72,10 +72,8 @@ async function collect(payload: Payload): Promise<ReturnData> {
   const startTime = performance.now()
   process.env['HST_COLLECT'] = 'true'
 
-  // A story being re-executed is being re-read by definition (#557). Tasks and
-  // broadcasts now share one port and so arrive in order, but this still has to
-  // run: a story re-collected without an intervening watcher event gets no
-  // broadcast at all.
+  // A story being re-executed is being re-read by definition (#557), and one
+  // re-collected without an intervening watcher event gets no broadcast at all.
   invalidate(payload.storyFile.moduleId)
 
   // Before any module runs: an externalised dep reads these at import time.
@@ -83,7 +81,6 @@ async function collect(payload: Payload): Promise<ReturnData> {
     ;(globalThis as Record<string, unknown>)[key] = value
   }
 
-  // One runner for the worker's lifetime, over the worker's own port.
   const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), _evaluatedModules))
 
   if (_domEnv) {
@@ -96,7 +93,6 @@ async function collect(payload: Payload): Promise<ReturnData> {
   const el = window.document.createElement('div')
 
   const beforeExecuteTime = performance.now()
-  // Mount app to collect stories/variants
   const { run } = (await runner.import(resolve(__dirname, './run.js'))) as { run: (payload: ServerRunPayload) => Promise<any> }
   const afterExecuteTime = performance.now()
   const storyData: ServerStory[] = []

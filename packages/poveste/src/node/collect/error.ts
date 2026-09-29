@@ -1,8 +1,7 @@
 /*
- * Errors cross a worker boundary by structured clone, which keeps an `Error`'s
- * `name`, `message` and `stack` and drops every own property beyond them. A Vite
- * transform error carries its code frame on `frame`, so the collector's
- * `error.frame ? … : error.stack` branch had never once seen a frame (#1020).
+ * Structured clone keeps an `Error`'s `name`, `message` and `stack` and drops every
+ * own property beyond them, so the code frame a Vite transform error puts on `frame`
+ * never once survived the worker boundary (#1020).
  */
 
 const MARK = 'pvt:error'
@@ -19,8 +18,8 @@ function isSerialized(value: unknown): value is Serialized {
   return typeof value === 'object' && value !== null && (value as Serialized).kind === MARK
 }
 
-// A property the clone would reject takes the whole message down with it, which
-// is worse than losing the property. Vite's own are strings and plain objects.
+// A property the clone rejects takes the whole message down with it, which is worse
+// than dropping the property.
 function cloneable(value: unknown) {
   try {
     structuredClone(value)
@@ -60,8 +59,7 @@ export function deserializeError(value: unknown): unknown {
 
   const error = new Error(value.message)
   error.name = value.name
-  // Assigning `undefined` would read as "this error has no stack" rather than
-  // "the one it crossed with had none".
+  // Assigning `undefined` would erase the stack `new Error` just gave this one.
   if (value.stack !== undefined) {
     error.stack = value.stack
   }

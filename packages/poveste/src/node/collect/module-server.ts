@@ -8,15 +8,10 @@ import { init as initLexer, parse as parseModule } from 'es-module-lexer'
 import { dirname, extname, join, relative, resolve } from 'pathe'
 
 /*
- * The server half of story collection: what vite-node's `ViteNodeServer` did,
- * answering a `ModuleRunner` in each worker (#167).
- *
- * Vite's own `fetchModule` is not enough for this. It externalises every bare
- * import, and it transforms every module one way, while collection needs both of
- * what vite-node gave it: an inline list, so `poveste`'s own `virtual:` imports
- * are transformed rather than handed to Node, which cannot load them in a fresh
- * install; and a transform per file, so a `.vue` or `.svelte` component compiles
- * for the DOM the collector mounts it in while its `.ts` compiles for Node.
+ * What vite-node's `ViteNodeServer` did, answering a `ModuleRunner` in each worker
+ * (#167). Vite's own `fetchModule` externalises every bare import and transforms
+ * every module one way; collection needs an inline list and a transform per file,
+ * so a `.vue` compiles for the DOM it is mounted in while its `.ts` compiles for Node.
  */
 
 export type TransformMode = 'ssr' | 'web'
