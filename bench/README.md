@@ -2,10 +2,13 @@
 
 Repeatable measurements for the sandbox iframe path: filling and scrolling a grid (#197, #319), and syncing state into one story (#960). The numbers that attributed the cost there, and the before/after for its fixes, came from these scripts — keep using the same instrument so results stay comparable.
 
+This directory is the browser half, and it is also where the project's recorded performance figures live, including for benches that run elsewhere. The collector's worker pool is one of those: it needs a worker thread and nothing else, so its benches sit with that package's other tests in `packages/poveste/src/node/__tests__/`, paired with the specs they match — `pool.spec.ts` beside `pool.bench.ts`, and the same for `rpc` and `error`. They run with `pnpm bench:pool`. The figures are below.
+
 ```bash
 node bench/run.mjs                          # vue + svelte, V=10/100/1000, 7 runs each
 node bench/run.mjs --examples vue --runs 3 # quick look
 node bench/run.mjs --json > after.json      # machine-readable, diff against a baseline
+pnpm bench:pool                             # the collector's worker pool (lives in packages/poveste)
 pnpm bench:smoke                            # one asserted run: does the instrument still work
 ```
 
@@ -89,6 +92,66 @@ The figures on #957 and #960 were taken with a throwaway harness that set `el.va
 | values visited per keystroke | 2,620,000 | not measurable here |
 
 Real typing runs the key pipeline the synthetic path skips, which is why the wall is higher. The frame count is doubled for the same reason long tasks under-read scrolling (#872): a heartbeat samples, and rendering-step work falls between its samples.
+
+## Reference, collection pool (M3 Pro, 12 cores, `003c343b`)
+
+The pool that replaced `@akryum/tinypool` (#1020). `pool.bench.ts`, `rpc.bench.ts` and `error.bench.ts` are vitest benchmarks measuring the source rather than a build, so the statistics are tinybench's — every figure below carries a margin of error under 0.3%. They measure this pool only; the tinypool column below came from a one-off exercise described at the end of this section, and nothing in the tree reproduces it.
+
+```bash
+pnpm bench:pool            # every measure, against the committed tinypool baselines
+pnpm bench:pool -t rpc     # one of them
+```
+
+### Faster in every shape collection uses, slower in one it does not
+
+| measure | what it does | tinypool | ours | |
+| --- | --- | --- | --- | --- |
+| `collecting` | a queue of story-sized tasks | 11,686/s | 14,617/s | **1.25x** |
+| `saturated` | a queue of scalar tasks | 12,510/s | 17,008/s | **1.36x** |
+| `rpc` | a worker calling back mid-task | 30,394/s | 44,985/s | **1.48x** |
+| `dispatch` | one scalar task at a time | 87,109/s | 90,046/s | 1.03x |
+| `payload` | one story-sized task at a time | 94,189/s | 79,498/s | **0.84x** |
+
+`collecting` is the one to believe: a build hands the pool every story at once — 63 against 11 workers in the vue book — and that is what it measures.
+
+`rpc` is the change itself. Tinypool built, transferred and closed a `MessageChannel` for every task; this pool answers on the port the task arrived on.
+
+**`payload` is a real regression and is left alone deliberately.** Tinypool's worker blocks on `Atomics.wait` and drains with `receiveMessageOnPort`, taking a message without an event-loop turn; this pool waits on `parentPort`'s `message` event. One turn per round trip shows when a round trip is all there is — `dispatch`, the same shape with a scalar, is level at 1.03x. Collection never runs one story at a time, so the gap is recorded rather than chased.
+
+### End to end it is a few percent, and that is the whole claim
+
+`examples/vue` — 63 stories, 2248 variants — built nine times alternating:
+
+| | median | min | max |
+| --- | --- | --- | --- |
+| tinypool | 1.89s | 1.83s | 2.20s |
+| ours | 1.81s | 1.76s | 1.94s |
+
+1.04x on medians, **8/9 paired wins**, a mean of 93ms off each build. A probe puts worker saturation at 74–79% during a build: the wall clock is story execution, so a scheduler half again as quick moves it by a few percent. The win count is what says the few percent is real.
+
+### They report; they do not gate
+
+None of these benches asserts a timing. Three attempts said otherwise and each one failed on this machine:
+
+| gate | idle | under load |
+| --- | --- | --- |
+| ours against the recorded tinypool baseline | 1.25x on `collecting` | 0.44x, straight after a lint and a test suite |
+| workers a queue keeps fed, out of 4 | ~3.0 | 1.84 |
+| an `invoke` round trip against a bare dispatch, both arms paired on one pool | 1.6–2.1x | 5.07x |
+
+The first cannot work by construction: ours is measured live and tinypool's comes off disk, so nothing cancels drift. The second measures how many cores are free as much as how the pool schedules. The third is properly paired and still spiked.
+
+So each bench asserts only that it measured something, which is what `smoke.spec.ts` says about this project's other instruments, and the numbers are for a person to read against the table above. What gates is `pool.spec.ts`, where the properties are correctness and a mutation makes them fail.
+
+That is also why none of this is a CI job.
+
+### Redoing the head-to-head
+
+The comparison above is interleaved — implementations alternate run by run — because a first attempt ran all of one and then all of the other and reported the new pool **2.6x slower** end to end, which was the machine drifting between the blocks. The direction reverses when you alternate.
+
+The fork is no longer a dependency, so redoing it means linking it from the pnpm store, writing a bench that drives it in the shape it was used (a `MessageChannel` per task, transferred), and alternating. Its recorded numbers were briefly committed as baselines and then removed: with no assertion resting on them they only printed a column, and a file recorded on one machine cannot be compared against a live run on another. This table is the record.
+
+**Quote win counts alongside any ratio from this bench.** The medians move with load; the direction does not.
 
 ## Reference, state sync (built book, medians over 7 runs)
 

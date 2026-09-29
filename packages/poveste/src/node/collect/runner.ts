@@ -37,23 +37,14 @@ function exportAll(exports: Record<string, unknown>, source: any) {
   }
 }
 
-/**
- * Loads an externalised dependency the way vite-node did, which collection has
- * always relied on: a CommonJS package's named exports are read through its
- * default export, so `import { x } from 'cjs-package'` works whether or not Node's
- * lexer found `x`.
- */
+/** As vite-node did: a CJS package's named exports are read through its default. */
 class InteropEvaluator implements ModuleEvaluator {
   // The runner offsets source maps by the lines a wrapper adds, which match Vite's own.
   startOffset = new ESModulesEvaluator().startOffset
 
   /**
-   * Runs a transformed module with `require`, `exports`, `module`, `__filename`
-   * and `__dirname` in scope, as vite-node did. Vite's own evaluator passes only
-   * its import bindings, so a CommonJS dependency a book inlines through
-   * `viteNodeInlineDeps` threw `exports is not defined` (#167). What a module
-   * assigns to `exports` or `module.exports` becomes its default export and its
-   * named exports.
+   * Vite's own evaluator passes only import bindings, so a CJS dependency inlined
+   * through `viteNodeInlineDeps` threw `exports is not defined` (#167).
    */
   async runInlinedModule(context: ModuleRunnerContext, code: string, module: Readonly<EvaluatedModuleNode>) {
     const exports = context[ssrModuleExportsKey] as Record<string, any>
@@ -125,8 +116,7 @@ class InteropEvaluator implements ModuleEvaluator {
   }
 }
 
-// `import.meta.env` as vite-node gave it: `process.env`, with the three flags as
-// booleans. The runner's default throws on any key the transform did not replace.
+// The runner's own default throws on any key the transform did not replace.
 const env = new Proxy(process.env, {
   get: (target, key) => typeof key !== 'string'
     ? undefined
