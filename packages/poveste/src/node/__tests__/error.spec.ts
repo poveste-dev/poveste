@@ -88,3 +88,40 @@ describe('serializeError', () => {
     expect(await roundTrip(() => {})).toBe('() => {}')
   })
 })
+
+describe('a cause that points back into its own chain', () => {
+  it('serializes an error whose cause is itself', () => {
+    // `structuredClone` carries a cycle; this walk is the only thing that cannot,
+    // and it runs on the path that reports a failure — so overflowing here would
+    // replace the error it was called to describe with its own stack overflow.
+    const error = new Error('went wrong')
+    error.cause = error
+
+    const round = deserializeError(serializeError(error)) as Error
+
+    expect(round.message).toBe('went wrong')
+  })
+
+  it('serializes a pair of errors that cause each other', () => {
+    const first = new Error('first')
+    const second = new Error('second')
+    first.cause = second
+    second.cause = first
+
+    const round = deserializeError(serializeError(first)) as Error & { cause?: Error }
+
+    expect(round.message).toBe('first')
+    expect(round.cause?.message).toBe('second')
+  })
+
+  it('keeps a cause that is merely repeated, not circular', () => {
+    // The same error under two keys is not a cycle, and the second sight of it
+    // still has to carry its own name and message.
+    const shared = new Error('shared')
+    const error = Object.assign(new Error('outer'), { cause: shared, other: shared })
+
+    const round = deserializeError(serializeError(error)) as Error & { cause?: Error, other?: Error }
+
+    expect(round.cause?.message).toBe('shared')
+  })
+})

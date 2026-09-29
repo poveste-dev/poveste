@@ -102,3 +102,33 @@ describe('the answer that never comes', () => {
     await settled
   })
 })
+
+describe('a call that throws something falsy', () => {
+  // The response carries `error` only when the call threw, so presence is the
+  // question. Read as truthiness, a thrown `undefined` came back as a *result* —
+  // and the runner takes a result where a module should be.
+  it('rejects when the server throws undefined', async () => {
+    const invoke = connect(async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw undefined
+    })
+
+    await expect(invoke('fetchModule', ['/src/Button.vue'])).rejects.toBeUndefined()
+  })
+
+  it('rejects when the server throws an empty string', async () => {
+    const invoke = connect(async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw ''
+    })
+
+    await expect(invoke('fetchModule', ['/src/Button.vue'])).rejects.toBe('')
+  })
+
+  it('still resolves an answer that is itself undefined', async () => {
+    // The other half: a call that succeeds with nothing must not read as a failure.
+    const invoke = connect(async () => undefined)
+
+    await expect(invoke('fetchModule', ['/src/Button.vue'])).resolves.toBeUndefined()
+  })
+})

@@ -70,7 +70,10 @@ export function invokeOver(port: PortLike): Invoke {
     }
     pending.delete(id)
     clearTimeout(call.timeout)
-    if (error) {
+    // Presence rather than truthiness: `serveInvoke` sets the key only when the
+    // call threw, and a thrown `undefined` or `''` read as no error at all —
+    // resolving the runner with `undefined` where it expects a module.
+    if ('error' in message) {
       call.reject(deserializeError(error))
     }
     else {

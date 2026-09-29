@@ -12,6 +12,7 @@ import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
 import { createModuleServer } from './module-server.js'
 import { createPool } from './pool.js'
+import { INVALIDATE } from './task.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -65,7 +66,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     mainServer.watcher.on('change', (file) => {
       file = slash(file)
       threadPool.broadcast({
-        kind: 'hst:invalidate',
+        kind: INVALIDATE,
         file,
       })
     })

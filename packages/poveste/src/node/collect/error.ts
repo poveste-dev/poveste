@@ -30,10 +30,21 @@ function cloneable(value: unknown) {
   }
 }
 
-export function serializeError(error: unknown): unknown {
+/*
+ * `seen` breaks a cause that points back into its own chain. `structuredClone`
+ * carries a cycle happily; this walk is the only thing here that cannot, and it
+ * runs on the path that reports a failure — so overflowing the stack would lose
+ * the error it was called to describe and replace it with its own.
+ */
+export function serializeError(error: unknown, seen: WeakSet<Error> = new WeakSet()): unknown {
   if (!(error instanceof Error)) {
     return cloneable(error) ? error : String(error)
   }
+  if (seen.has(error)) {
+    // Named and described, without the cause that leads back here.
+    return { kind: MARK, name: error.name, message: error.message, stack: error.stack, props: {} } satisfies Serialized
+  }
+  seen.add(error)
 
   const props: Record<string, unknown> = {}
   for (const key of Object.getOwnPropertyNames(error)) {
@@ -42,7 +53,7 @@ export function serializeError(error: unknown): unknown {
     }
     const value = (error as unknown as Record<string, unknown>)[key]
     if (key === 'cause') {
-      props[key] = serializeError(value)
+      props[key] = serializeError(value, seen)
     }
     else if (cloneable(value)) {
       props[key] = value

@@ -11,6 +11,11 @@ import { serializeError } from './error.js'
 export const TASK = 'pvt:task'
 export const DONE = 'pvt:done'
 export const FAILED = 'pvt:failed'
+/* The watcher's, and older than the rest — the wire value is what `index.ts`
+   has always sent. Shared so a rename cannot land on one end only: an unknown
+   kind is dropped in silence by design, so a typo here stops invalidation
+   without failing anything. */
+export const INVALIDATE = 'hst:invalidate'
 
 export interface TaskHandlers {
   invalidate: (file: string) => void
@@ -20,7 +25,7 @@ export interface TaskHandlers {
 /** Answers task dispatch and invalidation arriving on `port`. */
 export function serveTasks(port: PortLike, handlers: TaskHandlers) {
   port.on('message', (message) => {
-    if (message?.kind === 'hst:invalidate') {
+    if (message?.kind === INVALIDATE) {
       handlers.invalidate(message.file)
       return
     }
