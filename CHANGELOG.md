@@ -10,7 +10,7 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **A colour control and a date control, the interactive controls rebuilt on Reka UI, and a Node version range that was quietly installing a two-year-old Poveste.**
 
-It is a `minor` because two commits in the range are a `feat`: the colour control ([#929](https://github.com/poveste-dev/poveste/pull/929)) and the date control ([#928](https://github.com/poveste-dev/poveste/pull/928)). Nothing is deprecated, renamed or removed, and there is nothing to do unless you pin Vue or `@sveltejs/vite-plugin-svelte` below the peer floors below.
+It is a `minor` because two commits in the range are a `feat`: the colour control ([#929](https://github.com/poveste-dev/poveste/pull/929)) and the date control ([#928](https://github.com/poveste-dev/poveste/pull/928)). Nothing is deprecated, renamed or removed, and there is nothing to do unless you pin Vue or `@sveltejs/vite-plugin-svelte` below the peer floors.
 
 ### 🚀 Enhancements
 
