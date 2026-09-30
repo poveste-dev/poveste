@@ -250,4 +250,4 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 ## Community
 
-If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions).
+If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions/new?category=q-a).

@@ -179,4 +179,4 @@ Poveste has nothing to show until a story file exists, and `poveste build` on a 
 
 ## Community
 
-If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions).
+If you have questions or need help, reach out to the community on [GitHub Discussions](https://github.com/poveste-dev/poveste/discussions/new?category=q-a).
