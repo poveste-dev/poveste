@@ -112,6 +112,8 @@ $ git show origin/next:CHANGELOG.md | grep -n '^## v0\.16\.0'
 
 A replace-first insert hits the right one today by accident of ordering, and writes a poveste section into histoire's history the first time the numbers line up the other way. `## v<version>` plus `[compare changes](https://github.com/poveste-dev/poveste/compare/...)` is unique. Assert the match is unique before writing rather than trusting the count — the failure is silent, and this file is published verbatim.
 
+**The twin exists for the version you are writing, not only for older ones**, and it catches *reads* as well as inserts. histoire released a v0.16.1 too, so `sed -n '/^## v0.16.1/,/^## v0.16.0/p'` opens a second range at histoire's heading and returns both sections — which is how an audit of the numbers in a section came back holding histoire's commit hashes. Read the section by the line numbers `grep -n` gives you, or scope to the half of the file above the inherited changelog.
+
 ## If the workflow fails
 
 `release.yml` waits for `test.yml` to be green on the tagged commit before building. The bump goes straight to `main`, bypassing branch protection, so it is the one published commit no required check ever cleared — that wait is the substitute. If it is red, re-run `test.yml`; once green, re-run the release job. Nothing is published in the meantime.
