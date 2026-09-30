@@ -117,6 +117,9 @@ describe('resetDomEnv', () => {
 
     expect(typeof env.window.ResizeObserver).toBe('function')
     expect(typeof env.window.matchMedia).toBe('function')
+    // A property on `screen` rather than a key on `window`, so the reset's key
+    // sweep cannot reach it today and this says so if the sweep ever widens.
+    expect(env.window.screen.orientation?.type).toBe('landscape-primary')
     expect(env.window.document.body).toBeTruthy()
   })
 })
