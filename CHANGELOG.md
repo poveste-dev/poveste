@@ -4,6 +4,54 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.16.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.15.0...v0.16.0)
+
+**Two new controls, the whole control set and the app chrome rebuilt on Reka UI, and a Node version range that was quietly installing a two-year-old Poveste.**
+
+The visible half is the controls: a colour picker and a date field, and eighteen existing controls rewritten underneath so a keyboard reaches all of them. The half worth reading is the Node range — if `npm install poveste` ever gave you `0.6.1` and a deprecation notice, that is fixed here and it was never your Node's fault.
+
+It is a `minor` because two commits in the range are a `feat`: the colour control ([#929](https://github.com/poveste-dev/poveste/pull/929)) and the date control ([#928](https://github.com/poveste-dev/poveste/pull/928)). The version comes from the commits, not from the milestone.
+
+### 🚀 Enhancements
+
+- **A colour control and a date control** ([#929](https://github.com/poveste-dev/poveste/pull/929), [#928](https://github.com/poveste-dev/poveste/pull/928)). `HstColor` is a saturation area, a hue slider and a hex field in a popover; `HstDate` is a date field with a calendar, and an optional hour. Both are `Hst.Color` and `Hst.Date` in Svelte. Both take a string — a hex `#3366ff`, or an ISO `2026-09-20` and `2026-09-20T14:30` — because a story keeps its state as JSON, and the date objects the underlying library works in do not survive the trip into a sandbox.
+- **Neither one costs a book that does not use it** ([#930](https://github.com/poveste-dev/poveste/pull/930)). They are 215 KB and 101 KB of a built book and load on first use, so a book with no date in it downloads neither. Nothing renders until the chunk arrives, so the row appears a moment after the rest of the panel.
+- **The controls are one set again, and a keyboard reaches all of them** ([#955](https://github.com/poveste-dev/poveste/issues/955), [#63](https://github.com/poveste-dev/poveste/issues/63)). Every control moved onto Reka UI over fourteen changes. The radio group is one group rather than one group per option, so arrow keys move through it; the select's options are a listbox a key can reach; the slider's thumb has a dark mode and its tooltip survives a resize; the text inputs and the button group follow one written convention instead of three. The chrome's dropdowns, tooltips and preset picker moved with them.
+- **`floating-vue` is gone from the app and the controls** ([#944](https://github.com/poveste-dev/poveste/pull/944), [#927](https://github.com/poveste-dev/poveste/pull/927), [#943](https://github.com/poveste-dev/poveste/pull/943)). The chrome installed it globally and themed it; nothing in either package uses it now. A book that uses `floating-vue` itself is unaffected — the library still installs, and the story about restyling a teleported popper still passes.
+- **A story grid stops paying for a second state sync** ([#1009](https://github.com/poveste-dev/poveste/pull/1009)) and the state walkers stop at a value Vue has marked raw ([#974](https://github.com/poveste-dev/poveste/pull/974)). Nothing to do: rebuild and it is faster.
+- **Story collection runs on a pool of Poveste's own** ([#1021](https://github.com/poveste-dev/poveste/pull/1021)), replacing the third-party pool that ran it.
+
+### 🩹 Fixes
+
+- **A Node in the old range's gaps installed `poveste@0.6.1`** ([#907](https://github.com/poveste-dev/poveste/pull/907)). `engines.node` was `^22.22.2 || ^24.15.0 || >=26.0.0`, which rejects every 24.x below 24.15 — including what `fnm` installs as `lts-latest`. npm answers an unsatisfiable range by walking back to the newest release with no `engines` field, which is `0.6.1` from before the field existed, and installs it with only a deprecation notice. The range is now one contiguous `>=22.22.2`, so it admits everything above the floor, and every published package is held to that shape. Poveste also refuses to run on a Node below the floor now, before it loads anything, instead of failing later on a syntax it cannot parse ([#921](https://github.com/poveste-dev/poveste/pull/921)).
+- **The chrome's portalled surfaces say what they inherit** ([#1022](https://github.com/poveste-dev/poveste/pull/1022)). A popup that leaves its subtree for `document.body` inherits from `body`, which carries no colour — so the select's options shipped black on a dark panel. A surface that moves out of its subtree now states both its background and its text colour.
+- **A control no longer destroys a value it cannot carry** ([#1003](https://github.com/poveste-dev/poveste/pull/1003), [#1002](https://github.com/poveste-dev/poveste/pull/1002)). The JSON control names what JSON cannot represent and refuses the write-back rather than flattening it, and the types the transport would have carried are no longer flattened on the way through.
+- **A story binding whose write-back cannot succeed is not registered** ([#959](https://github.com/poveste-dev/poveste/issues/959)), and a Svelte variant seeds its state from the mount pass rather than only from a rendered slot ([#1005](https://github.com/poveste-dev/poveste/pull/1005)).
+- **A module keeps one identity while a collection pass churns the graph** ([#1023](https://github.com/poveste-dev/poveste/pull/1023)). A provider and a consumer could end up holding different instances of the same module-scope key mid-run, so a story's context resolved to nothing.
+- **The single view's preview fills its box** ([#950](https://github.com/poveste-dev/poveste/pull/950)) rather than an iframe's default 150px, and the chrome's panel dividers have a keyboard and report their position ([#998](https://github.com/poveste-dev/poveste/pull/998)).
+- **A missing plugin component is named** ([#982](https://github.com/poveste-dev/poveste/pull/982)) instead of being cast and called.
+
+### 📖 Documentation
+
+- **The colour and date controls are documented** ([#1040](https://github.com/poveste-dev/poveste/pull/1040)) on the Vue and Svelte controls pages, with their model type, the string format and an example each.
+- **The docs' framework examples compile, and are compiled on every run** ([#919](https://github.com/poveste-dev/poveste/pull/919)). Fifteen TypeScript Svelte examples did not, and nothing could tell; the Vue ones are now held to the same check.
+- **Three framework pages have a route to Discussions** ([#1015](https://github.com/poveste-dev/poveste/pull/1015)), and every getting-started page links the page that actually shows a story ([#910](https://github.com/poveste-dev/poveste/issues/910)).
+
+### 🏡 Chore
+
+- **`@poveste/vendors` ships its re-exports rather than prebundling them** ([#935](https://github.com/poveste-dev/poveste/pull/935)). Vue, Pinia, Vue Router, VueUse and Iconify now install as aliased dependencies instead of being rolled into the package's own output.
+- **Dependency floors moved** under the app (`pinia` 4, `vue-router` 5, `@vueuse/core` 15) and the examples (`vuetify` 4), with two grouped bumps across the workspace.
+
+### Upgrading
+
+**Nothing to do.** No configuration key changed, nothing was removed or renamed, and stories that worked on 0.15.0 work here unchanged. Rebuild your book to pick up the new controls and the faster grid.
+
+**If you ever got `poveste@0.6.1` from `npm install poveste`**, that was the `engines.node` range above rejecting your Node and npm silently resolving backwards. Install again on 0.16.0 and you will get 0.16.0. The supported range only widened — nothing that installed before stops installing.
+
+**If you style Poveste's own chrome**, its tooltips and dropdowns are no longer `floating-vue`, so CSS written against that library's classes no longer matches them. This is not a documented surface and nothing in the guide told you to target it, which is why it is here rather than under Breaking Changes. Your own components' poppers are untouched.
+
 ## v0.15.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.14.0...v0.15.0)
