@@ -16,6 +16,12 @@
 // where #919's defect would have surfaced. A parse-only check would have passed
 // all fifteen of them.
 //
+// Verifying this check needs a break planted in macro position. A
+// `defineProps<Unresolvable>()` nested inside a `reactive({ … })` literal is not
+// a macro, so it compiles and the run stays green — which reads as the fence
+// being covered when it proves nothing. Plant it at the top level of the
+// `<script setup>` instead.
+//
 // A fence with no `<script>` is still compiled as far as it goes: a `<template>`
 // on its own is a valid component and most of the reference pages are exactly
 // that. Only a fence that is neither is rejected, which is what a bare element
