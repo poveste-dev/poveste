@@ -41,6 +41,31 @@ describe('createDomEnv', () => {
     })
   })
 
+  describe('the interfaces jsdom does not implement', () => {
+    /*
+     * jsdom gives `Screen` seven properties and no `orientation`, and has no
+     * `ScreenOrientation` constructor at all — so the property is absent rather
+     * than present and inert, and there is nothing to detect but the absence.
+     *
+     * Quasar's Screen plugin reads it unguarded while installing:
+     * `const { type, angle } = window.screen.orientation` (#1053).
+     */
+    it('gives `screen.orientation` a type and an angle to destructure', () => {
+      env = createDomEnv()
+
+      const { type, angle } = env.window.screen.orientation
+
+      expect(type).toBe('landscape-primary')
+      expect(angle).toBe(0)
+    })
+
+    it('lets a listener register on it without throwing', () => {
+      env = createDomEnv()
+
+      expect(() => env.window.screen.orientation.addEventListener('change', () => {})).not.toThrow()
+    })
+  })
+
   describe('when a script throws an unhandled exception', () => {
     it('forwards the error to console.error', () => {
       errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
