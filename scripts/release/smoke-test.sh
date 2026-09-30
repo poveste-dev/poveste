@@ -32,10 +32,17 @@ CORE_PACKAGES=(
   "poveste-vendors"
 )
 
+# Every published plugin gets a pass. `scripts/checks/smoke-plugins.ts` holds this
+# list to the set derived from `packages/*/package.json`, so a new plugin cannot
+# ship uncovered — the gate ran three of seven (#1052).
 PLUGIN_PACKAGES=(
   "poveste-plugin-vue"
   "poveste-plugin-svelte"
   "poveste-plugin-quasar"
+  "poveste-plugin-nuxt"
+  "poveste-plugin-tailwind"
+  "poveste-plugin-percy"
+  "poveste-plugin-screenshot"
 )
 
 WORK="$(mktemp -d)"
@@ -62,12 +69,13 @@ plugin_tgz() {
 
 # peer_range <package-dir> <peer-name> — the range the plugin actually declares.
 #
-# Not a literal. A copied range drifts the moment a peer floor moves and the gate
-# keeps agreeing with itself: `vue@^3.5.26` below still resolves to what
-# `^3.5.43` would, so nothing has gone red while it stopped testing what the
-# package declares. Deriving it means a floor that moves reaches this file for
-# free, and it is what makes the Quasar pass meaningful — `quasar: ^2.24.0`
-# resolves to 2.34.0, the version #1048 fails on.
+# Not a literal, and every pass uses it. A copied range drifts the moment a peer
+# floor moves and the gate keeps agreeing with itself: the `vue@^3.5.26` and
+# `@sveltejs/vite-plugin-svelte@^7.0.0` this replaced still resolved to what
+# `^3.5.43` and `^7.3.0` would, so nothing went red while the gate stopped
+# testing what the packages declare (#1052). Deriving it means a floor that moves
+# reaches this file for free, and it is what makes the Quasar pass meaningful —
+# `quasar: ^2.24.0` resolves to 2.34.0, the version #1048 fails on.
 peer_range() {
   node -p "require('$ROOT/packages/$1/package.json').peerDependencies['$2']"
 }
@@ -171,7 +179,7 @@ VUE
 
 install_and_build vue "$VUE_APP" \
   "$(plugin_tgz poveste-plugin-vue)" \
-  vue@^3.5.26 vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+  "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
 # ── Svelte ───────────────────────────────────────────────────────────────────
 
@@ -246,7 +254,8 @@ SVELTE
 
 install_and_build svelte "$SVELTE_APP" \
   "$(plugin_tgz poveste-plugin-svelte)" \
-  svelte@^5.46.4 vite@^8.0.0 @sveltejs/vite-plugin-svelte@^7.0.0
+  "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
+  "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
 
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
@@ -329,4 +338,191 @@ install_and_build quasar "$QUASAR_APP" \
   "@quasar/app-vite@$(peer_range poveste-plugin-quasar '@quasar/app-vite')" \
   vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
-echo "✅ Smoke test passed — vue, svelte, quasar"
+
+# ── Nuxt ─────────────────────────────────────────────────────────────────────
+#
+# The heaviest pass by far: `nuxt` is a large npm install and `HstNuxt()` boots a
+# real Nuxt to read its Vite config. It is here because `plugin-nuxt` declares
+# `nuxt: ^4.5.0` as a mandatory peer and npm resolves peers strictly, which is
+# the exposure this whole gate exists for (#73, #1052).
+
+NUXT_APP="$WORK/nuxt"
+mkdir -p "$NUXT_APP/app"
+
+echo "▸ Scaffolding Nuxt consumer project → $NUXT_APP"
+consumer_package_json "$NUXT_APP" nuxt
+
+cat > "$NUXT_APP/nuxt.config.ts" <<'TS'
+export default defineNuxtConfig({
+  compatibilityDate: '2026-01-01',
+})
+TS
+
+cat > "$NUXT_APP/app/app.vue" <<'VUE'
+<template>
+  <div>smoke</div>
+</template>
+VUE
+
+cat > "$NUXT_APP/poveste.config.ts" <<'TS'
+import { HstNuxt } from '@poveste/plugin-nuxt'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), HstNuxt()],
+})
+TS
+
+cat > "$NUXT_APP/app/Button.story.vue" <<'VUE'
+<template>
+  <Story title="Button">
+    <Variant title="default">
+      <button>Click me</button>
+    </Variant>
+  </Story>
+</template>
+VUE
+
+install_and_build nuxt "$NUXT_APP" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "$(plugin_tgz poveste-plugin-nuxt)" \
+  "nuxt@$(peer_range poveste-plugin-nuxt nuxt)" \
+  "vue@$(peer_range poveste-plugin-vue vue)"
+# ── Tailwind ─────────────────────────────────────────────────────────────────
+
+TAILWIND_APP="$WORK/tailwind"
+mkdir -p "$TAILWIND_APP/src"
+
+echo "▸ Scaffolding Tailwind consumer project → $TAILWIND_APP"
+consumer_package_json "$TAILWIND_APP" tailwind
+
+# The plugin reads the design tokens out of a Tailwind v4 CSS entrypoint, so the
+# pass needs a real one: it searches the usual names and accepts the first that
+# imports `tailwindcss` or declares `@theme`. A book without one exercises the
+# plugin's file search and nothing it exists to do.
+cat > "$TAILWIND_APP/src/style.css" <<'CSS'
+@import "tailwindcss";
+
+@theme {
+  --color-tokenprobe-500: oklch(62% 0.19 260);
+}
+CSS
+
+cat > "$TAILWIND_APP/poveste.config.ts" <<'TS'
+import { HstTailwind } from '@poveste/plugin-tailwind'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), HstTailwind()],
+})
+TS
+
+cat > "$TAILWIND_APP/vite.config.ts" <<'TS'
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [vue()],
+})
+TS
+
+cat > "$TAILWIND_APP/src/Swatch.story.vue" <<'VUE'
+<template>
+  <Story title="Swatch">
+    <Variant title="default">
+      <div class="p-4">swatch</div>
+    </Variant>
+  </Story>
+</template>
+VUE
+
+install_and_build tailwind "$TAILWIND_APP" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "$(plugin_tgz poveste-plugin-tailwind)" \
+  "tailwindcss@$(peer_range poveste-plugin-tailwind tailwindcss)" \
+  "vue@$(peer_range poveste-plugin-vue vue)" \
+  vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+# This plugin generates a book of its own — a `Design System` group read from the
+# `@theme` block — so "the build exited 0" says nothing about whether it ran. The
+# token declared above has to reach the published book (#1052).
+#
+# `tokenprobe` appears in the `@theme` block and **nowhere else**: the story above
+# deliberately does not use the class. The first version of this did, and the grep
+# would have matched the story's own compiled chunk whether the plugin ran or not —
+# an assertion that cannot fail, in the gate added because a check that reports on
+# something it never exercises is how #1048 shipped.
+if grep -rq -a 'tokenprobe' "$TAILWIND_APP/.poveste/dist"; then
+  echo "✅ [tailwind] the @theme token reached the built book"
+else
+  echo "❌ Smoke test FAILED [tailwind] — no trace of the @theme token in the built book"
+  echo "   The build succeeded, so the plugin loaded and its design-system stories did not."
+  exit 1
+fi
+
+# ── Percy and screenshot ─────────────────────────────────────────────────────
+#
+# Neither declares a framework peer, so there is no strict-peer exposure to probe
+# and no story shape of their own — the pass is that a consumer can install the
+# tarball beside a framework plugin and still build. Cheap, and it is the half of
+# #1052 that would otherwise wait for a first report from a reader.
+#
+# Written out rather than looped over a suffix. `scripts/checks/smoke-plugins.ts`
+# holds every published plugin to a `plugin_tgz <name>` call, and a loop hides the
+# name from it — so a shared loop would need a special case in the check, which is
+# the kind of exemption this whole issue is about.
+
+addon_app() {
+  local addon="$1" factory="$2" app="$WORK/$1"
+  mkdir -p "$app/src"
+
+  echo "▸ Scaffolding $addon consumer project → $app"
+  consumer_package_json "$app" "$addon"
+
+  cat > "$app/vite.config.ts" <<'TS'
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [vue()],
+})
+TS
+
+  cat > "$app/src/Button.story.vue" <<'VUE'
+<template>
+  <Story title="Button">
+    <Variant title="default">
+      <button>Click me</button>
+    </Variant>
+  </Story>
+</template>
+VUE
+
+  cat > "$app/poveste.config.ts" <<TS
+import { $factory } from '@poveste/plugin-$addon'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), $factory()],
+})
+TS
+}
+
+addon_app percy HstPercy
+install_and_build percy "$WORK/percy" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "$(plugin_tgz poveste-plugin-percy)" \
+  "vue@$(peer_range poveste-plugin-vue vue)" \
+  vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+addon_app screenshot HstScreenshot
+install_and_build screenshot "$WORK/screenshot" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "$(plugin_tgz poveste-plugin-screenshot)" \
+  "vue@$(peer_range poveste-plugin-vue vue)" \
+  vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+echo "✅ Smoke test passed — vue, svelte, quasar, nuxt, tailwind, percy, screenshot"
