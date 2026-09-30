@@ -4,6 +4,27 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.16.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.0...v0.16.1)
+
+**A Quasar project could not build a book on 0.16.0, and the cause was not Quasar: story collection was telling every inlined CommonJS dependency it lived somewhere it does not.**
+
+It is a `patch`. The range holds four commits and none is a `feat`; nothing is deprecated, renamed or removed, and **there is nothing to do on upgrade** — no configuration key changed and no version floor moved.
+
+### 🩹 Fixes
+
+- **An inlined CommonJS dependency is told where it actually is** ([#1048](https://github.com/poveste-dev/poveste/issues/1048), [#1054](https://github.com/poveste-dev/poveste/pull/1054)). A module inlined during collection received its Vite id as `__filename` and `__dirname`. An id is relative to the Vite root, so `/node_modules/vue/index.js` is an id and not a path — and it looks absolute, which is all the old check asked. The module's own `require('./dist/vue.cjs.prod.js')` then resolved under the **filesystem** root and failed there. This was not a Quasar defect. Collection hands a filename to every module it inlines — 107 of them in the Vue reference book, 34 in the Quasar book — and every one of those was wrong. What made it invisible is that a module only notices if it resolves a path of its own at require time, rather than leaving its imports to Vite. Quasar's config pulls `vue` through that path, and `vue` is one of the few that does.
+- **Story collection has a `screen.orientation`** ([#1053](https://github.com/poveste-dev/poveste/issues/1053), [#1055](https://github.com/poveste-dev/poveste/pull/1055)). jsdom implements `Screen` without it, and Quasar 2.34 destructures it while installing its Screen plugin, so collection crashed before a story ran. Poveste now provides it, as it already did for `ResizeObserver`, `IntersectionObserver` and `matchMedia`.
+
+### Upgrading
+
+**Nothing to do.** No configuration key changed, no option was removed or renamed, and no `engines.node`, peer dependency or export floor moved on any published package. Stories that worked on 0.16.0 work here unchanged.
+
+**If you use `@poveste/plugin-quasar`,** this is the release that builds. The two fixes above are consecutive crashes on one path, so a Quasar book needs both — clearing the first only reaches the second.
+
+**If you are on another framework,** upgrade when convenient rather than urgently. The resolution fix applies to you, but nothing in the Vue or Svelte books reaches it: both were measured unchanged at every step of the fix, and neither has a dependency that resolves its own paths at require time during collection.
+
 ## v0.16.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.15.0...v0.16.0)
