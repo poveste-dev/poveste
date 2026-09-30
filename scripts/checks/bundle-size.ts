@@ -41,8 +41,9 @@ export interface Limit {
  * headroom for ordinary growth — raise them with a measurement and a reason
  * rather than to make a red run green.
  *
- * The migration is done: #63 moved the controls onto Reka UI and #918 took
- * floating-vue out of the chrome, so these hold the finished numbers.
+ * The migration is done: #63 moved the controls onto Reka UI, #918 took
+ * floating-vue out of the chrome, and #955 finished the remaining ten controls,
+ * so these hold the finished numbers and the ceilings are enforced again (#992).
  *
  * They came down by less than that sounds, and the reason is worth knowing
  * before anyone reads a small drop as a small win. The book measured is
@@ -51,11 +52,21 @@ export interface Limit {
  * here and always will. What these numbers show is the chrome's own install
  * and theme leaving, not the library.
  *
- * The margins matter more than the drop. Each ceiling sits close enough to the
- * measurement that the regression it names still trips it: at the old 1560 KB,
- * `vendor` had 165 KB of slack and a control quietly becoming eager costs 90 —
- * so it would have passed. A ceiling re-set after a win has to be re-set far
- * enough, or the win silently buys room for the thing it was guarding against.
+ * The margins matter more than the drop, and each ceiling is the midpoint of a
+ * window with two walls. Above the measurement, or it flakes; below measurement
+ * plus the smallest regression it names, or it has stopped being a ceiling. The
+ * midpoint is not a taste call — it is the point that maximises the smaller of
+ * the two, so each ceiling tolerates as much drift as the smallest regression it
+ * would miss. Anything nearer a wall trades one for the other, and a ceiling
+ * re-set generously after a win silently buys room for the thing it guarded
+ * against: at the old 1560 KB, `vendor` had 165 KB of slack and a control
+ * quietly becoming eager costs 90, so it would have passed.
+ *
+ * The lower wall is measurement plus build-to-build variance, and that variance
+ * is zero here rather than assumed small: two clean builds of the same tree
+ * produced the same byte count and the same content hash. The room above a
+ * measurement is for ordinary dependency drift, not for a build disagreeing
+ * with itself.
  *
  * The two say different things and the difference is the point. The whole book
  * is every chunk a host serves, so a lazily loaded control is in it either way.
@@ -70,8 +81,8 @@ export interface Limit {
  */
 export const LIMITS: Limit[] = [
   { prefix: 'highlighter', max: 3000, because: 'importing from `shiki` rather than `shiki/core` ships every grammar and theme (#304)' },
-  { prefix: 'vendor', max: 1470, because: 'what a reader downloads before anything renders, so this is the one #63 tracks: 1456 KB with the select on Reka\'s listbox and the date and colour controls still lazy (#955). Raised from 1450, which was set against a 1395 KB measurement that predates the last three controls — the regressions it is set to catch are unchanged and still well clear of it. Either lazy control becoming eager again is 90 KB or 201 KB and both land here, so anything under 1546 catches the smaller one. The devtools payload #791 removed coming back put this chunk at 1519 KB, which is also caught. Raise it only with a measurement of both arms and the reason written here' },
-  { prefix: '', max: 5220, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. 5100 until Reka UI, 5388 KB with it and two new controls (#63), and 5114 KB once the vendors prebundle went (#347) and the chrome stopped installing floating-vue (#918), then 5111 KB with each colour token holding a colour rather than three numbers wrapped in `rgb()` (#955). Has to stay under 5367 to catch the 257 KB of devtools payload #791 removed coming back' },
+  { prefix: 'vendor', max: 1487, because: 'what a reader downloads before anything renders, so this is the chunk laziness shows in. Measured at 1456 KB on `examples/vue` once #955 finished the controls. The window: above 1456, and below 1519, where the devtools payload #791 removed lands if it returns — a tighter wall than either arm of a lazy control becoming eager again, which land at 1546 and 1657. Set at the midpoint, so it tolerates 31 KB of drift and catches any regression over 31 KB, including all three named here. Re-derive both walls from a fresh measurement before raising it' },
+  { prefix: '', max: 5340, because: 'the whole book, which a user uploads and their host serves — every chunk, so laziness does not move it and only `vendor` above shows that. Measured at 5212 KB on `examples/vue` once #955 finished the controls. The window: above 5212, and below 5469, where the 257 KB of devtools payload #791 removed lands if it comes back. Set at the midpoint, so it tolerates 128 KB of drift and catches any regression over 128 KB' },
 ]
 
 export interface Chunk { name: string, kb: number }
@@ -188,26 +199,23 @@ const REMEDY = 'Raise a ceiling only with a reason written next to it. See scrip
 /**
  * Whether a chunk over its ceiling fails the run, or is only reported.
  *
- * **Off for the duration of #955's control migration, by decision, and to be
- * turned back on when it lands — see #992, which is what turns it back on.**
- * The ceilings are still measured and every breach is still printed — going
- * quiet on the number is the failure #601 was, and a check that reports nothing
- * is indistinguishable from one that passes.
+ * On again since #992. It was off for the duration of #955's control migration,
+ * because the migration moved `vendor` from 1436 to 1461 across five PRs and its
+ * ceiling from 1450 to 1470 inside that same stack — and a ceiling raised per PR
+ * to whatever that PR needs is the thing this file's own comment calls "raised
+ * without being read". The number worth setting it against was the one the
+ * migration finished on, and #955 closing is what produced it.
  *
- * Why it is off rather than raised again: the migration moved `vendor` from
- * 1436 to 1461 across five PRs and 1450 to 1470 once, and the honest number to
- * set it against is the one the migration finishes on, which nobody has yet. A
- * ceiling raised per PR to whatever the PR needs is the thing this file's own
- * comment calls "raised without being read".
- *
- * Off is not the same as gone. The breach lines move into the notes, so a run
- * says exactly how far over it is and says it in the same place the
- * measurements already print.
+ * `report` still takes the flag rather than reading this constant, so the off
+ * behaviour stays tested: a breach goes to the notes as `not failing: …`
+ * alongside the measurements, because going quiet on the number is the failure
+ * #601 was, and a check that reports nothing is indistinguishable from one that
+ * passes.
  */
-export const CEILINGS_ENFORCED = false
+export const CEILINGS_ENFORCED = true
 
 /** Printed whenever the ceilings are not failing, so nobody reads green as under. */
-export const NOT_ENFORCING = 'ceilings are MEASURED BUT NOT ENFORCED while #955 runs — see #992, and `CEILINGS_ENFORCED` in scripts/checks/bundle-size.ts'
+export const NOT_ENFORCING = 'ceilings are MEASURED BUT NOT ENFORCED — see `CEILINGS_ENFORCED` in scripts/checks/bundle-size.ts'
 
 /**
  * Where a breach goes, and what a run says about it.

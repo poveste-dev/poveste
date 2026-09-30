@@ -68,13 +68,13 @@ describe('measurements', () => {
   it('reports every ceiling', () => {
     expect(measurements(chunks, LIMITS)).toEqual(expect.arrayContaining([
       'highlighter-abc.js 1344 KB / 3000 KB',
-      'vendor-def.js 1413 KB / 1470 KB',
-      'whole book 2957 KB / 5220 KB',
+      'vendor-def.js 1413 KB / 1487 KB',
+      'whole book 2957 KB / 5340 KB',
     ]))
   })
 
   it('totals the whole book for the ceiling that has no prefix', () => {
-    expect(measurements(chunks, LIMITS)).toContain('whole book 2957 KB / 5220 KB')
+    expect(measurements(chunks, LIMITS)).toContain('whole book 2957 KB / 5340 KB')
   })
 
   // `overLimit` applies a prefix ceiling per chunk, so a joined line would read
@@ -86,8 +86,8 @@ describe('measurements', () => {
     ]
 
     expect(measurements(split, LIMITS.slice(1, 2))).toEqual([
-      'vendor-a.js 1400 KB / 1470 KB',
-      'vendor-b.js 1300 KB / 1470 KB',
+      'vendor-a.js 1400 KB / 1487 KB',
+      'vendor-b.js 1300 KB / 1487 KB',
     ])
   })
 
@@ -156,7 +156,7 @@ describe('checkBundleSize', () => {
     expect(checkBundleSize(root).problems).toContainEqual(expect.stringContaining('no built book under examples/vue'))
   })
 
-  it('measures the built vue book, and reports rather than fails while #955 runs', { tags: ['check', 'app', 'build'] }, () => {
+  it('measures the built vue book and holds it to the ceilings', { tags: ['check', 'app', 'build'] }, () => {
     const result = checkBundleSize()
     process.stdout.write(result.notes.map(line => `  ${line}\n`).join(''))
 
@@ -164,7 +164,7 @@ describe('checkBundleSize', () => {
   })
 })
 
-describe('the ceilings while they are not enforced', () => {
+describe('the enforcement switch', () => {
   // Pure over chunks, with no book on disk: `pnpm test:scripts` runs everything
   // *not* tagged `check`, and that job has no built book. A version of these
   // that called `checkBundleSize()` asserted "no built book" there instead.
@@ -198,8 +198,10 @@ describe('the ceilings while they are not enforced', () => {
     }
   })
 
-  // Turning it back on is this constant and nothing else (#992).
-  it('is off', () => {
-    expect(CEILINGS_ENFORCED).toBe(false)
+  // Turning it off again is this constant and nothing else, and this spec is
+  // what makes that a decision rather than a quiet change of behaviour — which
+  // is why it is flipped here rather than deleted with the migration (#992).
+  it('is on', () => {
+    expect(CEILINGS_ENFORCED).toBe(true)
   })
 })
