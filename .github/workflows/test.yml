@@ -250,6 +250,13 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:control-conventions
 
+      # A fence is prose to every other check here and to VitePress, which renders
+      # it whether or not it compiles (#902). Source-only, so it names
+      # `steps.install` rather than sitting where a build would be implied.
+      - name: Compile the docs' Vue fences
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run test:docs-vue-fences
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes

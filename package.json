@@ -59,6 +59,7 @@
     "test:mirrors": "vitest run --project scripts checks/mirrored-conformance",
     "test:conformance-config": "vitest run --project scripts checks/conformance-config",
     "test:docs-svelte-fences": "vitest run --project scripts checks/docs-svelte-fences",
+    "test:docs-vue-fences": "vitest run --project scripts checks/docs-vue-fences",
     "test:control-conventions": "vitest run --project scripts checks/control-conventions",
     "test:preview-position": "vitest run --project scripts checks/preview-position",
     "test:bundle-size": "vitest run --project scripts checks/bundle-size",

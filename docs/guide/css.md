@@ -101,7 +101,7 @@ Grid items render inside iframes by default. This gives the variant grid the sam
 
 You can opt out per story:
 
-```vue
+```vue-html
 <Story :layout="{ type: 'grid', iframeGrid: false }">
   <Variant title="A"><MyComponent /></Variant>
 </Story>
