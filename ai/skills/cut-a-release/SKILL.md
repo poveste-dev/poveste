@@ -43,6 +43,10 @@ Everything else in a release can be re-run. This cannot.
 
 Read each one. If it belongs in the notes, add it; if it is deliberately unmentioned — a chore no consumer can see — touching `CHANGELOG.md` records that judgement and clears the warning. It is a warning rather than a failure because that judgement is the writer's, and it is on stderr because the workflow redirects this script's stdout into the published release body.
 
+**It needs no install.** The script imports only node builtins plus `publishable.ts` and `support/captured.ts`, so `git worktree add --detach <ref>` and run it there — seconds, and it never touches the shared checkout, which sits on `main` and does not have the section.
+
+**Run it again after the rebase.** A rebase rewrites the commits it compares against, so a silent result before the rebase says nothing about the tree you are about to tag. Same command, second run, on the rebased tree.
+
 ## `next` is behind by one commit the moment a release lands
 
 This is the step that is easy to miss, because it is invisible until the second release in a cycle.
@@ -80,6 +84,19 @@ The browser suites are deliberately *not* in the release gate (#75) — they alr
 ## When notes have to do the work
 
 A commit list alone leaves a reader stuck whenever something is deprecated, renamed or removed; a supported version floor moved; a default changed; or the upgrade needs action — **or notably needs none**. "Nothing to do" is worth saying out loud, because a deprecation warning in an editor makes people assume otherwise.
+
+**Answer the floor question from a derived set, not from memory.** Three surfaces move a floor, and each is a diff over *every* `packages/*/package.json` that is not `private`:
+
+```bash
+# for each published manifest, v<previous> against the release branch
+engines.node        # widens or narrows what a consumer may run
+peerDependencies    # a grouped dependabot bump moves these with nothing in its title saying so
+exports             # a removed subpath is a removal, whatever the package README calls itself
+```
+
+Enumerate the manifests in the command rather than naming them. 0.16.0 was answered twice from short lists — once from `engines.node` alone, once from eight packages when twelve were published — and both passes were correct about the files they read. The gap is which files get read, so it belongs in the command.
+
+The result still goes through the consumer test: `@poveste/vendors` dropped three export subpaths in 0.16.0 and earned no line, because its README says there is nothing to install directly and no page in `docs/` names it.
 
 `v0.4.0` is the worked example: changelogithub produced one correct, useless line that told nobody their existing code still worked.
 
