@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'pathe'
 import { describe, expect, it } from 'vitest'
@@ -110,6 +110,40 @@ describe('the caret range check', () => {
   // `^0.x` narrows to the minor, and no vendored range uses it.
   it('refuses a zero-major caret rather than guessing its rule', () => {
     expect(satisfiesCaret('0.5.1', '^0.5.0')).toBe(false)
+  })
+})
+
+/*
+ * Every other case here builds a synthetic manifest, so nothing else would notice
+ * the real one drifting to a form `satisfiesCaret` declines to read. It refuses what
+ * it cannot read with certainty, which is the right direction to fail in and an
+ * invisible one: a range edited to `~3.5.26`, `>=3.5.26` or a pinned `3.5.26` would
+ * stop the collapse silently and bring #1060 back for every npm consumer with the
+ * whole suite green. This is the assertion that goes red instead.
+ */
+describe('the range @poveste/vendors really declares', () => {
+  it('is a form the guard reads, and the vendored copy satisfies it', () => {
+    // Resolved the way `collapseVendoredVue` resolves it — through an exported
+    // subpath, since vendors' `exports` map does not list `./package.json`.
+    const entry = nodeResolver('@poveste/vendors/vue', import.meta.dirname)
+    expect(entry, '@poveste/vendors is not resolvable from packages/poveste').toBeDefined()
+
+    const manifest = JSON.parse(readFileSync(join(entry!, '..', 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>
+    }
+    const vue = Object.entries(vendoredAliases(manifest.dependencies)).find(([, alias]) => alias.name === 'vue')
+    expect(vue, '@poveste/vendors declares no npm alias of vue').toBeDefined()
+
+    const [installedAs, { range }] = vue!
+    const version = JSON.parse(readFileSync(nodeResolver(`${installedAs}/package.json`, join(entry!, '..'))!, 'utf8')) as {
+      version: string
+    }
+
+    expect(
+      satisfiesCaret(version.version, range),
+      `@poveste/vendors declares ${installedAs} as ${range}, which collapseVendoredVue cannot read — `
+      + 'the chrome would silently keep its own Vue and #1060 returns for npm consumers',
+    ).toBe(true)
   })
 })
 
