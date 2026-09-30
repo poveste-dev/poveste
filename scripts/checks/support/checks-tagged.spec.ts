@@ -44,6 +44,7 @@ const RELEASE_GATE_CHECKS = [
   'conformance-config',
   'control-conventions',
   'docs-svelte-fences',
+  'docs-vue-fences',
   'example-wiring',
   'local-tags',
   'mirrored-conformance',

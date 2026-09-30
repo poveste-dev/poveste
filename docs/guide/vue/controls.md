@@ -242,7 +242,7 @@ Poveste reads the props a component declares and builds a control for each one,
 so a variant that renders a component needs nothing written for it to be
 adjustable:
 
-```vue
+```vue-html
 <Variant title="Naked">
   <MyButton />
 </Variant>
@@ -294,7 +294,7 @@ withDefaults(defineProps<{ label?: string }>(), { label: 'Click me' })  // text 
 
 Or a value in the story:
 
-```vue
+```vue-html
 <MyButton label="Click me" />
 ```
 

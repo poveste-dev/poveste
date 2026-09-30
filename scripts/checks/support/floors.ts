@@ -27,6 +27,7 @@ export const FLOORS: Record<string, Floor> = {
   'doc-coverage': { guard: 'no entrypoint was measured at all' },
   'docs-site': { guard: 'no build at' },
   'docs-svelte-fences': { guard: 'no `svelte` fence under' },
+  'docs-vue-fences': { guard: 'no `vue` fence under' },
   'example-wiring': { guard: 'lists no required contexts' },
   'local-tags': { exempt: 'a repository with no tags is a normal state, so a floor would be false; the report prints the count instead (#740)' },
   'mirrored-conformance': { walk: true },
