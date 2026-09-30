@@ -9,7 +9,7 @@ function runnerFor(code: string) {
     }
     const [url] = data as [string]
     return { code, file: `/fixture${url}`, id: `/fixture${url}`, url, invalidate: false }
-  })
+  }, '/fixture-root')
 }
 
 describe('createRunner', () => {

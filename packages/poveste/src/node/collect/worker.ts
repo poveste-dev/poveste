@@ -73,7 +73,9 @@ async function collect(payload: Payload): Promise<ReturnData> {
     ;(globalThis as Record<string, unknown>)[key] = value
   }
 
-  const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), _evaluatedModules))
+  // Memoised for the worker's life though `root` arrives per task: a worker pool
+  // belongs to one server, so every task it is sent carries that server's root.
+  const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), payload.root, _evaluatedModules))
 
   if (_domEnv) {
     resetDomEnv(_domEnv)

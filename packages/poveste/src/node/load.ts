@@ -17,7 +17,7 @@ export function useModuleLoader(options: UseModuleLoaderOptions): ModuleLoader {
 
   const node = createModuleServer(server, { inline: [] })
 
-  const runner = createRunner((name, data) => node.invoke(name, data))
+  const runner = createRunner((name, data) => node.invoke(name, data), server.config.root)
 
   function clearCache() {
     server.moduleGraph.invalidateAll()
