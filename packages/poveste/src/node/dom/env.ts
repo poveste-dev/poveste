@@ -74,6 +74,31 @@ export function createDomEnv() {
     takeRecords(): IntersectionObserverEntry[] { return [] }
   }
 
+  /*
+   * jsdom implements `Screen` — seven properties, no `orientation` — and has no
+   * `ScreenOrientation` constructor at all, so the property is absent rather than
+   * present and inert. There is nothing to feature-detect but the absence, and
+   * nothing to assign through: the property has no setter, so this defines it
+   * rather than using the `||` the three above can.
+   *
+   * Quasar's Screen plugin reads it unguarded while installing — `const { type,
+   * angle } = window.screen.orientation` — so a Quasar book cannot collect a
+   * story without it (#1053). Quasar 2.34 added that read; 2.33 had none.
+   */
+  if (window.screen !== undefined && window.screen.orientation === undefined) {
+    Object.defineProperty(window.screen, 'orientation', {
+      configurable: true,
+      value: {
+        type: 'landscape-primary',
+        angle: 0,
+        onchange: null,
+        addEventListener: () => { /* noop */ },
+        removeEventListener: () => { /* noop */ },
+        dispatchEvent: () => false,
+      },
+    })
+  }
+
   window.matchMedia = window.matchMedia || ((query: string) => ({
     matches: false,
     media: query,
