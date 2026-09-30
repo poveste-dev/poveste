@@ -329,6 +329,48 @@ const state = reactive({
 </template>
 ```
 
+### Colour and date
+
+Two of the builtin controls take a string where you might expect an object.
+
+`HstColor` is a colour picker — a saturation area, a hue slider and a hex field, in a popover. Its model is a hex string, `#3366ff`.
+
+`HstDate` is a date field with a calendar. Its model is an ISO string — `2026-09-20`, or `2026-09-20T14:30` when `time` is set, which adds the hour and minute segments and puts them in the value.
+
+Both take an optional `title`, and both emit a string.
+
+```vue
+<script lang="ts" setup>
+import { reactive } from 'vue'
+
+const state = reactive({
+  tint: '#3366ff',
+  when: '2026-09-20T14:30',
+})
+</script>
+
+<template>
+  <Story>
+    <Variant>
+      <p :style="{ color: state.tint }">
+        {{ state.when }}
+      </p>
+
+      <template #controls>
+        <HstColor v-model="state.tint" title="Tint" />
+        <HstDate v-model="state.when" title="When" time />
+      </template>
+    </Variant>
+  </Story>
+</template>
+```
+
+The model is a string because a story keeps its state as JSON, and the `DateValue` objects Reka works in do not survive the trip into the sandbox a story renders in.
+
+Both load only when a book uses one — they are 215 KB and 101 KB of a built book, and nothing renders until the chunk arrives, so the row appears a moment after the rest of the panel rather than with it.
+
+`HstColorSelect` is a different and older control that is still exported: a text field beside the browser's own `<input type="color">`, which opens the operating system's picker. It takes a hex string too, so the signature will not tell you which one you have.
+
 Check out all the available controls in the [`@poveste/controls` package](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-controls).
 
 ## Init state
