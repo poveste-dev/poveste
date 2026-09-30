@@ -10,7 +10,7 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **A Quasar project could not build a book on 0.16.0, and the cause was not Quasar: story collection was telling every inlined CommonJS dependency it lived somewhere it does not.**
 
-It is a `patch`. The range holds four commits and none is a `feat`; nothing is deprecated, renamed or removed, and **there is nothing to do on upgrade** — no configuration key changed and no version floor moved.
+It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. **There is nothing to do on upgrade** — no configuration key changed and no version floor moved.
 
 ### 🩹 Fixes
 
