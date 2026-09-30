@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkSmokePlugins, hasPass, listedPlugins, pluginProblems, publishedPlugins, SMOKE_TEST } from './smoke-plugins.ts'
+import { checkSmokePlugins, EXEMPT, hasPass, listedPlugins, pluginProblems, publishedPlugins, SMOKE_TEST } from './smoke-plugins.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -45,15 +45,17 @@ describe('reading the script', () => {
   })
 })
 
+const EXEMPT_FIXTURE = { 'poveste-plugin-shot': 'needs a browser CI does not provide (#654)' }
+
 describe('holding the two together', () => {
   it('is quiet when every published plugin has a pass', () => {
-    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], SCRIPT)).toEqual([])
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], SCRIPT, {})).toEqual([])
   })
 
   // #1052: three of seven, and the four missing ones were invisible because the
   // pass list is a list.
   it('names a published plugin with no pass', () => {
-    expect(pluginProblems(['poveste-plugin-nuxt', 'poveste-plugin-vue', 'poveste-plugin-svelte'], SCRIPT))
+    expect(pluginProblems(['poveste-plugin-nuxt', 'poveste-plugin-vue', 'poveste-plugin-svelte'], SCRIPT, {}))
       .toEqual([`poveste-plugin-nuxt is published and has no pass in ${SMOKE_TEST}`])
   })
 
@@ -66,19 +68,50 @@ describe('holding the two together', () => {
   it('names a plugin that is packed and never installed', () => {
     const packedOnly = SCRIPT.replace('"poveste-plugin-svelte"', '"poveste-plugin-svelte"\n  "poveste-plugin-nuxt"')
 
-    expect(pluginProblems(['poveste-plugin-nuxt', 'poveste-plugin-svelte', 'poveste-plugin-vue'], packedOnly))
+    expect(pluginProblems(['poveste-plugin-nuxt', 'poveste-plugin-svelte', 'poveste-plugin-vue'], packedOnly, {}))
       .toEqual([`poveste-plugin-nuxt is packed by ${SMOKE_TEST} and never installed by a pass`])
   })
 
   it('names a listed plugin that is not published', () => {
     const extra = SCRIPT.replace('"poveste-plugin-vue"', '"poveste-plugin-vue"\n  "poveste-plugin-gone"')
 
-    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], extra))
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], extra, {}))
       .toContainEqual(`${SMOKE_TEST} packs poveste-plugin-gone, which is not a published plugin`)
   })
 
+  /*
+   * The third problem, and the one an exemption invites: a plugin that genuinely
+   * cannot have a pass is fine, and an exemption nobody revisits is how a hole
+   * gets called a policy. So both directions fail — a plugin that is exempt *and*
+   * covered, and an exemption for something no longer published.
+   */
+  it('names an exemption that has been overtaken by a pass', () => {
+    const covered = SCRIPT.replace('"poveste-plugin-vue"', '"poveste-plugin-vue"\n  "poveste-plugin-shot"')
+
+    expect(pluginProblems(['poveste-plugin-shot', 'poveste-plugin-svelte', 'poveste-plugin-vue'], covered, EXEMPT_FIXTURE))
+      .toContainEqual(`poveste-plugin-shot has a pass in ${SMOKE_TEST} and an exemption here — one of the two is stale`)
+  })
+
+  it('names an exemption for a plugin that is no longer published', () => {
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], SCRIPT, EXEMPT_FIXTURE))
+      .toContainEqual('poveste-plugin-shot is exempt here and is not a published plugin — the exemption has outlived its subject')
+  })
+
+  it('is quiet about an exempt plugin that is published and has no pass', () => {
+    expect(pluginProblems(['poveste-plugin-shot', 'poveste-plugin-svelte', 'poveste-plugin-vue'], SCRIPT, EXEMPT_FIXTURE))
+      .toEqual([])
+  })
+
+  // A reason that does not say what makes a pass impossible is an excuse.
+  it('gives every exemption a reason naming the constraint', () => {
+    for (const [plugin, reason] of Object.entries(EXEMPT)) {
+      expect(reason, `${plugin}'s exemption has no reason`).not.toHaveLength(0)
+      expect(reason, `${plugin}'s exemption cites no issue`).toMatch(/#\d+/)
+    }
+  })
+
   it('reports rather than passes when it cannot find the array at all', () => {
-    expect(pluginProblems(['poveste-plugin-vue'], 'nothing to read here'))
+    expect(pluginProblems(['poveste-plugin-vue'], 'nothing to read here', {}))
       .toEqual([`${SMOKE_TEST} declares no \`PLUGIN_PACKAGES\` — this check is reading the wrong thing`])
   })
 })

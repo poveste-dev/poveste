@@ -42,7 +42,6 @@ PLUGIN_PACKAGES=(
   "poveste-plugin-nuxt"
   "poveste-plugin-tailwind"
   "poveste-plugin-percy"
-  "poveste-plugin-screenshot"
 )
 
 WORK="$(mktemp -d)"
@@ -518,11 +517,17 @@ install_and_build percy "$WORK/percy" \
   "vue@$(peer_range poveste-plugin-vue vue)" \
   vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
-addon_app screenshot HstScreenshot
-install_and_build screenshot "$WORK/screenshot" \
-  "$(plugin_tgz poveste-plugin-vue)" \
-  "$(plugin_tgz poveste-plugin-screenshot)" \
-  "vue@$(peer_range poveste-plugin-vue vue)" \
-  vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+# No screenshot pass, and the exemption is recorded in
+# `scripts/checks/smoke-plugins.ts` so a missing pass for it is deliberate rather
+# than a hole. `@poveste/plugin-screenshot` depends on a real Chrome, which CI does
+# not provide — the same constraint that keeps `examples/vue-screenshot` out of the
+# `Unbuilt books` job (#654).
+#
+# `PUPPETEER_SKIP_DOWNLOAD` does not rescue it, measured rather than assumed: the
+# install then succeeds and `poveste build` exits 1 with `Could not find Chrome`,
+# because the plugin launches a browser during the build. Skipping the download
+# moves the failure from install to build rather than removing it.
+#
+# Percy stays: its puppeteer is optional, and its pass is green on a CI runner.
 
-echo "✅ Smoke test passed — vue, svelte, quasar, nuxt, tailwind, percy, screenshot"
+echo "✅ Smoke test passed — vue, svelte, quasar, nuxt, tailwind, percy"

@@ -14,6 +14,10 @@
 // produces a tarball nothing consumes, which reads as coverage in the one place
 // anyone looks. Both halves are checked because I introduced exactly that state
 // while writing this, listing `plugin-nuxt` a step before its pass existed.
+//
+// `EXEMPT` is the third: a plugin that genuinely cannot have a pass. It is a map
+// to a reason rather than a list, and a stale entry fails as loudly as a missing
+// pass — an exemption that outlives its cause is how a hole gets called a policy.
 
 import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
@@ -62,7 +66,15 @@ export function hasPass(script: string, plugin: string): boolean {
   return new RegExp(`plugin_tgz "?${plugin}\\b`).test(script)
 }
 
-export function pluginProblems(published: string[], script: string): string[] {
+/**
+ * Plugins with no pass, and why. Each reason has to name what makes a pass
+ * impossible rather than inconvenient.
+ */
+export const EXEMPT: Record<string, string> = {
+  'poveste-plugin-screenshot': 'launches a real Chrome during the build, which CI does not provide — the constraint that keeps `examples/vue-screenshot` out of the `Unbuilt books` job (#654). `PUPPETEER_SKIP_DOWNLOAD` does not help: the install then succeeds and `poveste build` exits 1 with `Could not find Chrome`, measured on a cache with no browser in it',
+}
+
+export function pluginProblems(published: string[], script: string, exempt: Record<string, string> = EXEMPT): string[] {
   const listed = listedPlugins(script)
 
   if (listed.length === 0) {
@@ -72,6 +84,13 @@ export function pluginProblems(published: string[], script: string): string[] {
   const problems: string[] = []
 
   for (const plugin of published) {
+    if (plugin in exempt) {
+      if (listed.includes(plugin)) {
+        problems.push(`${plugin} has a pass in ${SMOKE_TEST} and an exemption here — one of the two is stale`)
+      }
+      continue
+    }
+
     if (!listed.includes(plugin)) {
       problems.push(`${plugin} is published and has no pass in ${SMOKE_TEST}`)
     }
@@ -86,10 +105,16 @@ export function pluginProblems(published: string[], script: string): string[] {
     }
   }
 
+  for (const plugin of Object.keys(exempt)) {
+    if (!published.includes(plugin)) {
+      problems.push(`${plugin} is exempt here and is not a published plugin — the exemption has outlived its subject`)
+    }
+  }
+
   return problems
 }
 
-const REMEDY = `Add a pass to ${SMOKE_TEST}: a minimal book built from the tarballs with npm, at the ranges \`peer_range\` reads from the plugin's own \`peerDependencies\`. A plugin with no consumer-install pass is one whose first report comes from a reader.`
+const REMEDY = `Add a pass to ${SMOKE_TEST}: a minimal book built from the tarballs with npm, at the ranges \`peer_range\` reads from the plugin's own \`peerDependencies\`. A plugin with no consumer-install pass is one whose first report comes from a reader. If a pass is genuinely impossible, add it to \`EXEMPT\` with the reason that makes it impossible.`
 
 export function checkSmokePlugins(root = ROOT): CheckResult {
   const published = publishedPlugins(root)
@@ -107,6 +132,6 @@ export function checkSmokePlugins(root = ROOT): CheckResult {
   return {
     problems: pluginProblems(published, script),
     remedy: REMEDY,
-    notes: [`${published.length} published plugins, ${listedPlugins(script).length} with a pass`],
+    notes: [`${published.length} published plugins, ${listedPlugins(script).length} with a pass, ${Object.keys(EXEMPT).length} exempt`],
   }
 }
