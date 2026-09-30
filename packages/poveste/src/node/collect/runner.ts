@@ -1,4 +1,5 @@
 import type { EvaluatedModuleNode, ModuleEvaluator, ModuleRunnerContext, ModuleRunnerImportMeta } from 'vite/module-runner'
+import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, isAbsolute, join } from 'node:path'
 import process from 'node:process'
@@ -37,6 +38,48 @@ function exportAll(exports: Record<string, unknown>, source: any) {
   }
 }
 
+/**
+ * The file a CJS module should believe it is, for `require`, `__filename` and
+ * `__dirname`.
+ *
+ * `module.id` is a Vite id and is root-relative — `/node_modules/vue/index.js`
+ * is a real id and not a path that exists. `isAbsolute()` answers "does this
+ * start with a separator", which that satisfies, so an id used to become a
+ * `filename` and the module's own `require('./dist/…')` resolved against a
+ * directory under the filesystem root. Quasar's config pulls `vue` through here,
+ * and a Quasar book could not collect a story at all (#1048).
+ *
+ * `module.file` is Vite's resolved path and is the only trustworthy source. An
+ * absolute-looking id is accepted only if it names something — one `existsSync`
+ * against evaluating a module, and it is the question the old predicate meant to
+ * ask.
+ */
+export function filenameOf(module: Readonly<EvaluatedModuleNode>): string {
+  for (const candidate of [module.file, module.id]) {
+    if (candidate === undefined) {
+      continue
+    }
+
+    const path = candidate.replace(/[?#].*$/, '')
+    if (!isAbsolute(path)) {
+      continue
+    }
+
+    if (existsSync(path)) {
+      return path
+    }
+
+    // Root-relative: `/node_modules/vue/index.js` is an id under the project
+    // root, not a path under the filesystem root.
+    const rooted = join(process.cwd(), path)
+    if (existsSync(rooted)) {
+      return rooted
+    }
+  }
+
+  return join(process.cwd(), 'virtual-module')
+}
+
 /** As vite-node did: a CJS package's named exports are read through its default. */
 class InteropEvaluator implements ModuleEvaluator {
   // The runner offsets source maps by the lines a wrapper adds, which match Vite's own.
@@ -48,8 +91,9 @@ class InteropEvaluator implements ModuleEvaluator {
    */
   async runInlinedModule(context: ModuleRunnerContext, code: string, module: Readonly<EvaluatedModuleNode>) {
     const exports = context[ssrModuleExportsKey] as Record<string, any>
+    // Identity, not a location: only `.mjs` is read off it, below.
     const path = (module.file || module.id).replace(/[?#].*$/, '')
-    const filename = isAbsolute(path) ? path : join(process.cwd(), 'virtual-module')
+    const filename = filenameOf(module)
 
     let assignedExports: unknown
     let assigned = false
