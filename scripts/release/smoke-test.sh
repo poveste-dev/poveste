@@ -35,6 +35,7 @@ CORE_PACKAGES=(
 PLUGIN_PACKAGES=(
   "poveste-plugin-vue"
   "poveste-plugin-svelte"
+  "poveste-plugin-quasar"
 )
 
 WORK="$(mktemp -d)"
@@ -57,6 +58,18 @@ while IFS= read -r f; do CORE_TGZ+=("$f"); done < <(find "$TARBALLS" -name '*.tg
 
 plugin_tgz() {
   find "$TARBALLS" -name "$1-[0-9]*.tgz"
+}
+
+# peer_range <package-dir> <peer-name> — the range the plugin actually declares.
+#
+# Not a literal. A copied range drifts the moment a peer floor moves and the gate
+# keeps agreeing with itself: `vue@^3.5.26` below still resolves to what
+# `^3.5.43` would, so nothing has gone red while it stopped testing what the
+# package declares. Deriving it means a floor that moves reaches this file for
+# free, and it is what makes the Quasar pass meaningful — `quasar: ^2.24.0`
+# resolves to 2.34.0, the version #1048 fails on.
+peer_range() {
+  node -p "require('$ROOT/packages/$1/package.json').peerDependencies['$2']"
 }
 
 # install_and_build <name> <app-dir> <extra npm args...>
@@ -235,4 +248,85 @@ install_and_build svelte "$SVELTE_APP" \
   "$(plugin_tgz poveste-plugin-svelte)" \
   svelte@^5.46.4 vite@^8.0.0 @sveltejs/vite-plugin-svelte@^7.0.0
 
-echo "✅ Smoke test passed — vue, svelte"
+# ── Quasar ───────────────────────────────────────────────────────────────────
+
+QUASAR_APP="$WORK/quasar"
+mkdir -p "$QUASAR_APP/src"
+
+echo "▸ Scaffolding Quasar consumer project → $QUASAR_APP"
+consumer_package_json "$QUASAR_APP" quasar
+
+# `@poveste/plugin-quasar` searches upward for a `quasar.config` and fails by
+# name without one, so a bare package.json is not a Quasar project to it. Quasar
+# then refuses a project with no `index.html` and exits, which the plugin reports
+# as "a missing index.html or a quasar.config it refuses" — so both files are the
+# real minimum, not just the config. Matching `examples/quasar`.
+cat > "$QUASAR_APP/index.html" <<'HTML'
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Quasar smoke consumer</title>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <!-- quasar:entry-point -->
+  </body>
+</html>
+HTML
+
+cat > "$QUASAR_APP/quasar.config.js" <<'JS'
+export default function () {
+  return {
+    boot: [],
+    css: [],
+    extras: [],
+    build: { vueRouterMode: 'hash' },
+    framework: { config: {} },
+  }
+}
+JS
+
+cat > "$QUASAR_APP/poveste.config.ts" <<'TS'
+import { HstQuasar } from '@poveste/plugin-quasar'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), HstQuasar()],
+  setupFile: '/src/poveste.setup.ts',
+})
+TS
+
+# The setup file is what installs Quasar into the story app, so a pass without
+# it exercises the plugin's config extraction and never Quasar itself — which is
+# #1051's hole, and putting it here would be reproducing that hole in the gate
+# meant to catch it.
+cat > "$QUASAR_APP/src/poveste.setup.ts" <<'TS'
+import { setupQuasar } from '@poveste/plugin-quasar/setup'
+import { defineSetupVue } from '@poveste/plugin-vue'
+
+export const setupVue = defineSetupVue(setupQuasar())
+TS
+
+cat > "$QUASAR_APP/src/Meow.story.vue" <<'VUE'
+<template>
+  <Story title="Meow">
+    <Variant title="default">
+      🐱
+    </Variant>
+  </Story>
+</template>
+VUE
+
+# Three mandatory peers, more than either pass above, and npm resolves peers
+# strictly — `@quasar/app-vite` is not optional even though nothing a minimal
+# story imports reaches it.
+install_and_build quasar "$QUASAR_APP" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "$(plugin_tgz poveste-plugin-quasar)" \
+  "quasar@$(peer_range poveste-plugin-quasar quasar)" \
+  "vue@$(peer_range poveste-plugin-quasar vue)" \
+  "@quasar/app-vite@$(peer_range poveste-plugin-quasar '@quasar/app-vite')" \
+  vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+echo "✅ Smoke test passed — vue, svelte, quasar"
