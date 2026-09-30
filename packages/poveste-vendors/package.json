@@ -1,7 +1,7 @@
 {
   "name": "@poveste/vendors",
   "type": "module",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "Poveste-owned copies of the libraries its chrome runs on",
   "author": {
     "name": "Sorin Gitlan",
