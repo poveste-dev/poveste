@@ -10,7 +10,7 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **A colour control and a date control, the interactive controls rebuilt on Reka UI, and a Node version range that was quietly installing a two-year-old Poveste.**
 
-It is a `minor` because two commits in the range are a `feat`: the colour control ([#929](https://github.com/poveste-dev/poveste/pull/929)) and the date control ([#928](https://github.com/poveste-dev/poveste/pull/928)). Nothing is deprecated, renamed or removed, and there is nothing to do on upgrade.
+It is a `minor` because two commits in the range are a `feat`: the colour control ([#929](https://github.com/poveste-dev/poveste/pull/929)) and the date control ([#928](https://github.com/poveste-dev/poveste/pull/928)). Nothing is deprecated, renamed or removed, and there is nothing to do unless you pin Vue or `@sveltejs/vite-plugin-svelte` below the peer floors below.
 
 ### 🚀 Enhancements
 
@@ -33,7 +33,9 @@ It is a `minor` because two commits in the range are a `feat`: the colour contro
 
 ### Upgrading
 
-**Nothing to do.** No configuration key changed, nothing was removed or renamed, and stories that worked on 0.15.0 work here unchanged.
+**Nothing to do, with one exception.** No configuration key changed, nothing was removed or renamed, and stories that worked on 0.15.0 work here unchanged.
+
+**Two peer floors moved up**: `vue` to `^3.5.43`, in `@poveste/plugin-vue` and `@poveste/plugin-quasar`, and `@sveltejs/vite-plugin-svelte` to `^7.3.0` in `@poveste/plugin-svelte`. A range resolving to the latest `3.5` or `7.x` already satisfies both. You only need to act if you pin below them, your lockfile resolves below them, or you install with strict peer checking.
 
 **If you ever got `poveste@0.6.1` from `npm install poveste`**, that was the old `engines.node` range rejecting your Node and npm resolving backwards. Install again and you will get 0.16.0. The range only widened.
 
