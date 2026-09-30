@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from
 import { tmpdir } from 'node:os'
 import { join } from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { collapseVendoredVue, nodeResolver, vendoredAliases } from '../vendors.js'
+import { collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
 
 // macOS reports `/var` and hands back `/private/var`, which resolution accepts and a
 // path comparison does not.
@@ -37,8 +37,8 @@ describe('the aliases @poveste/vendors declares', () => {
       'poveste-vue': 'npm:vue@^3.5.26',
       'poveste-vue-router': 'npm:vue-router@^5.3.1',
     })).toEqual({
-      'poveste-vue': 'vue',
-      'poveste-vue-router': 'vue-router',
+      'poveste-vue': { name: 'vue', range: '^3.5.26' },
+      'poveste-vue-router': { name: 'vue-router', range: '^5.3.1' },
     })
   })
 
@@ -47,8 +47,8 @@ describe('the aliases @poveste/vendors declares', () => {
       'poveste-iconify-vue': 'npm:@iconify/vue@^5.0.1',
       'poveste-vueuse-core': 'npm:@vueuse/core@^15.0.0',
     })).toEqual({
-      'poveste-iconify-vue': '@iconify/vue',
-      'poveste-vueuse-core': '@vueuse/core',
+      'poveste-iconify-vue': { name: '@iconify/vue', range: '^5.0.1' },
+      'poveste-vueuse-core': { name: '@vueuse/core', range: '^15.0.0' },
     })
   })
 
@@ -63,9 +63,53 @@ describe('the aliases @poveste/vendors declares', () => {
       'poveste-vue': 'npm:vue',
       'poveste-iconify-vue': 'npm:@iconify/vue',
     })).toEqual({
-      'poveste-vue': 'vue',
-      'poveste-iconify-vue': '@iconify/vue',
+      'poveste-vue': { name: 'vue', range: '' },
+      'poveste-iconify-vue': { name: '@iconify/vue', range: '' },
     })
+  })
+})
+
+describe('the caret range check', () => {
+  it('takes a version at or above the floor in the same minor', () => {
+    expect(satisfiesCaret('3.5.26', '^3.5.26')).toBe(true)
+    expect(satisfiesCaret('3.5.43', '^3.5.26')).toBe(true)
+  })
+
+  it('takes a higher minor whatever its patch', () => {
+    expect(satisfiesCaret('3.6.0', '^3.5.26')).toBe(true)
+  })
+
+  // The `--legacy-peer-deps` reader of #1062: a Vue the peer range would have refused.
+  it('refuses a version below the floor', () => {
+    expect(satisfiesCaret('3.5.25', '^3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.4.99', '^3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.2.0', '^3.5.26')).toBe(false)
+  })
+
+  it('refuses another major in either direction', () => {
+    expect(satisfiesCaret('4.0.0', '^3.5.26')).toBe(false)
+    expect(satisfiesCaret('2.7.16', '^3.5.26')).toBe(false)
+  })
+
+  /*
+   * Refused rather than approximated, which is the whole design. `poveste` has no
+   * `semver` dependency and a hand-rolled `satisfies` that quietly mis-handles a form
+   * it was never given is worse than declining to answer.
+   */
+  it('refuses every form it cannot read with certainty', () => {
+    expect(satisfiesCaret('3.6.0-beta.1', '^3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.5.43', '>=3.5.26 <4')).toBe(false)
+    expect(satisfiesCaret('3.5.43', '~3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.5.43', '3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.5.43', '*')).toBe(false)
+    expect(satisfiesCaret('3.5.43', '')).toBe(false)
+    expect(satisfiesCaret('3.5.43', undefined)).toBe(false)
+    expect(satisfiesCaret(undefined, '^3.5.26')).toBe(false)
+  })
+
+  // `^0.x` narrows to the minor, and no vendored range uses it.
+  it('refuses a zero-major caret rather than guessing its rule', () => {
+    expect(satisfiesCaret('0.5.1', '^0.5.0')).toBe(false)
   })
 })
 
@@ -106,9 +150,33 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     expect(collapseVendoredVue({ root })).toEqual({})
   })
 
+  /*
+   * The project's Vue is checked against the range vendors pins, not assumed from the
+   * peer floor. `--legacy-peer-deps` is how a project ends up holding a Vue the peer
+   * range would have refused (#1062), and collapsing the chrome onto it would hand a
+   * reader a chrome its Vue cannot run.
+   */
+  it('leaves the vendored copy alone below the range vendors pins', () => {
+    const root = tempRoot()
+    writePackage(root, 'vue', '3.2.0')
+    writePackage(root, 'poveste-vue', '3.5.43')
+    writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
+
+    expect(collapseVendoredVue({ root })).toEqual({})
+  })
+
+  it('leaves the vendored copy alone when the pinned range is not a plain caret', () => {
+    const root = tempRoot()
+    writePackage(root, 'vue', '3.5.43')
+    writePackage(root, 'poveste-vue', '3.5.43')
+    writeVendors(root, { 'poveste-vue': 'npm:vue@>=3.5.26 <4' })
+
+    expect(collapseVendoredVue({ root })).toEqual({})
+  })
+
   // The failure of aliasing is a chrome that keeps a Vue it can certainly run; the
   // failure of guessing is a chrome handed one it cannot.
-  it('leaves the vendored copy alone when a version cannot be read', () => {
+  it('leaves the vendored copy alone when the project version cannot be read', () => {
     const root = tempRoot()
     const dir = writePackage(root, 'vue', '3.5.43')
     writeFileSync(join(dir, 'package.json'), '{ not json')

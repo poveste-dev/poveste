@@ -20,16 +20,25 @@ export const nodeResolver: Resolver = (specifier, from) => {
   }
 }
 
+export interface VendoredAlias {
+  /** The bare package the alias points at, `vue`. */
+  name: string
+  /** The range it is pinned to, `^3.5.26`, or `''` when the spec carries none. */
+  range: string
+}
+
 /**
- * The bare package a vendored dependency aliases, by the name it is installed
- * under: `{ 'poveste-vue': 'vue' }` from `"poveste-vue": "npm:vue@^3.5.26"`.
+ * What each vendored dependency aliases, by the name it is installed under:
+ * `{ 'poveste-vue': { name: 'vue', range: '^3.5.26' } }` from
+ * `"poveste-vue": "npm:vue@^3.5.26"`.
  *
  * Derived from the manifest rather than listed, because the set is whatever
  * `@poveste/vendors` declares and a list here would keep working while silently
- * covering one name fewer.
+ * covering one name fewer. The range comes back with the name because the caller
+ * needs both and this is the only place the spec is parsed.
  */
-export function vendoredAliases(dependencies: Record<string, string> | undefined): Record<string, string> {
-  const aliases: Record<string, string> = {}
+export function vendoredAliases(dependencies: Record<string, string> | undefined): Record<string, VendoredAlias> {
+  const aliases: Record<string, VendoredAlias> = {}
 
   for (const [installedAs, spec] of Object.entries(dependencies ?? {})) {
     if (!spec.startsWith('npm:')) {
@@ -40,11 +49,52 @@ export function vendoredAliases(dependencies: Record<string, string> | undefined
     // opens with one, so the separator is positional and a regex that allows both
     // is the kind the linter rejects for backtracking.
     const target = spec.slice('npm:'.length)
-    const range = target.lastIndexOf('@')
-    aliases[installedAs] = range > 0 ? target.slice(0, range) : target
+    const at = target.lastIndexOf('@')
+    aliases[installedAs] = at > 0
+      ? { name: target.slice(0, at), range: target.slice(at + 1) }
+      : { name: target, range: '' }
   }
 
   return aliases
+}
+
+/**
+ * Whether `version` satisfies a caret range, for the caret ranges `@poveste/vendors`
+ * actually declares and **nothing else**.
+ *
+ * A range this cannot read with certainty is refused rather than approximated. That
+ * is the point: `poveste` has no `semver` dependency, a patch release is the wrong
+ * place to add one, and a hand-rolled `satisfies` that silently mis-handles a form it
+ * was never given is the failure this repo keeps producing. So `^X.Y.Z` with a major
+ * of at least 1 is answered, and `^0.x`, a prerelease, a comparator set or anything
+ * else returns false and leaves the chrome on the copy it can certainly run.
+ */
+export function satisfiesCaret(version: string | undefined, range: string | undefined): boolean {
+  const wanted = /^\^(\d+)\.(\d+)\.(\d+)$/.exec(range ?? '')
+  const have = /^(\d+)\.(\d+)\.(\d+)$/.exec(version ?? '')
+
+  if (!wanted || !have) {
+    return false
+  }
+
+  const [wantedMajor, wantedMinor, wantedPatch] = wanted.slice(1).map(Number)
+  const [major, minor, patch] = have.slice(1).map(Number)
+
+  // `^0.x` narrows to the minor, and no vendored range uses it. Refuse rather than
+  // implement a rule nothing here exercises.
+  if (wantedMajor === 0 || wantedMajor === undefined || major === undefined) {
+    return false
+  }
+
+  if (major !== wantedMajor) {
+    return false
+  }
+
+  if (minor! !== wantedMinor!) {
+    return minor! > wantedMinor!
+  }
+
+  return patch! >= wantedPatch!
 }
 
 /**
@@ -69,10 +119,18 @@ export function vendoredAliases(dependencies: Record<string, string> | undefined
  * is a larger change than this defect asks for.
  *
  * Empty when the project has no Vue of its own, when the two already resolve to one
- * file, or when their majors differ or cannot be read — in each case the vendored copy
- * is what the chrome should keep. Refusing on an unreadable version is deliberate: the
- * failure of this function is a chrome that keeps a Vue it can certainly run, and the
- * failure of guessing is a chrome handed one it cannot.
+ * file, or when the project's Vue does not satisfy the range vendors pins — in each
+ * case the vendored copy is what the chrome should keep. Refusing on anything it
+ * cannot read with certainty is deliberate: the failure of this function is a chrome
+ * that keeps a Vue it can certainly run, and the failure of guessing is a chrome
+ * handed one it cannot.
+ *
+ * The range is checked rather than assumed from the peer floor. A project only holds
+ * a Vue of its own because a framework plugin's peer range put it there — except that
+ * `--legacy-peer-deps` is exactly how a project ends up holding one the peer range
+ * would have refused (#1062), which leaves a reader on, say, Vue 3.2 with a chrome
+ * collapsed onto a Vue that cannot run it. Such a project is already broken without
+ * this fix, but "already broken" is not a reason to hand it a different break.
  */
 export function collapseVendoredVue(options: {
   root: string
@@ -92,12 +150,14 @@ export function collapseVendoredVue(options: {
     return {}
   }
 
-  const installedAs = Object.entries(vendoredAliases(readJson<{ dependencies?: Record<string, string> }>(join(vendorsDir, 'package.json'))?.dependencies))
-    .find(([, bare]) => bare === 'vue')?.[0]
+  const vueAlias = Object.entries(vendoredAliases(readJson<{ dependencies?: Record<string, string> }>(join(vendorsDir, 'package.json'))?.dependencies))
+    .find(([, alias]) => alias.name === 'vue')
 
-  if (!installedAs) {
+  if (!vueAlias) {
     return {}
   }
+
+  const [installedAs, { range }] = vueAlias
 
   const vendored = resolve(installedAs, vendorsDir)
   const project = resolve('vue', root)
@@ -106,10 +166,7 @@ export function collapseVendoredVue(options: {
     return {}
   }
 
-  const vendoredMajor = majorOf(versionOf(`${installedAs}/package.json`, resolve, vendorsDir))
-  const projectMajor = majorOf(versionOf('vue/package.json', resolve, root))
-
-  if (vendoredMajor === undefined || vendoredMajor !== projectMajor) {
+  if (!satisfiesCaret(versionOf('vue/package.json', resolve, root), range)) {
     return {}
   }
 
@@ -119,13 +176,6 @@ export function collapseVendoredVue(options: {
   // The name lets Vite resolve its own entry and condition, and `resolve.dedupe`
   // above then genuinely covers the result.
   return { [installedAs]: 'vue' }
-}
-
-// Enough of a version check to refuse the one case that cannot work, and no more.
-// The floor is already enforced where it belongs: a project reaches this only by
-// having a Vue of its own, which a framework plugin's peer range put there.
-function majorOf(version: string | undefined): string | undefined {
-  return /^(\d+)\./.exec(version ?? '')?.[1]
 }
 
 function versionOf(specifier: string, resolve: Resolver, root: string): string | undefined {
