@@ -17,7 +17,7 @@ Every issue gets a native GitHub issue **type** — `Bug`, `Feature` or `Task` �
 
 `docs`, `perf`, `chore` and `spike` exist as refinements where `Bug` and `Task` are too coarse.
 
-**Milestones and `sprint:*` labels are the owner's — never set them.** Ordering is expressed with the `blocked` label and GitHub's native dependency links instead.
+**Milestones and `sprint:*` labels are the owner's — never set them.** Ordering is expressed with GitHub's native dependency links: add a blocked-by link that names the blocker, rather than the retired `blocked` label, which named nothing and nothing cleared (see #1050).
 
 ## Body
 
