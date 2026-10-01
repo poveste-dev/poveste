@@ -1,13 +1,15 @@
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempDisposableSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'pathe'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
 
 // macOS reports `/var` and hands back `/private/var`, which resolution accepts and a
 // path comparison does not.
 function tempRoot() {
-  return realpathSync(mkdtempSync(join(tmpdir(), 'poveste-vendors-')))
+  const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-vendors-'))
+  onTestFinished(() => dir.remove())
+  return realpathSync(dir.path)
 }
 
 function writePackage(root: string, name: string, version: string, extra: Record<string, unknown> = {}) {
