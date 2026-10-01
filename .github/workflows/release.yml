@@ -75,6 +75,13 @@ jobs:
       # re-notifies, so a generated commit list was the only thing subscribers ever
       # saw (#399). Extracted before anything publishes: a missing section stops the
       # release here rather than shipping a release with no body.
+      #
+      # It also stops the worse case. CHANGELOG.md holds the inherited histoire
+      # history below poveste's own, histoire's numbers run higher, and the script
+      # used to take the first heading matching the tag — so a missing section
+      # published histoire's notes for that version instead, exit 0, with an
+      # upstream compare link (#1071). A body for the wrong project reads as
+      # deliberate; an empty one does not.
       - name: Build the release notes
         run: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/checks/changelog.ts "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
 
