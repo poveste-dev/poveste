@@ -1,7 +1,7 @@
 import type { ChildProcess } from 'node:child_process'
 import type { AddressInfo } from 'node:net'
 import { spawn } from 'node:child_process'
-import { appendFileSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdtempDisposableSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -13,10 +13,39 @@ const BIN = path.resolve(__dirname, '../../../bin.mjs')
 
 let child: ChildProcess | undefined
 
+const markerDirs: { remove: () => void }[] = []
+
+/*
+ * The removal follows the kill rather than a `using` scope, because a dev child
+ * outlives the test body — one test never awaits its exit.
+ *
+ * It is best effort even so: `kill` signals without waiting, so the child can
+ * still hold the marker open when this runs, and Windows fails the removal of a
+ * directory with an open handle where POSIX does not. A leftover directory is
+ * the thing this hook exists to avoid; failing a test whose assertions all
+ * passed is worse, and one directory per run is what the tree looked like
+ * before (#1094). Each is caught on its own, so one failure does not strand the
+ * rest.
+ */
 afterEach(() => {
   child?.kill('SIGKILL')
   child = undefined
+  for (const dir of markerDirs.splice(0)) {
+    try {
+      dir.remove()
+    }
+    catch {
+      // Still running, on a platform that minds. The next sweep gets it.
+    }
+  }
 })
+
+/** A marker path in a directory `afterEach` removes. */
+function markerPath(): string {
+  const dir = mkdtempDisposableSync(path.join(tmpdir(), 'poveste-cleanup-'))
+  markerDirs.push(dir)
+  return path.join(dir.path, 'marker')
+}
 
 /** How many times a cleanup registered while the config resolved has run. */
 function cleanupsRun(marker: string): number {
@@ -55,7 +84,7 @@ describe('poveste dev runs the process cleanups when the server stops', () => {
   // Windows has no SIGINT to deliver: `kill` there ends the process outright, so the
   // handler this exercises cannot run.
   it.skipIf(process.platform === 'win32')('not while it serves, before a config restart, and on SIGINT', async () => {
-    const marker = path.join(mkdtempSync(path.join(tmpdir(), 'poveste-cleanup-')), 'marker')
+    const marker = markerPath()
     const dev = startDev(marker, await freePort())
 
     await vi.waitFor(() => expect(dev.output()).toContain('Collect stories end'), { timeout: 60_000, interval: 250 })
@@ -83,7 +112,7 @@ describe('poveste dev runs the process cleanups when the server stops', () => {
   // A config saved mid-edit does not load. The restart it triggers fails, and the
   // save that fixes it has to bring the server back rather than be ignored.
   it('keeps watching after a restart whose config does not load', async () => {
-    const marker = path.join(mkdtempSync(path.join(tmpdir(), 'poveste-cleanup-')), 'marker')
+    const marker = markerPath()
     const dev = startDev(marker, await freePort())
     await vi.waitFor(() => expect(dev.output()).toContain('Collect stories end'), { timeout: 60_000, interval: 250 })
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -103,7 +132,7 @@ describe('poveste dev runs the process cleanups when the server stops', () => {
   }, 150_000)
 
   it('when the start fails, as well', async () => {
-    const marker = path.join(mkdtempSync(path.join(tmpdir(), 'poveste-cleanup-')), 'marker')
+    const marker = markerPath()
     const holder = createServer()
     await new Promise<void>(resolve => holder.listen(0, 'localhost', resolve))
 
