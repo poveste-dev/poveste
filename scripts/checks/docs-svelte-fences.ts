@@ -12,10 +12,17 @@
 // compiles a `lang="ts"` block directly, so no preprocessor is needed for what a
 // fence can contain.
 //
-// No skip-list. All 51 fences compile today, and a fence that cannot is a fence a
-// reader cannot copy — the two cases worth allowing, a deliberate fragment and a
-// file that is not a component, are both better written as a different language
-// tag than as an exemption here.
+// No skip-list. A fence that cannot compile is a fence a reader cannot copy — the
+// two cases worth allowing, a deliberate fragment and a file that is not a
+// component, are both better written as a different language tag than as an
+// exemption here. The one exception is keyed on the fence's own text rather than
+// on a path; see `LEGACY_MARKER`.
+//
+// Compiled in *runes* mode, because that is the mode the reader's project is in.
+// The current `sv create` sets `compilerOptions.runes` for every file outside
+// `node_modules`, and there `export let` is a hard error. Compiling in the
+// permissive default passed every legacy example while none of them built in the
+// project the getting-started page had just told the reader to create (#1061).
 
 import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -44,15 +51,28 @@ export function fencesIn(file: string, markdown: string): Fence[] {
     .map((match, index) => ({ file, index: index + 1, source: match[1] ?? '' }))
 }
 
+/*
+ * A fence that says it is histoire's code, and is therefore legacy by definition.
+ *
+ * `migration-from-histoire.md` pairs before with after, and the before half has
+ * to keep `export let` or it misrepresents what is being migrated from. Reading
+ * the marker the page already writes, rather than the filename, keeps that narrow:
+ * the Poveste half of the same page is held to runes like everything else, and a
+ * fence that loses its marker stops being exempt.
+ */
+const LEGACY_MARKER = /^\s*<!--\s*histoire\s*-->/m
+
 export function fenceProblems(fences: Fence[]): string[] {
   return fences.flatMap(({ file, index, source }) => {
+    const runes = LEGACY_MARKER.test(source) ? undefined : true
     try {
-      compile(source, { name: 'Fence', generate: 'client' })
+      compile(source, { name: 'Fence', generate: 'client', runes })
       return []
     }
     catch (error) {
       const message = (error instanceof Error ? error.message : String(error)).split('\n')[0]
-      return [`${file} fence ${index} does not compile: ${message}`]
+      const mode = runes ? ' in runes mode' : ''
+      return [`${file} fence ${index} does not compile${mode}: ${message}`]
     }
   })
 }
@@ -87,7 +107,7 @@ function repositoryProblems(root = ROOT): string[] {
   return fenceProblems(fences)
 }
 
-const REMEDY = 'A fence a reader copies has to compile. `import type { Hst as HstType }` is how the story examples take the type without colliding with the prop (#902).'
+const REMEDY = 'A fence a reader copies has to compile in the mode their project is in, which the current `sv create` makes runes: declare props with `const { Hst } = $props()`, not `export let Hst` (#1061). `import type { Hst as HstType }` is how the story examples take the type without colliding with the prop (#902).'
 
 export function checkDocsSvelteFences(root = ROOT): CheckResult {
   return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }

@@ -183,7 +183,7 @@ always used:
 ```svelte
 <!-- poveste -->
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ disabled: false })
 </script>
@@ -202,6 +202,12 @@ always used:
 Three things changed: the `let` became `initState`, the slots became snippets that receive
 `state`, and every read went from `disabled` to `state.disabled`.
 
+The `Hst` declaration changed too, and only on the Poveste side. Blocks marked `histoire` keep
+`export let Hst` because that is what histoire code looked like; the Poveste blocks use
+`const { Hst } = $props()`, which compiles whether or not your project is in runes mode — and a
+project scaffolded by the current `sv create` is, where `export let` does not compile at all.
+See [Writing Svelte stories](./svelte/stories.md).
+
 Values that are genuinely local — a `bind:this` node, a DOM ref — stay in the component. Only
 what your controls drive needs to move.
 
@@ -210,7 +216,7 @@ A `source` prop that reflected state also becomes a function, since props are ev
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ disabled: false })
 

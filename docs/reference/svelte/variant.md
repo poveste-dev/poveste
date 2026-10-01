@@ -50,7 +50,7 @@ to the `children` and `controls` snippets — it is how controls reach your comp
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ disabled: false })
 </script>
@@ -86,7 +86,7 @@ It receives a payload object with the following properties:
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   function setupApp({ variant }) {
     document.body.dataset.variant = variant.title
@@ -134,7 +134,7 @@ The copyable source code of the variant.
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const source = `<h1>Toto</h1>
 

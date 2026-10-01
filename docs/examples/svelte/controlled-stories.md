@@ -18,7 +18,7 @@ This will display a control panel for the story.
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 
   const initState = () => ({
     text: 'Hello world',
@@ -47,7 +47,7 @@ This will display a control panel for all the variants.
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 
   const initState = () => ({
     text: 'Hello world',
@@ -82,7 +82,7 @@ This will display a control panel only for one variant.
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 
   const initState = () => ({
     text: 'Hello world',
@@ -117,7 +117,7 @@ This will isolate each variant so that you control only one variant at a time. P
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 
   const initState = () => ({
     text: 'Hello world',

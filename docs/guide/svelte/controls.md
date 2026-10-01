@@ -16,7 +16,7 @@ Declare the state with `initState` on `<Hst.Variant>` (or `<Hst.Story>`), and re
 <script>
   import MyButton from './MyButton.svelte'
 
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({
     disabled: false,
@@ -74,7 +74,7 @@ and it receives the same `state`.
 <script>
   import MyButton from './MyButton.svelte'
 
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({
     disabled: false,
@@ -141,7 +141,7 @@ The source panel shows the `source` prop. Because props are evaluated in your `<
 <script lang="ts">
   import type { Hst as HstType, StoryState } from '@poveste/plugin-svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 
   const initState = () => ({ disabled: false })
 
@@ -253,7 +253,7 @@ fits the rest of the UI.
 <script>
   import MyButton from './MyButton.svelte'
 
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({
     disabled: false,
@@ -289,7 +289,7 @@ Both take an optional `title`.
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({
     tint: '#3366ff',

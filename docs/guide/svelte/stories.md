@@ -10,13 +10,21 @@ Stories are svelte files ending with `.story.svelte`. Add a `Hst` prop so povest
 ```svelte
 <!-- Meow.story.svelte -->
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story>
   🐱
 </Hst.Story>
 ```
+
+::: tip Runes mode, and why the examples use `$props()`
+`const { Hst } = $props()` is the runes form, and it compiles **whether or not your project is in runes mode** — which is why every example on this page uses it.
+
+A project scaffolded by the current `sv create` is in runes mode: it sets `compilerOptions.runes` in `vite.config.ts` for every file outside `node_modules`. There `export let Hst` is a hard compile error — `Cannot use \`export let\` in runes mode` — so a story written the older way does not build.
+
+`export let Hst` is still correct in a project that has not opted in, and existing stories do not need rewriting. Only the runes form works in both.
+:::
 
 ::: tip
 We use a prop instead of an import because Poveste provides different implementations of those components in different situations (for example when collecting the stories).
@@ -26,7 +34,7 @@ The title of the story is provided with the (optional) `title` prop:
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story title="🐱 Meow">
@@ -41,7 +49,7 @@ For example, you will usually import and use a component in your story:
 ```svelte{2,7}
 <script>
   import Meow from './Meow.svelte'
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story>
@@ -57,7 +65,7 @@ To get typings for the `Hst` prop, you can import the `Hst` type from `@poveste/
 <script lang="ts">
   import type { Hst as HstType } from '@poveste/plugin-svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story> <!-- Typed! -->
@@ -71,7 +79,7 @@ Stories can have different variants representing the same component. You can def
 
 ```svelte{6-14}
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story title="Cars">
@@ -100,7 +108,7 @@ Additional `layout` properties:
 
 ```svelte{7}
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story
@@ -129,7 +137,7 @@ Additional `layout` properties:
 
 ```svelte{7}
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story

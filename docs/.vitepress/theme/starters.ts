@@ -161,7 +161,7 @@ export default defineConfig({
 })
 `,
       'src/MyButton.svelte': `<script>
-  export let label = 'Click me'
+  const { label = 'Click me' } = $props()
 </script>
 
 <button class="my-button">{label}</button>
@@ -181,7 +181,7 @@ export default defineConfig({
       'src/MyButton.story.svelte': `<script>
   import MyButton from './MyButton.svelte'
 
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story title="MyButton">
@@ -247,7 +247,7 @@ export default defineConfig({
 <MyButton label="Hello" />
 `,
       'src/lib/MyButton.svelte': `<script>
-  export let label = 'Click me'
+  const { label = 'Click me' } = $props()
 </script>
 
 <button class="my-button">{label}</button>
@@ -267,7 +267,7 @@ export default defineConfig({
       'src/lib/MyButton.story.svelte': `<script>
   import MyButton from './MyButton.svelte'
 
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story title="MyButton">

@@ -47,7 +47,7 @@ to the `children` and `controls` snippets — it is how controls reach your comp
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ disabled: false })
 </script>
@@ -83,7 +83,7 @@ It receives a payload object with the following properties:
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   function setupApp({ variant }) {
     document.body.dataset.variant = variant.title
@@ -139,7 +139,7 @@ Write the content in a sibling markdown file. Svelte has no `<docs>` block; a st
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story group="top" docsOnly icon="carbon:bookmark" />
@@ -153,7 +153,7 @@ The copyable source code of the story.
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const source = `<h1>Toto</h1>
 
