@@ -58,6 +58,16 @@ describe('reading the script', () => {
     expect(hasPass(longerOnly, 'poveste-plugin-vue')).toBe(false)
   })
 
+  /*
+   * The name is escaped before it becomes a pattern, and nothing else here would
+   * notice if that stopped happening: every published name is `[\w-]+`, so an
+   * unescaped pattern behaves identically on all of them. A name carrying a
+   * metacharacter is the only input that can tell the two apart.
+   */
+  it('does not let a metacharacter in the name match something else', () => {
+    expect(hasPass('plugin_tgz poveste-plugin-vue', 'poveste-plugin-v.e')).toBe(false)
+  })
+
   it('sees a quoted name, which is how the loop-free passes spell it', () => {
     expect(hasPass('"$(plugin_tgz "poveste-plugin-percy")"', 'poveste-plugin-percy')).toBe(true)
   })

@@ -1,4 +1,3 @@
-import { escapeRegExp } from '@poveste/shared'
 import vue from '@vitejs/plugin-vue'
 import fs from 'fs-extra'
 import { globbySync } from 'globby'
@@ -60,7 +59,7 @@ export default defineConfig({
         // machine's pnpm store (#304).
         // eslint-disable-next-line ts/no-require-imports
         ...Object.keys(require('./package.json').dependencies)
-          .map(name => new RegExp(`^${escapeRegExp(name)}(/|$)`)),
+          .map(name => new RegExp(`^${RegExp.escape(name)}(/|$)`)),
       ],
 
       input: [

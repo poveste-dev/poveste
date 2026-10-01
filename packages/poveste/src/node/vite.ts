@@ -7,7 +7,6 @@ import type {
 import type { Context } from './context.js'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { escapeRegExp } from '@poveste/shared'
 import { lookup as lookupMime } from 'mrmime'
 import { dirname, join, relative } from 'pathe'
 import {
@@ -394,7 +393,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
       if (/\.(?:vue|js)(?:$|\?)/.test(id)) {
         const original = code
         for (const [flag, value] of Object.entries(flags)) {
-          code = code.replace(new RegExp(escapeRegExp(flag), 'g'), value)
+          code = code.replace(new RegExp(RegExp.escape(flag), 'g'), value)
         }
         if (original !== code) return code
       }
@@ -457,11 +456,11 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
                 ['vue', 'vue'],
               ] as const).reduce((acc, [name, entry]) => {
                 acc.push({
-                  find: new RegExp(`^${escapeRegExp(name)}$`),
+                  find: new RegExp(`^${RegExp.escape(name)}$`),
                   replacement: `@poveste/vendors/${entry}`,
                 })
                 acc.push({
-                  find: new RegExp(`^${escapeRegExp(name)}/`),
+                  find: new RegExp(`^${RegExp.escape(name)}/`),
                   replacement: `@poveste/vendors/${entry}/`,
                 })
                 return acc
