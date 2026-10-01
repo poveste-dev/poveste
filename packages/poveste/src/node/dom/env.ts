@@ -26,7 +26,10 @@ function createVirtualConsole(): VirtualConsole | undefined {
     const type = Reflect.get(err, 'type')
     if (type === JSDOM_ERROR_CSS_PARSING) return
     if (type === JSDOM_ERROR_UNHANDLED_EXCEPTION) {
-      globalThis.console.error((err.cause instanceof Error ? err.cause.stack : undefined) ?? err.message)
+      // `Error.isError` and not `instanceof`: the cause was constructed inside
+      // jsdom's realm, where `instanceof Error` is false and the stack — the
+      // only part that says which line threw — is discarded (#1093).
+      globalThis.console.error((Error.isError(err.cause) ? err.cause.stack : undefined) ?? err.message)
     }
     else {
       globalThis.console.error(err.message)
