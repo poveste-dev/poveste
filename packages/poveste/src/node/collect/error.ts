@@ -6,6 +6,13 @@
 
 const MARK = 'pvt:error'
 
+/** What this module needs of a thrown value to be able to describe it. */
+interface ErrorLike {
+  name: string
+  message: string
+  stack?: string | undefined
+}
+
 interface Serialized {
   kind: typeof MARK
   name: string
@@ -16,6 +23,28 @@ interface Serialized {
 
 function isSerialized(value: unknown): value is Serialized {
   return typeof value === 'object' && value !== null && (value as Serialized).kind === MARK
+}
+
+/*
+ * Not `instanceof Error`, and not `Error.isError` either. A `DOMException` from
+ * jsdom fails both — the first because `runScripts: 'dangerously'` makes jsdom a
+ * separate realm, the second because jsdom's is a webidl2js object rather than a
+ * genuine error — while carrying a name, a message and a stack. It is what a
+ * story's own DOM call throws, and a clone of one retains nothing, so the host
+ * received `{}` (#1097).
+ *
+ * A `stack` is required and not merely read: `{ name, message }` is a shape a
+ * story may legitimately throw, and it should arrive as the data it is.
+ */
+function errorLike(value: unknown): value is ErrorLike {
+  if (Error.isError(value)) {
+    return true
+  }
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const { name, message, stack } = value as Record<string, unknown>
+  return typeof name === 'string' && typeof message === 'string' && typeof stack === 'string'
 }
 
 // A property the clone rejects takes the whole message down with it, which is worse
@@ -36,8 +65,8 @@ function cloneable(value: unknown) {
  * runs on the path that reports a failure — so overflowing the stack would lose
  * the error it was called to describe and replace it with its own.
  */
-export function serializeError(error: unknown, seen: WeakSet<Error> = new WeakSet()): unknown {
-  if (!(error instanceof Error)) {
+export function serializeError(error: unknown, seen: WeakSet<ErrorLike> = new WeakSet()): unknown {
+  if (!errorLike(error)) {
     return cloneable(error) ? error : String(error)
   }
   if (seen.has(error)) {
