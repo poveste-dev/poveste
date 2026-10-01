@@ -14,7 +14,7 @@ The first parameter is the name of the event, and the second one is a data objec
   import EventButton from './EventButton.svelte'
   import { logEvent } from 'poveste/client'
 
-  export let Hst
+  const { Hst } = $props()
 </script>
 
 <Hst.Story
