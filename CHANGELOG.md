@@ -4,6 +4,30 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.16.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.1...v0.16.2)
+
+**`poveste dev` rendered no story at all for a consumer installed with npm, silently, in both 0.16.0 and 0.16.1.**
+
+It is a `patch`: both commits in the range are a `fix`, neither carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. **There is nothing to do on upgrade** — no configuration key changed and no version floor moved.
+
+### 🩹 Fixes
+
+- **`poveste dev` shows your stories again** ([#1060](https://github.com/poveste-dev/poveste/issues/1060), [#1066](https://github.com/poveste-dev/poveste/pull/1066)). The sidebar listed every story and its variant count, the URL never gained `?variantId=`, and the panel stayed empty — with no error and no warning anywhere a reader could see one. The cause was **two Vue runtimes in one page**: Poveste's chrome depends on Vue under an aliased name, an alias is a distinct package name, and a package manager installs a second copy of Vue whatever your project already has. The chrome's components rendered with one copy while the router reacted with the other, so the first render was never invalidated. Nothing warns, because neither copy is wrong — they cannot see each other. **If `poveste dev` showed your stories, you were not affected**, and `poveste build` followed by `poveste preview` was never affected either, so a reader who only built a book lost nothing. Installing with pnpm was also never affected: it resolves both names to one copy on its own.
+
+### 🤖 CI
+
+- **The publish gate installs every published plugin from a tarball** ([#1052](https://github.com/poveste-dev/poveste/issues/1052), [#1067](https://github.com/poveste-dev/poveste/pull/1067)), at the peer ranges each plugin declares rather than at ranges copied into the script. Nothing a consumer installs changes.
+
+### Upgrading
+
+**Nothing to do.** No configuration key changed, no option was removed or renamed, and no `engines.node`, peer dependency or export floor moved on any published package. Stories that worked on 0.16.1 work here unchanged.
+
+**If `poveste dev` was blank for you,** upgrade and it renders. The condition was installing with npm into a project that has a Vue of its own; it was reported on plain Vue and on Quasar.
+
+**If you only ever ran `poveste build`,** there is nothing here you were missing.
+
 ## v0.16.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.0...v0.16.1)
