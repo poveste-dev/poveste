@@ -29,6 +29,7 @@ const GATED_SEVERITIES = ['high', 'critical']
 export const ACCEPTED: Record<string, string> = {
   'GHSA-jmr9-qjv8-65gv': 'extract-zip has no patched release; plugin-screenshot reaches it through capture-website 5, puppeteer 24 and @puppeteer/browsers 2.13, which still depends on it (#569)',
   'GHSA-7pqw-9j4j-h8q3': 'the same extract-zip 2.0.1 as GHSA-jmr9-qjv8-65gv, through the same chain (#569)',
+  'GHSA-c475-qrg2-pj4r': 'basic-ftp 5.3.1 is the last 5.x and the fix landed only in 6.x, which `get-uri` does not accept — it declares `^5.0.2`; plugin-percy reaches it through @percy/sdk-utils, pac-proxy-agent and get-uri, and the parser the advisory names is the FTP branch of a proxy agent (#564)',
 }
 
 interface Lockfile {
