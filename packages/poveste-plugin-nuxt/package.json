@@ -46,7 +46,7 @@
     "runtime"
   ],
   "engines": {
-    "node": ">=22.22.2"
+    "node": ">=24.15.0"
   },
   "scripts": {
     "build": "rimraf dist && tsc -d",

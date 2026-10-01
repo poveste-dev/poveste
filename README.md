@@ -45,7 +45,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 
 | | Supported |
 | --- | --- |
-| Node | `>=22.22.2` |
+| Node | `>=24.15.0` |
 | Vite | `^8.0.0` |
 | Vue | `^3.5.43` |
 | Nuxt | `^4.5.0` |

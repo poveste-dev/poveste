@@ -464,7 +464,7 @@ jobs:
       - name: Switch to the declared minimum
         uses: actions/setup-node@v7
         with:
-          node-version: 22.22.2
+          node-version: 24.15.0
 
       - name: Smoke test on the minimum (pack + install + build)
         run: |
