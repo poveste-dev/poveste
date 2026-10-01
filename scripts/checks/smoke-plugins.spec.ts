@@ -43,6 +43,24 @@ describe('reading the script', () => {
     expect(hasPass(SCRIPT, 'poveste-plugin-vue')).toBe(true)
     expect(hasPass(SCRIPT, 'poveste-plugin-nuxt')).toBe(false)
   })
+
+  /*
+   * `\b` would have said yes here, because `-` is a word boundary: a plugin whose
+   * name is a prefix of another's would read as covered by that other pass. No two
+   * published names are a prefix of each other today, which is why nothing would
+   * have noticed until the pair existed — in the one check whose job is to have no
+   * silent holes.
+   */
+  it('does not take a longer plugin name as this plugin covered', () => {
+    const longerOnly = 'install_and_build x "$(plugin_tgz poveste-plugin-vue-router)"'
+
+    expect(hasPass(longerOnly, 'poveste-plugin-vue-router')).toBe(true)
+    expect(hasPass(longerOnly, 'poveste-plugin-vue')).toBe(false)
+  })
+
+  it('sees a quoted name, which is how the loop-free passes spell it', () => {
+    expect(hasPass('"$(plugin_tgz "poveste-plugin-percy")"', 'poveste-plugin-percy')).toBe(true)
+  })
 })
 
 const EXEMPT_FIXTURE = { 'poveste-plugin-shot': 'needs a browser CI does not provide (#654)' }

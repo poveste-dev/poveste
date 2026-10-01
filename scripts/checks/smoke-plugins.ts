@@ -61,9 +61,19 @@ export function listedPlugins(script: string): string[] {
  * is packed and handed to nobody. The name has to be literal — a pass that builds
  * it from a loop variable is invisible here, which is why the percy and screenshot
  * passes are written out rather than looped.
+ *
+ * `(?![\w-])` and not `\b`: `-` is a word boundary, so `\b` let
+ * `poveste-plugin-vue` match a `plugin_tgz poveste-plugin-vue-router` call and
+ * report a plugin as covered by a longer plugin's pass. No two published names are
+ * a prefix of each other today, which is exactly why it would have gone unnoticed.
  */
 export function hasPass(script: string, plugin: string): boolean {
-  return new RegExp(`plugin_tgz "?${plugin}\\b`).test(script)
+  return new RegExp(`plugin_tgz "?${escapeRegExp(plugin)}(?![\\w-])`).test(script)
+}
+
+/** A directory name is `[\w-]+` today, and a check should not depend on that holding. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 /**

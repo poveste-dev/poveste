@@ -75,14 +75,46 @@ plugin_tgz() {
 # testing what the packages declare (#1052). Deriving it means a floor that moves
 # reaches this file for free, and it is what makes the Quasar pass meaningful —
 # `quasar: ^2.24.0` resolves to 2.34.0, the version #1048 fails on.
+#
+# It fails loudly rather than returning nothing. `node -p` on a manifest with no
+# `peerDependencies`, or a package directory that has been renamed, throws and
+# prints an empty string — and the non-zero exit is discarded, because the
+# substitution sits in an argument list rather than being the command, so
+# `set -e` never sees it. The pass then installs `vue@`, which npm resolves to
+# **latest**, and the gate reports green while testing a version the package does
+# not declare: this file's own defect, reintroduced through its fix.
 peer_range() {
-  node -p "require('$ROOT/packages/$1/package.json').peerDependencies['$2']"
+  node -e "
+    const manifest = require('$ROOT/packages/$1/package.json')
+    const range = (manifest.peerDependencies || {})['$2']
+    if (typeof range !== 'string' || range === '') {
+      console.error('smoke-test: packages/$1 declares no peerDependencies[\'$2\'] — nothing to install at')
+      process.exit(1)
+    }
+    process.stdout.write(range)
+  "
 }
 
 # install_and_build <name> <app-dir> <extra npm args...>
 install_and_build() {
   local name="$1" app="$2"
   shift 2
+
+  # Every `<pkg>@<range>` argument has to carry a range. This is the net under
+  # `peer_range`, and it guards the property rather than one helper's error path:
+  # `vue@` and `vue@undefined` are what a failed derivation and a missing peer name
+  # produce, and npm answers the first by installing **latest** without complaint.
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      *@ | *@undefined)
+        echo "❌ Smoke test FAILED [$name] — \`$arg\` names no version"
+        echo "   A derived range came back empty or undefined, so npm would have installed"
+        echo "   whatever is latest and the pass would have proved nothing."
+        exit 1
+        ;;
+    esac
+  done
 
   echo "▸ [$name] Installing tarballs with npm (clean, no workspace)"
   (
