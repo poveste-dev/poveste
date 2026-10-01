@@ -16,15 +16,28 @@ let child: ChildProcess | undefined
 const markerDirs: { remove: () => void }[] = []
 
 /*
- * The removal follows the kill rather than a `using` scope. A dev child outlives
- * the test body — one test never awaits its exit — so disposing at scope exit
- * would race `SIGKILL` for a directory the child still has open, which POSIX
- * tolerates and Windows does not.
+ * The removal follows the kill rather than a `using` scope, because a dev child
+ * outlives the test body — one test never awaits its exit.
+ *
+ * It is best effort even so: `kill` signals without waiting, so the child can
+ * still hold the marker open when this runs, and Windows fails the removal of a
+ * directory with an open handle where POSIX does not. A leftover directory is
+ * the thing this hook exists to avoid; failing a test whose assertions all
+ * passed is worse, and one directory per run is what the tree looked like
+ * before (#1094). Each is caught on its own, so one failure does not strand the
+ * rest.
  */
 afterEach(() => {
   child?.kill('SIGKILL')
   child = undefined
-  markerDirs.splice(0).forEach(dir => dir.remove())
+  for (const dir of markerDirs.splice(0)) {
+    try {
+      dir.remove()
+    }
+    catch {
+      // Still running, on a platform that minds. The next sweep gets it.
+    }
+  }
 })
 
 /** A marker path in a directory `afterEach` removes. */
