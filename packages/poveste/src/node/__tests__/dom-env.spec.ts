@@ -10,6 +10,29 @@ describe('createDomEnv', () => {
     errorSpy?.mockRestore()
   })
 
+  describe('when a script inside the environment throws', () => {
+    /*
+     * `runScripts: 'dangerously'` makes the environment a separate realm, so the
+     * error jsdom hands back fails `instanceof Error` and an `instanceof` test
+     * drops the stack in favour of jsdom's one-line `Uncaught [Error: …]`
+     * summary (#1093). The stack is the whole value of the report: it is what
+     * says which line of a story threw.
+     */
+    it('logs the stack of the error, not jsdom\'s one-line summary', () => {
+      errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      env = createDomEnv()
+      const script = env.window.document.createElement('script')
+      script.textContent = 'throw new Error("a story threw")'
+
+      env.window.document.body.appendChild(script)
+
+      expect(errorSpy).toHaveBeenCalledTimes(1)
+      const logged = String(errorSpy.mock.calls[0]?.[0])
+      expect(logged).toContain('a story threw')
+      expect(logged).toMatch(/\n\s+at /)
+    })
+  })
+
   describe('when a stylesheet contains CSS jsdom cannot parse', () => {
     // An unparseable selector is one of the few inputs jsdom 28+ still reports
     // a css-parsing jsdomError for, so it is what keeps this guard honest.
