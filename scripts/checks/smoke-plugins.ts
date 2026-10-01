@@ -68,12 +68,7 @@ export function listedPlugins(script: string): string[] {
  * a prefix of each other today, which is exactly why it would have gone unnoticed.
  */
 export function hasPass(script: string, plugin: string): boolean {
-  return new RegExp(`plugin_tgz "?${escapeRegExp(plugin)}(?![\\w-])`).test(script)
-}
-
-/** A directory name is `[\w-]+` today, and a check should not depend on that holding. */
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`plugin_tgz "?${RegExp.escape(plugin)}(?![\\w-])`).test(script)
 }
 
 /**

@@ -3,7 +3,6 @@ import type { ViteDevServer } from 'vite'
 import type { Context } from '../context.js'
 import type { Payload, ReturnData } from './types.js'
 import { cpus } from 'node:os'
-import { escapeRegExp } from '@poveste/shared'
 import path, { relative } from 'pathe'
 import pc from 'picocolors'
 import { TEMP_PATH } from '../alias.js'
@@ -37,7 +36,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       // @TODO temporary fix for https://github.com/histoire-dev/histoire/issues/409
       /vite\w*\/dist\/client\/(client|env).mjs/,
       ...ctx.config.viteNodeInlineDeps ?? [],
-      new RegExp(escapeRegExp(path.resolve(TEMP_PATH, 'plugins'))),
+      new RegExp(RegExp.escape(path.resolve(TEMP_PATH, 'plugins'))),
     ],
     transformMode: ctx.config.viteNodeTransformMode,
   })
