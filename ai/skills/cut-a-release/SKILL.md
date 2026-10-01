@@ -22,7 +22,7 @@ Everything else in a release can be re-run. This cannot.
 1. **Rebase `next` onto `main` if they have diverged, then fast-forward `main` to it.** After every release `main` is exactly one commit ahead — bumpp's version bump goes there and nowhere else — so the *second* release in a cycle always needs the rebase first. `git merge --ff-only` fails with *"Not possible to fast-forward"* when you skip it. The rebase rewrites `next`, so pushing it needs `--force-with-lease`; `next` is unprotected, `main` is not.
 2. **Write the `CHANGELOG.md` section by hand.** Nothing generates it and nothing can. Draft from `git log v<previous>..HEAD --format='%s'`, group as changelogithub does (🚨 Breaking Changes / 🚀 Enhancements / 🩹 Fixes / 📖 Documentation / ✅ Tests / 🤖 CI / 🏡 Chore), skip anything a consumer cannot see, and add the `[compare changes]` link.
 3. **Check what will actually be published:** `node scripts/checks/changelog.ts v<version>`.
-4. **Pick the type from the commits, not the milestone** — a `feat` in the range means `minor`, otherwise `patch`. A milestone names the release its issues aim at, not what shipped; issues slip.
+4. **Pick the type from the commits, not the milestone** — a `!` marker or a `BREAKING CHANGE:` footer in the range means `minor`, so does a `feat`, and otherwise it is a `patch`. A breaking change lands in the minor because the package is pre-1.0 and `major` is a separate declaration (below); a `patch` that breaks consumers is the one direction a caret range cannot defend against. A milestone names the release its issues aim at, not what shipped; issues slip.
 5. `pnpm run release patch` (or `minor`).
 
 ## The freeze
@@ -68,6 +68,10 @@ pnpm run release patch
 ```
 
 A type it does not recognise fails immediately by name. It used to reach bumpp by landing at the very end of a script string as the value of a trailing `--release`, which held only while nothing was ever appended after it and failed as an interactive prompt when something was (#457).
+
+**The type is checked against the range, not only against the list of types.** A patch-sized release is refused when a commit between the last tag and `HEAD` carries a `!` marker or a `BREAKING CHANGE:` footer, and the refusal names those commits (#1099). Until that existed the rule in step 4 lived only in this file, and step 4 said nothing about a breaking change at all — so the documented answer for a range that drops an LTS line was `patch`.
+
+Two things about it are worth knowing before it surprises you. The detection is an **anchored footer** and not a search for the words, because the changelog commit of every patch release quotes `BREAKING CHANGE` in prose while justifying that release — a loose match reads those as breaking. And the range starts at the last tag **reachable from `HEAD`**, which is the previous release when you cut on `main` as step 1 leaves you; cut from a branch that is missing the last release commit and the range is wider, so the check can over-report and never miss.
 
 That script is also what pushes. bumpp runs with `--no-push`, because its own push is `git push --tags` — every tag on the machine, not the one it just made, which is how cutting v0.10.0 also published a maintainer's private `salvage/…` tag. `release:check` runs `test:tags` first and lists local tags outside `v<version>`; it warns rather than fails, since a tag on unmerged work can be the only reference keeping that commit alive.
 
