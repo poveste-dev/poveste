@@ -100,6 +100,22 @@ The result still goes through the consumer test: `@poveste/vendors` dropped thre
 
 `v0.4.0` is the worked example: changelogithub produced one correct, useless line that told nobody their existing code still worked.
 
+## No count of the range you are writing
+
+The notes commit lands in the range the tag covers, so **a count of that range taken while writing the notes is wrong by construction** — it is measured at two commits and published at three.
+
+0.16.1 lost a commit count to this, and 0.16.2 then lost the sentence written to replace it. *"Both commits in the range are a `fix`, neither carries a `!` marker"* has no numeral in it and is still a count of two, false the moment the notes commit is in the range. The digit was never the thing that made it break.
+
+State the predicate over the range rather than its size. The shipped wording is already in the file and is reused verbatim:
+
+> It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed.
+
+`no commit` and `none` hold at two commits or thirty. `both`, `neither`, `either` and `the two fixes` do not — nor does a count of files, issues or PRs taken before the section is committed.
+
+**A count is safe only once the range is closed.** v0.15.0 and v0.16.0 each say "two commits in the range are a `feat`" and both are permanently true, because the tag ending their range already exists. That is the whole distinction: the section you are writing has an open range, and every section above a tag has a closed one. So this is not a ban on numbers in the file — it is a ban on counting the release you are in the middle of cutting.
+
+Where a quantity is genuinely worth stating, **name the things instead of counting them**. v0.16.0 names the colour control and the date control, which is what makes that sentence useful and is also what would have survived another commit landing.
+
 ## Inserting the section
 
 **Anchor the insert on the heading *and* poveste's compare link, never the heading alone.** `CHANGELOG.md` holds poveste's releases above the inherited histoire changelog, and histoire's version numbers run higher because poveste restarted at `0.1.0` — so a poveste heading can have an exact twin 1600 lines below it:
