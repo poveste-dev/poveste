@@ -1,10 +1,15 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { freezeWarning, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
+import { freezeWarning, headingSites, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
 import { tree } from './support/fixture-tree.ts'
 import { runCheck } from './support/run-check.ts'
 
 // The shape of the real file: newest release first, then older ones, then the
-// inherited histoire history behind its own `## ` heading.
+// inherited histoire history behind its own heading — which is `#`, not `##`.
+// This fixture said `##` and that is why the boundary went untested for the only
+// level the file actually uses (#1071).
 const CHANGELOG = [
   '# Changelog',
   '',
@@ -22,7 +27,7 @@ const CHANGELOG = [
   '',
   '- Something older',
   '',
-  '## Inherited histoire changelog',
+  '# Inherited histoire changelog',
   '',
   '- Not ours',
 ].join('\n')
@@ -67,6 +72,94 @@ describe('sectionFor', () => {
     const changelog = '## v0.8.10\n\n- Ten\n'
 
     expect(sectionFor(changelog, 'v0.8.1')).toBeUndefined()
+  })
+})
+
+/*
+ * Poveste restarted at `0.1.0` and histoire's numbers run higher, so the file
+ * holds two headings for most versions poveste can still cut. `sectionFor` took
+ * the first and `release.yml` published it, which is another project's notes
+ * emailed to every watcher with no way to resend (#1071).
+ */
+describe('a version written up in both halves of the file', () => {
+  const BOTH_HALVES = [
+    '# Changelog',
+    '',
+    '## v0.8.1',
+    '',
+    '- Ours',
+    '',
+    '# Inherited histoire changelog',
+    '',
+    '## v0.8.1',
+    '',
+    '- Histoire\'s, for the same version number',
+  ].join('\n')
+
+  it('takes poveste\'s own section rather than whichever comes first', () => {
+    expect(sectionFor(BOTH_HALVES, 'v0.8.1')).toBe('- Ours')
+  })
+
+  it('has nothing when only the inherited half wrote it up', () => {
+    const onlyInherited = '# Changelog\n\n## v0.9.0\n\n- Ours\n\n# Inherited histoire changelog\n\n## v0.17.17\n\n- Not ours\n'
+
+    expect(sectionFor(onlyInherited, 'v0.17.17')).toBeUndefined()
+  })
+
+  it('says which half each heading is in', () => {
+    expect(headingSites(BOTH_HALVES, 'v0.8.1')).toEqual({ poveste: [3], inherited: [9] })
+  })
+
+  it('reports a line number that points at the heading', () => {
+    const { poveste, inherited } = headingSites(BOTH_HALVES, 'v0.8.1')
+    const lines = BOTH_HALVES.split('\n')
+
+    expect(lines[poveste[0]! - 1]).toBe('## v0.8.1')
+    expect(lines[inherited[0]! - 1]).toBe('## v0.8.1')
+  })
+
+  it('refuses a duplicate inside poveste\'s own half, which nobody can resolve for the caller', () => {
+    const twinned = '# Changelog\n\n## v0.9.0\n\n- One\n\n## v0.9.0\n\n- The other\n'
+
+    expect(headingSites(twinned, 'v0.9.0').poveste).toEqual([3, 7])
+    expect(sectionFor(twinned, 'v0.9.0')).toBeUndefined()
+  })
+})
+
+/*
+ * Against the real file, because the fixture above is the thing that was wrong:
+ * it wrote the divider as `##` while the file writes it `#`, so the boundary was
+ * only ever tested at a level the file does not use. Derive the version to ask
+ * about from the file rather than naming one — `v0.1.0` is the oldest today and
+ * that is not a durable fact.
+ */
+describe('the real CHANGELOG.md', () => {
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+  const real = readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8')
+  const lines = real.split('\n')
+  const divider = lines.findIndex(line => /^#+ +Inherited histoire changelog/.test(line))
+
+  it('has the inherited divider this check has to recognise', () => {
+    expect(divider, 'the file no longer has a divider, so the halves cannot be told apart').toBeGreaterThan(-1)
+  })
+
+  it('ends poveste\'s oldest section at the divider rather than swallowing it', () => {
+    const oldest = [...lines.slice(0, divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)].at(-1)?.[1]
+
+    expect(oldest, 'no poveste release heading above the divider').toBeDefined()
+    expect(sectionFor(real, oldest!)).not.toContain('Inherited histoire changelog')
+  })
+
+  it('does not answer with a histoire section for a version poveste has not written up', () => {
+    const own = new Set([...lines.slice(0, divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)].map(match => match[1]))
+    const theirsOnly = [...lines.slice(divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)]
+      .map(match => match[1]!)
+      .filter(version => !own.has(version))
+
+    expect(theirsOnly.length, 'no histoire-only version left to test the collision with').toBeGreaterThan(0)
+    for (const version of theirsOnly) {
+      expect(sectionFor(real, version), `${version} is histoire's alone and must not be publishable`).toBeUndefined()
+    }
   })
 })
 
@@ -201,6 +294,26 @@ describe('the check as a process', () => {
     const run = runCheck('checks/changelog.ts', ['0.99.0', '--root', tree({ 'CHANGELOG.md': '# Changelog\n\n## v0.98.0\n\nOlder notes.\n' })])
 
     expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('has no section for') })
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+  })
+
+  // #1071's acceptance. Before this the script exited 0 here and printed
+  // histoire's section, which `release.yml` copies into the published body.
+  it('exits non-zero for a version only the inherited half wrote up, and says so', () => {
+    const changelog = '# Changelog\n\n## v0.98.0\n\nOurs.\n\n# Inherited histoire changelog\n\n## v0.99.0\n\nNot ours.\n'
+    const run = runCheck('checks/changelog.ts', ['0.99.0', '--root', tree({ 'CHANGELOG.md': changelog })])
+
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('inherited histoire changelog') })
+    expect(run.stdout, 'nothing publishable may reach stdout on a refusal').toBe('')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+  })
+
+  it('names both lines when poveste wrote the same version up twice', () => {
+    const changelog = '# Changelog\n\n## v0.99.0\n\nOne.\n\n## v0.99.0\n\nThe other.\n'
+    const run = runCheck('checks/changelog.ts', ['0.99.0', '--root', tree({ 'CHANGELOG.md': changelog })])
+
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('at lines 3 and 7') })
+    expect(run.stdout).toBe('')
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
   })
 
