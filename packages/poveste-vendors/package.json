@@ -57,7 +57,7 @@
     "vue.js"
   ],
   "engines": {
-    "node": ">=22.22.2"
+    "node": ">=24.15.0"
   },
   "dependencies": {
     "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
