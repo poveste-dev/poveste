@@ -53,6 +53,7 @@ const RELEASE_GATE_CHECKS = [
   'preview-position',
   'readmes',
   'recipes',
+  'smoke-plugins',
   'step-gates',
   'task-graph',
   'theme-tokens',

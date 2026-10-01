@@ -38,6 +38,7 @@ export const FLOORS: Record<string, Floor> = {
   'published': { walk: true },
   'readmes': { walk: true },
   'recipes': { exempt: 'walks `RECIPES`, a list in the module itself, and reads each file by name: a file that is gone throws, and a section that is gone is reported' },
+  'smoke-plugins': { guard: 'no published plugin found under packages/' },
   'starters': { guard: 'declares no starters' },
   'step-gates': { walk: true },
   'task-graph': { guard: 'declares no `tasks:`' },
