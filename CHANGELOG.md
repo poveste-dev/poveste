@@ -4,6 +4,56 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.17.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.2...v0.17.0)
+
+**Node 22 is no longer supported. Every published package now requires Node `>=24.15.0`.**
+
+It is a `minor`, not a patch: the range carries breaking changes — the supported Node floor moves, and `escapeRegExp` is removed from `@poveste/shared`. **Read the Upgrading notes at the end of this section before you install**, because on an unsupported Node npm does not fail by default: it quietly installs a much older Poveste.
+
+### 🚨 Breaking Changes
+
+- **Node 22 is no longer supported, and the floor on every published package is `>=24.15.0`** ([#1075](https://github.com/poveste-dev/poveste/issues/1075), [#1089](https://github.com/poveste-dev/poveste/pull/1089)). Every package declared `engines.node: >=22.22.2` while `poveste` depends directly on `jsdom@^30`, whose own range is `^22.22.2 || ^24.15.0 || >=26.0.0`. A single half-open floor admits versions jsdom refuses, so with `engine-strict=true` in `.npmrc` — which the current official SvelteKit scaffold writes for you — `npm i -D poveste` failed outright on Node 23.x, 24.0.0 through 24.14.x, and 25.x. Most of the Node 24 LTS line could not install Poveste at all. `24.15.0` is the lowest Node 24 that jsdom accepts. **Node 25.x is still refused**, because jsdom's range skips 25 entirely and no floor below 26 can cover it; Node 25 is end-of-life.
+
+- **`escapeRegExp` is no longer exported from `@poveste/shared`** ([#1090](https://github.com/poveste-dev/poveste/issues/1090), [#1091](https://github.com/poveste-dev/poveste/pull/1091)). Call `RegExp.escape` instead — every Node this release supports provides it. The helper existed only because `RegExp.escape` was not available on every supported Node, and raising the floor removed the reason for it. The two differ in the pattern *text* they produce for most inputs and in matching behaviour for none, so a `RegExp` built either way matches the same strings.
+
+### 🩹 Fixes
+
+- **An error thrown by a story now reports the line it came from** ([#1095](https://github.com/poveste-dev/poveste/pull/1095)). Story collection runs inside a separate jsdom realm, and the handler asked `err.cause instanceof Error` before printing the cause's stack. `instanceof` is realm-bound, so that test was always false and the report fell back to jsdom's one-line summary:
+
+  ```
+  before   Uncaught [Error: a story threw]
+  now      Error: a story threw
+               at <anonymous>:1:7 …
+  ```
+
+  The stack was on the object the whole time. It is the only part of the report that names a line of your story.
+
+- **A `DOMException` thrown by a story no longer arrives as `{}`** ([#1098](https://github.com/poveste-dev/poveste/pull/1098)). The worker boundary describes a thrown value so it cannot be dropped in transit, and chose what to describe with `error instanceof Error`. A jsdom `DOMException` fails that test twice over — it comes from a separate realm, and it is a webidl2js object rather than a genuine error — while still surviving `structuredClone`, so it was passed through unwrapped and reached the host with no name, no message and no stack. Anything carrying a name, a message and a stack is now described by what it carries rather than by where it came from.
+
+  Both fixes read `Error.isError`, which landed in Node 24 and was unavailable while Node 22 was supported.
+
+### 📖 Documentation
+
+- **Every Svelte story example is written the way a runes project requires** ([#1061](https://github.com/poveste-dev/poveste/issues/1061), [#1080](https://github.com/poveste-dev/poveste/pull/1080)). The current official Svelte CLI turns runes mode on for the whole project, and `export let Hst` does not compile there — so the page a reader opens immediately after installing handed them an example that failed on their first story. The examples now use `const { Hst } = $props()`, which compiles both in runes mode and outside it, so no existing project is disadvantaged by the change. The migration guide keeps `export let` in the fences marked as histoire's and uses the current form for the Poveste side, since that half is the code a migrating reader is being told to write.
+
+### 🤖 CI
+
+- **A patch-sized release is refused when the range carries a breaking change** ([#1100](https://github.com/poveste-dev/poveste/pull/1100)), which is what this release would have been under the previous written rule. Nothing a consumer installs changes.
+
+- **The published release body is read from Poveste's own half of the changelog** ([#1071](https://github.com/poveste-dev/poveste/issues/1071), [#1073](https://github.com/poveste-dev/poveste/pull/1073)), rather than matching a heading that also appears in the inherited histoire history. Nothing a consumer installs changes.
+
+### Upgrading
+
+**Upgrade Node to 24.15.0 or newer before you install.** That is the whole of the work, and there is nothing else to change: no configuration key moved, no option was renamed, and stories that worked on 0.16.2 work here unchanged.
+
+**If you stay on Node 22 or on Node 24.0–24.14, npm will not tell you.** Unless you have `engine-strict=true`, npm resolves past every version whose `engines.node` refuses your Node and installs the newest one that accepts it — which is `poveste@0.6.1`, published before the field existed. You get a deprecation notice and no error, and a Poveste many releases old. Nothing we publish can change where that lands, because the version it lands on predates the mechanism. **If you cannot move off Node 22 yet, pin the exact version you are on** rather than letting the range resolve; `poveste@0.16.2` is the last release that supports it.
+
+**If you import `escapeRegExp` from `@poveste/shared`,** replace it with `RegExp.escape`. It takes the same argument and returns an equivalent pattern.
+
+**If you are on Node 25,** this release does not install, and no Poveste release can until jsdom's supported range covers it. Node 25 is end-of-life; move to 26.
+
 ## v0.16.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.1...v0.16.2)
