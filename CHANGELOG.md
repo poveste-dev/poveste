@@ -10,7 +10,7 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **`poveste dev` rendered no story at all for a consumer installed with npm, silently, in both 0.16.0 and 0.16.1.**
 
-It is a `patch`: both commits in the range are a `fix`, neither carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. **There is nothing to do on upgrade** — no configuration key changed and no version floor moved.
+It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. **There is nothing to do on upgrade** — no configuration key changed and no version floor moved.
 
 ### 🩹 Fixes
 
