@@ -76,7 +76,7 @@ A variant can define a `setupApp` prop, called after the global hook with the sa
 
 ```svelte
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   function setupApp({ variant }) {
     document.body.dataset.variant = variant.title
@@ -119,7 +119,7 @@ export const myValue = writable(10)
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import Store from './Store.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story title="Store">
@@ -149,7 +149,7 @@ Set it from the story instead, in a wrapper component:
 <script lang="ts">
   import { setContext } from 'svelte'
 
-  export let theme = 'dark'
+  const { theme = 'dark' } = $props()
 
   setContext('theme', theme)
 </script>
@@ -164,7 +164,7 @@ Set it from the story instead, in a wrapper component:
   import MyComponent from './MyComponent.svelte'
   import ThemeProvider from './ThemeProvider.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story title="With context">

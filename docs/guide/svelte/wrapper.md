@@ -21,7 +21,7 @@ For a wrapper you want around one story, wrap the markup yourself:
   import MyComponent from './MyComponent.svelte'
   import ThemeProvider from './ThemeProvider.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story title="MyStory">

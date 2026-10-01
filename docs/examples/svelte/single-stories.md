@@ -16,7 +16,7 @@ This will display your component inside an iframe to be able to test the respons
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story title="MyStory">
@@ -35,7 +35,7 @@ This will integrate your component directly in the app. The advantage being that
   import type { Hst as HstType } from '@poveste/plugin-svelte'
   import MyComponent from './MyComponent.svelte'
 
-  export let Hst: HstType
+  const { Hst }: { Hst: HstType } = $props()
 </script>
 
 <Hst.Story

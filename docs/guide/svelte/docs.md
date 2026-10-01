@@ -76,7 +76,7 @@ To document a copyable source code manually you can use the `source` prop.
 
 ```svelte{6-11,17}
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ count: 0 })
 
@@ -114,7 +114,7 @@ of the state**, called with the current values:
 
 ```svelte{6-10,16}
 <script>
-  export let Hst
+  const { Hst } = $props()
 
   const initState = () => ({ count: 0 })
 
