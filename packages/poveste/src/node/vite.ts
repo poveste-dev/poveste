@@ -26,6 +26,7 @@ import {
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
+import { collapseVendoredVue } from './vendors.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -191,6 +192,14 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           ],
           alias: {
             'poveste-style': join(APP_PATH, process.env['POVESTE_DEV'] ? 'app/style/main.pcss' : 'style.css'),
+            // `dedupe` above cannot reach this one: the chrome's Vue is installed
+            // under a different name, and dedupe matches on the name (#1060).
+            //
+            // Not under `POVESTE_DEV`. That path already aliases bare `vue` to
+            // `@poveste/vendors/vue`, so sending `poveste-vue` back to `vue` would
+            // point the vendored entry at itself — the empty re-export its own
+            // comment warns about.
+            ...(isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })),
           },
           ...(isServer
             ? {
