@@ -48,25 +48,70 @@ export function outsideFences(lines: string[]): boolean[] {
   })
 }
 
+// The divider above the inherited histoire history, at whatever heading level it
+// is written. It is `#` in the file and this predicate required `##`, which was
+// the spec fixture's level and not the file's — so the branch never fired where
+// it mattered, and `v0.1.0` published the divider and its paragraph as part of
+// its notes. Locating this line reliably is also what tells the two halves of
+// the file apart, which is the whole of #1071.
+const INHERITED_HEADING = /^#{1,6} +Inherited histoire changelog/
+
+function dividerIn(lines: string[], live: boolean[]): number {
+  return lines.findIndex((line, index) => live[index] && INHERITED_HEADING.test(line))
+}
+
 // Only a release boundary ends a section: the next version, or the divider above
 // the inherited histoire history. Ending at any `## ` instead meant an h2 written
 // inside a section silently truncated the release body — see `strayHeadings`,
 // which turns that into a refusal.
 function endsSection(line: string): boolean {
-  return /^## v\d/.test(line) || line.startsWith('## Inherited')
+  return /^## v\d/.test(line) || INHERITED_HEADING.test(line)
+}
+
+/** Every line a version's heading is written on, 1-based, per half of the file. */
+export interface HeadingSites {
+  poveste: number[]
+  inherited: number[]
+}
+
+/*
+ * Poveste restarted at `0.1.0` and histoire's numbers run higher, so a poveste
+ * version usually has a histoire heading as well — every version from v0.16.3 to
+ * v0.17.17 did at 0.16.2. Taking the first match handed back histoire's section
+ * for a version poveste had not written up, and exited 0, so `release.yml`
+ * published another project's notes to every watcher (#1071).
+ *
+ * Which half a heading is in is the answer, not how many there are: one match in
+ * the inherited half is a missing section, and two in poveste's own half is a
+ * duplicate nobody can resolve for the caller.
+ */
+export function headingSites(changelog: string, version: string): HeadingSites {
+  const heading = `## ${normalizeVersion(version)}`
+  const lines = changelog.split('\n')
+  const live = outsideFences(lines)
+  const divider = dividerIn(lines, live)
+  const sites: HeadingSites = { poveste: [], inherited: [] }
+  lines.forEach((line, index) => {
+    if (!live[index] || line.trim() !== heading) {
+      return
+    }
+    const half = divider !== -1 && index > divider ? sites.inherited : sites.poveste
+    half.push(index + 1)
+  })
+  return sites
 }
 
 // From the heading to the next release boundary. The heading itself is dropped —
 // the release is already titled with the version.
 export function sectionFor(changelog: string, version: string): string | undefined {
-  const heading = `## ${normalizeVersion(version)}`
-  const lines = changelog.split('\n')
-  const live = outsideFences(lines)
-  const start = lines.findIndex((line, index) => live[index] && line.trim() === heading)
-  if (start === -1) {
+  const [site, ...rest] = headingSites(changelog, version).poveste
+  if (site === undefined || rest.length > 0) {
     return undefined
   }
 
+  const lines = changelog.split('\n')
+  const live = outsideFences(lines)
+  const start = site - 1
   const next = lines.findIndex((line, index) => index > start && live[index] && endsSection(line))
   const end = next === -1 ? lines.length : next
 
@@ -138,8 +183,14 @@ export function freezeWarning(subjects: string[]): string[] {
   ]
 }
 
+// Poveste's own, which is what the caller offers as "sections present". The
+// inherited half holds histoire's releases too, and naming those would point a
+// reader at the wrong half of the file while they are trying to add a section.
 export function releasedVersions(changelog: string): string[] {
-  return [...changelog.matchAll(/^## (v\d\S*)\s*$/gm)].map(match => captured(match))
+  const lines = changelog.split('\n')
+  const divider = dividerIn(lines, outsideFences(lines))
+  const own = (divider === -1 ? lines : lines.slice(0, divider)).join('\n')
+  return [...own.matchAll(/^## (v\d\S*)\s*$/gm)].map(match => captured(match))
 }
 
 /**
@@ -185,8 +236,24 @@ function main(): void {
   }
 
   if (!section) {
+    const sites = headingSites(changelog, version)
+
+    // Naming both lines is the whole value of refusing here. Taking one of them
+    // is what let this reach a published body, and a reader cannot act on
+    // "ambiguous" without being told where the other one is.
+    if (sites.poveste.length > 1) {
+      console.error(`::error::${CHANGELOG} has ${sites.poveste.length} sections for ${normalizeVersion(version)}, at lines ${sites.poveste.join(' and ')}`)
+      console.error(`\nOne of them would be published as the release body and this script cannot tell which. Remove or renumber the duplicate.`)
+      process.exit(1)
+      return
+    }
+
     const known = releasedVersions(changelog).slice(0, 5).join(', ')
     console.error(`::error::${CHANGELOG} has no section for ${normalizeVersion(version)}`)
+    if (sites.poveste.length === 0 && sites.inherited.length > 0) {
+      console.error(`\nThere is a ${normalizeVersion(version)} heading at line ${sites.inherited.join(' and ')}, in the inherited histoire changelog — histoire released this version too.`)
+      console.error(`That is not poveste's section, and publishing it would email every watcher another project's release notes.`)
+    }
     console.error(`\nThe GitHub release body is this section, and the release notification is sent with it — so there is no fixing it afterwards.`)
     console.error(`Add the section to ${CHANGELOG} before cutting the tag. Newest sections present: ${known}`)
     process.exit(1)
