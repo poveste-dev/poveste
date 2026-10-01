@@ -1,12 +1,13 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempDisposableSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
 import { hasDesignSystemLoader, isTailwindEntry, resolveDesignSystemLoader, TAILWIND_V4_REQUIRED } from './index.js'
 
 function cssFile(contents: string) {
-  const dir = mkdtempSync(join(tmpdir(), 'poveste-tw-'))
-  const file = join(dir, 'entry.css')
+  const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-tw-'))
+  onTestFinished(() => dir.remove())
+  const file = join(dir.path, 'entry.css')
   writeFileSync(file, contents)
   return file
 }

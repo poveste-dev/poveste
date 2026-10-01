@@ -1,16 +1,20 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempDisposableSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, describe, expect, it } from 'vitest'
 import { createPool } from '../collect/pool.js'
 import { DONE, FAILED, TASK } from '../collect/task.js'
 
-const dir = mkdtempSync(join(tmpdir(), 'poveste-pool-'))
+const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-pool-'))
+
+// Module scope, so there is no block for `using` to end: the file itself is the
+// lifetime, and every worker written below lives in here.
+afterAll(() => dir.remove())
 const pools: { destroy: () => Promise<void> }[] = []
 
 /** Writes a worker that answers on the same protocol the collector's does. */
 function workerFile(name: string, body: string) {
-  const file = join(dir, `${name}.mjs`)
+  const file = join(dir.path, `${name}.mjs`)
   writeFileSync(file, `
 import { parentPort } from 'node:worker_threads'
 const TASK = ${JSON.stringify(TASK)}
