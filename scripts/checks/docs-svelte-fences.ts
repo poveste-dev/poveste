@@ -59,8 +59,14 @@ export function fencesIn(file: string, markdown: string): Fence[] {
  * the marker the page already writes, rather than the filename, keeps that narrow:
  * the Poveste half of the same page is held to runes like everything else, and a
  * fence that loses its marker stops being exempt.
+ *
+ * Anchored to the fence's opening line, with no `m` flag. Matching at any line
+ * start exempted the whole fence wherever the marker sat, so a fence of Poveste
+ * code that merely mentioned the marker — a trailing label, an inline note — was
+ * silently excluded from runes checking, which is not what the paragraph above
+ * promises.
  */
-const LEGACY_MARKER = /^\s*<!--\s*histoire\s*-->/m
+const LEGACY_MARKER = /^\s*<!--\s*histoire\s*-->/
 
 export function fenceProblems(fences: Fence[]): string[] {
   return fences.flatMap(({ file, index, source }) => {

@@ -19,11 +19,13 @@ Stories are svelte files ending with `.story.svelte`. Add a `Hst` prop so povest
 ```
 
 ::: tip Runes mode, and why the examples use `$props()`
-`const { Hst } = $props()` is the runes form, and it compiles **whether or not your project is in runes mode** — which is why every example on this page uses it.
+`const { Hst } = $props()` is the runes form, and it is the one declaration that compiles in **either** kind of project — which is why every example on this page uses it.
 
 A project scaffolded by the current `sv create` is in runes mode: it sets `compilerOptions.runes` in `vite.config.ts` for every file outside `node_modules`. There `export let Hst` is a hard compile error — `Cannot use \`export let\` in runes mode` — so a story written the older way does not build.
 
-`export let Hst` is still correct in a project that has not opted in, and existing stories do not need rewriting. Only the runes form works in both.
+**Using a rune puts the whole file in runes mode**, even in a project that has not opted in, so the rest of that story file has to be runes too. In practice a story declares `Hst` and an `initState` and nothing else, and both are fine. But if the file also uses `$:` or `$$props`, those stop compiling when you change the declaration — `$:` becomes `$derived` or `$effect`, and `$$props` has no equivalent you want in a story.
+
+So `export let Hst` is still correct in a project that has not opted in, and an existing story that works needs no rewriting. Change the declaration when you are ready to make the file runes, or when your project has opted in and you have no choice.
 :::
 
 ::: tip

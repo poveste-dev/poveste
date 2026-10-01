@@ -55,11 +55,13 @@ describe('a fence written the legacy way', () => {
     expect(fenceProblems([{ file: 'docs/guide/migration-from-histoire.md', index: 1, source: marked }])).toEqual([])
   })
 
-  it('stops being allowed if the marker goes', () => {
-    const marked = `<!-- histoire -->\n${LEGACY}`
+  // Was `marked.replace(marker, '')`, which is just `LEGACY` again — the same
+  // input as the test above, so it could not tell an over-broad marker from a
+  // correct one. The marker's position is the thing worth asserting.
+  it('is not allowed when the marker is somewhere other than the opening line', () => {
+    const trailing = `${LEGACY}<!-- histoire -->\n`
 
-    expect(fenceProblems([{ file: 'docs/guide/migration-from-histoire.md', index: 1, source: marked.replace('<!-- histoire -->\n', '') }]))
-      .toHaveLength(1)
+    expect(fenceProblems([{ file: 'docs/guide/svelte/stories.md', index: 1, source: trailing }])).toHaveLength(1)
   })
 
   it('does not exempt the poveste half of the same page', () => {
