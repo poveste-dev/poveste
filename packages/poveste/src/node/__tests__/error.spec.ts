@@ -1,4 +1,5 @@
 import { MessageChannel } from 'node:worker_threads'
+import { JSDOM } from 'jsdom'
 import { describe, expect, it } from 'vitest'
 import { deserializeError, serializeError } from '../collect/error.js'
 
@@ -81,6 +82,53 @@ describe('serializeError', () => {
     expect(received.message).toBe('Unexpected token')
     expect(received.frame).toBe('1 | <template>')
     expect(received.retry).toBeUndefined()
+  })
+
+  it('carries a jsdom DOMException, which is not a genuine error object', async () => {
+    /*
+     * What a story's own DOM call throws — an invalid selector, an invalid
+     * `appendChild`. Two things have to be true at once for this to be lost, and
+     * both are true of the collection environment (#1097):
+     *
+     * `runScripts: 'dangerously'`, as `createDomEnv` sets, makes jsdom a separate
+     * realm, so the exception fails `instanceof Error` against this one. And
+     * jsdom's `DOMException` is a webidl2js object rather than a genuine error, so
+     * `Error.isError` is false for it too — which is why the predicate here cannot
+     * be either of those. Its name and message live in internal slots and its
+     * `stack` is non-enumerable, so a clone of it retains nothing at all, and the
+     * host received `{}`.
+     *
+     * Without `runScripts` the same call is an ordinary Node-realm object and
+     * `instanceof Error` is true, which is how this reads as working.
+     */
+    const dom = new JSDOM('<!DOCTYPE html>', { runScripts: 'dangerously' })
+    let thrown: unknown
+    try {
+      dom.window.document.querySelector('[[[')
+    }
+    catch (error) {
+      thrown = error
+    }
+
+    const received = await roundTrip(thrown) as Error
+
+    // Being a real `Error` on arrival is what the printing path depends on:
+    // `collect/index.ts` asks `e instanceof Error` before it reaches for a stack,
+    // and this is what makes that true without changing it.
+    expect(received).toBeInstanceOf(Error)
+    expect(received.name).toBe('SyntaxError')
+    expect(received.message).toContain('Invalid selector')
+    expect(received.stack).toBe((thrown as Error).stack)
+  })
+
+  it('leaves an object that only carries a name and a message as the data it is', async () => {
+    // The boundary of the predicate above, and the reason it asks for a `stack`
+    // too: `{ name, message }` is a shape a story may legitimately throw, and it
+    // should arrive as itself rather than rebuilt into an `Error`.
+    const received = await roundTrip({ name: 'nope', message: 'still data' })
+
+    expect(received).not.toBeInstanceOf(Error)
+    expect(received).toEqual({ name: 'nope', message: 'still data' })
   })
 
   it('passes a non-error through, and stringifies one a clone would reject', async () => {
