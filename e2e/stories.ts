@@ -49,6 +49,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-story-setup-app', title: 'Story setup app' },
   { id: 'conformance-story-setup-app-implicit', title: 'Story setup app, implicit' },
   { id: 'conformance-tall-story', title: 'Tall story' },
+  { id: 'conformance-throws', title: 'Throws' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
 
@@ -129,6 +130,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'Sub Story 1',
   'Sub Story 2',
   'Tall story',
+  'Throws',
   'With sass',
   'Wrapper',
   '🐱 Meow',
