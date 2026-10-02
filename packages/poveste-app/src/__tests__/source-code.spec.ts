@@ -2,32 +2,54 @@ import type { Story, Variant } from '../app/types'
 import { describe, expect, it, vi } from 'vitest'
 import { getSourceCode } from '../app/util/docs'
 
-const generated = vi.hoisted(() => ({ value: undefined as string | undefined }))
+const plugin = vi.hoisted(() => ({ generateSourceCode: (() => undefined) as (variant: unknown) => unknown, loads: 0 }))
 
 vi.mock('virtual:$poveste-support-plugins-client', () => ({
   clientSupportPlugins: {
-    framework: async () => ({ generateSourceCode: async () => generated.value }),
+    framework: async () => {
+      plugin.loads++
+      return { generateSourceCode: (variant: unknown) => plugin.generateSourceCode(variant) }
+    },
   },
 }))
 
-function storyWithFile(text: string) {
-  return { file: { supportPluginId: 'framework', source: async () => ({ default: text }) } } as unknown as Story
+const FILE = '<Story title="Grid" />'
+
+function storyWithFile() {
+  return { file: { supportPluginId: 'framework', source: async () => ({ default: FILE }) } } as unknown as Story
 }
 
 describe('getSourceCode with a framework plugin', () => {
-  it('returns the story file when the plugin generates nothing', async () => {
-    generated.value = undefined
+  it('returns the story file when the plugin returns nothing synchronously, as plugin-svelte does', async () => {
+    plugin.generateSourceCode = () => undefined
 
-    const source = await getSourceCode(storyWithFile('<Story title="Grid" />'), {} as Variant)
+    const source = await getSourceCode(storyWithFile(), {} as Variant)
 
-    expect(source).toBe('<Story title="Grid" />')
+    expect(source).toBe(FILE)
+  })
+
+  it('returns the story file when the plugin resolves to an empty string', async () => {
+    plugin.generateSourceCode = async () => ''
+
+    const source = await getSourceCode(storyWithFile(), {} as Variant)
+
+    expect(source).toBe(FILE)
   })
 
   it('prefers what the plugin generates', async () => {
-    generated.value = '<Button />'
+    plugin.generateSourceCode = async () => '<Button />'
 
-    const source = await getSourceCode(storyWithFile('<Story title="Grid" />'), {} as Variant)
+    const source = await getSourceCode(storyWithFile(), {} as Variant)
 
     expect(source).toBe('<Button />')
+  })
+
+  it('returns a variant\'s declared source without loading the plugin', async () => {
+    plugin.loads = 0
+
+    const source = await getSourceCode(storyWithFile(), { source: '<Declared />' } as Variant)
+
+    expect(source).toBe('<Declared />')
+    expect(plugin.loads).toBe(0)
   })
 })

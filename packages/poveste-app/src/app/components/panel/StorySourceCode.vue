@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import type { HighlighterCore } from 'shiki/core'
+import type { GenerateSourceCode } from 'virtual:$poveste-support-plugins-client'
 import type { Story, Variant } from '../../types'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon, HstTooltip } from '@poveste/controls'
-import { unindent } from '@poveste/shared'
-import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { isDark } from '../../util/dark'
+import { getDynamicSourceCode, getStaticSourceCode, loadGenerateSourceCode } from '../../util/docs'
 import { getHighlighter } from '../../util/highlighter'
 import BaseEmpty from '../base/BaseEmpty.vue'
 
@@ -17,14 +17,12 @@ const props = defineProps<{
 
 // `ref(null)` infers `Ref<null>`, so the assignment below and the call further
 // down were both errors about a type nobody meant to declare.
-const generateSourceCodeFn = shallowRef<((variant: Variant) => Promise<string>) | null>(null)
+const generateSourceCodeFn = shallowRef<GenerateSourceCode | null>(null)
 
 watchEffect(async () => {
-  const supportPluginId = props.story.file?.supportPluginId
-  const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
-  if (clientPlugin) {
-    const pluginModule = await clientPlugin()
-    generateSourceCodeFn.value = markRaw(pluginModule.generateSourceCode)
+  const generate = await loadGenerateSourceCode(props.story)
+  if (generate) {
+    generateSourceCodeFn.value = markRaw(generate)
   }
 })
 
@@ -43,18 +41,7 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
   error.value = null
   dynamicSourceCode.value = ''
   try {
-    if (props.variant.source) {
-      dynamicSourceCode.value = props.variant.source
-    }
-    else if (props.variant.slots?.().source) {
-      const source = props.variant.slots?.().source()[0].children
-      if (source) {
-        dynamicSourceCode.value = await unindent(source)
-      }
-    }
-    else {
-      dynamicSourceCode.value = await generateSourceCodeFn.value(props.variant)
-    }
+    dynamicSourceCode.value = (await getDynamicSourceCode(props.variant, generateSourceCodeFn.value)) ?? ''
   }
   catch (e) {
     console.error(e)
@@ -75,10 +62,7 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
 const staticSourceCode = ref('')
 watch(() => [props.story, props.story?.file?.source], async () => {
   staticSourceCode.value = ''
-  const sourceLoader = props.story.file?.source
-  if (sourceLoader) {
-    staticSourceCode.value = (await sourceLoader()).default
-  }
+  staticSourceCode.value = (await getStaticSourceCode(props.story)) ?? ''
 }, {
   immediate: true,
 })
