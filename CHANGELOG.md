@@ -10,7 +10,7 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **Node 22 is no longer supported. Every published package now requires Node `>=24.15.0`.**
 
-It is a `minor`, not a patch: the range carries breaking changes — the supported Node floor moves, and `escapeRegExp` is removed from `@poveste/shared`. **Read the Upgrading notes at the end of this section before you install**, because on an unsupported Node npm does not fail by default: it quietly installs a much older Poveste.
+It is a `minor`, not a patch: the range carries breaking changes — the supported Node floor moves, and `escapeRegExp` is removed from `@poveste/shared`. **Read the Upgrading notes at the end of this section before you install**, because on an unsupported Node npm does not fail by default: it quietly installs an older Poveste instead.
 
 ### 🚨 Breaking Changes
 
@@ -48,7 +48,7 @@ It is a `minor`, not a patch: the range carries breaking changes — the support
 
 **Upgrade Node to 24.15.0 or newer before you install.** That is the whole of the work, and there is nothing else to change: no configuration key moved, no option was renamed, and stories that worked on 0.16.2 work here unchanged.
 
-**If you stay on Node 22 or on Node 24.0–24.14, npm will not tell you.** Unless you have `engine-strict=true`, npm resolves past every version whose `engines.node` refuses your Node and installs the newest one that accepts it — which is `poveste@0.6.1`, published before the field existed. You get a deprecation notice and no error, and a Poveste many releases old. Nothing we publish can change where that lands, because the version it lands on predates the mechanism. **If you cannot move off Node 22 yet, pin `poveste@0.16.2`.** It is the last release that supports Node 22, and it installs cleanly there with or without `engine-strict` — so this is a working path, not a least-bad one. The Node version that ends the need for the pin is `24.15.0`.
+**If you stay on Node 22 or on Node 24.0–24.14, npm will not tell you.** Unless you have `engine-strict=true`, npm resolves past every version whose `engines.node` refuses your Node and installs the newest one that accepts it. On Node 22.22.2 or newer, and on Node 24.0 through 24.14, that is **`poveste@0.16.2`** — one release behind this one, and the last that supports Node 22. You get a deprecation notice and no error. On a Node 22 *older* than 22.22.2 it lands much further back: `0.16.0` through `0.16.2` declare `>=22.22.2`, and every release from `0.7.0` to `0.15.0` declares `^22.22.2 || ^24.15.0 || >=26.0.0`, so all of them refuse that Node too and npm reaches **`poveste@0.6.1`**, published before the `engines` field existed at all. **If you cannot move off Node 22 yet, pin `poveste@0.16.2`** rather than relying on where the walk-back happens to stop. It installs cleanly on Node 22.22.2 or newer with or without `engine-strict` — so this is a working path, not a least-bad one. The Node version that ends the need for the pin is `24.15.0`.
 
 **If you import `escapeRegExp` from `@poveste/shared`,** replace it with `RegExp.escape`. It takes the same argument and returns an equivalent pattern.
 
