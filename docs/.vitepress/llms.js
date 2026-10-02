@@ -11,6 +11,11 @@ const { join, posix } = require('node:path')
 // drops out of this sentence on its own.
 const UNSUPPORTED = ['React', 'Angular', 'Preact', 'Lit', 'Qwik']
 
+// A framework whose plugin does less than the others says so wherever it is
+// listed beside them. Solid renders stories but has no controls until #1114 and
+// #1110; its entry goes when they land.
+const QUALIFIED = { Solid: 'renderer only' }
+
 // The plugins a reader can install. Every public package publishes in lockstep and
 // the site serves `main`, which only moves at a release, so a plugin listed here is
 // on npm by the time poveste.dev serves this file.
@@ -71,12 +76,13 @@ function llmsSections(nav, sidebar) {
 function preamble(nav, version) {
   const supported = navGroup(nav, 'Frameworks').items.map(item => item.text)
   const unsupported = UNSUPPORTED.filter(name => !supported.includes(name))
+  const named = supported.map(name => (QUALIFIED[name] ? `${name} (${QUALIFIED[name]})` : name))
   return [
     '# Poveste',
     '',
     '> Interactive component playgrounds, built with Vite from story files: a maintained, drop-in fork of histoire.',
     '',
-    `Supported frameworks: ${list(supported)}.${unsupported.length ? ` ${list(unsupported)} have no plugin, so their components cannot be written as stories.` : ''}`,
+    `Supported frameworks: ${list(named)}.${unsupported.length ? ` ${list(unsupported)} have no plugin, so their components cannot be written as stories.` : ''}`,
     '',
     `Current version: ${version}. Install \`poveste\` and the plugin for your framework at the same version.`,
     '',
