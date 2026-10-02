@@ -1,0 +1,82 @@
+{
+  "name": "@poveste/plugin-solid",
+  "type": "module",
+  "version": "0.16.2",
+  "description": "Poveste plugin for SolidJS support",
+  "author": {
+    "name": "Sorin Gitlan",
+    "url": "https://x.com/50rayn"
+  },
+  "license": "MIT",
+  "homepage": "https://poveste.dev",
+  "repository": {
+    "url": "https://github.com/poveste-dev/poveste.git",
+    "type": "git",
+    "directory": "packages/poveste-plugin-solid"
+  },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
+  "keywords": [
+    "poveste",
+    "histoire",
+    "storybook",
+    "component-playground",
+    "component-explorer",
+    "stories",
+    "styleguide",
+    "design-system",
+    "vite",
+    "solid",
+    "solidjs",
+    "plugin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./collect": {
+      "types": "./dist/collect/index.d.ts",
+      "default": "./dist/collect/index.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc -d",
+    "watch": "tsc -d -w --sourceMap",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "poveste": "workspace:^",
+    "solid-js": "^1.9.0",
+    "vite-plugin-solid": "^2.11.0"
+  },
+  "dependencies": {
+    "@poveste/shared": "workspace:^",
+    "@poveste/vendors": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "jsdom": "^30.1.1",
+    "poveste": "workspace:*",
+    "solid-js": "^1.9.15",
+    "typescript": "catalog:",
+    "vite": "^8.3.1",
+    "vite-plugin-solid": "^2.11.14",
+    "vitest": "catalog:"
+  }
+}

@@ -38,6 +38,7 @@ CORE_PACKAGES=(
 PLUGIN_PACKAGES=(
   "poveste-plugin-vue"
   "poveste-plugin-svelte"
+  "poveste-plugin-solid"
   "poveste-plugin-quasar"
   "poveste-plugin-nuxt"
   "poveste-plugin-tailwind"
@@ -287,6 +288,57 @@ install_and_build svelte "$SVELTE_APP" \
   "$(plugin_tgz poveste-plugin-svelte)" \
   "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
   "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
+
+# ── Solid ────────────────────────────────────────────────────────────────────
+
+SOLID_APP="$WORK/solid"
+mkdir -p "$SOLID_APP/src"
+
+echo "▸ Scaffolding Solid consumer project → $SOLID_APP"
+consumer_package_json "$SOLID_APP" solid
+
+cat > "$SOLID_APP/poveste.config.ts" <<'TS'
+import { HstSolid } from '@poveste/plugin-solid'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstSolid()],
+  storyMatch: ['**/*.story.tsx'],
+})
+TS
+
+cat > "$SOLID_APP/vite.config.ts" <<'TS'
+import { defineConfig } from 'vite'
+import solid from 'vite-plugin-solid'
+
+export default defineConfig({
+  plugins: [solid()],
+})
+TS
+
+cat > "$SOLID_APP/src/Button.tsx" <<'TSX'
+export function Button(props: { label: string }) {
+  return <button type="button">{props.label}</button>
+}
+TSX
+
+# Collection imports this file in Node, and the JSX inside `render` compiles to a
+# module-level `template()` that Solid's server build refuses — which is the
+# failure the plugin's browser-build aliases exist for.
+cat > "$SOLID_APP/src/Button.story.tsx" <<'TSX'
+import { defineStory } from '@poveste/plugin-solid'
+import { Button } from './Button'
+
+export default defineStory({
+  title: 'Button',
+  variants: [{ title: 'default', render: () => <Button label="Click me" /> }],
+})
+TSX
+
+install_and_build solid "$SOLID_APP" \
+  "$(plugin_tgz poveste-plugin-solid)" \
+  "solid-js@$(peer_range poveste-plugin-solid solid-js)" vite@^8.0.0 \
+  "vite-plugin-solid@$(peer_range poveste-plugin-solid vite-plugin-solid)"
 
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
@@ -562,4 +614,4 @@ install_and_build percy "$WORK/percy" \
 #
 # Percy stays: its puppeteer is optional, and its pass is green on a CI runner.
 
-echo "✅ Smoke test passed — vue, svelte, quasar, nuxt, tailwind, percy"
+echo "✅ Smoke test passed — vue, svelte, solid, quasar, nuxt, tailwind, percy"

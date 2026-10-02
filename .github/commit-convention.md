@@ -23,7 +23,7 @@ Package names first, then the areas that are not packages:
 | | |
 | --- | --- |
 | **Packages** | `app` · `controls` · `node` · `shared` · `vendors` |
-| **Framework surfaces** | `vue` · `svelte` · `nuxt` · `quasar` · `percy` · `screenshot` · `tailwind` |
+| **Framework surfaces** | `vue` · `svelte` · `solid` · `nuxt` · `quasar` · `percy` · `screenshot` · `tailwind` |
 | **Everything else** | `repo` · `ci` · `docs` · `guide` · `examples` · `e2e` · `deps` |
 
 A framework surface is the plugin package *and* the example books that teach it, the same span as the matching `a:` label — so `fix(nuxt)`, not `fix(plugin-nuxt)`, and `fix(svelte)` for a defect in the SvelteKit example's own source.
