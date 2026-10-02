@@ -34,8 +34,17 @@ while (true) {
 
 const browser = await chromium.launch()
 const vues = new Set()
+// Printed only on failure: what the browser said, which the server log cannot.
+const said = []
+let page
 try {
-  const page = await browser.newPage()
+  page = await browser.newPage()
+  page.on('pageerror', error => said.push(`pageerror: ${error.message}`))
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') {
+      said.push(`console.${message.type()}: ${message.text()}`)
+    }
+  })
   // Diagnostic only: which Vue modules were served, across the host and the frame.
   page.on('response', (response) => {
     const { pathname } = new URL(response.url())
@@ -53,6 +62,11 @@ catch (error) {
   console.error(`the story at ${path} did not render "${expected}" in the preview frame`)
   console.error(`Vue served as ${[...vues].join(', ') || '(none matched)'}`)
   console.error(error.message)
+  const frame = await page?.$('[data-testid="preview-iframe"]').then(handle => handle?.contentFrame())
+  console.error(`at ${page?.url()}: ${await page?.locator('iframe').count()} iframe(s); the frame shows ${JSON.stringify((await frame?.evaluate(() => (document.querySelector('#app') ?? document.body)?.textContent))?.slice(0, 200) ?? null)}`)
+  for (const line of said.slice(-20)) {
+    console.error(`  ${line}`)
+  }
   process.exitCode = 1
 }
 finally {
