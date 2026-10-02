@@ -160,7 +160,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [vue, nuxt, svelte, sveltekit, vue-tailwind, vike, quasar, solid, sveltekit3]
+        example: [vue, nuxt, svelte, sveltekit, vue-tailwind, vike, quasar, solid, sveltekit3, react]
     name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v7
