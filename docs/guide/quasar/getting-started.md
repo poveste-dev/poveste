@@ -24,7 +24,7 @@ For about a day after a release, pnpm installs the **previous** version and says
 :::
 
 ::: warning Poveste needs Node `>=24.15.0`, and npm will not tell you
-Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste whose own `engines.node` accepts your Node, usually with no warning at all. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead.
+Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
 :::
 
 You need an existing Quasar project. The plugin reads the Vite config Quasar builds, so it looks for a `quasar.config` file above the current directory and fails with a message saying so if there is none.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
-import { checkVersions, citedJobProblems, collect, docsNodeProblems, engineFloorProblems, jobNames, nodeClaimProblems, nodeFloorReachProblems, parseTable, readmeRangeProblems, specMinimum, tableProblems, walkProblems } from './versions.ts'
+import { checkVersions, citedJobProblems, collect, docsNodeProblems, engineFloorProblems, jobNames, nodeClaimProblems, nodeClaims, nodeFloorReachProblems, parseTable, readmeRangeProblems, specMinimum, tableProblems, walkProblems } from './versions.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`
 // while the plugin declared `^5.46.4`, inviting a combination that cannot be
@@ -109,6 +109,22 @@ describe('nodeClaimProblems', () => {
 
   it('says nothing when the package declares no engines', () => {
     expect(nodeClaimProblems('p', 'Node `>=26`.', undefined)).toEqual([])
+  })
+
+  // It read only the first claim, so a README stating the range twice had its
+  // second statement unchecked.
+  it('checks every claim, not only the first', () => {
+    expect(nodeClaimProblems('poveste', `Node \`${engines}\`, and later Node \`>=26\`.`, engines)).toHaveLength(1)
+  })
+})
+
+describe('nodeClaims', () => {
+  it.each(['>=24.15.0', '^24.15.0', '24', 'v26.1', '>= 24.15.0'])('reads Node `%s` as a claim', (range) => {
+    expect(nodeClaims(`Poveste needs Node \`${range}\`.`)).toEqual([range])
+  })
+
+  it.each(['fs', '--experimental-strip-types', 'process.versions.node'])('reads Node `%s` as prose', (token) => {
+    expect(nodeClaims(`the Node \`${token}\` module`)).toEqual([])
   })
 })
 

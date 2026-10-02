@@ -290,12 +290,22 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
  * supported breaks nobody, which is why nothing caught it — it only costs users.
  */
 export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
-  const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
-  if (!claimed || !engines || claimed === engines) {
+  if (!engines) {
     return []
   }
 
-  return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
+  return nodeClaims(readme)
+    .filter(claimed => claimed !== engines)
+    .map(claimed => `packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`)
+}
+
+/**
+ * Every Node range a page states in prose: Node `<range>`, where the range starts
+ * with a version or an operator before one. Read that narrowly so that "the Node
+ * `fs` module" is prose rather than a claim the check would hold to a version.
+ */
+export function nodeClaims(markdown: string): string[] {
+  return [...markdown.matchAll(/Node\s+`([\s<=>^~v]*\d[^`]*)`/g)].map(match => captured(match))
 }
 
 /**
@@ -370,13 +380,12 @@ export function specMinimum(spec: string): string | undefined {
  * A `node-version:` in a recipe is executed rather than read, so it must not be
  * able to install anything under the floor: the lost-pixel recipe said `18.x`
  * three majors after the floor moved, and a reader copying it got an older
- * Poveste with only a deprecation notice (#1102, #901).
+ * Poveste from npm, whose only warning named a dependency (#1102, #901).
  */
 export function docsNodeProblems(file: string, markdown: string, engines: string): string[] {
   const problems: string[] = []
 
-  for (const match of markdown.matchAll(/Node\s+`([^`]+)`/g)) {
-    const claimed = captured(match)
+  for (const claimed of nodeClaims(markdown)) {
     if (claimed !== engines) {
       problems.push(`${file} says Node ${claimed}, but packages/poveste/package.json → engines.node says ${engines}`)
     }
@@ -402,7 +411,7 @@ export function docsNodeProblems(file: string, markdown: string, engines: string
  * that states no floor leaves that reader nothing to check (#1106).
  */
 export function nodeFloorReachProblems(file: string, markdown: string): string[] {
-  if (!/^docs\/guide\/[^/]+\/getting-started\.md$/.test(file) || /Node\s+`[^`]+`/.test(markdown)) {
+  if (!/^docs\/guide\/[^/]+\/getting-started\.md$/.test(file) || nodeClaims(markdown).length > 0) {
     return []
   }
   return [`${file} does not state the Node floor, and it is a page a reader installs from`]
