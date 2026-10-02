@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDefaultConfig, loadConfigFile, mergeConfig, resolveConfigFile } from '../config.js'
+import { getDefaultConfig, loadConfigFile, mergeConfig, processDefaultConfig, resolveConfigFile } from '../config.js'
 
 // `mergeConfig(user, defaults)`: defu-style, the first argument wins.
 describe('mergeConfig', () => {
@@ -28,7 +28,34 @@ describe('mergeConfig', () => {
   })
 })
 
-// `resolveConfigFile` is the whole of the drop-in promise the migration guide
+// A framework plugin's story glob joins core's, and a user's still replaces both
+// (#1124). Solid shipped without one because the merger would have dropped
+// `.story.vue` from any book that had both.
+describe('a plugin\'s storyMatch', () => {
+  const solidLike = { name: 'solid-like', defaultConfig: () => ({ storyMatch: ['**/*.story.tsx'] }) }
+
+  it('adds to core\'s defaults rather than replacing them', async () => {
+    const config = await processDefaultConfig(getDefaultConfig(), { plugins: [solidLike] }, 'dev', '/')
+
+    expect(config.storyMatch).toEqual([...getDefaultConfig().storyMatch, '**/*.story.tsx'])
+  })
+
+  it('does not list a glob twice when two plugins declare it', async () => {
+    const reactLike = { name: 'react-like', defaultConfig: () => ({ storyMatch: ['**/*.story.tsx'] }) }
+
+    const config = await processDefaultConfig(getDefaultConfig(), { plugins: [solidLike, reactLike] }, 'dev', '/')
+
+    expect(config.storyMatch.filter(glob => glob === '**/*.story.tsx')).toHaveLength(1)
+  })
+
+  it('is replaced by a user\'s storyMatch, which can still narrow', async () => {
+    const defaults = await processDefaultConfig(getDefaultConfig(), { plugins: [solidLike] }, 'dev', '/')
+
+    expect(mergeConfig({ storyMatch: ['src/**/*.story.tsx'] }, defaults).storyMatch).toEqual(['src/**/*.story.tsx'])
+  })
+})
+
+// `resolveConfigFile` is the whole of the drop-in promise// `resolveConfigFile` is the whole of the drop-in promise the migration guide
 // makes twice: an existing `histoire.config.ts` keeps working, and a
 // `poveste.config.ts` beside it wins. Nothing exercised either before #336.
 describe('resolveConfigFile', () => {
