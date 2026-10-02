@@ -25,11 +25,6 @@ For about a day after a release, pnpm installs the **previous** version and says
 Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
 :::
 
-<!-- Remove this block once plugins can add story patterns rather than replace them (#1124). -->
-::: warning Set `storyMatch`, or the book is empty
-Add `storyMatch: ['**/*.story.tsx']` to your Poveste config, as [below](#configuration). Without it Poveste looks only for `.story.vue` and `.story.svelte`: the build succeeds and the book is empty, and the only sign is `Built 0 stories in … — nothing matched **/*.story.vue, **/*.story.svelte`. Setting it replaces those defaults, which matters only in a book that also has Vue or Svelte stories — list their patterns too.
-:::
-
 ## Configuration
 
 Keep `vite-plugin-solid` in your Vite config — Poveste reads it, so story files compile the way your components do:
@@ -44,7 +39,7 @@ export default defineConfig({
 })
 ```
 
-Then add the plugin, and tell Poveste which files are stories:
+Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has:
 
 ```ts
 // poveste.config.ts
@@ -53,7 +48,6 @@ import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [HstSolid()],
-  storyMatch: ['**/*.story.tsx'],
 })
 ```
 
@@ -128,7 +122,6 @@ export const setupSolid = defineSetupSolid(({ addWrapper }) => {
 // poveste.config.ts
 export default defineConfig({
   plugins: [HstSolid()],
-  storyMatch: ['**/*.story.tsx'],
   setupFile: 'src/poveste.setup.tsx',
 })
 ```

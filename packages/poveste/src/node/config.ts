@@ -371,13 +371,18 @@ async function resolveConfigPlugins(config: PovesteConfig, mode: ConfigMode): Pr
   return config
 }
 
-async function processDefaultConfig(defaultConfig: PovesteConfig, preUserConfig: Partial<PovesteConfig>, mode: ConfigMode, _cwd: string): Promise<PovesteConfig> {
+export async function processDefaultConfig(defaultConfig: PovesteConfig, preUserConfig: Partial<PovesteConfig>, mode: ConfigMode, _cwd: string): Promise<PovesteConfig> {
   // Apply plugins
   for (const plugin of [...defaultConfig.plugins, ...preUserConfig.plugins ?? []]) {
     if (plugin.defaultConfig) {
       const result = await plugin.defaultConfig(defaultConfig, mode)
       if (result) {
-        defaultConfig = mergeOnto(result, defaultConfig)
+        // A plugin's story globs add to the defaults: a Solid plugin declaring
+        // `.story.tsx` must not drop `.story.vue` from a book that has both. Only
+        // here. A user's `storyMatch` still replaces, since narrowing is a
+        // legitimate use (#1124).
+        const storyMatch = result.storyMatch && [...new Set([...defaultConfig.storyMatch, ...result.storyMatch])]
+        defaultConfig = mergeOnto(storyMatch ? { ...result, storyMatch } : result, defaultConfig)
       }
     }
   }
