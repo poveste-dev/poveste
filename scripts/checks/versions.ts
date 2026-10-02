@@ -10,6 +10,9 @@
 // The policy those docs state is "if a range is wider than the CI job behind
 // it, the range is the bug". This script is that policy, enforced.
 //
+// Every Node version stated anywhere in `docs/` is held to the same range, and
+// each per-framework getting-started page has to state it (#1102, #1106).
+//
 // Node is checked against the published `engines.node`, not `.node-version`:
 // the table states what a consumer needs, while `.node-version` pins the
 // toolchain contributors and the release build use. They are allowed to differ
@@ -20,6 +23,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { compareVersions, hardcodedNodeVersions, lowestVersion } from './node-versions.ts'
 import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
@@ -286,12 +290,22 @@ export function citedJobProblems(file: string, markdown: string, jobs: Set<strin
  * supported breaks nobody, which is why nothing caught it — it only costs users.
  */
 export function nodeClaimProblems(pkg: string, readme: string, engines: string | undefined): string[] {
-  const claimed = readme.match(/Node\s+`([^`]+)`/)?.[1]
-  if (!claimed || !engines || claimed === engines) {
+  if (!engines) {
     return []
   }
 
-  return [`packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`]
+  return nodeClaims(readme)
+    .filter(claimed => claimed !== engines)
+    .map(claimed => `packages/${pkg}/README.md says Node ${claimed}, but its own engines.node says ${engines}`)
+}
+
+/**
+ * Every Node range a page states in prose: Node `<range>`, where the range starts
+ * with a version or an operator before one. Read that narrowly so that "the Node
+ * `fs` module" is prose rather than a claim the check would hold to a version.
+ */
+export function nodeClaims(markdown: string): string[] {
+  return [...markdown.matchAll(/Node\s+`([\s<=>^~v]*\d[^`]*)`/g)].map(match => captured(match))
 }
 
 /**
@@ -345,11 +359,71 @@ export function readmeRangeProblems(pkg: string, readme: string, peers: Record<s
   return problems
 }
 
+/**
+ * The lowest Node a `setup-node` spec can install: `^24.15.0` is 24.15.0, `18.x`
+ * is 18.0.0. Undefined for anything that is not one such version, which the
+ * caller reports rather than guesses at.
+ */
+export function specMinimum(spec: string): string | undefined {
+  const parts = spec.replace(/^(?:[~^v]|>=)/, '').split('.')
+  if (parts.length > 3) {
+    return undefined
+  }
+  const filled = [0, 1, 2].map(index => parts[index] === undefined || parts[index] === 'x' || parts[index] === '*' ? '0' : parts[index]!)
+  return filled.every(part => /^\d+$/.test(part)) ? filled.join('.') : undefined
+}
+
+/**
+ * Every Node version a page in `docs/` states, held to the published `engines.node`.
+ *
+ * A prose claim, Node `<range>`, must be the range itself, as a package README's is.
+ * A `node-version:` in a recipe is executed rather than read, so it must not be
+ * able to install anything under the floor: the lost-pixel recipe said `18.x`
+ * three majors after the floor moved, and a reader copying it got an older
+ * Poveste from npm, whose only warning named a dependency (#1102, #901).
+ */
+export function docsNodeProblems(file: string, markdown: string, engines: string): string[] {
+  const problems: string[] = []
+
+  for (const claimed of nodeClaims(markdown)) {
+    if (claimed !== engines) {
+      problems.push(`${file} says Node ${claimed}, but packages/poveste/package.json → engines.node says ${engines}`)
+    }
+  }
+
+  const floor = lowestVersion(engines)
+  for (const use of hardcodedNodeVersions(file, markdown)) {
+    const minimum = specMinimum(use.value)
+    if (minimum === undefined || floor === undefined) {
+      problems.push(`${file}:${use.line} sets node-version ${use.value}, which cannot be read as a version to hold against engines.node ${engines}`)
+    }
+    else if (compareVersions(minimum, floor) < 0) {
+      problems.push(`${file}:${use.line} sets node-version ${use.value}, which can install Node ${minimum}, under the ${floor} that engines.node requires`)
+    }
+  }
+
+  return problems
+}
+
+/**
+ * The per-framework getting-started pages are where a reader installs, and on a
+ * Node under the floor npm installs an older Poveste without an error. A page
+ * that states no floor leaves that reader nothing to check (#1106).
+ */
+export function nodeFloorReachProblems(file: string, markdown: string): string[] {
+  if (!/^docs\/guide\/[^/]+\/getting-started\.md$/.test(file) || nodeClaims(markdown).length > 0) {
+    return []
+  }
+  return [`${file} does not state the Node floor, and it is a page a reader installs from`]
+}
+
 export interface Walk {
   /** Workflow file contents, which `jobNames` reads the job list out of. */
   workflows: string[]
   /** Packages whose README and manifest were both readable. */
   packages: Array<{ entry: string, readme: string, manifest: any }>
+  /** Every markdown page under `docs/`, by its path from the root. */
+  docs: Array<{ file: string, markdown: string }>
 }
 
 /**
@@ -376,24 +450,37 @@ export async function collect(root = ROOT): Promise<Walk> {
     }
   }
 
-  return { workflows, packages }
+  const docs: Walk['docs'] = []
+  for (const entry of await readdir(join(root, 'docs'), { recursive: true }).catch(() => [])) {
+    if (!entry.endsWith('.md') || entry.split(/[\\/]/).some(part => part === 'node_modules' || part.startsWith('.'))) {
+      continue
+    }
+    const file = `docs/${entry.replaceAll('\\', '/')}`
+    docs.push({ file, markdown: await readFile(join(root, file), 'utf8') })
+  }
+
+  return { workflows, packages, docs }
 }
 
 /**
- * The floor: both halves of the walk reached something.
+ * The floor: every part of the walk reached something.
  *
- * Either going empty is silent on its own — no workflows means every cited job
- * resolves against an empty set, and no packages means the per-README range
- * assertions run over nothing. The tables above would still match and the
- * success line would still print a row count.
+ * Any of them going empty is silent on its own — no workflows means every cited
+ * job resolves against an empty set, no packages means the per-README range
+ * assertions run over nothing, and no docs means no stated Node is checked.
+ * The tables above would still match and the success line would still print
+ * a row count.
  */
-export function walkProblems({ workflows, packages }: Walk): string[] {
+export function walkProblems({ workflows, packages, docs }: Walk): string[] {
   const problems: string[] = []
   if (workflows.length === 0) {
     problems.push('.github/workflows held no workflow files, so every job name cited by a table would resolve against nothing')
   }
   if (packages.length === 0) {
     problems.push('packages/ held no package with both a manifest and a README, so the per-package range assertions examined nothing')
+  }
+  if (docs.length === 0) {
+    problems.push('docs/ held no markdown page, so no Node version stated in the docs was held to engines.node')
   }
   return problems
 }
@@ -411,6 +498,12 @@ async function repositoryProblems(root = ROOT): Promise<string[]> {
 
   for (const file of TABLES) {
     problems.push(...citedJobProblems(file, await readFile(join(root, file), 'utf8'), jobNames(walk.workflows)))
+  }
+
+  const engines = expected.find(({ label }) => label === 'Node')!.expected
+  for (const { file, markdown } of walk.docs) {
+    problems.push(...docsNodeProblems(file, markdown, engines))
+    problems.push(...nodeFloorReachProblems(file, markdown))
   }
 
   for (const { entry, readme, manifest } of walk.packages) {
