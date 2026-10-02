@@ -259,7 +259,7 @@ Nothing writes `CHANGELOG.md` automatically, and nothing can: it is the release 
 
 So add the new section by hand as part of release prep, before `pnpm run release`:
 
-1. Draft the entries from `git log v<previous>..HEAD --format='%s'`, grouping them the way changelogithub does — `🚨 Breaking Changes` / `🚀 Enhancements` / `🩹 Fixes` / `📖 Documentation` / `✅ Tests` / `🤖 CI` / `🏡 Chore` — and skipping anything invisible to a consumer. Only the groups you actually need.
+1. Draft the entries from `git log v<previous>..HEAD --format='%s'`, grouping them the way changelogithub does — `🚨 Breaking Changes` / `🚀 Enhancements` / `🩹 Fixes` / `📖 Documentation` / `✅ Tests` / `🤖 CI` / `🏡 Chore` — and skipping anything invisible to a consumer. Only the groups you actually need, except that a range carrying a `BREAKING CHANGE:` footer needs `🚨 Breaking Changes`: changelogithub reads only a `!` in a subject, commitlint refuses one here, so nothing generated will say the release breaks.
 2. Add a `[compare changes]` link against the previous tag.
 3. Reference PRs as `#N` where there is one, and a short commit SHA otherwise.
 

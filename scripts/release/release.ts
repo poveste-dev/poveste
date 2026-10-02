@@ -113,8 +113,8 @@ function run(command: string, args: string[]) {
   execFileSync(command, args, { stdio: 'inherit', cwd: ROOT })
 }
 
-function capture(command: string, args: string[]): string {
-  return String(execFileSync(command, args, { stdio: ['ignore', 'pipe', 'pipe'], cwd: ROOT })).trim()
+function capture(command: string, args: string[], cwd = ROOT): string {
+  return String(execFileSync(command, args, { stdio: ['ignore', 'pipe', 'pipe'], cwd })).trim()
 }
 
 const RECORD = '\u001E'
@@ -131,9 +131,9 @@ const RECORD = '\u001E'
  * Exported so the gate can be read against a real range without running a
  * release: `main` pushes once bumpp has run, so there is no dry run of it.
  */
-export function rangeCommits(from?: string, to = 'HEAD'): RangeCommit[] {
-  const previous = from ?? capture('git', ['describe', '--tags', '--abbrev=0'])
-  const log = capture('git', ['log', `${previous}..${to}`, `--format=%s%x00%b${RECORD}`])
+export function rangeCommits(from?: string, to = 'HEAD', cwd = ROOT): RangeCommit[] {
+  const previous = from ?? capture('git', ['describe', '--tags', '--abbrev=0'], cwd)
+  const log = capture('git', ['log', `${previous}..${to}`, `--format=%s%x00%b${RECORD}`], cwd)
   return log
     .split(RECORD)
     .map(entry => entry.trim())

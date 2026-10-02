@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { breakingIn, rangeCommits } from '../release/release.ts'
 import { rootFromArgv } from './publishable.ts'
 import { captured } from './support/captured.ts'
 
@@ -225,6 +226,54 @@ export function placementProblems(changelog: string): string[] {
   return problems
 }
 
+const BREAKING_HEADING = /^### 🚨 Breaking Changes\s*$/
+
+/**
+ * A breaking range with no breaking heading, as the lines to print.
+ *
+ * The section is the only place that heading can come from. The commit list
+ * `release.yml` appends is changelogithub's, which reads a breaking change from a
+ * `!` in a subject and nothing else; this repo marks them with footers, because
+ * commitlint refuses `!`. Not conditional on that ban: if `!` became legal, the
+ * generated list would gain the heading below the `---`, and a reader still meets
+ * the hand-written section first (#1103).
+ */
+export function breakingHeadingProblem(section: string, version: string, breaking: string[]): string[] {
+  const lines = section.split('\n')
+  const live = outsideFences(lines)
+  if (breaking.length === 0 || lines.some((line, index) => live[index] && BREAKING_HEADING.test(line))) {
+    return []
+  }
+  return [
+    `::error::${normalizeVersion(version)} carries a breaking change, and its ${CHANGELOG} section has no \`### 🚨 Breaking Changes\` heading`,
+    ...breaking.map(subject => `  • ${subject}`),
+    '',
+    'Nothing generated will add it. The commit list appended to the release is changelogithub\'s, which reads a breaking change only from a `!` in a subject; this repo writes them as `BREAKING CHANGE:` footers, so that list files them under their type with no marker.',
+    'Add the heading to the section and say what a consumer has to change.',
+  ]
+}
+
+/**
+ * The commits a release covers: from the previous `v` tag to this version's tag,
+ * or to `HEAD` before the tag exists. `release.yml` runs this at the tag and the
+ * release skill runs it just before, so both have to land on the same range.
+ *
+ * `undefined` when git cannot answer, which the caller reports rather than
+ * reading as "nothing breaks".
+ */
+function breakingInRelease(version: string): string[] | undefined {
+  const tag = normalizeVersion(version)
+  try {
+    const git = (args: string[]) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+    const to = git(['tag', '--list', tag]) === tag ? tag : 'HEAD'
+    const from = git(['describe', '--tags', '--abbrev=0', '--match', 'v[0-9]*', `${to}^`])
+    return breakingIn(rangeCommits(from, to, ROOT))
+  }
+  catch {
+    return undefined
+  }
+}
+
 /** `commit` in `bump.config.ts`, which is what forms the subject. */
 const RELEASE_COMMIT = /^chore: release v/
 
@@ -350,6 +399,19 @@ function main(): void {
     console.error(`Add the section to ${CHANGELOG} before cutting the tag. Newest sections present: ${known}`)
     process.exit(1)
     return
+  }
+
+  const breaking = breakingInRelease(version)
+  if (breaking === undefined) {
+    console.error(`::warning::git could not read the commits in ${normalizeVersion(version)}, so nothing checked whether the section has to say it breaks`)
+  }
+  else {
+    const problem = breakingHeadingProblem(section, version, breaking)
+    if (problem.length > 0) {
+      for (const line of problem) console.error(line)
+      process.exit(1)
+      return
+    }
   }
 
   // After the hard failures: a leaked commit is worth knowing about, but not at

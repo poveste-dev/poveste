@@ -1,8 +1,9 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { freezeWarning, headingSites, HISTOIRE_VERSIONS, normalizeVersion, placementProblems, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
+import { breakingHeadingProblem, freezeWarning, headingSites, HISTOIRE_VERSIONS, normalizeVersion, placementProblems, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
 import { tree } from './support/fixture-tree.ts'
 import { runCheck } from './support/run-check.ts'
 
@@ -216,7 +217,31 @@ describe('placementProblems', () => {
   })
 })
 
-// Both cases below silently truncated the published body// Both cases below silently truncated the published body, which is the one thing
+describe('breakingHeadingProblem', () => {
+  const breaking = ['fix: raise the Node floor to 24.15.0 and drop Node 22 (#1089)']
+
+  it('is silent when the range breaks nothing', () => {
+    expect(breakingHeadingProblem('Notes.', 'v0.18.0', [])).toEqual([])
+  })
+
+  it('is silent when the section carries the heading', () => {
+    expect(breakingHeadingProblem('Intro.\n\n### 🚨 Breaking Changes\n\n- Node 24.15.0', 'v0.18.0', breaking)).toEqual([])
+  })
+
+  it('names every breaking commit, and says the generated list will not add the heading', () => {
+    const problem = breakingHeadingProblem('Intro.\n\n### 🩹 Fixes\n\n- Node 24.15.0', 'v0.18.0', breaking)
+
+    expect(problem[0]).toBe('::error::v0.18.0 carries a breaking change, and its CHANGELOG.md section has no `### 🚨 Breaking Changes` heading')
+    expect(problem).toContain(`  • ${breaking[0]}`)
+    expect(problem.join('\n')).toContain('Nothing generated will add it')
+  })
+
+  it('does not take a heading inside a code sample for the real one', () => {
+    expect(breakingHeadingProblem('```md\n### 🚨 Breaking Changes\n```', 'v0.18.0', breaking)).toHaveLength(5)
+  })
+})
+
+// Both cases below silently truncated the published body// Both cases below silently truncated the published body// Both cases below silently truncated the published body, which is the one thing
 // about a release that cannot be corrected once the notification is sent.
 describe('a heading written inside a section', () => {
   const WITH_H2 = [
@@ -368,6 +393,50 @@ describe('the check as a process', () => {
     expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('at lines 3 and 7') })
     expect(run.stdout).toBe('')
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+  })
+
+  // A repository with one release behind it and a breaking fix since, which is
+  // the shape #1103 asks about: the gate in `release.ts` counts the footer, and
+  // nothing generated will say so in the notes.
+  function repoWithBreakingFix(changelog: string, { tagged }: { tagged: boolean }): string {
+    const root = tree({ 'CHANGELOG.md': changelog })
+    const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { cwd: root, stdio: 'ignore' })
+    git('init', '-q')
+    git('commit', '-q', '--allow-empty', '-m', 'feat: the first release')
+    git('tag', 'v0.1.0')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'fix: raise the floor\n\nBREAKING CHANGE: Node 24.15.0 or later.')
+    if (tagged) {
+      git('tag', 'v0.2.0')
+    }
+    return root
+  }
+
+  it('exits non-zero at the tag when a breaking release does not say so', () => {
+    const root = repoWithBreakingFix('# Changelog\n\n## v0.2.0\n\n### 🩹 Fixes\n\n- The floor.\n', { tagged: true })
+    const run = runCheck('checks/changelog.ts', ['0.2.0', '--root', root])
+
+    expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('  • fix: raise the floor') })
+    expect(run.stdout, 'nothing publishable may reach stdout on a refusal').toBe('')
+    expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+  })
+
+  it('exits non-zero before the tag as well, which is when the release skill runs it', () => {
+    const root = repoWithBreakingFix('# Changelog\n\n## v0.2.0\n\n- The floor.\n', { tagged: false })
+
+    expect(runCheck('checks/changelog.ts', ['0.2.0', '--root', root])).toMatchObject({ status: 1, stderr: expect.stringContaining('has no `### 🚨 Breaking Changes` heading') })
+  })
+
+  it('prints the section when a breaking release says so', () => {
+    const root = repoWithBreakingFix('# Changelog\n\n## v0.2.0\n\n### 🚨 Breaking Changes\n\n- Node 24.15.0.\n', { tagged: true })
+
+    expect(runCheck('checks/changelog.ts', ['0.2.0', '--root', root])).toMatchObject({ status: 0, stdout: expect.stringContaining('### 🚨 Breaking Changes') })
+  })
+
+  it('warns rather than passing in silence when git cannot read the range', () => {
+    const run = runCheck('checks/changelog.ts', ['0.2.0', '--root', tree({ 'CHANGELOG.md': '# Changelog\n\n## v0.2.0\n\nNotes.\n' })])
+
+    expect(run).toMatchObject({ status: 0, stderr: expect.stringContaining('nothing checked whether the section has to say it breaks') })
   })
 
   it('exits non-zero when a section carries a release-level heading', () => {
