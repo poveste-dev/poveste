@@ -24,6 +24,8 @@ export async function mountMainApp() {
   if (import.meta.hot) {
     import.meta.hot.send('poveste:mount', {})
 
-    /* #__PURE__ */ setupPluginApi()
+    // Not `#__PURE__`: the call is nothing but side effects, and that annotation
+    // let the bundler drop it, so dev never had the plugin API here (#1064).
+    setupPluginApi()
   }
 }
