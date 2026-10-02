@@ -328,6 +328,22 @@ export default defineConfig({
 })
 ```
 
+## `defaultResponsivePreset`
+
+`string` - Default: unset
+
+The `label` of the [responsive preset](#responsivepresets) a story opens at, before the reader picks a size of their own. Unset, a story opens 720 pixels wide at automatic height, which matches none of the default presets.
+
+```ts
+export default defineConfig({
+  defaultResponsivePreset: 'Mobile (Medium)',
+})
+```
+
+It names a preset rather than repeating a size, so the size is defined in one place. A label that matches no preset fails the config with the labels it could have been, rather than leaving the book at 720 without a word. If your config sets `responsivePresets`, the label is checked against those, since they replace the defaults.
+
+Like `defaultBackgroundColor`, it is applied on every load, including for readers with previously stored settings, until the reader changes the size from the toolbar or by dragging the preview. From then on their size wins.
+
 ## `backgroundPresets`
 
 `Array`

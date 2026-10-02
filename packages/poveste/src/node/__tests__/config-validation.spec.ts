@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configProblems, describeKind } from '../config-validation.js'
+import { configProblems, defaultPresetProblem, describeKind } from '../config-validation.js'
 
 // #324: `outDir: 42` reached `pathe` and became
 // `TypeError: input.replace is not a function`, naming neither Poveste, nor the
@@ -77,5 +77,28 @@ describe('the vite config path', () => {
     expect(configProblems({ outDir: 42 }, 'vite.config.ts')).toEqual([
       'vite.config.ts: `outDir` must be string, received number (42)',
     ])
+  })
+})
+
+describe('defaultPresetProblem', () => {
+  const defaults = [{ label: 'Mobile (Small)' }, { label: 'Desktop' }]
+
+  it('is silent when the label names a default preset', () => {
+    expect(defaultPresetProblem({ defaultResponsivePreset: 'Desktop' }, defaults, 'poveste.config.ts')).toBeUndefined()
+  })
+
+  it('checks against the book\'s own presets when it sets them, since they replace the defaults', () => {
+    const config = { defaultResponsivePreset: 'Desktop', responsivePresets: [{ label: 'Phone' }] }
+
+    expect(defaultPresetProblem(config, defaults, 'poveste.config.ts')).toBe('poveste.config.ts: `defaultResponsivePreset` names "Desktop", which no responsive preset is labelled. Use one of "Phone"')
+  })
+
+  it('names a label that matches nothing, and what would', () => {
+    expect(defaultPresetProblem({ defaultResponsivePreset: 'Tablet' }, defaults, 'poveste.config.ts')).toContain('Use one of "Mobile (Small)", "Desktop"')
+  })
+
+  it('leaves an unset key, and a wrongly typed one, to the type rules', () => {
+    expect(defaultPresetProblem({}, defaults, 'poveste.config.ts')).toBeUndefined()
+    expect(defaultPresetProblem({ defaultResponsivePreset: 3 }, defaults, 'poveste.config.ts')).toBeUndefined()
   })
 })

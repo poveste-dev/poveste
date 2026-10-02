@@ -31,6 +31,7 @@ const RULES: Rule[] = [
   { path: 'defaultBackgroundColor', kind: 'string' },
   { path: 'sandboxDarkClass', kind: 'string' },
   { path: 'responsivePresets', kind: 'array' },
+  { path: 'defaultResponsivePreset', kind: 'string' },
   { path: 'backgroundPresets', kind: 'array' },
   { path: 'theme.title', kind: 'string' },
   { path: 'theme.lang', kind: 'string' },
@@ -121,4 +122,24 @@ export function configProblems(config: unknown, configFile: string): string[] {
   }
 
   return problems
+}
+
+/**
+ * A `defaultResponsivePreset` that names no preset.
+ *
+ * The key names a preset by label so the size lives in one place, and the cost
+ * of that is a rename that leaves it pointing at nothing: the book would open at
+ * 720 and say nothing (#1109). A book's own `responsivePresets` replace the
+ * defaults, so those are what it is checked against when the book sets them.
+ */
+export function defaultPresetProblem(config: any, defaults: { label: string }[], configFile: string): string | undefined {
+  const label = config?.defaultResponsivePreset
+  if (typeof label !== 'string') {
+    return undefined
+  }
+  const presets: { label?: unknown }[] = Array.isArray(config.responsivePresets) ? config.responsivePresets : defaults
+  if (presets.some(preset => preset?.label === label)) {
+    return undefined
+  }
+  return `${configFile}: \`defaultResponsivePreset\` names "${label}", which no responsive preset is labelled. Use one of ${presets.map(preset => JSON.stringify(preset?.label)).join(', ')}`
 }

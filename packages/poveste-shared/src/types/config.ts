@@ -201,6 +201,11 @@ export interface PovesteConfig {
    */
   responsivePresets?: ResponsivePreset[]
   /**
+   * The `label` of the responsive preset a story opens at, until the reader picks
+   * a size of their own. Unset, a story opens 720 pixels wide at automatic height.
+   */
+  defaultResponsivePreset?: string
+  /**
    * Background color of the story preview.
    */
   backgroundPresets?: BackgroundPreset[]
