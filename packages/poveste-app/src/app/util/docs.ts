@@ -1,7 +1,9 @@
-import type { GenerateSourceCode } from 'virtual:$poveste-support-plugins-client'
+import type { ClientSupportPlugin } from '@poveste/shared'
 import type { Story, Variant } from '../types'
 import { unindent } from '@poveste/shared'
 import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
+
+export type GenerateSourceCode = ClientSupportPlugin['generateSourceCode']
 
 /** What the variant declares, or what its framework generates from it; `undefined` when neither has anything. */
 export async function getDynamicSourceCode(variant: Variant, generate: GenerateSourceCode | undefined): Promise<string | undefined> {

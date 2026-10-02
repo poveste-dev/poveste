@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { HighlighterCore } from 'shiki/core'
-import type { GenerateSourceCode } from 'virtual:$poveste-support-plugins-client'
 import type { Story, Variant } from '../../types'
+import type { GenerateSourceCode } from '../../util/docs'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon, HstTooltip } from '@poveste/controls'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
