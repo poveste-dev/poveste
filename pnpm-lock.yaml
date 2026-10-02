@@ -380,6 +380,28 @@ importers:
         specifier: 'catalog:'
         version: 8.3.1(@types/node@22.19.3)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.104.1)(sass@1.103.1)(terser@5.44.1)(yaml@2.9.1)
 
+  examples/solid:
+    dependencies:
+      solid-js:
+        specifier: ^1.9.15
+        version: 1.9.15
+    devDependencies:
+      '@poveste/plugin-solid':
+        specifier: workspace:*
+        version: link:../../packages/poveste-plugin-solid
+      poveste:
+        specifier: workspace:*
+        version: link:../../packages/poveste
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.104.1)(sass@1.105.0)(terser@5.44.1)(yaml@2.9.1)
+      vite-plugin-solid:
+        specifier: ^2.11.14
+        version: 2.11.14(solid-js@1.9.15)(supports-color@10.2.2)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.104.1)(sass@1.105.0)(terser@5.44.1)(yaml@2.9.1))
+
   examples/svelte:
     dependencies:
       svelte:
