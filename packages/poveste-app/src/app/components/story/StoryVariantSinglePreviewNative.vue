@@ -3,7 +3,7 @@ import type { Story, Variant } from '../../types'
 import { computed, watch } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { previewDarkClasses, usePreviewDark } from '../../util/color-scheme'
+import { previewDarkClasses, usePreviewColorScheme, usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getContrastColor } from '../../util/preview-settings'
 import GenericRenderStory from './GenericRenderStory.vue'
@@ -36,6 +36,7 @@ function onReady() {
 const settings = usePreviewSettingsStore().currentSettings
 
 const previewDark = usePreviewDark(settings)
+const previewColorScheme = usePreviewColorScheme(settings)
 
 const contrastColor = computed(() => getContrastColor(settings))
 const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastColor)
@@ -69,6 +70,7 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
         :story="story"
         class="h-full"
         :class="previewDark ? previewDarkClasses() : undefined"
+        :style="{ colorScheme: previewColorScheme }"
         :dir="settings.textDirection"
         @ready="onReady"
       />
