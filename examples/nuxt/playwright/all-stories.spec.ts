@@ -12,9 +12,10 @@ test.describe('stories list', () => {
     await page.localStorage.clear()
     await page.reload()
 
-    // Moves when the conformance set gains a story, the same as vue's count;
+    // Moves when a story lands at the top level, the same as vue's count — a
+    // `Conformance/…` story sits inside its folder and does not move it.
     // `/add-conformance-story` names both files.
-    await expect(page.getByTestId('story-list-item'), 'the sidebar lists a different number of stories — a story added to the conformance set moves this count').toHaveCount(38)
+    await expect(page.getByTestId('story-list-item'), 'the sidebar lists a different number of top-level stories — a story whose title has no folder moves this count').toHaveCount(38)
     // The Nuxt-specific set, kept out of the shared names so a collision with
     // vue's `BaseButton` cannot split a folder in two.
     await expect(page.locator('[data-testid="story-list-folder"] [role="button"]').filter({ hasText: 'Nuxt' })).toBeVisible()

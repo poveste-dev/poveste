@@ -26,9 +26,9 @@ Before writing anything, open an existing conformance story in each book and cop
 
 Then the spec itself in `e2e/<name>.spec.ts`.
 
-## Two counts move with it
+## Two counts, and when they move
 
-Two books assert how many stories their sidebar lists, and a story added to the contract moves both:
+Two books assert how many top-level items their sidebar lists:
 
 | | |
 | --- | --- |
@@ -37,7 +37,9 @@ Two books assert how many stories their sidebar lists, and a story added to the 
 
 They count what the sidebar renders with folders collapsed, not the contract, which is why they are literals rather than derived from `SHARED_STORIES` — the number is a property of that book's tree, and deriving it would assert less than it does.
 
-Bump both in the same change. Miss them and Playwright fails in a book you did not touch, reading `Expected: 39 / Received: 40` (#906).
+**A story titled `Conformance/…` moves neither.** The tree path comes from the title, so it lands inside the `Conformance` folder, which is already one item — `conformance-native-state` and `conformance-throws` both went in without touching these lines. Bumping them anyway fails vue with `Expected: 40 / Received: 39`.
+
+**A title with no `/` moves both by one**, because it lands at the top level as an item of its own. Bump both in the same change, or Playwright fails in a book you did not touch with `Expected: 39 / Received: 40` (#906). A title under a first segment no folder has yet adds a folder instead, which vue counts separately on `story-list-folder`.
 
 Fixtures — `quasar`, `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify` — are **not** in this contract. Adding the story to one only slows it down.
 

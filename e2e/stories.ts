@@ -49,6 +49,7 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-story-setup-app', title: 'Story setup app' },
   { id: 'conformance-story-setup-app-implicit', title: 'Story setup app, implicit' },
   { id: 'conformance-tall-story', title: 'Tall story' },
+  { id: 'conformance-throws', title: 'Throws' },
   { id: 'conformance-wrapper', title: 'Wrapper' },
 ]
 
@@ -64,11 +65,19 @@ export const SHARED_STORIES: SharedStory[] = [
  * carry fewer, which is how vue ended up as the only book exercising the
  * chrome.
  *
- * Three of vue's stories are still absent, and two wait on the plugin: the two
- * `WrapperMetaOn…` stories need `addWrapper` (#232), and `Story setup` needs
- * setup hooks that run before the story mounts and an app to register things on
- * (#234). `Tailwind` is the odd one out — it is generated from design-system
- * config rather than being a story file at all. They go in here as they land.
+ * Some of vue's stories are absent, for different reasons:
+ *
+ * - Waiting on the plugin. The two `WrapperMetaOn…` stories need `addWrapper`
+ *   (#232), and `Story setup` needs setup hooks that run before the story mounts
+ *   and an app to register things on (#234). They go in here as they land.
+ * - `Tailwind` is generated from design-system config rather than being a story
+ *   file at all.
+ * - `i18n` is framework-specific by design; Nuxt shows it through its own
+ *   `Nuxt/i18n` story (#65).
+ * - `Auto props disabled`, `Init state controls`, `State types`, `Story setup
+ *   app` and `Story setup app, implicit` are contract stories: every book is
+ *   already held to them by id in `SHARED_STORIES` above. Whether this list
+ *   should name them too is #1087.
  *
  * This list counts titles, so it cannot see a story that carries a `.story.md`
  * companion in one book and not another. Nothing does yet (#488).
@@ -129,6 +138,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'Sub Story 1',
   'Sub Story 2',
   'Tall story',
+  'Throws',
   'With sass',
   'Wrapper',
   '🐱 Meow',
