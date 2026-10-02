@@ -311,10 +311,11 @@ export function nodeClaims(markdown: string): string[] {
 /**
  * A published `engines.node` must be one `>=` floor, with nothing above it.
  *
- * npm resolves backwards when no published version satisfies the running Node: it
- * walks back to the newest release with no `engines` field at all, which for this
- * package is `0.6.1` from before the field existed, and installs it with only a
- * deprecation notice. So a range that rejects any version above its own floor —
+ * npm resolves backwards when the newest version refuses the running Node: it
+ * installs the newest earlier release whose own `engines.node` accepts it, and
+ * failing that one with no `engines` field at all, which for this package is
+ * `0.6.1`. Nothing it prints says so; only `0.6.1`'s deprecation notice even
+ * names the package. So a range that rejects any version above its own floor —
  * `^22.22.2 || ^24.15.0 || >=26.0.0` rejected every 24.x below 24.15, which is
  * what `fnm` installs as `lts-latest` — hands that reader a nine-minor-old
  * package silently (#901).
