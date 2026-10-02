@@ -4,6 +4,18 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.17.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.1...v0.17.2)
+
+**`poveste dev` shows your stories again in a Svelte project installed with npm.**
+
+It is a `patch` with one fix and nothing to do but upgrade: no configuration key changed and no version floor moved.
+
+### 🩹 Fixes
+
+- **`poveste dev` rendered no story for a Svelte project installed with npm, in 0.16.2, 0.17.0 and 0.17.1** ([#1134](https://github.com/poveste-dev/poveste/issues/1134), [#1139](https://github.com/poveste-dev/poveste/pull/1139)). The sidebar listed every story and the story area stayed empty — no error, no warning, every request answered. The cause was two copies of Vue in one page again, the failure 0.16.2 fixed for Vue projects: npm installs Vue for every project, because Poveste's own interface depends on it, and since 0.16.2 the interface and its router loaded that Vue as two separate copies unless the project imported Vue itself. A Vue project does, so it was never affected; a Svelte project does not. Both now load one copy. **If `poveste dev` showed your stories, you were not affected**, and neither were `poveste build` with `poveste preview`, nor any install made with pnpm.
+
 ## v0.17.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.0...v0.17.1)
