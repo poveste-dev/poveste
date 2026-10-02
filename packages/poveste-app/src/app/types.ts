@@ -68,6 +68,11 @@ export interface PreviewSettings {
    *
    * @default false
    */
+  /**
+   * Set once the reader changes the size themselves, after which a book's
+   * `defaultResponsivePreset` stops being re-applied.
+   */
+  responsiveSizePicked?: boolean
   rotate: boolean
   /**
    * Background color of the story preview. Any CSS color, not only the ones

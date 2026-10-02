@@ -1,6 +1,7 @@
 import type { PreviewSettings } from '../types'
 import { useStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
+import { watch } from 'vue'
 import { defaultPreviewColorScheme } from '../util/color-scheme'
 import { povesteConfig } from '../util/config'
 import { PREVIEW_SETTINGS_STORAGE_KEY } from '../util/preview-settings'
@@ -25,6 +26,18 @@ export const usePreviewSettingsStore = defineStore('preview-settings', () => {
   if (configBg && !currentSettings.value.backgroundColorPicked) {
     currentSettings.value.backgroundColor = configBg
   }
+
+  // The same re-apply for the opening size, until the reader picks one: a preset,
+  // the size inputs or the drag handles. The watch is set up after the apply, so
+  // only the reader's own changes count (#1109).
+  const defaultPreset = povesteConfig.responsivePresets?.find(preset => preset.label === povesteConfig.defaultResponsivePreset)
+  if (defaultPreset && !currentSettings.value.responsiveSizePicked) {
+    currentSettings.value.responsiveWidth = defaultPreset.width
+    currentSettings.value.responsiveHeight = defaultPreset.height ?? null
+  }
+  watch(() => [currentSettings.value.responsiveWidth, currentSettings.value.responsiveHeight], () => {
+    currentSettings.value.responsiveSizePicked = true
+  })
 
   // Same reason: settings stored before `colorScheme` existed would leave it
   // undefined, so the toolbar would show no active option.
