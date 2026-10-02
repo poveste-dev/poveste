@@ -7,6 +7,6 @@ declare module '@poveste/shared' {
   }
 }
 
-export function generateSourceCode() {
+export function generateSourceCode(): undefined {
   // noop
 }
