@@ -133,6 +133,98 @@ export function strayHeadings(changelog: string, version: string): string[] {
   return lines.filter((line, index) => live[index] && line.startsWith('## '))
 }
 
+/**
+ * Every `## v` heading histoire wrote, which is all the inherited half may hold.
+ *
+ * That half is frozen history, so this list cannot go stale. It is what tells a
+ * poveste section written below the divider from histoire's own: any heading in
+ * that half is legitimate on its face, and only the version says it is not
+ * histoire's (#1104). Older histoire sections use `## [0.15.8](…)` and are not
+ * headings this file's tooling reads.
+ */
+export const HISTOIRE_VERSIONS = [
+  'v1.0.0-beta.1',
+  'v1.0.0-alpha.5',
+  'v1.0.0-alpha.4',
+  'v1.0.0-alpha.3',
+  'v1.0.0-alpha.2',
+  'v1.0.0-alpha.1',
+  'v0.17.17',
+  'v0.17.16',
+  'v0.17.15',
+  'v0.17.14',
+  'v0.17.13',
+  'v0.17.12',
+  'v0.17.11',
+  'v0.17.10',
+  'v0.17.9',
+  'v0.17.8',
+  'v0.17.7',
+  'v0.17.6',
+  'v0.17.5',
+  'v0.17.4',
+  'v0.17.3',
+  'v0.17.2',
+  'v0.17.1',
+  'v0.17.0',
+  'v0.16.5',
+  'v0.16.4',
+  'v0.16.3',
+  'v0.16.2',
+  'v0.16.1',
+  'v0.16.0',
+  'v0.15.9',
+]
+
+/**
+ * Sections that landed where `sectionFor` will not find them at tag time.
+ *
+ * Every per-PR check passes these, because a version whose notes went into the
+ * inherited half looks exactly like a version poveste never wrote up — and that
+ * is correct behaviour as far as anything else can tell. The cost is a release
+ * run that fails at the tag, with `main` already fast-forwarded (#1104).
+ *
+ * Each problem names the line and the half, which is what was actually needed
+ * both times this was hit while writing 0.17.0.
+ */
+export function placementProblems(changelog: string): string[] {
+  const lines = changelog.split('\n')
+  const live = outsideFences(lines)
+  const divider = dividerIn(lines, live)
+  const problems: string[] = []
+  const below = divider === -1 ? '' : `, below the divider at line ${divider + 1}`
+
+  const seen = new Map<string, number[]>()
+  lines.forEach((line, index) => {
+    const version = live[index] ? line.match(/^## (v\d\S*)\s*$/)?.[1] : undefined
+    if (version !== undefined) {
+      const key = `${divider !== -1 && index > divider ? 'inherited' : 'poveste'} ${version}`
+      seen.set(key, [...(seen.get(key) ?? []), index + 1])
+    }
+  })
+
+  for (const [key, at] of seen) {
+    const [half, version = ''] = key.split(' ')
+    if (half === 'inherited') {
+      if (!HISTOIRE_VERSIONS.includes(version)) {
+        problems.push(`line ${at.join(' and ')}: \`## ${version}\` is in the inherited histoire half${below}, and histoire never released ${version}. Move poveste's notes above the divider.`)
+      }
+      else if (at.length > 1) {
+        problems.push(`lines ${at.join(' and ')}: \`## ${version}\` appears ${at.length} times in the inherited histoire half${below}. One is histoire's; poveste's notes for ${version} belong above the divider.`)
+      }
+      continue
+    }
+    if (at.length > 1) {
+      problems.push(`lines ${at.join(' and ')}: \`## ${version}\` appears ${at.length} times in poveste's half, and only one of them can be published.`)
+    }
+    else if (sectionFor(changelog, version) === undefined) {
+      problems.push(`line ${at.join('')}: \`## ${version}\` has no notes under it, so there is nothing to publish.`)
+    }
+  }
+
+  return problems
+}
+
 /** `commit` in `bump.config.ts`, which is what forms the subject. */
 const RELEASE_COMMIT = /^chore: release v/
 

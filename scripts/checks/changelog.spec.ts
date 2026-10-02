@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { freezeWarning, headingSites, normalizeVersion, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
+import { freezeWarning, headingSites, HISTOIRE_VERSIONS, normalizeVersion, placementProblems, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
 import { tree } from './support/fixture-tree.ts'
 import { runCheck } from './support/run-check.ts'
 
@@ -150,6 +150,17 @@ describe('the real CHANGELOG.md', () => {
     expect(sectionFor(real, oldest!)).not.toContain('Inherited histoire changelog')
   })
 
+  // Per PR, because nothing else notices before the tag (#1104).
+  it('has every section in the half it will be published from', () => {
+    expect(placementProblems(real)).toEqual([])
+  })
+
+  it('pins exactly the versions histoire wrote below the divider', () => {
+    const theirs = [...lines.slice(divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)].map(match => match[1])
+
+    expect(theirs).toEqual(HISTOIRE_VERSIONS)
+  })
+
   it('does not answer with a histoire section for a version poveste has not written up', () => {
     const own = new Set([...lines.slice(0, divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)].map(match => match[1]))
     const theirsOnly = [...lines.slice(divider).join('\n').matchAll(/^## (v\d\S*)\s*$/gm)]
@@ -163,7 +174,49 @@ describe('the real CHANGELOG.md', () => {
   })
 })
 
-// Both cases below silently truncated the published body, which is the one thing
+describe('placementProblems', () => {
+  const file = (above: string[], below: string[]) => ['# Changelog', '', ...above, '# Inherited histoire changelog', '', ...below].join('\n')
+
+  it('is silent on a file with each half holding its own', () => {
+    const changelog = file(['## v0.18.0', '', 'Ours.', ''], ['## v0.17.0', '', 'Theirs.', ''])
+
+    expect(placementProblems(changelog)).toEqual([])
+  })
+
+  it('names poveste\'s notes written under a version histoire also released, as 0.17.0\'s were', () => {
+    const changelog = file(['## v0.16.2', '', 'Ours.', ''], ['## v0.17.0', '', 'Ours, misplaced.', '', '## v0.17.0', '', 'Theirs.', ''])
+
+    expect(placementProblems(changelog)).toEqual([
+      'lines 9 and 13: `## v0.17.0` appears 2 times in the inherited histoire half, below the divider at line 7. One is histoire\'s; poveste\'s notes for v0.17.0 belong above the divider.',
+    ])
+  })
+
+  it('names a version histoire never released, which has no twin to collide with', () => {
+    const changelog = file(['## v0.17.1', '', 'Ours.', ''], ['## v0.18.0', '', 'Ours, misplaced.', ''])
+
+    expect(placementProblems(changelog)).toEqual([expect.stringMatching(/^line 9: `## v0\.18\.0` is in the inherited histoire half, below the divider at line 7, and histoire never released v0\.18\.0/)])
+  })
+
+  it('names both lines of a version poveste wrote up twice', () => {
+    const changelog = file(['## v0.18.0', '', 'One.', '', '## v0.18.0', '', 'The other.', ''], [])
+
+    expect(placementProblems(changelog)).toEqual([expect.stringMatching(/^lines 3 and 7: `## v0\.18\.0` appears 2 times in poveste's half/)])
+  })
+
+  it('names a heading with nothing under it', () => {
+    const changelog = file(['## v0.18.0', '', '## v0.17.1', '', 'Ours.', ''], [])
+
+    expect(placementProblems(changelog)).toEqual(['line 3: `## v0.18.0` has no notes under it, so there is nothing to publish.'])
+  })
+
+  it('ignores a heading inside a code sample', () => {
+    const changelog = file(['## v0.18.0', '', '```md', '## v0.18.0', '```', ''], [])
+
+    expect(placementProblems(changelog)).toEqual([])
+  })
+})
+
+// Both cases below silently truncated the published body// Both cases below silently truncated the published body, which is the one thing
 // about a release that cannot be corrected once the notification is sent.
 describe('a heading written inside a section', () => {
   const WITH_H2 = [
