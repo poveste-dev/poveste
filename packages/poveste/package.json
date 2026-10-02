@@ -2,7 +2,7 @@
   "name": "poveste",
   "type": "module",
   "version": "0.17.2",
-  "description": "Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar — a drop-in fork of histoire, with Quasar support histoire does not ship.",
+  "description": "Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar, plus Solid (renderer only) — a drop-in fork of histoire, with Quasar support histoire does not ship.",
   "author": {
     "name": "Sorin Gitlan",
     "url": "https://x.com/50rayn"
@@ -29,6 +29,8 @@
     "svelte",
     "nuxt",
     "sveltekit",
+    "solid",
+    "solidjs",
     "cli"
   ],
   "publishConfig": {

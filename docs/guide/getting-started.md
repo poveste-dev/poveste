@@ -75,6 +75,7 @@ is wider than the CI job behind it, the range is the bug.
 | [SvelteKit](https://svelte.dev/docs/kit)* | `^2.53.0` | `Example e2e (sveltekit)` — builds that book and runs Playwright against it |
 | [Quasar](https://quasar.dev) | `^2.24.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
+| [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's

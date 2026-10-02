@@ -37,6 +37,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 
 - ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
 - 🧩 Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar, each proven by its own example suite in CI
+- 🧱 Solid, renderer only: stories and variants render, source is shown only where you wrote it, and the controls panel says why it is empty. Its CI runs the renderer's own tests; the checks the other five frameworks share do not run on it.
 - 🪟 Collects on Windows, macOS and Linux — all three run in CI
 - 📚 Stories and variants, with source examples generated from what you wrote
 - 🚀 Grids stay responsive at a thousand variants, and built books render offline
@@ -53,6 +54,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 | SvelteKit | `^2.53.0` |
 | Quasar | `^2.24.0` |
 | Quasar App Vite | `^3.8.0` |
+| Solid | `^1.9.0` |
 
 Every range is backed by a CI job that exercises it — see
 [supported versions](https://poveste.dev/guide/getting-started#supported-versions) for
@@ -67,6 +69,7 @@ what proves each one, the package-manager story, and the version-support policy.
 | [`@poveste/plugin-svelte`](packages/poveste-plugin-svelte) | Svelte 5 and SvelteKit | <a href="https://npmx.dev/package/@poveste/plugin-svelte"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-svelte" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-svelte"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-svelte" alt="Downloads"></a> |
 | [`@poveste/plugin-nuxt`](packages/poveste-plugin-nuxt) | Nuxt | <a href="https://npmx.dev/package/@poveste/plugin-nuxt"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-nuxt" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-nuxt"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-nuxt" alt="Downloads"></a> |
 | [`@poveste/plugin-quasar`](packages/poveste-plugin-quasar) | Quasar | <a href="https://npmx.dev/package/@poveste/plugin-quasar"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-quasar" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-quasar"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-quasar" alt="Downloads"></a> |
+| [`@poveste/plugin-solid`](packages/poveste-plugin-solid) | Solid, renderer only | <a href="https://npmx.dev/package/@poveste/plugin-solid"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-solid" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-solid"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-solid" alt="Downloads"></a> |
 | [`@poveste/plugin-tailwind`](packages/poveste-plugin-tailwind) | Tailwind design system story | <a href="https://npmx.dev/package/@poveste/plugin-tailwind"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-tailwind" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-tailwind"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-tailwind" alt="Downloads"></a> |
 | [`@poveste/plugin-percy`](packages/poveste-plugin-percy) | Visual regression testing with Percy | <a href="https://npmx.dev/package/@poveste/plugin-percy"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-percy" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-percy"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-percy" alt="Downloads"></a> |
 | [`@poveste/plugin-screenshot`](packages/poveste-plugin-screenshot) | Visual regression testing with screenshots | <a href="https://npmx.dev/package/@poveste/plugin-screenshot"><img src="https://npmx.dev/api/registry/badge/version/@poveste/plugin-screenshot" alt="Version"></a> | <a href="https://npmx.dev/package/@poveste/plugin-screenshot"><img src="https://npmx.dev/api/registry/badge/downloads/@poveste/plugin-screenshot" alt="Downloads"></a> |
