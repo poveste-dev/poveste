@@ -68,11 +68,6 @@ export interface PreviewSettings {
    *
    * @default false
    */
-  /**
-   * Set once the reader changes the size themselves, after which a book's
-   * `defaultResponsivePreset` stops being re-applied.
-   */
-  responsiveSizePicked?: boolean
   rotate: boolean
   /**
    * Background color of the story preview. Any CSS color, not only the ones
@@ -83,11 +78,17 @@ export interface PreviewSettings {
   backgroundColor: string
   /**
    * Whether `backgroundColor` came from an explicit toolbar pick rather than
-   * from the `defaultBackgroundColor` config option.
+   * from the book's config. Kept for settings stored before `picked`.
    *
    * @default false
    */
   backgroundColorPicked: boolean
+  /**
+   * The settings the reader has changed from the toolbar, which a book's
+   * `preview` config stops re-applying. The size is one entry,
+   * `responsiveWidth`, for both its width and height.
+   */
+  picked?: string[]
   /**
    * Show a checkerboard pattern behind the story, to spot transparency.
    *
