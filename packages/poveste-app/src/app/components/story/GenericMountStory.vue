@@ -5,6 +5,7 @@ export default {
 </script>
 
 <script lang="ts" setup>
+import type { Component } from 'vue'
 import type { Story } from '../../types'
 import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 import { markRaw, ref, watchEffect } from 'vue'
@@ -13,7 +14,7 @@ const props = defineProps<{
   story: Story
 }>()
 
-const mountComponent = ref(null)
+const mountComponent = ref<Component | null>(null)
 
 watchEffect(async () => {
   const supportPluginId = props.story.file?.supportPluginId
