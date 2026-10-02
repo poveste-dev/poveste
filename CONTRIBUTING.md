@@ -228,12 +228,14 @@ Pick the type from the commits being released, not from the milestone: **a `feat
 
 `major` is never reached this way. It is a deliberate stability declaration with its own checklist — see [What 1.0 means](https://poveste.dev/guide/getting-started#what-1-0-means).
 
-`release` runs `release:check` first, which gates the release on lint, build, unit tests and the smoke test:
+`release` runs `release:check` first, which gates the release on lint, build, unit tests, the published artifacts and the smoke test:
 
 ```sh
 # Root of the mono-repo — the same gate, without bumping anything
 pnpm run release:check
 ```
+
+`test:artifacts` builds the two artifacts `pnpm run build` does not, the vue example book and the docs site, and runs the two checks whose subject they are: `test:bundle-size`'s size ceilings and `test:docs-site`'s contract. Both run per PR too, but path-gated, so a run of PRs that touch nothing they watch all skip them, and the book once drifted about 101 KB toward its ceiling with nothing measuring it. Measured at about 14 seconds on top of the gate (#1039).
 
 The smoke test (`pnpm run test:smoke`) packs the publishable tarballs, installs them into a throwaway project with npm (no workspace symlinks) and runs a real `poveste build`. It is deliberately not part of `pnpm run test`, because it needs a completed build — but it is the check that catches "works in the pnpm workspace, broken for consumers" bugs, so the release must not skip it.
 

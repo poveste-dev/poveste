@@ -51,7 +51,7 @@
     "test:task-graph": "vitest run --project scripts checks/task-graph",
     "test:tsconfig-base": "vitest run --project scripts checks/tsconfig-base",
     "test:step-gates": "vitest run --project scripts checks/step-gates",
-    "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:publishable && pnpm run test:audit && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
+    "release:check": "pnpm run test:checks && pnpm run build && pnpm run lint:gate && pnpm run test:doc-coverage && pnpm run test:artifacts && pnpm run test:publishable && pnpm run test:audit && pnpm run test:scripts && pnpm run test && pnpm run test:smoke",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
@@ -63,6 +63,7 @@
     "test:control-conventions": "vitest run --project scripts checks/control-conventions",
     "test:preview-position": "vitest run --project scripts checks/preview-position",
     "test:bundle-size": "vitest run --project scripts checks/bundle-size",
+    "test:artifacts": "pnpm --filter ./examples/vue run story:build && pnpm run test:bundle-size && pnpm run docs:build && pnpm run test:docs-site",
     "sync:conformance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-conformance.ts"
   },
   "devDependencies": {
