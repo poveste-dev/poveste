@@ -1,20 +1,20 @@
 ---
 name: add-conformance-story
 description: >-
-  Add a story that proves a behaviour to the poveste conformance set. The set spans FOUR example
-  books (vue, nuxt, svelte, sveltekit) plus a spec in `e2e/` and an entry in `e2e/stories.ts`,
-  and `story-list.spec.ts` fails in the three books you forget. Use whenever adding a story that
+  Add a story that proves a behaviour to the poveste conformance set. The set spans FIVE example
+  books (vue, nuxt, svelte, sveltekit, quasar) plus a spec in `e2e/` and an entry in `e2e/stories.ts`,
+  and `story-list.spec.ts` fails in every book you forget. Use whenever adding a story that
   demonstrates or proves poveste behaviour, adding an e2e spec that needs a story to drive, or
   fixing a `story-list` failure naming a missing id.
 ---
 
 # Adding a conformance story
 
-The conformance set is a contract: **the same story, by the same id and title, in all four reference books.** A story added to one book fails `story-list.spec.ts` in the other three, and the failure names a missing id rather than the thing you did.
+The conformance set is a contract: **the same story, by the same id and title, in all five conformance books** — the four reference books and `quasar`. A story added to one book fails `story-list.spec.ts` in the others, and the failure names a missing id rather than the thing you did.
 
 Before writing anything, open an existing conformance story in each book and copy its shape. `Contrast` and `Button` are small; `Grid state` shows multiple variants.
 
-## The five places
+## The six places
 
 | | |
 | --- | --- |
@@ -22,7 +22,8 @@ Before writing anything, open an existing conformance story in each book and cop
 | `examples/nuxt/app/components/conformance/` | `.story.vue` |
 | `examples/svelte/src/conformance/` | `.story.svelte` |
 | `examples/sveltekit/src/lib/conformance/` | `.story.svelte` |
-| `e2e/stories.ts` | the `{ id, title }` entry all four are held to |
+| `examples/quasar/src/conformance/` | the vue file, copied byte for byte — `pnpm run test:mirrors` fails on any difference |
+| `e2e/stories.ts` | the `{ id, title }` entry all five are held to |
 
 Then the spec itself in `e2e/<name>.spec.ts`.
 
@@ -41,13 +42,13 @@ They count what the sidebar renders with folders collapsed, not the contract, wh
 
 **A title with no `/` moves both by one**, because it lands at the top level as an item of its own. Bump both in the same change, or Playwright fails in a book you did not touch with `Expected: 39 / Received: 40` (#906). A title under a first segment no folder has yet adds a folder instead, which vue counts separately on `story-list-folder`.
 
-Fixtures — `quasar`, `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify` — are **not** in this contract. Adding the story to one only slows it down.
+Fixtures — `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid` — are **not** in this contract. Adding the story to one only slows it down.
 
 ## Ids
 
 Set the id explicitly on the `Story`, matching `e2e/stories.ts` exactly.
 
-Do not let it derive from the path. Each framework lays its files out differently, so a path-derived id is `src-lib-meow-story-svelte` in one book and `src-components-meow-story-vue` in another, and one shared spec cannot address both. The explicit id is the only thing the four books agree on.
+Do not let it derive from the path. Each framework lays its files out differently, so a path-derived id is `src-lib-meow-story-svelte` in one book and `src-components-meow-story-vue` in another, and one shared spec cannot address both. The explicit id is the only thing the five books agree on.
 
 The title in `e2e/stories.ts` is asserted too, so a drifted title fails on the title.
 

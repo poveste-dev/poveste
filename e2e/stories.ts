@@ -1,12 +1,13 @@
 // Not a `.spec.ts`, so Playwright does not collect it as a test file.
 
 /**
- * The stories every framework example is expected to carry, by id.
+ * The stories every conformance book is expected to carry, by id: the four
+ * reference books and quasar.
  *
  * Ids rather than paths: a path-derived id embeds the example's own directory
  * layout — `src-components-meow-story-vue` against `src-lib-meow-story-svelte` —
  * so a spec addressing one cannot address the others. An explicit id is the only
- * thing the four books can agree on, and it is what lets a single spec drive all
+ * thing the five books can agree on, and it is what lets a single spec drive all
  * of them.
  *
  * `story-list.spec.ts` holds every book to this list, so a story added to one
