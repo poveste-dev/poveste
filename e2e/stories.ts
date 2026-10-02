@@ -65,7 +65,9 @@ export const SHARED_STORIES: SharedStory[] = [
  * carry fewer, which is how vue ended up as the only book exercising the
  * chrome.
  *
- * Some of vue's stories are absent, for different reasons:
+ * Every story in `SHARED_STORIES` is here too: a reference book carries the
+ * contract, so its titles are part of what a reader opens (#1087). Some of vue's
+ * other stories are absent, for different reasons:
  *
  * - Waiting on the plugin. The two `WrapperMetaOn…` stories need `addWrapper`
  *   (#232), and `Story setup` needs setup hooks that run before the story mounts
@@ -74,16 +76,13 @@ export const SHARED_STORIES: SharedStory[] = [
  *   file at all.
  * - `i18n` is framework-specific by design; Nuxt shows it through its own
  *   `Nuxt/i18n` story (#65).
- * - `Auto props disabled`, `Init state controls`, `State types`, `Story setup
- *   app` and `Story setup app, implicit` are contract stories: every book is
- *   already held to them by id in `SHARED_STORIES` above. Whether this list
- *   should name them too is #1087.
  *
  * This list counts titles, so it cannot see a story that carries a `.story.md`
  * companion in one book and not another. Nothing does yet (#488).
  */
 export const SHARED_STORY_TITLES: string[] = [
   'Auto State & Props',
+  'Auto props disabled',
   'BaseButton',
   'Button',
   'Code gen',
@@ -110,6 +109,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'Hand-written source',
   'Huge grid',
   'HugeGrid',
+  'Init state controls',
   'Inline grid',
   'InlineGrid',
   'Introduction',
@@ -130,11 +130,14 @@ export const SHARED_STORY_TITLES: string[] = [
   'Shared Controls',
   'State',
   'State key removal',
+  'State types',
   'StateOption',
   'StateSetup',
   'StateSetup2',
   'Store',
   'StoryOptions Override',
+  'Story setup app',
+  'Story setup app, implicit',
   'Sub Story 1',
   'Sub Story 2',
   'Tall story',
