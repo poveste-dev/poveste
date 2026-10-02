@@ -13,7 +13,7 @@ description: >-
 
 Every issue gets a native GitHub issue **type** — `Bug`, `Feature` or `Task` — and at least one **`a:` area label**:
 
-`a:vue` · `a:svelte` · `a:nuxt` · `a:app` · `a:node` · `a:controls` · `a:plugins` · `a:ci` · `a:repo`
+`a:vue` · `a:svelte` · `a:solid` · `a:nuxt` · `a:app` · `a:node` · `a:controls` · `a:plugins` · `a:ci` · `a:repo`
 
 `docs`, `perf`, `chore` and `spike` exist as refinements where `Bug` and `Task` are too coarse.
 
