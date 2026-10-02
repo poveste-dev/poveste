@@ -23,6 +23,40 @@ export interface ResponsivePreset {
   height?: number | null
 }
 
+/**
+ * What the story preview opens at. Each value is applied on every load, for a
+ * reader with stored settings too, until that reader changes the setting in the
+ * toolbar; from then on theirs wins.
+ */
+export interface PreviewConfig {
+  /**
+   * A CSS color. Match a `color` from `backgroundPresets` to also highlight that
+   * entry in the dropdown.
+   *
+   * @default 'transparent'
+   */
+  backgroundColor?: string
+  /**
+   * In pixels. `null` sizes the preview to the available space. Set it with
+   * `responsiveHeight` to open at one of `responsivePresets`.
+   *
+   * @default 720
+   */
+  responsiveWidth?: number | null
+  /**
+   * In pixels. `null` sizes the preview to the available space.
+   *
+   * @default null
+   */
+  responsiveHeight?: number | null
+  /** Swap the width and height. @default false */
+  rotate?: boolean
+  /** Show a checkerboard behind the story. @default false */
+  checkerboard?: boolean
+  /** @default 'ltr' */
+  textDirection?: 'ltr' | 'rtl'
+}
+
 export interface BackgroundPreset {
   label: string
   color: string
@@ -201,21 +235,21 @@ export interface PovesteConfig {
    */
   responsivePresets?: ResponsivePreset[]
   /**
-   * The `label` of the responsive preset a story opens at, until the reader picks
-   * a size of their own. Unset, a story opens 720 pixels wide at automatic height.
-   */
-  defaultResponsivePreset?: string
-  /**
    * Background color of the story preview.
    */
   backgroundPresets?: BackgroundPreset[]
   /**
+   * What the story preview opens at, before the reader changes it in the toolbar.
+   * Each field mirrors the toolbar setting of the same name.
+   */
+  preview?: PreviewConfig
+  /**
    * Initial background color used for story previews before the user picks one.
    *
-   * Should match a `color` from `backgroundPresets` to also highlight the corresponding
-   * entry in the dropdown; any other value is still applied as a CSS color.
+   * Still honoured where it is set. When `preview.backgroundColor` is set too,
+   * that one wins.
    *
-   * @default 'transparent'
+   * @deprecated use `preview.backgroundColor` instead
    */
   defaultBackgroundColor?: string
   /**

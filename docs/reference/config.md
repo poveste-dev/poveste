@@ -328,22 +328,6 @@ export default defineConfig({
 })
 ```
 
-## `defaultResponsivePreset`
-
-`string` - Default: unset
-
-The `label` of the [responsive preset](#responsivepresets) a story opens at, before the reader picks a size of their own. Unset, a story opens 720 pixels wide at automatic height, which matches none of the default presets.
-
-```ts
-export default defineConfig({
-  defaultResponsivePreset: 'Mobile (Medium)',
-})
-```
-
-It names a preset rather than repeating a size, so the size is defined in one place. A label that matches no preset fails the config with the labels it could have been, rather than leaving the book at 720 without a word. If your config sets `responsivePresets`, the label is checked against those, since they replace the defaults.
-
-Like `defaultBackgroundColor`, it is applied on every load, including for readers with previously stored settings, until the reader changes the size from the toolbar or by dragging the preview. From then on their size wins.
-
 ## `backgroundPresets`
 
 `Array`
@@ -398,19 +382,38 @@ You can use the current contrast color via the css variable `--poveste-contrast-
 }
 ```
 
-## `defaultBackgroundColor`
+## `preview`
 
-`string` - Default: `'transparent'`
+`object`
 
-Initial background color used for story previews before the user picks one from the dropdown. Should match a `color` from `backgroundPresets` to also highlight the matching entry.
+What the story preview opens at, before the reader changes it in the toolbar. Each field mirrors the toolbar setting of the same name, and each is optional.
 
 ```ts
 export default defineConfig({
-  defaultBackgroundColor: '#fff',
+  preview: {
+    backgroundColor: '#fff',
+    responsiveWidth: 360,
+    responsiveHeight: 640,
+  },
 })
 ```
 
-The value is applied on every load — including to users with previously stored settings, and when you change it — until the user picks a color from the toolbar dropdown. From that point on their pick wins and this option is ignored.
+- `backgroundColor: string` - Default: `'transparent'`. Any CSS color. Match a `color` from [`backgroundPresets`](#backgroundpresets) to also highlight that entry in the dropdown.
+- `responsiveWidth: number | null` - Default: `720`. In pixels; `null` sizes the preview to the available space. The default matches none of the default [`responsivePresets`](#responsivepresets): set this and `responsiveHeight` to one of them to open at it.
+- `responsiveHeight: number | null` - Default: `null`.
+- `rotate: boolean` - Default: `false`. Swaps the width and height.
+- `checkerboard: boolean` - Default: `false`. Shows a checkerboard behind the story.
+- `textDirection: 'ltr' | 'rtl'` - Default: `'ltr'`.
+
+Each value is applied on every load, including for readers with previously stored settings and when you change it, until the reader changes that setting in the toolbar. From then on their choice wins for that setting and the others keep following your config. The width and height count as one setting, since a preset or a drag changes both.
+
+The preview's color scheme is configured under [`theme.defaultColorScheme`](#theme), not here.
+
+## `defaultBackgroundColor`
+
+`string` - **Deprecated**: use [`preview.backgroundColor`](#preview)
+
+Still honoured where it is set. When `preview.backgroundColor` is set too, that one wins. Nothing needs doing on upgrade unless you set this key; if you did, move the value to `preview.backgroundColor` and delete it.
 
 ## `autoApplyContrastColor`
 

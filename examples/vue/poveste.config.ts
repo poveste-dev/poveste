@@ -14,7 +14,9 @@ export default defineConfig({
       contrastColor: '#005142',
     },
   ],
-  defaultBackgroundColor: 'transparent',
+  preview: {
+    backgroundColor: 'transparent',
+  },
   // `src/bench/` holds the #197 grid-fill fixtures. Out of the book unless the
   // bench runner asks, so the story-list counts and anyone browsing the example
   // never see them.

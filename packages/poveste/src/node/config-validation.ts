@@ -11,7 +11,7 @@
  * model the whole surface. Only options whose wrong type fails *inside someone
  * else's code* are listed — the rest fail legibly on their own.
  */
-export type ConfigKind = 'string' | 'boolean' | 'number' | 'string[]' | 'array' | 'object' | 'function'
+export type ConfigKind = 'string' | 'boolean' | 'number' | 'string[]' | 'array' | 'object' | 'function' | 'null'
 
 interface Rule {
   path: string
@@ -31,7 +31,13 @@ const RULES: Rule[] = [
   { path: 'defaultBackgroundColor', kind: 'string' },
   { path: 'sandboxDarkClass', kind: 'string' },
   { path: 'responsivePresets', kind: 'array' },
-  { path: 'defaultResponsivePreset', kind: 'string' },
+  { path: 'preview', kind: 'object' },
+  { path: 'preview.backgroundColor', kind: 'string' },
+  { path: 'preview.responsiveWidth', kind: ['number', 'null'] },
+  { path: 'preview.responsiveHeight', kind: ['number', 'null'] },
+  { path: 'preview.rotate', kind: 'boolean' },
+  { path: 'preview.checkerboard', kind: 'boolean' },
+  { path: 'preview.textDirection', kind: 'string' },
   { path: 'backgroundPresets', kind: 'array' },
   { path: 'theme.title', kind: 'string' },
   { path: 'theme.lang', kind: 'string' },
@@ -48,6 +54,9 @@ const RULES: Rule[] = [
 
 /** What the value actually is, in the words the message uses. */
 export function describeKind(value: unknown): string {
+  if (value === null) {
+    return 'null'
+  }
   if (Array.isArray(value)) {
     return value.every(item => typeof item === 'string') ? 'string[]' : 'array'
   }
@@ -70,6 +79,8 @@ function matches(value: unknown, kind: ConfigKind): boolean {
       return typeof value === 'number'
     case 'function':
       return typeof value === 'function'
+    case 'null':
+      return value === null
     default:
       return false
   }
@@ -122,24 +133,4 @@ export function configProblems(config: unknown, configFile: string): string[] {
   }
 
   return problems
-}
-
-/**
- * A `defaultResponsivePreset` that names no preset.
- *
- * The key names a preset by label so the size lives in one place, and the cost
- * of that is a rename that leaves it pointing at nothing: the book would open at
- * 720 and say nothing (#1109). A book's own `responsivePresets` replace the
- * defaults, so those are what it is checked against when the book sets them.
- */
-export function defaultPresetProblem(config: any, defaults: { label: string }[], configFile: string): string | undefined {
-  const label = config?.defaultResponsivePreset
-  if (typeof label !== 'string') {
-    return undefined
-  }
-  const presets: { label?: unknown }[] = Array.isArray(config.responsivePresets) ? config.responsivePresets : defaults
-  if (presets.some(preset => preset?.label === label)) {
-    return undefined
-  }
-  return `${configFile}: \`defaultResponsivePreset\` names "${label}", which no responsive preset is labelled. Use one of ${presets.map(preset => JSON.stringify(preset?.label)).join(', ')}`
 }
