@@ -5,8 +5,5 @@ export default defineConfig({
   plugins: [
     HstSolid(),
   ],
-  storyMatch: [
-    '**/*.story.tsx',
-  ],
   setupFile: 'src/poveste.setup.tsx',
 })

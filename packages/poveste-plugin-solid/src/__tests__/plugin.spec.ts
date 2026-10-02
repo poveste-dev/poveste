@@ -18,4 +18,12 @@ describe('the plugin\'s config', () => {
 
     expect(config.supportMatch).toEqual([{ id: 'solid', patterns: ['**/*.story.tsx', '**/*.story.jsx'], pluginIds: ['solid'] }])
   })
+
+  // Joined to core's globs by the config merger, so a Solid book needs no
+  // `storyMatch` of its own (#1124).
+  it('declares the story globs a Solid book uses', async () => {
+    const config = await HstSolid().defaultConfig!({} as any) as any
+
+    expect(config.storyMatch).toEqual(['**/*.story.tsx', '**/*.story.jsx'])
+  })
 })
