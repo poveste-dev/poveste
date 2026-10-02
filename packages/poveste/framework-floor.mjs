@@ -16,7 +16,7 @@
 import { readFileSync, writeSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
-import { isBelow } from './node-floor.mjs'
+import { floorOf, isBelow } from './node-floor.mjs'
 
 /** Each plugin whose framework is checked, and the peer that names it. */
 export const PEERS = {
@@ -31,18 +31,23 @@ export const PEERS = {
  * manifest drift from becoming a reader's failed command.
  */
 export function rangeFloor(range) {
-  const match = /^(?:\^|>=)(\d+)\.(\d+)\.(\d+)$/.exec(String(range ?? '').trim())
-  return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null
+  return floorOf(String(range ?? '').trim().replace(/^\^/, '>='))
 }
 
-/** The manifest of `name` as Node would find it from `dir`, or `null`. */
+/**
+ * The manifest of `name` as Node would find it from `dir`, or `null`.
+ *
+ * Only a missing file sends the walk upward, as it does Node's. A manifest that
+ * is there and unreadable ends it: going on would read an ancestor's copy, which
+ * in a monorepo can be another package's framework at another version.
+ */
 export function installedManifest(name, dir) {
   for (let current = dir; ; current = dirname(current)) {
     try {
       return JSON.parse(readFileSync(join(current, 'node_modules', name, 'package.json'), 'utf8'))
     }
-    catch {
-      if (dirname(current) === current) {
+    catch (error) {
+      if (error?.code !== 'ENOENT' || dirname(current) === current) {
         return null
       }
     }

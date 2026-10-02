@@ -14,8 +14,10 @@ import { supportedNode } from './node-floor.mjs'
 // module, before a line of it runs, so syntax `dist/` may carry would win the race
 // against the message explaining it.
 // The framework floor goes here for the same reason: on a framework below a
-// plugin's peer, importing the CLI fails first and names neither (#1062).
-if (supportedNode() && supportedFrameworks()) {
+// plugin's peer, importing the CLI fails first and names neither (#1062). Not for
+// `--help` or `--version`, which load no command and so cannot reach that failure.
+const informational = process.argv.slice(2).some(arg => ['--help', '-h', '--version', '-v'].includes(arg))
+if (supportedNode() && (informational || supportedFrameworks())) {
   import('./dist/node/bin.js').catch((error) => {
     // `exitCode`, not `exit`: the error is the last thing written, and forcing the
     // process out on the same tick truncates it on a pipe.

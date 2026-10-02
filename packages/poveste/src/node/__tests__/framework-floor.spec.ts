@@ -56,6 +56,38 @@ describe('a Nuxt below the plugin\'s peer floor', () => {
     expect(status).toBe(1)
     expect(stderr).toBe('You are using nuxt 3.21.11. @poveste/plugin-nuxt requires nuxt ^4.5.0. Please upgrade nuxt.\n')
   })
+
+  // They load no command, so they cannot reach the failure the check exists to
+  // explain, and a reader reporting a version should be able to get one.
+  it.each(['--version', '--help'])('lets `%s` through', (flag) => {
+    const root = project({ ...PLUGIN_NUXT, nuxt: { version: '3.21.11' } })
+    let stderr = ''
+
+    try {
+      execFileSync(process.execPath, [path.join(PACKAGE, 'bin.mjs'), flag], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+    }
+    catch (error: any) {
+      stderr = String(error.stderr)
+    }
+
+    expect(stderr).not.toContain('You are using nuxt')
+  })
+})
+
+describe('reading the installed manifests', () => {
+  // In a monorepo an ancestor's `node_modules` can hold another package's framework
+  // at another version. A manifest that is present and unreadable ends the walk
+  // rather than sending it there.
+  it('stops at an unreadable manifest instead of reading an ancestor\'s', () => {
+    const root = project({ nuxt: { version: '3.21.11' } })
+    const app = path.join(root, 'app')
+    mkdirSync(path.join(app, 'node_modules', 'nuxt'), { recursive: true })
+    writeFileSync(path.join(app, 'node_modules', 'nuxt', 'package.json'), '{ "name": "nuxt", "vers')
+    mkdirSync(path.join(app, 'node_modules', '@poveste', 'plugin-nuxt'), { recursive: true })
+    writeFileSync(path.join(app, 'node_modules', '@poveste', 'plugin-nuxt', 'package.json'), JSON.stringify(PLUGIN_NUXT['@poveste/plugin-nuxt']))
+
+    expect(frameworkProblems(app)).toEqual([])
+  })
 })
 
 describe('a project the check has nothing to say about', () => {
