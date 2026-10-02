@@ -17,7 +17,10 @@ export async function getSourceCode(story: Story, variant: Variant) {
     const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
     if (clientPlugin) {
       const pluginModule = await clientPlugin()
-      return pluginModule.generateSourceCode(variant)
+      const generated = await pluginModule.generateSourceCode(variant)
+      if (generated) {
+        return generated
+      }
     }
   }
 
