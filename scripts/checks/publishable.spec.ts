@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { checkPublishable, emptyFilesEntries, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
+import { checkPublishable, emptyFilesEntries, licenseProblems, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -340,7 +340,11 @@ describe('walkProblems', () => {
 describe('checkPublishable', () => {
   const check = (root: string) => checkPublishable(root, { offline: true })
 
+  // A fixture tree is no pnpm workspace, so nothing copies the root licence in.
+  const LICENSE = 'MIT License\n'
   const book = () => ({
+    'LICENSE': LICENSE,
+    'packages/one/LICENSE': LICENSE,
     'CONTRIBUTING.md': '| Package | What |\n| --- | --- |\n| [@fixture/one](./packages/one) | the only one |\n',
     'packages/one/package.json': manifest('@fixture/one', { type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
     'packages/one/index.js': 'export const one = 1\n',
@@ -357,6 +361,7 @@ describe('checkPublishable', () => {
       ...book(),
       'packages/two/package.json': manifest('@fixture/two', { type: 'module', files: ['index.js'], exports: { '.': './index.js' } }),
       'packages/two/index.js': 'export const two = 2\n',
+      'packages/two/LICENSE': LICENSE,
     })
 
     expect(check(root).problems).toContainEqual(expect.stringContaining('@fixture/two'))
@@ -391,5 +396,25 @@ describe('the walk the other checks import', () => {
     })
 
     expect(publishablePackages(root).map(pkg => pkg.name)).toEqual(['@poveste/one'])
+  })
+})
+
+describe('licenseProblems', () => {
+  const root = 'MIT License\n\nCopyright (c) 2026\n'
+
+  it('is silent when the tarball carries the repository\'s licence', () => {
+    expect(licenseProblems('poveste', ['package.json', 'LICENSE', 'dist/index.js'], root, root)).toEqual([])
+  })
+
+  it('names a package that packs no licence, and how to fix it', () => {
+    expect(licenseProblems('poveste', ['package.json', 'dist/index.js'], undefined, root)).toEqual([
+      expect.stringMatching(/^poveste packs no LICENSE.*copy the root LICENSE/),
+    ])
+  })
+
+  it('names a copy that went stale when the root changed', () => {
+    expect(licenseProblems('poveste', ['package.json', 'LICENSE'], 'MIT License\n\nCopyright (c) 2022\n', root)).toEqual([
+      expect.stringMatching(/^poveste packs a LICENSE that differs from the repository's/),
+    ])
   })
 })

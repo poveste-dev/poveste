@@ -250,6 +250,25 @@ function packedPaths(tarball: string): string[] {
     .map(path => path.replace(/^package\//, ''))
 }
 
+/**
+ * The licence a tarball ships, against the repository's.
+ *
+ * pnpm packs the workspace root's `LICENSE` into a package that has none of its
+ * own, which is how most packages ship it with no copy in their directory. It
+ * skips that when the package packs any `LICENSE` at all, and `@poveste/app`
+ * packs its bundled font's: it published with the font's licence and not ours
+ * (#936). So this asserts what was packed, not what the tree holds.
+ */
+export function licenseProblems(name: string, paths: string[], packed: string | undefined, root: string): string[] {
+  if (!paths.includes('LICENSE')) {
+    return [`${name} packs no LICENSE, so it ships an MIT claim without the licence text — copy the root LICENSE into its directory`]
+  }
+  if (packed !== root) {
+    return [`${name} packs a LICENSE that differs from the repository's — copy the root LICENSE over it`]
+  }
+  return []
+}
+
 // npm ships these whatever `files` says. Deliberately not the `main` file,
 // which npm also forces in: a main outside the declared surface is a defect.
 const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e)(?:\.[^/]*)?$/i
@@ -375,6 +394,7 @@ function describeError(err: any): string {
 
 function repositoryProblems(root: string, { offline = false }: { offline?: boolean }): string[] {
   const packagesDir = join(root, 'packages')
+  const rootLicense = readFileSync(join(root, 'LICENSE'), 'utf8')
   const walk = walkPackages(root)
   const packages = walk.packages
 
@@ -448,6 +468,13 @@ function repositoryProblems(root: string, { offline = false }: { offline?: boole
           problems.push(`${pkg.name} declares \`${entry}\` in \`files\` but ships nothing for it; renamed or mistyped?`)
         }
       }
+      const shipped = packedPaths(packed.tarball)
+      problems.push(...licenseProblems(
+        pkg.name,
+        shipped,
+        shipped.includes('LICENSE') ? String(execFileSync('tar', ['-xzOf', packed.tarball, 'package/LICENSE'], { stdio: ['ignore', 'pipe', 'pipe'] })) : undefined,
+        rootLicense,
+      ))
       for (const error of manifestLintProblems(packed.tarball)) {
         problems.push(`${pkg.name} fails publint: ${error}`)
       }
