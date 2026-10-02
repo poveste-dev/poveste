@@ -16,6 +16,7 @@
 //   7. the hostname is declared everywhere it should be, and agrees
 //   8. one <title> per page, and none inside an <svg> — #571
 //   9. the home page carries one parseable ld+json block — #573
+//  10. llms.txt lists the built pages, and only those — #1127
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -37,6 +38,8 @@ import { join, relative, sep } from 'node:path'
 import { captured } from './support/captured.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
+
+export const SITE = 'https://poveste.dev'
 
 // `force` is Netlify's override of a path that resolves to a file: `force = true`, or `301!`.
 export interface Redirect { from: string, to: string, status: number, force?: true }
@@ -238,6 +241,47 @@ export function sitemapGaps(builtPages: string[], listed: string[]): { missing: 
     missing: [...expected].filter(page => !present.has(page)).sort(),
     extra: [...present].filter(page => !expected.has(page)).sort(),
   }
+}
+
+/**
+ * `/llms.txt` against the build: every page an agent could be sent to is listed,
+ * every listed page exists, and each says what it is for.
+ *
+ * The file is generated from the nav and the sidebar, so a page nobody added to
+ * either is a page the file cannot know about. The home page is the site itself
+ * and is not listed.
+ */
+export function llmsProblems(builtPages: string[], text: string, site: string): string[] {
+  const problems: string[] = []
+  if (!text.startsWith('# ')) {
+    problems.push('llms.txt does not open with an H1 naming the project')
+  }
+  if (!/^> \S/m.test(text)) {
+    problems.push('llms.txt has no `>` summary line')
+  }
+
+  const links = [...text.matchAll(/^- \[([^\]]+)\]\(([^)]+)\)(.*)$/gm)].map(match => ({ text: captured(match), url: match[2] ?? '', rest: match[3] ?? '' }))
+  const pages = links.filter(link => link.url.startsWith(`${site}/`))
+  const listed = new Set(pages.map(link => new URL(link.url).pathname))
+
+  const expected = builtPages
+    .filter(page => page !== '/404.html' && page !== '/index.html')
+    .map(pageUrlPath)
+  for (const page of expected) {
+    if (!listed.has(page)) {
+      problems.push(`${page} was built and llms.txt does not list it — the file is generated from the nav and sidebar, so add the page to one`)
+    }
+  }
+  for (const page of [...listed].filter(page => !expected.includes(page)).sort()) {
+    problems.push(`llms.txt lists ${page}, which the build does not contain`)
+  }
+  for (const link of pages) {
+    if (!/^: \S/.test(link.rest)) {
+      problems.push(`llms.txt lists ${new URL(link.url).pathname} with no description — give the page a \`description\` in its frontmatter`)
+    }
+  }
+
+  return problems
 }
 
 // Every place the site states its own hostname. A declaration that goes missing
@@ -501,6 +545,13 @@ function checkBuild(root: string, problems: string[], built: Built | undefined):
     problems.push(...structuredDataProblems(readFileSync(join(dist, 'index.html'), 'utf8'), version))
   }
 
+  if (!built.paths.has('/llms.txt')) {
+    problems.push('llms.txt is not in the build — the `buildEnd` hook in the VitePress config writes it')
+  }
+  else {
+    problems.push(...llmsProblems(built.pages, readFileSync(join(dist, 'llms.txt'), 'utf8'), SITE))
+  }
+
   const { missing, extra } = sitemapGaps(built.pages, listed)
   for (const page of missing) {
     problems.push(`${page} was built and is not in the sitemap`)
@@ -581,8 +632,6 @@ function checkConfig(root: string, problems: string[], built: Built | undefined)
     }
   }
 }
-
-export const SITE = 'https://poveste.dev'
 
 async function checkLive(problems: string[], site: string): Promise<string | undefined> {
   const get = async (path: string) => {
