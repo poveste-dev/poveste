@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configProblems, defaultPresetProblem, describeKind } from '../config-validation.js'
+import { configProblems, describeKind } from '../config-validation.js'
 
 // #324: `outDir: 42` reached `pathe` and became
 // `TypeError: input.replace is not a function`, naming neither Poveste, nor the
@@ -80,25 +80,20 @@ describe('the vite config path', () => {
   })
 })
 
-describe('defaultPresetProblem', () => {
-  const defaults = [{ label: 'Mobile (Small)' }, { label: 'Desktop' }]
-
-  it('is silent when the label names a default preset', () => {
-    expect(defaultPresetProblem({ defaultResponsivePreset: 'Desktop' }, defaults, 'poveste.config.ts')).toBeUndefined()
+describe('the `preview` group', () => {
+  it('accepts null for a size, which sizes the preview to the available space', () => {
+    expect(configProblems({ preview: { responsiveWidth: 360, responsiveHeight: null } }, 'poveste.config.ts')).toEqual([])
   })
 
-  it('checks against the book\'s own presets when it sets them, since they replace the defaults', () => {
-    const config = { defaultResponsivePreset: 'Desktop', responsivePresets: [{ label: 'Phone' }] }
-
-    expect(defaultPresetProblem(config, defaults, 'poveste.config.ts')).toBe('poveste.config.ts: `defaultResponsivePreset` names "Desktop", which no responsive preset is labelled. Use one of "Phone"')
+  it('names a size of the wrong type, and says null is allowed', () => {
+    expect(configProblems({ preview: { responsiveWidth: '360px' } }, 'poveste.config.ts')).toEqual([
+      'poveste.config.ts: `preview.responsiveWidth` must be number or null, received string ("360px")',
+    ])
   })
 
-  it('names a label that matches nothing, and what would', () => {
-    expect(defaultPresetProblem({ defaultResponsivePreset: 'Tablet' }, defaults, 'poveste.config.ts')).toContain('Use one of "Mobile (Small)", "Desktop"')
-  })
-
-  it('leaves an unset key, and a wrongly typed one, to the type rules', () => {
-    expect(defaultPresetProblem({}, defaults, 'poveste.config.ts')).toBeUndefined()
-    expect(defaultPresetProblem({ defaultResponsivePreset: 3 }, defaults, 'poveste.config.ts')).toBeUndefined()
+  it('names a null where only an object will do', () => {
+    expect(configProblems({ preview: null }, 'poveste.config.ts')).toEqual([
+      'poveste.config.ts: `preview` must be object, received null (null)',
+    ])
   })
 })
