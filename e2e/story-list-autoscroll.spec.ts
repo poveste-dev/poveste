@@ -22,8 +22,8 @@ test.describe('the story list', () => {
     // Checked rather than assumed: a list that fits needs no scrolling, and the
     // rest of this would pass without proving anything.
     //
-    // `quasar` is the one that fits. It carries the conformance contract only —
-    // 17 stories in a few folders — so its list is four rows against `vue`'s
+    // `quasar` is the one that fits. It carries the conformance contract only,
+    // in a few folders, so its list is four rows against `vue`'s
     // thirty-nine, and no viewport short enough to overflow it exists: measured
     // at 500, 400, 320 and 260px, `scrollHeight` tracked `clientHeight` exactly
     // every time. Skipped there with that reason rather than quietly passing,

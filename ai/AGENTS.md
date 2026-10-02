@@ -50,7 +50,7 @@ A story that proves a behaviour goes in **all four** reference books — `vue`, 
 
 The ids are explicit rather than derived from paths, because each framework lays its files out differently and a path-derived id cannot be addressed by one shared spec.
 
-**The contract is not only stories.** A conformance book also declares the background presets the shared specs assert — the five `getDefaultConfig()` defaults plus the `Custom gray` sixth, and `defaultBackgroundColor: 'transparent'`. Spread `getDefaultConfig().backgroundPresets` or list the six literally; `examples/quasar` does the latter because its published recipe already owns the import line. A book that carries all 17 stories and skips this fails 18 specs on a preset count, which is how promoting Quasar spent a session (#540). `scripts/checks/conformance-config.ts` fails on it in seconds instead, and covers a new book automatically — it reads the `:conformance` projects in `playwright.config.ts`, the same source of truth as the wiring check.
+**The contract is not only stories.** A conformance book also declares the background presets the shared specs assert — the five `getDefaultConfig()` defaults plus the `Custom gray` sixth, and `defaultBackgroundColor: 'transparent'`. Spread `getDefaultConfig().backgroundPresets` or list the six literally; `examples/quasar` does the latter because its published recipe already owns the import line. A book that carries every contract story and skips this fails 18 specs on a preset count, which is how promoting Quasar spent a session (#540). `scripts/checks/conformance-config.ts` fails on it in seconds instead, and covers a new book automatically — it reads the `:conformance` projects in `playwright.config.ts`, the same source of truth as the wiring check.
 
 ## What the examples are for
 
@@ -64,7 +64,7 @@ Eleven directories, three kinds, not interchangeable:
 
 `vue-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
 
-The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is 17 ids and is the contract; `SHARED_STORY_TITLES` is 54 names and is this book's demo content. Requiring both of every new framework would price onboarding at 54 stories rather than 17.
+The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is the contract; `SHARED_STORY_TITLES` is the reference books' demo content and about twice its size. Requiring both of every new framework would price onboarding at the whole demo book rather than the contract.
 
 `scripts/checks/example-wiring.ts` keeps the workflow matrix, the Playwright config, each example's ports and the table above in agreement, so a new example that nobody explains here fails CI. Four of the fixtures run in no e2e job at all (#337), which is why that table rather than the matrix is what has to name them — the `Unbuilt books` job builds three of them so that a fixture which stops building says so, but it runs no specs, because they have none. `vue-screenshot` is the fourth and is not built: it needs a Chrome CI does not provide (#654). That job also builds `@poveste/controls-stories`, which is not an example at all — it is the book over the builtin controls, and the only exercise the seven of them have (#672).
 
