@@ -26,6 +26,11 @@ const { join } = require('node:path')
 // field here that goes out of date on its own, and a hardcoded version is a lie
 // nobody notices — bumpp moves every manifest in lockstep, so this cannot drift.
 const { version } = require('../../packages/poveste/package.json')
+const { llmsFullTxt, llmsTxt, publishedPlugins } = require('./llms.js')
+
+// Filled as each page is transformed and read at the end of the build, which is
+// the only point where every page's frontmatter has been seen.
+const descriptions = new Map()
 
 // Home page only. A `SoftwareApplication` on every guide page claims each guide
 // is a separate application, which is worse than saying nothing (#573).
@@ -73,6 +78,7 @@ module.exports = {
   // one (#502). Both are per page now, from one source.
   transformPageData(pageData) {
     const url = pageUrl(pageData.relativePath)
+    descriptions.set(url.slice(SITE.length), pageData.frontmatter.description)
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.push(
       ['link', { rel: 'canonical', href: url }],
@@ -108,6 +114,11 @@ module.exports = {
         return `${html} ${html.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '')} 301!`
       })
     writeFileSync(join(outDir, '_redirects'), `${rules.sort().join('\n')}\n`)
+
+    const { nav, sidebar } = module.exports.themeConfig
+    const plugins = publishedPlugins(join(__dirname, '..', '..', 'packages'))
+    writeFileSync(join(outDir, 'llms.txt'), llmsTxt({ site: SITE, nav, sidebar, descriptions, plugins, version }))
+    writeFileSync(join(outDir, 'llms-full.txt'), llmsFullTxt({ site: SITE, nav, sidebar, srcDir: join(__dirname, '..'), version }))
   },
 
   lastUpdated: true,
