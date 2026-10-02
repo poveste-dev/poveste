@@ -11,6 +11,7 @@ const SCOPES = [
   'vue',
   'svelte',
   'solid',
+  'react',
   'nuxt',
   'quasar',
   'percy',

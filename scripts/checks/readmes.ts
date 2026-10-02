@@ -70,6 +70,7 @@ export const ALLOWED_HOSTS = new Set([
   'nuxt.com',
   'svelte.dev',
   'www.solidjs.com',
+  'react.dev',
   'nodejs.org',
   'unhead.unjs.io',
   'i18n.nuxtjs.org',
