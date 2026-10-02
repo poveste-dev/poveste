@@ -49,7 +49,11 @@ WORK="$(mktemp -d)"
 TARBALLS="$WORK/tarballs"
 mkdir -p "$TARBALLS"
 
-cleanup() { rm -rf "$WORK"; }
+DEV_PID=""
+cleanup() {
+  [ -n "$DEV_PID" ] && kill "$DEV_PID" 2>/dev/null
+  rm -rf "$WORK"
+}
 trap cleanup EXIT
 
 echo "▸ Packing tarballs → $TARBALLS"
@@ -159,6 +163,31 @@ consumer_package_json() {
 JSON
 }
 
+# `poveste dev` over the same npm install, asserting the story renders in its
+# preview frame. Opt-in, because it needs Playwright's Chromium: `test:smoke:dev`
+# turns it on, and CI's `Unit tests and smoke` job runs that. The build passes
+# above cannot see this path, which has shipped blank twice (#1060, #1134).
+dev_renders() {
+  local name="$1" app="$2" path="$3" expected="$4" port="$5"
+  [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
+
+  echo "▸ [$name] Running poveste dev and opening $path"
+  local dev_log="$WORK/dev-$name.log"
+  ( cd "$app" && exec ./node_modules/.bin/poveste dev --port "$port" ) > "$dev_log" 2>&1 &
+  DEV_PID=$!
+
+  if ! node "$ROOT/scripts/release/dev-renders.mjs" "http://localhost:$port" "$path" "$expected"; then
+    echo "❌ Smoke test FAILED [$name] — poveste dev did not render the story"
+    tail -20 "$dev_log"
+    exit 1
+  fi
+
+  kill "$DEV_PID" 2>/dev/null
+  wait "$DEV_PID" 2>/dev/null || true
+  DEV_PID=""
+  echo "✅ [$name] dev renders"
+}
+
 # ── Vue ──────────────────────────────────────────────────────────────────────
 
 VUE_APP="$WORK/vue"
@@ -212,6 +241,8 @@ VUE
 install_and_build vue "$VUE_APP" \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
 
 # ── Svelte ───────────────────────────────────────────────────────────────────
 
@@ -288,6 +319,9 @@ install_and_build svelte "$SVELTE_APP" \
   "$(plugin_tgz poveste-plugin-svelte)" \
   "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
   "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
+
+# A Svelte book imports no `vue` of its own, which is the shape #1134 broke.
+dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantId=src-mybutton-story-svelte-1" "Hello Poveste" 4791
 
 # ── Solid ────────────────────────────────────────────────────────────────────
 
