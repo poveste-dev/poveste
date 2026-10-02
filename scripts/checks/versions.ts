@@ -68,6 +68,7 @@ async function expectations(root: string): Promise<Expectation[]> {
     { label: 'SvelteKit', ...await peer('packages/poveste-plugin-svelte/package.json', '@sveltejs/kit') },
     { label: 'Quasar', ...await peer('packages/poveste-plugin-quasar/package.json', 'quasar') },
     { label: 'Quasar App Vite', ...await peer('packages/poveste-plugin-quasar/package.json', '@quasar/app-vite') },
+    { label: 'Solid', ...await peer('packages/poveste-plugin-solid/package.json', 'solid-js') },
   ]
 }
 
