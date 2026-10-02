@@ -16,7 +16,7 @@ import {
 } from 'vite'
 import { vanillaSupport } from './builtin-plugins/vanilla-support/plugin.js'
 import { defaultColors } from './colors.js'
-import { configProblems } from './config-validation.js'
+import { configProblems, defaultPresetProblem } from './config-validation.js'
 import { findUp } from './util/find-up.js'
 
 export function getDefaultConfig(): PovesteConfig {
@@ -307,7 +307,8 @@ export const mergeConfig = createDefu((obj: any, key, value) => {
 
 /** Print every problem, then stop before anything consumes the value. */
 function reportConfigProblems(config: unknown, configFile: string): void {
-  const problems = configProblems(config, configFile)
+  const presetProblem = defaultPresetProblem(config, getDefaultConfig().responsivePresets ?? [], configFile)
+  const problems = [...configProblems(config, configFile), ...(presetProblem ? [presetProblem] : [])]
   if (problems.length === 0) {
     return
   }
