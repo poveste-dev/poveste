@@ -17,6 +17,9 @@ const NATIVE_STORY = '/story/conformance-no-iframe'
 // Grid cells rendered by the app rather than one sandbox each — the third
 // render path (#126).
 const INLINE_GRID_STORY = '/story/conformance-inline-grid'
+// A range, number, date, checkbox and select, which the browser paints itself.
+const NATIVE_WIDGETS_STORY = '/story/conformance-native-widgets'
+const WIDGETS = ['range', 'number', 'date', 'checkbox', 'select']
 
 async function pickColorScheme(page: Page, value: 'auto' | 'light' | 'dark') {
   await page.getByTestId('toolbar-background').click()
@@ -143,5 +146,56 @@ test.describe('sandbox color scheme', () => {
     await expect(sandboxHtml(page)).toHaveClass(DARK_CLASS)
     await page.getByTestId('toolbar-background').click()
     await expect(page.getByTestId('sandbox-color-scheme-auto')).toHaveClass(/bg-primary-500/)
+  })
+})
+
+/*
+ * The CSS `color-scheme` property, which is what the browser reads: native
+ * widgets, scrollbars and the canvas are painted from it and from no class, so
+ * every test above can pass while a dark story shows light form controls (#991).
+ */
+test.describe('the color-scheme the browser is told', () => {
+  test('reaches every native widget in the sandbox, in each scheme', async ({ page }) => {
+    await page.goto(NATIVE_WIDGETS_STORY)
+    const story = page.getByTestId('preview-iframe').contentFrame()
+
+    for (const [pick, expected] of [['dark', 'dark'], ['light', 'light'], ['auto', 'light dark']] as const) {
+      await pickColorScheme(page, pick)
+      for (const widget of WIDGETS) {
+        await expect(story.locator(`[data-widget="${widget}"]`), `${widget} under ${pick}`).toHaveCSS('color-scheme', expected)
+      }
+    }
+  })
+
+  test('reaches a story rendered without an iframe, on its own root', async ({ page }) => {
+    await seedChromeScheme(page, 'light')
+    await page.goto(NATIVE_STORY)
+    const story = page.getByTestId('sandbox-render').locator('.poveste-generic-render-story')
+
+    await pickColorScheme(page, 'dark')
+    await expect(story).toHaveCSS('color-scheme', 'dark')
+
+    await pickColorScheme(page, 'light')
+    await expect(story).toHaveCSS('color-scheme', 'light')
+  })
+
+  test('reaches grid cells rendered without an iframe', async ({ page }) => {
+    await seedChromeScheme(page, 'light')
+    await page.goto(INLINE_GRID_STORY)
+    const cell = page.locator('.poveste-story-variant-grid-item .poveste-generic-render-story').first()
+    await expect(cell).toBeVisible()
+
+    await pickColorScheme(page, 'dark')
+    await expect(cell).toHaveCSS('color-scheme', 'dark')
+  })
+
+  test('leaves the chrome on the chrome\'s own scheme', async ({ page }) => {
+    await seedChromeScheme(page, 'dark')
+    await page.goto(IFRAME_STORY)
+    await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark')
+
+    await pickColorScheme(page, 'light')
+    await expect(sandboxHtml(page)).toHaveCSS('color-scheme', 'light')
+    await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark')
   })
 })
