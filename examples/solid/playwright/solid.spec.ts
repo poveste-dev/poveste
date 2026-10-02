@@ -13,6 +13,11 @@ function preview(page: Page) {
   return page.getByTestId('preview-iframe').contentFrame()
 }
 
+/** The state panel's field for `count`, found by its key rather than its position. */
+function countField(page: Page) {
+  return page.getByTestId('story-controls').getByLabel('count', { exact: true })
+}
+
 async function open(page: Page, storyId: string, variantId: string) {
   await recordSandboxReady(page)
   await openStory(page, storyId, `?variantId=${variantId}`)
@@ -27,10 +32,19 @@ test.describe('a Solid book', () => {
     await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
   })
 
-  test('says why a variant without state has no controls', async ({ page }) => {
+  test('says why a variant without state has no controls, and still shows the panel toolbar', async ({ page }) => {
     await open(page, 'src-badge-story-tsx', 'info')
 
     await expect(page.getByTestId('story-controls')).toContainText('Solid stories have no controls yet')
+    // The toolbar waits on the controls slot reporting ready, which the
+    // explanation used not to do.
+    await expect(page.getByTestId('story-controls').locator('.poveste-state-presets')).toBeVisible()
+  })
+
+  test('collects and renders a story built with solid-js/html', async ({ page }) => {
+    await open(page, 'src-taggedtemplate-story-tsx', 'default')
+
+    await expect(preview(page).getByTestId('tagged')).toHaveText('Rendered by solid-js/html')
   })
 
   test('shows the story file as its source', async ({ page }) => {
@@ -52,7 +66,7 @@ test.describe('a Solid book', () => {
     await preview(page).locator('button.counter').click()
 
     await expect(preview(page).getByTestId('count')).toHaveText('12')
-    await expect(page.getByTestId('story-controls').locator('input').first()).toHaveValue('12')
+    await expect(countField(page)).toHaveValue('12')
   })
 
   // A Solid component runs once. If an edit reached the story by rendering it
@@ -64,7 +78,7 @@ test.describe('a Solid book', () => {
       Reflect.set(node, '__marked', true)
     })
 
-    await page.getByTestId('story-controls').locator('input').first().fill('42')
+    await countField(page).fill('42')
 
     await expect(preview(page).getByTestId('count')).toHaveText('42')
     expect(await button.evaluate(node => Reflect.get(node, '__marked'))).toBe(true)
