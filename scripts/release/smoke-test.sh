@@ -374,6 +374,8 @@ install_and_build solid "$SOLID_APP" \
   "solid-js@$(peer_range poveste-plugin-solid solid-js)" vite@^8.0.0 \
   "vite-plugin-solid@$(peer_range poveste-plugin-solid vite-plugin-solid)"
 
+dev_renders solid "$SOLID_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4792
+
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
 QUASAR_APP="$WORK/quasar"
