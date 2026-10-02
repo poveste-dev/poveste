@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defaultClientConditions } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 // Without this file vitest loads `vite.config.ts`, whose `import(` rewrite has no
@@ -8,6 +9,8 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [svelte()],
   resolve: {
+    // A jsdom spec mounts components, which `svelte`'s server build refuses.
+    conditions: defaultClientConditions,
     alias: {
       '@poveste/shared': fileURLToPath(new URL('../poveste-shared/src/index.ts', import.meta.url)),
     },

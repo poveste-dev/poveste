@@ -1159,6 +1159,9 @@ importers:
       fs-extra:
         specifier: ^11.4.1
         version: 11.4.1
+      jsdom:
+        specifier: ^30.1.1
+        version: 30.1.1
       poveste:
         specifier: workspace:*
         version: link:../poveste
