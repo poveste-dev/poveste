@@ -1,0 +1,138 @@
+---
+title: 'Getting started with Solid — write stories for SolidJS components'
+description: 'Install Poveste and the Solid plugin, add the config, and write your first story as a .story.tsx file. Controls for Solid are not available yet.'
+---
+
+# Getting started with Solid
+
+## Installation
+
+```shell
+pnpm i -D poveste @poveste/plugin-solid
+# OR
+npm i -D poveste @poveste/plugin-solid
+# OR
+yarn add -D poveste @poveste/plugin-solid
+```
+
+You also need `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`, which a Solid project built with Vite already has.
+
+::: tip Just installed and got an older version?
+For about a day after a release, pnpm installs the **previous** version and says so only in passing — `+ poveste x.y.z (x.y.z is available)`, with no error and no warning. That is pnpm's release-age cooldown holding back anything published in the last 24 hours, not a broken publish. Use the `npm` line above, wait it out, or pass `--config.minimum-release-age=0` — the kebab-case spelling, because pnpm 12 accepts the camelCase one and silently ignores it. Asking for the exact version does not get you past it: pnpm 12 refuses a version inside the window too, with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
+:::
+
+::: warning Poveste needs Node `>=24.15.0`, and npm will not tell you
+Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
+:::
+
+## Configuration
+
+Keep `vite-plugin-solid` in your Vite config — Poveste reads it, so story files compile the way your components do:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import solid from 'vite-plugin-solid'
+
+export default defineConfig({
+  plugins: [solid()],
+})
+```
+
+Then add the plugin, and tell Poveste which files are stories:
+
+```ts
+// poveste.config.ts
+import { HstSolid } from '@poveste/plugin-solid'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstSolid()],
+  storyMatch: ['**/*.story.tsx'],
+})
+```
+
+`storyMatch` is not set for you. The defaults look for `.story.vue` and `.story.svelte`, and the plugin does not replace them on its own, because `storyMatch` replaces rather than adds — in a book with Vue stories too, setting it from the plugin would quietly drop them. List every kind your book has.
+
+## Write a story
+
+A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX:
+
+```tsx
+// src/Badge.story.tsx
+import { defineStory } from '@poveste/plugin-solid'
+import { Badge } from './Badge'
+
+export default defineStory({
+  title: 'Badge',
+  variants: [
+    { title: 'Info', render: () => <Badge tone="info">Information</Badge> },
+    { title: 'Warning', render: () => <Badge tone="warn">Careful</Badge> },
+  ],
+})
+```
+
+A story with no `variants` and a `render` of its own has one implicit variant. `id`, `group`, `icon`, `layout` and `source` work as they do for the other frameworks.
+
+## State
+
+Give a story or a variant an `initState`, and `render` receives that state and a way to change it:
+
+```tsx
+// src/Counter.story.tsx
+import { defineStory } from '@poveste/plugin-solid'
+import { Counter } from './Counter'
+
+export default defineStory<{ count: number }>({
+  title: 'Counter',
+  initState: () => ({ count: 0 }),
+  variants: [
+    {
+      title: 'From zero',
+      render: ({ state, setState }) => (
+        <Counter count={state.count} onIncrement={() => setState('count', c => c + 1)} />
+      ),
+    },
+    {
+      title: 'From ten',
+      initState: () => ({ count: 10 }),
+      render: ({ state, setState }) => (
+        <Counter count={state.count} onIncrement={() => setState('count', c => c + 1)} />
+      ),
+    },
+  ],
+})
+```
+
+`render` runs **once**, as a Solid component does. `state` is a Solid store, so reading `state.count` inside the JSX is what keeps the output current — read it outside, at the top of `render`, and the value is fixed at the first render. `setState` is the store's setter, with the same path syntax.
+
+The state panel shows the state and lets you edit it, and an edit reaches the story without running `render` again. A variant's own `initState` takes precedence over the story's.
+
+## Setup and wrappers
+
+Export `setupSolid` from your [setup file](../config.md#global-js-and-css) to run code before every story mounts. `addWrapper` puts a component around each one — a theme provider, a layout frame, a context:
+
+```tsx
+// src/poveste.setup.tsx
+import { defineSetupSolid } from '@poveste/plugin-solid'
+
+export const setupSolid = defineSetupSolid(({ addWrapper }) => {
+  addWrapper(props => <div class="story-frame">{props.children}</div>)
+})
+```
+
+```ts
+// poveste.config.ts
+export default defineConfig({
+  plugins: [HstSolid()],
+  storyMatch: ['**/*.story.tsx'],
+  setupFile: 'src/poveste.setup.tsx',
+})
+```
+
+The hook runs before the story mounts, so a wrapper is there for the first render. The first wrapper added is the outermost. A variant can set its own `setupApp`, called after the global hook with the same argument: `{ story, variant, addWrapper }`.
+
+## What is not here yet
+
+- **Controls.** A variant with `initState` gets the state panel; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
+- **Generated source.** The source panel shows the story file. Solid compiles JSX to DOM operations and keeps no render tree, which is what generating per-variant source reads in Vue.
