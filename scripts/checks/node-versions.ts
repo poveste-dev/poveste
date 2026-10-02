@@ -90,7 +90,7 @@ export function hardcodedNodeVersions(workflow: string, content: string): NodeVe
 }
 
 /** Ascending, on the three numeric parts. No prereleases appear in an engines range here. */
-function compareVersions(a: string, b: string): number {
+export function compareVersions(a: string, b: string): number {
   return a.localeCompare(b, 'en', { numeric: true })
 }
 

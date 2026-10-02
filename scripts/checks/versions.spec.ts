@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
-import { checkVersions, citedJobProblems, collect, engineFloorProblems, jobNames, nodeClaimProblems, parseTable, readmeRangeProblems, tableProblems, walkProblems } from './versions.ts'
+import { checkVersions, citedJobProblems, collect, docsNodeProblems, engineFloorProblems, jobNames, nodeClaimProblems, nodeClaims, nodeFloorReachProblems, parseTable, readmeRangeProblems, specMinimum, tableProblems, walkProblems } from './versions.ts'
 
 // The defect this guard exists for is #148: the README advertised `svelte ^5.0.0`
 // while the plugin declared `^5.46.4`, inviting a combination that cannot be
@@ -109,6 +109,22 @@ describe('nodeClaimProblems', () => {
 
   it('says nothing when the package declares no engines', () => {
     expect(nodeClaimProblems('p', 'Node `>=26`.', undefined)).toEqual([])
+  })
+
+  // It read only the first claim, so a README stating the range twice had its
+  // second statement unchecked.
+  it('checks every claim, not only the first', () => {
+    expect(nodeClaimProblems('poveste', `Node \`${engines}\`, and later Node \`>=26\`.`, engines)).toHaveLength(1)
+  })
+})
+
+describe('nodeClaims', () => {
+  it.each(['>=24.15.0', '^24.15.0', '24', 'v26.1', '>= 24.15.0'])('reads Node `%s` as a claim', (range) => {
+    expect(nodeClaims(`Poveste needs Node \`${range}\`.`)).toEqual([range])
+  })
+
+  it.each(['fs', '--experimental-strip-types', 'process.versions.node'])('reads Node `%s` as prose', (token) => {
+    expect(nodeClaims(`the Node \`${token}\` module`)).toEqual([])
   })
 })
 
@@ -241,6 +257,18 @@ describe('collect', () => {
     ])
   })
 
+  it('reads every docs page, nested ones included, by its path from the root', async () => {
+    const root = tree({ 'docs/index.md': '# home', 'docs/guide/vue/getting-started.md': '# vue' })
+
+    expect((await collect(root)).docs.map(({ file }) => file).sort()).toEqual(['docs/guide/vue/getting-started.md', 'docs/index.md'])
+  })
+
+  it('passes over installed dependencies and the site\'s own dot-directories', async () => {
+    const root = tree({ 'docs/index.md': '# home', 'docs/node_modules/x/README.md': 'Node `18`', 'docs/.vitepress/cache/a.md': 'Node `18`' })
+
+    expect((await collect(root)).docs.map(({ file }) => file)).toEqual(['docs/index.md'])
+  })
+
   // A package with no README has nothing to compare and is not this check's
   // defect to report — `checks/readmes` owns that one.
   it('passes over a package with a manifest and no README', async () => {
@@ -251,26 +279,35 @@ describe('collect', () => {
 })
 
 describe('walkProblems', () => {
-  it('is silent when both halves read something', async () => {
+  const PAGE = { 'docs/index.md': '# docs' }
+
+  it('is silent when every part read something', async () => {
     const root = tree({
       '.github/workflows/test.yml': 'jobs:\n',
       'packages/one/package.json': pkg('@fixture/one'),
       'packages/one/README.md': '# one',
+      ...PAGE,
     })
 
     expect(walkProblems(await collect(root))).toEqual([])
   })
 
   it('fails when no workflow was read, since every cited job would resolve against nothing', async () => {
-    const root = tree({ 'packages/one/package.json': pkg('@fixture/one'), 'packages/one/README.md': '# one' })
+    const root = tree({ 'packages/one/package.json': pkg('@fixture/one'), 'packages/one/README.md': '# one', ...PAGE })
 
     expect(walkProblems(await collect(root))).toEqual([expect.stringContaining('held no workflow files')])
   })
 
   it('fails when no package was read, since the per-README assertions examined nothing', async () => {
-    const root = tree({ '.github/workflows/test.yml': 'jobs:\n' })
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n', ...PAGE })
 
     expect(walkProblems(await collect(root))).toEqual([expect.stringContaining('held no package with both')])
+  })
+
+  it('fails when no docs page was read, since no stated Node was checked', async () => {
+    const root = tree({ '.github/workflows/test.yml': 'jobs:\n', 'packages/one/package.json': pkg('@fixture/one'), 'packages/one/README.md': '# one' })
+
+    expect(walkProblems(await collect(root))).toEqual([expect.stringContaining('docs/ held no markdown page')])
   })
 })
 
@@ -326,5 +363,73 @@ describe('engineFloorProblems', () => {
     expect(engineFloorProblems('poveste-plugin-vue', undefined)).toEqual([
       'packages/poveste-plugin-vue/package.json declares no engines.node: npm reads that as accepting every Node, which is what makes a published version the one an unsupported Node resolves back to (#901)',
     ])
+  })
+})
+
+describe('specMinimum', () => {
+  it.each([
+    ['^24.15.0', '24.15.0'],
+    ['>=24.15.0', '24.15.0'],
+    ['24.x', '24.0.0'],
+    ['18.x', '18.0.0'],
+    ['24', '24.0.0'],
+    ['v26.1', '26.1.0'],
+  ])('reads %s as able to install %s', (spec, minimum) => {
+    expect(specMinimum(spec)).toBe(minimum)
+  })
+
+  it.each(['lts/*', 'node', '>=24 <26', '24.15.0.1'])('cannot read %s, rather than guessing', (spec) => {
+    expect(specMinimum(spec)).toBeUndefined()
+  })
+})
+
+describe('docsNodeProblems', () => {
+  const ENGINES = '>=24.15.0'
+  const recipe = (version: string) => `\`\`\`yaml\n      - uses: actions/setup-node@v7\n        with:\n          node-version: ${version}\n\`\`\`\n`
+
+  // The defect: the lost-pixel recipe kept `18.x` three majors after the floor
+  // moved, and a reader running it got an older Poveste without an error (#1102).
+  it('catches a recipe that can install a Node under the floor', () => {
+    expect(docsNodeProblems('docs/recipe.md', recipe('18.x'), ENGINES)).toEqual([
+      'docs/recipe.md:4 sets node-version 18.x, which can install Node 18.0.0, under the 24.15.0 that engines.node requires',
+    ])
+  })
+
+  it('catches `24.x`, which claims the 24.0–24.14 that npm walks back from', () => {
+    expect(docsNodeProblems('docs/recipe.md', recipe('24.x'), ENGINES)).toHaveLength(1)
+  })
+
+  it('accepts a recipe whose lowest installable Node is the floor', () => {
+    expect(docsNodeProblems('docs/recipe.md', recipe(`'^24.15.0'`), ENGINES)).toEqual([])
+  })
+
+  it('reports a spec it cannot read rather than passing it', () => {
+    expect(docsNodeProblems('docs/recipe.md', recipe('lts/*'), ENGINES)).toEqual([expect.stringContaining('cannot be read as a version')])
+  })
+
+  it('catches prose stating a different range', () => {
+    expect(docsNodeProblems('docs/page.md', 'Poveste needs Node `>=22.22.2`.', ENGINES)).toEqual([
+      'docs/page.md says Node >=22.22.2, but packages/poveste/package.json → engines.node says >=24.15.0',
+    ])
+  })
+
+  it('is silent when prose states the range itself', () => {
+    expect(docsNodeProblems('docs/page.md', 'Poveste needs Node `>=24.15.0`.', ENGINES)).toEqual([])
+  })
+})
+
+describe('nodeFloorReachProblems', () => {
+  it('catches a framework getting-started page that states no floor', () => {
+    expect(nodeFloorReachProblems('docs/guide/solid/getting-started.md', '# Getting started')).toEqual([
+      'docs/guide/solid/getting-started.md does not state the Node floor, and it is a page a reader installs from',
+    ])
+  })
+
+  it('is satisfied by a page that states one', () => {
+    expect(nodeFloorReachProblems('docs/guide/solid/getting-started.md', '::: warning Poveste needs Node `>=24.15.0`')).toEqual([])
+  })
+
+  it('does not require it of other pages', () => {
+    expect(nodeFloorReachProblems('docs/guide/solid/stories.md', '# Stories')).toEqual([])
   })
 })
