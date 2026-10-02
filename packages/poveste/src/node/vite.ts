@@ -184,6 +184,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     name: 'poveste-vite-plugin',
 
     config(_, { command }) {
+      const collapsedVue = isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })
       return {
         resolve: {
           dedupe: [
@@ -198,7 +199,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             // `@poveste/vendors/vue`, so sending `poveste-vue` back to `vue` would
             // point the vendored entry at itself — the empty re-export its own
             // comment warns about.
-            ...(isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })),
+            ...collapsedVue,
           },
           ...(isServer
             ? {
@@ -215,9 +216,17 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             // their deps cost a full reload when they turn up later (#282).
             ...optimizeEntries(ctx.config, ctx.root, isServer),
           ],
-          include: optimizeDeps([
-            'shiki',
-          ]),
+          include: [
+            ...optimizeDeps([
+              'shiki',
+            ]),
+            // With the alias above, `poveste-vue` is pre-bundled from the project's
+            // Vue, but bare `vue` is pre-bundled only if a project file imports it.
+            // A Svelte, Solid or React book has none, so `poveste-vue-router`'s
+            // bare `vue` was served raw beside the pre-bundled copy of the same
+            // file: two module instances, and `RouterView` rendered nothing (#1134).
+            ...(Object.keys(collapsedVue).length > 0 ? ['vue'] : []),
+          ],
           exclude: [
             'poveste',
             '@poveste/vendors',
