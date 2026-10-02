@@ -2,7 +2,7 @@ import type { Story, Variant } from '@poveste/shared'
 import type { PropType as _PropType } from '@poveste/vendors/vue'
 import type { JSX } from 'solid-js'
 import type { SolidRenderApi, SolidStorySetupApi, SolidStorySetupHandler, SolidWrapper } from '../types.js'
-import { getSetupHook as _getSetupHook, applyState, clone, reportStoryError } from '@poveste/shared'
+import { getSetupHook as _getSetupHook, clone, isEquivalent, reportStoryError } from '@poveste/shared'
 import {
   defineComponent as _defineComponent,
   h as _h,
@@ -53,13 +53,19 @@ export default _defineComponent({
     let dispose: (() => void) | undefined
     let stopSync: (() => void) | undefined
     let mounting = false
+    let alive = true
 
     async function mount() {
-      if (mounting || dispose || !el.value || !props.variant.configReady) {
+      if (!props.variant.configReady) {
         return
       }
+      // Checked before the element: the explanation renders no `el`, and the
+      // panel waits on this `ready` before it shows its toolbar.
       if (explainsControls()) {
         emit('ready')
+        return
+      }
+      if (mounting || dispose || !el.value) {
         return
       }
       const renderVariant = slot() as ((api: SolidRenderApi<any>) => JSX.Element) | undefined
@@ -85,6 +91,12 @@ export default _defineComponent({
         await _getSetupHook<SolidStorySetupHandler>(setup, SOLID_SETUP_HOOK_NAMES)?.(setupApi)
         await (props.variant.setupApp as SolidStorySetupHandler | undefined)?.(setupApi)
 
+        // A hook that awaited can outlive this component; rendering now would
+        // leave a Solid root and a watcher that no unmount will ever reach.
+        if (!alive || !el.value) {
+          return
+        }
+
         // A store, because a Solid component runs once: a change has to reach
         // the DOM through the reads it tracked, not by rendering again.
         // `reconcile` keeps the store's identities where the incoming state is
@@ -92,7 +104,7 @@ export default _defineComponent({
         const [state, setStore] = createStore<Record<string, any>>(clone(_toRaw(props.variant.state) ?? {}))
         const setState = ((...args: unknown[]) => {
           (setStore as (...args: unknown[]) => void)(...args)
-          applyState(props.variant.state, clone(unwrap(state)))
+          writeBack(props.variant.state, unwrap(state))
         }) as SolidRenderApi<any>['setState']
 
         stopSync = _watch(() => props.variant.state, (value) => {
@@ -114,6 +126,9 @@ export default _defineComponent({
         dispose = render(() => untrack(node), el.value)
       }
       catch (error) {
+        // Whatever got as far as existing goes with the failure, so a later
+        // attempt starts clean rather than beside a watcher nothing can stop.
+        unmount()
         reportStoryError(error, occupant)
         console.error(error)
       }
@@ -133,7 +148,10 @@ export default _defineComponent({
 
     _onMounted(mount)
     _watch(() => props.variant.configReady, mount)
-    _onBeforeUnmount(unmount)
+    _onBeforeUnmount(() => {
+      alive = false
+      unmount()
+    })
 
     return { el, explainsControls }
   },
@@ -145,3 +163,21 @@ export default _defineComponent({
     return _h('div', { ref: 'el' })
   },
 })
+
+/**
+ * Carries the store back to the variant's state one key at a time: only what
+ * changed is cloned, and a key the store no longer has is removed rather than
+ * left behind. The `_h` keys are the app's own and are never the store's to drop.
+ */
+function writeBack(target: Record<string, any>, snapshot: Record<string, any>) {
+  for (const key of Object.keys(target)) {
+    if (!key.startsWith('_h') && !Object.hasOwn(snapshot, key)) {
+      delete target[key]
+    }
+  }
+  for (const key of Object.keys(snapshot)) {
+    if (!Object.hasOwn(target, key) || !isEquivalent(target[key], snapshot[key])) {
+      target[key] = clone(snapshot[key])
+    }
+  }
+}

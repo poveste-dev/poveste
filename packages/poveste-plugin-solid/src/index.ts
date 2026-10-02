@@ -5,13 +5,31 @@ import type { Plugin } from '@poveste/shared'
 
 export const SOLID_SETUP_HOOK_NAMES = ['setupSolid']
 
+/**
+ * The conditions story collection resolves Solid under.
+ *
+ * Collection imports each story file in Node to read its metadata, and Solid's
+ * JSX compiles to DOM calls that run at module top level (`template()`). Under
+ * Node's own conditions every `solid-js` entry is the server build, where those
+ * throw "Client-only API called on the server side". Collection runs with a DOM,
+ * so the browser build works.
+ *
+ * The conditions alone are not enough. An entry Node loads resolves its own
+ * imports under Node's conditions: `solid-js/html` has no browser build of its
+ * own, imports `solid-js/web`, and so reached the server build anyway. Inlining
+ * every `solid-js` entry (`noExternal`) keeps the whole graph in Vite's hands.
+ *
+ * Without `development`: collection re-evaluates Solid on every run, and its
+ * development build warns "multiple instances of Solid" each time it does.
+ * Nothing renders during collection, so the production build loses nothing.
+ */
+export const SOLID_COLLECT_CONDITIONS = ['browser', 'module']
+
 export function HstSolid(): Plugin {
   return {
     name: '@poveste/plugin-solid',
 
-    async defaultConfig() {
-      const solidBrowserAliases = await getSolidBrowserAliases()
-
+    defaultConfig() {
       return {
         supportMatch: [
           {
@@ -21,12 +39,20 @@ export function HstSolid(): Plugin {
           },
         ],
         vite: {
+          plugins: [
+            reloadOnStoryEdit(),
+          ],
           // The story's JSX and this plugin's renderer must share one Solid
           // runtime: two copies track reads in two graphs, and a store written
           // through one never updates DOM the other built.
           resolve: {
             dedupe: ['solid-js'],
-            ...solidBrowserAliases.length ? { alias: solidBrowserAliases } : {},
+          },
+          ssr: {
+            noExternal: ['solid-js'],
+            resolve: {
+              conditions: SOLID_COLLECT_CONDITIONS,
+            },
           },
         },
       }
@@ -44,40 +70,23 @@ export function HstSolid(): Plugin {
 export * from './types.js'
 
 /**
- * Solid's browser builds, by absolute path, for every environment.
+ * Reloads the book when a Solid story file is edited in dev.
  *
- * Collection imports each story file in Node to read its metadata. Solid's JSX
- * compiles to DOM calls that run at module top level (`template()`), and under
- * Node's conditions `solid-js/web` is the server build, where they throw
- * "Client-only API called on the server side". Collection runs with a DOM, so
- * the browser build works there, and an absolute path keeps Node's own
- * resolution from choosing for it. `plugin-svelte` does the same for Svelte.
- *
- * Chosen as Solid's `exports` choose: the development build unless the book is
- * built for production.
+ * A story file is data, so there is no component for HMR to patch in place, and
+ * the sandbox keeps the story it mapped on mount rather than taking the updated
+ * module: the edit was collected and then never shown. A reload shows it, at the
+ * cost of whatever was set in the panel.
  */
-async function getSolidBrowserAliases(): Promise<{ find: RegExp, replacement: string }[]> {
-  // Imported here rather than at the top: story files import this entry for
-  // `defineStory`, and a static Node import would follow it into the browser.
-  const { createRequire } = await import('node:module')
-  const { existsSync } = await import('node:fs')
-  const { dirname, join } = await import('node:path')
-
-  try {
-    const require = createRequire(join(process.cwd(), 'package.json'))
-    const solidDir = dirname(require.resolve('solid-js/package.json'))
-    const development = process.env['NODE_ENV'] !== 'production'
-    const entries = [
-      [/^solid-js$/, development ? 'dist/dev.js' : 'dist/solid.js'],
-      [/^solid-js\/web$/, development ? 'web/dist/dev.js' : 'web/dist/web.js'],
-      [/^solid-js\/store$/, development ? 'store/dist/dev.js' : 'store/dist/store.js'],
-    ] as const
-
-    return entries
-      .map(([find, file]) => ({ find, replacement: join(solidDir, file) }))
-      .filter(({ replacement }) => existsSync(replacement))
-  }
-  catch {
-    return []
+function reloadOnStoryEdit() {
+  return {
+    name: 'poveste:solid-story-reload',
+    apply: 'serve' as const,
+    handleHotUpdate({ file, server }: { file: string, server: { ws: { send: (payload: { type: 'full-reload' }) => void } } }) {
+      if (!/\.story\.[jt]sx$/.test(file)) {
+        return undefined
+      }
+      server.ws.send({ type: 'full-reload' })
+      return []
+    },
   }
 }

@@ -50,6 +50,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
+    "client.d.ts",
+    "collect.d.ts",
     "dist"
   ],
   "engines": {

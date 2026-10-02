@@ -4,6 +4,8 @@ import type { SolidStorySetupApi } from '../types'
 import { createApp, nextTick, reactive } from '@poveste/vendors/vue'
 import { createComponent, createEffect } from 'solid-js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import MountStory from '../client/MountStory'
+import { NO_CONTROLS } from '../client/no-controls'
 import RenderStory from '../client/RenderStory'
 
 const hooks = vi.hoisted(() => ({ setupSolid: undefined as undefined | ((api: SolidStorySetupApi) => void) }))
@@ -123,5 +125,94 @@ describe('rendering a Solid variant', () => {
     set!('count', 5)
 
     expect(variant.state.count).toBe(5)
+  })
+})
+
+describe('the controls slot', () => {
+  // The panel shows its presets toolbar only once a custom controls slot says it
+  // is ready, and the explanation renders no element for the old guard to find.
+  it('reports ready when it only explains why there are no controls', async () => {
+    const variant = reactive({ id: 'v', title: 'v', state: {}, configReady: true, slots: () => ({ default: undefined, controls: NO_CONTROLS, source: undefined }) }) as Variant
+    const ready = vi.fn()
+    const host = document.createElement('div')
+    const app = createApp(RenderStory, { story, variant, slotName: 'controls', onReady: ready })
+    app.mount(host)
+    unmount = () => app.unmount()
+
+    await vi.waitFor(() => expect(ready).toHaveBeenCalled())
+    expect(host.textContent).toContain('no controls yet')
+  })
+})
+
+describe('a variant whose mount is interrupted or replaced', () => {
+  it('renders nothing when it was unmounted while a setup hook awaited', async () => {
+    let release!: () => void
+    hooks.setupSolid = () => new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const rendered = vi.fn(() => document.createElement('span'))
+    const host = document.createElement('div')
+    const app = createApp(RenderStory, { story, variant: variantOf(rendered) })
+    app.mount(host)
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'))
+
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    app.unmount()
+    release()
+    await new Promise(resolve => setTimeout(resolve))
+
+    // It used to go on: a store and a deep watcher created for a component that
+    // was gone, then `render` into the detached element, which threw and was
+    // reported as the story's own error.
+    expect(rendered).not.toHaveBeenCalled()
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
+  })
+
+  it('removes a key from the variant\'s state when the story deletes it', async () => {
+    let set: ((key: string, value: unknown) => void) | undefined
+    const variant = variantOf(({ state, setState }) => {
+      set = setState
+      const node = text(() => state.selected ?? 'none')
+      node.dataset['story'] = ''
+      return node
+    }, { selected: 'a', _hPropDefs: [] })
+    await mount(variant)
+
+    set!('selected', undefined)
+
+    expect(Object.hasOwn(variant.state, 'selected')).toBe(false)
+    expect(Object.hasOwn(variant.state, '_hPropDefs')).toBe(true)
+  })
+})
+
+describe('mounting a story\'s variants', () => {
+  function storyWith(options: Record<string, unknown>) {
+    return reactive({ id: 's', title: 's', file: { component: options }, variants: [{ id: 'v', title: 'v', state: {} }] }) as unknown as Story
+  }
+
+  it('still marks a variant ready when its initState throws, and reports it', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const mounted = storyWith({ variants: [{ title: 'v', render: () => null, initState: () => {
+      throw new Error('fixture failed to load')
+    } }] })
+    const app = createApp(MountStory, { story: mounted })
+    app.mount(document.createElement('div'))
+    unmount = () => app.unmount()
+
+    await vi.waitFor(() => expect(mounted.variants[0]!.configReady).toBe(true))
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ message: 'fixture failed to load' }))
+    error.mockRestore()
+  })
+
+  it('leaves initState to the realm that owns the state', async () => {
+    const mounted = storyWith({ variants: [{ title: 'v', render: () => null, initState: () => ({ count: 3 }) }] })
+    const app = createApp(MountStory, { story: mounted, syncState: false })
+    app.mount(document.createElement('div'))
+    unmount = () => app.unmount()
+
+    await vi.waitFor(() => expect(mounted.variants[0]!.configReady).toBe(true))
+    expect(mounted.variants[0]!.state).toEqual({})
   })
 })
