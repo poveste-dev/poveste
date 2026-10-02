@@ -164,6 +164,10 @@ module.exports = {
                 link: '/guide/solid/getting-started',
               },
               {
+                text: 'React',
+                link: '/guide/react/getting-started',
+              },
+              {
                 text: 'Quasar',
                 link: '/guide/quasar/getting-started',
               },
@@ -357,6 +361,36 @@ module.exports = {
             {
               text: 'Getting Started',
               link: '/guide/solid/getting-started',
+            },
+          ],
+        },
+        {
+          text: 'Learn more',
+          collapsible: true,
+          items: [
+            {
+              text: 'About Poveste',
+              link: '/guide/',
+            },
+            {
+              text: 'Configuration',
+              link: '/guide/config',
+            },
+            {
+              text: 'Plugins',
+              link: '/guide/plugins/official',
+            },
+          ],
+        },
+      ],
+      '/guide/react/': [
+        {
+          text: 'Guide - React',
+          collapsible: true,
+          items: [
+            {
+              text: 'Getting Started',
+              link: '/guide/react/getting-started',
             },
           ],
         },
