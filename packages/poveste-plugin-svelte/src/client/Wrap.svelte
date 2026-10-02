@@ -4,7 +4,7 @@
     h as _h,
     reactive as _reactive,
   } from '@poveste/vendors/vue'
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte'
 
   export let controlComponent
   export let value
@@ -58,6 +58,10 @@
       },
     })
     app.mount(el)
+  })
+
+  onDestroy(() => {
+    app?.unmount()
   })
 
   $: updateState(value, $$restProps)
