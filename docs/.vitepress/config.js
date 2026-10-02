@@ -26,7 +26,7 @@ const { join } = require('node:path')
 // field here that goes out of date on its own, and a hardcoded version is a lie
 // nobody notices — bumpp moves every manifest in lockstep, so this cannot drift.
 const { version } = require('../../packages/poveste/package.json')
-const { llmsTxt, publishedPlugins } = require('./llms.js')
+const { llmsFullTxt, llmsTxt, publishedPlugins } = require('./llms.js')
 
 // Filled as each page is transformed and read at the end of the build, which is
 // the only point where every page's frontmatter has been seen.
@@ -118,6 +118,7 @@ module.exports = {
     const { nav, sidebar } = module.exports.themeConfig
     const plugins = publishedPlugins(join(__dirname, '..', '..', 'packages'))
     writeFileSync(join(outDir, 'llms.txt'), llmsTxt({ site: SITE, nav, sidebar, descriptions, plugins, version }))
+    writeFileSync(join(outDir, 'llms-full.txt'), llmsFullTxt({ site: SITE, nav, sidebar, srcDir: join(__dirname, '..'), version }))
   },
 
   lastUpdated: true,
