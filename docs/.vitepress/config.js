@@ -160,6 +160,10 @@ module.exports = {
                 link: '/guide/sveltekit/getting-started',
               },
               {
+                text: 'Solid',
+                link: '/guide/solid/getting-started',
+              },
+              {
                 text: 'Quasar',
                 link: '/guide/quasar/getting-started',
               },
@@ -323,6 +327,36 @@ module.exports = {
             {
               text: 'Hierarchy',
               link: '/guide/vue/hierarchy',
+            },
+          ],
+        },
+        {
+          text: 'Learn more',
+          collapsible: true,
+          items: [
+            {
+              text: 'About Poveste',
+              link: '/guide/',
+            },
+            {
+              text: 'Configuration',
+              link: '/guide/config',
+            },
+            {
+              text: 'Plugins',
+              link: '/guide/plugins/official',
+            },
+          ],
+        },
+      ],
+      '/guide/solid/': [
+        {
+          text: 'Guide - Solid',
+          collapsible: true,
+          items: [
+            {
+              text: 'Getting Started',
+              link: '/guide/solid/getting-started',
             },
           ],
         },

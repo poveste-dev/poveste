@@ -263,6 +263,24 @@ export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
 
 [Learn more](./svelte/app-setup.md)
 
+### Solid setup
+
+Inside your setup file, you can export a `setupSolid` function that will be called by Poveste before every story and variant mounts. `defineSetupSolid` gives it types:
+
+```tsx
+// src/poveste.setup.tsx
+
+import { defineSetupSolid } from '@poveste/plugin-solid'
+
+export const setupSolid = defineSetupSolid(({ story, variant, addWrapper }) => {
+  addWrapper(props => <div class="story-frame">{props.children}</div>)
+})
+```
+
+There is no `app`: Solid has no application object. A wrapper is where a provider or a context goes, and the hook runs before mount, so the wrapper is there for the first render.
+
+[Learn more](./solid/getting-started.md#setup-and-wrappers)
+
 ## Theming
 
 Poveste can be white-labeled to match your brand guidelines. Here are the available options:
