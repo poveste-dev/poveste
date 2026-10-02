@@ -9,7 +9,7 @@ const deploy = [process.env.BRANCH, process.env.COMMIT_REF?.slice(0, 7), process
 const SITE = 'https://poveste.dev'
 // The home page is `layout: home` and carries no title of its own, so this is
 // what it falls back to — and `||`, not `??`, because what it has is empty.
-const CARD_TITLE = 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit, Quasar and Solid'
+const CARD_TITLE = 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar'
 const DESCRIPTION = 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar, plus Solid (renderer only) — a drop-in fork of histoire, with Quasar support histoire does not ship.'
 
 // `index.md` is the directory itself; everything else drops the extension. This
