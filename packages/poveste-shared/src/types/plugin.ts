@@ -15,6 +15,7 @@ import type {
   ServerStory,
   ServerStoryFile,
   ServerVariant,
+  Variant,
 } from './story.js'
 
 /**
@@ -28,6 +29,25 @@ export interface SupportPlugin {
   setupFn: string | string[]
   importStoriesPrepend?: string
   importStoryComponent: (file: ServerStoryFile, index: number) => string
+}
+
+/**
+ * The client half of a {@link SupportPlugin}: the module the app loads through
+ * `virtual:$poveste-support-plugins-client` to mount a story, render one, and
+ * read a variant's source back out.
+ *
+ * `generateSourceCode` may return nothing. A framework that cannot recover source
+ * from a render tree is a supported shape — two plugins ship as one — and the app
+ * falls back to the story file (#1108).
+ *
+ * The components are whatever the app renders them with, so the app names that
+ * type and a plugin is held only to providing them: they are built against
+ * `@poveste/vendors/vue`, a separate copy of Vue's types from the app's own.
+ */
+export interface ClientSupportPlugin<TComponent = unknown> {
+  MountStory: TComponent
+  RenderStory: TComponent
+  generateSourceCode: (variant: Variant) => Awaitable<string | undefined>
 }
 
 /**
