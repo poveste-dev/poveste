@@ -16,7 +16,7 @@
 //   7. the hostname is declared everywhere it should be, and agrees
 //   8. one <title> per page, and none inside an <svg> — #571
 //   9. the home page carries one parseable ld+json block — #573
-//  10. llms.txt lists the built pages, and only those — #1127
+//  10. llms.txt lists the built pages, and only those, and llms-full.txt carries each — #1127
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -284,6 +284,20 @@ export function llmsProblems(builtPages: string[], text: string, site: string): 
   return problems
 }
 
+/**
+ * `/llms-full.txt` against `/llms.txt`: one `Source:` per listed page, and none
+ * the map does not list. Both are generated from the same walk, so a gap here
+ * means one generator changed without the other.
+ */
+export function llmsFullProblems(llms: string, full: string, site: string): string[] {
+  const listed = [...llms.matchAll(/^- \[[^\]]+\]\(([^)]+)\)/gm)].map(match => captured(match)).filter(url => url.startsWith(`${site}/`))
+  const carried = [...full.matchAll(/^Source: (\S+)$/gm)].map(match => captured(match))
+  return [
+    ...listed.filter(url => !carried.includes(url)).map(url => `llms-full.txt does not carry ${new URL(url).pathname}, which llms.txt lists`),
+    ...carried.filter(url => !listed.includes(url)).map(url => `llms-full.txt carries ${new URL(url).pathname}, which llms.txt does not list`),
+  ]
+}
+
 // Every place the site states its own hostname. A declaration that goes missing
 // is reported, not skipped: a reformat must not quietly retire an assertion.
 export const HOSTNAME_DECLARATIONS = [
@@ -549,7 +563,14 @@ function checkBuild(root: string, problems: string[], built: Built | undefined):
     problems.push('llms.txt is not in the build — the `buildEnd` hook in the VitePress config writes it')
   }
   else {
-    problems.push(...llmsProblems(built.pages, readFileSync(join(dist, 'llms.txt'), 'utf8'), SITE))
+    const llms = readFileSync(join(dist, 'llms.txt'), 'utf8')
+    problems.push(...llmsProblems(built.pages, llms, SITE))
+    if (!built.paths.has('/llms-full.txt')) {
+      problems.push('llms-full.txt is not in the build — the `buildEnd` hook in the VitePress config writes it')
+    }
+    else {
+      problems.push(...llmsFullProblems(llms, readFileSync(join(dist, 'llms-full.txt'), 'utf8'), SITE))
+    }
   }
 
   const { missing, extra } = sitemapGaps(built.pages, listed)

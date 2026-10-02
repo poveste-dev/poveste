@@ -7,6 +7,7 @@ import {
   deployMarker,
   documentTitles,
   htmlTwinProblems,
+  llmsFullProblems,
   llmsProblems,
   missingRedirectTargets,
   pageUrlPath,
@@ -664,6 +665,25 @@ describe('llmsProblems', () => {
     expect(llmsProblems([], 'Poveste\n', SITE)).toEqual([
       'llms.txt does not open with an H1 naming the project',
       'llms.txt has no `>` summary line',
+    ])
+  })
+})
+
+describe('llmsFullProblems', () => {
+  const llms = '# Poveste\n\n- [Why](https://poveste.dev/guide/): Why.\n- [Config](https://poveste.dev/guide/config): Config.\n- [poveste](https://www.npmjs.com/package/poveste)\n'
+
+  it('is silent when every listed page is carried', () => {
+    const full = '# Poveste\n\n---\n\nSource: https://poveste.dev/guide/\n\n# Why\n\n---\n\nSource: https://poveste.dev/guide/config\n\n# Config\n'
+
+    expect(llmsFullProblems(llms, full, SITE)).toEqual([])
+  })
+
+  it('reports a listed page the full text left out, and one it carries that is not listed', () => {
+    const full = '# Poveste\n\n---\n\nSource: https://poveste.dev/guide/\n\n---\n\nSource: https://poveste.dev/guide/gone\n'
+
+    expect(llmsFullProblems(llms, full, SITE)).toEqual([
+      'llms-full.txt does not carry /guide/config, which llms.txt lists',
+      'llms-full.txt carries /guide/gone, which llms.txt does not list',
     ])
   })
 })
