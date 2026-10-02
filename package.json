@@ -25,6 +25,7 @@
     "bench:pool": "pnpm --filter poveste exec vitest bench",
     "story:build:e2e": "pnpm --filter ./examples/vue --filter ./examples/vue-tailwind --filter ./examples/nuxt --filter ./examples/svelte --filter ./examples/sveltekit --filter ./examples/quasar --filter ./examples/vike --filter ./examples/solid --filter ./examples/sveltekit3 run story:build",
     "test:smoke": "bash scripts/release/smoke-test.sh",
+    "test:smoke:dev": "POVESTE_SMOKE_DEV=1 bash scripts/release/smoke-test.sh",
     "test:starters": "vitest run --project scripts checks/starters --tags-filter=\"check && !after-publish\"",
     "test:starters:release": "vitest run --project scripts checks/starters --tags-filter=\"check && after-publish\"",
     "test:versions": "vitest run --project scripts checks/versions",

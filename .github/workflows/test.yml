@@ -346,8 +346,15 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
-      - name: Smoke test (pack + install + build)
-        run: pnpm run test:smoke
+      # For the dev pass below. No cache: one browser, and this job runs once.
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # `:dev` also runs `poveste dev` over the Vue and Svelte installs and opens
+      # a story, which the build alone cannot see: that path shipped blank twice
+      # (#1060, #1134). The release and minimum-Node runs keep the build-only pass.
+      - name: Smoke test (pack + install + build + dev)
+        run: pnpm run test:smoke:dev
 
   # Story collection is the code that breaks on Windows — `storyMatch` /
   # `storyIgnored` globs, the vite-node module graph, path handling throughout
