@@ -254,7 +254,7 @@ function packedPaths(tarball: string): string[] {
  * The licence a tarball ships, against the repository's.
  *
  * pnpm packs the workspace root's `LICENSE` into a package that has none of its
- * own, which is how twelve packages ship it with no copy in their directory. It
+ * own, which is how most packages ship it with no copy in their directory. It
  * skips that when the package packs any `LICENSE` at all, and `@poveste/app`
  * packs its bundled font's: it published with the font's licence and not ours
  * (#936). So this asserts what was packed, not what the tree holds.
