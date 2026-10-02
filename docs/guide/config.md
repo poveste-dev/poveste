@@ -281,6 +281,24 @@ There is no `app`: Solid has no application object. A wrapper is where a provide
 
 [Learn more](./solid/getting-started.md#setup-and-wrappers)
 
+### React setup
+
+Inside your setup file, you can export a `setupReact` function that will be called by Poveste before every story and variant mounts. `defineSetupReact` gives it types:
+
+```tsx
+// src/poveste.setup.tsx
+
+import { defineSetupReact } from '@poveste/plugin-react'
+
+export const setupReact = defineSetupReact(({ story, variant, addWrapper }) => {
+  addWrapper(({ children }) => <div className="story-frame">{children}</div>)
+})
+```
+
+There is no `app`: a React root renders one tree and takes no plugins. A wrapper is where a provider or a context goes, and the hook runs before mount, so the wrapper is there for the first render.
+
+[Learn more](./react/getting-started.md#setup-and-wrappers)
+
 ## Theming
 
 Poveste can be white-labeled to match your brand guidelines. Here are the available options:
