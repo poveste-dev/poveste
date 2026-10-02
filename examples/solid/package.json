@@ -1,0 +1,21 @@
+{
+  "name": "poveste-example-solid",
+  "type": "module",
+  "version": "0.16.2",
+  "private": true,
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview --port 4574"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.15"
+  },
+  "devDependencies": {
+    "@poveste/plugin-solid": "workspace:*",
+    "poveste": "workspace:*",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-solid": "^2.11.14"
+  }
+}
