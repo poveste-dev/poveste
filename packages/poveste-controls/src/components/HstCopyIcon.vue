@@ -7,11 +7,12 @@ export default {
 <script lang="ts" setup>
 import type { Awaitable } from '@poveste/shared'
 import { Icon } from '@iconify/vue'
-import { useClipboard, useLiveAnnouncer } from '@vueuse/core'
+import { useClipboard, useLiveAnnouncer, useTimeoutFn } from '@vueuse/core'
+import { ref } from 'vue'
 import HstTooltip from './HstTooltip.vue'
 
 const props = defineProps<{
-  content: string | (() => Awaitable<string>)
+  content: string | undefined | (() => Awaitable<string | undefined>)
 }>()
 
 const { copy, copied } = useClipboard()
@@ -19,8 +20,22 @@ const { copy, copied } = useClipboard()
 // hear a tooltip change (#827).
 const { polite } = useLiveAnnouncer()
 
+// `copy` skips an empty value without a word, leaving the clipboard holding
+// whatever was copied before — which then pastes as if it came from here (#1108).
+const empty = ref(false)
+const { start: clearEmpty } = useTimeoutFn(() => {
+  empty.value = false
+}, 1500, { immediate: false })
+
 async function action() {
   const content = typeof props.content === 'function' ? await props.content() : props.content
+  if (!content) {
+    empty.value = true
+    clearEmpty()
+    polite('Nothing to copy')
+    return
+  }
+  empty.value = false
   await copy(content)
   if (copied.value) {
     polite('Copied')
@@ -30,8 +45,8 @@ async function action() {
 
 <template>
   <HstTooltip
-    content="Copied!"
-    :open="copied"
+    :content="empty ? 'Nothing to copy' : 'Copied!'"
+    :open="copied || empty"
     :offset="12"
   >
     <button
