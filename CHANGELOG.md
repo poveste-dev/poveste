@@ -4,6 +4,42 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.17.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.0...v0.17.1)
+
+**Four fixes, and nothing to do on upgrade.**
+
+It is a `patch`: no commit in the range is a `feat` or carries a breaking-change marker, no configuration key changed and no version floor moved. One fix changes what happens on a Nuxt older than the plugin supports, and that project was already unsupported — it is described below so it is not a surprise.
+
+### 🩹 Fixes
+
+- **The copy button on a grid cell copies the story file in Svelte books** ([#1108](https://github.com/poveste-dev/poveste/issues/1108), [#1115](https://github.com/poveste-dev/poveste/pull/1115)). Svelte generates no source for a story, and the grid's copy button then copied nothing — silently, leaving your clipboard holding whatever you had copied before, so pasting gave you something else with no reason to doubt it. It now copies the story file, as the source panel already did. When there is genuinely nothing to copy, the button says *Nothing to copy* instead of appearing to succeed, and announces it to screen readers. Plain-JavaScript stories take the same path.
+
+- **Svelte controls clean up when you leave a story** ([#1111](https://github.com/poveste-dev/poveste/issues/1111), [#1113](https://github.com/poveste-dev/poveste/pull/1113)). Each control a Svelte story declares in its `controls` snippet is a small Vue app, and none was ever unmounted, so a control's own cleanup never ran. Controls generated from props never went through that path and were not affected. The case you could notice: leaving a story while dragging a number control left two listeners on the page for the rest of the session. Controls now unmount with their story, as they already did in Vue books.
+
+- **`poveste dev` names the problem on a Nuxt older than `@poveste/plugin-nuxt` supports** ([#1062](https://github.com/poveste-dev/poveste/issues/1062), [#1119](https://github.com/poveste-dev/poveste/pull/1119)). The plugin requires Nuxt `^4.5.0`. Installing past the peer conflict on a Nuxt 3 project — with `--legacy-peer-deps`, which npm's own error suggests — got you a first `poveste dev` that died on `Cannot find package 'vite'`, which says nothing about Nuxt. Poveste now compares the installed Nuxt with the plugin's range before anything else loads and stops with both versions named. **Only a project already on an unsupported Nuxt sees a difference**: it now stops with the reason instead of an unrelated error.
+
+- **For plugin authors: the client half of a framework plugin has a type** ([#1116](https://github.com/poveste-dev/poveste/issues/1116), [#1120](https://github.com/poveste-dev/poveste/pull/1120)). `@poveste/shared` now exports `ClientSupportPlugin`, the shape the app expects from a framework plugin's client module — mounting a story, rendering it and generating its source. Poveste's own plugins are held to it, so one that drifts fails its own build. Nothing changes for a book.
+
+### 📖 Documentation
+
+- **Every framework's getting-started page now states the Node floor where you install, and says that an older Node fails silently** ([#1106](https://github.com/poveste-dev/poveste/issues/1106), [#1118](https://github.com/poveste-dev/poveste/pull/1118)). A check now holds every Node version stated in the docs to the published `engines.node`.
+
+- **The lost-pixel CI recipe ran Node 18**, which silently installs an old Poveste; it now runs a supported Node ([#1102](https://github.com/poveste-dev/poveste/issues/1102), [#1117](https://github.com/poveste-dev/poveste/pull/1117)).
+
+### Correction to the v0.17.0 notes
+
+The v0.17.0 Upgrading notes were wrong about what happens on Node 22 or Node 24.0–24.14, and that email cannot be re-sent, so the correction is here. Measured with `npm i poveste` in an empty project:
+
+| your Node | npm installs | what npm prints |
+| --- | --- | --- |
+| 22.22.2 or newer | `poveste@0.16.2` | nothing |
+| 24.0 – 24.14 | `poveste@0.16.2` | `EBADENGINE` warnings about `jsdom` and three of its dependencies — none names Poveste |
+| 22 below 22.22.2 | `poveste@0.6.1` | a deprecation notice, the only message that mentions Poveste |
+
+The notes said `0.6.1` and *a deprecation notice* for all of them. On the common path you get the release before v0.17.0, and nothing on screen tells you so. The advice stands: upgrade Node to 24.15.0, or pin `poveste@0.16.2` if you cannot yet.
+
 ## v0.17.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.16.2...v0.17.0)
