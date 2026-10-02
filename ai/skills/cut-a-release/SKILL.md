@@ -25,6 +25,30 @@ Everything else in a release can be re-run. This cannot.
 4. **Pick the type from the commits, not the milestone** — a `!` marker or a `BREAKING CHANGE:` footer in the range means `minor`, so does a `feat`, and otherwise it is a `patch`. A breaking change lands in the minor because the package is pre-1.0 and `major` is a separate declaration (below); a `patch` that breaks consumers is the one direction a caret range cannot defend against. A milestone names the release its issues aim at, not what shipped; issues slip.
 5. `pnpm run release patch` (or `minor`).
 
+## Cadence
+
+**A minor carries one or two features and is cut on a Wednesday.** The day is a deadline, not an obligation: a week whose feature is not finished cuts no minor, because every publish emails every watcher and a release with nothing new in it spends that.
+
+**Fixes do not wait for a feature.** They ship as a `patch` as soon as they are ready, on any day.
+
+**Within a release, the feature comes first.** Once it is done, the time left goes to fixes. Work that runs alongside a feature still being finished goes to technical debt rather than to a second feature.
+
+**A feature split across several PRs merges as one stack before the freeze, or not at all.** The cut is a fast-forward, so a stack half-merged by Monday is half a feature published on Wednesday — a package with no example and no docs, announced to everyone watching.
+
+**A breaking change gets a release to itself**, so its notes lead with the break and nothing else competes for the reader's attention.
+
+## A patch from below a merged feature
+
+Fixes are ready and `next` already carries a feature that is not ready to publish. A fast-forward of `main` to `next` would ship both, so cut the patch from the last commit below the feature instead. v0.17.1 was cut this way, with `plugin-solid` merged above its fixes.
+
+1. In a worktree, rebase a copy of `next` onto `main`, and find the last commit before the feature.
+2. Branch there and commit the `CHANGELOG.md` section on that branch. This is the one case where the section is not written on `next`: `next` cannot hold a commit *below* the feature without being rewritten.
+3. Fast-forward `main` to it: `git push origin <sha>:refs/heads/main`. It is a fast-forward because the copy was rebased onto `main`.
+4. Release from the shared checkout as usual, once it is on `main`.
+5. Leave `next` alone until the next cut. Its rebase onto `main` then drops the commits already released, because git skips a commit whose patch is already upstream, and picks up the notes commit beneath the feature.
+
+The range check (`scripts/checks/changelog.ts`) and the release-type gate both read from the last tag to `HEAD`, so neither sees the feature sitting above the cut.
+
 ## The freeze
 
 **Declare it before step 1 and lift it deliberately.** `next` is frozen from the moment you start writing the notes: the release is a fast-forward, so anything merged while you write ships inside a section that never described it. Contributors are told to park work as green-and-open in `ai/AGENTS.md`; the person cutting is the one who has to say when that starts and when it ends.

@@ -99,7 +99,7 @@ Node comes from [`.node-version`](../.node-version); `fnm exec --using <version>
 
 ## Issues
 
-An issue gets a native GitHub issue **type** (`Bug`, `Feature`, `Task`) and at least one **`a:` label**: `a:vue`, `a:svelte`, `a:nuxt`, `a:app`, `a:node`, `a:controls`, `a:plugins`, `a:ci`, `a:repo`.
+An issue gets a native GitHub issue **type** (`Bug`, `Feature`, `Task`) and at least one **`a:` label**: `a:vue`, `a:svelte`, `a:solid`, `a:nuxt`, `a:app`, `a:node`, `a:controls`, `a:plugins`, `a:ci`, `a:repo`.
 
 Seven of those say what they are. Two do not, and picking them wrongly is defensible enough that it has already happened:
 
