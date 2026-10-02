@@ -12,13 +12,13 @@ it('unmounts the control\'s Vue app when the Svelte wrapper is destroyed', () =>
       onUnmounted(() => {
         unmounted = true
       })
-      return () => h('span', 'control')
+      return () => h('span', { 'data-control': '' })
     },
   })
   const target = document.createElement('div')
   const wrap = mount(Wrap, { target, props: { controlComponent: Control, value: 'text' } })
   flushSync()
-  expect(target.textContent).toContain('control')
+  expect(target.querySelector('[data-control]')).not.toBeNull()
 
   unmount(wrap)
 
