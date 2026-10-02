@@ -69,6 +69,7 @@ export const ALLOWED_HOSTS = new Set([
   'www.contributor-covenant.org',
   'nuxt.com',
   'svelte.dev',
+  'www.solidjs.com',
   'nodejs.org',
   'unhead.unjs.io',
   'i18n.nuxtjs.org',

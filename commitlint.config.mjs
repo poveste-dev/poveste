@@ -10,6 +10,7 @@ const SCOPES = [
   'vendors',
   'vue',
   'svelte',
+  'solid',
   'nuxt',
   'quasar',
   'percy',
