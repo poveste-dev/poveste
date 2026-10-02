@@ -79,3 +79,21 @@ describe('the vite config path', () => {
     ])
   })
 })
+
+describe('the `preview` group', () => {
+  it('accepts null for a size, which sizes the preview to the available space', () => {
+    expect(configProblems({ preview: { responsiveWidth: 360, responsiveHeight: null } }, 'poveste.config.ts')).toEqual([])
+  })
+
+  it('names a size of the wrong type, and says null is allowed', () => {
+    expect(configProblems({ preview: { responsiveWidth: '360px' } }, 'poveste.config.ts')).toEqual([
+      'poveste.config.ts: `preview.responsiveWidth` must be number or null, received string ("360px")',
+    ])
+  })
+
+  it('names a null where only an object will do', () => {
+    expect(configProblems({ preview: null }, 'poveste.config.ts')).toEqual([
+      'poveste.config.ts: `preview` must be object, received null (null)',
+    ])
+  })
+})

@@ -132,7 +132,13 @@ describe('bookProblems', () => {
   it('names a book that does not set the default background', () => {
     const source = SPREADING.replace(`defaultBackgroundColor: 'transparent',`, '')
 
-    expect(bookProblems('vue', 'f.ts', source, DEFAULTS)[0]).toMatch(/defaultBackgroundColor/)
+    expect(bookProblems('vue', 'f.ts', source, DEFAULTS)[0]).toMatch(/preview: \{ backgroundColor: 'transparent' \}/)
+  })
+
+  it('accepts the background under `preview` as well as the deprecated key', () => {
+    const source = SPREADING.replace(`defaultBackgroundColor: 'transparent',`, `preview: { backgroundColor: 'transparent' },`)
+
+    expect(bookProblems('vue', 'f.ts', source, DEFAULTS)).toEqual([])
   })
 
   it('reports every problem at once, so one run says what to write', () => {

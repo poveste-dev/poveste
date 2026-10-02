@@ -143,8 +143,10 @@ export function bookProblems(name: string, file: string, source: string, default
     problems.push(`${where} does not declare the \`${CUSTOM_PRESET.label}\` preset, so \`toolbar-background\` finds five buttons where it asserts six`)
   }
 
-  if (!/defaultBackgroundColor:\s*'transparent'/.test(source)) {
-    problems.push(`${where} does not set \`defaultBackgroundColor: 'transparent'\`, which the same spec starts from`)
+  // Either spelling: `preview.backgroundColor`, or the deprecated key it
+  // replaced, which is still honoured (#1109).
+  if (!/(?:preview:\s*\{[^}]*backgroundColor|defaultBackgroundColor):\s*'transparent'/.test(source)) {
+    problems.push(`${where} does not set \`preview: { backgroundColor: 'transparent' }\`, which the same spec starts from`)
   }
 
   return problems
