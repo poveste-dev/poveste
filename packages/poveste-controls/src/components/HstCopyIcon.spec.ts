@@ -1,3 +1,4 @@
+import type { VueWrapper } from '@vue/test-utils'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import HstCopyIcon from './HstCopyIcon.vue'
@@ -17,15 +18,24 @@ function tooltipText() {
   return document.body.querySelector('[role="tooltip"]')?.textContent
 }
 
+const mounted: VueWrapper[] = []
+
 async function click(content: unknown) {
   const wrapper = mount(HstCopyIcon, { props: { content } as any, attachTo: document.body })
+  mounted.push(wrapper)
   await wrapper.get('button').trigger('click')
   await new Promise(resolve => setTimeout(resolve))
   await nextTick()
 }
 
 describe('hstCopyIcon', () => {
+  // Unmounted before the body goes: the component's two timers, the copied flag
+  // and the "Nothing to copy" reset, are stopped with its scope. Left running,
+  // they fired into a removed parent while a later file ran (#1149).
   afterEach(() => {
+    for (const wrapper of mounted.splice(0)) {
+      wrapper.unmount()
+    }
     document.body.innerHTML = ''
   })
 
