@@ -95,6 +95,9 @@ const ALL_EXAMPLES: Example[] = [
     // the sandbox by different paths — so both are exercised.
     dev: { port: 4672, specs: ['**/vike-interop.spec.ts'] },
   },
+  // A fixture, not a conformance book: the contract asserts controls, and Solid
+  // has none until #1114's wrapper and #1110's auto-props exist (#61).
+  { name: 'solid', port: 4574 },
 ]
 
 /*
