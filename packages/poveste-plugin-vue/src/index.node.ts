@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
-import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVapor } from './util/vapor.js'
+import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
 
 export function HstVue(): Plugin {
   return {
@@ -29,23 +29,7 @@ export function HstVue(): Plugin {
       return {
         vite: {
           plugins: [
-            {
-              // Collection imports every story file in Node, where Vue 3.6's
-              // entry has no Vapor runtime, so a `<script setup vapor>` component
-              // failed with "does not provide an export named
-              // 'defineVaporComponent'" and took its whole story out of the book
-              // (#1153). Collection only reads metadata and stubs every component
-              // but `Story` and `Variant` (below), so the component is compiled
-              // as an ordinary one here. The browser still gets it as Vapor.
-              name: 'poveste-plugin-vue:collect-without-vapor',
-              enforce: 'pre',
-              transform(code, id) {
-                if (!(this.meta as any).poveste?.isCollecting || !id.endsWith('.vue')) {
-                  return undefined
-                }
-                return withoutVapor(code)
-              },
-            },
+            withoutVaporPlugin(),
             (() => {
               let root = process.cwd()
               return {
