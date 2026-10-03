@@ -7,7 +7,7 @@ import { computed, createApp, h, onMounted, ref, watch, watchEffect } from 'vue'
 import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
-import { previewColorScheme, previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
+import { previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
 import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
@@ -113,14 +113,6 @@ watch(previewDark, (value) => {
       el.classList.toggle(className, value)
     }
   }
-}, {
-  immediate: true,
-})
-
-// The sandbox is a document of its own, so the property goes on its root, where
-// it reaches every native widget the story renders (#991).
-watch(() => previewColorScheme(receivedSettings.colorScheme, isDark.value), (value) => {
-  document.documentElement.style.colorScheme = value
 }, {
   immediate: true,
 })
