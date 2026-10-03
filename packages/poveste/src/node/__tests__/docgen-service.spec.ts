@@ -4,9 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { createDocgenService } from '../docgen/service.js'
 
 const vue: Plugin = { name: 'vue', docgen: { match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'), module: 'fake' } }
+// A JSX story names its component in a field, so the extractor is handed the story itself.
+const solid: Plugin = { name: 'solid', docgen: { scope: 'story', match: file => /\.story\.[jt]sx$/.test(file), module: 'fake' } }
 
 function fakeRunner() {
-  const sent: { type: string, requests?: { file: string }[] }[] = []
+  const sent: { type: string, requests?: { name: string, file: string }[] }[] = []
   const runner: DocgenRunner = {
     send: vi.fn(async (request) => {
       sent.push(request)
@@ -81,6 +83,31 @@ describe('the docgen service', () => {
 
     expect(extracted(sent)).toEqual(['/book/src/Button.vue'])
     expect(Object.keys(result.components)).toEqual(['src/Button.vue'])
+  })
+
+  it('hands a story-scoped plugin the story file, not what the story imports', async () => {
+    const { docgen, sent } = service({
+      plugins: [solid],
+      storyFileOf: () => '/book/src/Button.story.tsx',
+      componentsOf: () => ['/book/src/Button.tsx', '/book/src/Other.story.tsx'],
+    })
+
+    const result = await docgen.request('button')
+
+    expect(sent[0]!.requests).toEqual([{ name: 'solid', file: '/book/src/Button.story.tsx' }])
+    expect(Object.keys(result.components)).toEqual(['src/Button.story.tsx'])
+  })
+
+  it('never hands an import-scoped plugin the story file, though it matches', async () => {
+    const { docgen, sent } = service({
+      plugins: [{ name: 'vue', docgen: { match: file => file.endsWith('.vue'), module: 'fake' } }],
+      storyFileOf: () => '/book/src/Button.story.vue',
+      componentsOf: () => ['/book/src/Button.vue'],
+    })
+
+    await docgen.request('button')
+
+    expect(extracted(sent)).toEqual(['/book/src/Button.vue'])
   })
 
   it('extracts a component once across requests', async () => {
