@@ -247,7 +247,9 @@ function toComponentDoc(
       continue
     }
 
-    const code = defaults.get(symbol.name)
+    // Normalised as Vue's printer writes it, so a default reads the same in every framework's table.
+    const written = defaults.get(symbol.name)
+    const code = written === undefined ? undefined : normalizeDefault(written)
     const defaultTag = tags.find(tag => DEFAULT_TAGS.includes(tag.name))?.text
     doc.props.push({
       ...member,
@@ -256,7 +258,7 @@ function toComponentDoc(
       ...code !== undefined ? { default: code } : {},
       ...defaultTag !== undefined ? { defaultTag } : {},
       // The code's default is what runs, so it is the one shown; the flag is for the reader.
-      ...code !== undefined && defaultTag !== undefined && normalizeDefault(code) !== normalizeDefault(defaultTag)
+      ...code !== undefined && defaultTag !== undefined && code !== normalizeDefault(defaultTag)
         ? { defaultConflict: true }
         : {},
     } satisfies DocProp)
