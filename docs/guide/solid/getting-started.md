@@ -59,7 +59,16 @@ export default defineConfig({
 
 ## Write a story
 
-A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX:
+A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX. `Badge` stands in for a component of your own; to follow along as written, this one is enough:
+
+```tsx
+// src/Badge.tsx
+import type { JSX } from 'solid-js'
+
+export function Badge(props: { tone: 'info' | 'warn', children: JSX.Element }) {
+  return <span class={`badge badge-${props.tone}`}>{props.children}</span>
+}
+```
 
 ```tsx
 // src/Badge.story.tsx
@@ -77,9 +86,39 @@ export default defineStory({
 
 A story with no `variants` and a `render` of its own has one implicit variant. `id`, `group`, `icon`, `layout` and `source` work as they do for the other frameworks.
 
+## Command Line Interface
+
+Poveste provides the following commands:
+- `poveste dev`: starts a development server with hot-reload
+- `poveste build`: builds the app for production
+- `poveste preview`: starts an HTTP server that serves the built app
+
+You can add these to your `package.json` like this:
+
+```json
+{
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview"
+  }
+}
+```
+
+And then run them with `npm run story:dev` or `npm run story:build`.
+
+You can specify additional CLI options like `--port`. For a full list of CLI options, run `npx poveste --help` in your project.
+
 ## State
 
-Give a story or a variant an `initState`, and `render` receives that state and a way to change it:
+Give a story or a variant an `initState`, and `render` receives that state and a way to change it. `Counter` again stands in for your own component:
+
+```tsx
+// src/Counter.tsx
+export function Counter(props: { count: number, onIncrement: () => void }) {
+  return <button onClick={props.onIncrement}>Count: {props.count}</button>
+}
+```
 
 ```tsx
 // src/Counter.story.tsx
