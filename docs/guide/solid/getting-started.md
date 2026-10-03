@@ -116,7 +116,7 @@ Give a story or a variant an `initState`, and `render` receives that state and a
 ```tsx
 // src/Counter.tsx
 export function Counter(props: { count: number, onIncrement: () => void }) {
-  return <button onClick={props.onIncrement}>Count: {props.count}</button>
+  return <button onClick={props.onIncrement}>{`Count: ${props.count}`}</button>
 }
 ```
 
