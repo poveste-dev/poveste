@@ -1,9 +1,13 @@
 import type { Plugin } from 'poveste'
 
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { join } from 'node:path'
+
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
-import { withoutVapor } from './util/vapor.js'
+import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVapor } from './util/vapor.js'
 
 export function HstVue(): Plugin {
   return {
@@ -42,6 +46,19 @@ export function HstVue(): Plugin {
                 return withoutVapor(code)
               },
             },
+            (() => {
+              let root = process.cwd()
+              return {
+                name: 'poveste-plugin-vue:vapor-interop',
+                configResolved(config) {
+                  root = config.root
+                },
+                resolveId: id => id === VAPOR_INTEROP_ID ? `\0${VAPOR_INTEROP_ID}` : undefined,
+                load(id) {
+                  return id === `\0${VAPOR_INTEROP_ID}` ? vaporInteropModule(projectVueVersion(root)) : undefined
+                },
+              }
+            })(),
             {
               name: 'poveste-plugin-vue',
               enforce: 'post',
@@ -78,6 +95,16 @@ export function HstVue(): Plugin {
       }
       return undefined
     },
+  }
+}
+
+function projectVueVersion(root: string): string | undefined {
+  try {
+    const manifest = createRequire(join(root, 'package.json')).resolve('vue/package.json')
+    return JSON.parse(readFileSync(manifest, 'utf8')).version
+  }
+  catch {
+    return undefined
   }
 }
 
