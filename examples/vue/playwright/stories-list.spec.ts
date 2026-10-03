@@ -10,7 +10,7 @@ test.describe('stories list', () => {
     // from `SHARED_STORIES`: a `Conformance/…` story lands inside that folder and
     // leaves it alone, while a title with no `/` adds an item here.
     // `/add-conformance-story` says which.
-    await expect(page.getByTestId('story-list-item'), 'the sidebar lists a different number of top-level stories — a story whose title has no folder moves this count').toHaveCount(39)
+    await expect(page.getByTestId('story-list-item'), 'the sidebar lists a different number of top-level stories — a story whose title has no folder moves this count').toHaveCount(40)
     await expect(page.getByTestId('story-list-item').filter({ hasText: '🐱 Meow' })).toBeVisible()
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'BaseButton' })).toContainText('3')
     await expect(page.getByTestId('story-list-item').filter({ hasText: 'Demo' })).toBeVisible()
