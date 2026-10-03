@@ -269,6 +269,14 @@ export function licenseProblems(name: string, paths: string[], packed: string | 
   return []
 }
 
+// A test file in a tarball is weight every install carries and nothing imports;
+// 0.17.2 shipped 13 in `@poveste/app` and 10 in `@poveste/plugin-vue` (#1189).
+const TEST_PATH = /(?:^|\/)__tests__\/|\.(?:spec|test)\.(?:d\.)?[cm]?[jt]sx?$/
+
+export function testPathProblems(name: string, paths: string[]): string[] {
+  return paths.filter(path => TEST_PATH.test(path)).map(path => `${name} packs \`${path}\`, a test file`)
+}
+
 // npm ships these whatever `files` says. Deliberately not the `main` file,
 // which npm also forces in: a main outside the declared surface is a defect.
 const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e)(?:\.[^/]*)?$/i
@@ -469,6 +477,7 @@ function repositoryProblems(root: string, { offline = false }: { offline?: boole
         }
       }
       const shipped = packedPaths(packed.tarball)
+      problems.push(...testPathProblems(pkg.name, shipped))
       problems.push(...licenseProblems(
         pkg.name,
         shipped,

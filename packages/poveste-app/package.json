@@ -27,6 +27,8 @@
     "./*": "./*"
   },
   "files": [
+    "!src/**/*.spec.ts",
+    "!src/**/__tests__",
     "dist",
     "src"
   ],
