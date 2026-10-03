@@ -26,3 +26,25 @@ export async function answerDevEvent(plugins: Plugin[], event: string, ask: (plu
   }
   return undefined
 }
+
+export interface DevCommandResult {
+  id: string
+  error?: string
+}
+
+/**
+ * Runs a command's server half and always reports back. Left to the listener, a
+ * `serverAction` that threw (a story file that already exists, a path with no
+ * directory) went unhandled and exited `poveste dev` (#1176).
+ */
+export async function runDevCommand(commands: { id: string, serverAction?: (params: any) => unknown }[], id: string, params: unknown): Promise<DevCommandResult> {
+  const command = commands.find(c => c.id === id)
+  try {
+    await command?.serverAction?.(params)
+    return { id }
+  }
+  catch (error) {
+    console.error(pc.red(`[poveste] command "${id}" failed:`), error)
+    return { id, error: error instanceof Error ? error.message : String(error) }
+  }
+}

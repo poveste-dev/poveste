@@ -15,6 +15,7 @@ import {
   searchForWorkspaceRoot,
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
+import { runDevCommand } from './dev-event.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
@@ -415,11 +416,8 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     plugins.push({
       name: 'poveste:dev-commands',
       configureServer(server) {
-        server.ws.on('poveste:dev-command', ({ id, params }) => {
-          const command = ctx.registeredCommands.find(c => c.id === id)
-          if (command?.serverAction) {
-            command.serverAction(params)
-          }
+        server.ws.on('poveste:dev-command', async ({ id, params }) => {
+          server.ws.send('poveste:dev-command-result', await runDevCommand(ctx.registeredCommands, id, params))
         })
       },
     })
