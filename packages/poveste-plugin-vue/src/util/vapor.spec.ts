@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
-import { hasVaporInterop, vaporInteropModule, withoutVapor } from './vapor.js'
+import { hasVaporInterop, vaporInteropModule, withoutVapor, withoutVaporPlugin } from './vapor.js'
 
 describe('withoutVapor', () => {
   it('drops the attribute from a `<script setup vapor>`', () => {
@@ -78,5 +78,31 @@ describe('vaporInteropModule', () => {
 
   it('exports nothing usable from one that does not, so a 3.5 build has no import to warn about', () => {
     expect(vaporInteropModule('3.5.43')).toBe(`export default undefined\n`)
+  })
+})
+
+describe('withoutVaporPlugin', () => {
+  const SFC = '<script setup vapor>\n</script>\n<template>\n<p/>\n</template>'
+  const STORY = '/book/src/Buttons.story.vue'
+
+  // What the core's own Vite plugin exposes, found by name the way Vite resolves it.
+  function transform(id: string, isCollecting: boolean) {
+    const plugin = withoutVaporPlugin()
+    const core = { name: 'poveste-vite-plugin', api: { isStoryFile: (file: string) => file === STORY } }
+    ;(plugin.configResolved as (config: unknown) => void)({ plugins: [core] })
+    const hook = plugin.transform as (this: unknown, code: string, id: string) => string | undefined
+    return hook.call({ meta: { poveste: { isCollecting } } }, SFC, id)
+  }
+
+  it('compiles every component without Vapor during collection', () => {
+    expect(transform('/book/src/Button.vue', true)).toBe('<script setup>\n</script>\n<template>\n<p/>\n</template>')
+  })
+
+  it('compiles a story file without Vapor in the browser', () => {
+    expect(transform(STORY, false)).toBe('<script setup>\n</script>\n<template>\n<p/>\n</template>')
+  })
+
+  it('leaves a component a story imports as Vapor in the browser', () => {
+    expect(transform('/book/src/Button.vue', false)).toBeUndefined()
   })
 })

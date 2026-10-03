@@ -13,6 +13,7 @@ import { dirname, join, relative } from 'pathe'
 import {
   loadConfigFromFile as loadViteConfigFromFile,
   mergeConfig as mergeViteConfig,
+  normalizePath,
   searchForWorkspaceRoot,
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
@@ -183,6 +184,14 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
 
   plugins.push({
     name: 'poveste-vite-plugin',
+
+    // Only the core knows which files a book's `storyMatch` makes stories, and a
+    // framework plugin may compile those differently from the components they
+    // import (#1164). Not on `this.meta`: a Rolldown build does not carry what
+    // `options()` sets there into `transform`.
+    api: {
+      isStoryFile: (id: string) => ctx.storyFiles.some(file => normalizePath(file.path) === id),
+    },
 
     config(_, { command }) {
       const collapsedVue = isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })
