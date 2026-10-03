@@ -60,7 +60,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4567,
     conformance: true,
     reference: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts', '**/generate-story.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/generate-story.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
   },
   { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts'] } },
   {
@@ -236,6 +236,9 @@ export default defineConfig({
           // boot against the preview server's 0.7s.
           reuseExistingServer: !process.env.CI,
           timeout: 180_000,
+          // A command that opens a file in the editor runs `true` instead, so a
+          // spec never opens one on the machine running it.
+          env: { LAUNCH_EDITOR: 'true' },
         }]
       : [],
   ]),
