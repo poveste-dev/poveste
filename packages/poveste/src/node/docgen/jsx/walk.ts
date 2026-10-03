@@ -16,6 +16,7 @@ export interface JsxDialect {
   slotType: RegExp
 }
 
+/** What a JSX plugin and the book pass the extractor, through `docgen.options` and `autoDocs`. */
 export interface JsxDocgenOptions {
   /** Packages whose props count although they are declared under `node_modules`. */
   allow?: string[]
