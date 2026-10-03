@@ -68,7 +68,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4569,
     conformance: true,
     reference: true,
-    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts'] },
+    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts', '**/story-hot-reload.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'] },
   },
   { name: 'sveltekit', port: 4570, conformance: true, reference: true },
   {
