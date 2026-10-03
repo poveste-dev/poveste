@@ -1,4 +1,6 @@
 import type { DocgenExtractor, DocgenExtractorModule } from '@poveste/shared'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 import { createDocgenEngine, importable } from '../docgen/engine.js'
 
@@ -76,7 +78,13 @@ describe('the docgen engine', () => {
 
 describe('the module a plugin names', () => {
   it('is imported as a file URL when given as a path', () => {
-    expect(importable('/book/node_modules/plugin/extractor.js')).toBe('file:///book/node_modules/plugin/extractor.js')
+    // Absolute on whichever platform runs it: `D:\book\...` on Windows, where the bug was.
+    const path = resolve('/book/node_modules/plugin/extractor.js')
+
+    const url = importable(path)
+
+    expect(url).toMatch(/^file:\/\/\//)
+    expect(fileURLToPath(url)).toBe(path)
   })
 
   it('is imported as given when already a URL or a package', () => {
