@@ -11,6 +11,7 @@ import type {
   ConfigMode,
   PovesteConfig,
 } from './config.js'
+import type { PluginDocgen } from './docgen.js'
 import type {
   ServerStory,
   ServerStoryFile,
@@ -257,6 +258,11 @@ export interface Plugin {
    * Handle a custom event from the client in development mode.
    */
   onDevEvent?: (api: PluginApiDevEvent) => Awaitable<any>
+  /**
+   * Auto-docs for this framework's components: which files it documents, and the
+   * module that extracts them, run lazily in a worker (#1159).
+   */
+  docgen?: PluginDocgen
   /**
    * Use this hook to manipulate Vite plugins before they are passed to Vite.
    */
