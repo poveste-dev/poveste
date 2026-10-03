@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { sandboxHtml, seedChromeScheme, seedPreviewSettings } from './support'
 
@@ -198,4 +198,79 @@ test.describe('the color-scheme the browser is told', () => {
     await expect(sandboxHtml(page)).toHaveCSS('color-scheme', 'light')
     await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark')
   })
+})
+
+/*
+ * What is painted, not what is declared. Where a sandbox root's `color-scheme`
+ * differs from the `<iframe>` element's, the browser paints the frame opaque,
+ * hiding the background preset and checkerboard behind it. Every property
+ * assertion above held throughout (#1167).
+ *
+ * Compares a point of the preview with the same point once the frame is hidden,
+ * so it holds for any preset: a transparent frame shows exactly what is behind
+ * it. Decoded by the page, so the spec needs no PNG library.
+ */
+test.describe('what the preview paints over its background', () => {
+  async function pixel(page: Page, x: number, y: number) {
+    const png = await page.screenshot({ clip: { x: Math.floor(x), y: Math.floor(y), width: 1, height: 1 } })
+    return page.evaluate(async (data) => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${data}`
+      await image.decode()
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, 0, 0)
+      return [...context.getImageData(0, 0, 1, 1).data.slice(0, 3)]
+    }, png.toString('base64'))
+  }
+
+  // Right of the content and clear of it, in both a full preview and a grid cell.
+  async function shownAndBehind(page: Page, frame: Locator) {
+    const box = (await frame.boundingBox())!
+    const [x, y] = [box.x + box.width - 4, box.y + box.height / 2]
+    const shown = await pixel(page, x, y)
+    await frame.evaluate((el: HTMLElement) => el.style.setProperty('visibility', 'hidden'))
+    const behind = await pixel(page, x, y)
+    await frame.evaluate((el: HTMLElement) => el.style.removeProperty('visibility'))
+    return { shown, behind }
+  }
+
+  const CASES = [
+    { chrome: 'dark', os: 'light', preview: 'light', backgroundColor: 'transparent', checkerboard: true },
+    { chrome: 'dark', os: 'light', preview: 'light', backgroundColor: '#333', checkerboard: false },
+    { chrome: 'light', os: 'dark', preview: 'auto', backgroundColor: '#aaa', checkerboard: false },
+    // The two agree, so this held before the fix too: it proves the method.
+    { chrome: 'dark', os: 'light', preview: 'dark', backgroundColor: '#333', checkerboard: false },
+  ] as const
+
+  for (const { chrome, os, preview, backgroundColor, checkerboard } of CASES) {
+    const name = `interface ${chrome}, preview ${preview} on a ${os} OS, ${checkerboard ? 'checkerboard' : backgroundColor}`
+
+    test(`shows the background through a full preview: ${name}`, async ({ page }) => {
+      await seedChromeScheme(page, chrome)
+      await seedPreviewSettings(page, { colorScheme: preview, backgroundColor, checkerboard })
+      await page.emulateMedia({ colorScheme: os })
+      await page.goto(IFRAME_STORY)
+      const frame = page.getByTestId('preview-iframe')
+      await expect(frame.contentFrame().locator('.conformance-contrast')).toBeVisible()
+      await expect(frame).toBeVisible()
+
+      const { shown, behind } = await shownAndBehind(page, frame)
+      expect(shown).toEqual(behind)
+    })
+
+    test(`shows the background through a grid cell: ${name}`, async ({ page }) => {
+      await seedChromeScheme(page, chrome)
+      await seedPreviewSettings(page, { colorScheme: preview, backgroundColor, checkerboard })
+      await page.emulateMedia({ colorScheme: os })
+      await page.goto('/story/conformance-grid')
+      const frame = page.getByTestId('preview-iframe').first()
+      await expect(frame.contentFrame().locator('.conformance-text')).toBeVisible()
+      await expect(frame).toBeVisible()
+
+      const { shown, behind } = await shownAndBehind(page, frame)
+      expect(shown).toEqual(behind)
+    })
+  }
 })
