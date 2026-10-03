@@ -1,6 +1,6 @@
 import type { Plugin } from '@poveste/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answerDevEvent } from '../dev-event.js'
+import { answerDevEvent, runDevCommand } from '../dev-event.js'
 
 function plugin(name: string, onDevEvent: () => unknown): Plugin {
   return { name, onDevEvent } as Plugin
@@ -45,5 +45,33 @@ describe('answerDevEvent', () => {
     await answerDevEvent([throwing, plugin('after', after)], 'onStoryOpened', p => p.onDevEvent!({} as any))
 
     expect(after).toHaveBeenCalledOnce()
+  })
+})
+
+describe('runDevCommand', () => {
+  // A rejection here was unhandled in the listener, and Node exited on it (#1176).
+  it('reports a server action that throws, rather than rejecting', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const commands = [{ id: 'generate', serverAction: () => {
+      throw new Error('File src/Button.story.vue already exists')
+    } }]
+
+    await expect(runDevCommand(commands, 'generate', {})).resolves.toEqual({ id: 'generate', error: 'File src/Button.story.vue already exists' })
+  })
+
+  it('waits for the server action before reporting success', async () => {
+    let done = false
+    const commands = [{ id: 'generate', serverAction: async () => {
+      await new Promise(resolve => setTimeout(resolve, 10))
+      done = true
+    } }]
+
+    await runDevCommand(commands, 'generate', {})
+
+    expect(done).toBe(true)
+  })
+
+  it('reports success for a command with no server half', async () => {
+    await expect(runDevCommand([{ id: 'builtin:docs' }], 'builtin:docs', {})).resolves.toEqual({ id: 'builtin:docs' })
   })
 })
