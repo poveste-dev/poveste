@@ -46,6 +46,9 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       if (id.startsWith(VirtualFiles.SEARCH_DOCS_DATA_ID)) {
         return VirtualFiles.RESOLVED_SEARCH_DOCS_DATA_ID
       }
+      if (id === VirtualFiles.COMPONENT_DOCS_ID) {
+        return VirtualFiles.RESOLVED_COMPONENT_DOCS_ID
+      }
       if (id.startsWith(VirtualFiles.GENERATED_GLOBAL_SETUP)) {
         return VirtualFiles.RESOLVED_GENERATED_GLOBAL_SETUP
       }
@@ -105,6 +108,11 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
 
       if (id === VirtualFiles.RESOLVED_SEARCH_DOCS_DATA_ID) {
         return getSearchDataJS(await generateDocSearchData(ctx))
+      }
+
+      // Filled by `poveste build`; in dev the docs come over the dev socket instead.
+      if (id === VirtualFiles.RESOLVED_COMPONENT_DOCS_ID) {
+        return `export const componentDocs = ${JSON.stringify(ctx.componentDocs ?? {})}\n`
       }
 
       if (id === VirtualFiles.RESOLVED_GENERATED_GLOBAL_SETUP) {
