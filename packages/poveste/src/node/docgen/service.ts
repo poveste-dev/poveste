@@ -103,7 +103,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
     return runner
   }
 
-  function extract(files: string[]) {
+  async function extract(files: string[]) {
     const missing = files.filter(file => !cache.has(file))
     if (missing.length) {
       const response = start().send({
@@ -121,7 +121,8 @@ export function createDocgenService(options: DocgenServiceOptions) {
         }
       })
     }
-    return Promise.all(files.map(async file => [relative(options.root, file), await cache.get(file)!] as const))
+    const results = await Promise.all(files.map(async file => [relative(options.root, file), await cache.get(file)!] as const))
+    return results.filter(([, result]) => result.doc || result.error)
   }
 
   return {

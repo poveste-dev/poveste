@@ -10,7 +10,8 @@ export interface EngineExtractorSpec {
   options?: unknown
 }
 
-export type ExtractResult = { doc: ComponentDoc } | { doc?: undefined, error: string }
+/** An empty result is a file the extractor found nothing to document in, such as a story naming no component. */
+export type ExtractResult = { doc: ComponentDoc } | { doc?: undefined, error: string } | { doc?: undefined, error?: undefined }
 
 export interface DocgenEngineOptions {
   root: string
@@ -81,7 +82,7 @@ export function createDocgenEngine(options: DocgenEngineOptions) {
         try {
           const extractor = await extractorFor(name)
           const doc = await extractor.extract(file)
-          results[file] = doc ? { doc } : { error: 'no component found' }
+          results[file] = doc ? { doc } : {}
         }
         catch (error) {
           results[file] = { error: error instanceof Error ? error.message : String(error) }
