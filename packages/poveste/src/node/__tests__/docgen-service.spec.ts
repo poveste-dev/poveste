@@ -171,6 +171,16 @@ describe('the docgen service', () => {
     expect(extracted(sent)).toEqual([])
   })
 
+  it('leaves out a file its extractor found nothing to document in', async () => {
+    const { docgen } = service({
+      plugins: [solid],
+      storyFileOf: () => '/book/src/Plain.story.tsx',
+      createRunner: () => ({ send: async () => ({ id: 0, results: { '/book/src/Plain.story.tsx': {} } }), terminate: async () => {} }),
+    })
+
+    expect((await docgen.request('plain')).components).toEqual({})
+  })
+
   it('never starts when the config turns it off', async () => {
     const { docgen, createRunner } = service({ enabled: false })
 
