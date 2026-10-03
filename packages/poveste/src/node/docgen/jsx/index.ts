@@ -1,2 +1,3 @@
 export { createJsxExtractor } from './extractor.js'
-export type { JsxDialect, JsxDocgenOptions } from './walk.js'
+export { documentProps, normalizeDefault } from './walk.js'
+export type { JsxDialect, JsxDocgenOptions, PropsReading } from './walk.js'
