@@ -50,8 +50,8 @@
       "default": "./plugin.js"
     },
     "./docgen-jsx": {
-      "types": "./dist/node/docgen/jsx/index.d.ts",
-      "default": "./dist/node/docgen/jsx/index.js"
+      "types": "./docgen-jsx.d.ts",
+      "default": "./docgen-jsx.js"
     },
     "./*": "./*"
   },
@@ -67,6 +67,8 @@
     "client.d.ts",
     "client.js",
     "dist",
+    "docgen-jsx.d.ts",
+    "docgen-jsx.js",
     "framework-floor.mjs",
     "index.d.ts",
     "node-floor.mjs",
