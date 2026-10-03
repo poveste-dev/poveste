@@ -1,7 +1,7 @@
 import type { JsxDialect } from '../docgen/jsx/index.js'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'pathe'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { createJsxExtractor } from '../docgen/jsx/index.js'
 
 const root = join(import.meta.dirname, 'docgen-jsx')
@@ -20,8 +20,10 @@ function extractor(options: { allow?: string[] } = {}) {
 }
 
 describe('the JSX extractor', () => {
-  // One extractor across the read-only cases: a language service over solid-js takes a second to build.
+  // One extractor across the read-only cases. Its program builds on the first read, so that read
+  // happens here, under a timeout a slow CI runner fits in.
   const shared = extractor()
+  beforeAll(() => shared.extract(file('Button.story.tsx')), 60_000)
   const button = () => shared.extract(file('Button.story.tsx'))!
   const prop = async (name: string) => (await button()).props.find(prop => prop.name === name)
 
@@ -83,7 +85,7 @@ describe('the JSX extractor', () => {
 })
 
 describe('the JSX extractor, with a package allowed', () => {
-  it('documents props a component inherits from that package', async () => {
+  it('documents props a component inherits from that package', { timeout: 60_000 }, async () => {
     const doc = await extractor({ allow: ['solid-js'] }).extract(file('Button.story.tsx'))
 
     expect(doc!.props.map(prop => prop.name)).toContain('disabled')
@@ -95,7 +97,7 @@ describe('the JSX extractor, after a change on disk', () => {
   const original = readFileSync(card, 'utf8')
   afterEach(() => writeFileSync(card, original))
 
-  it('reads the component again once told the file changed', async () => {
+  it('reads the component again once told the file changed', { timeout: 60_000 }, async () => {
     const jsx = extractor()
     await jsx.extract(file('Card.story.tsx'))
 
