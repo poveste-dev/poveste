@@ -22,6 +22,16 @@ export function disableStoryComponentHmr() {
   return {
     name: 'poveste:svelte-story-hmr',
     apply: 'serve' as const,
+    // With component HMR off, nothing in the sandbox takes the updated story module:
+    // the edit was collected and never shown until a manual reload (#1178). A reload
+    // shows it, as for Solid, at the cost of whatever was set in the panel.
+    handleHotUpdate({ file, server }: { file: string, server: { ws: { send: (payload: { type: 'full-reload' }) => void } } }) {
+      if (!storyFileRE.test(file)) {
+        return undefined
+      }
+      server.ws.send({ type: 'full-reload' })
+      return []
+    },
     configResolved(config: { readonly plugins: readonly unknown[] }) {
       for (const plugin of config.plugins as SvelteConfigPlugin[]) {
         if (plugin.name !== 'vite-plugin-svelte:config' || plugin.__povesteStoryHmrPatched) {
