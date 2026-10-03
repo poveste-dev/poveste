@@ -38,7 +38,7 @@ describe('the JSX extractor', () => {
   })
 
   it('takes a default from `mergeProps` and agrees with a tag that says the same', async () => {
-    expect(await prop('size')).toMatchObject({ default: '\'md\'', defaultTag: '"md"' })
+    expect(await prop('size')).toMatchObject({ default: '"md"', defaultTag: '"md"' })
     expect((await prop('size'))!.defaultConflict).toBeUndefined()
   })
 
@@ -47,7 +47,7 @@ describe('the JSX extractor', () => {
   })
 
   it('flags a code default that disagrees with its tag, and shows the code\'s', async () => {
-    expect(await prop('tone')).toMatchObject({ default: '\'danger\'', defaultTag: '\'neutral\'', defaultConflict: true })
+    expect(await prop('tone')).toMatchObject({ default: '"danger"', defaultTag: '\'neutral\'', defaultConflict: true })
   })
 
   it('reads an `on*` function as an event, with its parameters as the payload', async () => {
