@@ -10,9 +10,11 @@ const FIXTURE = fileURLToPath(new URL('../../../fixtures/docgen', import.meta.ur
 const BUTTON = join(FIXTURE, 'Button.vue')
 
 // One real checker for the file: building it is the slow part, and every case reads it.
+// The checker builds its program on the first read, so that read happens here, under this timeout.
 let extractor: DocgenExtractor
 beforeAll(async () => {
   extractor = await createExtractor({ root: FIXTURE, options: {} })
+  await extractor.extract(BUTTON)
 }, 60_000)
 
 async function button() {
