@@ -220,7 +220,7 @@ export default defineConfig({
 
 `boolean | { allow?: string[], exclude?: string[] }` - Default: `true`
 
-A props, slots and events table for each component a story imports, read from the component's types. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story imports.
+A props, slots and events table for each component a story imports, read from the component's types. A Solid story names its component in its `component` field instead, since JSX stories import much besides it. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story names.
 
 It holds a type checker while it runs, which on a large component library costs up to about 1 GB. Set it to `false` to turn it off; props detected at runtime still show.
 
