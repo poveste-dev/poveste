@@ -5,9 +5,11 @@ import { Icon } from '@iconify/vue'
 import { markdownFiles } from 'virtual:$poveste-markdown-files'
 import { computed, nextTick, ref, toRefs, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useComponentDocs } from '../../util/component-docs.js'
 import { povesteConfig } from '../../util/config.js'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import DevOnlyToolbarOpenInEditor from '../toolbar/DevOnlyToolbarOpenInEditor.vue'
+import ComponentDocs from './ComponentDocs.vue'
 
 export function useStoryDoc(story: Ref<Story>) {
   const renderedDoc = ref('')
@@ -75,6 +77,9 @@ const emit = defineEmits<{
 const { story } = toRefs(props)
 
 const { renderedDoc } = useStoryDoc(story)
+
+// Opening the docs is what starts auto-docs extraction (#1159).
+const { components } = useComponentDocs(computed(() => story.value?.id))
 
 // Markdown links to other stories
 const router = useRouter()
@@ -185,7 +190,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
     </div>
 
     <BaseEmpty
-      v-if="!renderedDoc"
+      v-if="!renderedDoc && !components?.length"
     >
       <Icon
         icon="carbon:document-unknown"
@@ -194,11 +199,15 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       No documentation available
     </BaseEmpty>
     <div
-      v-else
+      v-if="renderedDoc"
       ref="renderedEl"
       class="prose dark:prose-invert p-4 max-w-none"
       data-testid="story-docs"
       v-html="renderedDoc"
+    />
+    <ComponentDocs
+      v-if="components?.length"
+      :components="components"
     />
   </div>
 </template>
