@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net'
 import { spawn } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -58,6 +58,46 @@ describe('auto-docs in poveste dev', () => {
         components: { 'button.comp.js': { doc: { props: [{ name: 'button.comp.js', type: 'string', required: false, tags: [] }], slots: [], events: [] } } },
       })
       expect(readFileSync(marker, 'utf8')).toBe('created\n')
+      socket.close()
+    }
+    finally {
+      child.kill('SIGKILL')
+    }
+  }, 120_000)
+
+  // A file outside the book's root, which Vite's watcher never covered: an edit to
+  // a sibling package's types left the docs stale until a restart (#1190).
+  it('tells an open panel to ask again when a file the extractor read changes', async () => {
+    const work = mkdtempSync(path.join(tmpdir(), 'poveste-docgen-'))
+    const outside = path.join(work, 'types.ts')
+    writeFileSync(outside, 'export type Size = \'sm\'\n')
+    const port = await freePort()
+    const child = spawn(process.execPath, [BIN, 'dev', '--port', String(port)], {
+      cwd: FIXTURE,
+      stdio: 'pipe',
+      env: { ...process.env, POVESTE_DOCGEN_MARKER: path.join(work, 'created.log'), POVESTE_DOCGEN_OUTSIDE: outside },
+    })
+    let output = ''
+    child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+      output += stripVTControlCharacters(chunk)
+    })
+
+    try {
+      await vi.waitFor(() => expect(output).toContain('Collect stories end'), { timeout: 60_000, interval: 100 })
+      const socket = new WebSocket(`ws://localhost:${hmrPortFor(port)}`, 'vite-hmr')
+      await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }))
+      const events: string[] = []
+      socket.addEventListener('message', (event) => {
+        events.push(JSON.parse(String(event.data)).event)
+      })
+      socket.send(JSON.stringify({ type: 'custom', event: 'poveste:docgen-request', data: { storyId: 'button' } }))
+      await vi.waitFor(() => expect(events).toContain('poveste:docgen-result'), { timeout: 30_000, interval: 100 })
+
+      // Retried as well as asserted: the watcher has to have taken the file first.
+      await vi.waitFor(() => {
+        writeFileSync(outside, `export type Size = 'sm' | 'md' // ${Date.now()}\n`)
+        expect(events).toContain('poveste:docgen-stale')
+      }, { timeout: 30_000, interval: 1000 })
       socket.close()
     }
     finally {

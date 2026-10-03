@@ -9,6 +9,8 @@ export interface DocgenResponse {
   id: number
   results?: Record<string, ExtractResult>
   stats?: { created: number, recycled: number }
+  /** What the extractors read, sent with each extraction. */
+  sources?: string[]
 }
 
 /** What the dev server sends a client that asked for a story's docs. */
