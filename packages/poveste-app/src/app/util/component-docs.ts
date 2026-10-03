@@ -36,13 +36,19 @@ export function tagHref(text: string): string | undefined {
 }
 
 /**
- * The components a story imports, documented, asked of the dev server when this is
- * first used — which is what starts extraction at all (#1159).
+ * The components a story imports, documented. In dev they are asked of the server
+ * when this is first used, which is what starts extraction at all (#1159); in a
+ * built book they come from what `poveste build` extracted.
  */
 export function useComponentDocs(storyId: Ref<string | undefined>) {
   const components = ref<ComponentDocsEntry[]>()
   const hot = import.meta.hot
   if (!hot) {
+    watch(storyId, async (id) => {
+      const { componentDocs } = await import('./component-docs-data')
+      const docs = id ? componentDocs[id] : undefined
+      components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
+    }, { immediate: true })
     return { components }
   }
 
