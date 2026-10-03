@@ -9,6 +9,7 @@ import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
 import { useStoryErrorStore } from '../../stores/story-errors'
+import { usePreviewColorScheme } from '../../util/color-scheme'
 import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
@@ -28,6 +29,7 @@ const props = withDefaults(defineProps<{
 })
 
 const settings = usePreviewSettingsStore().currentSettings
+const previewColorScheme = usePreviewColorScheme(settings)
 const errorStore = useStoryErrorStore()
 
 const storyError = computed(() => errorStore.forVariant(props.story.id, props.variant.id))
@@ -288,7 +290,10 @@ watch(() => settings, () => {
 // unreadable. A stored `responsiveHeight` of 600 gives 729px cells holding one
 // small button, which is the shape #198 was filed about.
 function previewStyle(isResponsiveEnabled: boolean, finalWidth: number | null, finalHeight: number | null) {
-  const style: Record<string, string> = {}
+  // The sandbox root's own value, on the element that embeds it. Where the two
+  // differ the browser paints the frame opaque, and the background preset and
+  // checkerboard behind it are gone (#1167).
+  const style: Record<string, string> = { colorScheme: previewColorScheme.value }
 
   if (isResponsiveEnabled) {
     if (finalWidth) style['width'] = `${finalWidth}px`
