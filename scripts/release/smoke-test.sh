@@ -138,6 +138,14 @@ install_and_build() {
     exit 1
   fi
 
+  # Node's experimental-feature warnings read as an error to a first-time reader,
+  # and the `localStorage` one printed once per read during collection (#1175).
+  if grep -q -a 'ExperimentalWarning' "$build_log"; then
+    echo "❌ Smoke test FAILED [$name] — build printed an ExperimentalWarning on Node $(node -v):"
+    grep -A1 -a 'ExperimentalWarning' "$build_log"
+    exit 1
+  fi
+
   if [ -f "$out" ]; then
     echo "✅ [$name] passed — built $out"
   else
@@ -198,6 +206,10 @@ VUE
 cat > "$VUE_APP/src/Button.story.vue" <<'VUE'
 <script setup lang="ts">
 import Button from './Button.vue'
+
+// Read while the story is collected. On Node 25+ that reached Node's own Web
+// Storage getter, which warns, until collection supplied jsdom's (#1175).
+localStorage.getItem('poveste-smoke')
 </script>
 
 <template>
