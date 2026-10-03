@@ -46,7 +46,8 @@ watchEffect(async () => {
     const rId = ++requestId
     const result = await props.prompt.options(search.value, props.answers)
     if (rId === requestId) {
-      options.value = result
+      // Undefined when no plugin answered, or the one that should have threw (#1170).
+      options.value = result ?? []
     }
   }
   else {
