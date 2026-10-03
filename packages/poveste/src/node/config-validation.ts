@@ -27,6 +27,7 @@ const RULES: Rule[] = [
   { path: 'setupCode', kind: 'string[]' },
   { path: 'globalStyles', kind: 'string[]' },
   { path: 'isolateStyles', kind: 'boolean' },
+  { path: 'autoDocs', kind: 'boolean' },
   { path: 'autoApplyContrastColor', kind: 'boolean' },
   { path: 'defaultBackgroundColor', kind: 'string' },
   { path: 'sandboxDarkClass', kind: 'string' },
