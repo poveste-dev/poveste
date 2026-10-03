@@ -1,8 +1,10 @@
-import type { AutoDocsOptions, Plugin } from '@poveste/shared'
+import type { AutoDocsOptions, Plugin, PluginDocgen } from '@poveste/shared'
 import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
+
+type DocgenScope = NonNullable<PluginDocgen['scope']>
 
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
 
@@ -55,6 +57,8 @@ export interface DocgenServiceOptions {
   collected: Promise<void>
   /** The component files a story imports, resolved to absolute paths. */
   componentsOf: (storyId: string) => string[] | Promise<string[]>
+  /** The story's own file, for a plugin whose `docgen.scope` is `story`. */
+  storyFileOf?: (storyId: string) => string | undefined
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
   /** Called with files the extractors read that nothing was watching yet. */
   watch?: (files: string[]) => void
@@ -77,11 +81,14 @@ export function createDocgenService(options: DocgenServiceOptions) {
 
   const exclude = options.bookOptions?.exclude ?? []
 
-  function pluginFor(file: string) {
+  // Which plugin each requested file was handed to, so the worker gets its extractor.
+  const owners = new Map<string, Plugin>()
+
+  function pluginFor(file: string, scope: DocgenScope) {
     if (exclude.some(pattern => file.includes(pattern))) {
       return undefined
     }
-    return plugins.find(plugin => plugin.docgen!.match(file))
+    return plugins.find(plugin => (plugin.docgen!.scope ?? 'imports') === scope && plugin.docgen!.match(file))
   }
 
   function start() {
@@ -101,7 +108,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
     if (missing.length) {
       const response = start().send({
         type: 'extract',
-        requests: missing.map(file => ({ name: pluginFor(file)!.name, file })),
+        requests: missing.map(file => ({ name: owners.get(file)!.name, file })),
       })
       for (const file of missing) {
         cache.set(file, response.then(({ results }) => results?.[file] ?? { error: 'the docgen worker gave no answer' }))
@@ -130,7 +137,21 @@ export function createDocgenService(options: DocgenServiceOptions) {
         return { storyId, components: {} }
       }
       await options.collected
-      const files = (await options.componentsOf(storyId)).filter(file => pluginFor(file))
+      const files: string[] = []
+      function own(file: string, scope: DocgenScope) {
+        const plugin = pluginFor(file, scope)
+        if (plugin) {
+          owners.set(file, plugin)
+          files.push(file)
+        }
+      }
+      const storyFile = options.storyFileOf?.(storyId)
+      if (storyFile) {
+        own(storyFile, 'story')
+      }
+      for (const file of await options.componentsOf(storyId)) {
+        own(file, 'imports')
+      }
       return { storyId, components: Object.fromEntries(await extract(files)) }
     },
 
