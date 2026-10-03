@@ -67,6 +67,13 @@ export interface PovesteConfig {
    */
   isolateStyles?: boolean
   /**
+   * Auto-docs: a props, slots and events table read from each component's types.
+   * Extraction starts the first time a reader opens a story's docs, in a worker,
+   * and only for the components that story imports; it holds a type checker while
+   * it runs. Set to false to turn it off. Default: on.
+   */
+  autoDocs?: boolean
+  /**
    * CSS files loaded into the main app (not into stories). Wrapped in
    * @layer poveste-user-globals — lower priority than chrome.
    * Use for design tokens or anything intentionally global.
