@@ -6,6 +6,8 @@ import { getSetupHook, reportStoryError } from '@poveste/shared'
 // @ts-expect-error virtual module id
 import * as generatedSetup from 'virtual:$poveste-generated-global-setup'
 // @ts-expect-error virtual module id
+import vaporInteropPlugin from 'virtual:$poveste-plugin-vue/vapor-interop'
+// @ts-expect-error virtual module id
 import * as setup from 'virtual:$poveste-setup'
 import {
   createApp,
@@ -97,6 +99,13 @@ export function createPreviewHost(options: PreviewHostOptions) {
         variantId: options.getVariant()?.id,
       })
       console.error(err)
+    }
+
+    // From Vue 3.6, a Vapor component inside a VDOM tree mounts only through this
+    // plugin, and without it the preview throws `reading 'mount'` (#1112).
+    // Undefined on an older Vue.
+    if (vaporInteropPlugin) {
+      app.use(vaporInteropPlugin)
     }
 
     registerGlobalComponents(app)
