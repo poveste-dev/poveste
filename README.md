@@ -37,7 +37,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 
 - ⚡️ Instant HMR on [Vite](https://vite.dev) 8 and Rolldown
 - 🧩 Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar, each proven by its own example suite in CI
-- 🧱 Solid, renderer only: stories and variants render, source is shown only where you wrote it, and the controls panel says why it is empty. Its CI runs the renderer's own tests; the checks the other five frameworks share do not run on it.
+- 🧱 Solid, renderer only: stories and variants render, the source panel shows the story file or a variant's own `source`, and a variant with `initState` gets the state editor while one without says why its panel is empty. Its CI runs the renderer's own tests; the checks the other five frameworks share do not run on it.
 - 🪟 Collects on Windows, macOS and Linux — all three run in CI
 - 📚 Stories and variants, with source examples generated from what you wrote
 - 🚀 Grids stay responsive at a thousand variants, and built books render offline
