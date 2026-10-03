@@ -25,9 +25,20 @@ export const SOLID_SETUP_HOOK_NAMES = ['setupSolid']
  */
 export const SOLID_COLLECT_CONDITIONS = ['browser', 'module']
 
+// A variable, not a literal: Vite turns `new URL('<literal>', import.meta.url)` into
+// an asset, and this entry is bundled for the browser too.
+const DOCGEN_EXTRACTOR = './docgen/extractor.js'
+
 export function HstSolid(): Plugin {
   return {
     name: '@poveste/plugin-solid',
+
+    // A Solid story names its component in `component`, so the extractor reads the story (#1110).
+    docgen: {
+      scope: 'story',
+      match: file => /\.story\.[jt]sx$/.test(file),
+      module: new URL(DOCGEN_EXTRACTOR, import.meta.url).href,
+    },
 
     defaultConfig() {
       return {
