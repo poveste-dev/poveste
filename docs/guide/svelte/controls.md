@@ -216,10 +216,7 @@ reading:
 {label}
 ```
 
-This is a real limitation rather than something you did wrong, and it is tracked
-in [#501](https://github.com/poveste-dev/poveste/issues/501). Until it is fixed,
-declaring the type in the component, or giving the prop a default, gets the
-controls back.
+This is a real limitation rather than something you did wrong. The story's [docs tab](./docs.md#component-docs) does follow the import and lists those props with their descriptions and defaults; building controls from it is tracked in [#160](https://github.com/poveste-dev/poveste/issues/160). Until then, declaring the type in the component, or giving the prop a default, gets the controls back.
 
 ### When you get a JSON editor instead
 
