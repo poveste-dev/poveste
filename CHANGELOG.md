@@ -4,6 +4,37 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.18.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.2...v0.18.0)
+
+**Write stories for SolidJS components, renderer only. Native widgets in a dark preview are now dark.**
+
+It is a `minor`, because the Solid plugin is a new feature. Nothing is deprecated, renamed or removed, no configuration key changed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit or Quasar book upgrades with nothing to do. One fix changes what a dark preview looks like. It is described below so that a visual-regression diff is not a surprise.
+
+### 🚀 Enhancements
+
+- **Write stories for SolidJS components with `@poveste/plugin-solid`, renderer only for now** ([#61](https://github.com/poveste-dev/poveste/issues/61), [#1123](https://github.com/poveste-dev/poveste/pull/1123), [#1125](https://github.com/poveste-dev/poveste/pull/1125), [#1126](https://github.com/poveste-dev/poveste/pull/1126)).
+  - **What works:** a story is a `.story.tsx` file. Its variants render JSX. `initState` gives a variant the state panel, and `render` receives that state as a Solid store, so an edit in the panel reaches the story without running `render` again. `setupSolid` and `addWrapper` run before a story mounts. The source panel shows the story file.
+  - **Not here yet:** controls built from your components, and generated per-variant source. Solid compiles JSX to DOM operations and keeps no render tree to read either from. A variant without `initState` says why its panel is empty.
+  - **Requirements:** `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`.
+  - **Set `storyMatch: ['**/*.story.tsx']` in your Poveste config.** The defaults look only for `.story.vue` and `.story.svelte`, so without it the book builds empty.
+  - The [Solid guide](https://poveste.dev/guide/solid/getting-started) walks through all of it.
+
+### 🩹 Fixes
+
+- **Native widgets in a story follow the preview's colour scheme** ([#991](https://github.com/poveste-dev/poveste/issues/991), [#1148](https://github.com/poveste-dev/poveste/pull/1148)). Poveste told your CSS that a preview was dark, through the dark class, but never told the browser. So a `<select>`, a date input, a checkbox or a scrollbar in a dark preview was painted light. Each preview now declares CSS `color-scheme`: `dark`, `light`, or `light dark` when the preview follows the system. Poveste's own interface declares it too. **If you keep visual-regression baselines of dark stories, in Percy or with screenshots, expect the native widgets in them to change from light to dark.** That change is this fix, not a regression.
+
+- **In `poveste dev`, the "generate story" component picker and `openStory` work again** ([#1064](https://github.com/poveste-dev/poveste/issues/1064), [#1146](https://github.com/poveste-dev/poveste/pull/1146)). A call that sets up the plugin API those features use was marked as having no side effects, so the bundler removed it, and the main app never set that API up. Only `poveste dev` was affected.
+
+- **`@poveste/app` ships Poveste's licence** ([#936](https://github.com/poveste-dev/poveste/issues/936), [#1147](https://github.com/poveste-dev/poveste/pull/1147)). It packed its bundled font's licence and, because of that, not Poveste's own MIT licence, the only published package without it. It now carries both, and the release gate checks that every package's tarball carries Poveste's licence.
+
+### 📖 Documentation
+
+- **`/llms.txt` and `/llms-full.txt` on poveste.dev** ([#1127](https://github.com/poveste-dev/poveste/issues/1127), [#1144](https://github.com/poveste-dev/poveste/pull/1144)). They give an AI agent a map of the docs, generated from the site's own navigation and each page's description, so they cannot drift from it. They went live with the 0.17.2 site. From this release they list Solid as renderer only.
+
+- **Solid is named, as renderer only, wherever Poveste lists its frameworks** ([#1133](https://github.com/poveste-dev/poveste/issues/1133), [#1145](https://github.com/poveste-dev/poveste/pull/1145)): the README, the supported-versions table and the npm descriptions.
+
 ## v0.17.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.1...v0.17.2)
