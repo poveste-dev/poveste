@@ -3,6 +3,7 @@ import type { Plugin } from 'poveste'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
@@ -57,6 +58,12 @@ export function HstVue(): Plugin {
           ],
         },
       }
+    },
+
+    // A story file documents nothing: it names the components that do.
+    docgen: {
+      match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'),
+      module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
     },
 
     supportPlugin: {

@@ -17,6 +17,8 @@ export interface DocProp {
   default?: string
   /** The default a `@default` or `@defaultValue` tag states. */
   defaultTag?: string
+  /** Both defaults exist and say different things: the code's is shown, and this flags it. */
+  defaultConflict?: boolean
   tags: DocTag[]
 }
 
@@ -74,4 +76,15 @@ export interface PluginDocgen {
   module: string
   /** Passed to `createExtractor`; it has to survive a structured clone. */
   options?: unknown
+}
+
+/** `autoDocs` in the config, when it is more than on or off. */
+export interface AutoDocsOptions {
+  /**
+   * Packages whose props are documented although they are declared under
+   * `node_modules`: a design system a library builds on, such as `reka-ui`.
+   */
+  allow?: string[]
+  /** Component files to leave out, matched as substrings of the path. */
+  exclude?: string[]
 }
