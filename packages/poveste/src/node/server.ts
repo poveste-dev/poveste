@@ -5,6 +5,7 @@ import pc from 'picocolors'
 import { createServer as createViteServer, mergeConfig as mergeViteConfig } from 'vite'
 import { useCollectStories } from './collect/index.js'
 import { hmrPortFor } from './commands/port.js'
+import { answerDevEvent } from './dev-event.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
@@ -122,15 +123,11 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
 
   // Custom dev events
   server.ws.on(`poveste:dev-event`, async ({ event, payload }) => {
-    for (const plugin of ctx.config.plugins) {
-      if (plugin.onDevEvent) {
-        const api = new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload, watches)
-        const result = await plugin.onDevEvent(api)
-        if (!event.startsWith('on') && result !== undefined) {
-          server.ws.send(`poveste:dev-event-result`, { event, result })
-          break
-        }
-      }
+    const result = await answerDevEvent(ctx.config.plugins, event, plugin =>
+      plugin.onDevEvent?.(new DevEventPluginApi(ctx, plugin, moduleLoader, event, payload, watches)))
+    // Sent even when nothing answered, so the client's promise settles.
+    if (!event.startsWith('on')) {
+      server.ws.send(`poveste:dev-event-result`, { event, result })
     }
   })
 
