@@ -37,6 +37,8 @@ export interface DocEvent {
 }
 
 export interface ComponentDoc {
+  /** The component's own name, when the file it was read from is not named after it. */
+  name?: string
   props: DocProp[]
   slots: DocSlot[]
   events: DocEvent[]
@@ -73,7 +75,14 @@ export interface DocgenExtractorModule {
 }
 
 export interface PluginDocgen {
-  /** Whether a resolved file is a component this plugin documents. */
+  /**
+   * What a request hands the extractor. `imports`: each file the story's module
+   * imports that `match` accepts, as a Vue story imports its `.vue` files.
+   * `story`: the story file itself, when `match` accepts it, for a format whose
+   * story names its component in a `component` field the extractor resolves.
+   */
+  scope?: 'imports' | 'story'
+  /** Whether a resolved file is one this plugin documents. */
   match: (file: string) => boolean
   /**
    * An absolute path or `file:` URL to a module exporting `createExtractor`. It is
@@ -93,4 +102,13 @@ export interface AutoDocsOptions {
   allow?: string[]
   /** Component files to leave out, matched as substrings of the path. */
   exclude?: string[]
+}
+
+/**
+ * The field a story format uses to name the component it documents, shared by
+ * the JSX formats so Solid and React spell it the same way (#1110, #1161).
+ */
+export interface StoryComponentOptions<C> {
+  /** The component this story documents. Auto-docs reads its props from its type. */
+  component?: C
 }

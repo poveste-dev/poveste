@@ -5,7 +5,7 @@ import pc from 'picocolors'
 import { createServer as createViteServer, mergeConfig as mergeViteConfig } from 'vite'
 import { useCollectStories } from './collect/index.js'
 import { hmrPortFor } from './commands/port.js'
-import { componentsOfStory } from './docgen/components-of.js'
+import { componentsOfStory, storyFileOf } from './docgen/components-of.js'
 import { createDocgenService } from './docgen/service.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
@@ -178,6 +178,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     enabled: ctx.config.autoDocs !== false,
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected,
+    storyFileOf: storyId => storyFileOf(ctx.storyFiles, storyId),
     componentsOf: storyId => componentsOfStory(ctx.storyFiles, nodeServer.moduleGraph, storyId),
     watch: files => server.watcher.add(files),
   })
