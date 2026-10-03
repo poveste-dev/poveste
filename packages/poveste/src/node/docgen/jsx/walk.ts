@@ -50,7 +50,12 @@ export function documentStory(typescript: typeof ts, program: ts.Program, file: 
   if (!props) {
     throw new Error(`\`${component.getText()}\` has no props type to read`)
   }
-  return toComponentDoc(typescript, checker, component, props, codeDefaults(typescript, checker, component, dialect), dialect, options)
+  return documentProps(typescript, checker, props, {
+    location: component,
+    name: component.getText(),
+    defaults: codeDefaults(typescript, checker, component, dialect),
+    slotType: dialect.slotType,
+  }, options)
 }
 
 function unwrap(typescript: typeof ts, checker: ts.TypeChecker, node: ts.Expression): ts.Expression {
@@ -211,18 +216,29 @@ function isInherited(symbol: ts.Symbol, allow: string[]) {
     file.includes('/node_modules/') && !allow.some(pkg => file.includes(`/node_modules/${pkg}/`)))
 }
 
-function toComponentDoc(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
-  component: ts.Expression,
-  props: ts.Type,
-  defaults: Map<string, string>,
-  dialect: JsxDialect,
-  options: JsxDocgenOptions,
-): ComponentDoc {
+/** How to read one component's props type, beyond the type itself. */
+export interface PropsReading {
+  /** Where types are printed from, so aliases in scope there are kept. */
+  location: ts.Node
+  name?: string
+  /** Code defaults by prop name, as written. */
+  defaults: Map<string, string>
+  /** A prop whose printed type matches is a slot. */
+  slotType: RegExp
+  /** A callable prop whose name matches is an event. JSX's `onClick` by default; Svelte 5 also writes `onclick`. */
+  eventName?: RegExp
+}
+
+/**
+ * A props type as a docs table: filtered, tagged, split into props, slots and
+ * events, defaults reconciled. Shared by the JSX walker and by Svelte through
+ * `svelte2tsx`, whose output is TSX the same checker reads.
+ */
+export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, props: ts.Type, reading: PropsReading, options: JsxDocgenOptions = {}): ComponentDoc {
   const allow = options.allow ?? []
-  const print = (type: ts.Type) => checker.typeToString(type, component, typescript.TypeFormatFlags.NoTruncation | typescript.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope)
-  const doc: ComponentDoc = { name: component.getText(), props: [], slots: [], events: [] }
+  const { location, defaults, slotType } = reading
+  const print = (type: ts.Type) => checker.typeToString(type, location, typescript.TypeFormatFlags.NoTruncation | typescript.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope)
+  const doc: ComponentDoc = { ...reading.name ? { name: reading.name } : {}, props: [], slots: [], events: [] }
 
   for (const symbol of checker.getPropertiesOfType(checker.getApparentType(props))) {
     const tags = tagsOf(typescript, symbol, checker)
@@ -231,19 +247,19 @@ function toComponentDoc(
       continue
     }
     const required = !(symbol.flags & typescript.SymbolFlags.Optional)
-    const type = checker.getTypeOfSymbolAtLocation(symbol, component)
+    const type = checker.getTypeOfSymbolAtLocation(symbol, location)
     // Optional members print with the `| undefined` strict mode adds; the table says optional already.
     const printed = required ? print(type) : print(type).replace(/ \| undefined$/, '')
     const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
     const member = { name: symbol.name, ...description ? { description } : {}, tags }
 
     const signature = checker.getNonNullableType(type).getCallSignatures()[0]
-    if (EVENT_NAME.test(symbol.name) && signature) {
+    if ((reading.eventName ?? EVENT_NAME).test(symbol.name) && signature) {
       const payload = signature.getParameters().map(parameter => `${parameter.name}: ${print(checker.getTypeOfSymbol(parameter))}`).join(', ')
       doc.events.push({ ...member, ...payload ? { type: payload } : {} } satisfies DocEvent)
       continue
     }
-    if (symbol.name === 'children' || dialect.slotType.test(printed)) {
+    if (symbol.name === 'children' || slotType.test(printed)) {
       doc.slots.push({ ...member, type: printed } satisfies DocSlot)
       continue
     }

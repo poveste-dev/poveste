@@ -1,6 +1,7 @@
 import type { Plugin } from 'poveste'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'pathe'
 import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
@@ -13,6 +14,12 @@ import { disableStoryComponentHmr } from './util/story-hmr.js'
 export function HstSvelte(): Plugin {
   return {
     name: '@poveste/plugin-svelte',
+
+    // Props through `svelte2tsx` and the book's own TypeScript, read in the docgen worker (#501).
+    docgen: {
+      match: file => file.endsWith('.svelte') && !file.endsWith('.story.svelte'),
+      module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
+    },
 
     async defaultConfig() {
       const svelteClientAliases = getSvelteClientAliases()
