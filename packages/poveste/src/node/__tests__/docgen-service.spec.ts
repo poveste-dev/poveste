@@ -98,6 +98,14 @@ describe('the docgen service', () => {
     expect(extracted(sent)).toEqual(['/book/src/Button.vue', '/book/src/Button.vue'])
   })
 
+  it('leaves out a component the book excludes', async () => {
+    const { docgen, sent } = service({ bookOptions: { exclude: ['src/Button'] } })
+
+    await docgen.request('button')
+
+    expect(extracted(sent)).toEqual([])
+  })
+
   it('never starts when the config turns it off', async () => {
     const { docgen, createRunner } = service({ enabled: false })
 

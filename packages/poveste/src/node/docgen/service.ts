@@ -1,4 +1,4 @@
-import type { Plugin } from '@poveste/shared'
+import type { AutoDocsOptions, Plugin } from '@poveste/shared'
 import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
@@ -49,6 +49,8 @@ export interface DocgenServiceOptions {
   plugins: Plugin[]
   /** The config's off-switch. */
   enabled: boolean
+  /** `autoDocs` when the config gives an object: merged into every extractor's options. */
+  bookOptions?: AutoDocsOptions | undefined
   /** Settles once the first full collection has finished. */
   collected: Promise<void>
   /** The component files a story imports, resolved to absolute paths. */
@@ -70,14 +72,23 @@ export function createDocgenService(options: DocgenServiceOptions) {
   let runner: DocgenRunner | undefined
   const cache = new Map<string, Promise<ExtractResult>>()
 
+  const exclude = options.bookOptions?.exclude ?? []
+
   function pluginFor(file: string) {
+    if (exclude.some(pattern => file.includes(pattern))) {
+      return undefined
+    }
     return plugins.find(plugin => plugin.docgen!.match(file))
   }
 
   function start() {
     runner ??= createRunner({
       root: options.root,
-      extractors: plugins.map(plugin => ({ name: plugin.name, module: plugin.docgen!.module, options: plugin.docgen!.options })),
+      extractors: plugins.map(plugin => ({
+        name: plugin.name,
+        module: plugin.docgen!.module,
+        options: { ...plugin.docgen!.options as object, ...options.bookOptions },
+      })),
     })
     return runner
   }

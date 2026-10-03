@@ -218,7 +218,7 @@ export default defineConfig({
 
 ## `autoDocs`
 
-`boolean` - Default: `true`
+`boolean | { allow?: string[], exclude?: string[] }` - Default: `true`
 
 A props, slots and events table for each component a story imports, read from the component's types. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story imports.
 
@@ -227,6 +227,17 @@ It holds a type checker while it runs, which on a large component library costs 
 ```ts
 export default defineConfig({
   autoDocs: false,
+})
+```
+
+Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` names packages to keep anyway, such as a design system your components build on. `exclude` leaves out components whose path contains one of its strings.
+
+```ts
+export default defineConfig({
+  autoDocs: {
+    allow: ['reka-ui'],
+    exclude: ['src/internal/'],
+  },
 })
 ```
 
