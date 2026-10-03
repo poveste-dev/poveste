@@ -91,19 +91,26 @@ export function vendoredAliases(dependencies: Record<string, string> | undefined
  * is the point: `poveste` has no `semver` dependency, a patch release is the wrong
  * place to add one, and a hand-rolled `satisfies` that silently mis-handles a form it
  * was never given is the failure this repo keeps producing. So `^X.Y.Z` with a major
- * of at least 1 is answered, and `^0.x`, a prerelease, a comparator set or anything
- * else returns false and leaves the chrome on the copy it can certainly run.
+ * of at least 1 is answered, and `^0.x`, a comparator set or anything else returns
+ * false and leaves the chrome on the copy it can certainly run.
+ *
+ * A prerelease is answered too, though npm's own caret leaves one out. Refusing it
+ * left the chrome on the vendored Vue while pinia's bare `vue` took the project's
+ * prerelease, which is #1060's split, and the book rendered no story (#1163). So a
+ * prerelease counts when its `X.Y.Z` is above the floor in the same major. One of the
+ * floor itself sorts below the floor, and is refused.
  */
 export function satisfiesCaret(version: string | undefined, range: string | undefined): boolean {
   const wanted = /^\^(\d+)\.(\d+)\.(\d+)$/.exec(range ?? '')
-  const have = /^(\d+)\.(\d+)\.(\d+)$/.exec(version ?? '')
+  const have = /^(\d+)\.(\d+)\.(\d+)(-[0-9A-Z.-]+)?$/i.exec(version ?? '')
 
   if (!wanted || !have) {
     return false
   }
 
   const [wantedMajor, wantedMinor, wantedPatch] = wanted.slice(1).map(Number)
-  const [major, minor, patch] = have.slice(1).map(Number)
+  const [major, minor, patch] = have.slice(1, 4).map(Number)
+  const prerelease = have[4] !== undefined
 
   // `^0.x` narrows to the minor, and no vendored range uses it. Refuse rather than
   // implement a rule nothing here exercises.
@@ -119,7 +126,7 @@ export function satisfiesCaret(version: string | undefined, range: string | unde
     return minor! > wantedMinor!
   }
 
-  return patch! >= wantedPatch!
+  return prerelease ? patch! > wantedPatch! : patch! >= wantedPatch!
 }
 
 /**
