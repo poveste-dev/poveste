@@ -51,6 +51,12 @@ export interface DocgenExtractor {
   extract: (file: string) => ComponentDoc | undefined | Promise<ComponentDoc | undefined>
   /** A file changed on disk. Called for any file, not only components. */
   update?: (file: string) => void | Promise<void>
+  /**
+   * The files its program read, outside `node_modules`. The dev server watches
+   * them: a types file the browser never loads, or one outside the book's root,
+   * is otherwise never seen to change (#1190).
+   */
+  sources?: () => string[] | Promise<string[]>
   dispose: () => void | Promise<void>
 }
 

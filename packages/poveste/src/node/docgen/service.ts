@@ -56,6 +56,8 @@ export interface DocgenServiceOptions {
   /** The component files a story imports, resolved to absolute paths. */
   componentsOf: (storyId: string) => string[] | Promise<string[]>
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
+  /** Called with files the extractors read that nothing was watching yet. */
+  watch?: (files: string[]) => void
 }
 
 /**
@@ -71,6 +73,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
 
   let runner: DocgenRunner | undefined
   const cache = new Map<string, Promise<ExtractResult>>()
+  const watched = new Set<string>()
 
   const exclude = options.bookOptions?.exclude ?? []
 
@@ -103,6 +106,13 @@ export function createDocgenService(options: DocgenServiceOptions) {
       for (const file of missing) {
         cache.set(file, response.then(({ results }) => results?.[file] ?? { error: 'the docgen worker gave no answer' }))
       }
+      void response.then(({ sources }) => {
+        const unseen = (sources ?? []).filter(file => !watched.has(file))
+        if (unseen.length && options.watch) {
+          unseen.forEach(file => watched.add(file))
+          options.watch(unseen)
+        }
+      })
     }
     return Promise.all(files.map(async file => [relative(options.root, file), await cache.get(file)!] as const))
   }
