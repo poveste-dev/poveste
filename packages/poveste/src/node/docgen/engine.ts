@@ -1,4 +1,6 @@
 import type { ComponentDoc, DocgenExtractor, DocgenExtractorModule } from '@poveste/shared'
+import { isAbsolute } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { getHeapStatistics } from 'node:v8'
 
 export interface EngineExtractorSpec {
@@ -25,11 +27,16 @@ export interface DocgenEngineOptions {
 }
 
 /** The extraction loop that runs inside the docgen worker, kept free of the thread. */
+/** `import()` takes a URL, and an absolute Windows path is not one: `D:` reads as its scheme. */
+export function importable(module: string) {
+  return isAbsolute(module) ? pathToFileURL(module).href : module
+}
+
 export function createDocgenEngine(options: DocgenEngineOptions) {
   const heapRatio = options.heapRatio ?? 0.7
   const heapLimit = options.heapLimit ?? getHeapStatistics().heap_size_limit
   const heapUsed = options.heapUsed ?? (() => process.memoryUsage().heapUsed)
-  const load = options.load ?? (module => import(module) as Promise<DocgenExtractorModule>)
+  const load = options.load ?? (module => import(importable(module)) as Promise<DocgenExtractorModule>)
 
   const live = new Map<string, Promise<DocgenExtractor>>()
   const stats = { created: 0, recycled: 0 }

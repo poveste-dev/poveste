@@ -1,6 +1,6 @@
 import type { DocgenExtractor, DocgenExtractorModule } from '@poveste/shared'
 import { describe, expect, it, vi } from 'vitest'
-import { createDocgenEngine } from '../docgen/engine.js'
+import { createDocgenEngine, importable } from '../docgen/engine.js'
 
 const DOC = { props: [], slots: [], events: [] }
 
@@ -71,5 +71,16 @@ describe('the docgen engine', () => {
     await docgen.extract([{ name: 'vue', file: '/book/src/A.vue' }])
 
     expect(extractor.dispose).not.toHaveBeenCalled()
+  })
+})
+
+describe('the module a plugin names', () => {
+  it('is imported as a file URL when given as a path', () => {
+    expect(importable('/book/node_modules/plugin/extractor.js')).toBe('file:///book/node_modules/plugin/extractor.js')
+  })
+
+  it('is imported as given when already a URL or a package', () => {
+    expect(importable('file:///book/extractor.js')).toBe('file:///book/extractor.js')
+    expect(importable('@poveste/plugin-vue/docgen')).toBe('@poveste/plugin-vue/docgen')
   })
 })
