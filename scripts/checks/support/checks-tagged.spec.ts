@@ -43,6 +43,7 @@ const RELEASE_GATE_CHECKS = [
   'config-reference',
   'conformance-config',
   'control-conventions',
+  'dependency-engines',
   'docs-svelte-fences',
   'docs-vue-fences',
   'example-wiring',
