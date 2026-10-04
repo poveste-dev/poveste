@@ -1,56 +1,68 @@
-import type { ComponentDoc, DocEvent, DocProp, DocSlot, DocTag } from '@poveste/shared'
+import type { ComponentDoc } from '@poveste/shared'
 import type ts from 'typescript'
+import type { DocgenOptions } from '../typed.js'
+import { documentProps } from '../typed.js'
 
 /** What differs between JSX frameworks, as data, so Solid and React share one walker (#1110, #1161). */
 export interface JsxDialect {
   /** Where the compiler finds the JSX types when the book has no tsconfig: `solid-js`, `react`. */
   jsxImportSource: string
-  /**
-   * Type aliases whose first type argument is the props, read when a component's
-   * type has no call signature whose first parameter says it: `Component<P>`.
-   */
-  componentTypes: string[]
   /** Calls that merge an object of defaults into the props parameter: `mergeProps`. */
   defaultCalls: string[]
   /** A prop whose printed type matches is a slot: `JSX.Element`. */
   slotType: RegExp
-}
-
-/** What a JSX plugin and the book pass the extractor, through `docgen.options` and `autoDocs`. */
-export interface JsxDocgenOptions {
-  /** Packages whose props count although they are declared under `node_modules`. */
-  allow?: string[]
-}
-
-const HIDDEN_TAGS = ['internal', 'private']
-const DEFAULT_TAGS = ['default', 'defaultValue']
-const EVENT_NAME = /^on[A-Z]/
-
-/** A default as written, without the quoting a tag or the printer added. */
-export function normalizeDefault(value: string) {
-  return value.trim().replace(/^`(.*)`$/s, '$1').replace(/^'(.*)'$/s, '"$1"')
+  /** The framework's types that give a component `children`: `ParentProps`, `PropsWithChildren`. */
+  childrenTypes: string[]
 }
 
 /**
  * The component a story file's default export names in its `component` field,
- * documented from the type of its first parameter. Nothing when the story names none.
+ * documented from the type of its first parameter. Nothing when the story names none,
+ * or names one `exclude` leaves out.
  */
-export function documentStory(typescript: typeof ts, program: ts.Program, file: string, dialect: JsxDialect, options: JsxDocgenOptions = {}): ComponentDoc | undefined {
+export function documentStory(typescript: typeof ts, program: ts.Program, file: string, dialect: JsxDialect, options: DocgenOptions = {}): ComponentDoc | undefined {
   const sourceFile = program.getSourceFile(file)
   if (!sourceFile) {
-    return undefined
+    throw new Error('TypeScript did not read the story file')
   }
   const checker = program.getTypeChecker()
   const component = componentField(typescript, checker, sourceFile)
   if (!component) {
     return undefined
   }
-  const type = checker.getTypeAtLocation(component)
-  const props = propsType(typescript, checker, type, dialect)
-  if (!props) {
-    throw new Error(`\`${component.getText()}\` has no props type to read`)
+  const declaredIn = resolve(typescript, checker, component)?.getDeclarations()?.[0]?.getSourceFile().fileName
+  if (declaredIn && options.exclude?.some(pattern => declaredIn.includes(pattern))) {
+    return undefined
   }
-  return toComponentDoc(typescript, checker, component, props, codeDefaults(typescript, checker, component, dialect), dialect, options)
+  const type = checker.getTypeAtLocation(component)
+  const props = propsType(typescript, checker, type)
+  if (!props) {
+    throw new Error(`\`${nameOf(typescript, component) ?? 'the component'}\` has no props type to read`)
+  }
+  const name = nameOf(typescript, component)
+  return documentProps(typescript, checker, props, {
+    location: component,
+    ...name ? { name } : {},
+    defaults: codeDefaults(typescript, checker, component, dialect),
+    slotType: dialect.slotType,
+    childrenFrom: dialect.childrenTypes,
+  }, options)
+}
+
+/** `Button`, `Tabs.Root`, or the component inside `memo(Button)`; nothing for an inline function. */
+function nameOf(typescript: typeof ts, node: ts.Expression): string | undefined {
+  if (typescript.isIdentifier(node) || typescript.isPropertyAccessExpression(node)) {
+    return node.getText()
+  }
+  if (typescript.isCallExpression(node)) {
+    for (const argument of node.arguments) {
+      const name = nameOf(typescript, argument)
+      if (name) {
+        return name
+      }
+    }
+  }
+  return undefined
 }
 
 function unwrap(typescript: typeof ts, checker: ts.TypeChecker, node: ts.Expression): ts.Expression {
@@ -100,7 +112,7 @@ function componentField(typescript: typeof ts, checker: ts.TypeChecker, sourceFi
   return undefined
 }
 
-function propsType(typescript: typeof ts, checker: ts.TypeChecker, type: ts.Type, dialect: JsxDialect): ts.Type | undefined {
+function propsType(typescript: typeof ts, checker: ts.TypeChecker, type: ts.Type): ts.Type | undefined {
   for (const signature of [...type.getCallSignatures(), ...type.getConstructSignatures()]) {
     const parameter = signature.getParameters()[0]
     if (parameter) {
@@ -109,9 +121,6 @@ function propsType(typescript: typeof ts, checker: ts.TypeChecker, type: ts.Type
         return props
       }
     }
-  }
-  if (type.aliasSymbol && dialect.componentTypes.includes(type.aliasSymbol.name)) {
-    return type.aliasTypeArguments?.[0]
   }
   return undefined
 }
@@ -196,73 +205,4 @@ function codeDefaults(typescript: typeof ts, checker: ts.TypeChecker, component:
     visit(declaration.body)
   }
   return defaults
-}
-
-function tagsOf(typescript: typeof ts, symbol: ts.Symbol, checker: ts.TypeChecker): DocTag[] {
-  return symbol.getJsDocTags(checker).map(tag => tag.text === undefined
-    ? { name: tag.name }
-    : { name: tag.name, text: typescript.displayPartsToString(tag.text) })
-}
-
-/** Declared only in installed packages none of which is allowed: an inherited attribute. */
-function isInherited(symbol: ts.Symbol, allow: string[]) {
-  const files = (symbol.getDeclarations() ?? []).map(declaration => declaration.getSourceFile().fileName.replaceAll('\\', '/'))
-  return files.length > 0 && files.every(file =>
-    file.includes('/node_modules/') && !allow.some(pkg => file.includes(`/node_modules/${pkg}/`)))
-}
-
-function toComponentDoc(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
-  component: ts.Expression,
-  props: ts.Type,
-  defaults: Map<string, string>,
-  dialect: JsxDialect,
-  options: JsxDocgenOptions,
-): ComponentDoc {
-  const allow = options.allow ?? []
-  const print = (type: ts.Type) => checker.typeToString(type, component, typescript.TypeFormatFlags.NoTruncation | typescript.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope)
-  const doc: ComponentDoc = { name: component.getText(), props: [], slots: [], events: [] }
-
-  for (const symbol of checker.getPropertiesOfType(checker.getApparentType(props))) {
-    const tags = tagsOf(typescript, symbol, checker)
-    // `children` is declared by the framework (`ParentProps`, the JSX attributes) and is still the component's main slot.
-    if (tags.some(tag => HIDDEN_TAGS.includes(tag.name)) || (symbol.name !== 'children' && isInherited(symbol, allow))) {
-      continue
-    }
-    const required = !(symbol.flags & typescript.SymbolFlags.Optional)
-    const type = checker.getTypeOfSymbolAtLocation(symbol, component)
-    // Optional members print with the `| undefined` strict mode adds; the table says optional already.
-    const printed = required ? print(type) : print(type).replace(/ \| undefined$/, '')
-    const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
-    const member = { name: symbol.name, ...description ? { description } : {}, tags }
-
-    const signature = checker.getNonNullableType(type).getCallSignatures()[0]
-    if (EVENT_NAME.test(symbol.name) && signature) {
-      const payload = signature.getParameters().map(parameter => `${parameter.name}: ${print(checker.getTypeOfSymbol(parameter))}`).join(', ')
-      doc.events.push({ ...member, ...payload ? { type: payload } : {} } satisfies DocEvent)
-      continue
-    }
-    if (symbol.name === 'children' || dialect.slotType.test(printed)) {
-      doc.slots.push({ ...member, type: printed } satisfies DocSlot)
-      continue
-    }
-
-    // Normalised as Vue's printer writes it, so a default reads the same in every framework's table.
-    const written = defaults.get(symbol.name)
-    const code = written === undefined ? undefined : normalizeDefault(written)
-    const defaultTag = tags.find(tag => DEFAULT_TAGS.includes(tag.name))?.text
-    doc.props.push({
-      ...member,
-      type: printed,
-      required,
-      ...code !== undefined ? { default: code } : {},
-      ...defaultTag !== undefined ? { defaultTag } : {},
-      // The code's default is what runs, so it is the one shown; the flag is for the reader.
-      ...code !== undefined && defaultTag !== undefined && code !== normalizeDefault(defaultTag)
-        ? { defaultConflict: true }
-        : {},
-    } satisfies DocProp)
-  }
-  return doc
 }
