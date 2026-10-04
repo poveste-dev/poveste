@@ -1,13 +1,12 @@
 import type { ComponentDoc, DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
-import type { JsxDocgenOptions } from 'poveste/docgen-jsx'
+import type { DocgenOptions } from 'poveste/docgen'
 import type ts from 'typescript'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { basename, dirname, isAbsolute, join, resolve } from 'pathe'
-import { documentProps } from 'poveste/docgen-jsx'
-import { svelteDefaults } from './defaults.js'
+import { ambientFiles, documentProps, loadFromBook, readTsconfig } from 'poveste/docgen'
+import { readScript } from './defaults.js'
 
-const TSCONFIGS = ['tsconfig.app.json', 'tsconfig.json']
 // A Svelte 5 `Snippet<...>`, and Svelte 4's slot shape as `svelte2tsx` types it.
 const SLOT_TYPE = /\bSnippet\b/
 // Svelte 5's DOM-style `onclick` as well as a library's `onCheckedChange`.
@@ -17,19 +16,6 @@ const EVENT_NAME = /^on[a-z]/i
 const VIRTUAL = '.tsx'
 
 const ownRequire = createRequire(import.meta.url)
-
-function bookRequire(root: string) {
-  return createRequire(join(root, 'package.json'))
-}
-
-function load<T>(root: string, id: string, why: string): T {
-  try {
-    return bookRequire(root)(id)
-  }
-  catch {
-    throw new Error(`auto-docs for Svelte components ${why}, and needs \`${id}\` installed in the book`)
-  }
-}
 
 function isVirtual(file: string) {
   return file.endsWith(`.svelte${VIRTUAL}`) && !file.includes('/node_modules/')
@@ -47,14 +33,15 @@ function realOf(file: string) {
  */
 export async function createExtractor(context: DocgenExtractorContext): Promise<DocgenExtractor> {
   const root = context.root
-  const options = (context.options ?? {}) as JsxDocgenOptions
-  const typescript = load<typeof ts>(root, 'typescript', 'reads their types')
-  const { VERSION, parse } = load<typeof import('svelte/compiler')>(root, 'svelte/compiler', 'reads their source')
+  const options = (context.options ?? {}) as DocgenOptions
+  const typescript = loadFromBook<typeof ts>(root, 'typescript', 'reads Svelte components\' types')
+  const { VERSION, parse } = loadFromBook<typeof import('svelte/compiler')>(root, 'svelte/compiler', 'reads Svelte components\' source')
   const { svelte2tsx } = await import('svelte2tsx')
   const shims = ['svelte-shims-v4.d.ts', 'svelte-jsx-v4.d.ts'].map(file => join(dirname(ownRequire.resolve('svelte2tsx/package.json')), file))
 
-  const tsconfig = TSCONFIGS.map(name => join(root, name)).find(file => existsSync(file))
-  const parsed = tsconfig && typescript.getParsedCommandLineOfConfigFile(tsconfig, {}, { ...typescript.sys, onUnRecoverableConfigFileDiagnostic: () => {} })
+  const parsed = readTsconfig(typescript, root)
+  // The book's `app.d.ts` and other globals, which the probe's imports would not reach.
+  const ambient = ambientFiles(parsed)
   const compilerOptions: ts.CompilerOptions = {
     module: typescript.ModuleKind.ESNext,
     moduleResolution: typescript.ModuleResolutionKind.Bundler,
@@ -147,7 +134,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
   const service = typescript.createLanguageService({
     getProjectVersion: () => String(projectVersion),
     getCompilationSettings: () => compilerOptions,
-    getScriptFileNames: () => [probe, ...shims],
+    getScriptFileNames: () => [probe, ...shims, ...ambient],
     getScriptVersion: file => String(versions.get(file) ?? 0),
     getScriptSnapshot(file) {
       const text = read(file)
@@ -183,12 +170,14 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       if (props.flags & typescript.TypeFlags.Any) {
         throw new Error('its props type did not resolve')
       }
+      const script = readScript(parse, readFileSync(file, 'utf8'))
       return documentProps(typescript, checker, props, {
         location: alias,
         name: basename(file).replace(/\.svelte$/, ''),
-        defaults: svelteDefaults(parse, readFileSync(file, 'utf8')),
+        defaults: script.defaults,
         slotType: SLOT_TYPE,
         eventName: EVENT_NAME,
+        takesChildren: script.taken.has('children'),
       }, options)
     },
     update(file) {

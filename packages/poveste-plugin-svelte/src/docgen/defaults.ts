@@ -23,12 +23,21 @@ function keyOf(property: Node): string | undefined {
   return property.key?.name ?? property.key?.value
 }
 
+export interface ScriptReading {
+  /** The defaults the component's own code applies, as written. */
+  defaults: Map<string, string>
+  /** The props its `$props()` destructuring names. */
+  taken: Set<string>
+}
+
 /**
- * The defaults a component's own code applies, as written: a `$props()`
- * destructuring default, through `$bindable(...)`, or a Svelte 4 `export let`.
+ * What a component's script says about its props: a `$props()` destructuring
+ * default, through `$bindable(...)`, or a Svelte 4 `export let`, and which props
+ * the destructuring takes.
  */
-export function svelteDefaults(parse: Parse, source: string): Map<string, string> {
+export function readScript(parse: Parse, source: string): ScriptReading {
   const defaults = new Map<string, string>()
+  const taken = new Set<string>()
   const ast = parse(source, { modern: true })
   const text = (node: Node) => source.slice(node.start, node.end)
 
@@ -39,6 +48,9 @@ export function svelteDefaults(parse: Parse, source: string): Map<string, string
     if (node.type === 'VariableDeclarator' && node.init?.type === 'CallExpression' && node.init.callee?.name === '$props' && node.id?.type === 'ObjectPattern') {
       for (const property of node.id.properties ?? []) {
         const name = keyOf(property)
+        if (property.type === 'Property' && name) {
+          taken.add(name)
+        }
         if (property.type !== 'Property' || property.value?.type !== 'AssignmentPattern' || !name) {
           continue
         }
@@ -71,5 +83,5 @@ export function svelteDefaults(parse: Parse, source: string): Map<string, string
     }
   }
   visit(ast.instance?.content as Node | undefined)
-  return defaults
+  return { defaults, taken }
 }

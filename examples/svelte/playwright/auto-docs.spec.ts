@@ -67,5 +67,7 @@ test.describe('the docs of a Svelte story\'s component', () => {
   test('lists the snippet as a slot and the callback as an event', async ({ page }) => {
     await expect(component(page).locator('[data-slot="slots"] [data-slot-name="icon"]')).toContainText('Shown before the label.', { timeout: 60_000 })
     await expect(component(page).locator('[data-slot="events"] [data-event="onpress"]')).toContainText('MouseEvent')
+    // `children` comes with the button attributes it extends, and it never takes it.
+    await expect(component(page).locator('[data-slot="slots"] [data-slot-name="children"]')).toHaveCount(0)
   })
 })

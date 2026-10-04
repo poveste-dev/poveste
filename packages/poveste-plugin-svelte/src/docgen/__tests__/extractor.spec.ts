@@ -54,6 +54,18 @@ describe('svelte auto-docs through svelte2tsx', () => {
     expect(doc.events).toEqual([{ name: 'onpress', description: 'Called when the button is pressed.', type: 'event: MouseEvent', tags: [] }])
   })
 
+  it('keeps the inherited `children` of a component that takes it, and no other component\'s', async () => {
+    const attrs = await extractor.extract(file('Attrs.svelte'))
+
+    expect((await button()).slots.map(slot => slot.name)).toContain('children')
+    expect(attrs!.slots).toEqual([])
+    expect(attrs!.props.map(prop => prop.name)).toEqual(['label'])
+  })
+
+  it('reads a props type the book declares globally', async () => {
+    expect((await extractor.extract(file('Global.svelte')))!.props).toMatchObject([{ name: 'mode', description: 'The colour scheme.', type: '"light" | "dark"' }])
+  })
+
   it('marks a deprecated prop, hides an internal one, and drops the HTML attributes it inherits', async () => {
     const { prop } = await button()
 
