@@ -1,8 +1,8 @@
-import type { JsxDialect } from '../docgen/jsx/index.js'
+import type { JsxDialect } from '../docgen/public.js'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'pathe'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
-import { createJsxExtractor } from '../docgen/jsx/index.js'
+import { createJsxExtractor } from '../docgen/public.js'
 
 const root = join(import.meta.dirname, 'docgen-jsx')
 const file = (name: string) => join(root, 'src', name)
@@ -10,12 +10,12 @@ const file = (name: string) => join(root, 'src', name)
 // Solid's, written out here: the plugin owns the real one.
 const solid: JsxDialect = {
   jsxImportSource: 'solid-js',
-  componentTypes: ['Component', 'ParentComponent', 'VoidComponent', 'FlowComponent'],
   defaultCalls: ['mergeProps', 'mergeDefaultProps'],
   slotType: /\bJSX\.Element\b/,
+  childrenTypes: ['ParentProps', 'FlowProps'],
 }
 
-function extractor(options: { allow?: string[] } = {}) {
+function extractor(options: { allow?: string[], exclude?: string[] } = {}) {
   return createJsxExtractor({ root, options }, solid)
 }
 
@@ -58,8 +58,27 @@ describe('the JSX extractor', () => {
     ])
   })
 
-  it('reads `children` and element-typed props as slots', async () => {
-    expect((await button()).slots.map(slot => slot.name)).toEqual(['icon', 'children'])
+  it('reads element-typed props as slots, and not the `children` the HTML attributes declare', async () => {
+    expect((await button()).slots.map(slot => slot.name)).toEqual(['icon'])
+  })
+
+  it('reads `children` as a slot when the component takes it through `ParentProps`', async () => {
+    expect((await shared.extract(file('Card.story.tsx')))!.slots.map(slot => slot.name)).toEqual(['children'])
+  })
+
+  it('reads a JS story, though the book\'s tsconfig does not allow JS', async () => {
+    expect(await shared.extract(file('Card.story.jsx'))).toMatchObject({ name: 'Card', props: [{ name: 'elevation', default: '1' }, { name: 'title' }] })
+  })
+
+  it('names the component inside a wrapping call, and reads a global type the book declares', async () => {
+    expect(await shared.extract(file('Themed.story.tsx'))).toMatchObject({ name: 'Themed', props: [{ name: 'mode', description: 'The colour scheme.', type: '"light" | "dark"' }] })
+  })
+
+  it('gives an inline component no name, rather than its source', async () => {
+    const doc = await shared.extract(file('Inline.story.tsx'))
+
+    expect(doc!.name).toBeUndefined()
+    expect(doc!.props.map(prop => prop.name)).toEqual(['label'])
   })
 
   it('leaves out what the component inherits from the JSX attribute types, and what is hidden', async () => {
@@ -81,6 +100,26 @@ describe('the JSX extractor', () => {
 
     expect(sources).toContain(file('Button.tsx'))
     expect(sources.every(source => !source.includes('/node_modules/'))).toBe(true)
+  })
+})
+
+describe('the JSX extractor, on its first request', () => {
+  it('builds a program over that story, not every source the tsconfig includes', { timeout: 60_000 }, async () => {
+    const own = extractor()
+    await own.extract(file('Button.story.tsx'))
+
+    expect(await own.sources!()).not.toContain(file('Card.tsx'))
+    await own.dispose()
+  })
+})
+
+describe('the JSX extractor, with components excluded', () => {
+  it('documents nothing for a story whose component lives in an excluded file', { timeout: 60_000 }, async () => {
+    const own = extractor({ exclude: ['src/Card'] })
+
+    expect(await own.extract(file('Card.story.tsx'))).toBeUndefined()
+    expect(await own.extract(file('Button.story.tsx'))).toMatchObject({ name: 'Button' })
+    await own.dispose()
   })
 })
 
