@@ -26,6 +26,28 @@ export function resolvePreviewDark(colorScheme: SandboxColorScheme | undefined, 
 }
 
 /**
+ * The CSS `color-scheme` a preview declares, from the same inputs as the class.
+ *
+ * The class tells the book's CSS; this tells the browser, which paints native
+ * widgets, scrollbars and the canvas itself and reads no class (#991). `auto`
+ * becomes `light dark`, so the browser follows the OS preference on its own
+ * rather than being told the answer `prefersDark` already computed.
+ */
+export function previewColorScheme(colorScheme: SandboxColorScheme | undefined, chromeDark: boolean): 'light' | 'dark' | 'light dark' {
+  switch (colorScheme) {
+    case 'light': return 'light'
+    case 'dark': return 'dark'
+    case 'auto': return 'light dark'
+    default: return chromeDark ? 'dark' : 'light'
+  }
+}
+
+/** `previewColorScheme`, for previews rendered by the app itself. */
+export function usePreviewColorScheme(settings: PreviewSettings) {
+  return computed(() => previewColorScheme(settings.colorScheme, isDark.value))
+}
+
+/**
  * Whether the story preview should be rendered dark, for previews rendered by
  * the app itself. The sandbox resolves the same thing from the settings it
  * receives over `PREVIEW_SETTINGS_SYNC`.
