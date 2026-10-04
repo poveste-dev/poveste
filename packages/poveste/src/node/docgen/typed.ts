@@ -90,6 +90,8 @@ export interface PropsReading {
    * HTML attributes a component extends, it is filtered like any other attribute.
    */
   childrenFrom?: string[]
+  /** The component's own code takes `children`, as a Svelte `$props()` destructuring shows, wherever it is declared. */
+  takesChildren?: boolean
 }
 
 function tagsOf(typescript: typeof ts, symbol: ts.Symbol, checker: ts.TypeChecker): DocTag[] {
@@ -121,7 +123,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
   for (const symbol of checker.getPropertiesOfType(checker.getApparentType(props))) {
     const tags = tagsOf(typescript, symbol, checker)
     const files = (symbol.getDeclarations() ?? []).map(declaration => declaration.getSourceFile().fileName)
-    const parentChildren = symbol.name === 'children' && declaredIn(typescript, symbol, reading.childrenFrom ?? [])
+    const parentChildren = symbol.name === 'children' && (reading.takesChildren || declaredIn(typescript, symbol, reading.childrenFrom ?? []))
     if (tags.some(tag => HIDDEN_TAGS.includes(tag.name)) || (!parentChildren && declaredOnlyInPackages(files, allow))) {
       continue
     }
