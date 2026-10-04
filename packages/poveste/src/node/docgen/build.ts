@@ -1,7 +1,7 @@
 import type { ModuleGraph } from 'vite'
 import type { Context } from '../context.js'
 import type { StoryDocsResult } from './protocol.js'
-import { componentsOfStory, storyFileOf } from './components-of.js'
+import { componentsOfStory, storyOf } from './components-of.js'
 import { createDocgenService } from './service.js'
 
 /**
@@ -15,7 +15,7 @@ export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGrap
     enabled: ctx.config.autoDocs !== false,
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected: Promise.resolve(),
-    storyFileOf: storyId => storyFileOf(ctx.storyFiles, storyId),
+    storyOf: storyId => storyOf(ctx.storyFiles, storyId),
     componentsOf: storyId => componentsOfStory(ctx.storyFiles, moduleGraph, storyId),
   })
   if (!docgen.enabled) {

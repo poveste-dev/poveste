@@ -1,10 +1,8 @@
-import type { AutoDocsOptions, Plugin, PluginDocgen } from '@poveste/shared'
+import type { AutoDocsOptions, Plugin } from '@poveste/shared'
 import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
-
-type DocgenScope = NonNullable<PluginDocgen['scope']>
 
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
 
@@ -57,8 +55,8 @@ export interface DocgenServiceOptions {
   collected: Promise<void>
   /** The component files a story imports, resolved to absolute paths. */
   componentsOf: (storyId: string) => string[] | Promise<string[]>
-  /** The story's own file, for a plugin whose `docgen.scope` is `story`. */
-  storyFileOf?: (storyId: string) => string | undefined
+  /** The story's own file and the framework collection gave it, for a plugin whose `docgen.scope` is `story`. */
+  storyOf?: (storyId: string) => { file: string, supportPluginId: string } | undefined
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
   /** Called with files the extractors read that nothing was watching yet. */
   watch?: (files: string[]) => void
@@ -84,11 +82,18 @@ export function createDocgenService(options: DocgenServiceOptions) {
   // Which plugin each requested file was handed to, so the worker gets its extractor.
   const owners = new Map<string, Plugin>()
 
-  function pluginFor(file: string, scope: DocgenScope) {
+  function pluginFor(file: string) {
     if (exclude.some(pattern => file.includes(pattern))) {
       return undefined
     }
-    return plugins.find(plugin => (plugin.docgen!.scope ?? 'imports') === scope && plugin.docgen!.match(file))
+    return plugins.find(plugin => (plugin.docgen!.scope ?? 'imports') === 'imports' && plugin.docgen!.match(file))
+  }
+
+  // The plugin collection already gave the story, not the first whose `match` takes its
+  // file: Solid and React both take `.story.tsx`. `exclude` names component files, which
+  // only the extractor knows here, so it applies it.
+  function storyPluginFor(file: string, supportPluginId: string) {
+    return plugins.find(plugin => plugin.docgen!.scope === 'story' && plugin.supportPlugin?.id === supportPluginId && plugin.docgen!.match(file))
   }
 
   function start() {
@@ -138,19 +143,18 @@ export function createDocgenService(options: DocgenServiceOptions) {
       }
       await options.collected
       const files: string[] = []
-      function own(file: string, scope: DocgenScope) {
-        const plugin = pluginFor(file, scope)
+      function own(file: string, plugin: Plugin | undefined) {
         if (plugin) {
           owners.set(file, plugin)
           files.push(file)
         }
       }
-      const storyFile = options.storyFileOf?.(storyId)
-      if (storyFile) {
-        own(storyFile, 'story')
+      const story = options.storyOf?.(storyId)
+      if (story) {
+        own(story.file, storyPluginFor(story.file, story.supportPluginId))
       }
       for (const file of await options.componentsOf(storyId)) {
-        own(file, 'imports')
+        own(file, pluginFor(file))
       }
       return { storyId, components: Object.fromEntries(await extract(files)) }
     },
