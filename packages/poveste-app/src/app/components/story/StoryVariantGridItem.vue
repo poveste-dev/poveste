@@ -8,7 +8,7 @@ import { computed, nextTick, ref, toRefs, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
-import { previewDarkClasses, usePreviewColorScheme, usePreviewDark } from '../../util/color-scheme'
+import { previewDarkClasses, usePreviewDark } from '../../util/color-scheme'
 import { povesteConfig } from '../../util/config'
 import { getSourceCode } from '../../util/docs'
 import { getContrastColor } from '../../util/preview-settings'
@@ -91,7 +91,6 @@ watch(() => props.variant.previewReady, (ready) => {
 const settings = usePreviewSettingsStore().currentSettings
 
 const previewDark = usePreviewDark(settings)
-const previewColorScheme = usePreviewColorScheme(settings)
 
 const contrastColor = computed(() => getContrastColor(settings))
 const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastColor)
@@ -191,7 +190,6 @@ const useIframe = computed(() => {
           :story="story"
           :dir="settings.textDirection"
           :class="previewDark ? previewDarkClasses() : undefined"
-          :style="{ colorScheme: previewColorScheme }"
           @ready="onReady"
         />
       </div>
