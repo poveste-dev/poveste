@@ -174,7 +174,7 @@ describe('the docgen service', () => {
   it('leaves out a file its extractor found nothing to document in', async () => {
     const { docgen } = service({
       plugins: [solid],
-      storyFileOf: () => '/book/src/Plain.story.tsx',
+      storyOf: () => ({ file: '/book/src/Plain.story.tsx', supportPluginId: 'solid' }),
       createRunner: () => ({ send: async () => ({ id: 0, results: { '/book/src/Plain.story.tsx': {} } }), terminate: async () => {} }),
     })
 

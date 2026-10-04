@@ -1,46 +1,27 @@
 import type { DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
 import type ts from 'typescript'
-import type { JsxDialect, JsxDocgenOptions } from './walk.js'
+import type { DocgenOptions } from '../typed.js'
+import type { JsxDialect } from './walk.js'
 import { existsSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { join } from 'pathe'
+import { ambientFiles, loadFromBook, readTsconfig } from '../typed.js'
 import { documentStory } from './walk.js'
 
-// `tsconfig.app.json` first: Vite's templates split the app's settings into it
-// and leave `tsconfig.json` holding only references, which type nothing.
-const TSCONFIGS = ['tsconfig.app.json', 'tsconfig.json']
-
-/** The book's own compiler, so the types are read as its editor reads them. */
-function loadTypescript(root: string): typeof ts {
-  try {
-    return createRequire(join(root, 'package.json'))('typescript')
-  }
-  catch {
-    throw new Error('auto-docs for JSX components reads their types, and needs `typescript` installed in the book')
-  }
-}
-
-function compilerSettings(typescript: typeof ts, root: string, dialect: JsxDialect) {
-  const tsconfig = TSCONFIGS.map(name => join(root, name)).find(file => existsSync(file))
-  const parsed = tsconfig && typescript.getParsedCommandLineOfConfigFile(tsconfig, {}, {
-    ...typescript.sys,
-    onUnRecoverableConfigFileDiagnostic: () => {},
-  })
-  if (parsed) {
-    return { options: parsed.options, fileNames: parsed.fileNames }
-  }
+function compilerOptions(typescript: typeof ts, parsed: ts.ParsedCommandLine | undefined, dialect: JsxDialect): ts.CompilerOptions {
   return {
-    options: {
-      jsx: typescript.JsxEmit.Preserve,
-      jsxImportSource: dialect.jsxImportSource,
-      module: typescript.ModuleKind.ESNext,
-      moduleResolution: typescript.ModuleResolutionKind.Bundler,
-      target: typescript.ScriptTarget.ESNext,
-      strict: true,
-      allowJs: true,
-      skipLibCheck: true,
-    } satisfies ts.CompilerOptions,
-    fileNames: [],
+    ...parsed
+      ? parsed.options
+      : {
+          jsx: typescript.JsxEmit.Preserve,
+          jsxImportSource: dialect.jsxImportSource,
+          module: typescript.ModuleKind.ESNext,
+          moduleResolution: typescript.ModuleResolutionKind.Bundler,
+          target: typescript.ScriptTarget.ESNext,
+          strict: true,
+          skipLibCheck: true,
+        },
+    // A `.story.jsx` is read whatever the book's tsconfig says, and nothing is emitted.
+    allowJs: true,
+    noEmit: true,
   }
 }
 
@@ -50,16 +31,19 @@ function compilerSettings(typescript: typeof ts, root: string, dialect: JsxDiale
  * is this with its dialect bound.
  */
 export function createJsxExtractor(context: DocgenExtractorContext, dialect: JsxDialect): DocgenExtractor {
-  const typescript = loadTypescript(context.root)
-  const options = (context.options ?? {}) as JsxDocgenOptions
-  const settings = compilerSettings(typescript, context.root, dialect)
-  const files = new Set(settings.fileNames)
+  const typescript = loadFromBook<typeof ts>(context.root, 'typescript', 'reads JSX components\' types')
+  const options = (context.options ?? {}) as DocgenOptions
+  const parsed = readTsconfig(typescript, context.root)
+  const settings = compilerOptions(typescript, parsed, dialect)
+  // The requested stories and the book's declaration files, not every source it includes:
+  // the program grows with the components asked for, not with the book.
+  const files = new Set(ambientFiles(parsed))
   const versions = new Map<string, number>()
   let projectVersion = 0
 
   const service = typescript.createLanguageService({
     getProjectVersion: () => String(projectVersion),
-    getCompilationSettings: () => settings.options,
+    getCompilationSettings: () => settings,
     getScriptFileNames: () => [...files],
     getScriptVersion: file => String(versions.get(file) ?? 0),
     getScriptSnapshot(file) {
