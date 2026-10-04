@@ -5,7 +5,14 @@ import { createDocgenService } from '../docgen/service.js'
 
 const vue: Plugin = { name: 'vue', docgen: { match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'), module: 'fake' } }
 // A JSX story names its component in a field, so the extractor is handed the story itself.
-const solid: Plugin = { name: 'solid', docgen: { scope: 'story', match: file => /\.story\.[jt]sx$/.test(file), module: 'fake' } }
+function jsx(name: string): Plugin {
+  return {
+    name,
+    supportPlugin: { id: name, moduleName: `@poveste/plugin-${name}`, setupFn: [], importStoryComponent: () => '' },
+    docgen: { scope: 'story', match: file => /\.story\.[jt]sx$/.test(file), module: 'fake' },
+  }
+}
+const solid = jsx('solid')
 
 function fakeRunner() {
   const sent: { type: string, requests?: { name: string, file: string }[] }[] = []
@@ -88,7 +95,7 @@ describe('the docgen service', () => {
   it('hands a story-scoped plugin the story file, not what the story imports', async () => {
     const { docgen, sent } = service({
       plugins: [solid],
-      storyFileOf: () => '/book/src/Button.story.tsx',
+      storyOf: () => ({ file: '/book/src/Button.story.tsx', supportPluginId: 'solid' }),
       componentsOf: () => ['/book/src/Button.tsx', '/book/src/Other.story.tsx'],
     })
 
@@ -98,10 +105,22 @@ describe('the docgen service', () => {
     expect(Object.keys(result.components)).toEqual(['src/Button.story.tsx'])
   })
 
+  it('hands a story to the plugin collection gave it, when two plugins match its file', async () => {
+    const { docgen, sent } = service({
+      plugins: [solid, jsx('react')],
+      storyOf: () => ({ file: '/book/src/Button.story.tsx', supportPluginId: 'react' }),
+      componentsOf: () => [],
+    })
+
+    await docgen.request('button')
+
+    expect(sent[0]!.requests).toEqual([{ name: 'react', file: '/book/src/Button.story.tsx' }])
+  })
+
   it('never hands an import-scoped plugin the story file, though it matches', async () => {
     const { docgen, sent } = service({
       plugins: [{ name: 'vue', docgen: { match: file => file.endsWith('.vue'), module: 'fake' } }],
-      storyFileOf: () => '/book/src/Button.story.vue',
+      storyOf: () => ({ file: '/book/src/Button.story.vue', supportPluginId: 'vue' }),
       componentsOf: () => ['/book/src/Button.vue'],
     })
 

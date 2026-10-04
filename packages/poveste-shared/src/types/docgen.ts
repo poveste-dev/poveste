@@ -78,8 +78,10 @@ export interface PluginDocgen {
   /**
    * What a request hands the extractor. `imports`: each file the story's module
    * imports that `match` accepts, as a Vue story imports its `.vue` files.
-   * `story`: the story file itself, when `match` accepts it, for a format whose
-   * story names its component in a `component` field the extractor resolves.
+   * `story`: the story file itself, for a story collection gave to this plugin's
+   * `supportPlugin` and that `match` accepts, in a format whose story names its
+   * component in a `component` field the extractor resolves. `autoDocs.exclude`
+   * reaches the extractor in its options, since only it knows the component's file.
    */
   scope?: 'imports' | 'story'
   /** Whether a resolved file is one this plugin documents. */
