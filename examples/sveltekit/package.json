@@ -10,6 +10,7 @@
     "sk:preview": "vite preview",
     "sk:check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "sk:check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "prepare": "svelte-kit sync || echo ''",
     "story:dev": "poveste dev",
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4570"
