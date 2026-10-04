@@ -4,7 +4,7 @@ description: >-
   Cut a poveste release — hand-write the CHANGELOG section BEFORE tagging, because it is published
   as the GitHub release body and publishing is what emails every watcher, and that email cannot be
   fixed afterwards. Use when asked to cut, prepare or publish a release, bump the version, write
-  release notes, or diagnose a release workflow failure.
+  release notes, diagnose a release workflow failure, or put a new package on npm for the first time.
 ---
 
 # Cutting a poveste release
@@ -157,6 +157,30 @@ $ git show origin/next:CHANGELOG.md | grep -n '^## v0\.16\.0'
 A replace-first insert hits the right one today by accident of ordering, and writes a poveste section into histoire's history the first time the numbers line up the other way. `## v<version>` plus `[compare changes](https://github.com/poveste-dev/poveste/compare/...)` is unique. Assert the match is unique before writing rather than trusting the count — the failure is silent, and this file is published verbatim.
 
 **The twin exists for the version you are writing, not only for older ones**, and it catches *reads* as well as inserts. histoire released a v0.16.1 too, so `sed -n '/^## v0.16.1/,/^## v0.16.0/p'` opens a second range at histoire's heading and returns both sections — which is how an audit of the numbers in a section came back holding histoire's commit hashes. Read the section by the line numbers `grep -n` gives you, or scope to the half of the file above the inherited changelog.
+
+## A new package needs one publish by hand
+
+`release.yml` publishes without a token, through npm Trusted Publishing, and a Trusted Publisher is configured per package on npmjs.com, so it can only be set up for a package that already exists. A package that has never been on npm stops the release at its preflight: the network half of `pnpm run test:publishable` reports `<name> has never been published, so Trusted Publishing cannot bootstrap it`. Per-PR CI skips that half, which is why the PR adding the package was green. Run it yourself on `next` as soon as a new public package merges, not on release day. `plugin-quasar` and `plugin-solid` each needed this (#1135), and `plugin-react` (#371) needs it before 0.19.
+
+The account owner does it once per package, and the release workflow publishes every version after:
+
+1. **Publish a placeholder `0.0.1` by hand**, from a directory holding only a manifest and a README, after `npm login`. The manifest needs `name`, `version: "0.0.1"`, `license`, `repository`, `publishConfig.access: "public"` and the same `engines.node` as the real package's manifest:
+   ```bash
+   npm publish
+   ```
+   - The placeholder is the package's `latest` until the first real version publishes, and its "previous version" forever after. Without `engines`, it's exactly what npm walks back to on an unsupported Node (#901).
+2. **Deprecate it, naming the first real version.** pnpm's release-age cooldown installs the previous version for hours after a release, and here that's the placeholder, so it has to say what it is:
+   ```bash
+   npm deprecate @poveste/plugin-<name>@0.0.1 "Placeholder. Install @poveste/plugin-<name>@<first version> or later."
+   ```
+3. **Configure its Trusted Publisher** on npmjs.com, under the package's settings: GitHub Actions, organization `poveste-dev`, repository `poveste`, workflow filename `release.yml`, environment left empty.
+4. **Check it:** `npm view @poveste/plugin-<name> version deprecated engines` shows all three, and `pnpm run test:publishable` on `next` no longer names the package.
+
+What gets in the way, each seen on `plugin-solid`:
+
+- **A `PUT` that answers `404` means you are not logged in**, not that the name is wrong or taken. Run `npm login` and publish again.
+- **A new package takes about three and a half minutes to become readable.** Until then `npm view` answers `404`, and so does `npm deprecate`, which reads the package before it writes. Wait, and run the deprecate again; nothing is half-written.
+- **Every write asks for 2FA in the browser**: the publish and the deprecate each open a confirmation, so do this at the machine, not over a remote shell.
 
 ## If the workflow fails
 
