@@ -4,6 +4,40 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.18.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.2...v0.18.0)
+
+**Write stories for SolidJS components, renderer only.**
+
+It is a `minor`, because the Solid plugin is a new feature. Nothing is deprecated, renamed or removed, no configuration key changed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit or Quasar book upgrades with nothing to do.
+
+### 🚀 Enhancements
+
+- **Write stories for SolidJS components with `@poveste/plugin-solid`, renderer only for now** ([#61](https://github.com/poveste-dev/poveste/issues/61), [#1123](https://github.com/poveste-dev/poveste/pull/1123), [#1125](https://github.com/poveste-dev/poveste/pull/1125), [#1126](https://github.com/poveste-dev/poveste/pull/1126), [#1172](https://github.com/poveste-dev/poveste/pull/1172)).
+  - **What works:** a story is a `.story.tsx` file. Its variants render JSX. `initState` gives a variant the state panel, and `render` receives that state as a Solid store, so an edit in the panel reaches the story without running `render` again. `setupSolid` runs before a story mounts, and its `addWrapper` puts a component around it. The source panel shows the story's `source` if it sets one, and the story file otherwise.
+  - **Not here yet:** controls built from your components, and generated per-variant source. Solid compiles JSX to DOM operations and keeps no render tree to read either from. A variant without `initState` says why its panel is empty.
+  - **Requirements:** `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`.
+  - **Set `storyMatch: ['**/*.story.tsx']` in your Poveste config.** The defaults look only for `.story.vue` and `.story.svelte`, so without it the book builds empty.
+  - The [Solid guide](https://poveste.dev/guide/solid/getting-started) walks through all of it, including the `story:dev` and `story:build` scripts.
+
+### 🩹 Fixes
+
+- **`@poveste/app` ships Poveste's licence** ([#936](https://github.com/poveste-dev/poveste/issues/936), [#1147](https://github.com/poveste-dev/poveste/pull/1147)). It packed its bundled font's licence and, because of that, not Poveste's own MIT licence, the only published package without it. It now carries both, and the release gate checks that every package's tarball carries Poveste's licence.
+
+### 📖 Documentation
+
+- **`/llms.txt` and `/llms-full.txt` on poveste.dev** ([#1127](https://github.com/poveste-dev/poveste/issues/1127), [#1144](https://github.com/poveste-dev/poveste/pull/1144)). They give an AI agent a map of the docs, generated from the site's own navigation and each page's description, so they cannot drift from it. They went live on poveste.dev just after 0.17.2. From this release they list Solid as renderer only.
+
+- **Solid is named, as renderer only, wherever Poveste lists its frameworks** ([#1133](https://github.com/poveste-dev/poveste/issues/1133), [#1145](https://github.com/poveste-dev/poveste/pull/1145)): the README, the supported-versions table and the npm descriptions.
+
+### ↩️ Pulled before release
+
+Two fixes landed during this cycle and were reverted before the release. **The generated commit list below still names both under Bug Fixes**, because it doesn't list reverts: neither is in 0.18.0, which behaves as 0.17.2 does for both. Both are planned for 0.19.
+
+- **Native widgets in a dark preview are still painted light** ([#991](https://github.com/poveste-dev/poveste/issues/991)). The fix ([#1148](https://github.com/poveste-dev/poveste/pull/1148), reverted by [#1173](https://github.com/poveste-dev/poveste/pull/1173)) made a preview paint opaque whenever its colour scheme differed from Poveste's interface, and it overrode a book's own `color-scheme` ([#1167](https://github.com/poveste-dev/poveste/issues/1167)).
+- **In `poveste dev`, the "generate story" component picker still lists nothing** ([#1064](https://github.com/poveste-dev/poveste/issues/1064)). The fix ([#1146](https://github.com/poveste-dev/poveste/pull/1146), reverted by [#1179](https://github.com/poveste-dev/poveste/pull/1179)) made the picker reach two paths that stop the dev server ([#1170](https://github.com/poveste-dev/poveste/issues/1170), [#1176](https://github.com/poveste-dev/poveste/issues/1176)).
+
 ## v0.17.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.1...v0.17.2)
