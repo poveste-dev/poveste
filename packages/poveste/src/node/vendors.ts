@@ -1,5 +1,5 @@
 import type { Plugin as VitePlugin } from 'vite'
-import { readFileSync, realpathSync } from 'node:fs'
+import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'pathe'
@@ -13,15 +13,35 @@ export type Resolver = (specifier: string, from: string) => string | undefined
 // A file of this package's own, to resolve from.
 const POVESTE_FILE = fileURLToPath(import.meta.url)
 
+function packageName(specifier: string) {
+  const parts = specifier.split('/')
+  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!
+}
+
+/**
+ * Finds the package by walking `node_modules` up from `from`, then lets Node resolve
+ * the subpath from inside it, through its `exports`. Not `require.resolve` from `from`:
+ * Node folds NODE_PATH into every lookup, even with `paths`, and pnpm's bin shims
+ * point it at the whole store, so a Svelte book run through `poveste` "had" a Vue of
+ * its own and the chrome was collapsed onto a Vue Vite could not find (#1201).
+ */
 export const nodeResolver: Resolver = (specifier, from) => {
-  try {
-    // `createRequire` resolves relative to the *dirname* of what it is given, so a
-    // directory has to be named as a file inside it or every lookup starts one
-    // level too high.
-    return realpathSync(createRequire(join(from, 'noop.js')).resolve(specifier))
-  }
-  catch {
-    return undefined
+  const name = packageName(specifier)
+  for (let dir = from; ; dir = dirname(dir)) {
+    const candidate = join(dir, 'node_modules', name)
+    if (existsSync(join(candidate, 'package.json'))) {
+      try {
+        // From a file inside the package, whose own `node_modules` parent is the
+        // first place Node looks, so the lookup ends here before NODE_PATH.
+        return realpathSync(createRequire(join(candidate, 'package.json')).resolve(specifier))
+      }
+      catch {
+        return undefined
+      }
+    }
+    if (dirname(dir) === dir) {
+      return undefined
+    }
   }
 }
 
@@ -228,4 +248,36 @@ export function vendorsFromPoveste(): VitePlugin {
       return this.resolve(source, POVESTE_FILE, { ...options, skipSelf: true })
     },
   }
+}
+
+/**
+ * The chrome's vendored packages, as nested pre-bundle specifiers, for a book with no
+ * Vue of its own (Svelte, Solid, React).
+ *
+ * There the collapse has no project Vue to point at, and under pnpm `poveste-vue`
+ * and the `vue` that `poveste-vue-router` imports are one file in the store. Vite
+ * pre-bundled the first and served the second raw: one file, two module instances,
+ * and a book that rendered no story. Pre-bundling every vendored package together,
+ * reached through Poveste's own install, puts their Vue in one shared chunk (#1201).
+ *
+ * Empty wherever the collapse applies, or when the chain cannot be resolved from
+ * the project, where Vite would only warn about an include it cannot find.
+ */
+export function chromePrebundles(options: {
+  root: string
+  resolve?: Resolver
+  vendorsFrom?: string
+}): string[] {
+  const { root } = options
+  const resolve = options.resolve ?? nodeResolver
+
+  if (resolve('vue', root) || !resolve('poveste/package.json', root)) {
+    return []
+  }
+  const vendorsEntry = resolve('@poveste/vendors/vue', options.vendorsFrom ?? dirname(POVESTE_FILE))
+  if (!vendorsEntry) {
+    return []
+  }
+  const aliases = vendoredAliases(readJson<{ dependencies?: Record<string, string> }>(join(vendorsEntry, '..', 'package.json'))?.dependencies)
+  return Object.keys(aliases).map(installedAs => `poveste > @poveste/vendors > ${installedAs}`)
 }
