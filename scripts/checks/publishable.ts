@@ -10,6 +10,7 @@ import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync } f
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { buildBundles, NOTICES_FILE } from '../build/third-party-notices.ts'
 import { captured } from './support/captured.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -271,6 +272,20 @@ export function licenseProblems(name: string, paths: string[], packed: string | 
 
 // npm ships these whatever `files` says. Deliberately not the `main` file,
 // which npm also forces in: a main outside the declared surface is a defect.
+/**
+ * The notices a bundling package's build writes, in its tarball (#936).
+ *
+ * Every bundling build empties `dist` first and writes them last, so a packed
+ * copy is the current build's: one cannot outlive the bundle it describes, and a
+ * build that stops writing them leaves none for this to find.
+ */
+export function noticesProblems(name: string, paths: string[], bundling: boolean): string[] {
+  if (bundling && !paths.includes(`dist/${NOTICES_FILE}`)) {
+    return [`${name} bundles in its build but packs no dist/${NOTICES_FILE}, so the code it redistributes ships without notices — add thirdPartyNotices() to its vite.config`]
+  }
+  return []
+}
+
 const ALWAYS_PACKED = /^(?:package\.json|readme|licen[cs]e)(?:\.[^/]*)?$/i
 
 // Packed paths no `files` entry accounts for. Entries match as an exact path or
@@ -475,6 +490,7 @@ function repositoryProblems(root: string, { offline = false }: { offline?: boole
         shipped.includes('LICENSE') ? String(execFileSync('tar', ['-xzOf', packed.tarball, 'package/LICENSE'], { stdio: ['ignore', 'pipe', 'pipe'] })) : undefined,
         rootLicense,
       ))
+      problems.push(...noticesProblems(pkg.name, shipped, buildBundles(manifest)))
       for (const error of manifestLintProblems(packed.tarball)) {
         problems.push(`${pkg.name} fails publint: ${error}`)
       }

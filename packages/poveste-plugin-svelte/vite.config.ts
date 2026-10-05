@@ -2,12 +2,14 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import fs from 'fs-extra'
 import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
+import { thirdPartyNotices } from '../../scripts/build/third-party-notices.ts'
 import { escapeRegExp } from '../../scripts/escape-regexp.ts'
 import pkg from './package.json'
 
 export default defineConfig({
   plugins: [
     svelte(),
+    thirdPartyNotices({ packageName: '@poveste/plugin-svelte' }),
     {
       name: 'poveste:preserve:import.dynamic',
       enforce: 'pre',

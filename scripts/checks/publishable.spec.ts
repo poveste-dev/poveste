@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { checkPublishable, emptyFilesEntries, licenseProblems, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
+import { checkPublishable, emptyFilesEntries, licenseProblems, noticesProblems, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -396,6 +396,17 @@ describe('the walk the other checks import', () => {
     })
 
     expect(publishablePackages(root).map(pkg => pkg.name)).toEqual(['@poveste/one'])
+  })
+})
+
+describe('noticesProblems', () => {
+  it('names a bundling package whose tarball carries no notices', () => {
+    expect(noticesProblems('@fixture/lib', ['package.json', 'dist/index.js'], true)).toEqual(['@fixture/lib bundles in its build but packs no dist/THIRD_PARTY_NOTICES.md, so the code it redistributes ships without notices — add thirdPartyNotices() to its vite.config'])
+  })
+
+  it('accepts one that packs them, and a package that does not bundle', () => {
+    expect(noticesProblems('@fixture/lib', ['package.json', 'dist/THIRD_PARTY_NOTICES.md'], true)).toEqual([])
+    expect(noticesProblems('@fixture/tsc', ['package.json', 'dist/index.js'], false)).toEqual([])
   })
 })
 
