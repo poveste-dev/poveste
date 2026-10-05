@@ -40,6 +40,14 @@ export interface TreeGroupConfig {
  */
 export type HistoireConfig = PovesteConfig
 
+/** A plugin `viteIgnorePlugins` keeps, minus some of its hooks. */
+export interface ViteIgnoredHooks {
+  /** The Vite plugin's `name`. */
+  name: string
+  /** Hooks to remove from it, such as `configureServer`. */
+  hooks: string[]
+}
+
 export interface PovesteConfig {
   plugins: Plugin[]
   /**
@@ -253,9 +261,11 @@ export interface PovesteConfig {
    */
   vite?: ViteConfig | ((config: ViteConfig, env: ViteConfigEnv) => void | ViteConfig | Promise<void | ViteConfig>)
   /**
-   * Remove those plugins from the Vite configuration
+   * Remove those plugins from the Vite configuration. A name removes the plugin;
+   * `{ name, hooks }` keeps it and removes only those hooks, for a plugin whose
+   * config the book needs but whose server it must not run.
    */
-  viteIgnorePlugins?: string[]
+  viteIgnorePlugins?: (string | ViteIgnoredHooks)[]
   /**
    * Transpile dependencies when collecting stories on Node.js
    */

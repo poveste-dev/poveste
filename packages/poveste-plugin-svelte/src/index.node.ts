@@ -1,12 +1,14 @@
 import type { Plugin } from 'poveste'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import process from 'node:process'
 import { dirname, join } from 'pathe'
 import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { SVELTE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { svelteAutoProps } from './util/auto-props-vite.js'
 import { svelteKitAssetsDir } from './util/kit-assets.js'
+import { syncSvelteKit } from './util/kit-sync.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
 
@@ -15,6 +17,10 @@ export function HstSvelte(): Plugin {
     name: '@poveste/plugin-svelte',
 
     async defaultConfig() {
+      const syncProblem = syncSvelteKit(process.cwd())
+      if (syncProblem) {
+        console.warn(`[@poveste/plugin-svelte] svelte-kit sync failed, so types and aliases Kit generates may be missing:\n${syncProblem}`)
+      }
       const svelteClientAliases = getSvelteClientAliases()
       const publicDir = await svelteKitAssetsDir(process.cwd())
 
@@ -38,6 +44,9 @@ export function HstSvelte(): Plugin {
         },
         viteIgnorePlugins: [
           'vite-plugin-sveltekit-compile',
+          // Kit 3 moved its dev and preview middleware here from `compile`, but this
+          // plugin's config is what stories need: aliases, `server.fs`, `define` (#1200).
+          { name: 'vite-plugin-sveltekit-setup', hooks: ['configureServer', 'configurePreviewServer'] },
         ],
         vite: {
           plugins: [

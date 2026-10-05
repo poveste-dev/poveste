@@ -476,17 +476,20 @@ export default defineConfig({
 
 ## `viteIgnorePlugins`
 
-`string[]`
+`(string | { name: string, hooks: string[] })[]`
 
-List of Vite plugin names to exclude for Poveste.
+Vite plugins from your config that Poveste leaves out. A name removes the plugin. `{ name, hooks }` keeps the plugin and removes only those hooks, for a plugin whose config the book needs but whose dev server middleware it must not run.
 
 ```ts
 export default defineConfig({
   viteIgnorePlugins: [
     'vite-plugin-example',
+    { name: 'vite-plugin-framework-setup', hooks: ['configureServer', 'configurePreviewServer'] },
   ],
 })
 ```
+
+`@poveste/plugin-svelte` already lists SvelteKit's plugins here, so a SvelteKit book needs nothing of its own.
 
 ## `viteNodeTransformMode`
 
