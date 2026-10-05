@@ -1,6 +1,6 @@
 ---
 title: 'Getting started with SvelteKit — add Poveste to the config you have'
-description: 'SvelteKit uses the same Svelte plugin, configured through the vite.config.ts SvelteKit already owns. The supported floor is Kit 2.53.'
+description: 'SvelteKit uses the same Svelte plugin, configured through the vite.config.ts SvelteKit already owns. Kit 2 from 2.53, and Kit 3, are supported.'
 ---
 
 # Getting started with SvelteKit
@@ -31,15 +31,11 @@ Run `node -v` before you install. On an older Node, `npm i poveste` still succee
 :::
 
 ::: info Supported versions
-`@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0` as an **optional** peer — enforced
-when Kit is installed, ignored when it is not, since the same package serves plain Svelte.
+`@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0 || ^3.0.0` as an **optional** peer: enforced when Kit is installed, ignored when it is not, since the same package serves plain Svelte.
 
-`2.53.0` is the first SvelteKit release to peer Vite 8 and `@sveltejs/vite-plugin-svelte@^7`,
-and v7 is in turn the first plugin major to peer Vite 8, which Poveste requires. CI runs
-ahead of the floor: `examples/sveltekit` pins `^2.55.0`.
+`2.53.0` is the first SvelteKit release to peer Vite 8 and `@sveltejs/vite-plugin-svelte@^7`, and v7 is in turn the first plugin major to peer Vite 8, which Poveste requires.
 
-That example is the most thoroughly checked one we have: build, Playwright, and
-`svelte-check` on every pull request.
+Each major has a book in CI on every pull request. `examples/sveltekit` is on Kit 2 and runs the full Playwright suite against the built book. `examples/sveltekit3` is a SvelteKit 3 project as `sv create` scaffolds it, checked in `poveste dev` and the built book, with `svelte-check`.
 :::
 
 ## Configuring it
@@ -84,9 +80,7 @@ If TypeScript does report the key as unknown, that reference is the fix. Do not 
 `as any` on the config object: Vite genuinely checks it for unknown keys, so a cast throws
 away that checking for everything inside — including the Poveste options you came for.
 
-Nothing else needs changing. `svelte.config.js` and your adapter stay as they are, and
-`@poveste/plugin-svelte` already excludes SvelteKit's compile plugin from the stories build,
-so you do not need to configure `viteIgnorePlugins` yourself.
+Nothing else needs changing. Your Kit config and adapter stay where they are: `svelte.config.js` on Kit 2, inside `sveltekit({ ... })` on Kit 3. `@poveste/plugin-svelte` already keeps SvelteKit's own dev server and build out of the book, and runs `svelte-kit sync` for it, so you do not need to configure `viteIgnorePlugins` yourself.
 
 ## Command Line Interface
 

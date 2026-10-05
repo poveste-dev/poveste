@@ -164,9 +164,7 @@ the tidier option is the `poveste` key of that file rather than a standalone
 `poveste.config.ts`; Poveste reads both and merges them. Nothing about `svelte.config.js` or
 your adapter changes.
 
-`@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0` as an **optional** peer — enforced
-when Kit is installed, ignored when it is not, since the same package serves plain Svelte.
-`2.53.0` is the first SvelteKit release to peer Vite 8.
+`@poveste/plugin-svelte` declares `@sveltejs/kit@^2.53.0 || ^3.0.0` as an **optional** peer: enforced when Kit is installed, ignored when it is not, since the same package serves plain Svelte. `2.53.0` is the first SvelteKit release to peer Vite 8.
 
 The full setup, including the `poveste` key typing and what not to reach for when TypeScript
 complains, now lives on its own page:

@@ -51,7 +51,7 @@ Say it however you like — we answer to "po-VEST" too. 🙂
 | Vue | `^3.5.43` |
 | Nuxt | `^4.5.0` |
 | Svelte | `^5.46.4` |
-| SvelteKit | `^2.53.0` |
+| SvelteKit | `^2.53.0 \|\| ^3.0.0` |
 | Quasar | `^2.24.0` |
 | Quasar App Vite | `^3.8.0` |
 | Solid | `^1.9.0` |
