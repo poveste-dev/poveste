@@ -1,9 +1,11 @@
 // What a published package may ship or depend on, by licence (#936).
 //
 // Shared by the build, which writes the notices for what it bundles, and by the
-// check over the runtime dependency tree, so the two cannot disagree.
+// check over the runtime dependency tree, so the two cannot disagree. Split by
+// how the code ships, because a licence can be fine to depend on and not to
+// redistribute. Anything not listed needs a reason added beside it here.
 
-/** SPDX ids a shipped package may carry. Anything else needs a reason beside it here. */
+/** Allowed however the code ships: depended on, or bundled into a `dist`. */
 export const ALLOWED_LICENCES: Record<string, string> = {
   'MIT': 'permissive',
   'ISC': 'permissive',
@@ -17,9 +19,26 @@ export const ALLOWED_LICENCES: Record<string, string> = {
   'PSF-2.0': 'the Python licence under its current SPDX id; argparse 3 declares it where argparse 2 declared Python-2.0',
   'MIT-0': 'MIT without the attribution clause, so less demanding than MIT',
   'Unlicense': 'a public-domain dedication, like CC0-1.0',
-  'MPL-2.0': 'weak copyleft per file: its obligations attach to MPL files a distributor modifies. Only installed as unmodified dependencies, lightningcss for poveste and the Ghostery adblocker for plugin-screenshot; bundling MPL code would need its source offered',
-  'OFL-1.1': 'the chrome\'s font, Noto Sans Display, shipped in @poveste/app with its licence; OFL permits redistribution inside other software and forbids only selling the font on its own',
 }
+
+/** Allowed as an unmodified dependency, and refused in a bundle. */
+export const DEPENDENCY_ONLY_LICENCES: Record<string, string> = {
+  'MPL-2.0': 'weak copyleft per file: depending on unmodified copies (lightningcss for poveste, the Ghostery adblocker for plugin-screenshot) asks nothing of us, but bundling one would oblige us to point at its source',
+}
+
+/** Allowed for a file kept in this repository and shipped with its licence beside it, never as a dependency. */
+export const BUNDLED_ASSET_LICENCES: Record<string, string> = {
+  'OFL-1.1': 'the chrome\'s font, Noto Sans Display, shipped in @poveste/app with its licence file; OFL permits redistribution inside other software and forbids only selling the font on its own',
+}
+
+/** What a published package may depend on. */
+export const DEPENDENCY_LICENCES = { ...ALLOWED_LICENCES, ...DEPENDENCY_ONLY_LICENCES }
+
+/** What a build may put in a `dist` from an installed package. */
+export const BUNDLED_LICENCES = ALLOWED_LICENCES
+
+/** What a build may put in a `dist` from a file kept in this repository. */
+export const BUNDLED_ASSET_ALLOWED = { ...ALLOWED_LICENCES, ...BUNDLED_ASSET_LICENCES }
 
 /** The licence a manifest declares, as one SPDX expression, or undefined when it declares none. */
 export function declaredLicence(manifest: { license?: unknown, licenses?: unknown }): string | undefined {
@@ -43,7 +62,7 @@ export function declaredLicence(manifest: { license?: unknown, licenses?: unknow
  * An `OR` is allowed when one side is, an `AND` only when both are. Anything
  * that does not parse as that is refused rather than guessed at.
  */
-export function licenceProblem(expression: string | undefined, allowed: Record<string, string> = ALLOWED_LICENCES): string | undefined {
+export function licenceProblem(expression: string | undefined, allowed: Record<string, string>, list = 'the allow-list'): string | undefined {
   if (!expression) {
     return 'declares no licence'
   }
@@ -84,5 +103,5 @@ export function licenceProblem(expression: string | undefined, allowed: Record<s
   if (verdict === undefined || index !== tokens.length) {
     return `declares a licence that does not parse: ${expression}`
   }
-  return verdict ? undefined : `is licensed ${expression}, which is not in the allow-list`
+  return verdict ? undefined : `is licensed ${expression}, which is not in ${list}`
 }

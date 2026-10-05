@@ -69,6 +69,14 @@ describe('thirdPartyNotices', () => {
     expect(errors[0]).toContain('inlined@1.2.3 is licensed GPL-3.0-only, which is not in the allow-list')
   })
 
+  // MPL-2.0 is allowed as a dependency; bundled, it would oblige us to point at its source.
+  it('fails the build on MPL-2.0 code in the bundle', () => {
+    const root = project('MPL-2.0')
+    const { errors } = build(root, { [join(root, 'node_modules/inlined/index.js')]: 20 })
+
+    expect(errors[0]).toContain('inlined@1.2.3 is licensed MPL-2.0, which is not in the allow-list for bundled code')
+  })
+
   it('fails the build on a bundled package that ships no licence file', () => {
     const root = project('MIT', false)
     const { errors } = build(root, { [join(root, 'node_modules/inlined/index.js')]: 20 })

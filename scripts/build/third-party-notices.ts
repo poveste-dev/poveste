@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
-import { declaredLicence, licenceProblem } from '../licences.ts'
+import { BUNDLED_ASSET_ALLOWED, BUNDLED_LICENCES, declaredLicence, licenceProblem } from '../licences.ts'
 
 export const NOTICES_FILE = 'THIRD_PARTY_NOTICES.md'
 
@@ -154,17 +154,20 @@ export function thirdPartyNotices(options: { packageName: string, extra?: string
           }
         }
       }
-      const bundled = [
-        ...[...dirs].map(readBundledPackage),
-        ...(options.vendored ?? []).map(file => ({ name: file.name, version: 'vendored', licence: file.licence, licenceText: readFileSync(join(root, file.licenceFile), 'utf8').trim(), noticeText: undefined })),
-      ]
-      const problems = bundled.flatMap((pkg) => {
-        const problem = licenceProblem(pkg.licence) ?? (pkg.licenceText ? undefined : 'ships no licence file, so its notice cannot travel with the copy')
-        return problem ? [`${pkg.name}@${pkg.version} ${problem}`] : []
-      })
-      if (problems.length > 0) {
-        this.error(`${options.packageName} bundles code it may not redistribute:\n${problems.map(p => `  • ${p}`).join('\n')}\nAdd the licence to ALLOWED_LICENCES in scripts/licences.ts with a reason, or stop bundling the package.`)
+      const installed = [...dirs].map(readBundledPackage)
+      const vendored = (options.vendored ?? []).map(file => ({ name: file.name, version: 'vendored', licence: file.licence, licenceText: readFileSync(join(root, file.licenceFile), 'utf8').trim(), noticeText: undefined }))
+      const problem = (pkg: BundledPackage, allowed: Record<string, string>, list: string) => {
+        const found = licenceProblem(pkg.licence, allowed, list) ?? (pkg.licenceText ? undefined : 'ships no licence file, so its notice cannot travel with the copy')
+        return found ? [`${pkg.name}@${pkg.version} ${found}`] : []
       }
+      const problems = [
+        ...installed.flatMap(pkg => problem(pkg, BUNDLED_LICENCES, 'the allow-list for bundled code')),
+        ...vendored.flatMap(pkg => problem(pkg, BUNDLED_ASSET_ALLOWED, 'the allow-list for bundled assets')),
+      ]
+      if (problems.length > 0) {
+        this.error(`${options.packageName} bundles code it may not redistribute:\n${problems.map(p => `  • ${p}`).join('\n')}\nSee the lists in scripts/licences.ts: add the licence with a reason, or stop bundling the package.`)
+      }
+      const bundled = [...installed, ...vendored]
       notices = renderNotices(options.packageName, bundled)
     },
     // Into `dist` itself: two of the builds write the bundle to `dist/bundled`.

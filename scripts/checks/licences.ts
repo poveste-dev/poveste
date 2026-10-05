@@ -13,7 +13,7 @@ import { readdirSync, readFileSync, realpathSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildBundles, installedPackageDir } from '../build/third-party-notices.ts'
-import { declaredLicence, licenceProblem } from '../licences.ts'
+import { declaredLicence, DEPENDENCY_LICENCES, licenceProblem } from '../licences.ts'
 import { publishablePackages } from './publishable.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
@@ -113,7 +113,7 @@ export function checkLicences(root = ROOT): CheckResult {
   }
 
   for (const [key, { pkg, from }] of reachedBy) {
-    const problem = licenceProblem(pkg.licence)
+    const problem = licenceProblem(pkg.licence, DEPENDENCY_LICENCES)
     if (problem) {
       problems.push(`${key} ${problem}; a consumer installs it through ${from.join(', ')}`)
     }
