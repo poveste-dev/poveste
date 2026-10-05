@@ -160,7 +160,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [vue, nuxt, svelte, sveltekit, vue-tailwind, vike, quasar, solid]
+        example: [vue, nuxt, svelte, sveltekit, vue-tailwind, vike, quasar, solid, sveltekit3]
     name: Example e2e (${{ matrix.example }})
     steps:
       - uses: actions/checkout@v7
@@ -318,8 +318,14 @@ jobs:
       # reason. Those two are the whole set: every other example is a book wired
       # into a framework's toolchain and has no app of its own to build.
       - name: Assert the SvelteKit app still builds
-        if: ${{ env.RUN == 'true' && (matrix.example == 'sveltekit') }}
-        run: pnpm --filter ./examples/sveltekit run sk:build
+        if: ${{ env.RUN == 'true' && (matrix.example == 'sveltekit' || matrix.example == 'sveltekit3') }}
+        run: pnpm --filter ./examples/${{ matrix.example }} run sk:build
+
+      # Kit 3 needs TypeScript 6 and generates its types under `node_modules/$app`,
+      # so a Kit 3 project that typechecks is part of what the range claims (#1200).
+      - name: Type-check the SvelteKit 3 book
+        if: ${{ env.RUN == 'true' && matrix.example == 'sveltekit3' }}
+        run: pnpm --filter ./examples/sveltekit3 run check
 
       # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
       # config starts, so this job boots one preview server rather than five.

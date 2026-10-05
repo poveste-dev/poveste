@@ -58,7 +58,9 @@ overrides:
   # MISSING_EXPORT errors and no Nuxt story build. Pinned so the family resolves
   # as one; drop it when the ranges agree without help.
   '@intlify/shared': 11.4.12
-  '@sveltejs/kit': ^2.70.2
+  # Scoped to the 2.x line, which the advisories are about: `examples/sveltekit3`
+  # asks for Kit 3, and an unscoped override resolved it to 2.70 (#1200).
+  '@sveltejs/kit@^2': ^2.70.2
   # Group A of #455 — advisories that reach a consumer through a published
   # package's `dependencies`. All transitive, so there is no manifest to bump,
   # and every parent range already admits the fixed version; these pin the floor
