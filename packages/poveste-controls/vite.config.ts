@@ -2,10 +2,13 @@
 
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import { thirdPartyNotices } from '../../scripts/build/third-party-notices.ts'
 
 export default defineConfig({
   plugins: [
     vue(),
+    // Tailwind's CSS is compiled into `dist/style-standalone.css`, outside the bundle.
+    thirdPartyNotices({ packageName: '@poveste/controls', extra: ['tailwindcss'] }),
   ],
   resolve: {
     alias: process.env.VITEST
