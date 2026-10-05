@@ -42,6 +42,28 @@ export function previewColorScheme(colorScheme: SandboxColorScheme | undefined, 
   }
 }
 
+/**
+ * Declares `color-scheme` on `selector` beneath any rule a book writes: in the
+ * first cascade layer of the document, at zero specificity. Set inline, it beat
+ * a book's own `:root { color-scheme }` on every render path (#1167).
+ */
+export function lowPriorityColorScheme(selector: string) {
+  const style = document.createElement('style')
+  document.head.prepend(style)
+  return (value: string) => {
+    style.textContent = `@layer poveste-color-scheme { :where(${selector}) { color-scheme: ${value}; } }`
+  }
+}
+
+/**
+ * Previews the app renders itself carry their scheme as a custom property, which
+ * this applies to their root at the same low priority. Style isolation moves a
+ * book's own `:root` rule onto that root, so it wins.
+ */
+export function installRenderRootColorScheme() {
+  lowPriorityColorScheme('.__poveste-render-story')('var(--poveste-color-scheme)')
+}
+
 /** `previewColorScheme`, for previews rendered by the app itself. */
 export function usePreviewColorScheme(settings: PreviewSettings) {
   return computed(() => previewColorScheme(settings.colorScheme, isDark.value))

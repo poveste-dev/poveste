@@ -10,7 +10,7 @@ import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
 import { useStoryErrorStore } from '../../stores/story-errors'
 import { usePreviewColorScheme } from '../../util/color-scheme'
-import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
+import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
 import { createRenderTracker } from '../../util/render-tracker'
@@ -30,6 +30,9 @@ const props = withDefaults(defineProps<{
 
 const settings = usePreviewSettingsStore().currentSettings
 const previewColorScheme = usePreviewColorScheme(settings)
+// What the sandbox root computed, which a book's own rule can make differ from
+// the setting. Until its document reports, the setting is the best guess.
+const sandboxColorScheme = ref<string | null>(null)
 const errorStore = useStoryErrorStore()
 
 const storyError = computed(() => errorStore.forVariant(props.story.id, props.variant.id))
@@ -134,6 +137,9 @@ useEventListener(window, 'message', (event) => {
       break
     case PREVIEW_SETTINGS_REQUEST:
       syncSettings()
+      break
+    case SANDBOX_COLOR_SCHEME:
+      if (typeof event.data.scheme === 'string') sandboxColorScheme.value = event.data.scheme
       break
     case SANDBOX_HEIGHT:
       if (!fromCurrentOccupant(event.data)) break
@@ -293,7 +299,7 @@ function previewStyle(isResponsiveEnabled: boolean, finalWidth: number | null, f
   // The sandbox root's own value, on the element that embeds it. Where the two
   // differ the browser paints the frame opaque, and the background preset and
   // checkerboard behind it are gone (#1167).
-  const style: Record<string, string> = { colorScheme: previewColorScheme.value }
+  const style: Record<string, string> = { colorScheme: sandboxColorScheme.value ?? previewColorScheme.value }
 
   if (isResponsiveEnabled) {
     if (finalWidth) style['width'] = `${finalWidth}px`

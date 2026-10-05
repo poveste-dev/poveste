@@ -5,6 +5,7 @@ import { createApp, watch } from 'vue'
 import App from './App.vue'
 import { setupPluginApi } from './plugin.js'
 import { router } from './router'
+import { installRenderRootColorScheme } from './util/color-scheme.js'
 import { isDark } from './util/dark.js'
 import { iconCollections } from './util/icons.generated.js'
 import 'virtual:$poveste-theme'
@@ -24,6 +25,7 @@ export async function mountMainApp() {
   watch(isDark, (dark) => {
     document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
   }, { immediate: true })
+  installRenderRootColorScheme()
 
   const app = createApp(App)
   app.use(createPinia())
