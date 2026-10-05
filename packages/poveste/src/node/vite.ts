@@ -1,3 +1,4 @@
+import type { PovesteConfig } from '@poveste/shared'
 import type {
   InlineConfig,
   PluginOption,
@@ -30,6 +31,24 @@ import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
 
+/**
+ * The user's plugins, flattened one level as Vite's own options are, without the
+ * ones `viteIgnorePlugins` names.
+ */
+export async function withoutIgnoredPlugins(plugins: PluginOption[] | undefined, ignored: PovesteConfig['viteIgnorePlugins']): Promise<PluginOption[]> {
+  const flat: PluginOption[] = []
+  for (const pluginOption of plugins ?? []) {
+    const resolvedPluginOption = await pluginOption
+    if (Array.isArray(resolvedPluginOption)) {
+      flat.push(...await Promise.all(resolvedPluginOption))
+    }
+    else {
+      flat.push(resolvedPluginOption)
+    }
+  }
+  return flat.filter(plugin => plugin && !('name' in plugin && ignored?.includes((plugin as VitePlugin).name)))
+}
+
 export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Pick<Context, 'config' | 'mode'>) {
   if (ctx.config.vite) {
     const command = viteCommand(ctx.mode)
@@ -44,26 +63,7 @@ export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Pick
     }
   }
 
-  let flatPlugins: PluginOption[] = []
-  if (viteConfig.plugins) {
-    for (const pluginOption of viteConfig.plugins) {
-      const resolvedPluginOption = await pluginOption
-      if (Array.isArray(resolvedPluginOption)) {
-        flatPlugins.push(...await Promise.all(resolvedPluginOption))
-      }
-      else {
-        flatPlugins.push(resolvedPluginOption)
-      }
-    }
-    flatPlugins = flatPlugins.filter(Boolean)
-  }
-
-  const ignoredPlugins = ctx.config.viteIgnorePlugins
-  if (ignoredPlugins) {
-    flatPlugins = flatPlugins.filter(plugin => !(plugin && 'name' in plugin && ignoredPlugins.includes(plugin.name)))
-  }
-
-  viteConfig.plugins = flatPlugins
+  viteConfig.plugins = await withoutIgnoredPlugins(viteConfig.plugins, ctx.config.viteIgnorePlugins)
 
   return viteConfig
 }
@@ -186,6 +186,10 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     config(_, { command }) {
       const collapsedVue = isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })
       return {
+        // The book is a single-page app whatever the project's framework says: a
+        // framework serving its own app sets `custom`, which turns off the fallback
+        // that serves `/story/...` (#1200).
+        appType: 'spa',
         resolve: {
           dedupe: [
             'vue',

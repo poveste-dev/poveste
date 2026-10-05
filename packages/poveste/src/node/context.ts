@@ -7,10 +7,10 @@ import type {
   ServerStoryFile,
 } from '@poveste/shared'
 import type { InlineConfig, ResolvedConfig } from 'vite'
-import { resolveConfig as resolveViteConfig } from 'vite'
+import { loadConfigFromFile as loadViteConfigFromFile, resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
-import { mergePovesteViteConfig } from './vite.js'
+import { mergePovesteViteConfig, withoutIgnoredPlugins } from './vite.js'
 
 export interface Context {
   root: string
@@ -35,7 +35,15 @@ export async function createContext(options: CreateContextOptions): Promise<Cont
   // `'development'` whatever the command, and `base` from this resolution is
   // what the hand-written index.html uses while the bundle uses the build's.
   // A user config setting `base` by mode would otherwise disagree with itself.
-  const viteConfig = await resolveViteConfig({}, command, viteMode(options.mode))
+  // Through `viteIgnorePlugins`, as the dev server and the build are: an ignored
+  // plugin's `config` hook still runs in a resolution that skips it, and SvelteKit's
+  // sets a relative `base` here, which index.html then carries (#1200).
+  const userViteConfig = await loadViteConfigFromFile({ command, mode: viteMode(options.mode) })
+  const viteConfig = await resolveViteConfig({
+    ...userViteConfig?.config,
+    configFile: false,
+    plugins: await withoutIgnoredPlugins(userViteConfig?.config.plugins, config.viteIgnorePlugins),
+  }, command, viteMode(options.mode))
 
   const supportPlugins = config.plugins.flatMap(p => p.supportPlugin ? [p.supportPlugin] : [])
 

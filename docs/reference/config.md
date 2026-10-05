@@ -488,6 +488,8 @@ export default defineConfig({
 })
 ```
 
+`@poveste/plugin-svelte` already lists SvelteKit's plugins here, so a SvelteKit book needs nothing of its own.
+
 ## `viteNodeTransformMode`
 
 `{ web?, ssr? }`

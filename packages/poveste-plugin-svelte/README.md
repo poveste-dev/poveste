@@ -2,7 +2,7 @@
 
 Requires `svelte@^5.46.4` and `@sveltejs/vite-plugin-svelte@^7.3.0`. SvelteKit is supported
 by this same package — there is no separate plugin — through an optional
-`@sveltejs/kit@^2.53.0` peer.
+`@sveltejs/kit@^2.53.0 || ^3.0.0` peer.
 
 The floor is not `^5.0.0` for a reason: Poveste requires Vite 8, only
 `@sveltejs/vite-plugin-svelte` v7 peers Vite 8, and v7 in turn requires `svelte@^5.46.4`.

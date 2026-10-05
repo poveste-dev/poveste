@@ -23,7 +23,7 @@ export async function svelteKitAssetsDir(cwd: string): Promise<string | undefine
 // the project and finds Kit through a sibling in a workspace store, which
 // reported a plain Svelte book as SvelteKit and pointed its `publicDir` at a
 // `static/` that does not exist — losing the `public/` it actually had.
-function declaresKit(cwd: string): boolean {
+export function declaresKit(cwd: string): boolean {
   try {
     const manifest = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
     return ['dependencies', 'devDependencies', 'peerDependencies']

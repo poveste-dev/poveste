@@ -54,13 +54,13 @@ The ids are explicit rather than derived from paths, because each framework lays
 
 ## What the examples are for
 
-Twelve directories, three kinds, not interchangeable:
+Thirteen directories, three kinds, not interchangeable:
 
 | | |
 | --- | --- |
 | **Reference books** | `vue`, `nuxt`, `svelte`, `sveltekit` — the conformance set *and* the full shared story list |
 | **Conformance books** | `quasar` — the conformance set only |
-| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid` — each exists for one narrow thing |
+| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid`, `sveltekit3` — each exists for one narrow thing |
 
 `vue-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
 
