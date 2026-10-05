@@ -18,7 +18,7 @@ It is a `minor`, because the Solid plugin is a new feature. Nothing is deprecate
   - **What works:** a story is a `.story.tsx` file. Its variants render JSX. `initState` gives a variant the state panel, and `render` receives that state as a Solid store, so an edit in the panel reaches the story without running `render` again. `setupSolid` runs before a story mounts, and its `addWrapper` puts a component around it. The source panel shows the story's `source` if it sets one, and the story file otherwise.
   - **Not here yet:** controls built from your components, and generated per-variant source. Solid compiles JSX to DOM operations and keeps no render tree to read either from. A variant without `initState` says why its panel is empty.
   - **Requirements:** `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`.
-  - **Set `storyMatch: ['**/*.story.tsx']` in your Poveste config.** The defaults look only for `.story.vue` and `.story.svelte`, so without it the book builds empty.
+  - **Add `'**/*.story.tsx'` to `storyMatch` in your Poveste config.** The defaults look only for `.story.vue` and `.story.svelte`, so without it a Solid-only book builds empty. Setting `storyMatch` replaces those defaults, so **in a book that also has Vue or Svelte stories, list their patterns too**: `storyMatch: ['**/*.story.vue', '**/*.story.tsx']`. Otherwise those stories drop out of the book with no message.
   - The [Solid guide](https://poveste.dev/guide/solid/getting-started) walks through all of it, including the `story:dev` and `story:build` scripts.
 
 ### 🩹 Fixes
