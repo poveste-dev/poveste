@@ -196,6 +196,44 @@ dev_renders() {
   echo "✅ [$name] dev renders"
 }
 
+# The same consumer installed with pnpm, and the dev pass over it. pnpm's isolated
+# layout puts none of Poveste's own dependencies at the project root, which is how
+# `poveste dev` rendered a blank page for every pnpm user from 0.13.0 while each npm
+# pass here stayed green (#1201). Opt-in with the dev pass, which it ends in.
+pnpm_dev_renders() {
+  local name="$1" src="$2" path="$3" expected="$4" port="$5" plugin="$6"
+  shift 6
+  [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
+
+  local app="$WORK/$name-pnpm"
+  mkdir -p "$app"
+  # The consumer's own files, not npm's install of them.
+  ( cd "$src" && tar --exclude=./node_modules --exclude=./package-lock.json --exclude=./.poveste -cf - . ) | ( cd "$app" && tar -xf - )
+  consumer_package_json "$app" "$name-pnpm"
+
+  # Without overrides pnpm resolves Poveste's own `@poveste/*` dependencies from the
+  # registry, which is not what this pass built.
+  {
+    echo "overrides:"
+    local tgz pkg
+    for tgz in "${CORE_TGZ[@]}" "$plugin"; do
+      pkg="$(tar -xzOf "$tgz" package/package.json | node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(0, "utf8")).name)')"
+      echo "  '$pkg': 'file:$tgz'"
+    done
+  } > "$app/pnpm-workspace.yaml"
+
+  echo "▸ [$name] Installing the same consumer with pnpm"
+  # `strict-dep-builds` off: pnpm 12 exits 1 on an ignored build script, esbuild's,
+  # after a complete install.
+  if ! ( cd "$app" && pnpm add --config.strict-dep-builds=false "${CORE_TGZ[@]}" "$plugin" "$@" ) > "$WORK/pnpm-install-$name.log" 2>&1; then
+    echo "❌ Smoke test FAILED [$name] — pnpm could not install the tarballs"
+    tail -20 "$WORK/pnpm-install-$name.log"
+    exit 1
+  fi
+
+  dev_renders "$name-pnpm" "$app" "$path" "$expected" "$port"
+}
+
 # ── Vue ──────────────────────────────────────────────────────────────────────
 
 VUE_APP="$WORK/vue"
@@ -255,6 +293,9 @@ install_and_build vue "$VUE_APP" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
 dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
+pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
 # ── Svelte ───────────────────────────────────────────────────────────────────
 
@@ -334,6 +375,10 @@ install_and_build svelte "$SVELTE_APP" \
 
 # A Svelte book imports no `vue` of its own, which is the shape #1134 broke.
 dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantId=src-mybutton-story-svelte-1" "Hello Poveste" 4791
+pnpm_dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantId=src-mybutton-story-svelte-1" "Hello Poveste" 4794 \
+  "$(plugin_tgz poveste-plugin-svelte)" \
+  "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
+  "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
 
 # ── Solid ────────────────────────────────────────────────────────────────────
 
