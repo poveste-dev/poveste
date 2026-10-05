@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url)
 
 /**
  * The user's plugins, flattened one level as Vite's own options are, without the
- * ones `viteIgnorePlugins` names, and without the hooks it names of the others.
+ * ones `viteIgnorePlugins` names.
  */
 export async function withoutIgnoredPlugins(plugins: PluginOption[] | undefined, ignored: PovesteConfig['viteIgnorePlugins']): Promise<PluginOption[]> {
   const flat: PluginOption[] = []
@@ -46,20 +46,7 @@ export async function withoutIgnoredPlugins(plugins: PluginOption[] | undefined,
       flat.push(resolvedPluginOption)
     }
   }
-  const names = new Set(ignored?.filter(entry => typeof entry === 'string'))
-  const hooks = new Map(ignored?.flatMap(entry => typeof entry === 'string' ? [] : [[entry.name, entry.hooks] as const]))
-  return flat.filter(Boolean).flatMap((plugin): PluginOption[] => {
-    if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) {
-      return [plugin]
-    }
-    const { name } = plugin as VitePlugin
-    if (names.has(name)) {
-      return []
-    }
-    const dropped = hooks.get(name)
-    // A copy, not the plugin: the same instance can be resolved more than once.
-    return dropped ? [Object.fromEntries(Object.entries(plugin).filter(([key]) => !dropped.includes(key))) as VitePlugin] : [plugin]
-  })
+  return flat.filter(plugin => plugin && !('name' in plugin && ignored?.includes((plugin as VitePlugin).name)))
 }
 
 export async function mergePovesteViteConfig(viteConfig: InlineConfig, ctx: Pick<Context, 'config' | 'mode'>) {

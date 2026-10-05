@@ -8,6 +8,7 @@ import generateStoryCommand from './commands/generate-story.server.js'
 import { SVELTE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { svelteAutoProps } from './util/auto-props-vite.js'
 import { svelteKitAssetsDir } from './util/kit-assets.js'
+import { withoutSvelteKitServer } from './util/kit-server.js'
 import { syncSvelteKit } from './util/kit-sync.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
@@ -44,14 +45,12 @@ export function HstSvelte(): Plugin {
         },
         viteIgnorePlugins: [
           'vite-plugin-sveltekit-compile',
-          // Kit 3 moved its dev and preview middleware here from `compile`, but this
-          // plugin's config is what stories need: aliases, `server.fs`, `define` (#1200).
-          { name: 'vite-plugin-sveltekit-setup', hooks: ['configureServer', 'configurePreviewServer'] },
         ],
         vite: {
           plugins: [
             svelteAutoProps(),
             disableStoryComponentHmr(),
+            withoutSvelteKitServer(),
           ],
           ...svelteClientAliases.length ? { resolve: { alias: svelteClientAliases } } : {},
           ...publicDir ? { publicDir } : {},
