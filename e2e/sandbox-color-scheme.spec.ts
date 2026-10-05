@@ -20,6 +20,9 @@ const INLINE_GRID_STORY = '/story/conformance-inline-grid'
 // A range, number, date, checkbox and select, which the browser paints itself.
 const NATIVE_WIDGETS_STORY = '/story/conformance-native-widgets'
 const WIDGETS = ['range', 'number', 'date', 'checkbox', 'select']
+// Pins its own root to `light` with a book rule, in an iframe and without one.
+const OWN_SCHEME_STORY = '/story/conformance-own-color-scheme'
+const OWN_SCHEME_NATIVE_STORY = '/story/conformance-own-color-scheme-no-iframe'
 
 async function pickColorScheme(page: Page, value: 'auto' | 'light' | 'dark') {
   await page.getByTestId('toolbar-background').click()
@@ -201,6 +204,45 @@ test.describe('the color-scheme the browser is told', () => {
 })
 
 /*
+ * poveste's value is a default, not an override: a book that declares
+ * `color-scheme` on its root keeps it. Set inline, poveste's won on every path,
+ * so a design system theming its root lost its scheme (#1167).
+ *
+ * The book's rule reaches the sandbox `<html>` in a built book and the story's
+ * scope root in dev, so these assert what holds on both.
+ */
+test.describe('a book that declares its own color-scheme', () => {
+  test('keeps it in a sandbox, over the preview setting', async ({ page }) => {
+    await seedPreviewSettings(page, { colorScheme: 'dark' })
+    await page.goto(OWN_SCHEME_STORY)
+    const story = page.getByTestId('preview-iframe').contentFrame()
+
+    await expect(story.locator('[data-widget="checkbox"]')).toHaveCSS('color-scheme', 'light')
+  })
+
+  // Only the sandbox can see that the book won, so the element follows what it reports.
+  test('has the iframe element declare what the sandbox root computed', async ({ page }) => {
+    await seedPreviewSettings(page, { colorScheme: 'dark' })
+    await page.goto(OWN_SCHEME_STORY)
+    const frame = page.getByTestId('preview-iframe')
+    await expect(frame.contentFrame().locator('[data-widget="checkbox"]')).toHaveCSS('color-scheme', 'light')
+
+    const rootScheme = await frame.contentFrame().locator('html').evaluate(el => getComputedStyle(el).colorScheme)
+    await expect(frame).toHaveCSS('color-scheme', rootScheme)
+  })
+
+  test('keeps it in a story rendered without an iframe', async ({ page }) => {
+    await seedChromeScheme(page, 'dark')
+    await seedPreviewSettings(page, { colorScheme: 'dark' })
+    await page.goto(OWN_SCHEME_NATIVE_STORY)
+    const story = page.getByTestId('sandbox-render').locator('.poveste-generic-render-story')
+
+    await expect(story.locator('[data-widget="checkbox"]')).toHaveCSS('color-scheme', 'light')
+    await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark')
+  })
+})
+
+/*
  * What is painted, not what is declared. Where a sandbox root's `color-scheme`
  * differs from the `<iframe>` element's, the browser paints the frame opaque,
  * hiding the background preset and checkerboard behind it. Every property
@@ -243,6 +285,22 @@ test.describe('what the preview paints over its background', () => {
     // The two agree, so this held before the fix too: it proves the method.
     { chrome: 'dark', os: 'light', preview: 'dark', backgroundColor: '#333', checkerboard: false },
   ] as const
+
+  // The book's rule beats the preview setting, so an element following the
+  // setting would mismatch the root it embeds.
+  test('shows the background through a preview whose book pins its own scheme', async ({ page }) => {
+    await seedChromeScheme(page, 'dark')
+    await seedPreviewSettings(page, { colorScheme: 'dark', backgroundColor: '#333', checkerboard: false })
+    await page.emulateMedia({ colorScheme: 'light' })
+    await page.goto(OWN_SCHEME_STORY)
+    const frame = page.getByTestId('preview-iframe')
+    await expect(frame.contentFrame().locator('[data-widget="checkbox"]')).toHaveCSS('color-scheme', 'light')
+    const rootScheme = await frame.contentFrame().locator('html').evaluate(el => getComputedStyle(el).colorScheme)
+    await expect(frame).toHaveCSS('color-scheme', rootScheme)
+
+    const { shown, behind } = await shownAndBehind(page, frame)
+    expect(shown).toEqual(behind)
+  })
 
   for (const { chrome, os, preview, backgroundColor, checkerboard } of CASES) {
     const name = `interface ${chrome}, preview ${preview} on a ${os} OS, ${checkerboard ? 'checkerboard' : backgroundColor}`

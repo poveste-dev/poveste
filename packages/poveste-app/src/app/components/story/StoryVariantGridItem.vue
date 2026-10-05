@@ -191,7 +191,7 @@ const useIframe = computed(() => {
           :story="story"
           :dir="settings.textDirection"
           :class="previewDark ? previewDarkClasses() : undefined"
-          :style="{ colorScheme: previewColorScheme }"
+          :style="{ '--poveste-color-scheme': previewColorScheme }"
           @ready="onReady"
         />
       </div>

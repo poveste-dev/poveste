@@ -70,7 +70,7 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
         :story="story"
         class="h-full"
         :class="previewDark ? previewDarkClasses() : undefined"
-        :style="{ colorScheme: previewColorScheme }"
+        :style="{ '--poveste-color-scheme': previewColorScheme }"
         :dir="settings.textDirection"
         @ready="onReady"
       />

@@ -7,8 +7,8 @@ import { computed, createApp, h, onMounted, ref, watch, watchEffect } from 'vue'
 import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
-import { previewColorScheme, previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
-import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
+import { lowPriorityColorScheme, previewColorScheme, previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
+import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { mapFile } from './util/mapping'
 import { occupant } from './util/occupant.js'
@@ -117,10 +117,29 @@ watch(previewDark, (value) => {
   immediate: true,
 })
 
+// The `<iframe>` element has to declare what this root ends up with, or the
+// browser paints the frame opaque over the background preset (#1167). A book
+// rule may win over the setting, so only this side knows: report the computed
+// value whenever a stylesheet or the root's class can have changed it.
+let reportedColorScheme = ''
+function reportColorScheme() {
+  if (window.parent === window) return
+  const scheme = getComputedStyle(document.documentElement).colorScheme
+  if (scheme === reportedColorScheme) return
+  reportedColorScheme = scheme
+  window.parent.postMessage({ type: SANDBOX_COLOR_SCHEME, scheme }, window.location.origin)
+}
+new MutationObserver(reportColorScheme).observe(document.head, { childList: true, subtree: true, characterData: true })
+new MutationObserver(reportColorScheme).observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] })
+// A `<link>` applies when it loads, after the mutation that inserted it.
+document.addEventListener('load', reportColorScheme, true)
+
 // The sandbox is a document of its own, so the property goes on its root, where
 // it reaches every native widget the story renders (#991).
+const setRootColorScheme = lowPriorityColorScheme(':root')
 watch(() => previewColorScheme(receivedSettings.colorScheme, isDark.value), (value) => {
-  document.documentElement.style.colorScheme = value
+  setRootColorScheme(value)
+  reportColorScheme()
 }, {
   immediate: true,
 })
@@ -257,6 +276,8 @@ document.body.classList.add('__poveste-render-story', '__poveste-render-custom-c
 
 function reportHeight() {
   pendingFrame = null
+  // A story mounting or resizing can change which book rules match the root.
+  reportColorScheme()
   const renderRoot = document.querySelector('.__poveste-render-story')
   const h = renderRoot
     ? Math.ceil(renderRoot.getBoundingClientRect().height)

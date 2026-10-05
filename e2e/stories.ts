@@ -48,6 +48,8 @@ export const SHARED_STORIES: SharedStory[] = [
   { id: 'conformance-native-state', title: 'Native state' },
   { id: 'conformance-no-iframe', title: 'No iframe' },
   { id: 'conformance-native-widgets', title: 'Native widgets' },
+  { id: 'conformance-own-color-scheme', title: 'Own colour scheme' },
+  { id: 'conformance-own-color-scheme-no-iframe', title: 'Own colour scheme, no iframe' },
   { id: 'conformance-story-setup-app', title: 'Story setup app' },
   { id: 'conformance-story-setup-app-implicit', title: 'Story setup app, implicit' },
   { id: 'conformance-tall-story', title: 'Tall story' },
