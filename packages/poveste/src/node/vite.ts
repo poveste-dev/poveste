@@ -26,7 +26,7 @@ import {
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
-import { collapseVendoredVue } from './vendors.js'
+import { collapseVendoredVue, vendorsFromPoveste } from './vendors.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -377,6 +377,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     },
   })
 
+  plugins.push(vendorsFromPoveste())
   plugins.push(createVirtualFilesPlugin(ctx, isServer))
   plugins.push(globalStylesPlugin({
     files: ctx.config.globalStyles ?? [],

@@ -1,12 +1,17 @@
+import type { Plugin as VitePlugin } from 'vite'
 import { readFileSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { join } from 'pathe'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'pathe'
 
 /**
  * Resolves `specifier` as Node would from `from`, to a real path, or `undefined`
  * when nothing answers.
  */
 export type Resolver = (specifier: string, from: string) => string | undefined
+
+// A file of this package's own, to resolve from.
+const POVESTE_FILE = fileURLToPath(import.meta.url)
 
 export const nodeResolver: Resolver = (specifier, from) => {
   try {
@@ -118,8 +123,8 @@ export function satisfiesCaret(version: string | undefined, range: string | unde
  * and making the chrome's pinned copies authoritative for a project's own story code
  * is a larger change than this defect asks for.
  *
- * Empty when the project has no Vue of its own, when the two already resolve to one
- * file, or when the project's Vue does not satisfy the range vendors pins — in each
+ * Empty when the project has no Vue of its own, or when the project's Vue does not
+ * satisfy the range vendors pins — in each
  * case the vendored copy is what the chrome should keep. Refusing on anything it
  * cannot read with certainty is deliberate: the failure of this function is a chrome
  * that keeps a Vue it can certainly run, and the failure of guessing is a chrome
@@ -135,16 +140,19 @@ export function satisfiesCaret(version: string | undefined, range: string | unde
 export function collapseVendoredVue(options: {
   root: string
   resolve?: Resolver
+  /** Where `@poveste/vendors` is resolved from: Poveste's own install unless a test says otherwise. */
+  vendorsFrom?: string
 }): Record<string, string> {
   const { root } = options
   const resolve = options.resolve ?? nodeResolver
 
-  // From the vendors directory, not from the project: that is where the import
-  // happens, and an isolated `node_modules` layout makes `poveste-vue` invisible
-  // from the project root while the chrome resolves it perfectly well.
+  // Vendors from Poveste's own install, and `poveste-vue` from the vendors directory:
+  // that is where each import happens. An isolated `node_modules` layout, pnpm's,
+  // puts neither at the project root, so resolving vendors from there found nothing,
+  // nothing was collapsed, and a pnpm book had two Vues (#1201).
   // Through an exported subpath: vendors' `exports` map does not list
   // `./package.json`, so resolving that name directly fails.
-  const vendorsEntry = resolve('@poveste/vendors/vue', root)
+  const vendorsEntry = resolve('@poveste/vendors/vue', options.vendorsFrom ?? dirname(POVESTE_FILE))
   const vendorsDir = vendorsEntry ? join(vendorsEntry, '..') : undefined
   if (!vendorsDir) {
     return {}
@@ -162,7 +170,10 @@ export function collapseVendoredVue(options: {
   const vendored = resolve(installedAs, vendorsDir)
   const project = resolve('vue', root)
 
-  if (!vendored || !project || vendored === project) {
+  // Even when they are one file, as pnpm makes them: Vite keys a pre-bundled dependency
+  // by the name it is imported under, so `poveste-vue` was served raw beside the
+  // pre-bundled `vue` — one file, two module instances, and no story (#1201).
+  if (!vendored || !project) {
     return {}
   }
 
@@ -192,5 +203,29 @@ function readJson<T>(file: string): T | undefined {
   }
   catch {
     return undefined
+  }
+}
+
+/**
+ * Resolves `@poveste/vendors` from Poveste's own install, wherever it is imported.
+ *
+ * `@poveste/vendors` is excluded from pre-bundling, so the pre-bundled
+ * `@poveste/controls` keeps bare imports of it. Vite resolves an optimized entry's
+ * imports from the package's real location, but a shared chunk of one has no real
+ * location and resolves from `node_modules/.pvt-vite/deps` under the project. Since
+ * #593 split the controls into chunks, that only worked where npm or Yarn had
+ * hoisted `@poveste/vendors` to the project's `node_modules`. pnpm doesn't, and
+ * `poveste dev` rendered a blank page (#1201).
+ */
+export function vendorsFromPoveste(): VitePlugin {
+  return {
+    name: 'poveste:vendors-from-poveste',
+    enforce: 'pre',
+    resolveId(source, _importer, options) {
+      if (source !== '@poveste/vendors' && !source.startsWith('@poveste/vendors/')) {
+        return null
+      }
+      return this.resolve(source, POVESTE_FILE, { ...options, skipSelf: true })
+    },
   }
 }

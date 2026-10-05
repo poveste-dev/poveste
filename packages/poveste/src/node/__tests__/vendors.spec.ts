@@ -165,16 +165,45 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
 
     // The bare name, not a resolved path: a path is whatever the `require` condition
     // answers, which for Vue is a CJS shim that leaves the browser app unable to boot.
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({ 'poveste-vue': 'vue' })
+  })
+
+  /*
+   * pnpm's layout (#1201): the project's `node_modules` holds `vue` but not
+   * `@poveste/vendors`, which sits beside `poveste` in the store with its own
+   * `poveste-vue`. Resolved from the project root, vendors was not found at all.
+   */
+  it('finds vendors from Poveste\'s own install when the project root has none', () => {
+    const root = tempRoot()
+    writePackage(root, 'vue', '3.5.43')
+    const store = join(root, 'node_modules', '.pnpm', 'poveste@0.0.0')
+    writePackage(store, 'poveste-vue', '3.5.43')
+    writeVendors(store, { 'poveste-vue': 'npm:vue@^3.5.26' })
+
+    expect(collapseVendoredVue({ root, vendorsFrom: join(store, 'node_modules', 'poveste') })).toEqual({ 'poveste-vue': 'vue' })
+  })
+
+  it('resolves vendors from Poveste\'s own install by default, not from the project', () => {
+    const vendored = JSON.parse(readFileSync(nodeResolver('poveste-vue/package.json', join(nodeResolver('@poveste/vendors/vue', import.meta.dirname)!, '..'))!, 'utf8')) as { version: string }
+    const root = tempRoot()
+    writePackage(root, 'vue', vendored.version)
+
     expect(collapseVendoredVue({ root })).toEqual({ 'poveste-vue': 'vue' })
   })
 
-  it('has nothing to do when both names already resolve to one file', () => {
+  /*
+   * pnpm's layout: the alias and the project's Vue are one file in the store. Still
+   * the bare name, because Vite keys a pre-bundled dependency by the name it is
+   * imported under, and `poveste-vue` was served raw beside the pre-bundled `vue`:
+   * one file, two module instances (#1201).
+   */
+  it('points the vendored name at the project\'s even when they are one file', () => {
     const root = tempRoot()
     writePackage(root, 'vue', '3.5.43')
     symlinkSync(join(root, 'node_modules', 'vue'), join(root, 'node_modules', 'poveste-vue'))
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({ 'poveste-vue': 'vue' })
   })
 
   it('leaves the vendored copy alone when the majors differ', () => {
@@ -183,7 +212,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   /*
@@ -198,7 +227,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   it('leaves the vendored copy alone when the pinned range is not a plain caret', () => {
@@ -207,7 +236,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@>=3.5.26 <4' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   // The failure of aliasing is a chrome that keeps a Vue it can certainly run; the
@@ -219,7 +248,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   /*
@@ -238,7 +267,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     const resolve = (specifier: string, from: string) =>
       specifier === 'vue' ? undefined : nodeResolver(specifier, from)
 
-    expect(collapseVendoredVue({ root, resolve })).toEqual({})
+    expect(collapseVendoredVue({ root, resolve, vendorsFrom: root })).toEqual({})
   })
 
   it('has nothing to do when vendors declares no Vue alias', () => {
@@ -247,6 +276,6 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-pinia': 'npm:pinia@^4.0.3' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 })
