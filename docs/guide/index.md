@@ -46,6 +46,11 @@ Poveste is a tool to generate stories applications (or "books").
   <DemoLinks framework="sveltekit" />
 </div>
 
+<div class="demo-links-box border-sky-200 dark:border-sky-900">
+  <Icon icon="logos:solidjs-icon" class="w-10 h-10 mt-3" aria-label="Solid logo" />
+  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
+</div>
+
 A story is a scenario where you showcase in your browser one or more components for specific use cases.
 
 Stories are useful for several reasons:

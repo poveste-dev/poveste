@@ -24,7 +24,7 @@ const VITE = '^8.2.0'
 
 // Unnumbered on purpose: `svelte3` outlived Svelte 3 by two majors before
 // anyone noticed. A bare framework name never goes stale — see #120.
-export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt'
+export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt' | 'solid'
 
 export interface Manifest {
   name: string
@@ -346,11 +346,87 @@ import MyButton from './MyButton.vue'
   }
 }
 
+function solidStarter(): Starter {
+  return {
+    openFile: 'src/MyButton.story.tsx',
+    manifest: manifest(
+      'poveste-solid-starter',
+      {
+        '@poveste/plugin-solid': POVESTE,
+        // The plugin's own peer ranges. npm resolves the newest 2.11, and 2.11.11
+        // is the first to peer Vite 8.
+        'vite': VITE,
+        'vite-plugin-solid': '^2.11.0',
+      },
+      { 'solid-js': '^1.9.0' },
+    ),
+    files: {
+      'vite.config.ts': `import { defineConfig } from 'vite'
+import solid from 'vite-plugin-solid'
+
+export default defineConfig({
+  plugins: [solid()],
+})
+`,
+      // Setting `storyMatch` replaces the defaults, which find only Vue and
+      // Svelte stories (#1124).
+      'poveste.config.ts': `import { HstSolid } from '@poveste/plugin-solid'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstSolid()],
+  storyMatch: ['**/*.story.tsx'],
+})
+`,
+      'src/MyButton.tsx': `import type { JSX } from 'solid-js'
+
+export function MyButton(props: { label?: string, onClick?: JSX.EventHandler<HTMLButtonElement, MouseEvent> }) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      style={{
+        'padding': '8px 16px',
+        'border': 'none',
+        'border-radius': '6px',
+        'background': '#24c56a',
+        'color': '#fff',
+        'font-weight': '600',
+        'cursor': 'pointer',
+      }}
+    >
+      {props.label ?? 'Click me'}
+    </button>
+  )
+}
+`,
+      'src/MyButton.story.tsx': `import { defineStory } from '@poveste/plugin-solid'
+import { MyButton } from './MyButton'
+
+export default defineStory<{ clicks: number }>({
+  title: 'MyButton',
+  variants: [
+    { title: 'default', render: () => <MyButton /> },
+    {
+      title: 'counting clicks',
+      initState: () => ({ clicks: 0 }),
+      render: ({ state, setState }) => (
+        <MyButton label={\`Clicks: \${state.clicks}\`} onClick={() => setState('clicks', c => c + 1)} />
+      ),
+    },
+  ],
+})
+`,
+    },
+  }
+}
+
 export const starters: Record<Framework, () => Starter> = {
   vue: vueStarter,
   svelte: svelteStarter,
   sveltekit: svelteKitStarter,
   nuxt: nuxtStarter,
+  solid: solidStarter,
 }
 
 export const titles: Record<Framework, string> = {
@@ -358,4 +434,5 @@ export const titles: Record<Framework, string> = {
   svelte: 'Poveste + Svelte starter',
   sveltekit: 'Poveste + SvelteKit starter',
   nuxt: 'Poveste + Nuxt starter',
+  solid: 'Poveste + Solid starter',
 }

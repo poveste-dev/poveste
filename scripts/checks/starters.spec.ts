@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { starters, titles } from '../../docs/.vitepress/theme/starters.ts'
 import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './starters.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
@@ -122,5 +125,22 @@ describe('checkStarters', () => {
 
   it('every starter installs the version that just published', { tags: ['check', 'release', 'network', 'after-publish'] }, async () => {
     assertNoProblems(await checkStarters(undefined, { afterPublish: true }))
+  })
+})
+
+describe('the starters', () => {
+  it('each has a title for its StackBlitz project', () => {
+    expect(Object.keys(titles).sort()).toEqual(Object.keys(starters).sort())
+  })
+
+  // The Solid plugin's peers are the whole of what a Solid project needs, so the
+  // starter asks for exactly those ranges rather than its own reading of them.
+  it('installs the Solid plugin\'s declared peers', () => {
+    const peers = JSON.parse(readFileSync(join(import.meta.dirname, '../../packages/poveste-plugin-solid/package.json'), 'utf8')).peerDependencies
+    const { dependencies, devDependencies } = starters.solid().manifest
+    const asked = { ...dependencies, ...devDependencies }
+
+    expect({ 'solid-js': asked['solid-js'], 'vite-plugin-solid': asked['vite-plugin-solid'] })
+      .toEqual({ 'solid-js': peers['solid-js'], 'vite-plugin-solid': peers['vite-plugin-solid'] })
   })
 })
