@@ -187,6 +187,9 @@ dev_renders() {
   if ! node "$ROOT/scripts/release/dev-renders.mjs" "http://localhost:$port" "$path" "$expected"; then
     echo "❌ Smoke test FAILED [$name] — poveste dev did not render the story"
     tail -20 "$dev_log"
+    # When collection ended and the optimizer reloaded, beside the browser's timeline (#1218).
+    echo "dev server timeline:"
+    grep -aE 'Collect stories end|optimized|reloading|ready in' "$dev_log" || echo "  (none of it logged)"
     exit 1
   fi
 
