@@ -61,7 +61,7 @@ npm i -D poveste @poveste/plugin-<framework>
 
 <div class="demo-links-box border-sky-200 dark:border-sky-900">
   <Icon icon="logos:solidjs-icon" class="w-10 h-10 mt-3" aria-label="Solid logo" />
-  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. There are no Solid controls yet." />
+  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
 </div>
 
 ## Supported versions

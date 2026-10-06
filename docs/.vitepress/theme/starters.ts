@@ -411,7 +411,7 @@ export default defineStory<{ clicks: number }>({
       title: 'counting clicks',
       initState: () => ({ clicks: 0 }),
       render: ({ state, setState }) => (
-        <MyButton label={\`Clicked \${state.clicks} times\`} onClick={() => setState('clicks', c => c + 1)} />
+        <MyButton label={\`Clicks: \${state.clicks}\`} onClick={() => setState('clicks', c => c + 1)} />
       ),
     },
   ],
