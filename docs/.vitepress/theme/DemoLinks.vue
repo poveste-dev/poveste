@@ -4,6 +4,8 @@ import { launchStackBlitz } from './stackblitz'
 
 defineProps<{
   framework: Framework
+  /** What the starter shows and does not, where the framework's support is partial. */
+  note?: string
 }>()
 
 // The online-demo buttons (*.examples.poveste.dev) are omitted until those
@@ -25,5 +27,11 @@ defineProps<{
       >
       Try it in a live editor
     </button>
+    <p
+      v-if="note"
+      class="text-sm opacity-80 m-0"
+    >
+      {{ note }}
+    </p>
   </div>
 </template>
