@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempDisposableSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
 import { join } from 'pathe'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { chromePrebundles, collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
@@ -338,7 +339,7 @@ describe('nodeResolver', () => {
     const found = execFileSync(process.execPath, [
       '--input-type=module',
       '-e',
-      `const { nodeResolver } = await import(${JSON.stringify(vendors)}); console.log(nodeResolver('vue', ${JSON.stringify(project)}) ?? 'none')`,
+      `const { nodeResolver } = await import(${JSON.stringify(pathToFileURL(vendors).href)}); console.log(nodeResolver('vue', ${JSON.stringify(project)}) ?? 'none')`,
     ], { env: { ...process.env, NODE_PATH: join(store, 'node_modules') }, encoding: 'utf8' }).trim()
 
     expect(found).toBe('none')
