@@ -8,9 +8,9 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.2...v0.18.0)
 
-**Write stories for SolidJS components, renderer only.**
+**Write stories for SolidJS components, renderer only, and use Poveste with SvelteKit 3.**
 
-It is a `minor`, because the Solid plugin is a new feature. Nothing is deprecated, renamed or removed, no configuration key changed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit or Quasar book upgrades with nothing to do.
+It is a `minor`, because the Solid plugin and SvelteKit 3 support are new features. Nothing is deprecated, renamed or removed, no configuration key changed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit or Quasar book upgrades with nothing to do.
 
 ### 🚀 Enhancements
 
@@ -20,6 +20,8 @@ It is a `minor`, because the Solid plugin is a new feature. Nothing is deprecate
   - **Requirements:** `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`.
   - **Add `'**/*.story.tsx'` to `storyMatch` in your Poveste config.** The defaults look only for `.story.vue` and `.story.svelte`, so without it a Solid-only book builds empty. Setting `storyMatch` replaces those defaults, so **in a book that also has Vue or Svelte stories, list their patterns too**: `storyMatch: ['**/*.story.vue', '**/*.story.tsx']`. Otherwise those stories drop out of the book with no message.
   - The [Solid guide](https://poveste.dev/guide/solid/getting-started) walks through all of it, including the `story:dev` and `story:build` scripts.
+
+- **SvelteKit 3 is supported, alongside SvelteKit 2** ([#1200](https://github.com/poveste-dev/poveste/issues/1200), [#1207](https://github.com/poveste-dev/poveste/pull/1207)). A project created with `npx sv create` since SvelteKit 3.0.0 came out on 1 October is on Kit 3, and installing Poveste into it failed with `ERESOLVE`, because `@poveste/plugin-svelte` peered on `@sveltejs/kit ^2.53.0`. The peer is now `^2.53.0 || ^3.0.0`, and `poveste dev`, `poveste build` and `poveste preview` work on Kit 3. The plugin now runs `svelte-kit sync` itself on either major, as SvelteKit's own dev server does, because Kit 3 keeps what it generates under `node_modules`, where a package install deletes it. **A Kit 2 book needs no changes.** It now also runs `svelte-kit sync` when Poveste starts, as SvelteKit's own dev server does. Your Kit config stays where it is: `svelte.config.js` on Kit 2, inside `sveltekit({ ... })` on Kit 3. One exception: Poveste reads a custom `files.assets` only from `svelte.config.js`, so a Kit 3 book's static files come from `static/`.
 
 ### 🩹 Fixes
 
