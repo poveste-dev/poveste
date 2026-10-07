@@ -1,8 +1,10 @@
+import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempDisposableSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { pathToFileURL } from 'node:url'
 import { join } from 'pathe'
 import { describe, expect, it, onTestFinished } from 'vitest'
-import { collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
+import { chromePrebundles, collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
 
 // macOS reports `/var` and hands back `/private/var`, which resolution accepts and a
 // path comparison does not.
@@ -165,16 +167,45 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
 
     // The bare name, not a resolved path: a path is whatever the `require` condition
     // answers, which for Vue is a CJS shim that leaves the browser app unable to boot.
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({ 'poveste-vue': 'vue' })
+  })
+
+  /*
+   * pnpm's layout (#1201): the project's `node_modules` holds `vue` but not
+   * `@poveste/vendors`, which sits beside `poveste` in the store with its own
+   * `poveste-vue`. Resolved from the project root, vendors was not found at all.
+   */
+  it('finds vendors from Poveste\'s own install when the project root has none', () => {
+    const root = tempRoot()
+    writePackage(root, 'vue', '3.5.43')
+    const store = join(root, 'node_modules', '.pnpm', 'poveste@0.0.0')
+    writePackage(store, 'poveste-vue', '3.5.43')
+    writeVendors(store, { 'poveste-vue': 'npm:vue@^3.5.26' })
+
+    expect(collapseVendoredVue({ root, vendorsFrom: join(store, 'node_modules', 'poveste') })).toEqual({ 'poveste-vue': 'vue' })
+  })
+
+  it('resolves vendors from Poveste\'s own install by default, not from the project', () => {
+    const vendored = JSON.parse(readFileSync(nodeResolver('poveste-vue/package.json', join(nodeResolver('@poveste/vendors/vue', import.meta.dirname)!, '..'))!, 'utf8')) as { version: string }
+    const root = tempRoot()
+    writePackage(root, 'vue', vendored.version)
+
     expect(collapseVendoredVue({ root })).toEqual({ 'poveste-vue': 'vue' })
   })
 
-  it('has nothing to do when both names already resolve to one file', () => {
+  /*
+   * pnpm's layout: the alias and the project's Vue are one file in the store. Still
+   * the bare name, because Vite keys a pre-bundled dependency by the name it is
+   * imported under, and `poveste-vue` was served raw beside the pre-bundled `vue`:
+   * one file, two module instances (#1201).
+   */
+  it('points the vendored name at the project\'s even when they are one file', () => {
     const root = tempRoot()
     writePackage(root, 'vue', '3.5.43')
     symlinkSync(join(root, 'node_modules', 'vue'), join(root, 'node_modules', 'poveste-vue'))
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({ 'poveste-vue': 'vue' })
   })
 
   it('leaves the vendored copy alone when the majors differ', () => {
@@ -183,7 +214,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   /*
@@ -198,7 +229,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   it('leaves the vendored copy alone when the pinned range is not a plain caret', () => {
@@ -207,7 +238,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@>=3.5.26 <4' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   // The failure of aliasing is a chrome that keeps a Vue it can certainly run; the
@@ -219,7 +250,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
   })
 
   /*
@@ -238,7 +269,7 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     const resolve = (specifier: string, from: string) =>
       specifier === 'vue' ? undefined : nodeResolver(specifier, from)
 
-    expect(collapseVendoredVue({ root, resolve })).toEqual({})
+    expect(collapseVendoredVue({ root, resolve, vendorsFrom: root })).toEqual({})
   })
 
   it('has nothing to do when vendors declares no Vue alias', () => {
@@ -247,6 +278,70 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     writePackage(root, 'poveste-vue', '3.5.43')
     writeVendors(root, { 'poveste-pinia': 'npm:pinia@^4.0.3' })
 
-    expect(collapseVendoredVue({ root })).toEqual({})
+    expect(collapseVendoredVue({ root, vendorsFrom: root })).toEqual({})
+  })
+})
+
+describe('pre-bundling the chrome\'s vendored packages', () => {
+  // A resolver over a fixed map: `require.resolve` honours NODE_PATH, which the
+  // workspace sets, so a real one would find packages this layout does not have.
+  function resolverOver(files: Record<string, string>) {
+    return (specifier: string, from: string) => files[`${from}|${specifier}`]
+  }
+
+  function vendorsWith(dependencies: Record<string, string>) {
+    const root = tempRoot()
+    writeVendors(root, dependencies)
+    return join(root, 'node_modules', '@poveste', 'vendors')
+  }
+
+  it('reaches each vendored package through Poveste for a book with no Vue of its own', () => {
+    const vendors = vendorsWith({ 'poveste-vue': 'npm:vue@^3.5.26', 'poveste-vue-router': 'npm:vue-router@^5.3.1' })
+    const resolve = resolverOver({
+      '/book|poveste/package.json': '/book/node_modules/poveste/package.json',
+      '/poveste|@poveste/vendors/vue': join(vendors, 'vue.js'),
+    })
+
+    expect(chromePrebundles({ root: '/book', resolve, vendorsFrom: '/poveste' })).toEqual([
+      'poveste > @poveste/vendors > poveste-vue',
+      'poveste > @poveste/vendors > poveste-vue-router',
+    ])
+  })
+
+  it('leaves a book with its own Vue to the collapse', () => {
+    const vendors = vendorsWith({ 'poveste-vue': 'npm:vue@^3.5.26' })
+    const resolve = resolverOver({
+      '/book|vue': '/book/node_modules/vue/index.js',
+      '/book|poveste/package.json': '/book/node_modules/poveste/package.json',
+      '/poveste|@poveste/vendors/vue': join(vendors, 'vue.js'),
+    })
+
+    expect(chromePrebundles({ root: '/book', resolve, vendorsFrom: '/poveste' })).toEqual([])
+  })
+
+  it('names nothing the project cannot reach, so Vite has no include to warn about', () => {
+    const vendors = vendorsWith({ 'poveste-vue': 'npm:vue@^3.5.26' })
+    const resolve = resolverOver({ '/poveste|@poveste/vendors/vue': join(vendors, 'vue.js') })
+
+    expect(chromePrebundles({ root: '/book', resolve, vendorsFrom: '/poveste' })).toEqual([])
+  })
+})
+
+describe('nodeResolver', () => {
+  // pnpm's bin shims set NODE_PATH to the whole store, and Node reads it once, at
+  // startup, so this needs a process of its own (#1201).
+  it('does not find a package only NODE_PATH can see', () => {
+    const project = tempRoot()
+    const store = tempRoot()
+    writePackage(store, 'vue', '3.5.43')
+    const vendors = join(import.meta.dirname, '..', 'vendors.ts')
+
+    const found = execFileSync(process.execPath, [
+      '--input-type=module',
+      '-e',
+      `const { nodeResolver } = await import(${JSON.stringify(pathToFileURL(vendors).href)}); console.log(nodeResolver('vue', ${JSON.stringify(project)}) ?? 'none')`,
+    ], { env: { ...process.env, NODE_PATH: join(store, 'node_modules') }, encoding: 'utf8' }).trim()
+
+    expect(found).toBe('none')
   })
 })

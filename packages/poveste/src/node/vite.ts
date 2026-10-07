@@ -26,7 +26,7 @@ import {
 } from './style-isolation/index.js'
 import { applyHeadTransform } from './util/head.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
-import { collapseVendoredVue } from './vendors.js'
+import { chromePrebundles, collapseVendoredVue, vendorsFromPoveste } from './vendors.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -230,6 +230,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             // bare `vue` was served raw beside the pre-bundled copy of the same
             // file: two module instances, and `RouterView` rendered nothing (#1134).
             ...(Object.keys(collapsedVue).length > 0 ? ['vue'] : []),
+            ...isServer || process.env['POVESTE_DEV'] ? [] : chromePrebundles({ root: ctx.root }),
           ],
           exclude: [
             'poveste',
@@ -377,6 +378,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     },
   })
 
+  plugins.push(vendorsFromPoveste())
   plugins.push(createVirtualFilesPlugin(ctx, isServer))
   plugins.push(globalStylesPlugin({
     files: ctx.config.globalStyles ?? [],
