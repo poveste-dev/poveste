@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain runtime module, no types
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
-import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot } from './index'
+import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
 
 const I18N_DEFAULT = /[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/
 
@@ -121,5 +121,29 @@ describe('the HstNuxt teardown', () => {
   it('awaits the close rather than leaving it floating', async () => {
     // Not awaited, a successful build could finish before Nuxt had shut down.
     await expect(callOnBuild().cleanups[0]()).resolves.toBeUndefined()
+  })
+})
+
+describe('wrapPluginTemplates', () => {
+  const SOURCE = 'import a from \'a\'\nexport default [a]\n'
+
+  // Nuxt regenerates templates on a story edit and hands the hook the same objects.
+  it('wraps a template once however many times the hook runs', async () => {
+    const template = { filename: 'plugins.client.mjs', getContents: () => SOURCE }
+
+    wrapPluginTemplates([template])
+    wrapPluginTemplates([template])
+    const contents = await template.getContents()
+
+    expect(contents.match(/import \{ __povesteTolerant \}/g)).toHaveLength(1)
+    expect(contents.match(/\.map\(__povesteTolerant\)/g)).toHaveLength(1)
+  })
+
+  it('leaves other templates alone', async () => {
+    const template = { filename: 'app-component.mjs', getContents: () => SOURCE }
+
+    wrapPluginTemplates([template])
+
+    expect(await template.getContents()).toBe(SOURCE)
   })
 })

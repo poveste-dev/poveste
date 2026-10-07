@@ -53,6 +53,25 @@ export function wrapPluginsForTolerantBoot(source: string): string {
   return `import { __povesteTolerant } from '#build/poveste/tolerant-plugins.mjs'\n${wrapped}`
 }
 
+// Nuxt runs `app:templates` again on every regeneration, with the same template
+// objects, and a second wrap imported `__povesteTolerant` twice: the preview threw
+// "has already been declared" after any story edit until a restart (#1177).
+const wrappedTemplates = new WeakSet<object>()
+
+export function wrapPluginTemplates(templates: { filename?: string, getContents?: (ctx: any) => string | Promise<string> }[]) {
+  for (const template of templates) {
+    if (template.filename !== 'plugins.client.mjs' && template.filename !== 'plugins.server.mjs') {
+      continue
+    }
+    const original = template.getContents
+    if (!original || wrappedTemplates.has(template)) {
+      continue
+    }
+    wrappedTemplates.add(template)
+    template.getContents = async (ctx: any) => wrapPluginsForTolerantBoot(await original(ctx))
+  }
+}
+
 export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
   let nuxt: Nuxt
   let closed = false
@@ -222,16 +241,7 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[], isBuild: b
     // while setting up in the sandbox is logged and skipped, not fatal to the
     // whole iframe. `excludePlugins` drops what we know can't run; this catches
     // the rest.
-    for (const template of app.templates) {
-      if (template.filename !== 'plugins.client.mjs' && template.filename !== 'plugins.server.mjs') {
-        continue
-      }
-      const original = template.getContents
-      if (!original) {
-        continue
-      }
-      template.getContents = async (ctx: any) => wrapPluginsForTolerantBoot(await original(ctx))
-    }
+    wrapPluginTemplates(app.templates)
   })
 
   // `useNuxtApp` was stubbed here until #439, which cost every story the real
