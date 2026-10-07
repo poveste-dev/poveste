@@ -32,6 +32,14 @@ interface Example {
      * to reload (#370).
      */
     devOnly?: string[]
+    /**
+     * Dev-only specs that need the dev server to themselves. They run in their
+     * own project, after the dev and dev-shared ones: every page's mount after
+     * the first starts a collection, and its frames reach every open page, so a
+     * spec that asserts on what one page is sent cannot share the server (#1218).
+     * List them in `devOnly` too, or the built book runs them.
+     */
+    alone?: string[]
   }
   /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
   conformance?: boolean
@@ -60,7 +68,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4567,
     conformance: true,
     reference: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'], alone: ['**/stale-story-list.spec.ts'] },
   },
   { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts', '**/story-hot-reload.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'] } },
   {
@@ -211,6 +219,18 @@ export default defineConfig({
           name: `${example.name}:dev-shared`,
           testDir: './e2e',
           testMatch: example.dev.shared,
+          use: chrome(`http://localhost:${example.dev.port}`),
+        }]
+      : [],
+    ...example.dev?.alone
+      ? [{
+          name: `${example.name}:dev-alone`,
+          testDir: `./examples/${example.name}/playwright`,
+          testMatch: example.dev.alone,
+          dependencies: [
+            ...example.dev.specs ? [`${example.name}:dev`] : [],
+            ...example.dev.shared ? [`${example.name}:dev-shared`] : [],
+          ],
           use: chrome(`http://localhost:${example.dev.port}`),
         }]
       : [],

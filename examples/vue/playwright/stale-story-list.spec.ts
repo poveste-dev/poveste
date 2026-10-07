@@ -10,10 +10,18 @@ import { expect, test } from '@playwright/test'
 const LIST = '__resolved__virtual:$poveste-stories'
 
 test('a page holding a stale story list is sent the current one when it mounts', async ({ page }) => {
-  // The server has to be past its first collection, whose own broadcast would
-  // otherwise reach the page and make the test pass without the fix.
-  await expect.poll(async () => (await (await page.request.get(`/${LIST}`)).text()).match(/export let generation = (\d+)/)?.[1], { timeout: 60_000 })
-    .toMatch(/^[1-9]/)
+  // The server has to be past its first collection, and done with any other,
+  // or that collection's own broadcast reaches the page and the test passes
+  // without the fix. The generation moves when a collection ends.
+  const generation = async () => (await (await page.request.get(`/${LIST}`)).text()).match(/export let generation = (\d+)/)?.[1]
+  await expect.poll(generation, { timeout: 60_000 }).toMatch(/^[1-9]/)
+  let last: string | undefined
+  await expect.poll(async () => {
+    const now = await generation()
+    const settled = now === last
+    last = now
+    return settled
+  }, { intervals: [1_000], timeout: 30_000 }).toBe(true)
 
   let mounted = false
   // Every copy the page loads before it mounts is stale, so a reload from the
@@ -34,8 +42,10 @@ test('a page holding a stale story list is sent the current one when it mounts',
 
   // A mount after the server's first one also re-collects, and the broadcast at
   // the end of that collection would rescue the page with or without the fix. A
-  // full collection always starts by reporting progress, so from that frame on
-  // nothing more is let through: only what the mount itself is sent can count.
+  // full collection opens by reporting zero files loaded, so from that frame on
+  // nothing more is let through: only what the mount itself is sent can count. A
+  // collection already running when the page connected reports more than zero,
+  // and muting on it would also mute the reply this waits for.
   let recollecting = false
   await page.routeWebSocket(/.*/, (ws) => {
     const server = ws.connectToServer()
@@ -46,7 +56,8 @@ test('a page holding a stale story list is sent the current one when it mounts',
       server.send(message)
     })
     server.onMessage((message) => {
-      recollecting ||= String(message).includes('poveste:stories-loading-progress')
+      const frame = JSON.parse(String(message))
+      recollecting ||= mounted && frame.event === 'poveste:stories-loading-progress' && frame.data?.loadedFileCount === 0
       if (!recollecting) {
         ws.send(message)
       }
