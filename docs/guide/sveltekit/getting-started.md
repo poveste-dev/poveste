@@ -23,11 +23,19 @@ yarn add -D poveste @poveste/plugin-svelte
 ```
 
 ::: tip Just installed and got an older version?
-For about a day after a release, pnpm installs the **previous** version and says so only in passing — `+ poveste x.y.z (x.y.z is available)`, with no error and no warning. That is pnpm's release-age cooldown holding back anything published in the last 24 hours, not a broken publish. Use the `npm` line above, wait it out, or pass `--config.minimum-release-age=0` — the kebab-case spelling, because pnpm 12 accepts the camelCase one and silently ignores it. Asking for the exact version does not get you past it: pnpm 12 refuses a version inside the window too, with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
+For about a day after a release, pnpm installs the **previous** version, with no error and no warning. Current pnpm prints nothing to say a newer one exists. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
+
+pnpm also saves the version it installed to `package.json` as `^x.y.z`, so waiting a day doesn't fix an install you've already run. Run the install line again with one of these:
+
+- the `npm` line above;
+- `--config.minimum-release-age=0` added to the `pnpm` line. Use the kebab-case spelling: pnpm 12.4 ignores `--config.minimumReleaseAge=0` without a word;
+- exact versions: `poveste@x.y.z` and the plugin at the same version. pnpm installs them, saves them without the `^`, and lists them under `minimumReleaseAgeExclude` in a `pnpm-workspace.yaml` it creates. `@latest` doesn't get you past the cooldown.
 :::
 
 ::: warning Poveste needs Node `>=22.22.2`, and npm will not tell you
 Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
+
+On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22.2 || ^24.15.0 || >=26`.
 :::
 
 ::: info Supported versions
