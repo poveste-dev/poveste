@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "private": true,
   "devDependencies": {
     "vue": "^3.5.43"
