@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
 
 describe('createDomEnv', () => {
@@ -118,8 +118,7 @@ describe('resetDomEnv', () => {
     doc.documentElement.setAttribute('lang', 'fr')
     doc.body.append(doc.createElement('div'))
     doc.head.append(doc.createElement('style'))
-    // Proxied onto the global only on some node versions.
-    env.window.localStorage?.setItem('seen', '1')
+    env.storages[0]!.setItem('seen', '1')
     ;(env.window as any).__setupInstalled = true
 
     resetDomEnv(env)
@@ -128,9 +127,50 @@ describe('resetDomEnv', () => {
     expect(doc.documentElement.getAttributeNames()).toEqual([])
     expect(doc.body.children).toHaveLength(0)
     expect(doc.head.children).toHaveLength(0)
-    expect(env.window.localStorage?.getItem('seen') ?? null).toBeNull()
+    expect(env.storages[0]!.getItem('seen')).toBeNull()
     // A setup marking itself installed would skip later stories in the worker.
     expect((env.window as any).__setupInstalled).toBeUndefined()
+  })
+
+  // From Node 25 the global is Node's own Web Storage, and reading it without
+  // `--localstorage-file` printed an ExperimentalWarning per worker (#1175).
+  it('clears storage without reading the global localStorage', () => {
+    env = createDomEnv()
+    const own = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    let reads = 0
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get: () => {
+        reads++
+        return undefined
+      },
+    })
+    onTestFinished(() => {
+      if (own) Object.defineProperty(globalThis, 'localStorage', own)
+      else delete (globalThis as Record<string, unknown>)['localStorage']
+    })
+
+    resetDomEnv(env)
+
+    expect(reads).toBe(0)
+  })
+
+  // A story reading `localStorage` while it is collected got Node's own on Node 25+,
+  // which warned and stored nothing.
+  it('puts jsdom\'s storage on the global for the stories it runs', () => {
+    env = createDomEnv()
+
+    expect(globalThis.localStorage).toBe(env.storages[0])
+    expect(globalThis.sessionStorage).toBe(env.storages[1])
+  })
+
+  it('gives the global storage back when destroyed', () => {
+    const before = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+    const created = createDomEnv()
+
+    created.destroy()
+
+    expect(Object.getOwnPropertyDescriptor(globalThis, 'localStorage')).toEqual(before)
   })
 
   it('leaves the globals the environment itself installed', () => {

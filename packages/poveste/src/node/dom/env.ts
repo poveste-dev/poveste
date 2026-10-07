@@ -51,12 +51,30 @@ export function createDomEnv() {
     },
   )
 
+  const storageNames = ['localStorage', 'sessionStorage'] as const
+  // Before `populateGlobal`, which installs jsdom's own on older Node.
+  const storageDescriptors = storageNames.map(name => Object.getOwnPropertyDescriptor(globalThis, name))
   const { keys, originals } = populateGlobal(globalThis, dom.window, { bindFunctions: true })
+
+  // From Node 25 the global names are Node's experimental Web Storage, so
+  // `populateGlobal` leaves them, and every read warns without
+  // `--localstorage-file`: from a story during collection, and from the reset
+  // below (#1175). jsdom's take their place, as they already did on older Node.
+  // Descriptors rather than values, because reading Node's is what warns.
+  const storages = storageNames.map(name => dom.window[name])
+  storageNames.forEach((name, index) => {
+    Object.defineProperty(globalThis, name, { configurable: true, enumerable: true, writable: true, value: storages[index] })
+  })
 
   function destroy() {
     keys.forEach(key => Reflect.deleteProperty(globalThis, key))
     originals.forEach((v, k) => {
       Reflect.set(globalThis, k, v)
+    })
+    storageNames.forEach((name, index) => {
+      const descriptor = storageDescriptors[index]
+      if (descriptor) Object.defineProperty(globalThis, name, descriptor)
+      else Reflect.deleteProperty(globalThis, name)
     })
   }
 
@@ -119,11 +137,12 @@ export function createDomEnv() {
     // `populateGlobal` does `global.window = global`, so `window` here is
     // `globalThis` — one surface, not two.
     pristineKeys: new Set(Object.keys(globalThis)),
+    storages,
   }
 }
 
 /** Returns a reused environment to the state a fresh one would have been in. */
-export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' | 'pristineKeys'>) {
+export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' | 'pristineKeys' | 'storages'>) {
   const doc = env.window.document
 
   for (const el of [doc.documentElement, doc.head, doc.body]) {
@@ -135,14 +154,8 @@ export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' 
   doc.head?.replaceChildren()
   doc.body?.replaceChildren()
 
-  try {
-    // Only present when the key was proxied onto the global, which varies by
-    // node version.
-    env.window.localStorage?.clear()
-    env.window.sessionStorage?.clear()
-  }
-  catch {
-    // Unavailable for some jsdom urls.
+  for (const storage of env.storages) {
+    storage.clear()
   }
 
   // Additions only: the modules that installed the rest are cached, not re-run.
