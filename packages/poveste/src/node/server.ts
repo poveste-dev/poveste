@@ -165,6 +165,18 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
   let collecting = false
   let didAllStoriesYet = false
 
+  const updateFor = (url: string, timestamp: number) => ({
+    type: 'update' as const,
+    updates: [
+      {
+        type: 'js-update' as const,
+        acceptedPath: url,
+        path: url,
+        timestamp,
+      },
+    ],
+  })
+
   // Invalidate modules
   const invalidateModule = (id: string) => {
     const mod = server.moduleGraph.getModuleById(id)
@@ -176,18 +188,35 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     // Send HMR update
     const timestamp = Date.now()
     mod.lastHMRTimestamp = timestamp
-    server.ws.send({
-      type: 'update',
-      updates: [
-        {
-          type: 'js-update',
-          acceptedPath: mod.url,
-          path: mod.url,
-          timestamp,
-        },
-      ],
-    })
+    server.ws.send(updateFor(mod.url, timestamp))
   }
+
+  // Bumped before the list is invalidated, so the copy a client loads next
+  // carries the generation it reflects.
+  const invalidateStoryList = () => {
+    VirtualFiles.storiesGeneration.set(ctx, (VirtualFiles.storiesGeneration.get(ctx) ?? 0) + 1)
+    invalidateModule(VirtualFiles.RESOLVED_STORIES_ID)
+    invalidateModule(VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID)
+  }
+
+  // The update and `poveste:all-stories-loaded` reach only a page that has
+  // already evaluated the list and registered for them, and neither is
+  // replayed. A page that loaded the list mid-collection and was still loading
+  // when collection ended kept that partial list until a reload (#1218). By the
+  // time it mounts it is listening, so it is sent what it missed.
+  server.ws.on('poveste:mount', (data: { generation?: number } | undefined, client) => {
+    if (!didAllStoriesYet || data?.generation === (VirtualFiles.storiesGeneration.get(ctx) ?? 0)) {
+      return
+    }
+    const timestamp = Date.now()
+    for (const id of [VirtualFiles.RESOLVED_STORIES_ID, VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID]) {
+      const mod = server.moduleGraph.getModuleById(id)
+      if (mod) {
+        client.send(updateFor(mod.url, timestamp))
+      }
+    }
+    client.send('poveste:all-stories-loaded', {})
+  })
 
   onOpen('onStoryChange', onStoryChange(async (changedFile) => {
     if (changedFile && !didAllStoriesYet) {
@@ -275,8 +304,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     }
     console.log(`Collect stories end ${pc.bold(pc.blue(Math.round(performance.now() - time)))}ms`)
 
-    invalidateModule(VirtualFiles.RESOLVED_STORIES_ID)
-    invalidateModule(VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID)
+    invalidateStoryList()
 
     collecting = false
 
@@ -286,8 +314,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
   }
 
   onOpen('onStoryListChange', onStoryListChange(() => {
-    invalidateModule(VirtualFiles.RESOLVED_STORIES_ID)
-    invalidateModule(VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID)
+    invalidateStoryList()
   }))
 
   onOpen('onMarkdownListChange', onMarkdownListChange(() => {

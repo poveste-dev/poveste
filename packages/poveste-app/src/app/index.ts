@@ -1,5 +1,6 @@
 import { addCollection } from '@iconify/vue'
 import { createPinia } from 'pinia'
+import { generation } from 'virtual:$poveste-stories'
 import { createApp } from 'vue'
 import App from './App.vue'
 import { setupPluginApi } from './plugin.js'
@@ -22,7 +23,8 @@ export async function mountMainApp() {
   app.mount('#app')
 
   if (import.meta.hot) {
-    import.meta.hot.send('poveste:mount', {})
+    // Which story list this page holds, so a page that missed its update is sent it (#1218).
+    import.meta.hot.send('poveste:mount', { generation })
 
     /* #__PURE__ */ setupPluginApi()
   }
