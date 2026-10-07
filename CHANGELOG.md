@@ -26,6 +26,10 @@ It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker o
 
 - **`poveste dev` and `poveste build` no longer print Node's `localStorage` warning** ([#1175](https://github.com/poveste-dev/poveste/issues/1175), [#1182](https://github.com/poveste-dev/poveste/pull/1182)). On Node 25 and later, collection printed `ExperimentalWarning: localStorage is not available…` once per worker, which read as an error. Stories now get jsdom's storage during collection.
 
+### 📖 Documentation
+
+- **The pnpm tip on every getting-started page now describes what current pnpm does** ([#1228](https://github.com/poveste-dev/poveste/issues/1228), [#1231](https://github.com/poveste-dev/poveste/pull/1231)). For about a day after a release, pnpm's release-age cooldown installs the previous version with no error and no notice, and a plugin that is new in that release installs as its empty `0.0.1` placeholder. The old tip said pnpm prints `(x.y.z is available)`, which no current version does, and that asking for the exact version doesn't get past the cooldown, which it does. The tip now says what to look for, why waiting doesn't fix an install already saved as `^x.y.z`, and three ways to get the new version. The Node box in each guide also says to use 24.15 or later on Node 24.
+
 ## v0.18.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.2...v0.18.0)
