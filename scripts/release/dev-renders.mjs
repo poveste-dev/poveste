@@ -36,6 +36,12 @@ const browser = await chromium.launch()
 const vues = new Set()
 // Printed only on failure: what the browser said, which the server log cannot.
 const said = []
+// Also printed only on failure, timed from the first navigation: what a re-run
+// cannot tell apart, a page that loaded the story list before collection ended
+// and missed the update that carried the rest (#1218) from a broken render.
+const started = Date.now()
+const timeline = []
+const at = event => timeline.push(`${String(Date.now() - started).padStart(6)}ms ${event}`)
 let page
 try {
   page = await browser.newPage()
@@ -44,6 +50,29 @@ try {
     if (message.type() === 'error' || message.type() === 'warning') {
       said.push(`console.${message.type()}: ${message.text()}`)
     }
+  })
+  page.on('load', () => at('page load'))
+  page.on('requestfailed', request => at(`request failed: ${request.url()} (${request.failure()?.errorText})`))
+  page.on('response', (response) => {
+    if (response.status() >= 400) {
+      at(`${response.status()} ${response.url()}`)
+    }
+    else if (response.url().includes('poveste-stories')) {
+      at(`stories list served: ${new URL(response.url()).pathname}${new URL(response.url()).search}`)
+    }
+  })
+  // The HMR traffic that decides whether a page holds the whole story list.
+  page.on('websocket', (socket) => {
+    at(`websocket ${new URL(socket.url()).pathname}`)
+    const note = direction => (frame) => {
+      const text = String(frame.payload)
+      const named = text.match(/"(full-reload)"|"event":"(poveste:[\w-]+)"|"acceptedPath":"([^"]*poveste-stories[^"]*)"/)
+      if (named && !text.includes('stories-loading-progress')) {
+        at(`ws ${direction} ${named[1] ?? named[2] ?? `update ${named[3]}`}${text.includes('"generation"') ? ` ${text.match(/"generation":-?\d+/)?.[0] ?? ''}` : ''}`)
+      }
+    }
+    socket.on('framereceived', note('<-'))
+    socket.on('framesent', note('->'))
   })
   // Diagnostic only: which Vue modules were served, across the host and the frame.
   page.on('response', (response) => {
@@ -65,6 +94,13 @@ catch (error) {
   const frame = await page?.$('[data-testid="preview-iframe"]').then(handle => handle?.contentFrame())
   console.error(`at ${page?.url()}: ${await page?.locator('iframe').count()} iframe(s); the frame shows ${JSON.stringify((await frame?.evaluate(() => (document.querySelector('#app') ?? document.body)?.textContent))?.slice(0, 200) ?? null)}`)
   for (const line of said.slice(-20)) {
+    console.error(`  ${line}`)
+  }
+  const listed = await page?.locator('[data-testid="story-list-item"]').count()
+  const loading = await page?.locator('.poveste-initial-loading').count()
+  console.error(`the story list showed ${listed} item(s); the initial loading screen was ${loading ? 'up' : 'gone'}`)
+  console.error('timeline:')
+  for (const line of timeline) {
     console.error(`  ${line}`)
   }
   process.exitCode = 1
