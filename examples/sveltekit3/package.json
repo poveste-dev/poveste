@@ -1,7 +1,7 @@
 {
   "name": "sveltekit3",
   "type": "module",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "private": true,
   "imports": {
     "#lib": "./src/lib/index.ts",
