@@ -51,6 +51,8 @@ Node `>=22.22.2` and Vite `^8.0.0`. See
 [supported versions](https://poveste.dev/guide/getting-started#supported-versions) for
 what proves each range.
 
+On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22.2 || ^24.15.0 || >=26`.
+
 ## Links
 
 - [Documentation](https://poveste.dev)
