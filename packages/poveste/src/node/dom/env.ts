@@ -2,6 +2,7 @@ import {
   JSDOM,
   VirtualConsole,
 } from 'jsdom'
+import { isError } from '../util/is-error.js'
 import { populateGlobal } from './util.js'
 
 // jsdom error types — not exported by jsdom.
@@ -29,7 +30,7 @@ function createVirtualConsole(): VirtualConsole | undefined {
       // `Error.isError` and not `instanceof`: the cause was constructed inside
       // jsdom's realm, where `instanceof Error` is false and the stack — the
       // only part that says which line threw — is discarded (#1093).
-      globalThis.console.error((Error.isError(err.cause) ? err.cause.stack : undefined) ?? err.message)
+      globalThis.console.error((isError(err.cause) ? err.cause.stack : undefined) ?? err.message)
     }
     else {
       globalThis.console.error(err.message)

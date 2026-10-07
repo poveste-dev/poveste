@@ -1,9 +1,10 @@
 import type { EvaluatedModuleNode } from 'vite/module-runner'
-import { mkdirSync, mkdtempDisposableSync, realpathSync, writeFileSync } from 'node:fs'
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it, onTestFinished } from 'vitest'
+import { tempDir } from '../../__tests__/temp-dir.js'
 import { filenameOf } from '../runner.ts'
 
 /** Only the two fields `filenameOf` reads. */
@@ -14,7 +15,7 @@ function node(id: string, file?: string): Readonly<EvaluatedModuleNode> {
 // macOS reports `/var` and hands back `/private/var`, which `existsSync` accepts
 // and a path comparison does not.
 function tempRoot() {
-  const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-runner-'))
+  const dir = tempDir(join(tmpdir(), 'poveste-runner-'))
   onTestFinished(() => dir.remove())
   return realpathSync(dir.path)
 }

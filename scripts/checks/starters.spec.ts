@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { starters, titles } from '../../docs/.vitepress/theme/starters.ts'
-import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion } from './starters.ts'
+import { checkStarters, installArgs, isPovestePackage, mergeResults, pinLatest, releasedVersion, webContainerProblems } from './starters.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -142,5 +142,29 @@ describe('the starters', () => {
 
     expect({ 'solid-js': asked['solid-js'], 'vite-plugin-solid': asked['vite-plugin-solid'] })
       .toEqual({ 'solid-js': peers['solid-js'], 'vite-plugin-solid': peers['vite-plugin-solid'] })
+  })
+})
+
+// Every starter died at Poveste's own floor check in a WebContainer while the
+// resolution stayed green (#1226).
+describe('webContainerProblems', () => {
+  const lockfile = (engines: string) => ({
+    packages: {
+      '': {},
+      'node_modules/poveste': { version: '0.18.0', engines: { node: engines } },
+      'node_modules/@poveste/plugin-vue': { version: '0.18.0', engines: { node: engines } },
+      'node_modules/jsdom': { version: '30.0.1', engines: { node: '>=99.0.0' } },
+    },
+  })
+
+  it('names each Poveste package whose floor is above the WebContainer\'s Node, with the message a reader would see', () => {
+    expect(webContainerProblems(lockfile('>=24.15.0'), '22.22.3')).toEqual([
+      'poveste@0.18.0: You are using Node.js 22.22.3. Poveste requires Node.js version >=24.15.0. Please upgrade your Node.js version.',
+      '@poveste/plugin-vue@0.18.0: You are using Node.js 22.22.3. Poveste requires Node.js version >=24.15.0. Please upgrade your Node.js version.',
+    ])
+  })
+
+  it('accepts a floor the WebContainer meets, and leaves other packages to npm', () => {
+    expect(webContainerProblems(lockfile('>=22.22.2'), '22.22.3')).toEqual([])
   })
 })

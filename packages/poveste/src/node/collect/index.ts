@@ -7,6 +7,7 @@ import path, { relative } from 'pathe'
 import pc from 'picocolors'
 import { TEMP_PATH } from '../alias.js'
 import { createPath } from '../tree.js'
+import { escapeRegExp } from '../util/escape-regexp.js'
 import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
 import { createModuleServer } from './module-server.js'
@@ -36,7 +37,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
       // @TODO temporary fix for https://github.com/histoire-dev/histoire/issues/409
       /vite\w*\/dist\/client\/(client|env).mjs/,
       ...ctx.config.viteNodeInlineDeps ?? [],
-      new RegExp(RegExp.escape(path.resolve(TEMP_PATH, 'plugins'))),
+      new RegExp(escapeRegExp(path.resolve(TEMP_PATH, 'plugins'))),
     ],
     transformMode: ctx.config.viteNodeTransformMode,
   })

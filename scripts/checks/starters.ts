@@ -32,12 +32,13 @@ import type { Framework, Manifest } from '../../docs/.vitepress/theme/starters.t
 import type { CheckResult } from './support/check-result.ts'
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
+import { nodeProblem } from '../../packages/poveste/node-floor.mjs'
 
 const run = promisify(execFile)
 
@@ -98,7 +99,9 @@ export function releasedVersion(root = ROOT): string {
 // that the release run asks for an exact version rather than `latest` — the
 // cached packument is what would be missing it. Do not drop this flag.
 export function installArgs(afterPublish: boolean): string[] {
-  const args = ['install', '--dry-run', '--no-audit', '--no-fund']
+  // A lockfile rather than `--dry-run`: the same full resolution, and it records
+  // each package's `engines`, which `webContainerProblems` reads.
+  const args = ['install', '--package-lock-only', '--no-audit', '--no-fund']
   return afterPublish ? [...args, '--prefer-online'] : args
 }
 
@@ -108,6 +111,27 @@ export function mergeResults(previous: Result[], latest: Result[]): Result[] {
   return previous.map(before => latest.find(after => after.framework === before.framework) ?? before)
 }
 
+/**
+ * The Node a StackBlitz WebContainer runs, which every starter boots on. From
+ * 0.17.0 to 0.18.0 it sat below `engines.node`, and every starter died at
+ * Poveste's own floor check while this check stayed green, because a resolution
+ * starts nothing (#1226). Raise it when StackBlitz does.
+ */
+export const WEBCONTAINER_NODE = '22.22.3'
+
+interface Lockfile {
+  packages?: Record<string, { version?: string, engines?: { node?: string } }>
+}
+
+/** What Poveste's floor check would print in a WebContainer, for each resolved Poveste package that refuses it. */
+export function webContainerProblems(lockfile: Lockfile, node = WEBCONTAINER_NODE): string[] {
+  return Object.entries(lockfile.packages ?? {}).flatMap(([path, entry]) => {
+    const name = path.replace(/^.*node_modules\//, '')
+    const problem = isPovestePackage(name) ? nodeProblem(node, entry.engines?.node) : null
+    return problem ? [`${name}@${entry.version}: ${problem}`] : []
+  })
+}
+
 async function check(starters: Starters, framework: Framework, afterPublish: boolean, root: string): Promise<Result> {
   const dir = await mkdtemp(join(tmpdir(), `poveste-starter-${framework}-`))
   try {
@@ -115,7 +139,7 @@ async function check(starters: Starters, framework: Framework, afterPublish: boo
     const resolved = afterPublish ? pinLatest(manifest, releasedVersion(root)) : manifest
     await writeFile(join(dir, 'package.json'), `${JSON.stringify(resolved, null, 2)}\n`)
 
-    const { stdout } = await run(
+    await run(
       'npm',
       installArgs(afterPublish),
       {
@@ -126,9 +150,14 @@ async function check(starters: Starters, framework: Framework, afterPublish: boo
         maxBuffer: 32 * 1024 * 1024,
       },
     )
-    const packages = /added (\d+) package/.exec(stdout)?.[1] ?? '?'
+    const lockfile: Lockfile = JSON.parse(await readFile(join(dir, 'package-lock.json'), 'utf8'))
+    const refused = webContainerProblems(lockfile)
     const asked = afterPublish ? ` for ${releasedVersion(root)}` : ''
-    return { framework, ok: true, detail: `resolves${asked}, ${packages} packages` }
+    if (refused.length > 0) {
+      return { framework, ok: false, detail: `resolves${asked}, but cannot start in a StackBlitz WebContainer (Node ${WEBCONTAINER_NODE}):\n${refused.join('\n')}` }
+    }
+    const packages = Object.keys(lockfile.packages ?? {}).length - 1
+    return { framework, ok: true, detail: `resolves${asked}, ${packages} packages, and starts on the WebContainer's Node ${WEBCONTAINER_NODE}` }
   }
   catch (error) {
     const { stderr, message } = error as { stderr?: string, message: string }
@@ -173,10 +202,10 @@ async function repositoryProblems(root: string, { afterPublish = false }: { afte
     }
   }
 
-  return results.filter(r => !r.ok).map(r => `${r.framework} cannot be installed: ${r.detail}`)
+  return results.filter(r => !r.ok).map(r => `the ${r.framework} starter fails: ${r.detail}`)
 }
 
-const REMEDY = 'Fix the versions in docs/.vitepress/theme/starters.ts.'
+const REMEDY = 'Fix the versions in docs/.vitepress/theme/starters.ts. A starter that resolves but cannot start needs the published packages\' engines.node to admit WEBCONTAINER_NODE (#1226).'
 
 // The versions are live and npm versions are immutable, so there is nothing to
 // fix in place — 0.6.1 is the worked example of the way out.

@@ -2,6 +2,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import fs from 'fs-extra'
 import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
+import { escapeRegExp } from '../../scripts/escape-regexp.ts'
 import pkg from './package.json'
 
 export default defineConfig({
@@ -71,8 +72,8 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       external: [
-        ...Object.keys(pkg.dependencies).map(dep => new RegExp(`^${RegExp.escape(dep)}(\\/?)`)),
-        ...Object.keys(pkg.peerDependencies).map(dep => new RegExp(`^${RegExp.escape(dep)}(\\/?)`)),
+        ...Object.keys(pkg.dependencies).map(dep => new RegExp(`^${escapeRegExp(dep)}(\\/?)`)),
+        ...Object.keys(pkg.peerDependencies).map(dep => new RegExp(`^${escapeRegExp(dep)}(\\/?)`)),
         /^node:/,
         /^virtual:/,
         /^\$/, // Virtual modules

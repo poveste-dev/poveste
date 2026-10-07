@@ -1,11 +1,17 @@
-import { mkdtempDisposableSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { hasDesignSystemLoader, isTailwindEntry, resolveDesignSystemLoader, TAILWIND_V4_REQUIRED } from './index.js'
 
+// `fs.mkdtempDisposableSync`'s shape; it arrived in Node 24.4, below the floor since #1226.
+function tempDir(prefix: string) {
+  const path = mkdtempSync(prefix)
+  return { path, remove: () => rmSync(path, { recursive: true, force: true }) }
+}
+
 function cssFile(contents: string) {
-  const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-tw-'))
+  const dir = tempDir(join(tmpdir(), 'poveste-tw-'))
   onTestFinished(() => dir.remove())
   const file = join(dir.path, 'entry.css')
   writeFileSync(file, contents)

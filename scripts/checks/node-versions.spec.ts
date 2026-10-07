@@ -3,8 +3,8 @@ import { ALLOWED, checkNodeVersions, collect, hardcodedNodeVersions, lowestVersi
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
-const ENGINES = '>=24.15.0'
-const FLOOR = { workflow: 'test.yml', line: 319, value: '24.15.0' }
+const ENGINES = '>=22.22.2'
+const FLOOR = { workflow: 'test.yml', line: 319, value: '22.22.2' }
 
 describe('hardcodedNodeVersions', () => {
   it('finds a pinned version and reports where it is', () => {

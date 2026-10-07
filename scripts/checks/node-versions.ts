@@ -70,7 +70,7 @@ export interface Allowance {
  */
 export const ALLOWED: Record<string, Allowance> = {
   'test.yml': {
-    value: '24.15.0',
+    value: '22.22.2',
     reason: 'the `Node floor` job switches to the lowest version `engines.node` admits, on purpose — reading `.node-version` there would leave the job green while testing nothing (#303)',
   },
 }
