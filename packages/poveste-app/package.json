@@ -47,12 +47,12 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "fuse.js": "^7.0.0",
-    "shiki": "^4.4.3"
+    "shiki": "^4.5.0"
   },
   "devDependencies": {
     "@fontsource/noto-sans-display": "^5.3.0",
-    "@iconify-json/carbon": "^1.2.27",
-    "@iconify-json/fluent": "1.2.58",
+    "@iconify-json/carbon": "^1.2.28",
+    "@iconify-json/fluent": "1.2.59",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/ri": "^1.2.10",
     "@iconify/utils": "^3.1.7",

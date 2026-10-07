@@ -9,14 +9,14 @@
     "story:preview": "poveste preview --port 4573"
   },
   "dependencies": {
-    "quasar": "^2.33.2",
+    "quasar": "^2.34.0",
     "vue": "^3.5.43"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@poveste/plugin-quasar": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
-    "@quasar/app-vite": "^3.10.0",
+    "@quasar/app-vite": "^3.10.1",
     "@vitejs/plugin-vue": "^6.0.9",
     "poveste": "workspace:*",
     "vite": "catalog:"
