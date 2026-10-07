@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { backoffMs, checkPublished, probeArgs, problemFor, tagArgs, tagFor, unpublishedReleases } from './published.ts'
+import { backoffMs, checkPublished, probeArgs, probeRelease, problemFor, tagArgs, tagFor, unpublishedReleases } from './published.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -148,9 +148,9 @@ describe('probeArgs', () => {
     expect(probeArgs('poveste', '0.7.0')).toContain('--prefer-online')
   })
 
-  it('asks for the exact released version', () => {
+  it('asks for the exact released version\'s tarball', () => {
     expect(probeArgs('@poveste/plugin-vue', '0.7.0')).toEqual(
-      ['view', '@poveste/plugin-vue@0.7.0', 'version', '--prefer-online'],
+      ['view', '@poveste/plugin-vue@0.7.0', 'dist.tarball', '--prefer-online'],
     )
   })
 })
@@ -193,6 +193,43 @@ describe('the latest dist-tag', () => {
       'dist-tags.latest',
       '--prefer-online',
     ])
+  })
+})
+
+// 0.18.0: plugin-vue's packument listed the version at 08:34, the release email
+// went out at 08:35, and its tarball answered 404 until 08:39 (#1227).
+describe('the tarball', () => {
+  const TARBALL = 'https://registry.npmjs.org/@poveste/plugin-vue/-/plugin-vue-0.18.0.tgz'
+  // A registry that has the version and has tagged it.
+  const view = (args: string[]) => ({ out: args[2] === 'dist.tarball' ? TARBALL : '0.18.0' })
+  const release = [{ name: '@poveste/plugin-vue', version: '0.18.0' }]
+
+  it('keeps the check waiting while the packument lists the version and the tarball 404s', () => {
+    const head = vi.fn().mockReturnValueOnce('404').mockReturnValueOnce('404').mockReturnValue('200')
+
+    const problems = unpublishedReleases(release, (name, version) => probeRelease(name, version, view, head), options())
+
+    expect(problems).toEqual([])
+    expect(head).toHaveBeenCalledTimes(3)
+  })
+
+  it('names the tarball when it never downloads', () => {
+    const problems = unpublishedReleases(release, (name, version) => probeRelease(name, version, view, () => '404'), options())
+
+    expect(problems).toEqual([`@poveste/plugin-vue@0.18.0 is on the registry, but its tarball ${TARBALL} answers 404`])
+  })
+
+  it('asks for the URL the packument names', () => {
+    const head = vi.fn().mockReturnValue('200')
+
+    probeRelease('@poveste/plugin-vue', '0.18.0', view, head)
+
+    expect(head).toHaveBeenCalledWith(TARBALL)
+  })
+
+  it('reports a request that got no status as unverified, not as a 404', () => {
+    expect(problemFor(probeRelease('@poveste/plugin-vue', '0.18.0', view, () => 'TypeError: fetch failed')))
+      .toBe('could not be verified: its tarball could not be fetched: TypeError: fetch failed')
   })
 })
 

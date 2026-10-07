@@ -3,9 +3,11 @@
 // (#327). Every other release check runs on the tarballs before they are sent;
 // this one asks the registry what actually arrived.
 //
-// It asks two things, because a tarball on the registry is not a release anyone
+// It asks three things, because a version on the registry is not a release anyone
 // installs: `latest` is what the starters and the install instructions resolve,
-// and nothing read it after #419 pinned the starter check by version (#427).
+// and nothing read it after #419 pinned the starter check by version (#427). And
+// the packument lists a version minutes before its tarball downloads: 0.18.0's
+// release email went out while `@poveste/plugin-vue`'s still answered 404 (#1227).
 //
 // Which tag depends on the version. `release.yml` publishes a prerelease to
 // `next` and everything else to `latest` (#553), so that is what is asserted.
@@ -25,8 +27,8 @@ import { walkPackages, walkProblems } from './publishable.ts'
 
 interface Release { name: string, version: string }
 
-// 'present', 'missing', `untagged:<version latest points at>`, or the reason the
-// answer is unknown.
+// 'present', 'missing', `untagged:<tag>:<version it points at>`,
+// `tarball:<status>:<url>`, or the reason the answer is unknown.
 export type Probe = (name: string, version: string) => string
 
 function sleepSync(ms: number): void {
@@ -99,6 +101,10 @@ export function problemFor(result: string): string {
     const [tag, points] = result.slice('untagged:'.length).split(':')
     return `is on the registry, but the ${tag} dist-tag still points at ${points}`
   }
+  if (result.startsWith('tarball:')) {
+    const [, status, ...url] = result.split(':')
+    return `is on the registry, but its tarball ${url.join(':')} answers ${status}`
+  }
   return `could not be verified: ${result}`
 }
 
@@ -109,7 +115,7 @@ export function problemFor(result: string): string {
 // below needs it for the same reason, and more sharply — during propagation the
 // cached packument still names the previous release as `latest`.
 export function probeArgs(name: string, version: string): string[] {
-  return ['view', `${name}@${version}`, 'version', '--prefer-online']
+  return ['view', `${name}@${version}`, 'dist.tarball', '--prefer-online']
 }
 
 /** The tag `release.yml` publishes this version to. */
@@ -140,8 +146,20 @@ function npmView(args: string[]): View {
   }
 }
 
-function npmProbe(name: string, version: string): string {
-  const published = npmView(probeArgs(name, version))
+// The status a `HEAD` of `url` answers, or why there is none. In a child process
+// because the probe is synchronous, like the sleep between attempts.
+function headStatus(url: string): string {
+  try {
+    const script = 'fetch(process.argv[1], { method: "HEAD" }).then(r => process.stdout.write(String(r.status)), (e) => { process.stderr.write(e.message + " (" + (e.cause?.code ?? e.cause?.message) + ")"); process.exit(1) })'
+    return String(execFileSync(process.execPath, ['-e', script, url], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 30_000 })).trim()
+  }
+  catch (err: any) {
+    return String(err.stderr ?? '').trim() || err.message
+  }
+}
+
+export function probeRelease(name: string, version: string, view: (args: string[]) => View = npmView, head: (url: string) => string = headStatus): string {
+  const published = view(probeArgs(name, version))
   if (published.error) {
     return published.notFound ? 'missing' : published.error
   }
@@ -150,13 +168,23 @@ function npmProbe(name: string, version: string): string {
     return 'missing'
   }
 
-  const tagged = npmView(tagArgs(name, version))
+  const tagged = view(tagArgs(name, version))
   if (tagged.error) {
     return `the latest dist-tag could not be read: ${tagged.error}`
   }
   // Reported as pending rather than failed, so the existing backoff absorbs tag
   // propagation the same way it absorbs a tarball's.
-  return tagged.out === version ? 'present' : `untagged:${tagFor(version)}:${tagged.out || 'nothing'}`
+  if (tagged.out !== version) {
+    return `untagged:${tagFor(version)}:${tagged.out || 'nothing'}`
+  }
+
+  // Last, because it is the slowest to arrive: a 404 here is the same tail, and
+  // waits in the same backoff.
+  const status = head(published.out)
+  if (status === '200') {
+    return 'present'
+  }
+  return /^\d{3}$/.test(status) ? `tarball:${status}:${published.out}` : `its tarball could not be fetched: ${status}`
 }
 
 function repositoryProblems(root?: string): string[] {
@@ -174,7 +202,7 @@ function repositoryProblems(root?: string): string[] {
     version: JSON.parse(readFileSync(join(pkg.dir, 'package.json'), 'utf8')).version,
   }))
 
-  return unpublishedReleases(releases, npmProbe)
+  return unpublishedReleases(releases, probeRelease)
 }
 
 const REMEDY = 'Re-run this release job. Do NOT `npm publish` by hand: it does not rewrite pnpm\'s `workspace:` protocol, which is what turned 0.6.0 into 0.6.1 with three uninstallable packages.'
