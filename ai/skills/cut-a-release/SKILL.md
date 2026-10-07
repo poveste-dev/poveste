@@ -174,6 +174,8 @@ The account owner does it once per package, and the release workflow publishes e
    npm deprecate @poveste/plugin-<name>@0.0.1 "Placeholder. Install @poveste/plugin-<name>@<first version> or later."
    ```
 3. **Configure its Trusted Publisher** on npmjs.com, under the package's settings: GitHub Actions, organization `poveste-dev`, repository `poveste`, workflow filename `release.yml`, environment left empty.
+   - **Save it on the morning of the cut, or save it again then.** A Trusted Publisher nothing has published through yet is unvalidated, and it lapses 48 hours after it was saved. `plugin-solid`'s was saved on 4 Oct, and by the 0.18.0 cut on 7 Oct it had lapsed.
+   - **Check its status before you tag.** It should read *Pending validation — publish once before <date>*, with that date after the tag. The first release that publishes through it validates it, and after that it doesn't lapse.
 4. **Check it:** `npm view @poveste/plugin-<name> version deprecated engines` shows all three, and `pnpm run test:publishable` on `next` no longer names the package.
 
 What gets in the way, each seen on `plugin-solid`:
@@ -181,6 +183,11 @@ What gets in the way, each seen on `plugin-solid`:
 - **A `PUT` that answers `404` means you are not logged in**, not that the name is wrong or taken. Run `npm login` and publish again.
 - **A new package takes about three and a half minutes to become readable.** Until then `npm view` answers `404`, and so does `npm deprecate`, which reads the package before it writes. Wait, and run the deprecate again; nothing is half-written.
 - **Every write asks for 2FA in the browser**: the publish and the deprecate each open a confirmation, so do this at the machine, not over a remote shell.
+- **A lapsed or missing Trusted Publisher fails the release halfway.** In `Publish to npm`, pnpm logs `[WARN] Skipped OIDC: ERR_PNPM_AUTH_TOKEN_EXCHANGE: … (status code 404)`, publishes without auth, and fails with `ERR_PNPM_FAILED_TO_PUBLISH … (status 404 Not Found)`. The 0.18.0 cut hit it on `plugin-solid` (run 37590633058). What follows:
+  - **It's a partial publish.** `pnpm -r publish` goes one package at a time and stops at the refused one. Everything before it is on npm, and nothing after it was attempted.
+  - **No email goes out.** The GitHub release is published only after `test:published` passes, so the draft stays a draft.
+  - **You can't re-run until the run ends.** `test:published` keeps retrying for its 15-minute budget, and a running workflow can't be re-run.
+  - **Recovery:** save the Trusted Publisher again, wait for the run to end, then `gh run rerun <run id> --failed`. The re-run repeats the whole job, and pnpm publishes only the versions not yet on npm.
 
 ## If the workflow fails
 
