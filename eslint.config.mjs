@@ -36,6 +36,9 @@ export default antfu({
     // a builtin newer than the floor reaches a release green. This reads
     // `engines.node` and fails at the call site instead (#608).
     'node/no-unsupported-features/es-builtins': 'error',
+    // The rule above has no data on these two, and TypeScript's `ESNext` lib types
+    // both, so a call compiles and then throws on Node 22 (#1226).
+    'no-restricted-properties': ['error', { object: 'RegExp', property: 'escape', message: 'Node 22 does not have it (#1226): use escapeRegExp.' }, { object: 'Error', property: 'isError', message: 'Node 22 does not have it (#1226): use isError from util/is-error.' }],
     'no-console': 'warn',
     // Warn, not error: every remaining hit is a `ref`/`computed` referenced
     // from a closure defined above it, which is legal and common in

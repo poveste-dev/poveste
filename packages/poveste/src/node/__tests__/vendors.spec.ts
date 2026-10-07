@@ -1,15 +1,16 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempDisposableSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { join } from 'pathe'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { chromePrebundles, collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
+import { tempDir } from './temp-dir.js'
 
 // macOS reports `/var` and hands back `/private/var`, which resolution accepts and a
 // path comparison does not.
 function tempRoot() {
-  const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-vendors-'))
+  const dir = tempDir(join(tmpdir(), 'poveste-vendors-'))
   onTestFinished(() => dir.remove())
   return realpathSync(dir.path)
 }

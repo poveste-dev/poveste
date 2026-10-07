@@ -22,6 +22,7 @@
 import type { CheckResult } from './support/check-result.ts'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { escapeRegExp } from '../escape-regexp.ts'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -68,7 +69,7 @@ export function listedPlugins(script: string): string[] {
  * a prefix of each other today, which is exactly why it would have gone unnoticed.
  */
 export function hasPass(script: string, plugin: string): boolean {
-  return new RegExp(`plugin_tgz "?${RegExp.escape(plugin)}(?![\\w-])`).test(script)
+  return new RegExp(`plugin_tgz "?${escapeRegExp(plugin)}(?![\\w-])`).test(script)
 }
 
 /**

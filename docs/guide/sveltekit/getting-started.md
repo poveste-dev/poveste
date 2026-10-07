@@ -26,7 +26,7 @@ yarn add -D poveste @poveste/plugin-svelte
 For about a day after a release, pnpm installs the **previous** version and says so only in passing — `+ poveste x.y.z (x.y.z is available)`, with no error and no warning. That is pnpm's release-age cooldown holding back anything published in the last 24 hours, not a broken publish. Use the `npm` line above, wait it out, or pass `--config.minimum-release-age=0` — the kebab-case spelling, because pnpm 12 accepts the camelCase one and silently ignores it. Asking for the exact version does not get you past it: pnpm 12 refuses a version inside the window too, with `ERR_PNPM_NO_MATURE_MATCHING_VERSION`.
 :::
 
-::: warning Poveste needs Node `>=24.15.0`, and npm will not tell you
+::: warning Poveste needs Node `>=22.22.2`, and npm will not tell you
 Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
 :::
 

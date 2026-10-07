@@ -1,3 +1,4 @@
+import { isError } from '../util/is-error.js'
 /*
  * Structured clone keeps an `Error`'s `name`, `message` and `stack` and drops every
  * own property beyond them, so the code frame a Vite transform error puts on `frame`
@@ -37,7 +38,7 @@ function isSerialized(value: unknown): value is Serialized {
  * story may legitimately throw, and it should arrive as the data it is.
  */
 function errorLike(value: unknown): value is ErrorLike {
-  if (Error.isError(value)) {
+  if (isError(value)) {
     return true
   }
   if (typeof value !== 'object' || value === null) {

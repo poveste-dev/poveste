@@ -1,12 +1,13 @@
 import type { ChildProcess } from 'node:child_process'
 import type { AddressInfo } from 'node:net'
 import { spawn } from 'node:child_process'
-import { appendFileSync, existsSync, mkdtempDisposableSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { tempDir } from './temp-dir.js'
 
 const FIXTURE = path.resolve(__dirname, './dev-cleanup')
 const BIN = path.resolve(__dirname, '../../../bin.mjs')
@@ -42,7 +43,7 @@ afterEach(() => {
 
 /** A marker path in a directory `afterEach` removes. */
 function markerPath(): string {
-  const dir = mkdtempDisposableSync(path.join(tmpdir(), 'poveste-cleanup-'))
+  const dir = tempDir(path.join(tmpdir(), 'poveste-cleanup-'))
   markerDirs.push(dir)
   return path.join(dir.path, 'marker')
 }

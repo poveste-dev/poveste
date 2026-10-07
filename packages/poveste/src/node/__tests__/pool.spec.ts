@@ -1,11 +1,12 @@
-import { mkdtempDisposableSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, afterEach, describe, expect, it } from 'vitest'
 import { createPool } from '../collect/pool.js'
 import { DONE, FAILED, TASK } from '../collect/task.js'
+import { tempDir } from './temp-dir.js'
 
-const dir = mkdtempDisposableSync(join(tmpdir(), 'poveste-pool-'))
+const dir = tempDir(join(tmpdir(), 'poveste-pool-'))
 
 // Module scope, so there is no block for `using` to end: the file itself is the
 // lifetime, and every worker written below lives in here.

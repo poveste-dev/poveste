@@ -2,6 +2,7 @@ import vue from '@vitejs/plugin-vue'
 import fs from 'fs-extra'
 import { globbySync } from 'globby'
 import { defineConfig } from 'vite'
+import { escapeRegExp } from '../../scripts/escape-regexp.ts'
 
 export default defineConfig({
   plugins: [
@@ -59,7 +60,7 @@ export default defineConfig({
         // machine's pnpm store (#304).
         // eslint-disable-next-line ts/no-require-imports
         ...Object.keys(require('./package.json').dependencies)
-          .map(name => new RegExp(`^${RegExp.escape(name)}(/|$)`)),
+          .map(name => new RegExp(`^${escapeRegExp(name)}(/|$)`)),
       ],
 
       input: [

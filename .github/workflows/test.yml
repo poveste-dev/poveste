@@ -464,9 +464,16 @@ jobs:
       - name: Switch to the declared minimum
         uses: actions/setup-node@v7
         with:
-          node-version: 24.15.0
+          node-version: 22.22.2
 
       - name: Smoke test on the minimum (pack + install + build)
         run: |
           node --version
           pnpm run test:smoke
+
+      # The smoke test only builds. These cover what it never reaches, such as the
+      # cross-realm error handling that used `Error.isError`, which Node 22 lacks (#1226).
+      - name: Unit tests on the minimum
+        run: |
+          node --version
+          pnpm --filter poveste run test
