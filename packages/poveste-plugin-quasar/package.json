@@ -67,10 +67,10 @@
     "pathe": "^2.0.3"
   },
   "devDependencies": {
-    "@quasar/app-vite": "^3.10.0",
+    "@quasar/app-vite": "^3.10.1",
     "@types/node": "catalog:",
     "poveste": "workspace:*",
-    "quasar": "^2.33.2",
+    "quasar": "^2.34.0",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
