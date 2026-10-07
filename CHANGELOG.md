@@ -4,6 +4,28 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.18.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.0...v0.18.1)
+
+**`poveste dev` works under pnpm again, Node 22.22 is supported again, and the "Try it live" starters start.**
+
+It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. One version floor moved, **down**: Poveste supports Node `>=22.22.2` again, as before 0.17.0. There is nothing to do on upgrade.
+
+### 🩹 Fixes
+
+- **`poveste dev` renders the book again in a project installed with pnpm** ([#1201](https://github.com/poveste-dev/poveste/issues/1201), [#1208](https://github.com/poveste-dev/poveste/pull/1208)). Since 0.13.0 (for Solid, since its first release in 0.18.0), a pnpm-installed Vue, Svelte, Solid or Quasar book showed a blank page in dev, with `Failed to resolve import "@poveste/vendors/vue"` in the terminal. Poveste resolved its own dependencies from the project root, where pnpm's strict layout doesn't put them. Nuxt books and installs made with npm or Yarn 1 were not affected, and for a Vue book neither were `poveste build` and `poveste preview`. The release smoke test now installs a Vue and a Svelte book with pnpm and loads a story in `poveste dev`, so this is checked before every release ([#1142](https://github.com/poveste-dev/poveste/pull/1142), [#1209](https://github.com/poveste-dev/poveste/pull/1209)).
+
+- **Node 22.22 is supported again, and the "Try it live" StackBlitz starters start** ([#1226](https://github.com/poveste-dev/poveste/issues/1226), [#1229](https://github.com/poveste-dev/poveste/pull/1229)). 0.17.0 raised the floor to Node 24.15.0. StackBlitz runs Node 22.22, and a project can't choose another version, so since 0.17.0 every starter on [Getting started](https://poveste.dev/guide/getting-started) has stopped at "Poveste requires Node.js version >=24.15.0". The floor is `>=22.22.2` again on every package, and Poveste no longer calls the two Node 24-only APIs it had started using. One range note: Node 23.x, 24.0–24.14 and 25.x fall inside `>=22.22.2`, but Poveste's DOM dependency (jsdom) declares `^22.22.2 || ^24.15.0 || >=26`. npm and pnpm warn on those versions and refuse with `engine-strict`, and Yarn 1 refuses by default. **On Node 24, use 24.15 or later.**
+
+- **A book opened while `poveste dev` is still collecting stories no longer stays empty** ([#1218](https://github.com/poveste-dev/poveste/issues/1218), [#1219](https://github.com/poveste-dev/poveste/pull/1219)). A page that loaded before collection finished could miss the finished story list and show no stories, with no error, until something collected again. The server now sends the list to a page that missed it.
+
+- **Editing a story in a Nuxt book no longer breaks its preview** ([#1177](https://github.com/poveste-dev/poveste/issues/1177), [#1181](https://github.com/poveste-dev/poveste/pull/1181)). After a story edit, the preview showed `Identifier '__povesteTolerant' has already been declared`, and only restarting `poveste dev` cleared it.
+
+- **Editing a story in a Svelte or SvelteKit book now reaches the preview** ([#1178](https://github.com/poveste-dev/poveste/issues/1178), [#1183](https://github.com/poveste-dev/poveste/pull/1183)). The edit was collected but the open preview kept the old story until you reloaded by hand. The page now reloads on a story-file edit, which resets the panel. Component edits still use Svelte's hot update.
+
+- **`poveste dev` and `poveste build` no longer print Node's `localStorage` warning** ([#1175](https://github.com/poveste-dev/poveste/issues/1175), [#1182](https://github.com/poveste-dev/poveste/pull/1182)). On Node 25 and later, collection printed `ExperimentalWarning: localStorage is not available…` once per worker, which read as an error. Stories now get jsdom's storage during collection.
+
 ## v0.18.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.17.2...v0.18.0)
