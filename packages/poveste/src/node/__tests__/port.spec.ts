@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hmrPortFor, resolvePort } from '../commands/port.js'
+import { resolvePort, socketOnBookPort } from '../commands/port.js'
 
 describe('resolvePort', () => {
   it('returns undefined when the flag was not passed', () => {
@@ -32,34 +32,24 @@ describe('resolvePort', () => {
   })
 })
 
-// `@nuxt/vite-builder` otherwise pins every server's HMR socket to the constant
-// 24678, so two dev servers on different `--port`s collide and the second
-// silently loses HMR (#221). The socket has to be as unique as the book port.
-describe('hmrPortFor', () => {
-  it('derives a port distinct from the dev port', () => {
-    expect(hmrPortFor(6006)).not.toBe(6006)
+// A socket on a second port never connected on StackBlitz, which previews each
+// port on its own hostname, so the page waited for its story list forever (#1245).
+describe('socketOnBookPort', () => {
+  it('drops the port @nuxt/vite-builder fills in', () => {
+    expect(socketOnBookPort({ hmr: { port: 24678 } })).toEqual({ hmr: {}, ws: {} })
   })
 
-  it('gives distinct dev ports distinct sockets', () => {
-    expect(hmrPortFor(4567)).not.toBe(hmrPortFor(4568))
+  it('drops a port or server under server.ws too, which Vite reads first', () => {
+    expect(socketOnBookPort({ ws: { port: 24678, server: {} } })).toEqual({ hmr: {}, ws: {} })
   })
 
-  it('never lands on the framework default that collides', () => {
-    for (const p of [4567, 4568, 6006, 8080]) {
-      expect(hmrPortFor(p)).not.toBe(24678)
-    }
+  it('keeps the rest of what the book configured', () => {
+    expect(socketOnBookPort({ hmr: { port: 24678, clientPort: 443, overlay: false } }))
+      .toEqual({ hmr: { clientPort: 443, overlay: false }, ws: {} })
   })
 
-  it('stays within the valid port range, even for a high dev port', () => {
-    for (const p of [1024, 6006, 45535, 45536, 65535]) {
-      const hmr = hmrPortFor(p)
-      expect(hmr).toBeGreaterThanOrEqual(0)
-      expect(hmr).toBeLessThanOrEqual(65535)
-      expect(hmr).not.toBe(p)
-    }
-  })
-
-  it('falls back to the default dev port when none was given', () => {
-    expect(hmrPortFor(undefined)).toBe(hmrPortFor(6006))
+  it('gives a book that configured nothing a socket on its own port', () => {
+    expect(socketOnBookPort({})).toEqual({ hmr: {}, ws: {} })
+    expect(socketOnBookPort({ hmr: true })).toEqual({ hmr: {}, ws: {} })
   })
 })
