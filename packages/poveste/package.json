@@ -49,6 +49,10 @@
       "types": "./plugin.d.ts",
       "default": "./plugin.js"
     },
+    "./docgen": {
+      "types": "./docgen.d.ts",
+      "default": "./docgen.js"
+    },
     "./*": "./*"
   },
   "main": "./dist/node/index.js",
@@ -63,6 +67,8 @@
     "client.d.ts",
     "client.js",
     "dist",
+    "docgen.d.ts",
+    "docgen.js",
     "framework-floor.mjs",
     "index.d.ts",
     "node-floor.mjs",
@@ -115,6 +121,7 @@
     "@types/jsdom": "^30.0.0",
     "@types/node": "catalog:",
     "@types/picomatch": "^4.0.3",
+    "solid-js": "^1.9.15",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

@@ -1,16 +1,11 @@
 import type { ComponentDoc, DocEvent, DocProp, DocSlot, DocTag } from '@poveste/shared'
+import type { DocgenOptions } from 'poveste/docgen'
 import type { ComponentMeta, EventMeta, PropertyMeta, SlotMeta } from 'vue-component-meta'
+import { declaredOnlyInPackages, DEFAULT_TAGS, HIDDEN_TAGS, normalizeDefault } from 'poveste/docgen'
 
-export interface VueDocgenOptions {
-  /** Packages whose props count although they are declared under `node_modules`. */
-  allow?: string[]
-}
+export type VueDocgenOptions = DocgenOptions
 
 type Tags = { name: string, text?: string }[]
-
-const HIDDEN_TAGS = ['internal', 'private']
-// Aliases: bits-ui mixes them about 50/50, reka-ui and nuxt/ui write `@defaultValue`.
-const DEFAULT_TAGS = ['default', 'defaultValue']
 
 function tagsOf(tags: Tags): DocTag[] {
   return tags.map(({ name, text }) => text === undefined ? { name } : { name, text })
@@ -20,16 +15,8 @@ function isHidden(tags: Tags) {
   return tags.some(tag => HIDDEN_TAGS.includes(tag.name))
 }
 
-/** Declared only in installed packages none of which is allowed: an inherited attribute. */
 function isInherited(prop: PropertyMeta, allow: string[]) {
-  const files = prop.getDeclarations().map(declaration => declaration.file.replaceAll('\\', '/'))
-  return files.length > 0 && files.every(file =>
-    file.includes('/node_modules/') && !allow.some(pkg => file.includes(`/node_modules/${pkg}/`)))
-}
-
-/** A default as written, without the quoting a tag or the printer added. */
-export function normalizeDefault(value: string) {
-  return value.trim().replace(/^`(.*)`$/s, '$1').replace(/^'(.*)'$/s, '"$1"')
+  return declaredOnlyInPackages(prop.getDeclarations().map(declaration => declaration.file), allow)
 }
 
 function toProp(prop: PropertyMeta): DocProp {
