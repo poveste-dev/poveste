@@ -4,6 +4,18 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.18.2
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.1...v0.18.2)
+
+**The "Try it live" StackBlitz starters show their stories.**
+
+It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. There is nothing to do on upgrade.
+
+### 🩹 Fixes
+
+- **A book on StackBlitz collects its stories again** ([#1238](https://github.com/poveste-dev/poveste/issues/1238), [#1239](https://github.com/poveste-dev/poveste/pull/1239)). With 0.18.1, the starters on [Getting started](https://poveste.dev/guide/getting-started) got past the Node check and started `poveste dev`, but the book stayed empty. StackBlitz's in-browser Node reports version 22.22 but has no global `Iterator`, and Poveste's DOM dependency (jsdom) has extended `Iterator` since its 30.1 release. So every story failed to collect, with `ReferenceError: Iterator is not defined` in the terminal. Poveste now defines `Iterator` itself, before jsdom loads, when the runtime has none. Installs on your own machine were never affected: Node has had `Iterator` since 22.0, so there the new code never runs.
+
 ## v0.18.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.0...v0.18.1)
