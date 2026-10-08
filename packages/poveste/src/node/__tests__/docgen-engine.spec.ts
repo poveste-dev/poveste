@@ -66,6 +66,16 @@ describe('the docgen engine', () => {
     expect(docgen.stats).toEqual({ created: 2, recycled: 1 })
   })
 
+  it('reports what its extractors read, and nothing before one exists', async () => {
+    const { module } = fakeModule({ sources: () => ['/book/src/A.vue', '/elsewhere/types.ts'] })
+    const docgen = engine(module)
+
+    expect(await docgen.sources()).toEqual([])
+    await docgen.extract([{ name: 'vue', file: '/book/src/A.vue' }])
+
+    expect(await docgen.sources()).toEqual(['/book/src/A.vue', '/elsewhere/types.ts'])
+  })
+
   it('stays below the ceiling without recycling', async () => {
     const { module, extractor } = fakeModule()
     const docgen = engine(module, () => 69)
