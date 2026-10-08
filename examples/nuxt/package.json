@@ -21,9 +21,9 @@
     "nuxt": "^4.5.2",
     "pinia": "^4.0.3",
     "poveste": "workspace:*",
-    "sass": "^1.105.0",
+    "sass": "^1.105.1",
     "tailwindcss": "catalog:",
     "vue": "^3.5.43",
-    "vue-i18n": "^11.4.12"
+    "vue-i18n": "^11.4.13"
   }
 }

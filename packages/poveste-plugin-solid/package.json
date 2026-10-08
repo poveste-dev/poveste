@@ -73,11 +73,11 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "jsdom": "^30.1.1",
+    "jsdom": "^30.1.2",
     "poveste": "workspace:*",
     "solid-js": "^1.9.15",
     "typescript": "catalog:",
-    "vite": "^8.3.1",
+    "vite": "^8.3.2",
     "vite-plugin-solid": "^2.11.14",
     "vitest": "catalog:"
   }

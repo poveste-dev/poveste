@@ -24,9 +24,9 @@
     "@vitejs/plugin-vue": "^6.0.9",
     "nodemon": "^3.1.14",
     "poveste": "workspace:*",
-    "sass": "^1.105.0",
+    "sass": "^1.105.1",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
-    "vue-i18n": "^11.4.12"
+    "vue-i18n": "^11.4.13"
   }
 }
