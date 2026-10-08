@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import { globSync } from 'tinyglobby'
 import { defineConfig } from 'vite'
+import { thirdPartyNotices } from '../../scripts/build/third-party-notices.ts'
 
 // Externalize every declared dependency/peer so the lib build emits bare
 // specifiers (e.g. `import 'change-case'`) instead of resolved node_modules
@@ -11,6 +12,7 @@ const pkg = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url
 
 export default defineConfig({
   plugins: [
+    thirdPartyNotices({ packageName: '@poveste/plugin-vue' }),
     {
       name: 'poveste:preserve:import.dynamic',
       enforce: 'pre',
