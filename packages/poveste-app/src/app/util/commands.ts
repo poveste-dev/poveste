@@ -46,15 +46,27 @@ export const builtinCommands: ClientCommand[] = [
   },
 ]
 
-export function executeCommand(command: ClientCommand, params: Record<string, any>) {
-  if (import.meta.hot) {
-    import.meta.hot.send('poveste:dev-command', {
-      id: command.id,
-      params,
-    })
+export async function executeCommand(command: ClientCommand, params: Record<string, any>) {
+  const hot = import.meta.hot
+  if (!hot) return
 
-    command.clientAction?.(params, getCommandContext())
+  // The client half waits for the server's: a generated story was opened before its
+  // file existed, and opened anyway when writing it failed (#1176).
+  const result = await new Promise<{ id: string, error?: string }>((resolve) => {
+    const listener = (data: { id: string, error?: string }) => {
+      if (data.id !== command.id) return
+      hot.off('poveste:dev-command-result', listener)
+      resolve(data)
+    }
+    hot.on('poveste:dev-command-result', listener)
+    hot.send('poveste:dev-command', { id: command.id, params })
+  })
+
+  if (result.error) {
+    console.error(`[poveste] ${command.label}: ${result.error}`)
+    return
   }
+  command.clientAction?.(params, getCommandContext())
 }
 
 export function getCommandContext(): ClientCommandContext {
