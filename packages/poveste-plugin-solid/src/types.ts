@@ -1,4 +1,4 @@
-import type { Awaitable, Story, StoryProps, Variant, VariantProps } from '@poveste/shared'
+import type { Awaitable, Story, StoryComponentOptions, StoryProps, Variant, VariantProps } from '@poveste/shared'
 import type { Component, JSX } from 'solid-js'
 import type { SetStoreFunction } from 'solid-js/store'
 
@@ -38,7 +38,7 @@ export interface VariantOptions<S extends object = Record<string, any>> extends 
   setupApp?: SolidStorySetupHandler
 }
 
-export interface StoryOptions<S extends object = Record<string, any>> extends Omit<StoryProps, 'setupApp'> {
+export interface StoryOptions<S extends object = Record<string, any>> extends Omit<StoryProps, 'setupApp'>, StoryComponentOptions<Component<any>> {
   /** A story with no `variants` and a `render` of its own has one implicit variant. */
   variants?: VariantOptions<S>[]
   render?: (api: SolidRenderApi<S>) => JSX.Element
