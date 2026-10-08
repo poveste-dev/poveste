@@ -32,9 +32,21 @@ test.describe('bare sandbox URL in dev', () => {
   test('renders the variant it names', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', error => errors.push(error.message))
+    // Only the page that settles counts: the optimizer's reload replaces the rest.
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) {
+        errors.length = 0
+      }
+    })
 
     await page.goto(BARE_URL)
-    await expect(page.locator('.conformance-huge-grid-button')).toHaveText('Button 7')
+    // A count, and not straight to the text: on a cold dev server the first page
+    // is reloaded while the optimizer bundles, and before that it can render with
+    // two Vues, where `<Story>` and `<Variant>` resolve as plain elements and every
+    // variant shows (#1236). A count that never settles on one is the failure.
+    const buttons = page.locator('.conformance-huge-grid-button')
+    await expect(buttons, 'the sandbox renders only the variant it names').toHaveCount(1)
+    await expect(buttons).toHaveText('Button 7')
     expect(errors).toEqual([])
   })
 
