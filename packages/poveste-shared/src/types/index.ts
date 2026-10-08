@@ -1,5 +1,6 @@
 export * from './command.js'
 export * from './config.js'
+export * from './docgen.js'
 export * from './plugin.js'
 export * from './prompt.js'
 export * from './story.js'
