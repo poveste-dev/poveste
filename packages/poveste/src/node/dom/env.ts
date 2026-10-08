@@ -1,9 +1,14 @@
+/* eslint-disable perfectionist/sort-imports -- order is load order here */
+// First, and kept first: it defines `Iterator` where the runtime lacks it, and
+// jsdom extends `Iterator` while it loads (#1238).
+import './iterator.js'
 import {
   JSDOM,
   VirtualConsole,
 } from 'jsdom'
 import { isError } from '../util/is-error.js'
 import { populateGlobal } from './util.js'
+/* eslint-enable perfectionist/sort-imports */
 
 // jsdom error types — not exported by jsdom.
 const JSDOM_ERROR_CSS_PARSING = 'css-parsing'
