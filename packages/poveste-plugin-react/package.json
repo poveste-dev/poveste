@@ -1,0 +1,92 @@
+{
+  "name": "@poveste/plugin-react",
+  "type": "module",
+  "version": "0.17.1",
+  "description": "Poveste plugin for React support",
+  "author": {
+    "name": "Sorin Gitlan",
+    "url": "https://x.com/50rayn"
+  },
+  "license": "MIT",
+  "homepage": "https://poveste.dev",
+  "repository": {
+    "url": "https://github.com/poveste-dev/poveste.git",
+    "type": "git",
+    "directory": "packages/poveste-plugin-react"
+  },
+  "bugs": "https://github.com/poveste-dev/poveste/issues",
+  "keywords": [
+    "poveste",
+    "histoire",
+    "storybook",
+    "component-playground",
+    "component-explorer",
+    "stories",
+    "styleguide",
+    "design-system",
+    "vite",
+    "react",
+    "plugin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./collect": {
+      "types": "./dist/collect/index.d.ts",
+      "default": "./dist/collect/index.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "client.d.ts",
+    "collect.d.ts",
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc -d",
+    "watch": "tsc -d -w --sourceMap",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@vitejs/plugin-react": "^6.0.0",
+    "poveste": "workspace:^",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@vitejs/plugin-react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@poveste/shared": "workspace:^",
+    "@poveste/vendors": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^30.1.1",
+    "poveste": "workspace:*",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "typescript": "catalog:",
+    "vite": "^8.3.1",
+    "vitest": "catalog:"
+  }
+}
