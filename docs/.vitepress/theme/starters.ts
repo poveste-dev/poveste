@@ -290,8 +290,10 @@ function nuxtStarter(): Starter {
       '@poveste/plugin-nuxt': POVESTE,
       '@poveste/plugin-vue': POVESTE,
       // Nuxt only moved to Vite 8 in 4.5 — 4.5.2's `@nuxt/vite-builder`
-      // resolves `vite ^8.2.0`. This is also the floor set in #39.
-      'nuxt': '^4.5.2',
+      // resolves `vite ^8.2.0`. This is also the floor set in #39. Held below
+      // 4.6, whose dev error reporter constructs a `BroadcastChannel` that
+      // StackBlitz's WebContainer throws on (#1244).
+      'nuxt': '~4.5.2',
       'vite': VITE,
       'vue': '^3.5.26',
     }),
