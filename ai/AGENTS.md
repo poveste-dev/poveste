@@ -54,17 +54,19 @@ The ids are explicit rather than derived from paths, because each framework lays
 
 ## What the examples are for
 
-Thirteen directories, three kinds, not interchangeable:
+Fourteen directories, three kinds, not interchangeable:
 
 | | |
 | --- | --- |
 | **Reference books** | `vue`, `nuxt`, `svelte`, `sveltekit` — the conformance set *and* the full shared story list |
 | **Conformance books** | `quasar` — the conformance set only |
-| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid`, `sveltekit3` — each exists for one narrow thing |
+| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid`, `sveltekit3`, `react` — each exists for one narrow thing |
 
 `vue-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
 
 `solid` is a fixture for now, and its narrow thing is the renderer: its own specs prove a Solid story renders inside its wrapper and that state moves both ways without the component running again. It cannot carry the conformance set yet, because the contract asserts controls and Solid has none. It is promoted to a conformance book once #1114's Solid wrapper gives it explicit controls and #1110 gives it auto-props.
+
+`react` is a fixture for the same reason. Its own specs prove a React story renders inside its wrapper, that state moves both ways, and that a hook in `render` keeps its state when the panel changes the story (#371). It is promoted on the same two issues.
 
 The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is the contract; `SHARED_STORY_TITLES` is the reference books' demo content and about twice its size. Requiring both of every new framework would price onboarding at the whole demo book rather than the contract.
 

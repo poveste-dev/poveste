@@ -110,6 +110,8 @@ const ALL_EXAMPLES: Example[] = [
   // `examples/sveltekit`, which stays on Kit 2 for the floor. Kit 3 broke dev and
   // preview differently, so both are run (#1200).
   { name: 'sveltekit3', port: 4575, dev: { port: 4675, specs: ['**/sveltekit3.spec.ts'] } },
+  // A fixture for the same reason as Solid: no controls yet (#371).
+  { name: 'react', port: 4576 },
 ]
 
 /*
