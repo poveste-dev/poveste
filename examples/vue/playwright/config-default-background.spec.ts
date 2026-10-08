@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
-// The example config sets `defaultBackgroundColor: 'transparent'`, which matches
+// The example config sets `preview.backgroundColor: 'transparent'`, which matches
 // the built-in "Transparent" preset (the first entry in the dropdown).
 const TRANSPARENT_PRESET_INDEX = 0
 // The "White" preset, used to assert that a non-default entry stays unhighlighted.
@@ -21,7 +21,7 @@ function seedSettings(page: Page, settings: Record<string, unknown>) {
   }, settings)
 }
 
-test.describe('defaultBackgroundColor', () => {
+test.describe('preview.backgroundColor', () => {
   test('applies the configured color before any preset is picked', async ({ page }) => {
     await page.goto('/story/src-components-complexparameter-story-vue?variantId=_default')
     await expect(page.getByTestId('responsive-preview-bg')).toHaveCSS('background-color', TRANSPARENT_CSS)
