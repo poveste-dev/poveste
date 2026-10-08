@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import pc from 'picocolors'
 import { createServer as createViteServer, mergeConfig as mergeViteConfig } from 'vite'
 import { useCollectStories } from './collect/index.js'
-import { hmrPortFor } from './commands/port.js'
+import { socketOnBookPort } from './commands/port.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
@@ -56,14 +56,19 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
       serverConfig.hmr = false
     }
     else {
-      // `@nuxt/vite-builder` pins the HMR socket to the constant 24678 on every
-      // server it configures, so two poveste dev servers on different `--port`s
-      // collide on it and the second silently loses HMR (#221). It only does
-      // this when `server.hmr` carries no port of its own (it fills the gap with
-      // `defu`), so pin the socket to a port derived from this book's `--port`,
-      // before the config is resolved: each dev server then owns a distinct one
-      // (#175).
-      serverConfig.hmr = { port: hmrPortFor(options.port ?? serverConfig.port) }
+      // On the book's own port, never a second one: StackBlitz does not route
+      // it, and `@nuxt/vite-builder`'s default collides between books (#1245,
+      // #221). Post-ordered, because that default is filled in by Nuxt's own
+      // `config` hook.
+      viteConfig.plugins = [...viteConfig.plugins ?? [], {
+        name: 'poveste:socket-on-book-port',
+        config: {
+          order: 'post',
+          handler(config) {
+            config.server = { ...config.server, ...socketOnBookPort(config.server ?? {}) }
+          },
+        },
+      }]
 
       if (options.open) {
         serverConfig.open = true
