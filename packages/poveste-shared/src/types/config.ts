@@ -4,6 +4,7 @@ import type {
   UserConfig as ViteConfig,
   ConfigEnv as ViteConfigEnv,
 } from 'vite'
+import type { AutoDocsOptions } from './docgen.js'
 import type { Plugin } from './plugin.js'
 import type { ServerTreeFile, StoryProps } from './story.js'
 
@@ -72,7 +73,7 @@ export interface PovesteConfig {
    * and only for the components that story imports; it holds a type checker while
    * it runs. Set to false to turn it off. Default: on.
    */
-  autoDocs?: boolean
+  autoDocs?: boolean | AutoDocsOptions
   /**
    * CSS files loaded into the main app (not into stories). Wrapped in
    * @layer poveste-user-globals — lower priority than chrome.

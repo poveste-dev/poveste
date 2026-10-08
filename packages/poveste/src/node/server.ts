@@ -187,6 +187,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     root: ctx.root,
     plugins: ctx.config.plugins,
     enabled: ctx.config.autoDocs !== false,
+    bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected,
     // The component files a story file imports, as collection resolved them.
     componentsOf: (storyId) => {
