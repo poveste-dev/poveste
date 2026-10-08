@@ -5,6 +5,7 @@ import pc from 'picocolors'
 import { createServer as createViteServer, mergeConfig as mergeViteConfig } from 'vite'
 import { useCollectStories } from './collect/index.js'
 import { hmrPortFor } from './commands/port.js'
+import { componentsOfStory } from './docgen/components-of.js'
 import { createDocgenService } from './docgen/service.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
@@ -189,20 +190,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     enabled: ctx.config.autoDocs !== false,
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected,
-    // The component files a story file imports, as collection resolved them.
-    componentsOf: (storyId) => {
-      const storyFile = ctx.storyFiles.find(file => file.story?.id === storyId)
-      const storyPaths = new Set(ctx.storyFiles.map(file => file.path))
-      const files = new Set<string>()
-      for (const mod of nodeServer.moduleGraph.getModulesByFile(storyFile?.path ?? '') ?? []) {
-        for (const imported of mod.importedModules) {
-          if (imported.file && !storyPaths.has(imported.file)) {
-            files.add(imported.file)
-          }
-        }
-      }
-      return [...files]
-    },
+    componentsOf: storyId => componentsOfStory(ctx.storyFiles, nodeServer.moduleGraph, storyId),
   })
   onOpen('docgen', () => docgen.dispose())
   if (docgen.enabled) {
