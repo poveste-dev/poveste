@@ -52,16 +52,34 @@ test.describe('editing a markdown file', () => {
   // rendered content reloading says nothing about the title: that lives in the
   // story module's code and is not re-read from disk.
   test('renames the story when frontmatter changes, without a restart', async ({ page }) => {
+    const t0 = Date.now()
+    const log = (...a: unknown[]) => console.log(`[R ${Date.now() - t0}]`, ...a)
+    page.on('websocket', ws => ws.on('framereceived', (f) => {
+      const text = String(f.payload)
+      if (/poveste-stories|all-stories|full-reload|mount/.test(text)) log('<', text.slice(0, 160))
+    }))
+    page.on('console', m => log('console', m.type(), m.text().slice(0, 200)))
+    const served = async () => {
+      const body = await (await page.request.get('/__resolved__virtual:$poveste-stories')).text()
+      return `gen=${body.match(/export let generation = (\d+)/)?.[1]} renamed=${body.includes('RENAMED-BY-SPEC')} markdownfile=${body.includes('"MarkdownFile"')}`
+    }
     await page.goto(STORY)
     const listItem = page.locator('[data-testid="story-list-item"]', { hasText: 'MarkdownFile' })
-    await expect(listItem).toBeVisible()
+    await expect(listItem).toBeVisible().catch(async (error) => {
+      log('FAILED BEFORE WRITE', await served(), 'loading screen:', await page.locator('.poveste-initial-loading').count(), 'items:', (await page.locator('[data-testid="story-list-item"]').allTextContents()).length)
+      throw error
+    })
 
     // Same retried-arrange as above, for the same reason: the edit has to be
     // delivered before the assertion means anything.
     await expect(async () => {
       writeFileSync(MARKDOWN, `---\ntitle: RENAMED-BY-SPEC\n---\n\n${original}`)
+      log('WRITE', await served(), 'sidebar:', (await page.locator('[data-testid="story-list-item"]').allTextContents()).filter(t => /Markdown|RENAMED/.test(t)).join('|'))
       await expect(page.locator('[data-testid="story-list-item"]', { hasText: 'RENAMED-BY-SPEC' }))
         .toBeVisible({ timeout: 2_000 })
-    }).toPass({ timeout: 20_000 })
+    }).toPass({ timeout: 20_000 }).catch(async (error) => {
+      log('FAILED', await served(), 'loading screen:', await page.locator('.poveste-initial-loading').count(), 'items:', (await page.locator('[data-testid="story-list-item"]').allTextContents()).length)
+      throw error
+    })
   })
 })
