@@ -491,7 +491,6 @@ import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [HstReact()],
-  storyMatch: ['**/*.story.tsx'],
 })
 TS
 

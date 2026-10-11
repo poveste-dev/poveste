@@ -62,7 +62,7 @@ export default defineConfig({
 
 Use `src/**/*.story.vue` to prevent search errors in binary files (e.g., in iOS or Android folders) when using Ionic Capacitor.
 
-A framework plugin can add its own patterns to the default: `@poveste/plugin-solid` adds `**/*.story.tsx` and `**/*.story.jsx`, so a book with Solid stories needs no `storyMatch` at all. Setting `storyMatch` yourself replaces the whole list, the patterns plugins added included, which is what lets you narrow it. If you set it in a book with Solid stories, list their patterns too.
+A framework plugin can add its own patterns to the default: `@poveste/plugin-solid` and `@poveste/plugin-react` each add `**/*.story.tsx` and `**/*.story.jsx`, so a book with Solid or React stories needs no `storyMatch` at all. Setting `storyMatch` yourself replaces the whole list, the patterns plugins added included, which is what lets you narrow it. If you set it in a book with Solid or React stories, list their patterns too.
 
 ## `storyIgnored`
 

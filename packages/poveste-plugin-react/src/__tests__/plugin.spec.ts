@@ -22,4 +22,12 @@ describe('the plugin\'s config', () => {
 
     expect(config.supportMatch).toEqual([{ id: 'react', patterns: ['**/*.story.tsx', '**/*.story.jsx'], pluginIds: ['react'] }])
   })
+
+  // Joined to core's globs by the config merger, so a React book needs no
+  // `storyMatch` of its own, and one that also has Vue stories keeps them (#1267).
+  it('declares the story globs a React book uses', async () => {
+    const config = await HstReact().defaultConfig!({} as any) as any
+
+    expect(config.storyMatch).toEqual(['**/*.story.tsx', '**/*.story.jsx'])
+  })
 })
