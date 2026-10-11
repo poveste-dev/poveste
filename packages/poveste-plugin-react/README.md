@@ -4,4 +4,4 @@
 
 Requires Node `>=22.22.2`, `react@^19.0.0` and `react-dom@^19.0.0`, with a JSX transform such as `@vitejs/plugin-react` in your Vite config. See the [React guide](https://poveste.dev/guide/react/getting-started).
 
-This first version renders stories, variants and their source. The controls panel is not wired to React yet: a variant with `initState` gets the generic state editor, and one without says why there is nothing there.
+This first version renders stories and variants. The source panel shows the story file. The controls panel is not wired to React: a variant with `initState` gets the generic state editor, and one without says why there is nothing there.

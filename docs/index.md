@@ -27,7 +27,7 @@ features:
   - title: 🔁 Drop-in for histoire
     details: Your stories, your config file and your plugin names keep working. The old names are still accepted, so the move is an install rather than a rewrite.
   - title: 🧩 Five frameworks, each proven in CI
-    details: Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar. Every one has its own example book, built and end-to-end tested on every commit.
+    details: Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar. Every one has its own example book, built and end-to-end tested on every commit. Solid and React are supported as renderers only.
   - title: 🔧️ Reuses your Vite config
     details: Your aliases, plugins and defines already apply. Where a framework plugin needs handling, that is the framework plugin's job, not yours.
   - title: ⚡ Fast
@@ -82,6 +82,20 @@ ratio and the boxes would otherwise be ragged. -->
   >
     <span class="w-12 h-12 flex items-center justify-center text-3xl" aria-hidden="true">Q</span>
     <span class="text-sm font-medium">Quasar</span>
+  </a>
+  <a
+    href="./guide/solid/getting-started"
+    class="w-40 p-6 rounded bg-gray-100 dark:bg-gray-900 transition-colors hover:bg-sky-100 dark:hover:bg-sky-950 flex flex-col items-center justify-center gap-3"
+  >
+    <Icon icon="logos:solidjs-icon" class="w-12 h-12" aria-hidden="true" />
+    <span class="text-sm font-medium text-center">Solid<span class="block text-xs font-normal opacity-80">renderer only</span></span>
+  </a>
+  <a
+    href="./guide/react/getting-started"
+    class="w-40 p-6 rounded bg-gray-100 dark:bg-gray-900 transition-colors hover:bg-cyan-100 dark:hover:bg-cyan-950 flex flex-col items-center justify-center gap-3"
+  >
+    <Icon icon="logos:react" class="w-12 h-12" aria-hidden="true" />
+    <span class="text-sm font-medium text-center">React 19<span class="block text-xs font-normal opacity-80">renderer only</span></span>
   </a>
 </div>
 

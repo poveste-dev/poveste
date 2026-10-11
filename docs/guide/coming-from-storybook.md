@@ -1,11 +1,11 @@
 ---
-title: 'Coming from Storybook — a Vite-native component playground for Vue, Nuxt, Svelte and Quasar'
+title: 'Coming from Storybook — a Vite-native component playground for Vue, Nuxt, Svelte and Quasar, with Solid and React renderers'
 description: 'What a Poveste book is, how stories are written as ordinary components, what a built book weighs, and what Poveste does not do.'
 ---
 
 # Coming from Storybook
 
-Poveste is a component playground built on Vite, for Vue, Nuxt, Svelte, SvelteKit and Quasar. If you already run Storybook, this page is what is different here — not a case for switching.
+Poveste is a component playground built on Vite, for Vue, Nuxt, Svelte, SvelteKit and Quasar, with Solid and React supported as renderers. If you already run Storybook, this page is what is different here — not a case for switching.
 
 ## A story is a component, not a separate format
 
@@ -56,11 +56,14 @@ The highlighter had been importing from the `shiki` barrel, which ships every gr
 
 [Vue](./vue/getting-started.md), [Nuxt](./nuxt/getting-started.md), [Svelte](./svelte/getting-started.md), [SvelteKit](./sveltekit/getting-started.md) and [Quasar](./quasar/getting-started.md) each have an example book in this repository, built and driven by Playwright on every commit. The shared specs run against all of them, so support means a job that fails rather than a row in a table.
 
+[Solid](./solid/getting-started.md) and [React](./react/getting-started.md) are renderers only. Each has an example book that CI builds and runs that renderer's own specs on; the shared specs do not run on them.
+
 ## What Poveste does not do
 
 Worth knowing before you spend an afternoon:
 
-- **No React, Angular or Solid.** The plugin interface is public and a framework plugin is possible, but nobody has written those. For React, [Ladle](https://www.ladle.dev) is Vite-native and does this well.
+- **No controls panel for Solid or React.** Their stories and variants render, a variant with `initState` gets the state editor, and the source panel shows the story file. Nothing builds a control per prop for them, as Storybook's Controls does from `args`.
+- **No Angular, Preact, Lit or Qwik.** The plugin interface is public and a framework plugin is possible, but nobody has written those.
 - **No addon ecosystem.** Poveste has a [plugin API](./plugins/development.md) for collection and setup, and official plugins for the frameworks, Tailwind, Percy and screenshots. It is not a marketplace, and an addon you rely on has no equivalent here.
 - **It is a small project.** Poveste is a maintained fork of [histoire](https://github.com/histoire-dev/histoire), currently pre-1.0 — [what 1.0 means](./getting-started.md#what-1-0-means) is written down, along with [what a deprecation promises](./getting-started.md#deprecations).
 

@@ -1,6 +1,6 @@
 ---
 title: 'Examples — sample books for every supported framework'
-description: 'Runnable example books for Vue, Nuxt, Svelte, SvelteKit and Quasar, and where to find them in the repository.'
+description: 'Runnable example books for Vue, Nuxt, Svelte, SvelteKit, Quasar, Solid and React, and where to find them in the repository.'
 ---
 
 # Examples
