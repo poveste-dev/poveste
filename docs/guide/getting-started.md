@@ -79,6 +79,7 @@ npm i -D poveste @poveste/plugin-<framework>
 [React guide &rarr;](./react/getting-started.md)
 
   </div>
+</div>
 
 <div class="demo-links-box border-blue-200 dark:border-blue-900">
   <Icon icon="devicon:quasar" class="w-10 h-10 mt-3" aria-label="Quasar logo" />
