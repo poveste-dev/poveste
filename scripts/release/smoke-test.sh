@@ -172,6 +172,45 @@ consumer_package_json() {
 JSON
 }
 
+# types_check <name> <app> <tsconfig compilerOptions, as JSON members>
+#
+# Type-checks the consumer with `skipLibCheck: false`, which also checks every
+# `.d.ts` our packages publish. `@poveste/shared` imported a `vue-router` type it
+# did not depend on, so this failed in every strict consumer, and in a Solid or
+# Svelte project nothing else installs the router either (#1199). Only errors
+# inside our packages or the consumer's own files fail the pass: another
+# library's declarations are its own to keep clean.
+types_check() {
+  local name="$1" app="$2" options="$3"
+
+  echo "▸ [$name] Type-checking with skipLibCheck: false"
+  local typescript
+  typescript="$(node -p "require('$ROOT/node_modules/typescript/package.json').version")"
+  ( cd "$app" && npm install --no-audit --no-fund --loglevel=error "typescript@$typescript" )
+  cat > "$app/tsconfig.json" <<JSON
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    $options
+  },
+  "include": ["poveste.config.ts", "src"]
+}
+JSON
+
+  local types_log="$WORK/types-$name.log"
+  ( cd "$app" && npx tsc -p . ) > "$types_log" 2>&1 || true
+  if grep -a -E "^(node_modules/(poveste|@poveste)/|poveste\.config\.ts|src/)" "$types_log"; then
+    echo "❌ Smoke test FAILED [$name] — the published types do not check under skipLibCheck: false (above)"
+    exit 1
+  fi
+  echo "✅ [$name] passed — types check, $(grep -a -c 'error TS' "$types_log" || true) error(s) in other libraries"
+}
+
 # `poveste dev` over the same npm install, asserting the story renders in its
 # preview frame. Opt-in, because it needs Playwright's Chromium: `test:smoke:dev`
 # turns it on, and CI's `Unit tests and smoke` job runs that. The build passes
@@ -433,6 +472,8 @@ install_and_build solid "$SOLID_APP" \
   "$(plugin_tgz poveste-plugin-solid)" \
   "solid-js@$(peer_range poveste-plugin-solid solid-js)" vite@^8.0.0 \
   "vite-plugin-solid@$(peer_range poveste-plugin-solid vite-plugin-solid)"
+
+types_check solid "$SOLID_APP" '"jsx": "preserve", "jsxImportSource": "solid-js"'
 
 dev_renders solid "$SOLID_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4792
 

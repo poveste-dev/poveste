@@ -1,4 +1,3 @@
-import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import type { Prompt } from './prompt.js'
 import type { Story, Variant } from './story.js'
 
@@ -24,8 +23,25 @@ export interface ClientCommandOptions extends CommonCommandOptions {
  */
 export type ClientCommand = Command & ClientCommandOptions
 
+/**
+ * The route the book is on, as a command sees it. The app passes its
+ * `vue-router` route, and this names the fields a command reads rather than
+ * importing the router's type: this package depends on no router, so that import
+ * failed a consumer's type check under `skipLibCheck: false`, in a Solid or
+ * Svelte project most of all (#1199).
+ */
+export interface ClientCommandRoute {
+  path: string
+  fullPath: string
+  hash: string
+  name: string | symbol | null | undefined
+  params: Record<string, string | string[]>
+  query: Record<string, string | null | (string | null)[]>
+  meta: Record<PropertyKey, unknown>
+}
+
 export interface ClientCommandContext {
-  route: RouteLocationNormalizedLoaded
+  route: ClientCommandRoute
   /**
    * The story the route names, or undefined on any route that names none — the
    * home page, or a story id that is not loaded. Declared non-optional here
