@@ -6,7 +6,6 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, it, vi } from 'vitest'
-import { hmrPortFor } from '../commands/port.js'
 
 const FIXTURE = path.resolve(__dirname, './dev-docgen')
 const BIN = path.resolve(__dirname, '../../../bin.mjs')
@@ -43,7 +42,8 @@ describe('auto-docs in poveste dev', () => {
       await new Promise(resolve => setTimeout(resolve, 500))
       expect(existsSync(marker), 'an extractor was created before anyone asked').toBe(false)
 
-      const socket = new WebSocket(`ws://localhost:${hmrPortFor(port)}`, 'vite-hmr')
+      // The HMR socket is on the book's own port (#1245).
+      const socket = new WebSocket(`ws://localhost:${port}`, 'vite-hmr')
       await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }))
       const result = new Promise<any>((resolve) => {
         socket.addEventListener('message', (event) => {
