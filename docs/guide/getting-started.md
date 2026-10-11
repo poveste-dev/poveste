@@ -72,7 +72,7 @@ npm i -D poveste @poveste/plugin-<framework>
 
 [React guide &rarr;](./react/getting-started.md)
 
-  <p class="text-sm opacity-80 m-0">React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet.</p>
+  <p class="text-sm opacity-80 m-0">React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel.</p>
   </div>
 </div>
 

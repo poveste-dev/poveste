@@ -257,6 +257,13 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run test:docs-vue-fences
 
+      # A page said "No React, Angular or Solid" for a release after Solid
+      # shipped, because nothing ties a sentence to the plugin that makes it
+      # untrue (#1284). Source-only, like the fences above.
+      - name: Check no page denies a framework that has a guide
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm run test:framework-claims
+
       # A published recipe and the example that guards it are one thing; the
       # example is a copy, and a copy drifts (#436).
       - name: Check the published recipes
