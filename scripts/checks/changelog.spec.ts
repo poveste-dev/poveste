@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { breakingHeadingProblem, freezeWarning, headingSites, HISTOIRE_VERSIONS, normalizeVersion, placementProblems, releasedVersions, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
+import { breakingHeadingProblem, freezeWarning, headingSites, HISTOIRE_VERSIONS, normalizeVersion, placementProblems, releasedVersions, revertsIn, revertWarning, sectionFor, strayHeadings, subjectsAfter } from './changelog.ts'
 import { tree } from './support/fixture-tree.ts'
 import { runCheck } from './support/run-check.ts'
 
@@ -444,5 +444,48 @@ describe('the check as a process', () => {
 
     expect(run).toMatchObject({ status: 1, stderr: expect.stringContaining('contains a heading at the release level') })
     expect(run.stderr, 'the guard should end the run, not a crash after it').not.toContain('\n    at ')
+  })
+})
+
+// The 0.18.0 range: two fixes merged and reverted before the cut, which the
+// generated list announced as shipped and the notes had to disown by hand (#1197).
+describe('reverts in a release', () => {
+  const commits = [
+    { subject: 'revert: fix(app): stop marking the main app\'s plugin API setup as pure (#1179)', body: '' },
+    { subject: 'feat(solid): add `@poveste/plugin-solid` (#1113)', body: '' },
+    { subject: 'fix(app): stop marking the main app\'s plugin API setup as pure (#1146)', body: '' },
+  ]
+
+  it('pairs a revert with the commit it undoes, by subject', () => {
+    expect(revertsIn(commits)).toEqual([
+      { subject: 'revert: fix(app): stop marking the main app\'s plugin API setup as pure (#1179)', numbers: ['1146', '1179'] },
+    ])
+  })
+
+  it('keeps a revert whose commit shipped in an earlier release, under its own number', () => {
+    expect(revertsIn(commits.slice(0, 2))[0]?.numbers).toEqual(['1179'])
+  })
+
+  it('finds none in a range without one', () => {
+    expect(revertsIn(commits.slice(1))).toEqual([])
+  })
+
+  it('warns when the section mentions neither number', () => {
+    const lines = revertWarning('### 🩹 Fixes\n\n- The plugin API works in dev again.', 'v0.18.0', revertsIn(commits))
+
+    expect(lines[0]).toBe('::warning::v0.18.0 reverts a commit its CHANGELOG.md section does not mention')
+    expect(lines[1]).toBe('  • revert: fix(app): stop marking the main app\'s plugin API setup as pure (#1179), which undoes #1146')
+  })
+
+  it.each([
+    ['the reverted change', '#1146 was reverted before the release.'],
+    ['the revert itself', 'See [#1179](https://github.com/poveste-dev/poveste/pull/1179).'],
+    ['either as a bare link', 'https://github.com/poveste-dev/poveste/pull/1146'],
+  ])('is satisfied by a mention of %s', (_, text) => {
+    expect(revertWarning(text, 'v0.18.0', revertsIn(commits))).toEqual([])
+  })
+
+  it('does not take a longer number for a mention', () => {
+    expect(revertWarning('See #11461 and #11790.', 'v0.18.0', revertsIn(commits))).not.toEqual([])
   })
 })

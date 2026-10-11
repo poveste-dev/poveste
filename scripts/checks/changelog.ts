@@ -15,6 +15,7 @@
 // thin body it replaces: `gh release create --notes-file` on an empty file
 // publishes a release with no body at all.
 
+import type { RangeCommit } from '../release/release.ts'
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -261,17 +262,66 @@ export function breakingHeadingProblem(section: string, version: string, breakin
  * `undefined` when git cannot answer, which the caller reports rather than
  * reading as "nothing breaks".
  */
-function breakingInRelease(version: string): string[] | undefined {
+function commitsInRelease(version: string): RangeCommit[] | undefined {
   const tag = normalizeVersion(version)
   try {
     const git = (args: string[]) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
     const to = git(['tag', '--list', tag]) === tag ? tag : 'HEAD'
     const from = git(['describe', '--tags', '--abbrev=0', '--match', 'v[0-9]*', `${to}^`])
-    return breakingIn(rangeCommits(from, to, ROOT))
+    return rangeCommits(from, to, ROOT)
   }
   catch {
     return undefined
   }
+}
+
+const REVERT = /^revert: (.+?)(?: \(#(\d+)\))?$/
+const PR_SUFFIX = / \(#(\d+)\)$/
+
+export interface Revert {
+  /** The revert commit's subject. */
+  subject: string
+  /** The PR numbers either side of it: the revert's own, and the reverted commit's when it is in the range. */
+  numbers: string[]
+}
+
+/**
+ * The reverts a range carries. A revert's subject is `revert: ` and the subject
+ * it undoes, so the commit it undoes is found by that text when it is in the
+ * range too. When it is not, the revert takes back something already released,
+ * and the revert's own number is all there is to look for.
+ */
+export function revertsIn(commits: RangeCommit[]): Revert[] {
+  return commits.flatMap(({ subject }) => {
+    const [, undone, number] = REVERT.exec(subject) ?? []
+    if (!undone) {
+      return []
+    }
+    const original = commits.find(commit => commit.subject.replace(PR_SUFFIX, '') === undone)
+    const originalNumber = original && PR_SUFFIX.exec(original.subject)?.[1]
+    return [{ subject, numbers: [originalNumber, number].filter(value => value !== undefined) }]
+  })
+}
+
+/**
+ * The warning for a revert the notes do not mention, as the lines to print.
+ *
+ * The 0.18.0 range reverted two fixes it had also merged. The notes said so in a
+ * sentence someone remembered to write; without it the release email would have
+ * announced two fixes that were not in the release (#1197). A warning, because
+ * the writer may have covered it in words this cannot read.
+ */
+export function revertWarning(section: string, version: string, reverts: Revert[]): string[] {
+  const unmentioned = reverts.filter(({ numbers }) => !numbers.some(number => new RegExp(`(?:#|/pull/|/issues/)${number}\\b`).test(section)))
+  if (unmentioned.length === 0) {
+    return []
+  }
+  return [
+    `::warning::${normalizeVersion(version)} reverts ${unmentioned.length === 1 ? 'a commit' : `${unmentioned.length} commits`} its ${CHANGELOG} section does not mention`,
+    ...unmentioned.map(({ subject, numbers }) => `  • ${subject}${numbers.length > 1 ? `, which undoes #${numbers[0]}` : ''}`),
+    '',
+    'A reverted change is not in the release. If the section presents it as shipped, the release email will say so too. Say what was reverted, citing either number, or remove it from the section.',
+  ]
 }
 
 /** `commit` in `bump.config.ts`, which is what forms the subject. */
@@ -401,17 +451,18 @@ function main(): void {
     return
   }
 
-  const breaking = breakingInRelease(version)
-  if (breaking === undefined) {
+  const commits = commitsInRelease(version)
+  if (commits === undefined) {
     console.error(`::warning::git could not read the commits in ${normalizeVersion(version)}, so nothing checked whether the section has to say it breaks`)
   }
   else {
-    const problem = breakingHeadingProblem(section, version, breaking)
+    const problem = breakingHeadingProblem(section, version, breakingIn(commits))
     if (problem.length > 0) {
       for (const line of problem) console.error(line)
       process.exit(1)
       return
     }
+    for (const line of revertWarning(section, version, revertsIn(commits))) console.error(line)
   }
 
   // After the hard failures: a leaked commit is worth knowing about, but not at
