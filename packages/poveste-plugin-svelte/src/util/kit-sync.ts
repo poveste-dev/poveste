@@ -13,8 +13,11 @@ import { declaresKit } from './kit-assets.js'
  *
  * Returns why it could not run, for the caller to report; a failed sync is the
  * project's to fix, and the book may still start without it.
+ *
+ * Bounded, because it blocks startup: a Kit config that never settles kept
+ * `spawnSync` waiting with nothing printed, and the book never started (#1211).
  */
-export function syncSvelteKit(cwd: string): string | undefined {
+export function syncSvelteKit(cwd: string, timeoutMs = 60_000): string | undefined {
   if (!declaresKit(cwd)) {
     return undefined
   }
@@ -27,6 +30,9 @@ export function syncSvelteKit(cwd: string): string | undefined {
   catch {
     return '@sveltejs/kit is declared but could not be resolved from the project'
   }
-  const result = spawnSync(process.execPath, [cli, 'sync'], { cwd, encoding: 'utf8' })
+  const result = spawnSync(process.execPath, [cli, 'sync'], { cwd, encoding: 'utf8', timeout: timeoutMs })
+  if (Reflect.get(result.error ?? {}, 'code') === 'ETIMEDOUT') {
+    return `\`svelte-kit sync\` in ${cwd} did not finish within ${timeoutMs / 1000}s and was stopped. A Kit or Vite config that never settles does this, and it would hang \`vite dev\` the same way`
+  }
   return result.status === 0 ? undefined : (result.stderr || result.error?.message || `exited with ${result.status}`).trim()
 }
