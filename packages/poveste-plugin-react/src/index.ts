@@ -11,6 +11,9 @@ export function HstReact(): Plugin {
 
     defaultConfig() {
       return {
+        // Added to core's defaults rather than replacing them (#1124), so a book
+        // with React stories needs no `storyMatch` of its own.
+        storyMatch: ['**/*.story.tsx', '**/*.story.jsx'],
         supportMatch: [
           {
             id: 'react',

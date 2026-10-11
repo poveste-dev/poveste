@@ -33,11 +33,6 @@ Run `node -v` before you install. On an older Node, `npm i poveste` still succee
 On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22.2 || ^24.15.0 || >=26`.
 :::
 
-<!-- Remove this block once plugins can add story patterns rather than replace them (#1124). -->
-::: warning Set `storyMatch`, or the book is empty
-Add `storyMatch: ['**/*.story.tsx']` to your Poveste config, as [below](#configuration). Without it Poveste looks only for `.story.vue` and `.story.svelte`: the build succeeds and the book is empty, and the only sign is `Built 0 stories in … — nothing matched **/*.story.vue, **/*.story.svelte`. Setting it replaces those defaults, which matters only in a book that also has Vue or Svelte stories — list their patterns too.
-:::
-
 ## Configuration
 
 Keep `@vitejs/plugin-react` in your Vite config — Poveste reads it, so story files compile the way your components do, and editing a component refreshes it in place:
@@ -52,7 +47,7 @@ export default defineConfig({
 })
 ```
 
-Then add the plugin, and tell Poveste which files are stories:
+Then add the plugin:
 
 ```ts
 // poveste.config.ts
@@ -61,9 +56,10 @@ import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [HstReact()],
-  storyMatch: ['**/*.story.tsx'],
 })
 ```
+
+The plugin adds `**/*.story.tsx` and `**/*.story.jsx` to the files Poveste looks for, so there is no [`storyMatch`](../../reference/config.md#storymatch) to set.
 
 ## Write a story
 
@@ -136,7 +132,6 @@ export const setupReact = defineSetupReact(({ addWrapper }) => {
 // poveste.config.ts
 export default defineConfig({
   plugins: [HstReact()],
-  storyMatch: ['**/*.story.tsx'],
   setupFile: 'src/poveste.setup.tsx',
 })
 ```

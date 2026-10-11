@@ -5,8 +5,5 @@ export default defineConfig({
   plugins: [
     HstReact(),
   ],
-  storyMatch: [
-    '**/*.story.tsx',
-  ],
   setupFile: 'src/poveste.setup.tsx',
 })
