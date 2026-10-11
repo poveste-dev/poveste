@@ -1,5 +1,5 @@
 import type { HstControlOption } from '@poveste/controls'
-import type { Story, StoryProps, Variant, VariantProps } from '@poveste/shared'
+import type { Story, StoryMeta, StoryProps, Variant, VariantProps } from '@poveste/shared'
 import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
@@ -51,7 +51,7 @@ type WithState<P> = Omit<P, 'source'> & {
 
 export interface Hst {
   // Main built-ins
-  Story: Component<WithState<WithChildren<StoryProps>>>
+  Story: Component<WithState<WithChildren<StoryProps>> & { meta?: StoryMeta }>
   Variant: Component<WithState<WithChildren<VariantProps>>>
   // Controls
   // Deliberately permissive. This was previously a bare `SvelteComponentTyped`,
@@ -100,7 +100,7 @@ export interface Hst {
   }>
   Radio: Component<{
     value?: string
-    options: HstControlOption[]
+    options: Record<string, string> | (string | HstControlOption)[]
     title?: string
   }>
   Color: Component<{
