@@ -4,6 +4,71 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.19.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.3...v0.19.0)
+
+**Write stories for React 19 components, renderer only, and set in your config what a story's preview opens at.**
+
+It is a `minor`: the React plugin, the `preview` config group and plugin-added story patterns are new features. Nothing is renamed or removed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit, Quasar or Solid book upgrades with nothing to do. Three things to know before you do:
+
+- **`defaultBackgroundColor` is deprecated.** It still works; `preview.backgroundColor` replaces it.
+- **A dark preview looks different.** The browser now draws its native widgets dark. See the second fix.
+- **One published type is narrower:** `ClientCommandContext.route`, for plugin authors who type-check a command. See the `vue-router` fix.
+
+### 🚀 Enhancements
+
+- **Write stories for React components with `@poveste/plugin-react`, renderer only for now** ([#371](https://github.com/poveste-dev/poveste/issues/371), [#1136](https://github.com/poveste-dev/poveste/pull/1136), [#1137](https://github.com/poveste-dev/poveste/pull/1137), [#1138](https://github.com/poveste-dev/poveste/pull/1138), [#1272](https://github.com/poveste-dev/poveste/pull/1272)).
+  - **What works:** a story is a `.story.tsx` or `.story.jsx` file. Each variant has a `render` that returns JSX. `render` is a component body: it runs again on every state change, so hooks work inside it. `initState` gives a variant the state panel, and `render` receives that state and a `setState` that merges what you pass, as a class component's does. `setupReact` runs before a story mounts, and its `addWrapper` puts a component around it. The source panel shows the story file.
+  - **Not here yet:** controls built from your components, and generated per-variant source. A variant without `initState` says why its panel is empty.
+  - **Requirements:** `react@^19.0.0` and `react-dom@^19.0.0`, and a JSX transform in your Vite config, such as `@vitejs/plugin-react`. React 18 is not supported. A story is not rendered inside `StrictMode`; add it as a wrapper if you want its checks.
+  - **There is no `storyMatch` to set.** The plugin adds its own patterns to the defaults.
+  - **React and Vue stories can share a book. React and Solid stories cannot yet** ([#1273](https://github.com/poveste-dev/poveste/issues/1273)): both are `.story.tsx` files, and whichever of the two plugins comes first in `plugins` takes them all.
+  - **Installing with pnpm in the first day:** pnpm's release-age cooldown holds back a version published less than a day ago. For a package that is new in this release, what it installs instead is the empty `0.0.1` placeholder, with a `deprecated` warning as the only sign. Install with npm, or add `--config.minimum-release-age=0` to the pnpm line.
+  - The [React guide](https://poveste.dev/guide/react/getting-started) walks through all of it.
+
+- **A `preview` config group sets what a story's preview opens at** ([#1109](https://github.com/poveste-dev/poveste/issues/1109), [#1152](https://github.com/poveste-dev/poveste/pull/1152)). Its keys mirror the preview toolbar: `backgroundColor`, `responsiveWidth`, `responsiveHeight`, `rotate`, `checkerboard` and `textDirection`. Until now a book could set only the background, so every story opened 720 pixels wide, a width that matches none of the default presets. Each value applies on every load until the reader changes that setting in the toolbar. From then on their choice wins for that setting, and the others keep following your config. **`defaultBackgroundColor` is deprecated and still honoured.** `preview.backgroundColor` wins when a book sets both. The [config reference](https://poveste.dev/reference/config#preview) lists each key and its default.
+
+- **A framework plugin can add its story patterns to the defaults** ([#1124](https://github.com/poveste-dev/poveste/issues/1124), [#1157](https://github.com/poveste-dev/poveste/pull/1157)). `@poveste/plugin-solid` and `@poveste/plugin-react` now add `**/*.story.tsx` and `**/*.story.jsx` themselves. **A Solid book no longer needs the `storyMatch` line that 0.18.0 asked for**, and you can delete it; leaving it in changes nothing. Setting `storyMatch` yourself still replaces the whole list, plugin patterns included. So in a book with two frameworks, either leave the key out or name every kind of story in it. For plugin authors: return `storyMatch` from your plugin's `defaultConfig()`.
+
+### 🩹 Fixes
+
+- **In a Vue book's `poveste dev`, "generate story" works** ([#1064](https://github.com/poveste-dev/poveste/issues/1064), [#1170](https://github.com/poveste-dev/poveste/issues/1170), [#1176](https://github.com/poveste-dev/poveste/issues/1176), [#1174](https://github.com/poveste-dev/poveste/pull/1174), [#1184](https://github.com/poveste-dev/poveste/pull/1184)). The component picker listed nothing. It now lists your components, writes `<Component>.story.vue` beside the component you pick, and the new story appears in the sidebar. This is the fix that was pulled from 0.18.0, together with fixes for the two ways it could stop the dev server. A plugin whose `onDevEvent` handler throws is now logged under the plugin's name and skipped. A story that can't be written, because the file already exists for instance, is logged and no story is opened.
+
+- **The browser draws a dark preview's native widgets dark** ([#991](https://github.com/poveste-dev/poveste/issues/991), [#1167](https://github.com/poveste-dev/poveste/issues/1167), [#1171](https://github.com/poveste-dev/poveste/pull/1171)). Poveste now tells the browser each preview's colour scheme, so form controls, scrollbars and anything else the browser draws itself follow the preview's light or dark setting. This is the other fix pulled from 0.18.0, and it comes back with both of its defects fixed: the preview's background preset shows through as before, and **a book that sets its own `color-scheme` keeps it**. It is the one change you can see in an existing book: a dark preview that contains native widgets looks different from 0.18, and a screenshot comparison of one will differ once.
+
+- **A page opened just as a collection finishes keeps its story list up to date** ([#1218](https://github.com/poveste-dev/poveste/issues/1218), [#1258](https://github.com/poveste-dev/poveste/pull/1258)). In `poveste dev`, such a page could load two copies of the story list and apply every later update to the copy nothing was reading. The sidebar then missed each new, renamed or deleted story until the page was reloaded.
+
+- **Vue 3.6 Vapor components work in stories** ([#1153](https://github.com/poveste-dev/poveste/issues/1153), [#1112](https://github.com/poveste-dev/poveste/issues/1112), [#1164](https://github.com/poveste-dev/poveste/issues/1164), [#1158](https://github.com/poveste-dev/poveste/pull/1158), [#1162](https://github.com/poveste-dev/poveste/pull/1162), [#1165](https://github.com/poveste-dev/poveste/pull/1165)). Under Vue 3.6, a story that imported a `<script setup vapor>` component failed to collect, so it was missing from the book. Once collected, it threw when it mounted. A story file written with `vapor` itself stayed on "Loading...". All three now render, with controls and generated source as for any other component. This was measured on `3.6.0-rc.10`; Vue 3.6 has no stable release yet.
+
+- **A project on a Vue prerelease shows its stories** ([#1163](https://github.com/poveste-dev/poveste/issues/1163), [#1180](https://github.com/poveste-dev/poveste/pull/1180)). On any Vue prerelease, `poveste dev` showed the sidebar and no story, because Poveste's interface and its stores ended up on two copies of Vue. The interface now shares the project's Vue when that is a prerelease above the supported floor, such as `3.6.0-rc.10` or `3.5.27-beta.1`.
+
+- **Nuxt: a working book prints fewer lines that read as errors** ([#1203](https://github.com/poveste-dev/poveste/issues/1203), [#1262](https://github.com/poveste-dev/poveste/pull/1262)). `[NUXT_B7005] No client entry was found`, `Could not resolve client entry` and the 25 `Module "node:https" has been externalized` warnings of every build are gone. One kind is left: in `poveste dev`, a Nuxt book still prints `NUXT_E1005` and Vue warnings when a page mounts ([#1283](https://github.com/poveste-dev/poveste/issues/1283)). 0.18.3 prints the same lines, and the book works.
+
+- **Quasar: the first story loads without a second dependency pass** ([#1278](https://github.com/poveste-dev/poveste/issues/1278), [#1277](https://github.com/poveste-dev/poveste/pull/1277)). In an installed book, Vite found `quasar` only when the first story loaded, bundled it then and reloaded the page. `@poveste/plugin-quasar` now names it up front.
+
+- **SvelteKit 3: a favicon in a custom assets directory no longer stops the book** ([#1212](https://github.com/poveste-dev/poveste/issues/1212), [#1257](https://github.com/poveste-dev/poveste/pull/1257)). With `files.assets` set in `sveltekit({ ... })`, a `theme.favicon` in that directory failed the config with "seems to target a file that does not exist", because Poveste looked for it in `static/`. **This also corrects the 0.18.0 notes**, which said a Kit 3 book's static files come from `static/` whatever `files.assets` says. Measured, that was wrong: the book already served and copied the directory Kit names. Only the favicon check used the wrong one.
+
+- **SvelteKit: a `svelte-kit sync` that never finishes is stopped after 60 seconds** ([#1211](https://github.com/poveste-dev/poveste/issues/1211), [#1256](https://github.com/poveste-dev/poveste/pull/1256)). A Kit or Vite config that never settles used to block `poveste dev`, `build` and `preview` with nothing printed. Poveste now says the sync was stopped and carries on, as it does for a sync that fails.
+
+- **Svelte: `meta` on `<Hst.Story>` is collected** ([#1206](https://github.com/poveste-dev/poveste/issues/1206), [#1259](https://github.com/poveste-dev/poveste/pull/1259)). It was dropped, so `meta={{ storyOptions: false }}` left the options pane showing. In the same change, the type of `Hst.Radio`'s `options` accepts a map of value to label, in Vue and in Svelte, which the control already handled.
+
+- **`@poveste/shared`'s types no longer import `vue-router`** ([#1199](https://github.com/poveste-dev/poveste/issues/1199), [#1255](https://github.com/poveste-dev/poveste/pull/1255)). The package neither depends on it nor peers it, so a project type-checking with `skipLibCheck: false` failed inside Poveste's declarations, and a Svelte, Solid or React project has no router installed at all. `ClientCommandContext.route` is now `ClientCommandRoute`, a new exported type with `path`, `fullPath`, `hash`, `name`, `params`, `query` and `meta`. **This narrows a type:** a plugin command that reads a `vue-router`-only field off `ctx.route`, such as `matched` or `redirectedFrom`, no longer type-checks. The value at runtime is unchanged.
+
+- **Test files are no longer published** ([#1189](https://github.com/poveste-dev/poveste/issues/1189), [#1192](https://github.com/poveste-dev/poveste/pull/1192)). `@poveste/app` shipped 13 and `@poveste/plugin-vue` 10. The release gate now refuses a tarball that carries one.
+
+- **Bundled third-party code ships its notices** ([#936](https://github.com/poveste-dev/poveste/issues/936), [#1214](https://github.com/poveste-dev/poveste/pull/1214)). `@poveste/app`, `@poveste/controls`, `@poveste/plugin-svelte` and `@poveste/plugin-vue` bundle other packages' code. Each now carries `dist/THIRD_PARTY_NOTICES.md`, with every bundled package's name, version and licence text, and the build fails on a licence outside the allowed list.
+
+### 📖 Documentation
+
+- **[More than one framework in a book](https://poveste.dev/guide/plugins/official#more-than-one-framework-in-a-book)** ([#1204](https://github.com/poveste-dev/poveste/issues/1204), [#1268](https://github.com/poveste-dev/poveste/pull/1268), [#1287](https://github.com/poveste-dev/poveste/pull/1287)). What to install, what goes in each config, how one setup file serves both frameworks, and what `storyMatch` does to a mixed book. Every statement in it was measured on a book installed from the packed packages.
+
+- **React is named, as renderer only, wherever Poveste lists its frameworks** ([#1270](https://github.com/poveste-dev/poveste/issues/1270), [#1284](https://github.com/poveste-dev/poveste/issues/1284), [#1274](https://github.com/poveste-dev/poveste/pull/1274), [#1286](https://github.com/poveste-dev/poveste/pull/1286)): the README, the npm page, the home page, the supported-versions table and `llms.txt`. "Coming from Storybook" said there was no React or Solid plugin and sent React users elsewhere. It now names both as renderers and lists what they lack.
+
+- **The `setupFile` reference says what the file has to export** ([#1285](https://github.com/poveste-dev/poveste/issues/1285), [#1287](https://github.com/poveste-dev/poveste/pull/1287)). It said "a default function". Poveste calls the function your framework's plugin reads: `setupVue`, `setupSvelte`, `setupSolid` or `setupReact`. A default export is loaded and never called, with no warning. The `supportMatch` table gains its Solid and React rows.
+
+- **The Nuxt guide says where story files go** ([#1203](https://github.com/poveste-dev/poveste/issues/1203), [#1262](https://github.com/poveste-dev/poveste/pull/1262)): anywhere under the project root, and how to keep stories under `app/components/` out of Nuxt's auto-imported components.
+
 ## v0.18.3
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.2...v0.18.3)
