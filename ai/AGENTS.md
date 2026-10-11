@@ -59,10 +59,12 @@ Fourteen directories, three kinds, not interchangeable:
 | | |
 | --- | --- |
 | **Reference books** | `vue`, `nuxt`, `svelte`, `sveltekit` — the conformance set *and* the full shared story list |
-| **Conformance books** | `quasar` — the conformance set only |
-| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid`, `sveltekit3`, `react` — each exists for one narrow thing |
+| **Conformance books** | `quasar`, `sveltekit3` — the conformance set only |
+| **Fixtures** | `vike`, `vue-tailwind`, `vue-percy`, `vue-screenshot`, `vue-themed`, `vue-vuetify`, `solid`, `react` — each exists for one narrow thing |
 
 `vue-tailwind` is a fixture but a required status check: it tests a consumer's own Tailwind build against the chrome. Giving a fixture the conformance set only slows it down.
+
+`sveltekit3` is a conformance book and not a second copy of `sveltekit`: SvelteKit 3 refuses a `svelte.config.js`, needs TypeScript 6 and resolves `#lib` where Kit 2 has `$lib`, so one book cannot be both (#1200, #1205). It also keeps the spec it had as a fixture, which runs in `poveste dev` and against the built book.
 
 `solid` is a fixture for now, and its narrow thing is the renderer: its own specs prove a Solid story renders inside its wrapper and that state moves both ways without the component running again. It cannot carry the conformance set yet, because the contract asserts controls and Solid has none. It is promoted to a conformance book once #1114's Solid wrapper gives it explicit controls and #1110 gives it auto-props.
 

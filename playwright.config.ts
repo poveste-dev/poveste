@@ -106,10 +106,10 @@ const ALL_EXAMPLES: Example[] = [
   // A fixture, not a conformance book: the contract asserts controls, and Solid
   // has none until #1114's wrapper and #1110's auto-props exist (#61).
   { name: 'solid', port: 4574 },
-  // A fixture until #1205 ports the conformance contract: SvelteKit 3 cannot share
+  // A conformance book of its own (#1205): SvelteKit 3 cannot share
   // `examples/sveltekit`, which stays on Kit 2 for the floor. Kit 3 broke dev and
-  // preview differently, so both are run (#1200).
-  { name: 'sveltekit3', port: 4575, dev: { port: 4675, specs: ['**/sveltekit3.spec.ts'] } },
+  // preview differently, so its own spec runs in both (#1200).
+  { name: 'sveltekit3', port: 4575, conformance: true, dev: { port: 4675, specs: ['**/sveltekit3.spec.ts'] } },
   // A fixture for the same reason as Solid: no controls yet (#371).
   { name: 'react', port: 4576 },
 ]

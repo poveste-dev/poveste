@@ -43,7 +43,7 @@ On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22
 
 `2.53.0` is the first SvelteKit release to peer Vite 8 and `@sveltejs/vite-plugin-svelte@^7`, and v7 is in turn the first plugin major to peer Vite 8, which Poveste requires.
 
-Each major has a book in CI on every pull request. `examples/sveltekit` is on Kit 2 and runs the full Playwright suite against the built book. `examples/sveltekit3` is a SvelteKit 3 project as `sv create` scaffolds it, checked in `poveste dev` and the built book, with `svelte-check`.
+Each major has a book in CI on every pull request. `examples/sveltekit` is on Kit 2 and runs the full Playwright suite against the built book. `examples/sveltekit3` is a SvelteKit 3 project as `sv create` scaffolds it. It runs the conformance suite the other books run, against the built book, and is also checked in `poveste dev` and with `svelte-check`.
 :::
 
 ## Configuring it
