@@ -340,6 +340,20 @@ jobs:
           POVESTE_E2E_WORKERS: ${{ inputs.workers }}
         run: pnpm run test:e2e
 
+      # DIAGNOSTIC ONLY, on the #1241 branch: the rename test fails in about one
+      # vue job in six, so run the dev projects again to catch one with the
+      # logging on (#1237). Never fails the job.
+      - name: 'Diagnose #1237: run the vue dev projects eight more times'
+        if: env.RUN == 'true' && matrix.example == 'vue'
+        env:
+          POVESTE_E2E_EXAMPLE: vue
+        run: |
+          for i in 1 2 3 4 5 6 7 8; do
+            echo "::group::diagnose run $i"
+            pnpm exec playwright test --project vue:dev --project vue:dev-shared --project vue:dev-alone --retries=0 || echo "DIAGNOSE RUN $i FAILED"
+            echo "::endgroup::"
+          done
+
       # After the tests, so a size regression does not pre-empt the e2e result.
       # No `!cancelled()`: a status function would suppress the implicit
       # `success()` and run this after a failed book build, reporting "no built
