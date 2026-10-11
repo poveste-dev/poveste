@@ -28,14 +28,27 @@ export function resolvePort(value: unknown, command: string): number | undefined
   return port
 }
 
+type SocketOptions = Record<string, unknown>
+
+function withoutOwnPort(options: unknown): SocketOptions {
+  if (options === null || typeof options !== 'object') {
+    return {}
+  }
+  const { port: _port, server: _server, ...rest } = options as SocketOptions
+  return rest
+}
+
 /**
- * The HMR socket port for a book served on `devPort`. Derived from the dev port
- * so each concurrent dev server's socket is as distinct as its book port (#175),
- * offset clear of the usual dev-port range and wrapped so it stays a valid port
- * for an unusually high `--port`. `@nuxt/vite-builder` otherwise pins every
- * server to the framework default (24678), a constant that collides (#221).
+ * The book server's HMR socket settings: whatever the merged config asked for,
+ * minus a port or server of its own, so Vite serves the socket on the book's port
+ * and the browser dials the page's own origin. Vite takes these from `server.ws`
+ * and from the deprecated `server.hmr` alike, so both are cleared.
+ *
+ * A socket on a second port was never routed on StackBlitz, which previews each
+ * port on its own hostname, so a page opened before collection ended waited for
+ * the list on a socket that never connected, and stayed blank (#1245). It is
+ * also how `@nuxt/vite-builder`'s 24678 default made two books collide (#221).
  */
-export function hmrPortFor(devPort: number | undefined): number {
-  const base = devPort ?? 6006
-  return base < 45536 ? base + 20000 : base - 20000
+export function socketOnBookPort(server: { hmr?: unknown, ws?: unknown }): { hmr: SocketOptions, ws: SocketOptions } {
+  return { hmr: withoutOwnPort(server.hmr), ws: withoutOwnPort(server.ws) }
 }
