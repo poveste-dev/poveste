@@ -10,10 +10,10 @@ Below poveste's own entries sits the [inherited histoire changelog](#inherited-h
 
 **Write stories for React 19 components, renderer only, and set in your config what a story's preview opens at.**
 
-It is a `minor`: the React plugin, the `preview` config group and plugin-added story patterns are new features. Nothing is renamed or removed and no version floor moved, so a Vue, Nuxt, Svelte, SvelteKit, Quasar or Solid book upgrades with nothing to do. Three things to know before you do:
+It is a `minor`: the React plugin, the `preview` config group and plugin-added story patterns are new features. Nothing is renamed or removed and no version floor moved, and a Vue, Nuxt, Svelte, SvelteKit, Quasar or Solid book keeps its stories with no config change. Three things to know before you upgrade:
 
 - **`defaultBackgroundColor` is deprecated.** It still works; `preview.backgroundColor` replaces it.
-- **A dark preview looks different.** The browser now draws its native widgets dark. See the second fix.
+- **A dark preview looks different, and it is the most visible change in this release.** Text with no colour of its own turns from black to white, and native widgets turn dark. A component with a light background and no text colour of its own becomes unreadable there. One line of CSS keeps the 0.18 behaviour. See the second fix.
 - **One published type is narrower:** `ClientCommandContext.route`, for plugin authors who type-check a command. See the `vue-router` fix.
 
 ### 🚀 Enhancements
@@ -35,7 +35,13 @@ It is a `minor`: the React plugin, the `preview` config group and plugin-added s
 
 - **In a Vue book's `poveste dev`, "generate story" works** ([#1064](https://github.com/poveste-dev/poveste/issues/1064), [#1170](https://github.com/poveste-dev/poveste/issues/1170), [#1176](https://github.com/poveste-dev/poveste/issues/1176), [#1174](https://github.com/poveste-dev/poveste/pull/1174), [#1184](https://github.com/poveste-dev/poveste/pull/1184)). The component picker listed nothing. It now lists your components, writes `<Component>.story.vue` beside the component you pick, and the new story appears in the sidebar. This is the fix that was pulled from 0.18.0, together with fixes for the two ways it could stop the dev server. A plugin whose `onDevEvent` handler throws is now logged under the plugin's name and skipped. A story that can't be written, because the file already exists for instance, is logged and no story is opened.
 
-- **The browser draws a dark preview's native widgets dark** ([#991](https://github.com/poveste-dev/poveste/issues/991), [#1167](https://github.com/poveste-dev/poveste/issues/1167), [#1171](https://github.com/poveste-dev/poveste/pull/1171)). Poveste now tells the browser each preview's colour scheme, so form controls, scrollbars and anything else the browser draws itself follow the preview's light or dark setting. This is the other fix pulled from 0.18.0, and it comes back with both of its defects fixed: the preview's background preset shows through as before, and **a book that sets its own `color-scheme` keeps it**. It is the one change you can see in an existing book: a dark preview that contains native widgets looks different from 0.18, and a screenshot comparison of one will differ once.
+- **The browser is told each preview's colour scheme** ([#991](https://github.com/poveste-dev/poveste/issues/991), [#1167](https://github.com/poveste-dev/poveste/issues/1167), [#1171](https://github.com/poveste-dev/poveste/pull/1171)). Until now a preview only got a class for your CSS to read, and the browser itself was told nothing, so it drew everything of its own light. Now form controls, scrollbars and default text follow the preview's setting. A preview is dark when the reader picks dark in the toolbar, or when the setting is `auto`, which is the default, and their system is dark.
+  - **What changes in a dark preview:** text with no colour of its own was black and is now white. A native `<input>` was white with black text and is now dark with white text. Plain text straight on the dark preview background was black on dark, and is now readable.
+  - **What gets worse:** a component with a hard-coded light background and no text colour of its own. It was black on white, and is now white on white.
+  - **To keep the 0.18 behaviour**, add `:root { color-scheme: light; }` to your book's CSS. A book's own `color-scheme` wins over Poveste's. Giving the component a text colour fixes it too, and that is what makes it readable on any dark page.
+  - **Light previews are unchanged**, and so is a book that already sets its own text colour.
+  - A screenshot comparison of a dark preview will differ once.
+  - This is the other fix pulled from 0.18.0. It comes back with both of its defects fixed: the preview's background preset shows through as before, and a book's own `color-scheme` is no longer overridden.
 
 - **A page opened just as a collection finishes keeps its story list up to date** ([#1218](https://github.com/poveste-dev/poveste/issues/1218), [#1258](https://github.com/poveste-dev/poveste/pull/1258)). In `poveste dev`, such a page could load two copies of the story list and apply every later update to the copy nothing was reading. The sidebar then missed each new, renamed or deleted story until the page was reloaded.
 
