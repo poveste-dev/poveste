@@ -2,11 +2,18 @@ import vue from '@vitejs/plugin-vue'
 import fs from 'fs-extra'
 import { globbySync } from 'globby'
 import { defineConfig } from 'vite'
+import { thirdPartyNotices } from '../../scripts/build/third-party-notices.ts'
 import { escapeRegExp } from '../../scripts/escape-regexp.ts'
 
 export default defineConfig({
   plugins: [
     vue(),
+    thirdPartyNotices({
+      packageName: '@poveste/app',
+      // Compiled into `dist/style.css` by postcss, outside the bundle.
+      extra: ['tailwindcss', '@tailwindcss/typography'],
+      vendored: [{ name: 'Noto Sans Display', licence: 'OFL-1.1', licenceFile: 'src/app/style/fonts/LICENSE' }],
+    }),
     {
       name: 'poveste:preserve:import.meta',
       enforce: 'pre',
