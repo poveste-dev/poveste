@@ -2,7 +2,7 @@
   "name": "@poveste/plugin-react",
   "type": "module",
   "version": "0.17.1",
-  "description": "Poveste plugin for React support",
+  "description": "Poveste plugin for React support, renderer only",
   "author": {
     "name": "Sorin Gitlan",
     "url": "https://x.com/50rayn"
