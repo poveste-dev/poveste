@@ -102,7 +102,7 @@ describe('the caret range check', () => {
    * it was never given is worse than declining to answer.
    */
   it('refuses every form it cannot read with certainty', () => {
-    expect(satisfiesCaret('3.6.0-beta.1', '^3.5.26')).toBe(false)
+    expect(satisfiesCaret('3.6.0+build.1', '^3.5.26')).toBe(false)
     expect(satisfiesCaret('3.5.43', '>=3.5.26 <4')).toBe(false)
     expect(satisfiesCaret('3.5.43', '~3.5.26')).toBe(false)
     expect(satisfiesCaret('3.5.43', '3.5.26')).toBe(false)
@@ -110,6 +110,21 @@ describe('the caret range check', () => {
     expect(satisfiesCaret('3.5.43', '')).toBe(false)
     expect(satisfiesCaret('3.5.43', undefined)).toBe(false)
     expect(satisfiesCaret(undefined, '^3.5.26')).toBe(false)
+  })
+
+  // Refusing one split pinia off the chrome's Vue, and the book rendered no story (#1163).
+  it('takes a prerelease above the floor', () => {
+    expect(satisfiesCaret('3.6.0-rc.10', '^3.5.26')).toBe(true)
+    expect(satisfiesCaret('3.5.27-beta.1', '^3.5.26')).toBe(true)
+  })
+
+  // `3.5.26-rc.1` comes before `3.5.26`.
+  it('refuses a prerelease of the floor itself', () => {
+    expect(satisfiesCaret('3.5.26-rc.1', '^3.5.26')).toBe(false)
+  })
+
+  it('refuses a prerelease of another major', () => {
+    expect(satisfiesCaret('4.0.0-alpha.1', '^3.5.26')).toBe(false)
   })
 
   // `^0.x` narrows to the minor, and no vendored range uses it.
@@ -190,6 +205,16 @@ describe('collapsing the chrome Vue onto the project Vue', () => {
     const vendored = JSON.parse(readFileSync(nodeResolver('poveste-vue/package.json', join(nodeResolver('@poveste/vendors/vue', import.meta.dirname)!, '..'))!, 'utf8')) as { version: string }
     const root = tempRoot()
     writePackage(root, 'vue', vendored.version)
+
+    expect(collapseVendoredVue({ root })).toEqual({ 'poveste-vue': 'vue' })
+  })
+
+  // The RC this was found on: refused, the chrome rendered no story at all (#1163).
+  it('points the vendored name at a project on a prerelease of the next minor', () => {
+    const root = tempRoot()
+    writePackage(root, 'vue', '3.6.0-rc.10')
+    writePackage(root, 'poveste-vue', '3.5.43')
+    writeVendors(root, { 'poveste-vue': 'npm:vue@^3.5.26' })
 
     expect(collapseVendoredVue({ root })).toEqual({ 'poveste-vue': 'vue' })
   })
