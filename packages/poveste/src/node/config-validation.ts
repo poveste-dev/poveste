@@ -11,7 +11,7 @@
  * model the whole surface. Only options whose wrong type fails *inside someone
  * else's code* are listed — the rest fail legibly on their own.
  */
-export type ConfigKind = 'string' | 'boolean' | 'number' | 'string[]' | 'array' | 'object' | 'function'
+export type ConfigKind = 'string' | 'boolean' | 'number' | 'string[]' | 'array' | 'object' | 'function' | 'null'
 
 interface Rule {
   path: string
@@ -31,6 +31,13 @@ const RULES: Rule[] = [
   { path: 'defaultBackgroundColor', kind: 'string' },
   { path: 'sandboxDarkClass', kind: 'string' },
   { path: 'responsivePresets', kind: 'array' },
+  { path: 'preview', kind: 'object' },
+  { path: 'preview.backgroundColor', kind: 'string' },
+  { path: 'preview.responsiveWidth', kind: ['number', 'null'] },
+  { path: 'preview.responsiveHeight', kind: ['number', 'null'] },
+  { path: 'preview.rotate', kind: 'boolean' },
+  { path: 'preview.checkerboard', kind: 'boolean' },
+  { path: 'preview.textDirection', kind: 'string' },
   { path: 'backgroundPresets', kind: 'array' },
   { path: 'theme.title', kind: 'string' },
   { path: 'theme.lang', kind: 'string' },
@@ -47,6 +54,9 @@ const RULES: Rule[] = [
 
 /** What the value actually is, in the words the message uses. */
 export function describeKind(value: unknown): string {
+  if (value === null) {
+    return 'null'
+  }
   if (Array.isArray(value)) {
     return value.every(item => typeof item === 'string') ? 'string[]' : 'array'
   }
@@ -69,6 +79,8 @@ function matches(value: unknown, kind: ConfigKind): boolean {
       return typeof value === 'number'
     case 'function':
       return typeof value === 'function'
+    case 'null':
+      return value === null
     default:
       return false
   }
