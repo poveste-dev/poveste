@@ -103,7 +103,7 @@ Cut the release on the Node version in `.node-version`. The gate only means some
 
 ## What the gate does and does not cover
 
-`release` runs `release:check` first: lint, versions, readmes, example wiring, recipes, build, publishable, script tests, unit tests and the smoke test.
+`release` runs `release:check` first: lint, versions, readmes, example wiring, recipes, build, the vue book's size ceilings and the docs-site contract (`test:artifacts`), publishable, script tests, unit tests and the smoke test.
 
 **`pnpm run test:smoke` is deliberately not part of `pnpm test`** — it needs a completed build. It packs the real tarballs, installs them with npm into a throwaway project and runs a real `poveste build`, which is what catches "works in the pnpm workspace, broken for consumers". Never skip it.
 
