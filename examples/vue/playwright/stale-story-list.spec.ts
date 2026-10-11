@@ -131,3 +131,35 @@ test('a page holding two copies of the story list still takes updates', async ({
     await rm(TMP, { recursive: true, force: true })
   }
 })
+
+// Vite hands the accept callback nothing when the updated module fails to load:
+// a request that drops, or one that lands while the optimizer is replacing the
+// bundles it imports. The handler read `.files` off that and threw, which is the
+// error a StackBlitz preview showed in place of a story (#1269).
+test('a story list update that fails to load is skipped, and the next one lands', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+
+  await mkdir(TMP, { recursive: true })
+  try {
+    await page.goto('/')
+    const item = (title: string) => page.getByTestId('story-list-item').filter({ hasText: title })
+    await expect(page.getByTestId('story-list-item').first()).toBeVisible()
+
+    let dropped = 0
+    // Only a hot update asks for the list by timestamp once the page has loaded.
+    await page.route(url => url.pathname.endsWith(LIST) && url.searchParams.has('t'), route => (dropped++ === 0 ? route.abort() : route.continue()))
+
+    await writeFile(join(TMP, 'DroppedFirst.story.vue'), story('e2e-dropped-first', 'Dropped first'))
+    await expect.poll(() => dropped, { timeout: 30_000 }).toBeGreaterThan(0)
+
+    await writeFile(join(TMP, 'DroppedSecond.story.vue'), story('e2e-dropped-second', 'Dropped second'))
+
+    await expect(item('Dropped second')).toBeVisible({ timeout: 30_000 })
+    await expect(item('Dropped first')).toBeVisible()
+    expect(errors).toEqual([])
+  }
+  finally {
+    await rm(TMP, { recursive: true, force: true })
+  }
+})

@@ -60,6 +60,10 @@ export function onUpdate (cb) {
 }
 if (import.meta.hot) {
   import.meta.hot.accept(newModule => {
+    // Undefined when the new copy failed to load. The next update carries the list.
+    if (!newModule) {
+      return
+    }
     files = newModule.files
     tree = newModule.tree
     generation = newModule.generation
