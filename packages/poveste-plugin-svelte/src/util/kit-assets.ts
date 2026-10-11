@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { isAbsolute, join } from 'pathe'
 
@@ -10,9 +11,14 @@ import { isAbsolute, join } from 'pathe'
  * `kit.files.assets`, and poveste drops that plugin through `viteIgnorePlugins`
  * — so a book served none of a Kit project's `static/`, in dev or in the build
  * (#463). This restores the one value that went with it.
+ *
+ * Kit 2 only. Kit 3 sets `publicDir` from a plugin poveste keeps, out of the
+ * `files.assets` given to `sveltekit()`. Answering `static` here as well put
+ * that in the config poveste resolves, and a `theme.favicon` in a custom assets
+ * directory was reported missing (#1212).
  */
 export async function svelteKitAssetsDir(cwd: string): Promise<string | undefined> {
-  if (!declaresKit(cwd)) {
+  if (!declaresKit(cwd) || installedKitMajor(cwd) >= 3) {
     return undefined
   }
   const assets = await configuredAssetsDir(cwd) ?? 'static'
@@ -31,6 +37,17 @@ export function declaresKit(cwd: string): boolean {
   }
   catch {
     return false
+  }
+}
+
+// 0 when Kit is declared and not installed, which leaves the Kit 2 answer.
+function installedKitMajor(cwd: string): number {
+  try {
+    const manifestPath = createRequire(join(cwd, 'package.json')).resolve('@sveltejs/kit/package.json')
+    return Number.parseInt(JSON.parse(readFileSync(manifestPath, 'utf8')).version) || 0
+  }
+  catch {
+    return 0
   }
 }
 

@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [
     sveltekit({
       adapter: adapter(),
+      // Not the default `static`, so the book proves it reads this (#1212).
+      files: { assets: 'public-assets' },
     }),
   ],
 })

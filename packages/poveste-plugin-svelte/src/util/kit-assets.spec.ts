@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'pathe'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -12,10 +12,15 @@ afterEach(() => {
   }
 })
 
-function project({ manifest, config }: { manifest: Record<string, any>, config?: string }) {
+function project({ manifest, config, installed }: { manifest: Record<string, any>, config?: string, installed?: string }) {
   const dir = mkdtempSync(join(tmpdir(), 'poveste-kit-'))
   made.push(dir)
   writeFileSync(join(dir, 'package.json'), JSON.stringify(manifest))
+  if (installed) {
+    const kit = join(dir, 'node_modules/@sveltejs/kit')
+    mkdirSync(kit, { recursive: true })
+    writeFileSync(join(kit, 'package.json'), JSON.stringify({ name: '@sveltejs/kit', version: installed, exports: { './package.json': './package.json' } }))
+  }
   if (config != null) {
     writeFileSync(join(dir, 'svelte.config.js'), config)
   }
@@ -43,6 +48,23 @@ describe('a sveltekit project\'s assets directory', () => {
       manifest: { devDependencies: { '@sveltejs/kit': '^2.55.0' } },
       config: 'this is not valid javascript (',
     })
+
+    await expect(svelteKitAssetsDir(dir)).resolves.toBe(join(dir, 'static'))
+  })
+})
+
+// Kit 3 takes `files.assets` in `sveltekit()` and sets Vite's `publicDir` from a
+// plugin poveste keeps. Answering `static` over it sent `theme.favicon` looking
+// in the wrong directory (#1212).
+describe('a sveltekit 3 project', () => {
+  it('is left to set its own assets directory', async () => {
+    const dir = project({ manifest: { devDependencies: { '@sveltejs/kit': '^3.0.0' } }, installed: '3.0.0' })
+
+    await expect(svelteKitAssetsDir(dir)).resolves.toBeUndefined()
+  })
+
+  it('is told apart by the installed version, not the declared range', async () => {
+    const dir = project({ manifest: { devDependencies: { '@sveltejs/kit': '^2.55.0 || ^3.0.0' } }, installed: '2.55.0' })
 
     await expect(svelteKitAssetsDir(dir)).resolves.toBe(join(dir, 'static'))
   })
