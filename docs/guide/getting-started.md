@@ -63,7 +63,12 @@ npm i -D poveste @poveste/plugin-<framework>
 
 <div class="demo-links-box border-sky-200 dark:border-sky-900">
   <Icon icon="logos:solidjs-icon" class="w-10 h-10 mt-3" aria-label="Solid logo" />
+  <div class="demo-links space-y-2">
   <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
+
+[Solid guide &rarr;](./solid/getting-started.md)
+
+  </div>
 </div>
 
 <div class="demo-links-box border-cyan-200 dark:border-cyan-900">
@@ -95,6 +100,9 @@ is wider than the CI job behind it, the range is the bug.
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 | [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 
+On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts
+`^22.22.2 || ^24.15.0 || >=26`.
+
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's
 last compatible `@sveltejs/vite-plugin-svelte` (v3) caps at Vite 5, so no release pairs
@@ -120,8 +128,10 @@ every published package, so npm warns you at install time rather than leaving yo
 at runtime.
 
 The range is not ours to choose freely — it is what `jsdom`, which Poveste uses to collect
-stories, imposes on anything that depends on it. Declaring the same range means npm's warning
-names Poveste rather than a transitive dependency you did not ask for. The floor was `>=26`
+stories, imposes on anything that depends on it: `^22.22.2 || ^24.15.0 || >=26`. Poveste
+declares the floor of that range, `>=22.22.2`, so on a Node below it npm's warning names
+Poveste rather than a transitive dependency you did not ask for. The gaps above that floor
+are jsdom's alone: Node 23, Node 24 before 24.15, and Node 25. The floor was `>=26`
 until a run on the minimum showed the requirement was never real: `>=26` was what CI happened
 to run, which proves Poveste works *on* 26, not that it *needs* it.
 
@@ -135,7 +145,7 @@ a throwaway project with `npm install` — no workspace symlinks — and runs a 
 **Bun** works from `1.4.0`, as both the installer and the runtime — `bun install` then
 `bun --bun run story:build` builds a book. Earlier releases do not, and the reason is the
 version Bun reports rather than anything Poveste does: `process.versions.node` is `22.6.0`
-on 1.2.x and `24.3.0` throughout 1.3.x, and neither satisfies the `engines.node` above.
+on 1.2.x and `24.3.0` throughout 1.3.x, and neither is inside the range `jsdom` accepts.
 Below that floor a story build hangs during collection instead of failing — Bun's worker
 pool never returns, which is [oven-sh/bun#3787](https://github.com/oven-sh/bun/issues/3787),
 open since 2023 against histoire.

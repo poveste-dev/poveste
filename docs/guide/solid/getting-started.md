@@ -47,7 +47,7 @@ export default defineConfig({
 })
 ```
 
-Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has:
+Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has. React stories are the exception: they are `.story.tsx` files too, and one plugin takes them all, so Solid and React [cannot share a book yet](../plugins/official.md#more-than-one-framework-in-a-book).
 
 ```ts
 // poveste.config.ts
@@ -169,7 +169,7 @@ export const setupSolid = defineSetupSolid(({ addWrapper }) => {
 // poveste.config.ts
 export default defineConfig({
   plugins: [HstSolid()],
-  setupFile: 'src/poveste.setup.tsx',
+  setupFile: '/src/poveste.setup.tsx',
 })
 ```
 
