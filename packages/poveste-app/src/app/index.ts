@@ -26,6 +26,8 @@ export async function mountMainApp() {
     // Which story list this page holds, so a page that missed its update is sent it (#1218).
     import.meta.hot.send('poveste:mount', { generation })
 
-    /* #__PURE__ */ setupPluginApi()
+    // Not `#__PURE__`: the call is nothing but side effects, and that annotation
+    // let the bundler drop it, so dev never had the plugin API here (#1064).
+    setupPluginApi()
   }
 }

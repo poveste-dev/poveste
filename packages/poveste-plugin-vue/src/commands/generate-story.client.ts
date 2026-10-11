@@ -16,7 +16,9 @@ export default {
       label: 'File name',
       type: 'text',
       required: true,
-      defaultValue: answers => answers['component']?.replace(/[^/]+\/([^/]+)\.vue$/, '$1.story.vue'),
+      // A name, not a path: both halves join it to the component's own directory,
+      // and a path here was joined twice into one that does not exist (#1176).
+      defaultValue: answers => answers['component']?.split('/').pop()?.replace(/\.vue$/, '.story.vue'),
     },
   ],
   clientAction: (params) => {
