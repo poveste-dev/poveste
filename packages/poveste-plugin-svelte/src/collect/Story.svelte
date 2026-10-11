@@ -10,6 +10,7 @@
   export let docsOnly = false
   export let autoPropsDisabled = null
   export let initState = null
+  export let meta = null
 
   const addStory = addStoryContext.getOptional()
   const file = storyFileContext.getOptional()
@@ -36,6 +37,8 @@
     // only to an implicit variant (#466). Left undefined when unset, or the
     // collector's `??=` merge could never apply `defaultStoryProps`.
     autoPropsDisabled,
+    // Was dropped: a story's `meta.storyOptions` did nothing in a Svelte book (#1206).
+    ...meta ? { meta } : {},
     variants: [],
   }
 
