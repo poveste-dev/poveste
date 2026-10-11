@@ -18,6 +18,36 @@ async function freePort(): Promise<number> {
   return port
 }
 
+/**
+ * Where a restart that did not finish stopped, read from what `poveste dev` printed.
+ *
+ * The three are different defects. No restart is the edit landing before the
+ * config watcher was ready, which is this test's timing. A restart with no
+ * collection after it is the dev server coming back with no stories, which is
+ * what the test exists to catch (#1288).
+ */
+function stalledAt(output: string): string {
+  const afterRestart = output.split('restarting...')[1]
+  if (afterRestart === undefined) {
+    return 'the config edit never printed `restarting...`'
+  }
+  const afterCollection = afterRestart.split('story collection')[1]
+  if (afterCollection === undefined) {
+    return 'the server restarted and never started a story collection'
+  }
+  return 'the restarted server started a story collection that never printed `Collect stories end`'
+}
+
+describe('saying where a restart stalled', () => {
+  it.for([
+    ['Local: http://localhost:1/\nUsing 4 threads for story collection\n', 'the config edit never printed `restarting...`'],
+    ['Local:\nconfig changed, restarting...\nLocal:\n', 'the server restarted and never started a story collection'],
+    ['Local:\nrestarting...\nUsing 4 threads for story collection\n', 'the restarted server started a story collection that never printed `Collect stories end`'],
+  ] as const)('reads %j as "%s"', ([output, stage]) => {
+    expect(stalledAt(output)).toBe(stage)
+  })
+})
+
 // A real `poveste dev`, because collection runs in worker threads that only the
 // built package has. The fixture's one story takes three seconds to import, so a
 // config edit a second in lands while it is being collected (#878).
@@ -42,6 +72,9 @@ describe('restarting poveste dev while stories are being collected', () => {
       appendFileSync(CONFIG, '\n')
       // The restarted server's own collection, which starts after it prints its thread count.
       await vi.waitFor(() => expect(output.split('restarting...')[1]?.split('story collection')[1]).toContain('Collect stories end'), { timeout: 60_000, interval: 100 })
+        .catch(() => {
+          throw new Error(`${stalledAt(output)}, 60 s after the edit. What \`poveste dev\` printed:\n${output}`)
+        })
 
       const restart = output.slice(edited)
       expect(restart).not.toContain('Error while collecting story')
