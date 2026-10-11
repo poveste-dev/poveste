@@ -39,6 +39,7 @@ PLUGIN_PACKAGES=(
   "poveste-plugin-vue"
   "poveste-plugin-svelte"
   "poveste-plugin-solid"
+  "poveste-plugin-react"
   "poveste-plugin-quasar"
   "poveste-plugin-nuxt"
   "poveste-plugin-tailwind"
@@ -436,6 +437,61 @@ install_and_build solid "$SOLID_APP" \
 
 dev_renders solid "$SOLID_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4792
 
+# ── React ────────────────────────────────────────────────────────────────────
+
+REACT_APP="$WORK/react"
+mkdir -p "$REACT_APP/src"
+
+echo "▸ Scaffolding React consumer project → $REACT_APP"
+consumer_package_json "$REACT_APP" react
+
+cat > "$REACT_APP/poveste.config.ts" <<'TS'
+import { HstReact } from '@poveste/plugin-react'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstReact()],
+  storyMatch: ['**/*.story.tsx'],
+})
+TS
+
+cat > "$REACT_APP/vite.config.ts" <<'TS'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react()],
+})
+TS
+
+cat > "$REACT_APP/src/Button.tsx" <<'TSX'
+import type { ReactNode } from 'react'
+
+export function Button({ label }: { label: ReactNode }) {
+  return <button type="button">{label}</button>
+}
+TSX
+
+# Collection imports this file in Node under Node's own conditions, which is
+# where React's CommonJS build and a module-level element both have to work.
+cat > "$REACT_APP/src/Button.story.tsx" <<'TSX'
+import { defineStory } from '@poveste/plugin-react'
+import { Button } from './Button'
+
+const label = <span>Click me</span>
+
+export default defineStory({
+  title: 'Button',
+  variants: [{ title: 'default', render: () => <Button label={label} /> }],
+})
+TSX
+
+install_and_build react "$REACT_APP" \
+  "$(plugin_tgz poveste-plugin-react)" \
+  "react@$(peer_range poveste-plugin-react react)" \
+  "react-dom@$(peer_range poveste-plugin-react react-dom)" vite@^8.0.0 \
+  "@vitejs/plugin-react@$(peer_range poveste-plugin-react @vitejs/plugin-react)"
+
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
 QUASAR_APP="$WORK/quasar"
@@ -710,4 +766,4 @@ install_and_build percy "$WORK/percy" \
 #
 # Percy stays: its puppeteer is optional, and its pass is green on a CI runner.
 
-echo "✅ Smoke test passed — vue, svelte, solid, quasar, nuxt, tailwind, percy"
+echo "✅ Smoke test passed — vue, svelte, solid, react, quasar, nuxt, tailwind, percy"
