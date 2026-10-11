@@ -48,11 +48,20 @@ test.describe('a SvelteKit 3 book', () => {
     await expect(preview(page).getByTestId('greeting')).toHaveText('Hello, SvelteKit 3')
   })
 
-  test('serves the project\'s static/ to a story', async ({ page }) => {
+  // `public-assets/`, set as `files.assets` in `sveltekit()`. Kit 3 keeps that
+  // option there, and the plugin used to answer `static` over it (#1212).
+  test('serves the project\'s assets directory to a story', async ({ page }) => {
     await openStory(page, 'kit-3', '?variantId=static')
 
     const logo = preview(page).getByTestId('logo')
     await expect(logo).toBeVisible()
     await expect.poll(() => logo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0)
+  })
+
+  // The book would not start at all: `theme.favicon` was looked for in `static/`.
+  test('finds theme.favicon in that directory', async ({ page }) => {
+    await openStory(page, 'kit-3', '?variantId=static')
+
+    await expect(page.locator('link[rel="icon"][href$="logo.svg"]')).toHaveCount(1)
   })
 })
