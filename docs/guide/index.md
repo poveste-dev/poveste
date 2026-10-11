@@ -59,10 +59,10 @@ Poveste is a tool to generate stories applications (or "books").
 <div class="demo-links-box border-cyan-200 dark:border-cyan-900">
   <Icon icon="logos:react" class="w-10 h-10 mt-3" aria-label="React logo" />
   <div class="demo-links space-y-2">
+  <DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel." />
 
 [React guide &rarr;](./react/getting-started.md)
 
-  <p class="text-sm opacity-80 m-0">React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel.</p>
   </div>
 </div>
 

@@ -5,6 +5,8 @@ description: 'Install Poveste and the React plugin, add the config, and write yo
 
 # Getting started with React
 
+<DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet." />
+
 ## Installation
 
 ```shell
