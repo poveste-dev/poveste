@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain runtime module, no types
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
-import { HstNuxt, isPluginExcluded, withoutIgnoredPlugins, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
+import { withoutIgnoredPlugins } from './ignored-plugins'
+import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
 
 const I18N_DEFAULT = /[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/
 
