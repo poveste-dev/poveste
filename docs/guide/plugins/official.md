@@ -51,4 +51,4 @@ Each story is rendered by the plugin that claims its file: `.story.vue` by Vue, 
 
 **One [setup file](../config.md#global-js-and-css) serves both.** Export each framework's function from it, `setupVue` beside `setupSolid`, and each runs only for its own framework's stories.
 
-**Solid and React cannot share a book.** Both write stories as `.story.tsx`, and a file goes to whichever of the two plugins comes first in `plugins`. The other framework's stories then render nothing under Solid, or throw under React, and a `supportMatch` entry of your own does not change which plugin wins.
+**Solid and React cannot share a book yet.** Both write stories as `.story.tsx`, and a file goes to whichever of the two plugins comes first in `plugins`. The other framework's stories then render nothing under Solid, or throw under React, and a `supportMatch` entry of your own does not change which plugin wins.
