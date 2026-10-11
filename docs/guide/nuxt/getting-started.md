@@ -160,6 +160,23 @@ export default defineConfig({
 Your patterns are added **on top of** the built-in defaults (which already drop
 `@nuxtjs/i18n`'s client plugins), not in place of them.
 
+## Where story files go
+
+Anywhere in the project: Poveste finds every `*.story.vue` under the project root, so a story can sit beside its component in `app/components/` or in a folder of its own, such as `stories/`.
+
+Beside the component is the usual place, with one thing to know. Nuxt registers every `.vue` file under `app/components/` as a component, story files included: `BaseButton.story.vue` becomes an auto-importable `<BaseButtonStory>`. Nothing breaks, because Nuxt only bundles the components a page uses. To keep stories out of that list, tell Nuxt to skip them:
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  components: [
+    { path: '~/components', ignore: ['**/*.story.vue'] },
+  ],
+})
+```
+
+Poveste still finds them, because it looks for story files itself and does not go through Nuxt's component scan. A folder outside `app/`, like `stories/` at the project root, is never scanned by Nuxt and needs no setting.
+
 ## Write your first story
 
 Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
