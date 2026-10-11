@@ -9,12 +9,12 @@ const { join, posix } = require('node:path')
 
 // Named only while no plugin exists for it: a framework that gains a nav entry
 // drops out of this sentence on its own.
-const UNSUPPORTED = ['React', 'Angular', 'Preact', 'Lit', 'Qwik']
+const UNSUPPORTED = ['Angular', 'Preact', 'Lit', 'Qwik']
 
 // A framework whose plugin does less than the others says so wherever it is
 // listed beside them. Solid renders stories but has no controls until #1114 and
-// #1110; its entry goes when they land.
-const QUALIFIED = { Solid: 'renderer only' }
+// #1110; its entry goes when they land. React's goes with its own controls.
+const QUALIFIED = { Solid: 'renderer only', React: 'renderer only' }
 
 // The plugins a reader can install. Every public package publishes in lockstep and
 // the site serves `main`, which only moves at a release, so a plugin listed here is

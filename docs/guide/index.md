@@ -51,6 +51,16 @@ Poveste is a tool to generate stories applications (or "books").
   <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
 </div>
 
+<div class="demo-links-box border-cyan-200 dark:border-cyan-900">
+  <Icon icon="logos:react" class="w-10 h-10 mt-3" aria-label="React logo" />
+  <div class="demo-links space-y-2">
+
+[React guide &rarr;](./react/getting-started.md)
+
+  <p class="text-sm opacity-80 m-0">React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet.</p>
+  </div>
+</div>
+
 A story is a scenario where you showcase in your browser one or more components for specific use cases.
 
 Stories are useful for several reasons:

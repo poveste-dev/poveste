@@ -322,6 +322,7 @@ describe('checkVersions', () => {
     'packages/poveste-plugin-svelte/package.json': '{ "peerDependencies": { "svelte": "^5", "@sveltejs/kit": "^2" } }',
     'packages/poveste-plugin-quasar/package.json': '{ "peerDependencies": { "quasar": "^2", "@quasar/app-vite": "^2" } }',
     'packages/poveste-plugin-solid/package.json': '{ "peerDependencies": { "solid-js": "^1" } }',
+    'packages/poveste-plugin-react/package.json': '{ "peerDependencies": { "react": "^19" } }',
   }
 
   it('reports that there is no workflow to cite a job from', async () => {

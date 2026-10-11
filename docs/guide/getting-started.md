@@ -36,6 +36,8 @@ npm i -D poveste @poveste/plugin-<framework>
 - [Quasar &rarr;](./quasar/getting-started.md) — the Vue packages, plus `@poveste/plugin-quasar`
 - [Svelte &rarr;](./svelte/getting-started.md) — `poveste` and `@poveste/plugin-svelte`
 - [SvelteKit &rarr;](./sveltekit/getting-started.md) — the same two as Svelte
+- [Solid &rarr;](./solid/getting-started.md) — `poveste` and `@poveste/plugin-solid`
+- [React &rarr;](./react/getting-started.md) — `poveste` and `@poveste/plugin-react`
 
 ## Try it in a live editor
 
@@ -64,6 +66,16 @@ npm i -D poveste @poveste/plugin-<framework>
   <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
 </div>
 
+<div class="demo-links-box border-cyan-200 dark:border-cyan-900">
+  <Icon icon="logos:react" class="w-10 h-10 mt-3" aria-label="React logo" />
+  <div class="demo-links space-y-2">
+
+[React guide &rarr;](./react/getting-started.md)
+
+  <p class="text-sm opacity-80 m-0">React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet.</p>
+  </div>
+</div>
+
 ## Supported versions
 
 Each row below is the range Poveste actually declares in `peerDependencies`, next to the
@@ -81,6 +93,7 @@ is wider than the CI job behind it, the range is the bug.
 | [Quasar](https://quasar.dev) | `^2.24.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
+| [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's
@@ -240,15 +253,17 @@ Two limits are worth knowing, because neither is obvious from a green run:
 | [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | - |
 | [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
 | [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | - |
-| Solid | - | - | - |
+| [Solid →](./solid/getting-started.md) | renderer only | - | - |
+| [React →](./react/getting-started.md) | renderer only | - | - |
 | Angular | - | - | - |
-| React | - ([Alternative](https://www.ladle.dev)) | - | - |
 
 **<u>Support</u> means the following is available*:
 - Collect and render stories
 - Render controls pane content with state sync
 - Builtin controls wrappers
 - Static source
+
+*Renderer only* is the first and last of those: stories and variants render and their source shows, with no controls pane content and no control wrappers yet.
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
