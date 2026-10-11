@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
-import { withoutVapor } from './vapor.js'
+import { hasVaporInterop, vaporInteropModule, withoutVapor } from './vapor.js'
 
 describe('withoutVapor', () => {
   it('drops the attribute from a `<script setup vapor>`', () => {
@@ -50,5 +50,33 @@ describe('a Vapor SFC under Vue 3.6', () => {
     const missing = importsFromVue(withoutVapor(SOURCE)!).filter(name => !(name in nodeVue))
 
     expect(missing).toEqual([])
+  })
+})
+
+describe('hasVaporInterop', () => {
+  it('is false for Vue 3.5, which has no Vapor runtime', () => {
+    expect(hasVaporInterop('3.5.43')).toBe(false)
+  })
+
+  it('is true for a 3.6 prerelease', () => {
+    expect(hasVaporInterop('3.6.0-rc.10')).toBe(true)
+  })
+
+  it('is true for a later major', () => {
+    expect(hasVaporInterop('4.0.0')).toBe(true)
+  })
+
+  it('is false when the project has no Vue to read', () => {
+    expect(hasVaporInterop(undefined)).toBe(false)
+  })
+})
+
+describe('vaporInteropModule', () => {
+  it('re-exports the plugin from a Vue that has it', () => {
+    expect(vaporInteropModule('3.6.0')).toBe(`export { vaporInteropPlugin as default } from 'vue'\n`)
+  })
+
+  it('exports nothing usable from one that does not, so a 3.5 build has no import to warn about', () => {
+    expect(vaporInteropModule('3.5.43')).toBe(`export default undefined\n`)
   })
 })
