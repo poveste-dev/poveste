@@ -1,6 +1,7 @@
 <script>
   import BaseButton from './BaseButton.svelte'
 
+  /** @type {import('@poveste/plugin-svelte').Hst} */
   export let Hst
 
   const initState = () => ({

@@ -1,4 +1,5 @@
 <script>
+  /** @type {import('@poveste/plugin-svelte').Hst} */
   export let Hst
 
   // Deliberately still a component local: `bind:this` is a DOM node, which is

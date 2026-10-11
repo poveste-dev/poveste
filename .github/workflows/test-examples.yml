@@ -323,9 +323,14 @@ jobs:
 
       # Kit 3 needs TypeScript 6 and generates its types under `node_modules/$app`,
       # so a Kit 3 project that typechecks is part of what the range claims (#1200).
-      - name: Type-check the SvelteKit 3 book
-        if: ${{ env.RUN == 'true' && matrix.example == 'sveltekit3' }}
-        run: pnpm --filter ./examples/sveltekit3 run check
+      #
+      # The other two Svelte books had this once (#177) and lost it when the
+      # per-framework workflows were folded into this matrix (#217). By the time
+      # anyone ran it again `examples/sveltekit` had 14 errors, one of them a story
+      # whose `meta` the plugin had been dropping (#1206).
+      - name: Type-check the Svelte book
+        if: ${{ env.RUN == 'true' && (matrix.example == 'svelte' || matrix.example == 'sveltekit' || matrix.example == 'sveltekit3') }}
+        run: pnpm --filter ./examples/${{ matrix.example }} run ${{ matrix.example == 'sveltekit' && 'sk:check' || 'check' }}
 
       # `POVESTE_E2E_EXAMPLE` narrows both the projects and the servers the root
       # config starts, so this job boots one preview server rather than five.
