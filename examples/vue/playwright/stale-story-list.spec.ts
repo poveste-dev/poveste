@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 import { expect, test } from '@playwright/test'
 
 // A page that loaded the story list mid-collection, and was still loading when
@@ -8,6 +10,9 @@ import { expect, test } from '@playwright/test'
 // The race is milliseconds wide, so this serves the page the state it leaves: an
 // empty list from a generation the server has already moved past.
 const LIST = '__resolved__virtual:$poveste-stories'
+
+// Both tests need the server's list to change only when they change it.
+test.describe.configure({ mode: 'serial' })
 
 test('a page holding a stale story list is sent the current one when it mounts', async ({ page }) => {
   // The server has to be past its first collection, and done with any other,
@@ -67,4 +72,62 @@ test('a page holding a stale story list is sent the current one when it mounts',
   await page.goto('/story/conformance-button')
 
   await expect(page.getByTestId('preview-iframe').contentFrame().getByRole('button', { name: 'Click me' })).toBeVisible()
+})
+
+// The page's importers of the list are each stamped with the list's version when
+// the server serves them. A list that changes between two of them gives the page
+// two copies, and the one evaluated last takes over the hot update. The handlers
+// were kept per copy, so the page then applied every update to a copy nobody was
+// watching: "hot updated" in the console, and a sidebar that never changed. That
+// is what the markdown rename test hit in one CI job in six (#1237).
+const TMP = resolve(import.meta.dirname, '../src/e2e-tmp')
+
+function story(id: string, title: string) {
+  return `<template>
+  <Story id="${id}" title="${title}">
+    <Variant id="only" title="Only">
+      <span>${title}</span>
+    </Variant>
+  </Story>
+</template>
+`
+}
+
+test('a page holding two copies of the story list still takes updates', async ({ page }) => {
+  const served = async () => (await (await page.request.get(`/${LIST}`)).text())
+  const copies = new Set<string>()
+  page.on('request', (request) => {
+    const url = new URL(request.url())
+    if (url.pathname.endsWith(LIST)) {
+      copies.add(url.search)
+    }
+  })
+
+  await mkdir(TMP, { recursive: true })
+  let held = false
+  // The entry is served by now, stamped with the list as it stood. The list is
+  // changed before the next importer is served, so that one is stamped with the
+  // list that follows.
+  await page.route(/App\.vue_vue_type_script_setup_true_lang\.js/, async (route) => {
+    if (!held) {
+      held = true
+      await writeFile(join(TMP, 'SplitFirst.story.vue'), story('e2e-split-first', 'Split first'))
+      await expect.poll(async () => (await served()).includes('e2e-split-first'), { timeout: 30_000 }).toBe(true)
+    }
+    await route.continue()
+  })
+
+  try {
+    await page.goto('/')
+    const item = (title: string) => page.getByTestId('story-list-item').filter({ hasText: title })
+    await expect(item('Split first')).toBeVisible()
+    expect(copies.size, 'the page loaded two copies of the list').toBeGreaterThan(1)
+
+    await writeFile(join(TMP, 'SplitSecond.story.vue'), story('e2e-split-second', 'Split second'))
+
+    await expect(item('Split second')).toBeVisible({ timeout: 30_000 })
+  }
+  finally {
+    await rm(TMP, { recursive: true, force: true })
+  }
 })
