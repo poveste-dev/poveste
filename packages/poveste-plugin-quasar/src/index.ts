@@ -124,10 +124,16 @@ export async function withoutProcessExit<T>(fn: () => Promise<T>): Promise<T> {
  * `ssr.noExternal` is the part users should not have to know: Quasar's plugin
  * writes `__QUASAR_VERSION__` while transforming its own source, so that source
  * has to be transformed rather than externalised during story collection.
+ *
+ * `optimizeDeps.include` names Quasar because Vite's scan cannot find it: a
+ * `<q-btn>` becomes an import of `quasar` only when Quasar's plugin transforms
+ * the template. Left to be discovered, it is bundled in a second pass once the
+ * first story loads, and the page is reloaded under the reader while it runs.
  */
 export function quasarViteConfig(viteConfig: QuasarViteConfig) {
   return {
     ssr: { noExternal: [/quasar/] },
+    optimizeDeps: { include: ['quasar'] },
     define: { ...viteConfig.define },
     resolve: {
       alias: viteConfig.resolve?.alias,
