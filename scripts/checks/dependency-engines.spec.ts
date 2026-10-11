@@ -35,21 +35,31 @@ describe('engineProblems', () => {
   })
 
   it('accepts a gap recorded against the dependency\'s exact range', () => {
-    const exempt = { 'poveste -> jsdom': { range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
+    const exempt = { 'poveste -> jsdom': { admits: '>=24.15.0', range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
 
     expect(engineProblems([dependency('^24.15.0 || >=26.0.0')], exempt)).toEqual([])
   })
 
   it('reopens the question when the dependency\'s range moves', () => {
-    const exempt = { 'poveste -> jsdom': { range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
+    const exempt = { 'poveste -> jsdom': { admits: '>=24.15.0', range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
 
     expect(engineProblems([dependency('^24.15.0 || >=27.0.0')], exempt)).toEqual([
       expect.stringMatching(/^poveste -> jsdom: jsdom@30\.1\.1 now requires Node \^24\.15\.0 \|\| >=27\.0\.0, and the recorded exemption was for/),
     ])
   })
 
+  // The floor dropped from 24.15.0 to 22.22.2 (#1226), and the gap an exemption
+  // had accepted widened to Node 24.0–24.14 with nothing said.
+  it('reopens the question when the package\'s own range moves', () => {
+    const exempt = { 'poveste -> jsdom': { admits: '>=24.15.0', range: '^22.22.2 || ^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
+
+    expect(engineProblems([dependency('^22.22.2 || ^24.15.0 || >=26.0.0', '>=22.22.2')], exempt)).toEqual([
+      'poveste -> jsdom: poveste now admits Node >=22.22.2, and the recorded exemption was accepted against >=24.15.0. Re-decide it against the new range',
+    ])
+  })
+
   it('reports an exemption with no gap left behind it', () => {
-    const exempt = { 'poveste -> jsdom': { range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
+    const exempt = { 'poveste -> jsdom': { admits: '>=24.15.0', range: '^24.15.0 || >=26.0.0', reason: 'Node 25 is past end of life' } }
 
     expect(engineProblems([dependency('>=20')], exempt)).toEqual(['poveste -> jsdom: exempted, but the gap is gone. Delete the exemption'])
   })

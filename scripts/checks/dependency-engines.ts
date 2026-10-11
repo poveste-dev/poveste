@@ -9,8 +9,10 @@
 // while every job was green (#1075). Comparing the ranges directly needs no
 // probe versions to pick and keep current (#916).
 //
-// A gap that is accepted is recorded with the dependency's exact range, so the
-// record goes stale, and says so, the moment that range changes.
+// A gap that is accepted is recorded with both ranges it lies between, so the
+// record goes stale, and says so, the moment either one changes. Recording only
+// the dependency's let the floor drop from 24.15.0 to 22.22.2 (#1226) and widen
+// the accepted gap to Node 24.0–24.14, which is current LTS, with nothing said.
 
 import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -20,6 +22,8 @@ import semver from 'semver'
 const ROOT = join(import.meta.dirname, '..', '..')
 
 export interface Exemption {
+  /** The package's own `engines.node` when the gap was accepted. */
+  admits: string
   /** The dependency's `engines.node` when the gap was accepted. */
   range: string
   /** Why the Node versions it refuses are acceptable to leave admitted. */
@@ -29,8 +33,9 @@ export interface Exemption {
 /** `<package> -> <dependency>` */
 export const EXEMPT: Record<string, Exemption> = {
   'poveste -> jsdom': {
+    admits: '>=22.22.2',
     range: '^22.22.2 || ^24.15.0 || >=26.0.0',
-    reason: 'It refuses only Node 25.x inside `>=24.15.0`, an odd-numbered line that reached end of life on 2026-06-01. `engines.node` cannot carve 25 out: it has to stay a single `>=` floor, or npm walks a Node outside it back to a version that predates the field (#901).',
+    reason: 'It refuses Node 23.x, 24.0–24.14 and 25.x. 23 and 25 are odd-numbered lines past end of life. 24.0–24.14 is current LTS below jsdom\'s own floor, accepted because the floor had to come down to 22.22.2 for StackBlitz (#1226) and the guides tell a Node 24 reader to use 24.15 or later (#1231). `engines.node` cannot carve any of them out: it has to stay a single `>=` floor, or npm walks a Node outside it back to a version that predates the field (#901).',
   },
 }
 
@@ -66,13 +71,15 @@ export function engineProblems(ranges: DependencyRange[], exempt: Record<string,
     }
     const key = `${pkg} -> ${dependency}`
     const exemption = exempt[key]
-    if (exemption && exemption.range === range) {
+    if (exemption && exemption.range === range && exemption.admits === declared) {
       used.add(key)
       continue
     }
-    problems.push(exemption
-      ? `${key}: ${dependency}@${version} now requires Node ${range}, and the recorded exemption was for ${exemption.range}. Re-decide it against the new range`
-      : `${key}: ${pkg} admits Node ${declared}, and ${dependency}@${version} requires ${range}, so a strict install fails on the versions between`)
+    problems.push(!exemption
+      ? `${key}: ${pkg} admits Node ${declared}, and ${dependency}@${version} requires ${range}, so a strict install fails on the versions between`
+      : exemption.range !== range
+        ? `${key}: ${dependency}@${version} now requires Node ${range}, and the recorded exemption was for ${exemption.range}. Re-decide it against the new range`
+        : `${key}: ${pkg} now admits Node ${declared}, and the recorded exemption was accepted against ${exemption.admits}. Re-decide it against the new range`)
   }
 
   for (const key of Object.keys(exempt)) {
