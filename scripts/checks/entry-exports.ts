@@ -78,11 +78,12 @@ export function surfaceProblems(built: Surface, recorded: Surface): string[] {
       problems.push(`${specifier} is a published entrypoint with no list in ${RECORD}`)
       continue
     }
+    // Each says what to do: whoever meets one is usually on an unrelated PR.
     for (const name of names.filter(name => !known.includes(name))) {
-      problems.push(`${specifier} exports \`${name}\`, which is not recorded`)
+      problems.push(`${specifier} exports \`${name}\`, which is not in ${RECORD}. If it is meant to be public, add it to that file under "${specifier}" and say so in the PR. If only a spec needs it, import it from a module the entrypoint does not re-export.`)
     }
     for (const name of known.filter(name => !names.includes(name))) {
-      problems.push(`${specifier} no longer exports \`${name}\`, which is recorded`)
+      problems.push(`${specifier} no longer exports \`${name}\`, which ${RECORD} records. That is a removal a consumer can see: restore it, or deprecate it first as docs/guide/getting-started.md#deprecations promises and remove it in a release whose notes say so. Only then delete its line.`)
     }
   }
 
@@ -93,7 +94,7 @@ export function surfaceProblems(built: Surface, recorded: Surface): string[] {
   return problems
 }
 
-const REMEDY = `An unrecorded export is public from the next release, and taking it back is a removal. If a spec needed it, import it from a module the entry does not re-export. If it is meant to be public, add it to ${RECORD} and say so in the PR. A name that is no longer exported is a breaking change for whoever imports it: restore it, or remove it from the record on purpose. An entrypoint missing from the built tree usually means \`pnpm run build\` has not run.`
+const REMEDY = `A name is public from the release after it appears, and taking it back is a removal, so ${RECORD} changes only on purpose. An entrypoint missing from the built tree usually means \`pnpm run build\` has not run.`
 
 export function checkEntryExports(root = ROOT): CheckResult {
   const { surface, unbuilt } = builtSurface(root)

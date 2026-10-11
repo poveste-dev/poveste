@@ -17,13 +17,23 @@ describe('comparing the built surface with the record', () => {
   it('names an export nobody recorded', () => {
     const built = { ...RECORDED, poveste: ['defineConfig', 'processDefaultConfig', 'resolveConfig'] }
 
-    expect(surfaceProblems(built, RECORDED)).toEqual(['poveste exports `processDefaultConfig`, which is not recorded'])
+    const problems = surfaceProblems(built, RECORDED)
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toMatch(/^poveste exports `processDefaultConfig`, which is not in scripts\/checks\/entry-exports\.json\./)
+    expect(problems[0]).toContain('add it to that file under "poveste"')
+    expect(problems[0]).toContain('import it from a module the entrypoint does not re-export')
   })
 
   it('names a recorded export that is gone', () => {
     const built = { ...RECORDED, poveste: ['defineConfig'] }
 
-    expect(surfaceProblems(built, RECORDED)).toEqual(['poveste no longer exports `resolveConfig`, which is recorded'])
+    const problems = surfaceProblems(built, RECORDED)
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toMatch(/^poveste no longer exports `resolveConfig`, which scripts\/checks\/entry-exports\.json records\./)
+    expect(problems[0]).toContain('a removal a consumer can see')
+    expect(problems[0]).toContain('deprecate it first')
   })
 
   it('names an entrypoint with no list, and a list with no entrypoint', () => {
