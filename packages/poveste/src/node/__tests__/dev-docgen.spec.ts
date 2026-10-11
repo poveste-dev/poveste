@@ -84,7 +84,7 @@ describe('auto-docs in poveste dev', () => {
 
     try {
       await vi.waitFor(() => expect(output).toContain('Collect stories end'), { timeout: 60_000, interval: 100 })
-      const socket = new WebSocket(`ws://localhost:${hmrPortFor(port)}`, 'vite-hmr')
+      const socket = new WebSocket(`ws://localhost:${port}`, 'vite-hmr')
       await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }))
       const events: string[] = []
       socket.addEventListener('message', (event) => {
