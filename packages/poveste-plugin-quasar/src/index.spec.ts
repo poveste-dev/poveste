@@ -54,6 +54,13 @@ describe('quasarViteConfig', () => {
     expect(quasarViteConfig(extracted).ssr).toEqual({ noExternal: [/quasar/] })
   })
 
+  it('pre-bundles Quasar in the first pass', () => {
+    // The scan misses it, since only Quasar's own transform turns `<q-btn>` into
+    // an import. Found late, it costs a second bundling pass and a forced reload
+    // of the first story page, which a StackBlitz preview did not survive (#1269).
+    expect(quasarViteConfig(extracted).optimizeDeps).toEqual({ include: ['quasar'] })
+  })
+
   it('passes every plugin through, including Quasar\'s own Vue one', () => {
     // @quasar/vite-plugin asserts a Vue plugin is registered before it, so
     // dropping `vite:vue` as a duplicate fails config resolution outright.
@@ -70,6 +77,7 @@ describe('quasarViteConfig', () => {
   it('survives a config that declares none of them', () => {
     expect(quasarViteConfig({})).toEqual({
       ssr: { noExternal: [/quasar/] },
+      optimizeDeps: { include: ['quasar'] },
       define: {},
       resolve: { alias: undefined, extensions: undefined, dedupe: undefined },
       plugins: undefined,
