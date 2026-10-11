@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { checkPublishable, emptyFilesEntries, licenseProblems, packageTableProblems, publishablePackages, rootFromArgv, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
+import { checkPublishable, emptyFilesEntries, licenseProblems, packageTableProblems, publishablePackages, rootFromArgv, testPathProblems, unacceptedResolutionProblems, undeclaredPackedPaths, unsupportedFilesEntries, walkPackages, walkProblems, workspaceProtocolDeps } from './publishable.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -396,6 +396,27 @@ describe('the walk the other checks import', () => {
     })
 
     expect(publishablePackages(root).map(pkg => pkg.name)).toEqual(['@poveste/one'])
+  })
+})
+
+describe('testPathProblems', () => {
+  // What 0.17.2 shipped (#1189).
+  it('refuses a spec file, a test directory and an emitted spec', () => {
+    expect(testPathProblems('@poveste/app', [
+      'src/__tests__/font.spec.ts',
+      'src/app/util/__tests__/fixture/base.ts',
+      'dist/util/list-components.spec.js',
+      'dist/util/list-components.spec.d.ts',
+    ])).toEqual([
+      '@poveste/app packs `src/__tests__/font.spec.ts`, a test file',
+      '@poveste/app packs `src/app/util/__tests__/fixture/base.ts`, a test file',
+      '@poveste/app packs `dist/util/list-components.spec.js`, a test file',
+      '@poveste/app packs `dist/util/list-components.spec.d.ts`, a test file',
+    ])
+  })
+
+  it('passes source whose name only mentions a test', () => {
+    expect(testPathProblems('poveste', ['dist/node/collect/test-runner.js', 'src/spec.ts', 'dist/testing.d.ts'])).toEqual([])
   })
 })
 
