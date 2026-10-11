@@ -84,13 +84,17 @@ export default defineConfig({
 
 Which support plugin renders a story, once [`storyMatch`](#storymatch) has decided it is one. The two are separate globs: `storyMatch` is *what is a story*, `supportMatch` is *who renders it*. Each entry is `{ id, patterns, pluginIds }`, where `patterns` are matched against the absolute path.
 
-Plugins contribute the defaults, and they match on extension rather than on the `.story.` infix:
+Plugins contribute the defaults:
 
 | `id` | `patterns` | `pluginIds` | From |
 | --- | --- | --- | --- |
 | `vue` | `**/*.vue` | `vue3` | `@poveste/plugin-vue` |
 | `svelte` | `**/*.svelte` | `svelte4` | `@poveste/plugin-svelte` |
+| `solid` | `**/*.story.tsx`, `**/*.story.jsx` | `solid` | `@poveste/plugin-solid` |
+| `react` | `**/*.story.tsx`, `**/*.story.jsx` | `react` | `@poveste/plugin-react` |
 | `vanilla` | `**/*.js` | `vanilla` | built in |
+
+The Vue, Svelte and built-in entries match on extension rather than on the `.story.` infix. `vue3` and `svelte4` are the ids those two support plugins have always had, and name no version: `svelte4` is what renders Svelte 5. Solid and React claim the same files, and the first entry that matches a file wins, which is why the two [cannot share a book yet](../guide/plugins/official.md#more-than-one-framework-in-a-book).
 
 Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry, which is what you want only if you are pointing at a plugin nothing else claims.
 
@@ -179,15 +183,17 @@ export default defineConfig({
 
 `string | { browser: string, server: string }`
 
-Setup file exporting a default function executed when setting up each story preview.
+A file of your own that Poveste loads with every story, in the app and in each preview. Import global CSS from it, and export the setup function your framework's plugin reads — `setupVue`, `setupSvelte`, `setupSolid` or `setupReact` — to run code before each story mounts.
 
-Import custom CSS files from this file.
+A default export is not called. The file is still loaded, so what it imports applies, but the function never runs and nothing warns.
+
+The path is resolved from the project root. The leading slash means that root, not the filesystem's, and `'src/poveste.setup.ts'` without it names the same file.
 
 [Learn more](../guide/config.md#global-js-and-css)
 
 ```ts
 export default defineConfig({
-  setupFile: '/src/poveste-setup.ts',
+  setupFile: '/src/poveste.setup.ts',
 })
 ```
 
@@ -196,8 +202,8 @@ If you need a different version for the NodeJS server (while collecting stories)
 ```ts
 export default defineConfig({
   setupFile: {
-    browser: '/src/poveste-setup.ts',
-    server: '/src/poveste-setup.server.ts',
+    browser: '/src/poveste.setup.ts',
+    server: '/src/poveste.setup.server.ts',
   },
 })
 ```

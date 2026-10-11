@@ -226,6 +226,8 @@ You can also tell Poveste to configure the sandbox application using the corresp
 | --------- | -------------- | ------------- |
 | Vue | `setupVue` | `setupVue3` |
 | Svelte | `setupSvelte` | `setupSvelte5`, `setupSvelte4`, `setupSvelte3` |
+| Solid | `setupSolid` | - |
+| React | `setupReact` | - |
 
 ### Vue setup
 

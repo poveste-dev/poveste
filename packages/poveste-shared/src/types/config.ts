@@ -200,11 +200,11 @@ export interface PovesteConfig {
     lang?: string
   }
   /**
-   * Setup file exporting a default function executed when setting up each story preview.
+   * Setup file loaded with every story. Import custom CSS files from it, and export
+   * the setup function your framework's plugin reads, such as `setupVue`. A default
+   * export is not called.
    *
-   * Import custom CSS files from this file.
-   *
-   * Example: `'/src/poveste-setup.ts'`
+   * Example: `'/src/poveste.setup.ts'`
    */
   setupFile?: string | {
     /**
