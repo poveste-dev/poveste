@@ -27,6 +27,7 @@ export const FLOORS: Record<string, Floor> = {
   'dependency-engines': { walk: true },
   'doc-coverage': { guard: 'no entrypoint was measured at all' },
   'docs-site': { guard: 'no build at' },
+  'entry-exports': { guard: 'no entrypoint was compared' },
   'docs-svelte-fences': { guard: 'no `svelte` fence under' },
   'docs-vue-fences': { guard: 'no `vue` fence under' },
   'example-wiring': { guard: 'lists no required contexts' },

@@ -165,7 +165,7 @@ export function summarise(rows: Coverage[]): { documented: number, total: number
   return { documented, total, pct: total ? Math.round(documented / total * 100) : 0 }
 }
 
-const COMPILER_OPTIONS: ts.CompilerOptions = {
+export const COMPILER_OPTIONS: ts.CompilerOptions = {
   noEmit: true,
   skipLibCheck: true,
   moduleResolution: ts.ModuleResolutionKind.Bundler,
