@@ -36,19 +36,37 @@ ${resolvedStories.map((file, index) => {
 export let files = [${files.map(file => `{${JSON.stringify(file).slice(1, -1)}, component: Comp${file.index}, source: () => import(${jsString(`virtual:story-source:${file.story.id}`)})}`).join(',\n')}]
 export let tree = ${JSON.stringify(makeTree(ctx.config, resolvedStories))}
 export let generation = ${storiesGeneration.get(ctx) ?? 0}
-const handlers = []
+// Every copy of this module on a page shares these. A page can hold two: each
+// importer's URL is stamped when the server serves it, so a list that changes
+// between two of them gives each its own copy, and the one evaluated last takes
+// over the hot update. Kept per copy, the handlers stayed with the other one, and
+// the page applied every update to a list nobody was watching (#1237).
+const shared = import.meta.hot
+  ? (import.meta.hot.data.shared ??= { handlers: [], generation: -Infinity, files, tree })
+  : { handlers: [], generation, files, tree }
+if (generation > shared.generation) {
+  const announce = shared.generation !== -Infinity
+  Object.assign(shared, { generation, files, tree })
+  if (announce) {
+    shared.handlers.forEach(h => h(files, tree))
+  }
+}
 export function onUpdate (cb) {
-  handlers.push(cb)
+  shared.handlers.push(cb)
+  // Registered through a copy the page has already moved past.
+  if (shared.generation > generation) {
+    cb(shared.files, shared.tree)
+  }
 }
 if (import.meta.hot) {
   import.meta.hot.accept(newModule => {
+    // Undefined when the new copy failed to load. The next update carries the list.
+    if (!newModule) {
+      return
+    }
     files = newModule.files
     tree = newModule.tree
     generation = newModule.generation
-    handlers.forEach(h => {
-      h(newModule.files, newModule.tree)
-      newModule.onUpdate(h)
-    })
   })
 }`
 }
