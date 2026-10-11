@@ -24,7 +24,7 @@ const VITE = '^8.2.0'
 
 // Unnumbered on purpose: `svelte3` outlived Svelte 3 by two majors before
 // anyone noticed. A bare framework name never goes stale — see #120.
-export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt' | 'solid' | 'react'
+export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt' | 'solid' | 'react' | 'quasar'
 
 export interface Manifest {
   name: string
@@ -497,6 +497,92 @@ export default defineStory<{ clicks: number }>({
   }
 }
 
+function quasarStarter(): Starter {
+  return {
+    openFile: 'src/MyButton.story.vue',
+    manifest: manifest(
+      'poveste-quasar-starter',
+      {
+        '@poveste/plugin-quasar': POVESTE,
+        '@poveste/plugin-vue': POVESTE,
+        // The plugin's own peer floor. It brings `@vitejs/plugin-vue` and
+        // `@quasar/vite-plugin` itself, so neither is listed here.
+        '@quasar/app-vite': '^3.8.0',
+        'vite': VITE,
+      },
+      { quasar: '^2.24.0', vue: '^3.5.43' },
+    ),
+    files: {
+      // The least Quasar accepts as a project: the plugin reads the Vite config
+      // Quasar builds from this file, and Quasar ends the process without an
+      // `index.html` beside it.
+      //
+      // No `src/css/quasar.variables.*`, on purpose. Without one Quasar serves
+      // its prebuilt `quasar.css`; with one it compiles its Sass source, through
+      // `sass-embedded`, whose compiler is a native binary a WebContainer cannot
+      // be assumed to run.
+      'quasar.config.js': `export default function () {
+  return {
+    build: { vueRouterMode: 'hash' },
+    framework: { config: {} },
+  }
+}
+`,
+      'index.html': `<!doctype html>
+<html>
+  <head>
+    <title>Poveste + Quasar starter</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <!-- quasar:entry-point -->
+  </body>
+</html>
+`,
+      'poveste.config.ts': `import { HstQuasar } from '@poveste/plugin-quasar'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue(), HstQuasar()],
+  setupFile: '/src/poveste.setup.ts',
+})
+`,
+      'src/poveste.setup.ts': `import { setupQuasar } from '@poveste/plugin-quasar/setup'
+import { defineSetupVue } from '@poveste/plugin-vue'
+
+export const setupVue = defineSetupVue(setupQuasar())
+`,
+      'src/MyButton.vue': `<script setup>
+defineProps({
+  label: { type: String, default: 'Click me' },
+})
+</script>
+
+<template>
+  <q-btn color="primary" unelevated no-caps :label="label" />
+</template>
+`,
+      'src/MyButton.story.vue': `<script setup>
+import MyButton from './MyButton.vue'
+</script>
+
+<template>
+  <Story title="MyButton">
+    <Variant title="default">
+      <MyButton />
+    </Variant>
+    <Variant title="custom label">
+      <MyButton label="Hello Poveste" />
+    </Variant>
+  </Story>
+</template>
+`,
+    },
+  }
+}
+
 export const starters: Record<Framework, () => Starter> = {
   vue: vueStarter,
   svelte: svelteStarter,
@@ -504,6 +590,7 @@ export const starters: Record<Framework, () => Starter> = {
   nuxt: nuxtStarter,
   solid: solidStarter,
   react: reactStarter,
+  quasar: quasarStarter,
 }
 
 export const titles: Record<Framework, string> = {
@@ -513,4 +600,5 @@ export const titles: Record<Framework, string> = {
   nuxt: 'Poveste + Nuxt starter',
   solid: 'Poveste + Solid starter',
   react: 'Poveste + React starter',
+  quasar: 'Poveste + Quasar starter',
 }
