@@ -4,6 +4,22 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.18.3
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.2...v0.18.3)
+
+**The "Try it live" StackBlitz starters show the book without a reload, and the Nuxt starter starts again.**
+
+It is a `patch`: no commit in the range is a `feat`, none carries a `!` marker or a `BREAKING CHANGE` footer, and nothing is deprecated, renamed or removed. One thing moves: `poveste dev` no longer opens a second port for live updates. For most setups there is nothing to do on upgrade; see the first fix if you forward ports yourself.
+
+### 🩹 Fixes
+
+- **`poveste dev` serves its live-update socket on the book's own port** ([#1245](https://github.com/poveste-dev/poveste/issues/1245), [#1247](https://github.com/poveste-dev/poveste/pull/1247)). Since 0.6.0, the dev server put Vite's HMR websocket on a second port, `--port` plus 20000 (26006 for the default 6006). StackBlitz routes only the port it previews, so in every starter the page never connected: it waited for the story list on that socket and stayed blank until you pressed the preview's reload button. The socket now shares the book's port. **If you forward ports yourself**, in Docker, over SSH or through a proxy, the book's port is now the only one to forward, and a rule for the old second port can go. A `clientPort` set under `server.hmr` in your Vite config is now kept; it used to be discarded.
+
+### 📖 Documentation
+
+- **The Nuxt "Try it live" starter starts again** ([#1244](https://github.com/poveste-dev/poveste/issues/1244), [#1246](https://github.com/poveste-dev/poveste/pull/1246)). Nuxt 4.6.0, released on 5 October, uses an API that StackBlitz's in-browser Node throws on, so the starter on [Getting started with Nuxt](https://poveste.dev/guide/nuxt/getting-started) stopped at "Failed to run start command". The starter now stays on Nuxt 4.5. This is about the starter only. On your own machine, Poveste 0.18.2 with Nuxt 4.6.0 starts `poveste dev`, collects its story and completes `poveste build`; Nuxt prints a `[NUXT_B7005] No client entry was found` message along the way.
+
 ## v0.18.2
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.1...v0.18.2)
