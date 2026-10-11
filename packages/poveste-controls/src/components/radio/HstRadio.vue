@@ -14,7 +14,9 @@ import HstWrapper from '../HstWrapper.vue'
 const props = defineProps<{
   title?: string
   modelValue?: string | null
-  options: HstControlOption[]
+  // The map form is what `formattedOptions` returns as it is; the type said
+  // arrays only, so a map that works failed a type check (#1206).
+  options: Record<string, string> | (string | HstControlOption)[]
 }>()
 
 const emit = defineEmits<{

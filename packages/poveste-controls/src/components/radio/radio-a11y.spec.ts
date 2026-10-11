@@ -78,4 +78,13 @@ describe('hstRadio', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['c'])
   })
+
+  // The form the Svelte books' Controls story passes, which the prop type refused (#1206).
+  it('takes a map of value to label', () => {
+    const wrapper = mount(HstRadio, { props: { modelValue: 'mgs', options: { ds: 'Death Stranding', mgs: 'Metal Gear' }, title: 'Game' } })
+
+    expect(wrapper.findAll('[role="radio"]').map(radio => radio.attributes('aria-checked'))).toEqual(['false', 'true'])
+    expect(wrapper.text()).toContain('Death Stranding')
+    expect(wrapper.text()).toContain('Metal Gear')
+  })
 })
