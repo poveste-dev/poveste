@@ -218,6 +218,28 @@ That means it covers components the story imports and renders directly. A compon
 A story that declares a **variant** inside `{#if}`, `{#each}` or `{#await}` gets no auto-props at all. Those variants are registered in an order nothing can predict before the story runs, so the whole story is left alone rather than risk driving the wrong one.
 :::
 
+## `meta`
+
+`{ storyOptions?: boolean }`
+
+Settings for the app around the story, not for the story's own render. One key is read today.
+
+### `meta.storyOptions`
+
+Overrides the **Story Options** switch in the Layout menu, for this story only. The pane that switch shows and hides is the one beside or below the preview, with the story's controls, docs, events and source.
+
+- `false` hides the pane for this story, whatever the reader has set.
+- `true` shows it, whatever the reader has set.
+- Left out, the story follows the reader's setting, which starts on.
+
+```svelte
+<Hst.Story title="Dashboard" meta={{ storyOptions: false }}>
+  <!-- ... -->
+</Hst.Story>
+```
+
+Use it for a story with nothing to adjust, where the pane only takes room from the preview. In a Svelte book it needs Poveste 0.19.0 or later: earlier versions dropped a story's `meta`, so the key did nothing ([#1206](https://github.com/poveste-dev/poveste/issues/1206)).
+
 ## Slot: `controls`
 
 Content of the 'Controls' pane used to interact with the story. This will be the default content for variants of the story but you can override it by defining a `controls` slot in a variant.
