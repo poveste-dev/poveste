@@ -330,6 +330,12 @@ jobs:
       - name: Report documented-export coverage
         run: pnpm run test:doc-coverage
 
+      # Two helpers reached a package's main entry because a spec imported them,
+      # and a release diff found them by hand (#1291). Reads the same emitted
+      # declarations as the step above, so it sits with it.
+      - name: Check each entrypoint exports what is recorded
+        run: pnpm run test:entry-exports
+
       # After `build`, not beside `lint`: @poveste/app imports @poveste/shared
       # and @poveste/controls, which are not in its tsconfig `paths` and resolve
       # through the workspace symlink to `dist/*.d.ts`. Run cold, every named
