@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 // @ts-expect-error plain runtime module, no types
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
-import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
+import { HstNuxt, isPluginExcluded, withoutIgnoredPlugins, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
 
 const I18N_DEFAULT = /[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/
 
@@ -145,5 +145,20 @@ describe('wrapPluginTemplates', () => {
     wrapPluginTemplates([template])
 
     expect(await template.getContents()).toBe(SOURCE)
+  })
+})
+
+// `nuxt:module-preload-polyfill` looks for Nuxt's client entry, which a book
+// does not have, so it raised `NUXT_B7005` and a "Could not resolve client
+// entry" line at every start and build (#1203).
+describe('withoutIgnoredPlugins', () => {
+  it('drops the preload polyfill plugin, wherever Nuxt nests it', () => {
+    const plugins = [{ name: 'vite:vue' }, [{ name: 'nuxt:module-preload-polyfill' }, { name: 'nuxt:kept' }], null]
+
+    expect(withoutIgnoredPlugins(plugins)).toEqual([{ name: 'vite:vue' }, [{ name: 'nuxt:kept' }], null])
+  })
+
+  it('leaves a config with no plugin list alone', () => {
+    expect(withoutIgnoredPlugins(undefined)).toBeUndefined()
   })
 })

@@ -11,12 +11,14 @@ import { createRequire } from 'node:module'
 import { lookup as lookupMime } from 'mrmime'
 import { dirname, join, relative } from 'pathe'
 import {
+  createLogger,
   loadConfigFromFile as loadViteConfigFromFile,
   mergeConfig as mergeViteConfig,
   normalizePath,
   searchForWorkspaceRoot,
 } from 'vite'
 import { APP_PATH, TEMP_PATH } from './alias.js'
+import { collectionLogger } from './collect/logger.js'
 import { runDevCommand } from './dev-event.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { optimizeEntries } from './optimize-entries.js'
@@ -507,6 +509,12 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     configFile: false,
     plugins,
   }) as InlineConfig
+
+  if (isServer) {
+    viteConfig.customLogger = collectionLogger(viteConfig.customLogger ?? createLogger(viteConfig.logLevel, {
+      ...viteConfig.clearScreen === undefined ? {} : { allowClearScreen: viteConfig.clearScreen },
+    }))
+  }
 
   return {
     viteConfig,
