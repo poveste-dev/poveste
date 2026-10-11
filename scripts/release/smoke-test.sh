@@ -200,6 +200,24 @@ dev_renders() {
   echo "✅ [$name] dev renders"
 }
 
+# one_dependency_pass <name> — after `dev_renders`, over the log it left.
+#
+# A dependency Vite's scan missed is bundled in a second pass when a story first
+# asks for it, and the page is reloaded while that runs. Only an installed book
+# shows it: in the workspace the plugins are linked source, which the scan reads.
+one_dependency_pass() {
+  local name="$1"
+  [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
+
+  local dev_log="$WORK/dev-$name.log"
+  if grep -aq 'optimized dependencies changed' "$dev_log"; then
+    echo "❌ Smoke test FAILED [$name] — poveste dev bundled dependencies a second time and reloaded the page"
+    grep -aE 'optimized|reloading' "$dev_log"
+    exit 1
+  fi
+  echo "✅ [$name] one dependency pass"
+}
+
 # The same consumer installed with pnpm, and the dev pass over it. pnpm's isolated
 # layout puts none of Poveste's own dependencies at the project root, which is how
 # `poveste dev` rendered a blank page for every pnpm user from 0.13.0 while each npm
@@ -555,7 +573,7 @@ cat > "$QUASAR_APP/src/Meow.story.vue" <<'VUE'
 <template>
   <Story title="Meow">
     <Variant title="default">
-      🐱
+      <q-btn label="Meow" />
     </Variant>
   </Story>
 </template>
@@ -571,6 +589,13 @@ install_and_build quasar "$QUASAR_APP" \
   "vue@$(peer_range poveste-plugin-quasar vue)" \
   "@quasar/app-vite@$(peer_range poveste-plugin-quasar '@quasar/app-vite')" \
   vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+# The story's `<q-btn>` is an import of `quasar` only once Quasar's plugin has
+# transformed the template, so the scan cannot find it and the plugin has to name
+# it. Left out, the first story page was reloaded mid-load, and in a StackBlitz
+# preview it never rendered (#1278).
+dev_renders quasar "$QUASAR_APP" "/story/src-meow-story-vue" "Meow" 4795
+one_dependency_pass quasar
 
 
 # ── Nuxt ─────────────────────────────────────────────────────────────────────
