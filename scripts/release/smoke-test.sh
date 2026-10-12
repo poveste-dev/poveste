@@ -376,8 +376,19 @@ export default defineConfig({
   plugins: [svelte()],
   poveste: {
     plugins: [HstSvelte()],
+    setupFile: '/src/poveste.setup.ts',
   },
 })
+TS
+
+# The Svelte guide's own setup file. Importing the helper pulls `poveste`'s node
+# entry into collection, where a module of its own declares `__dirname`, and
+# that failed every story of the book from 0.15.0 on. The page imports the same
+# file, and got the Node entry too, so the dev pass below reads it as well (#1301).
+cat > "$SVELTE_APP/src/poveste.setup.ts" <<'TS'
+import { defineSetupSvelte } from '@poveste/plugin-svelte'
+
+export const setupSvelte = defineSetupSvelte(() => {})
 TS
 
 cat > "$SVELTE_APP/src/MyButton.svelte" <<'SVELTE'

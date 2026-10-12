@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { tempDir } from '../../__tests__/temp-dir.js'
-import { filenameOf } from '../runner.ts'
+import { createRunner, filenameOf } from '../runner.ts'
 
 /** Only the two fields `filenameOf` reads. */
 function node(id: string, file?: string): Readonly<EvaluatedModuleNode> {
@@ -113,5 +113,64 @@ describe('the file a CJS module is told it is', () => {
     writeFileSync(file, '')
 
     expect(filenameOf(node(`${file}?v=1`, `${file}?v=1`), dir)).toBe(file)
+  })
+})
+
+/** Runs `code` as the module server would hand it over, and returns its exports. */
+async function evaluate(code: string, root = tempRoot()): Promise<Record<string, unknown>> {
+  const file = join(root, 'module.js')
+  writeFileSync(file, '')
+  // The two questions a runner asks its server: which modules are Node's own, and what a module's code is.
+  const runner = createRunner(async name => name === 'fetchModule' ? { code, file, id: file, url: file, invalidate: false } : [], root)
+  onTestFinished(() => runner.close())
+  return runner.import(file)
+}
+
+const EXPORT_VALUE = 'Object.defineProperty(__vite_ssr_exports__, "value", { enumerable: true, value })'
+
+// The body of an inlined module ran in the scope of the function that hands it
+// `require`, `exports`, `module`, `__filename` and `__dirname`, so a top-level
+// `const` of any of those names was a redeclaration: a syntax error before a
+// line ran, in every story of the book. `const require = createRequire(…)` and
+// `const __dirname = dirname(fileURLToPath(…))` are how ESM spells them (#1301).
+describe('an inlined module that declares a name the runner also provides', () => {
+  it.for(['require', 'exports', 'module', '__filename', '__dirname'])('may declare `%s` at its top level', async (name) => {
+    const { value } = await evaluate(`const ${name} = 'mine'\nconst value = ${name}\n${EXPORT_VALUE}`)
+
+    expect(value).toBe('mine')
+  })
+
+  it('may declare it with `let` or as a function too', async () => {
+    const { value } = await evaluate(`let __dirname = 'mine'\nfunction require() { return 'also mine' }\nconst value = [__dirname, require()]\n${EXPORT_VALUE}`)
+
+    expect(value).toEqual(['mine', 'also mine'])
+  })
+})
+
+describe('an inlined module that ends in a line comment', () => {
+  // As transformed code does, with its source map.
+  it('still runs', async () => {
+    const { value } = await evaluate(`const value = 'ran'\n${EXPORT_VALUE}\n//# sourceMappingURL=data:application/json;base64,e30=`)
+
+    expect(value).toBe('ran')
+  })
+})
+
+describe('an inlined module that only reads those names', () => {
+  it('still gets a `require`, its own path and a `module` to export through', async () => {
+    const root = tempRoot()
+
+    const { value } = await evaluate(`const value = [typeof require, __filename, __dirname, typeof module.exports]\n${EXPORT_VALUE}`, root)
+
+    // Vite's runner writes a module's path with forward slashes, on Windows too.
+    const slashed = (path: string) => path.replaceAll('\\', '/')
+    expect(value).toEqual(['function', slashed(join(root, 'module.js')), slashed(root), 'object'])
+  })
+
+  it('still exports what it assigns to `module.exports`', async () => {
+    const exported = await evaluate(`module.exports = { answer: 42 }`)
+
+    expect(exported['default']).toEqual({ answer: 42 })
+    expect(exported['answer']).toBe(42)
   })
 })
