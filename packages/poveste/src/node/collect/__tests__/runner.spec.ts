@@ -162,7 +162,9 @@ describe('an inlined module that only reads those names', () => {
 
     const { value } = await evaluate(`const value = [typeof require, __filename, __dirname, typeof module.exports]\n${EXPORT_VALUE}`, root)
 
-    expect(value).toEqual(['function', join(root, 'module.js'), root, 'object'])
+    // Vite's runner writes a module's path with forward slashes, on Windows too.
+    const slashed = (path: string) => path.replaceAll('\\', '/')
+    expect(value).toEqual(['function', slashed(join(root, 'module.js')), slashed(root), 'object'])
   })
 
   it('still exports what it assigns to `module.exports`', async () => {
