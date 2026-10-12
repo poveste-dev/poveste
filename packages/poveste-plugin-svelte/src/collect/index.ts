@@ -10,8 +10,7 @@ import {
   callSetupFunctions,
   mountSvelteComponent,
 } from '../util/svelte.js'
-import Story from './Story.svelte'
-import Variant from './Variant.svelte'
+import { collectHst } from './hst.js'
 
 export async function run({ file, el, storyData }: ServerRunPayload) {
   const { default: Comp } = await import(/* @vite-ignore */ file.moduleId)
@@ -19,10 +18,7 @@ export async function run({ file, el, storyData }: ServerRunPayload) {
   const mountedApp = await mountSvelteComponent(Comp, {
     target: el,
     props: {
-      Hst: {
-        Story,
-        Variant,
-      },
+      Hst: collectHst(),
     },
     // Keyed by the same symbols the components read, through the map `mount`
     // takes — a runner is not a component, so it cannot call `set` (#981).
