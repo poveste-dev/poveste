@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openStory, toggleLayout } from './support.js'
 
 // A story whose `meta` forces the options pane hidden. It lived in the Vue book
 // alone while the Svelte plugin dropped a story's `meta`, with a Svelte story
@@ -22,6 +23,27 @@ test.describe('story options meta', () => {
 
     // The global setting stays on — only this story opts out.
     await page.getByTestId('story-list-item').filter({ hasText: /^Controls/ }).first().click()
+    await expect(page.getByTestId('story-side-panel')).toBeVisible()
+  })
+})
+
+// The other direction, which nothing asserted while the docs promised it
+// (#1261). A conformance story, so it runs in every conformance book.
+test.describe('a story that forces its options pane on', () => {
+  test('shows the pane though the reader has turned it off', async ({ page }) => {
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+
+    await openStory(page, 'conformance-button')
+    await toggleLayout(page, 'story-options')
+    // A story that sets nothing follows the reader. Asked once the story is on
+    // screen, for the reason given above: "no panel" is true of any story for
+    // an instant.
+    await openStory(page, 'conformance-first-variant')
+    await expect(preview.getByText('First variant')).toBeVisible()
+    expect(await page.getByTestId('story-side-panel').count()).toBe(0)
+
+    await openStory(page, 'conformance-story-options-on')
+    await expect(preview.getByText('Story options forced on')).toBeVisible()
     await expect(page.getByTestId('story-side-panel')).toBeVisible()
   })
 })
