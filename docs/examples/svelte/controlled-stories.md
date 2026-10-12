@@ -151,4 +151,4 @@ Each variant calls `initState` for itself, so editing Red's text leaves Blue's a
 
 ## Available controls
 
-`Hst.Text`, `Hst.Textarea`, `Hst.Number`, `Hst.Checkbox`, `Hst.CheckboxList`, `Hst.Select`, `Hst.Radio`, `Hst.ButtonGroup`, `Hst.Slider`, `Hst.Json`, `Hst.ColorSelect` and `Hst.Button` — reached through the `Hst` prop rather than as globals. Note `ColorSelect`, not `Color`. See [controls](../../guide/svelte/controls.md).
+`Hst.Text`, `Hst.Textarea`, `Hst.Number`, `Hst.Checkbox`, `Hst.CheckboxList`, `Hst.Select`, `Hst.Radio`, `Hst.ButtonGroup`, `Hst.Slider`, `Hst.Color`, `Hst.Date`, `Hst.Json` and `Hst.Button` — reached through the `Hst` prop rather than as globals. `Hst.ColorSelect` is an older colour control that is still exported; `Hst.Color` is the picker. See [controls](../../guide/svelte/controls.md).
