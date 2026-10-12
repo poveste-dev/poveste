@@ -212,13 +212,7 @@ export default defineConfig({
 })
 ```
 
-In this file, you can import global CSS files or JS files.
-
-```ts
-// src/poveste.setup.ts
-
-import './poveste.css' // Import global CSS
-```
+The setup file is one you create, and it is where global CSS and JS go: anything it imports reaches every story. Import a stylesheet of your own, by its path from the setup file: `import './app.css'` for a `src/app.css`. A file that does not exist fails the build, and the error names a story, not the setup file.
 
 You can also tell Poveste to configure the sandbox application using the corresponding setup function (more details afterwards).
 
