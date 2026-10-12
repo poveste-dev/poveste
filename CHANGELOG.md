@@ -98,6 +98,12 @@ It is a `minor`: the React plugin, the `preview` config group and plugin-added s
 
 - **The Svelte examples page lists `Hst.Color` and `Hst.Date`** ([#1317](https://github.com/poveste-dev/poveste/pull/1317)). It said `Hst.Color` did not exist.
 
+- **The Svelte setup page's snippets build as printed** ([#1321](https://github.com/poveste-dev/poveste/issues/1321), [#1322](https://github.com/poveste-dev/poveste/pull/1322)). The setup snippet imported `./poveste.css`, a file the page never told you to create, so a book set up from it failed to build with an error that named a story. The page now shows the `setupFile` line in the config, names the file `src/poveste.setup.ts`, and says the stylesheet is yours to import. The config guide had the same import and is corrected.
+
+- **The CSS guide names Firefox 146 for `@scope`, where it said 128** ([#1321](https://github.com/poveste-dev/poveste/issues/1321), [#1322](https://github.com/poveste-dev/poveste/pull/1322)). Firefox shipped `@scope` in 146, in December 2025, and Firefox ESR 140 does not have it. On a Firefox older than 146 a book needs `isolateStyles: false`, as the guide already says of any browser without `@scope`.
+
+- **Smaller corrections in the story and variant references** ([#1321](https://github.com/poveste-dev/poveste/issues/1321), [#1322](https://github.com/poveste-dev/poveste/pull/1322)). The Svelte pages write `iconColor`, which is the prop; `icon-color` sets nothing. The story pages say `meta` is yours to extend and show how a TypeScript book declares its keys, and the variant pages document a variant's `meta`.
+
 - **The Nuxt guide says where story files go** ([#1203](https://github.com/poveste-dev/poveste/issues/1203), [#1262](https://github.com/poveste-dev/poveste/pull/1262)): anywhere under the project root, and how to keep stories under `app/components/` out of Nuxt's auto-imported components.
 
 ## v0.18.3
