@@ -4,6 +4,7 @@ import { startPreview } from '../preview.js'
 import { resolvePort } from './port.js'
 
 export interface PreviewOptions {
+  config?: string
   port?: number | string
   host?: string | boolean
   open?: boolean
@@ -15,7 +16,11 @@ export async function previewCommand(options: PreviewOptions) {
   try {
     const port = resolvePort(options.port, 'preview')
 
+    // The same file the book was built with: `outDir` is read from it, and
+    // without it a book built with `--config` was looked for in the default
+    // directory and every path answered 404 (#1302).
     const ctx = await createContext({
+      configFile: options.config,
       mode: 'build',
     })
 
