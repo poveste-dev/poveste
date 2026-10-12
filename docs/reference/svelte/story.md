@@ -126,7 +126,7 @@ An [Iconify id](https://icones.js.org/) to customize the story icon in the tree.
 The icon color.
 
 ```svelte
-<Hst.Story icon-color="#8B5CF6">
+<Hst.Story iconColor="#8B5CF6">
   Hello world
 </Hst.Story>
 ```
@@ -220,9 +220,20 @@ A story that declares a **variant** inside `{#if}`, `{#each}` or `{#await}` gets
 
 ## `meta`
 
-`{ storyOptions?: boolean }`
+`StoryMeta`, an object of your own keys plus `storyOptions`.
 
-Settings for the app around the story, not for the story's own render. One key is read today.
+Free-form data attached to the story. `meta` is the book's to extend: put any key in it and read it back where your own code is handed the story, which in a Svelte book is the [setup function](../../guide/svelte/app-setup.md). Poveste itself reads one key, `storyOptions`, described below. It also writes one of its own, `hasVariantChildComponents`, so leave that name alone.
+
+In a TypeScript book, declare your keys once, in the setup file for instance. `CommonMeta` types `meta` on both `Hst.Story` and `Hst.Variant`:
+
+```ts
+declare module 'poveste' {
+  interface CommonMeta {
+    /** Read by the book's own setup function. */
+    theme?: 'light' | 'dark'
+  }
+}
+```
 
 ### `meta.storyOptions`
 

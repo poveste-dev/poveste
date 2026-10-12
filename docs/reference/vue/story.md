@@ -206,9 +206,20 @@ Disables the automatic detection of props of the components in the story.
 
 ## `meta`
 
-`{ storyOptions?: boolean }`
+`StoryMeta`, an object of your own keys plus `storyOptions`.
 
-Settings for the app around the story, not for the story's own render. One key is read today.
+Free-form data attached to the story. `meta` is the book's to extend: put any key in it and read it back where your own code is handed the story, such as a [wrapper](../../guide/vue/wrapper.md) or the [setup function](../../guide/vue/app-setup.md). Poveste itself reads one key, `storyOptions`, described below. It also writes one of its own, `hasVariantChildComponents`, so leave that name alone.
+
+In a TypeScript book, declare your keys once, in the setup file for instance. `CommonMeta` types `meta` on both `<Story>` and `<Variant>`:
+
+```ts
+declare module 'poveste' {
+  interface CommonMeta {
+    /** Set to `false` to render without the book's wrapper. */
+    wrapper?: boolean
+  }
+}
+```
 
 ### `meta.storyOptions`
 

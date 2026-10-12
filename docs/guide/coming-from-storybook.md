@@ -69,4 +69,4 @@ Worth knowing before you spend an afternoon:
 
 ## Trying it
 
-`pnpm i -D poveste @poveste/plugin-vue`, a `poveste.config.ts` with the plugin in it, and `poveste dev`. The [Getting started](./getting-started.md) page has the exact commands per framework, and every framework page has a working example to copy.
+`pnpm i -D poveste @poveste/plugin-vue`, a `poveste.config.ts` with the plugin in it, and `poveste dev`. The [Getting started](./getting-started.md) page has the exact commands per framework. The Solid and React pages have a story to copy on the page itself; the others link to the page that shows one.

@@ -220,4 +220,4 @@ Vue's own flags — `__VUE_PROD_DEVTOOLS__` and friends — come from `@vitejs/p
 and never needed declaring.
 
 Nuxt users need none of this: `@nuxtjs/i18n` provides the flags, and its own client
-plugin is handled for you — see the [Nuxt i18n guide](./getting-started.md#i18n).
+plugin is handled for you — see the [Nuxt i18n guide](../nuxt/getting-started.md#i18n).
