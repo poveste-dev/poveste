@@ -172,6 +172,6 @@ Poveste's own sandbox-side defaults are wrapped in `@layer poveste-defaults` so 
 
 - Chrome 118+ (October 2023)
 - Safari 17.4+ (March 2024)
-- Firefox 128+ (July 2024)
+- Firefox 146+ (December 2025). Firefox ESR 140 and earlier do not have it.
 
 There is no JavaScript fallback, and the failure is not a graceful one. An unrecognised at-rule is discarded along with its whole block, so on a browser without `@scope` every wrapped rule disappears — chrome and story CSS alike, leaving an unstyled book rather than a slightly-off one. On those browsers `isolateStyles: false` is a requirement, not a preference.

@@ -7,7 +7,7 @@ description: 'Use addWrapper to put a provider, a theme or a layout around every
 
 **Not supported yet.**
 
-The Vue plugin lets a [setup file](./app-setup.md) add components that render around every story with `addWrapper`. The Svelte plugin has no equivalent: there is no `addWrapper`, and `Hst.Story` and `Hst.Variant` have no `meta` prop for a story to opt out with.
+The Vue plugin lets a [setup file](./app-setup.md) add components that render around every story with `addWrapper`. The Svelte plugin has no equivalent: there is no `addWrapper`. `Hst.Story` and `Hst.Variant` do take a [`meta` prop](../../reference/svelte/story.md#meta), but with no wrapper to read it there is nothing for a story to opt out of.
 
 This is tracked in [#232](https://github.com/poveste-dev/poveste/issues/232).
 

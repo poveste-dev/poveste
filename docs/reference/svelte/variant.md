@@ -122,7 +122,7 @@ The icon color.
 
 ```svelte
 <Hst.Story>
-  <Hst.Variant icon-color="#8B5CF6">
+  <Hst.Variant iconColor="#8B5CF6">
     🚗
   </Hst.Variant>
 </Hst.Story>
@@ -169,6 +169,16 @@ Turns off [automatic prop detection](./story.md#autopropsdisabled) for this vari
 
 ```svelte
 <Hst.Variant autoPropsDisabled>
+  <Button />
+</Hst.Variant>
+```
+
+## `meta`
+
+Free-form data attached to the variant, for your own code to read. Poveste reads no key of a variant's `meta`. How a TypeScript book declares its keys is under [`meta` on a story](./story.md#meta). In a Svelte book it needs Poveste 0.19.0 or later: earlier versions dropped a variant's `meta`.
+
+```svelte
+<Hst.Variant title="Dark" meta={{ theme: 'dark' }}>
   <Button />
 </Hst.Variant>
 ```

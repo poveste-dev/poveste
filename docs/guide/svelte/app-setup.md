@@ -7,18 +7,28 @@ description: 'Define a setup function so the Svelte app that renders your storie
 
 ## Global setup
 
-You can define a setup function globally in your setup file defined by the `setupFile` option
-in the global configuration ([learn more](../config.md#global-js-and-css)).
+You can define a setup function globally in a setup file. It is a file you create, and the
+`setupFile` option in the global configuration names it ([learn more](../config.md#global-js-and-css)):
 
-For Svelte it is called `setupSvelte`. Poveste provides an optional `defineSetupSvelte`
+```ts
+// poveste.config.ts
+import { HstSvelte } from '@poveste/plugin-svelte'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [
+    HstSvelte(),
+  ],
+  setupFile: '/src/poveste.setup.ts',
+})
+```
+
+For Svelte the function is called `setupSvelte`. Poveste provides an optional `defineSetupSvelte`
 helper to have better types in your IDE:
 
 ```ts
-// poveste.setup.ts
-
+// src/poveste.setup.ts
 import { defineSetupSvelte } from '@poveste/plugin-svelte'
-
-import './poveste.css'
 
 export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
   // Runs for every mounted story and variant
@@ -29,6 +39,9 @@ export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
 ::: tip
 Importing global CSS or JS files at the top of the setup file — outside the hook — is the
 most common use, and it does not need the hook at all. The file is a module like any other.
+Import a stylesheet of your own, by its path from the setup file: `import './app.css'` for a
+`src/app.css`. A file that does not exist fails the build, and the error names a story, not
+the setup file.
 :::
 
 ## If you already export a numbered name
@@ -207,7 +220,7 @@ same as you would for any other provider.
 
 There is nothing special to do. A Svelte i18n library — or a hand-rolled `t()` — is an
 ordinary module, not a framework plugin, so it has none of the sandbox trouble the [Nuxt
-i18n guide](../vue/getting-started.md#i18n) describes: nothing gets booted through an app
+i18n guide](../nuxt/getting-started.md#i18n) describes: nothing gets booted through an app
 entry, so nothing 500s the iframe. Import or initialise it like any other module (in a
 `.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. `examples/svelte`
 carries a minimal version.

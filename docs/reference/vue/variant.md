@@ -183,6 +183,23 @@ Disables the automatic detection of props of the components in the story.
 </template>
 ```
 
+## `meta`
+
+Free-form data attached to the variant, for your own code to read. Poveste reads no key of a variant's `meta`. How a TypeScript book declares its keys is under [`meta` on a story](./story.md#meta).
+
+```vue
+<template>
+  <Story>
+    <Variant
+      title="Without wrapper"
+      :meta="{ wrapper: false }"
+    >
+      <!-- ... -->
+    </Variant>
+  </Story>
+</template>
+```
+
 ## Slot: `default`
 
 Content of the variant.
