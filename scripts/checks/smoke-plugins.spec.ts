@@ -142,6 +142,41 @@ describe('holding the two together', () => {
     expect(pluginProblems(['poveste-plugin-vue'], 'nothing to read here', {}))
       .toEqual([`${SMOKE_TEST} declares no \`PLUGIN_PACKAGES\` — this check is reading the wrong thing`])
   })
+
+  // The read stops at the first `)`. One in a comment or a substitution is not
+  // the array's own, and what followed it was dropped without a word (#1069).
+  it('names the line when a `)` inside the array ends the read early', () => {
+    const script = SCRIPT.replace('"poveste-plugin-vue"', '"poveste-plugin-vue" # the first (and oldest)')
+
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], script, {})).toEqual([
+      expect.stringContaining('has a `)` before the array ends, on the line `"poveste-plugin-vue" # the first (and oldest)`'),
+    ])
+  })
+
+  it('says the same when the `)` comes before any name, and not that there is no array', () => {
+    const script = SCRIPT.replace('PLUGIN_PACKAGES=(', 'PLUGIN_PACKAGES=(\n  # directory names (not package names)')
+
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], script, {})).toEqual([
+      expect.stringContaining('on the line `# directory names (not package names)`'),
+    ])
+  })
+
+  it('says so when the array is never closed', () => {
+    expect(pluginProblems(['poveste-plugin-vue'], 'PLUGIN_PACKAGES=(\n  "poveste-plugin-vue"\n', {}))
+      .toEqual([expect.stringContaining('opens `PLUGIN_PACKAGES=(` and never closes it')])
+  })
+
+  it('reads an array written on one line', () => {
+    const script = 'PLUGIN_PACKAGES=("poveste-plugin-vue")\ninstall_and_build vue "$(plugin_tgz poveste-plugin-vue)"'
+
+    expect(pluginProblems(['poveste-plugin-vue'], script, {})).toEqual([])
+  })
+
+  it('reads past a comment that has no `)` in it', () => {
+    const script = SCRIPT.replace('"poveste-plugin-vue"', '"poveste-plugin-vue" # the first')
+
+    expect(pluginProblems(['poveste-plugin-svelte', 'poveste-plugin-vue'], script, {})).toEqual([])
+  })
 })
 
 describe('the repository', () => {

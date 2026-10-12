@@ -55,6 +55,37 @@ export function listedPlugins(script: string): string[] {
   return block === undefined ? [] : [...block.matchAll(/"([\w-]+)"/g)].map(match => match[1] ?? '').sort()
 }
 
+const ARRAY_OPEN = 'PLUGIN_PACKAGES=('
+
+/**
+ * Why the array cannot be read to its end, if it cannot.
+ *
+ * `listedPlugins` reads as far as the first `)`. That is the array's own unless
+ * it sits in a comment or a `$(…)`, and then every name after it was dropped and
+ * reported as a plugin with no pass, or the array as not there at all (#1069).
+ * Reading shell properly is not the aim: saying what stopped the read is.
+ */
+export function unreadableArray(script: string): string | undefined {
+  const open = script.indexOf(ARRAY_OPEN)
+  if (open === -1) {
+    return undefined
+  }
+
+  const close = script.indexOf(')', open + ARRAY_OPEN.length)
+  if (close === -1) {
+    return `${SMOKE_TEST} opens \`${ARRAY_OPEN}\` and never closes it`
+  }
+
+  // The array's own `)` has nothing before it on its line but names.
+  const lineStart = Math.max(open + ARRAY_OPEN.length, script.lastIndexOf('\n', close) + 1)
+  if (script.slice(lineStart, close).replace(/"[\w-]+"/g, '').trim() === '') {
+    return undefined
+  }
+
+  const line = script.slice(script.lastIndexOf('\n', close) + 1).split('\n', 1)[0]!.trim()
+  return `${SMOKE_TEST}: \`PLUGIN_PACKAGES\` has a \`)\` before the array ends, on the line \`${line}\`. This check reads the array as far as its first \`)\`, so every name after it would be dropped — move that \`)\` out of the array`
+}
+
 /**
  * Whether the script installs this plugin's tarball somewhere.
  *
@@ -81,6 +112,11 @@ export const EXEMPT: Record<string, string> = {
 }
 
 export function pluginProblems(published: string[], script: string, exempt: Record<string, string> = EXEMPT): string[] {
+  const unreadable = unreadableArray(script)
+  if (unreadable) {
+    return [unreadable]
+  }
+
   const listed = listedPlugins(script)
 
   if (listed.length === 0) {
