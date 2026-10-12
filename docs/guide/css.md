@@ -91,6 +91,8 @@ html.dark {
 
 That becomes `:scope.dark`, which is the story root, so it paints the story and nothing else.
 
+A rule keyed on the class from further up, `.dark .card { … }`, which is what Tailwind's class strategy writes, matches too, whether the story renders in an iframe or without one.
+
 ::: danger Don't target the app's own dark class
 Poveste's chrome marks itself dark with a different class, on the document root. That element is outside your scope, so a rule keyed to it never matches — silently. Use `theme.darkClass` and let the story root carry it.
 :::

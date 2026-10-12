@@ -7,6 +7,9 @@ export default defineConfig({
   ],
   theme: {
     favicon: 'logo.svg',
+    // Not the default, so the shared dark specs run against a custom class in
+    // one book. The conformance stories key their dark CSS on both names.
+    darkClass: 'my-dark',
   },
   // What the shared `e2e/` suite asserts of every conformance book: the default
   // presets plus one, and a transparent default (#540).
