@@ -95,6 +95,7 @@ program.command('build')
 program.command('preview')
   .describe('preview the built directory')
   .option('-p, --port <port>', 'Listening port of the server')
+  .option('-c, --config <file>', `[string] use specified config file`)
   .option('--open', 'Open in your default browser')
   .option('--host [host]', '[string] specify hostname (omit value or pass `0.0.0.0` to expose to all network interfaces)')
   .action(async (options) => {
