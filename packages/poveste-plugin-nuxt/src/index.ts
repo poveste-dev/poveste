@@ -1,7 +1,7 @@
 import type { Nuxt } from '@nuxt/schema'
 import type { Plugin } from 'poveste'
 import type { ResolvedConfig } from 'vite'
-import { join } from 'node:path'
+import { isAbsolute, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import replace from '@rollup/plugin-replace'
 import { onPovesteCleanup } from 'poveste'
@@ -37,8 +37,19 @@ export function isPluginExcluded(src: string, patterns: (string | RegExp)[]): bo
 // ordering by transforming its output rather than reimplementing it. Returns the
 // source untouched if the `export default [...]` shape is not found, so an
 // upstream format change degrades to today's behaviour instead of breaking.
-export function wrapPluginsForTolerantBoot(source: string): string {
-  const wrapped = source.replace(/export default (\[[\s\S]*?\])/, 'export default $1.map(__povesteTolerant)')
+export function wrapPluginsForTolerantBoot(source: string, root?: string): string {
+  // Each plugin's import path, handed to the guard so it can name a plugin that
+  // has no name of its own (#1063). From the project root where there is one:
+  // the paths are written into the book, and Nuxt imports by absolute path.
+  const sources = new Map<string, string>()
+  for (const [, named, bare, , path] of source.matchAll(/import\s+(?:\{\s*default\s+as\s+([\w$]+)\s*\}|([\w$]+))\s+from\s+(['"])(.+?)\3/g)) {
+    const from = path as string
+    sources.set((named ?? bare) as string, root && isAbsolute(from) ? relative(root, from).replaceAll('\\', '/') : from)
+  }
+  const wrapped = source.replace(/export default (\[[\s\S]*?\])/, (_, list: string) => {
+    const from = list.slice(1, -1).split(',').map(name => name.trim()).filter(Boolean).map(name => sources.get(name) ?? null)
+    return `export default ${list}.map((plugin, index) => __povesteTolerant(plugin, ${JSON.stringify(from)}[index]))`
+  })
   if (wrapped === source) {
     return source
   }
@@ -60,7 +71,7 @@ export function wrapPluginTemplates(templates: { filename?: string, getContents?
       continue
     }
     wrappedTemplates.add(template)
-    template.getContents = async (ctx: any) => wrapPluginsForTolerantBoot(await original(ctx))
+    template.getContents = async (ctx: any) => wrapPluginsForTolerantBoot(await original(ctx), ctx?.nuxt?.options?.rootDir)
   }
 }
 

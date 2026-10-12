@@ -135,7 +135,7 @@ sets up. Poveste handles this in two layers.
 
 **Failing plugins are skipped, not fatal.** If a client plugin throws while setting up in
 the sandbox, Poveste catches it, logs a `[poveste] … skipping it` warning naming the
-plugin, and renders the story anyway — one broken plugin no longer paints a 500 into every
+plugin, or the file it came from when the plugin has no name, and renders the story anyway — one broken plugin no longer paints a 500 into every
 iframe. Whatever that plugin would have provided is simply absent. So a module Poveste has
 never seen degrades gracefully instead of taking the story down.
 

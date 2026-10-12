@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 // @ts-expect-error plain runtime module, no types
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
 import { withoutIgnoredPlugins } from './ignored-plugins'
@@ -42,19 +46,61 @@ describe('wrapPluginsForTolerantBoot', () => {
     const result = wrapPluginsForTolerantBoot(source)
 
     expect(result).toContain(`import { __povesteTolerant } from '#build/poveste/tolerant-plugins.mjs'`)
-    expect(result).toContain(`export default [i18n_ab12, ssr_cd34].map(__povesteTolerant)`)
+    expect(result).toContain(`export default [i18n_ab12, ssr_cd34].map((plugin, index) => __povesteTolerant(plugin, ["../node_modules/@nuxtjs/i18n/dist/runtime/plugins/i18n.js","../plugins/ssr.js"][index]))`)
   })
 
   it('wraps an array that spans multiple lines', () => {
     const source = `import a from 'a'\nexport default [\n  a,\n]`
 
-    expect(wrapPluginsForTolerantBoot(source)).toContain('].map(__povesteTolerant)')
+    expect(wrapPluginsForTolerantBoot(source)).toContain('].map((plugin, index) => __povesteTolerant(plugin, ["a"][index]))')
   })
 
   it('returns the source untouched when the array shape is absent', () => {
     const source = `export const plugins = []`
 
     expect(wrapPluginsForTolerantBoot(source)).toBe(source)
+  })
+
+  // The form Nuxt writes today: a default import per plugin, by absolute path.
+  it('hands each plugin the path it was imported from, in the array\'s order', () => {
+    const source = `import b_2 from "/app/plugins/b.ts";\nimport a_1 from "/app/plugins/a.ts";\nexport default [a_1, b_2]`
+
+    expect(wrapPluginsForTolerantBoot(source)).toContain('__povesteTolerant(plugin, ["/app/plugins/a.ts","/app/plugins/b.ts"][index])')
+  })
+
+  it('writes those paths from the project root, not from the disk\'s', () => {
+    const source = `import a_1 from "/home/me/app/plugins/a.ts";\nimport i18n_2 from "/home/me/app/node_modules/@nuxtjs/i18n/dist/runtime/plugins/i18n.js";\nexport default [a_1, i18n_2]`
+
+    expect(wrapPluginsForTolerantBoot(source, '/home/me/app')).toContain('["plugins/a.ts","node_modules/@nuxtjs/i18n/dist/runtime/plugins/i18n.js"][index]')
+  })
+
+  // The acceptance in #1063, through the file a book actually loads: two
+  // plugins written `defineNuxtPlugin(() => { throw … })` each warn, and a
+  // reader can tell the two warnings apart.
+  it('makes two unnamed plugins that throw warn with two different lines', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'poveste-nuxt-plugins-'))
+    onTestFinished(() => rmSync(dir, { recursive: true, force: true }))
+    // Through a `defineNuxtPlugin` of its own, as a plugin file is written: the
+    // arrow is an argument, so it has no name to infer.
+    const unnamed = `const defineNuxtPlugin = plugin => plugin\nexport default defineNuxtPlugin(() => { throw new Error('needs a server') })\n`
+    writeFileSync(join(dir, 'analytics.mjs'), unnamed)
+    writeFileSync(join(dir, 'session.mjs'), unnamed)
+    // Relative, so the same text is a valid import on Windows, where a path has backslashes.
+    const generated = `import analytics_1 from "./analytics.mjs";\nimport session_2 from "./session.mjs";\nexport default [analytics_1, session_2]`
+    writeFileSync(join(dir, 'plugins.client.mjs'), wrapPluginsForTolerantBoot(generated)
+      .replace('#build/poveste/tolerant-plugins.mjs', pathToFileURL(join(import.meta.dirname, '../runtime/tolerant-plugins.mjs')).href))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    onTestFinished(() => warn.mockRestore())
+
+    const { default: plugins } = await import(/* @vite-ignore */ pathToFileURL(join(dir, 'plugins.client.mjs')).href)
+    for (const plugin of plugins) {
+      await plugin({})
+    }
+
+    const lines = warn.mock.calls.map(([line]) => line as string)
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toContain('Nuxt client plugin from ./analytics.mjs threw')
+    expect(lines[1]).toContain('Nuxt client plugin from ./session.mjs threw')
   })
 })
 
@@ -79,6 +125,31 @@ describe('__povesteTolerant', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('auth:session'), expect.any(Error))
 
     warn.mockRestore()
+  })
+
+  // `defineNuxtPlugin(() => {})`: no `_name`, and a `.name` of `''`, which `??`
+  // took for a name. The warning then had a gap where the plugin goes (#1063).
+  it('names an unnamed plugin by the file it came from', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    onTestFinished(() => warn.mockRestore())
+    const plugin = Object.assign(async () => {
+      throw new Error('needs the full Nuxt runtime')
+    }, {})
+
+    await __povesteTolerant(plugin, '/app/plugins/analytics.client.ts')({})
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Nuxt client plugin from /app/plugins/analytics.client.ts threw'), expect.any(Error))
+  })
+
+  it('says so when an unnamed plugin has no file either', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    onTestFinished(() => warn.mockRestore())
+
+    await __povesteTolerant(Object.assign(async () => {
+      throw new Error('boom')
+    }, {}))({})
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('Nuxt client plugin (anonymous) threw'), expect.any(Error))
   })
 
   it('preserves plugin metadata so ordering and dependencies are unchanged', () => {
@@ -137,7 +208,7 @@ describe('wrapPluginTemplates', () => {
     const contents = await template.getContents()
 
     expect(contents.match(/import \{ __povesteTolerant \}/g)).toHaveLength(1)
-    expect(contents.match(/\.map\(__povesteTolerant\)/g)).toHaveLength(1)
+    expect(contents.match(/\.map\(\(plugin, index\) => __povesteTolerant\(/g)).toHaveLength(1)
   })
 
   it('leaves other templates alone', async () => {
