@@ -80,6 +80,12 @@ const local = {
       ]
     },
 
+    // Kebab-case where a digit is a letter like any other, so `e2e` is one word.
+    // Several scopes may be listed, split as the built-in rule splits them.
+    'scope-kebab-case': ({ scope }) => [
+      (scope ?? '').split(/[/\\,]/).every(part => /^(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$/.test(part.trim())),
+      'scope must be kebab-case',
+    ],
   },
 }
 
@@ -97,7 +103,10 @@ export default {
     // second spelling of the footer, and two spellings mean a release pass
     // reads one and misses the other.
     'subject-exclamation-mark': [2, 'never'],
-    'scope-case': [2, 'always', 'kebab-case'],
+    // Off in favour of the local rule: the built-in kebab-case reads `e2e` as
+    // `e-2-e` and refused a scope that is in the list above (#1077).
+    'scope-case': [0, 'always', 'kebab-case'],
+    'scope-kebab-case': [2, 'always'],
     'scope-enum': [1, 'always', SCOPES],
     'body-explains-why': [1, 'always', 20],
     'subject-no-bare-at-word': [2, 'always'],
