@@ -156,6 +156,43 @@ describe('checkDocCoverage', () => {
     expect(checkDocCoverage(root).problems).toContainEqual(expect.stringContaining('no entrypoint was measured at all'))
   })
 
+  // What #347 made happen: a published entrypoint re-exporting a dependency's
+  // declarations. They are in the surface a consumer sees and not ours to document.
+  const LIBRARY = {
+    'packages/demo/node_modules/lib/package.json': '{ "name": "lib", "types": "./index.d.ts" }\n',
+    'packages/demo/node_modules/lib/index.d.ts': '/** Theirs. */\nexport declare const theirs: number\nexport declare const alsoTheirs: number\n',
+  }
+
+  it('counts a package\'s own exports and leaves out the ones it re-exports from a dependency', () => {
+    const root = tree({
+      'CONTRIBUTING.md': '',
+      ...LIBRARY,
+      'packages/demo/package.json': '{ "name": "demo", "version": "1.0.0", "exports": { ".": { "types": "./dist/index.d.ts" } } }\n',
+      'packages/demo/dist/index.d.ts': 'export * from \'lib\'\nexport { theirs as renamed } from \'lib\'\n/** Ours. */\nexport declare const documented: number\nexport declare const bare: number\n',
+    })
+
+    const result = checkDocCoverage(root)
+
+    expect(result.problems).toEqual([])
+    expect(result.notes).toContainEqual(expect.stringContaining('1 of 2 exported symbols carry a doc comment across 1 entrypoints (50%)'))
+    expect(result.notes).toContainEqual(expect.stringContaining('Left out: 3 exports that are another library\'s'))
+  })
+
+  it('lists an entrypoint that only re-exports as not measured, and does not call it empty', () => {
+    const root = tree({
+      'CONTRIBUTING.md': '',
+      ...LIBRARY,
+      'packages/demo/package.json': '{ "name": "demo", "version": "1.0.0", "exports": { ".": { "types": "./dist/index.d.ts" }, "./lib": { "types": "./dist/lib.d.ts" } } }\n',
+      'packages/demo/dist/index.d.ts': '/** Ours. */\nexport declare const documented: number\n',
+      'packages/demo/dist/lib.d.ts': 'export * from \'lib\'\n',
+    })
+
+    const result = checkDocCoverage(root)
+
+    expect(result.problems).toEqual([])
+    expect(result.notes).toContainEqual(expect.stringContaining('demo/lib — re-exports 2 symbols of other libraries and declares none of its own'))
+  })
+
   it('every published entrypoint is measured for doc comments', { tags: ['check', 'docs', 'build'] }, () => {
     const result = checkDocCoverage()
     process.stdout.write(`${result.notes.join('\n')}\n`)

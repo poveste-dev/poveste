@@ -77,6 +77,8 @@ export interface Coverage {
   total: number
   documented: number
   undocumented: string[]
+  /** Exports declared by another library, which are in neither count above. */
+  reexported?: number
 }
 
 /**
@@ -203,6 +205,25 @@ function unresolvedRelativeModules(program: ts.Program): string[] {
   return missing
 }
 
+/**
+ * Whether an export is another library's, re-exported.
+ *
+ * `@poveste/vendors` re-exports Vue, Pinia, the router and VueUse whole. Once
+ * their real declarations shipped, the walk followed them, the surface went from
+ * 263 symbols to 1686 and the figure from 21% to 8%, with nothing changed about
+ * what Poveste documents (#937). Those symbols are documented, or not, by their
+ * own projects.
+ *
+ * By where the declaration is, not by which package re-exports it: a workspace
+ * package resolves to its real path under `packages/`, a dependency to one under
+ * `node_modules`, and any entrypoint can re-export either.
+ */
+function isAnotherLibrarys(exported: ts.Symbol, checker: ts.TypeChecker): boolean {
+  const target = exported.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(exported) : exported
+  const declarations = target.declarations ?? []
+  return declarations.length > 0 && declarations.every(declaration => declaration.getSourceFile().fileName.includes('/node_modules/'))
+}
+
 function measure(entry: Entrypoint): { coverage: Coverage | null, halfBuilt: string[] } {
   const program = ts.createProgram([entry.types], COMPILER_OPTIONS)
   const halfBuilt = unresolvedRelativeModules(program)
@@ -213,12 +234,14 @@ function measure(entry: Entrypoint): { coverage: Coverage | null, halfBuilt: str
 
   const undocumented: string[] = []
   let documented = 0
+  let reexported = 0
   for (const exported of checker.getExportsOfModule(symbol)) {
-    if (exported.getDocumentationComment(checker)?.length) documented++
+    if (isAnotherLibrarys(exported, checker)) reexported++
+    else if (exported.getDocumentationComment(checker)?.length) documented++
     else undocumented.push(exported.getName())
   }
   return {
-    coverage: { specifier: entry.specifier, total: documented + undocumented.length, documented, undocumented },
+    coverage: { specifier: entry.specifier, total: documented + undocumented.length, documented, undocumented, reexported },
     halfBuilt,
   }
 }
@@ -230,6 +253,7 @@ export function checkDocCoverage(root = ROOT): CheckResult {
   const unmeasured: string[] = []
 
   const broken: string[] = []
+  let reexported = 0
 
   const seen = new Set<string>()
 
@@ -266,10 +290,15 @@ export function checkDocCoverage(root = ROOT): CheckResult {
       else if (!coverage) {
         broken.push(`${entry.specifier} resolved to a file that is not a module`)
       }
-      else if (coverage.total === 0) {
+      else if (coverage.total === 0 && !coverage.reexported) {
         broken.push(`${entry.specifier} resolved but exports nothing`)
       }
+      else if (coverage.total === 0) {
+        reexported += coverage.reexported ?? 0
+        unmeasured.push(`${entry.specifier} — re-exports ${coverage.reexported} symbols of other libraries and declares none of its own`)
+      }
       else {
+        reexported += coverage.reexported ?? 0
         rows.push(coverage)
       }
     }
@@ -306,6 +335,11 @@ export function checkDocCoverage(root = ROOT): CheckResult {
   // clause at the end of a sentence.
   if (unmeasured.length) {
     report.push('', `Not measured (${unmeasured.length}):`, ...unmeasured.map(entry => `  • ${entry}`))
+  }
+
+  // Said every time, so a figure read next to an older one has its cause beside it.
+  if (reexported) {
+    report.push('', `Left out: ${reexported} exports that are another library's, re-exported. Their own projects document them (#937).`)
   }
 
   report.push('This step never fails on the number. It is here so the number is measured rather than remembered (#363).')
