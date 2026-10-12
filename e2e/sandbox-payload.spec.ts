@@ -59,3 +59,27 @@ test('the sandbox boots inside its script budget, without the highlighter', asyn
   // A realm that needs the network to boot is a realm that fails offline.
   expect(external, `sandbox reached out to ${external.join(', ')}`).toEqual([])
 })
+
+// A builtin control drawn in a story's own content, which `conformance-controls`
+// has: a select, with the chrome's chevron on it. Each realm has an icon store
+// of its own and only the app's was given the data, so that chevron was fetched
+// from api.iconify.design in every sandbox, and was missing offline (#255). The
+// test above could not see it: its story renders no control.
+test('a builtin control in a story draws its icon without the network', async ({ page }, testInfo) => {
+  // The Svelte books' story keeps its controls in the panel and has none in its
+  // own content. The realm under test is the app's, the same in every book.
+  test.skip(testInfo.project.name.startsWith('svelte'), 'no builtin control in this book\'s story content')
+
+  const external: string[] = []
+  page.on('request', (request) => {
+    const url = request.url()
+    if (/^https?:/.test(url) && !/^https?:\/\/(?:localhost|127\.0\.0\.1)[:/]/.test(url)) {
+      external.push(url)
+    }
+  })
+
+  await page.goto('/__sandbox.html?storyId=conformance-controls&variantId=_default')
+
+  await expect(page.locator('.__poveste-render-story .poveste-select svg').first()).toBeVisible()
+  expect(external, `sandbox reached out to ${external.join(', ')}`).toEqual([])
+})
