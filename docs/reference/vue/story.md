@@ -204,6 +204,37 @@ Disables the automatic detection of props of the components in the story.
 </template>
 ```
 
+## `meta`
+
+`{ storyOptions?: boolean }`
+
+Settings for the app around the story, not for the story's own render. One key is read today.
+
+### `meta.storyOptions`
+
+Overrides the **Story Options** switch in the Layout menu, for this story only. The pane that switch shows and hides is the one beside or below the preview, with the story's controls, docs, events and source.
+
+- `false` hides the pane for this story, whatever the reader has set.
+- `true` shows it, whatever the reader has set.
+- Left out, the story follows the reader's setting, which starts on.
+
+```vue
+<script lang="ts" setup>
+const meta = { storyOptions: false }
+</script>
+
+<template>
+  <Story
+    title="Dashboard"
+    :meta="meta"
+  >
+    <!-- ... -->
+  </Story>
+</template>
+```
+
+Use it for a story with nothing to adjust, where the pane only takes room from the preview. It works in books whose stories are written in Vue or [Svelte](../svelte/story.md#meta). A Solid or React story cannot set `meta` yet ([#1295](https://github.com/poveste-dev/poveste/issues/1295)).
+
 ## Slot: `controls`
 
 Content of the 'Controls' pane used to interact with the story. This will be the default content for variants of the story but you can override it by defining a `controls` slot in a variant.
