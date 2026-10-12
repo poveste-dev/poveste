@@ -1,10 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { transformStoryAutoProps } from './auto-props.js'
 import { extractPropDefs } from './props.js'
+import { isSvelteStory } from './story-source.js'
 
-// Cheaper than a parse, and unlike a filename pattern it cannot go blind when a
-// project narrows `storyMatch`.
-const RENDERS_A_STORY = '<Hst.Story'
 const IMPORTS_A_COMPONENT = /from\s*['"][^'"]*\.svelte['"]/
 
 /** Runs before `vite-plugin-svelte`: after it compiles there is nothing left to rewrite (#233). */
@@ -14,7 +12,7 @@ export function svelteAutoProps() {
     enforce: 'pre' as const,
 
     async transform(this: any, code: string, id: string) {
-      if (!id.replace(/\?.*$/s, '').endsWith('.svelte') || !code.includes(RENDERS_A_STORY) || !IMPORTS_A_COMPONENT.test(code)) {
+      if (!isSvelteStory(id, code) || !IMPORTS_A_COMPONENT.test(code)) {
         return undefined
       }
 

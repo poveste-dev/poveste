@@ -1,4 +1,4 @@
-const storyFileRE = /\.story\.svelte$/
+import { isSvelteStory } from './story-source.js'
 
 type DynamicCompileOptions = NonNullable<SveltePluginApi['options']>['dynamicCompileOptions']
 
@@ -25,8 +25,8 @@ export function disableStoryComponentHmr() {
     // With component HMR off, nothing in the sandbox takes the updated story module:
     // the edit was collected and never shown until a manual reload (#1178). A reload
     // shows it, as for Solid, at the cost of whatever was set in the panel.
-    handleHotUpdate({ file, server }: { file: string, server: { ws: { send: (payload: { type: 'full-reload' }) => void } } }) {
-      if (!storyFileRE.test(file)) {
+    async handleHotUpdate({ file, read, server }: { file: string, read: () => string | Promise<string>, server: { ws: { send: (payload: { type: 'full-reload' }) => void } } }) {
+      if (!file.endsWith('.svelte') || !isSvelteStory(file, await read())) {
         return undefined
       }
       server.ws.send({ type: 'full-reload' })
@@ -46,7 +46,7 @@ export function disableStoryComponentHmr() {
         const originalDynamicCompileOptions = options.dynamicCompileOptions as DynamicCompileOptions
         options.dynamicCompileOptions = async (data) => {
           const result = await originalDynamicCompileOptions?.(data)
-          if (!storyFileRE.test(data.filename)) {
+          if (!isSvelteStory(data.filename, data.code)) {
             return result
           }
 
