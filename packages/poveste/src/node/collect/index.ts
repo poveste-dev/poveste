@@ -10,6 +10,7 @@ import { createPath } from '../tree.js'
 import { escapeRegExp } from '../util/escape-regexp.js'
 import { slash } from '../util/fs.js'
 import { globalsFromDefine } from './define-globals.js'
+import { strayLayoutKeys } from './layout-keys.js'
 import { createModuleServer } from './module-server.js'
 import { createPool } from './pool.js'
 import { INVALIDATE, INVALIDATE_ALL } from './task.js'
@@ -102,6 +103,10 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
             Reflect.set(finalData, key, value)
           }
         }
+      }
+
+      for (const stray of strayLayoutKeys(finalData.layout)) {
+        console.warn(pc.yellow(`⚠️  ${storyFile.path}: ${stray}`))
       }
 
       if (!finalData.layout) {
