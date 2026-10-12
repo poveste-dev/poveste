@@ -1,4 +1,5 @@
 import type { StoryFile } from './types'
+import { addCollection } from '@iconify/vue'
 import { reportStoryError } from '@poveste/shared'
 import { usePreferredDark } from '@vueuse/core'
 import { createPinia } from 'pinia'
@@ -10,6 +11,7 @@ import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { lowPriorityColorScheme, previewColorScheme, previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
 import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
+import { iconCollections } from './util/icons.generated.js'
 import { mapFile } from './util/mapping'
 import { occupant } from './util/occupant.js'
 import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } from './util/preview-settings.js'
@@ -148,6 +150,14 @@ watch(() => previewColorScheme(receivedSettings.colorScheme, isDark.value), (val
 // app resets it.
 let pendingFrame: number | null = null
 let lastReportedHeight = -1
+
+// A builtin control rendered in a story draws the chrome's icons, and each
+// realm has an icon store of its own. Without the data here, a select or a date
+// control in a story fetched its icon from api.iconify.design, in every sandbox,
+// and had none offline (#255).
+for (const collection of iconCollections) {
+  addCollection(collection)
+}
 
 const app = createApp({
   name: 'SandboxApp',
