@@ -85,7 +85,8 @@ describe('wrapPluginsForTolerantBoot', () => {
     const unnamed = `const defineNuxtPlugin = plugin => plugin\nexport default defineNuxtPlugin(() => { throw new Error('needs a server') })\n`
     writeFileSync(join(dir, 'analytics.mjs'), unnamed)
     writeFileSync(join(dir, 'session.mjs'), unnamed)
-    const generated = `import analytics_1 from "${join(dir, 'analytics.mjs')}";\nimport session_2 from "${join(dir, 'session.mjs')}";\nexport default [analytics_1, session_2]`
+    // Relative, so the same text is a valid import on Windows, where a path has backslashes.
+    const generated = `import analytics_1 from "./analytics.mjs";\nimport session_2 from "./session.mjs";\nexport default [analytics_1, session_2]`
     writeFileSync(join(dir, 'plugins.client.mjs'), wrapPluginsForTolerantBoot(generated)
       .replace('#build/poveste/tolerant-plugins.mjs', pathToFileURL(join(import.meta.dirname, '../runtime/tolerant-plugins.mjs')).href))
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -98,8 +99,8 @@ describe('wrapPluginsForTolerantBoot', () => {
 
     const lines = warn.mock.calls.map(([line]) => line as string)
     expect(lines).toHaveLength(2)
-    expect(lines[0]).toContain(`Nuxt client plugin from ${join(dir, 'analytics.mjs')} threw`)
-    expect(lines[1]).toContain(`Nuxt client plugin from ${join(dir, 'session.mjs')} threw`)
+    expect(lines[0]).toContain('Nuxt client plugin from ./analytics.mjs threw')
+    expect(lines[1]).toContain('Nuxt client plugin from ./session.mjs threw')
   })
 })
 
