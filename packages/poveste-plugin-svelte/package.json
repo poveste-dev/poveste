@@ -46,7 +46,11 @@
       "types": "./dist/client/auto-props.d.ts",
       "default": "./dist/client/auto-props.js"
     },
-    ".": "./dist/index.node.js",
+    ".": {
+      "types": "./dist/index.node.d.ts",
+      "node": "./dist/index.node.js",
+      "default": "./dist/index.js"
+    },
     "./*": "./*"
   },
   "main": "./dist/index.node.js",
