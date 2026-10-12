@@ -2,8 +2,8 @@ import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { sandboxHtml, seedChromeScheme, seedPreviewSettings } from './support'
 
-// `theme.darkClass` is per-book config — vue sets `my-dark`, the rest take the
-// default — so a shared spec matches either rather than pinning one book's.
+// `theme.darkClass` is per-book config — sveltekit3 sets `my-dark`, the rest take
+// the default — so a shared spec matches either rather than pinning one book's.
 const DARK_CLASS = /(?:^|\s)(?:my-)?dark(?:\s|$)/
 // The app chrome uses its own class, driven by the top bar toggle.
 const CHROME_DARK_CLASS = /ptw-dark/
@@ -138,6 +138,33 @@ test.describe('sandbox color scheme', () => {
     await pickColorScheme(page, 'light')
     await expect(story.locator('.conformance-dark-only')).toBeHidden()
     await expect(story.locator('.conformance-dark-text')).not.toHaveCSS('color', 'rgb(255, 255, 255)')
+  })
+
+  // The two paths the app renders itself. The class was on the story's scope
+  // root and nowhere inside it, so a rule keyed on it matched nothing, in a
+  // built book and under `poveste dev` alike (#332).
+  test('makes the scheme reach the CSS of a story rendered without an iframe', async ({ page }) => {
+    await page.goto(NATIVE_STORY)
+    const text = page.getByTestId('sandbox-render').locator('.conformance-no-iframe-dark')
+
+    await pickColorScheme(page, 'dark')
+    await expect(text).toHaveCSS('color', 'rgb(0, 255, 0)')
+    await expect(text).toHaveCSS('font-weight', '700')
+
+    await pickColorScheme(page, 'light')
+    await expect(text).not.toHaveCSS('color', 'rgb(0, 255, 0)')
+  })
+
+  test('makes the scheme reach the CSS of grid cells rendered without an iframe', async ({ page }) => {
+    await page.goto(INLINE_GRID_STORY)
+    const text = page.locator('.poveste-story-variant-grid-item .conformance-inline-grid-text').first()
+
+    await pickColorScheme(page, 'dark')
+    await expect(text).toHaveCSS('color', 'rgb(0, 255, 0)')
+    await expect(text).toHaveCSS('font-weight', '700')
+
+    await pickColorScheme(page, 'light')
+    await expect(text).not.toHaveCSS('color', 'rgb(0, 255, 0)')
   })
 
   test('reaches users whose settings predate the option', async ({ page }) => {

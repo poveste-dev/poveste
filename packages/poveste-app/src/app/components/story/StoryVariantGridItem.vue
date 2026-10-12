@@ -17,6 +17,7 @@ import { useCurrentVariantRoute } from '../../util/variant'
 import CheckerboardPattern from '../misc/CheckerboardPattern.vue'
 import ToolbarNewTab from '../toolbar/ToolbarNewTab.vue'
 import GenericRenderStory from './GenericRenderStory.vue'
+import StoryNativeScope from './StoryNativeScope.vue'
 import StoryVariantSinglePreviewRemote from './StoryVariantSinglePreviewRemote.vue'
 
 const props = defineProps({
@@ -184,16 +185,17 @@ const useIframe = computed(() => {
           auto-height
           :responsive="false"
         />
-        <GenericRenderStory
-          v-else
-          :key="`${story.id}-${variant.id}`"
-          :variant="variant"
-          :story="story"
-          :dir="settings.textDirection"
-          :class="previewDark ? previewDarkClasses() : undefined"
-          :style="{ '--poveste-color-scheme': previewColorScheme }"
-          @ready="onReady"
-        />
+        <StoryNativeScope v-else>
+          <GenericRenderStory
+            :key="`${story.id}-${variant.id}`"
+            :variant="variant"
+            :story="story"
+            :dir="settings.textDirection"
+            :class="previewDark ? previewDarkClasses() : undefined"
+            :style="{ '--poveste-color-scheme': previewColorScheme }"
+            @ready="onReady"
+          />
+        </StoryNativeScope>
       </div>
     </div>
   </div>

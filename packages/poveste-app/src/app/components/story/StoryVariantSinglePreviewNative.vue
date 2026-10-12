@@ -7,6 +7,7 @@ import { previewDarkClasses, usePreviewColorScheme, usePreviewDark } from '../..
 import { povesteConfig } from '../../util/config'
 import { getContrastColor } from '../../util/preview-settings'
 import GenericRenderStory from './GenericRenderStory.vue'
+import StoryNativeScope from './StoryNativeScope.vue'
 import StoryResponsivePreview from './StoryResponsivePreview.vue'
 
 const props = defineProps<{
@@ -64,16 +65,18 @@ const autoApplyContrastColor = computed(() => !!povesteConfig.autoApplyContrastC
       class="relative"
       data-testid="sandbox-render"
     >
-      <GenericRenderStory
-        :key="`${story.id}-${variant.id}`"
-        :variant="variant"
-        :story="story"
-        class="h-full"
-        :class="previewDark ? previewDarkClasses() : undefined"
-        :style="{ '--poveste-color-scheme': previewColorScheme }"
-        :dir="settings.textDirection"
-        @ready="onReady"
-      />
+      <StoryNativeScope>
+        <GenericRenderStory
+          :key="`${story.id}-${variant.id}`"
+          :variant="variant"
+          :story="story"
+          class="h-full"
+          :class="previewDark ? previewDarkClasses() : undefined"
+          :style="{ '--poveste-color-scheme': previewColorScheme }"
+          :dir="settings.textDirection"
+          @ready="onReady"
+        />
+      </StoryNativeScope>
     </div>
   </StoryResponsivePreview>
 </template>

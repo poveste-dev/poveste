@@ -22,3 +22,15 @@
     </Variant>
   </Story>
 </template>
+
+<!-- Both class names: the dark class is per-book config (`theme.darkClass`),
+     and a contract story has to hold whichever one its example sets. Keyed the
+     way `darkMode: 'class'` writes it, which did nothing where the app renders
+     the story itself (#332). -->
+<style scoped>
+.dark .conformance-inline-grid-text,
+.my-dark .conformance-inline-grid-text {
+  color: rgb(0, 255, 0);
+  font-weight: 700;
+}
+</style>
