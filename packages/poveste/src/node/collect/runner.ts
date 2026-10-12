@@ -146,7 +146,11 @@ class InteropEvaluator implements ModuleEvaluator {
       },
     }
 
-    const run = new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, 'require', 'exports', 'module', '__filename', '__dirname', `"use strict";\n${code}`)
+    // In a block of its own, so a module's top-level `const require = createRequire(…)`
+    // or `const __dirname = …` shadows the parameter of that name. In the function's
+    // own scope it redeclared it, a syntax error that failed every story of the book
+    // (#1301). The closing brace goes on a new line: the code may end in a line comment.
+    const run = new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, 'require', 'exports', 'module', '__filename', '__dirname', `"use strict";{\n${code}\n}`)
     await run(context[ssrModuleExportsKey], context[ssrImportMetaKey], context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], context[ssrExportNameKey], createRequire(filename), cjsExports, moduleProxy, filename, dirname(filename))
   }
 
