@@ -13,6 +13,7 @@
   // (the compiler's suggestion) would make passing one an error.
   // svelte-ignore export_let_unused
   export let initState = null
+  export let meta = null
 
   // Asked for before anything reads them, so a missing `<Story>` is reported
   // once and the same way whether or not the variant carries an `id`. Reading
@@ -27,6 +28,8 @@
     icon,
     iconColor,
     autoPropsDisabled,
+    // Was dropped, as a story's was (#1260).
+    ...meta ? { meta } : {},
   }
 
   addVariant(variant)
