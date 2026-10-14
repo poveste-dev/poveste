@@ -16,17 +16,17 @@
     "vue": "^3.5.43"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.64.0",
     "@poveste/app": "workspace:*",
     "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@poveste/vendors": "workspace:*",
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "nodemon": "^3.1.14",
     "poveste": "workspace:*",
-    "sass": "^1.105.0",
+    "sass": "^1.105.1",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
-    "vue-i18n": "^11.4.12"
+    "vue-i18n": "^11.4.14"
   }
 }

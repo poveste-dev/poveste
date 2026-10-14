@@ -88,14 +88,14 @@
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
     "ignore": "^7.0.10",
-    "launch-editor": "^2.9.1",
+    "launch-editor": "^2.14.2",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17",
     "vue-component-meta": "^3.3.12"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "concurrently": "^10.0.5",
+    "concurrently": "^10.0.6",
     "poveste": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:",
