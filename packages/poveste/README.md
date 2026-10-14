@@ -26,7 +26,7 @@ pnpm i -D poveste @poveste/plugin-react                        # React 19, rende
 
 > **Installed an older version than you expected?** For about a day after a release, pnpm installs the previous one with no error and no hint, and for a plugin that's new in that release, its empty `0.0.1` placeholder. That's pnpm's release-age cooldown, not a broken publish. `package.json` keeps the old `^x.y.z`, so waiting doesn't fix it: install again with `npm`, with `--config.minimum-release-age=0` (kebab-case: pnpm 12.4 ignores the camelCase spelling), or with exact versions.
 
-Then create a `poveste.config.ts` in your project root:
+Then create a `poveste.config.ts` in your project root. For a Vue project it is this:
 
 ```ts
 import { HstVue } from '@poveste/plugin-vue'
@@ -38,6 +38,8 @@ export default defineConfig({
   ],
 })
 ```
+
+Every other framework uses its own plugin, and Quasar also needs a setup file, so take the config from its guide: [Svelte](https://poveste.dev/guide/svelte/getting-started), [SvelteKit](https://poveste.dev/guide/sveltekit/getting-started), [Nuxt](https://poveste.dev/guide/nuxt/getting-started), [Quasar](https://poveste.dev/guide/quasar/getting-started), [Solid](https://poveste.dev/guide/solid/getting-started) or [React](https://poveste.dev/guide/react/getting-started).
 
 ## Commands
 

@@ -6,9 +6,10 @@ Builds a Poveste book inside a Quasar project.
 pnpm add -D poveste @poveste/plugin-vue @poveste/plugin-quasar
 ```
 
-Add both plugins in poveste config:
+Add both plugins in poveste config, with a setup file:
 
 ```ts
+// poveste.config.ts
 import { HstQuasar } from '@poveste/plugin-quasar'
 import { HstVue } from '@poveste/plugin-vue'
 import { defineConfig } from 'poveste'
@@ -18,7 +19,18 @@ export default defineConfig({
     HstVue(),
     HstQuasar(),
   ],
+  setupFile: '/src/poveste.setup.ts',
 })
+```
+
+The setup file installs Quasar into the app Poveste renders your stories in, and every Quasar component needs it, not only boot files. Without it the book still builds, and each story that uses a Quasar component shows "This component threw while rendering", with `Cannot read properties of undefined (reading 'platform')` in the browser console.
+
+```ts
+// src/poveste.setup.ts
+import { setupQuasar } from '@poveste/plugin-quasar/setup'
+import { defineSetupVue } from '@poveste/plugin-vue'
+
+export const setupVue = defineSetupVue(setupQuasar())
 ```
 
 Quasar builds its Vite config asynchronously and exposes it through an
