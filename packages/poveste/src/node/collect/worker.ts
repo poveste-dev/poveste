@@ -10,7 +10,7 @@ import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
 import { invokeOver } from './rpc.js'
-import { createRunner } from './runner.js'
+import { createRunner, globalsFromExternals } from './runner.js'
 import { serveTasks } from './task.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -78,7 +78,7 @@ async function collect(payload: Payload): Promise<ReturnData> {
   const runner = _runner ?? (_runner = createRunner((name, data) => _invoke(name, data), payload.root, _evaluatedModules))
 
   if (_domEnv) {
-    resetDomEnv(_domEnv)
+    resetDomEnv(_domEnv, globalsFromExternals)
   }
   else {
     _domEnv = createDomEnv()

@@ -148,7 +148,7 @@ export function createDomEnv() {
 }
 
 /** Returns a reused environment to the state a fresh one would have been in. */
-export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' | 'pristineKeys' | 'storages'>) {
+export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' | 'pristineKeys' | 'storages'>, kept: ReadonlySet<string> = new Set()) {
   const doc = env.window.document
 
   for (const el of [doc.documentElement, doc.head, doc.body]) {
@@ -165,8 +165,9 @@ export function resetDomEnv(env: Pick<ReturnType<typeof createDomEnv>, 'window' 
   }
 
   // Additions only: the modules that installed the rest are cached, not re-run.
+  // So are the ones that installed `kept`, after this environment was made.
   for (const key of Object.keys(globalThis)) {
-    if (!env.pristineKeys.has(key)) {
+    if (!env.pristineKeys.has(key) && !kept.has(key)) {
       delete (globalThis as Record<string, unknown>)[key]
     }
   }
