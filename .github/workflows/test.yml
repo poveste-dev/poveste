@@ -486,9 +486,15 @@ jobs:
         with:
           node-version: 22.22.2
 
+      # npm 10, which Node 22 bundles, crashes resolving `nuxt` since
+      # `@vitejs/devtools` 0.8.0 (npm/cli#9787, fixed in npm 11.6), with or without
+      # our packages. The floor is a claim about Node, so the installs run on a
+      # pinned npm that can resolve the graph.
       - name: Smoke test on the minimum (pack + install + build)
         run: |
           node --version
+          npm install -g npm@11.6.0
+          npm --version
           pnpm run test:smoke
 
       # The smoke test only builds. These cover what it never reaches, such as the

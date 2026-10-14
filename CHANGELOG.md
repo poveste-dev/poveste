@@ -17,6 +17,8 @@ It is a `minor`: the React plugin, the `preview` config group and plugin-added s
 - **`@poveste/plugin-svelte`'s export map changed.** Node still resolves the plugin, and a browser now resolves the setup helpers only. See the Svelte setup-file fix.
 - **One published type is narrower:** `ClientCommandContext.route`, for plugin authors who type-check a command. See the `vue-router` fix.
 
+**Installing Nuxt with npm 10 fails at the moment, with or without Poveste.** npm 10 is the version Node 22 ships with. Since Vite's devtools packages were released on 14 October, `npm install` in a Nuxt project stops with `Cannot read properties of null (reading 'edgesOut')`. It is an npm bug ([npm/cli#9787](https://github.com/npm/cli/issues/9787)), and npm 11.6 and later install the same packages: run `npm install -g npm@latest`, or `npx npm@latest install`.
+
 ### 🚀 Enhancements
 
 - **Write stories for React components with `@poveste/plugin-react`, renderer only for now** ([#371](https://github.com/poveste-dev/poveste/issues/371), [#1136](https://github.com/poveste-dev/poveste/pull/1136), [#1137](https://github.com/poveste-dev/poveste/pull/1137), [#1138](https://github.com/poveste-dev/poveste/pull/1138), [#1272](https://github.com/poveste-dev/poveste/pull/1272)).
