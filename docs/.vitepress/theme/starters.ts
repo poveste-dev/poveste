@@ -24,7 +24,7 @@ const VITE = '^8.2.0'
 
 // Unnumbered on purpose: `svelte3` outlived Svelte 3 by two majors before
 // anyone noticed. A bare framework name never goes stale — see #120.
-export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt' | 'solid'
+export type Framework = 'vue' | 'svelte' | 'sveltekit' | 'nuxt' | 'solid' | 'react'
 
 export interface Manifest {
   name: string
@@ -423,12 +423,87 @@ export default defineStory<{ clicks: number }>({
   }
 }
 
+function reactStarter(): Starter {
+  return {
+    openFile: 'src/MyButton.story.tsx',
+    manifest: manifest(
+      'poveste-react-starter',
+      {
+        '@poveste/plugin-react': POVESTE,
+        // Each inside the plugin's peer range, and held to a minor: the starters
+        // run in a WebContainer nobody tests upstream releases against, and a
+        // floating range is how Nuxt 4.6 broke one with no change here (#1244).
+        '@vitejs/plugin-react': '~6.1.0',
+        'vite': VITE,
+      },
+      { 'react': '~19.3.0', 'react-dom': '~19.3.0' },
+    ),
+    files: {
+      'vite.config.ts': `import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react()],
+})
+`,
+      // No `storyMatch`: the plugin adds its own story patterns (#1267).
+      'poveste.config.ts': `import { HstReact } from '@poveste/plugin-react'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstReact()],
+})
+`,
+      'src/MyButton.tsx': `import type { MouseEventHandler } from 'react'
+
+export function MyButton(props: { label?: string, onClick?: MouseEventHandler<HTMLButtonElement> }) {
+  return (
+    <button
+      type="button"
+      onClick={props.onClick}
+      style={{
+        padding: '8px 16px',
+        border: 'none',
+        borderRadius: '6px',
+        background: '#24c56a',
+        color: '#fff',
+        fontWeight: 600,
+        cursor: 'pointer',
+      }}
+    >
+      {props.label ?? 'Click me'}
+    </button>
+  )
+}
+`,
+      'src/MyButton.story.tsx': `import { defineStory } from '@poveste/plugin-react'
+import { MyButton } from './MyButton'
+
+export default defineStory<{ clicks: number }>({
+  title: 'MyButton',
+  variants: [
+    { title: 'default', render: () => <MyButton /> },
+    {
+      title: 'counting clicks',
+      initState: () => ({ clicks: 0 }),
+      render: ({ state, setState }) => (
+        <MyButton label={\`Clicks: \${state.clicks}\`} onClick={() => setState(s => ({ clicks: s.clicks + 1 }))} />
+      ),
+    },
+  ],
+})
+`,
+    },
+  }
+}
+
 export const starters: Record<Framework, () => Starter> = {
   vue: vueStarter,
   svelte: svelteStarter,
   sveltekit: svelteKitStarter,
   nuxt: nuxtStarter,
   solid: solidStarter,
+  react: reactStarter,
 }
 
 export const titles: Record<Framework, string> = {
@@ -437,4 +512,5 @@ export const titles: Record<Framework, string> = {
   sveltekit: 'Poveste + SvelteKit starter',
   nuxt: 'Poveste + Nuxt starter',
   solid: 'Poveste + Solid starter',
+  react: 'Poveste + React starter',
 }
