@@ -173,6 +173,21 @@ describe('resetDomEnv', () => {
     expect(Object.getOwnPropertyDescriptor(globalThis, 'localStorage')).toEqual(before)
   })
 
+  // A module Node has cached does not run again to put them back (#1320).
+  it('leaves the globals it is told to keep', () => {
+    env = createDomEnv()
+    ;(env.window as any).__installedByACachedModule = 'kept'
+    ;(env.window as any).__setByAStory = 'dropped'
+    onTestFinished(() => {
+      delete (env.window as any).__installedByACachedModule
+    })
+
+    resetDomEnv(env, new Set(['__installedByACachedModule']))
+
+    expect((env.window as any).__installedByACachedModule).toBe('kept')
+    expect((env.window as any).__setByAStory).toBeUndefined()
+  })
+
   it('leaves the globals the environment itself installed', () => {
     env = createDomEnv()
 

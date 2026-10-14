@@ -90,6 +90,28 @@ export function filenameOf(module: Readonly<EvaluatedModuleNode>, root: string):
   return join(root, 'virtual-module')
 }
 
+/**
+ * The keys an externalised module added to `globalThis` when Node ran it. Node
+ * caches that module, so once a worker's reset deletes them nothing installs them
+ * again. Vue's development build sets `__VUE_HMR_RUNTIME__` this way, and a story
+ * compiled with HMR code reads it at its top level (#1320).
+ */
+export const globalsFromExternals = new Set<string>()
+
+const ranExternals = new Set<string>()
+
+async function importRecordingGlobals(file: string) {
+  const before = new Set(Object.keys(globalThis))
+  const imported = await import(file)
+  ranExternals.add(file)
+  for (const key of Object.keys(globalThis)) {
+    if (!before.has(key)) {
+      globalsFromExternals.add(key)
+    }
+  }
+  return imported
+}
+
 /** As vite-node did: a CJS package's named exports are read through its default. */
 class InteropEvaluator implements ModuleEvaluator {
   // The runner offsets source maps by the lines a wrapper adds, which match Vite's own.
@@ -155,7 +177,7 @@ class InteropEvaluator implements ModuleEvaluator {
   }
 
   async runExternalModule(file: string) {
-    const imported = await import(file)
+    const imported = ranExternals.has(file) ? await import(file) : await importRecordingGlobals(file)
     if (file.endsWith('.mjs') || !('default' in imported)) {
       return imported
     }

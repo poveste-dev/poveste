@@ -3,9 +3,10 @@ import { mkdirSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { tempDir } from '../../__tests__/temp-dir.js'
-import { createRunner, filenameOf } from '../runner.ts'
+import { createRunner, filenameOf, globalsFromExternals } from '../runner.ts'
 
 /** Only the two fields `filenameOf` reads. */
 function node(id: string, file?: string): Readonly<EvaluatedModuleNode> {
@@ -172,5 +173,39 @@ describe('an inlined module that only reads those names', () => {
 
     expect(exported['default']).toEqual({ answer: 42 })
     expect(exported['answer']).toBe(42)
+  })
+})
+
+// The worker's reset between stories keeps these. Vue's development build sets
+// `__VUE_HMR_RUNTIME__` on import, and once deleted nothing set it again (#1320).
+describe('the globals a module adds while it is first run', () => {
+  /** A fresh global name per test, so no earlier run has recorded it. */
+  function globalName() {
+    const name = `__poveste_runner_spec_${Math.random().toString(36).slice(2)}`
+    onTestFinished(() => {
+      delete (globalThis as Record<string, unknown>)[name]
+    })
+    return name
+  }
+
+  it('are recorded when Node runs the module, externalised', async () => {
+    const root = tempRoot()
+    const name = globalName()
+    const file = join(root, 'external.mjs')
+    writeFileSync(file, `globalThis.${name} = 'installed'\n`)
+    const runner = createRunner(async request => request === 'fetchModule' ? { externalize: pathToFileURL(file).href, type: 'module' } : [], root)
+    onTestFinished(() => runner.close())
+
+    await runner.import(file)
+
+    expect(globalsFromExternals.has(name)).toBe(true)
+  })
+
+  it('are not recorded when the runner evaluates the module, inlined', async () => {
+    const name = globalName()
+
+    await evaluate(`globalThis.${name} = 'set'`)
+
+    expect(globalsFromExternals.has(name)).toBe(false)
   })
 })
