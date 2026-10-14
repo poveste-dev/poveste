@@ -16,12 +16,12 @@ panel.
 Install `poveste` alongside the plugin for your framework:
 
 ```shell
-pnpm i -D poveste @poveste/plugin-vue      # Vue 3
-pnpm i -D poveste @poveste/plugin-svelte   # Svelte 5 and SvelteKit
-pnpm i -D poveste @poveste/plugin-nuxt     # Nuxt 4
-pnpm i -D poveste @poveste/plugin-quasar   # Quasar
-pnpm i -D poveste @poveste/plugin-solid    # Solid, renderer only
-pnpm i -D poveste @poveste/plugin-react    # React 19, renderer only
+pnpm i -D poveste @poveste/plugin-vue                          # Vue 3
+pnpm i -D poveste @poveste/plugin-svelte                       # Svelte 5 and SvelteKit
+pnpm i -D poveste @poveste/plugin-vue @poveste/plugin-nuxt     # Nuxt 4
+pnpm i -D poveste @poveste/plugin-vue @poveste/plugin-quasar   # Quasar
+pnpm i -D poveste @poveste/plugin-solid                        # Solid, renderer only
+pnpm i -D poveste @poveste/plugin-react                        # React 19, renderer only
 ```
 
 > **Installed an older version than you expected?** For about a day after a release, pnpm installs the previous one with no error and no hint, and for a plugin that's new in that release, its empty `0.0.1` placeholder. That's pnpm's release-age cooldown, not a broken publish. `package.json` keeps the old `^x.y.z`, so waiting doesn't fix it: install again with `npm`, with `--config.minimum-release-age=0` (kebab-case: pnpm 12.4 ignores the camelCase spelling), or with exact versions.
