@@ -63,6 +63,32 @@ The plugin adds `**/*.story.tsx` and `**/*.story.jsx` to the files Poveste looks
 
 React stories can sit beside Vue ones in the same book, but not beside Solid ones: both are `.story.tsx` files, and one plugin takes them all. See [More than one framework in a book](../plugins/official.md#more-than-one-framework-in-a-book).
 
+### In a Vue project
+
+A project made from Vite's Vue template compiles JSX for Vue: its `tsconfig.app.json` extends `@vue/tsconfig`, which sets `"jsxImportSource": "vue"`, and Vite follows it. Your React components and stories then compile to Vue's vnodes, so the book builds and every React story shows "This component threw while rendering". The browser console says why:
+
+- under `poveste dev`, `Objects are not valid as a React child (found: object with keys {__v_isVNode, __v_skip, type, props, …})`;
+- in a built book, `Minified React error #31` with the same keys.
+
+If the project has no Vue components written in TSX, set React's JSX in `tsconfig.app.json`:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}
+```
+
+If it has some, leave the tsconfig as it is, because that change makes each of them render `[object Object]`. Start every React file with this line instead, the stories and the components they import alike:
+
+```tsx
+/** @jsxImportSource react */
+```
+
+A pragma on the story file alone is not enough: the component it imports still compiles for Vue. Each way, used where it says, also satisfies `vue-tsc`, which reports type errors in the React files until one of them is in place.
+
 ## Write a story
 
 A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX. `Badge` stands in for a component of your own; to follow along as written, this one is enough:

@@ -1,0 +1,7 @@
+// The JSX settings of a project made from Vite's Vue template: `@vue/tsconfig`
+// compiles JSX for Vue. Vite reads the nearest tsconfig, so the files here get
+// them, and the React ones need the pragma the React guide shows (#1330).
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["./**/*.ts", "./**/*.tsx", "./**/*.vue"]
+}

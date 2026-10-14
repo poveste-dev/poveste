@@ -83,3 +83,22 @@ test.describe('a React book', () => {
     await expect(toggle).toHaveText('Light: On')
   })
 })
+
+// A project made from Vite's Vue template compiles JSX for Vue, through
+// `@vue/tsconfig`, and React was handed Vue vnodes: React error #31 on every
+// React story (#1330). `src/vue-project` has those settings, and its React files
+// carry the pragma the React guide gives for it.
+test.describe('a book with Vue stories and Vue\'s JSX settings', () => {
+  test('renders a React story whose files carry the JSX pragma', async ({ page }) => {
+    await open(page, 'src-vue-project-notice-story-tsx', '_default')
+
+    await expect(preview(page).locator('.notice')).toHaveText('Rendered by React')
+    await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
+  })
+
+  test('renders the Vue story beside it', async ({ page }) => {
+    await open(page, 'src-vue-project-hello-story-vue', '_default')
+
+    await expect(preview(page).locator('.hello')).toHaveText('Rendered by Vue')
+  })
+})

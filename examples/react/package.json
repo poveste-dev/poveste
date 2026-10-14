@@ -10,13 +10,17 @@
   },
   "dependencies": {
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "vue": "^3.5.43"
   },
   "devDependencies": {
     "@poveste/plugin-react": "workspace:*",
+    "@poveste/plugin-vue": "workspace:*",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/tsconfig": "^0.9.1",
     "poveste": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:"
