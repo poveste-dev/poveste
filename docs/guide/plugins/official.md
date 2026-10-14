@@ -47,7 +47,7 @@ export default defineConfig({
 })
 ```
 
-Each story is rendered by the plugin that claims its file: `.story.vue` by Vue, `.story.tsx` and `.story.jsx` by Solid. The two Vite plugins need no `include` or `exclude` to stay out of each other's way, since `vue()` compiles `.vue` files and `solid()` compiles JSX. Vue with React is the same, with `react()` and `HstReact()` in place of the Solid pair.
+Each story is rendered by the plugin that claims its file: `.story.vue` by Vue, `.story.tsx` and `.story.jsx` by Solid. The two Vite plugins need no `include` or `exclude` to stay out of each other's way, since `vue()` compiles `.vue` files and `solid()` compiles JSX. Vue with React is the same, with `react()` and `HstReact()` in place of the Solid pair, and one thing more in a project made from Vite's Vue template: its tsconfig compiles JSX for Vue, so every React story shows "This component threw while rendering" and React error #31 until React's JSX is set. The React guide shows [what to set](../react/getting-started.md#in-a-vue-project).
 
 Each framework's stories are written as its own guide shows: [a Vue story](../vue/stories.md) is a `.story.vue` file, and a [Solid](../solid/getting-started.md#write-a-story) or [React](../react/getting-started.md#write-a-story) one is a `.story.tsx` file.
 
