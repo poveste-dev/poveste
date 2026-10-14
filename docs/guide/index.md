@@ -66,6 +66,11 @@ Poveste is a tool to generate stories applications (or "books").
   </div>
 </div>
 
+<div class="demo-links-box border-blue-200 dark:border-blue-900">
+  <Icon icon="devicon:quasar" class="w-10 h-10 mt-3" aria-label="Quasar logo" />
+  <DemoLinks framework="quasar" />
+</div>
+
 A story is a scenario where you showcase in your browser one or more components for specific use cases.
 
 Stories are useful for several reasons:
