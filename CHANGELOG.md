@@ -4,6 +4,25 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.19.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.19.0...v0.19.1)
+
+**`poveste dev` shows the story you open just after an edit, React and Quasar get "Try it live" starters, and the npm pages say what to install.**
+
+It is a `patch`: no commit in the range is a `feat`, none is breaking, and nothing is deprecated, renamed or removed. There is nothing to do on upgrade.
+
+### 🩹 Fixes
+
+- **A story edit in a Nuxt or Quasar book no longer breaks its re-collection** ([#1320](https://github.com/poveste-dev/poveste/issues/1320), [#1332](https://github.com/poveste-dev/poveste/pull/1332)). In `poveste dev`, a template-only edit to a story made collecting it again throw `ReferenceError: __VUE_HMR_RUNTIME__ is not defined`. Vue's development build sets that global when it is first loaded, and Poveste cleared it between stories as though the story had set it. Poveste now keeps the globals a dependency sets when it is first imported. A story's own globals are still cleared.
+- **A page opened just after a story edit shows its story** ([#1320](https://github.com/poveste-dev/poveste/issues/1320), [#1335](https://github.com/poveste-dev/poveste/pull/1335)). In `poveste dev`, a page opened in the second or two after an edit could show the story list and no story, until it was reloaded. In a Nuxt book that happened on 18 of 120 such pages. The edit could leave the page with two copies of Poveste's router, and the story list followed the copy the app had not installed. Every copy now hands out the same router. 0.19.0 and 0.18.3 do the same, and built books were never affected.
+
+### 📖 Documentation
+
+- **React in a Vue project** ([#1330](https://github.com/poveste-dev/poveste/issues/1330), [#1333](https://github.com/poveste-dev/poveste/pull/1333)). A project made from Vite's Vue template compiles JSX for Vue, so a React story there fails with `Objects are not valid as a React child (found: object with keys {__v_isVNode, …})` in `poveste dev`, or `Minified React error #31` in a built book. The React guide has a new section, "In a Vue project", that says what to set: React's JSX in `tsconfig.app.json` when the project has no Vue components written in TSX, and a `/** @jsxImportSource react */` line in each React file when it has some.
+- **"Try it live" starters for React and Quasar** ([#1271](https://github.com/poveste-dev/poveste/issues/1271), [#1275](https://github.com/poveste-dev/poveste/pull/1275), [#1222](https://github.com/poveste-dev/poveste/issues/1222), [#1269](https://github.com/poveste-dev/poveste/pull/1269)). [Getting started](https://poveste.dev/guide/getting-started) opens a React book and a Quasar book on StackBlitz, as it already did for the other frameworks.
+- **The npm pages say what to install** ([#1331](https://github.com/poveste-dev/poveste/issues/1331), [#1334](https://github.com/poveste-dev/poveste/pull/1334)). `@poveste/plugin-react`'s page now has an install line, a config and a first story. `poveste`'s page installs `@poveste/plugin-vue` with the Nuxt and Quasar plugins, which both need it, and links each framework other than Vue to its guide for the config. `@poveste/plugin-quasar`'s page shows the setup file every Quasar component needs: without it a book builds, and each story that uses a Quasar component shows "This component threw while rendering".
+
 ## v0.19.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.18.3...v0.19.0)
