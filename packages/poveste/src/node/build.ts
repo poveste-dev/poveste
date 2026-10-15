@@ -52,6 +52,13 @@ const APP_ONLY_VENDORS = [
   /[\\/]node_modules[\\/]@shikijs[\\/]/,
 ]
 
+// Left to the bundler wherever they are installed, rather than sent to `vendor`.
+// `@poveste/controls` loads three controls lazily, and in a book installed from
+// npm `vendor` took them in, so every reader downloaded them before anything
+// rendered. The workspace book never showed it: linked source has no
+// `node_modules` in its path (#1343).
+const LEFT_TO_BUNDLER = ['@poveste/app', '@poveste/controls']
+
 const PREFETCHED_MODULES = [
   'StoryView',
   'reactivity',
@@ -228,7 +235,7 @@ export async function build(ctx: Context) {
               return 'app-runtime'
             }
 
-            if (!id.includes('@poveste/app') && id.includes('node_modules')) {
+            if (!LEFT_TO_BUNDLER.some(name => id.includes(name)) && id.includes('node_modules')) {
               if (APP_ONLY_VENDORS.some(test => test.test(id))) {
                 return 'highlighter'
               }

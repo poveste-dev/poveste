@@ -313,7 +313,7 @@ Both take an optional `title`.
 
 The value is a string because a story keeps its state as JSON, and the `DateValue` objects Reka works in do not survive the trip into the sandbox a story renders in.
 
-Both load only when a book uses one — they are 215 KB and 101 KB of a built book, and nothing renders until the chunk arrives, so the row appears a moment after the rest of the panel rather than with it.
+Both load only when a book uses one — they are about 120 KB and 60 KB of a built book, and nothing renders until the chunk arrives, so the row appears a moment after the rest of the panel rather than with it.
 
 `Hst.ColorSelect` is a different and older control that is still exported: a text field beside the browser's own `<input type="color">`, which opens the operating system's picker. It takes a hex string too, so the signature will not tell you which one you have.
 
