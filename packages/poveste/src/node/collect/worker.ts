@@ -50,6 +50,23 @@ function invalidateAll() {
   }
 }
 
+// A framework's collect module imports the setup file, so a setup file that fails
+// to load fails every story with an error that names neither of them (#1324). The
+// runner keeps a module that failed as its rejected promise, which is how it is told
+// apart from a story that failed on its own. Matched on the fetched file, because
+// the module's id is however its importer wrote it, root-relative inside the root.
+async function blameSetupFile(error: unknown, setupFile: string | undefined) {
+  const nodes = setupFile
+    ? [..._evaluatedModules.idToModuleMap.values()].filter(node => node.meta && 'file' in node.meta && node.meta.file === setupFile)
+    : []
+  const failed = await Promise.all(nodes.map(node => node.promise?.then(() => false, () => true)))
+  if (!failed.includes(true)) {
+    return error
+  }
+  const blamed = typeof error === 'object' && error !== null ? error : new Error(String(error))
+  return Object.assign(blamed, { setupFile })
+}
+
 if (!parentPort) {
   throw new Error('[poveste] the collection worker was started outside a worker thread')
 }
@@ -90,11 +107,16 @@ async function collect(payload: Payload): Promise<ReturnData> {
   const { run } = (await runner.import(resolve(__dirname, './run.js'))) as { run: (payload: ServerRunPayload) => Promise<any> }
   const afterExecuteTime = performance.now()
   const storyData: ServerStory[] = []
-  await run({
-    file: payload.storyFile,
-    storyData,
-    el,
-  })
+  try {
+    await run({
+      file: payload.storyFile,
+      storyData,
+      el,
+    })
+  }
+  catch (error) {
+    throw await blameSetupFile(error, payload.setupFile)
+  }
   const afterRunTime = performance.now()
 
   if (payload.storyFile.markdownFile) {
