@@ -94,7 +94,7 @@ Plugins contribute the defaults:
 | `react` | `**/*.story.tsx`, `**/*.story.jsx` | `react` | `@poveste/plugin-react` |
 | `vanilla` | `**/*.js` | `vanilla` | built in |
 
-The Vue, Svelte and built-in entries match on extension rather than on the `.story.` infix. `vue3` and `svelte4` are the ids those two support plugins have always had, and name no version: `svelte4` is what renders Svelte 5. Solid and React claim the same files, and the first entry that matches a file wins, which is why the two [cannot share a book yet](../guide/plugins/official.md#more-than-one-framework-in-a-book).
+The Vue, Svelte and built-in entries match on extension rather than on the `.story.` infix. `vue3` and `svelte4` are the ids those two support plugins have always had, and name no version: `svelte4` is what renders Svelte 5. Solid and React claim the same files. When more than one entry matches a file, the plugin the file imports from wins; a file importing both or neither goes to the first entry that matches, with a warning. See [More than one framework in a book](../guide/plugins/official.md#more-than-one-framework-in-a-book).
 
 Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry after every entry the plugins contributed, and since the first entry that matches a file wins, it only claims files none of theirs match. That is what you want only if you are pointing at a plugin nothing else claims.
 

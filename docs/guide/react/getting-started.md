@@ -65,7 +65,7 @@ export default defineConfig({
 
 The plugin adds `**/*.story.tsx` and `**/*.story.jsx` to the files Poveste looks for, so there is no [`storyMatch`](../../reference/config.md#storymatch) to set.
 
-React stories can sit beside Vue ones in the same book, but not beside Solid ones: both are `.story.tsx` files, and one plugin takes them all. See [More than one framework in a book](../plugins/official.md#more-than-one-framework-in-a-book).
+React stories can sit beside Vue ones in the same book, and beside Solid ones: both are `.story.tsx` files, and each goes to the plugin it imports `defineStory` from. See [More than one framework in a book](../plugins/official.md#more-than-one-framework-in-a-book) for the Vite config that needs.
 
 ### In a Vue project
 

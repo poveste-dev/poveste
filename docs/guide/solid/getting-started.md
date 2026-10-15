@@ -47,7 +47,7 @@ export default defineConfig({
 })
 ```
 
-Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has. React stories are the exception: they are `.story.tsx` files too, and one plugin takes them all, so Solid and React [cannot share a book yet](../plugins/official.md#more-than-one-framework-in-a-book).
+Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has. React stories are `.story.tsx` files too, so in a book with both, each goes to the plugin it imports `defineStory` from: see [More than one framework in a book](../plugins/official.md#more-than-one-framework-in-a-book).
 
 ```ts
 // poveste.config.ts
