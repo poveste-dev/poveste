@@ -3,6 +3,12 @@ import type { App } from 'h3'
 import { createApp } from 'h3'
 import { createFetch } from 'ofetch'
 
+// Per pass: collection drops its module graph between passes, so this module and
+// Nuxt's are evaluated again. `unctx`, which holds Nuxt's current app, is external
+// and is not, so the previous pass's app was still current when the new one was set,
+// and Nuxt threw "Context conflict" in every worker on every re-collection (#1283).
+let clearedPreviousApp = false
+
 export async function setupNuxtApp(publicConfig: PublicRuntimeConfig) {
   const win = window as unknown as Window & {
     __app: App
@@ -57,6 +63,13 @@ export async function setupNuxtApp(publicConfig: PublicRuntimeConfig) {
 
   win.__registry = registry
   win.__app = h3App
+
+  if (__HST_COLLECT__ && !clearedPreviousApp) {
+    clearedPreviousApp = true
+    // @ts-expect-error no types
+    const { getNuxtAppCtx } = await import('#app/nuxt')
+    getNuxtAppCtx().unset()
+  }
 
   // @ts-expect-error no types
   const result = await import('#app/entry')
