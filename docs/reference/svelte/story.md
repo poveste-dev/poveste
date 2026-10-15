@@ -124,6 +124,8 @@ The id of a group to include the story in.
 
 An [Iconify id](https://icones.js.org/) to customize the story icon in the tree.
 
+The icon's data ships with the book when the book has its collection installed: `@iconify-json/lucide` for `lucide:cpu`, as a dev dependency. That holds for `poveste build` and `poveste dev`. Without the package, the icon loads from `api.iconify.design` when it first shows, so it is missing offline, and each reader's browser asks Iconify for it. The same goes for a variant's `icon`.
+
 ```svelte
 <Hst.Story icon="lucide:cpu">
   Hello world

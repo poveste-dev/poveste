@@ -1,6 +1,6 @@
 import { addCollection } from '@iconify/vue'
 import { createPinia } from 'pinia'
-import { generation } from 'virtual:$poveste-stories'
+import { generation, onUpdate, icons as storyIcons } from 'virtual:$poveste-stories'
 import { createApp, watch } from 'vue'
 import App from './App.vue'
 import { setupPluginApi } from './plugin.js'
@@ -13,11 +13,20 @@ import 'virtual:$poveste-theme'
 export async function mountMainApp() {
   // The chrome's icon data ships with the app. Without this every Icon fetched
   // its data from api.iconify.design at runtime — a handful of CDN requests per
-  // boot, and no toolbar offline (#219). Story icons a user sets still resolve
-  // through the runtime lookup.
+  // boot, and no toolbar offline (#219).
   for (const collection of iconCollections) {
     addCollection(collection)
   }
+  // And the icons a book's stories name, where the book has the collection
+  // installed; the rest still resolve through the runtime lookup (#255).
+  for (const collection of storyIcons) {
+    addCollection(collection)
+  }
+  onUpdate((_files: unknown, _tree: unknown, icons: typeof storyIcons = []) => {
+    for (const collection of icons) {
+      addCollection(collection)
+    }
+  })
 
   // The chrome's own scheme, for the browser: it paints the chrome's native
   // controls and scrollbars, and reads no class (#991). Here rather than in the
