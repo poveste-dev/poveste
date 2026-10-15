@@ -1,7 +1,8 @@
+import { utimesSync } from 'node:fs'
 import { join } from 'node:path'
 import process from 'node:process'
 import { describe, expect, it } from 'vitest'
-import { barrelImport, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit, report } from './bundle-size.ts'
+import { barrelImport, bookInputs, CEILINGS_ENFORCED, checkBundleSize, findBook, LIMITS, measurements, NOT_ENFORCING, overLimit, report, staleBook } from './bundle-size.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -146,6 +147,65 @@ describe('findBook', () => {
     const absent = join(tree({}), 'never-created')
 
     expect(findBook(absent)).toBeUndefined()
+  })
+})
+
+// A stale book read 216 KB low at the 0.16.0 cut and passed (#1047).
+describe('a book older than what it is built from', () => {
+  const HOUR = 3_600_000
+  function setTimes(root: string, times: Record<string, number>) {
+    for (const [path, ms] of Object.entries(times)) {
+      utimesSync(join(root, path), ms / 1000, ms / 1000)
+    }
+  }
+  function book(times: Record<string, number>) {
+    const root = tree({
+      'examples/vue/.poveste/dist/index.html': '<html></html>',
+      'examples/vue/.poveste/dist/poveste.json': '{}',
+      'examples/vue/.poveste/dist/assets/app.js': '',
+      'examples/vue/src/App.vue': '',
+      'packages/poveste/dist/index.js': '',
+    })
+    setTimes(root, times)
+    return root
+  }
+
+  it('is measured when nothing it is built from changed after it', () => {
+    const now = Date.now()
+    const root = book({ 'examples/vue/.poveste/dist/index.html': now, 'examples/vue/.poveste/dist/poveste.json': now, 'examples/vue/.poveste/dist/assets/app.js': now, 'examples/vue/src/App.vue': now - HOUR, 'packages/poveste/dist/index.js': now - HOUR })
+
+    expect(staleBook(join(root, 'examples/vue/.poveste/dist'), bookInputs(root), root)).toBeUndefined()
+  })
+
+  it('is refused when a package was rebuilt after it, naming the file', () => {
+    const now = Date.now()
+    const root = book({ 'examples/vue/.poveste/dist/index.html': now - HOUR, 'examples/vue/.poveste/dist/poveste.json': now - HOUR, 'examples/vue/.poveste/dist/assets/app.js': now - HOUR, 'examples/vue/src/App.vue': now - 2 * HOUR, 'packages/poveste/dist/index.js': now })
+
+    expect(staleBook(join(root, 'examples/vue/.poveste/dist'), bookInputs(root), root)).toMatch(/built before packages[\\/]poveste[\\/]dist[\\/]index\.js last changed \(60 min later\)/)
+  })
+
+  it('is refused when the book\'s own source changed after it', () => {
+    const now = Date.now()
+    const root = book({ 'examples/vue/.poveste/dist/index.html': now - HOUR, 'examples/vue/.poveste/dist/poveste.json': now - HOUR, 'examples/vue/.poveste/dist/assets/app.js': now - HOUR, 'examples/vue/src/App.vue': now, 'packages/poveste/dist/index.js': now - 2 * HOUR })
+
+    expect(staleBook(join(root, 'examples/vue/.poveste/dist'), bookInputs(root), root)).toMatch(/examples[\\/]vue[\\/]src[\\/]App\.vue/)
+  })
+
+  it('is not made stale by a public file, which the build copies with its old time', () => {
+    const now = Date.now()
+    const root = book({ 'examples/vue/.poveste/dist/index.html': now, 'examples/vue/.poveste/dist/poveste.json': now, 'examples/vue/.poveste/dist/assets/app.js': now - 3 * HOUR, 'examples/vue/src/App.vue': now - HOUR, 'packages/poveste/dist/index.js': now - HOUR })
+
+    expect(staleBook(join(root, 'examples/vue/.poveste/dist'), bookInputs(root), root)).toBeUndefined()
+  })
+
+  it('is refused by the check, with no measurement printed', () => {
+    const now = Date.now()
+    const root = book({ 'examples/vue/.poveste/dist/index.html': now - HOUR, 'examples/vue/.poveste/dist/poveste.json': now - HOUR, 'examples/vue/.poveste/dist/assets/app.js': now - HOUR, 'examples/vue/src/App.vue': now - 2 * HOUR, 'packages/poveste/dist/index.js': now })
+
+    const result = checkBundleSize(root)
+
+    expect(result.problems).toEqual([expect.stringContaining('is not the book this tree builds')])
+    expect(result.notes).toEqual([])
   })
 })
 
