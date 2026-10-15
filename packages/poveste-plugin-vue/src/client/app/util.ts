@@ -1,6 +1,7 @@
 import type { ComponentInternalInstance } from 'vue'
 import { applyState, createStateBaseline, isMarkedRaw, isPlainObject } from '@poveste/shared'
 import {
+  getCurrentInstance as _getCurrentInstance,
   isRef as _isRef,
   unref as _unref,
   watch as _watch,
@@ -240,4 +241,28 @@ export function useInstance(name: string): ComponentInternalInstance {
     throw new Error(`[poveste] <${name}> can only be set up inside a component`)
   }
   return vm
+}
+
+let warnedForeignVue = false
+
+/**
+ * Warns, once, when a component built against `@poveste/vendors/vue` is
+ * rendered by another copy of Vue.
+ *
+ * The other copy runs the component's `setup`, so the vendored one has no
+ * current instance and drops every hook: the story renders nothing, and no build
+ * of Vue says why. A test mounting `MountStory` with `createApp` from `vue` read
+ * it as a story with no variants (#940).
+ */
+export function warnIfForeignVue(component: string) {
+  if (warnedForeignVue || _getCurrentInstance()) {
+    return
+  }
+  warnedForeignVue = true
+  console.warn(`[poveste] ${component} was rendered by a copy of Vue other than \`@poveste/vendors/vue\`, so it renders nothing. Poveste's client components are built against that copy: create the app with \`createApp\` from \`@poveste/vendors/vue\`, not from \`vue\`.`)
+}
+
+/** For specs: lets the warning be seen again. */
+export function resetForeignVueWarning() {
+  warnedForeignVue = false
 }
