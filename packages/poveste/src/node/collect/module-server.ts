@@ -194,7 +194,14 @@ export function createModuleServer(server: ViteDevServer, options: ModuleServerO
     : [...options.inline, ...(Array.isArray(noExternal) ? noExternal : noExternal ? [noExternal] : [])]
 
   const externalizeCache = new Map<string, Promise<string | false>>()
-  const fetchCache = new Map<string, { timestamp: number, result: FetchResult }>()
+  // Each entry keeps the module's invalidation time it was transformed under, in
+  // Vite's clock rather than `Date.now()`. That clock adds a millisecond for every
+  // call within one, so a burst of transforms runs it ahead of the wall clock, and
+  // `invalidateAll` then stamps every module seconds in the future. Against
+  // `Date.now()` the whole cache read as stale until real time caught up, each
+  // re-transform pushed the clock further ahead, and one reload re-collected a
+  // large book a hundred times over (#1352).
+  const fetchCache = new Map<string, { invalidatedAt: number, result: FetchResult }>()
 
   function getTransformMode(id: string): TransformMode {
     const path = cleanUrl(id)
@@ -279,13 +286,12 @@ export function createModuleServer(server: ViteDevServer, options: ModuleServerO
     const moduleNode = server.moduleGraph.getModuleById(id) ?? [...server.moduleGraph.getModulesByFile(path) ?? []][0]
     const invalidatedAt = moduleNode ? Math.max(moduleNode.lastHMRTimestamp, moduleNode.lastInvalidationTimestamp) : 0
     const cached = fetchCache.get(path)
-    if (cached && (invalidatedAt === 0 || cached.timestamp >= invalidatedAt)) {
+    if (cached && invalidatedAt <= cached.invalidatedAt) {
       // Unchanged since the runner last read it: it keeps what it has. A runner
       // that never had it gets the code, with nothing of its own to invalidate.
       return cachedByRunner ? { cache: true } : { ...cached.result, invalidate: false }
     }
 
-    const timestamp = Date.now()
     const result = await transform(id, getTransformMode(id))
     if (!result) {
       throw new Error(`[poveste] could not transform ${id}${importer ? `, imported from ${importer}` : ''}`)
@@ -297,7 +303,7 @@ export function createModuleServer(server: ViteDevServer, options: ModuleServerO
       url: id,
       invalidate: true,
     }
-    fetchCache.set(path, { timestamp, result: fetched })
+    fetchCache.set(path, { invalidatedAt, result: fetched })
     return fetched
   }
 
