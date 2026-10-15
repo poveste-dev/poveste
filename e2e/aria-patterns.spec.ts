@@ -144,8 +144,12 @@ test.describe('the panel actions', () => {
   test('announce a copy', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await openStory(page, STORY, '?variantId=default')
+    const source = page.locator('.poveste-story-source-code')
+    // The source loads after the story does; a click before it lands is told
+    // "Nothing to copy", which is right, and not what this asserts (#1314).
+    await expect(source).toContainText('conformance-button')
 
-    await page.locator('.poveste-story-source-code').getByRole('button', { name: 'Copy', exact: true }).click()
+    await source.getByRole('button', { name: 'Copy', exact: true }).click()
 
     await expect(page.getByRole('status').filter({ hasText: 'Copied' })).toBeAttached()
   })
