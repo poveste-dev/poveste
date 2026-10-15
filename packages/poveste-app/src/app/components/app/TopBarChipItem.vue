@@ -1,10 +1,59 @@
 <template>
-  <!-- Without an href this is not a link, so `aria-label` on it is prohibited and
-       it has no accessible role. Chip items are used both ways (#310). -->
-  <a
-    :role="$attrs['href'] ? undefined : 'button'"
-    class="poveste-top-bar-chip-item flex items-center gap-1 px-2.5 py-1.5 hover:bg-white/50 active:bg-white/70 dark:hover:bg-white/10 dark:active:bg-white/15 hover:text-primary-500 dark:hover:text-primary-400 cursor-pointer text-gray-900 dark:text-gray-100 transition-colors"
+  <!-- A link where it navigates, a button everywhere else. An `<a>` without an
+       href is not focusable, so a keyboard could not reach the chip (#1351). -->
+  <component
+    :is="$attrs['href'] ? 'a' : 'button'"
+    :type="$attrs['href'] ? undefined : 'button'"
+    class="poveste-top-bar-chip-item"
+    data-slot="top-bar-chip-item"
   >
     <slot />
-  </a>
+  </component>
 </template>
+
+<style lang="postcss">
+.poveste-top-bar-chip-item {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .375rem .625rem;
+  border: 0;
+  font: inherit;
+  color: var(--color-gray-900);
+  cursor: pointer;
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: color .15s ease-out, background-color .15s ease-out;
+  }
+
+  &:hover {
+    background-color: rgb(255 255 255 / .5);
+    color: var(--color-primary-500);
+  }
+
+  &:active {
+    background-color: rgb(255 255 255 / .7);
+  }
+
+  /* Inset: the chip clips its items to its rounded border. */
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: -2px;
+  }
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    color: var(--color-gray-100);
+
+    &:hover {
+      background-color: rgb(255 255 255 / .1);
+      color: var(--color-primary-400);
+    }
+
+    &:active {
+      background-color: rgb(255 255 255 / .15);
+    }
+  }
+}
+</style>

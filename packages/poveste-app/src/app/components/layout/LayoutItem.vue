@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import BaseListItem from '../base/BaseListItem.vue'
 
 defineProps<{
   title: string
@@ -15,10 +14,14 @@ defineEmits<{
 </script>
 
 <template>
-  <BaseListItem
-    :is-active="isActive"
-    class="px-6 py-4 gap-4"
-    @navigate="$emit('click')"
+  <!-- A button: `BaseListItem` is an `<a>` with no href, which a keyboard cannot
+       reach (#1351). -->
+  <button
+    type="button"
+    class="poveste-layout-item"
+    :class="{ active: isActive }"
+    data-slot="layout-item"
+    @click="$emit('click')"
   >
     <Icon
       class="w-4 h-4 flex-none"
@@ -32,5 +35,52 @@ defineEmits<{
       :icon="stateIcon"
       aria-hidden="true"
     />
-  </BaseListItem>
+  </button>
 </template>
+
+<style lang="postcss">
+.poveste-layout-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: 0;
+  font: inherit;
+  text-align: start;
+  color: var(--color-gray-900);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-primary-100);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: -2px;
+  }
+
+  &.active {
+    background-color: var(--color-primary-500);
+    color: var(--color-white);
+
+    &:hover {
+      background-color: var(--color-primary-600);
+    }
+  }
+
+  /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
+     descendant rule keyed on it never matches from in here (#101). */
+  &:where(.ptw-dark, .ptw-dark *) {
+    color: var(--color-gray-100);
+
+    &:hover {
+      background-color: var(--color-primary-900);
+    }
+
+    &.active {
+      color: var(--color-black);
+    }
+  }
+}
+</style>
