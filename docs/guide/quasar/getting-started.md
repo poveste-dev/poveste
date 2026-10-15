@@ -79,18 +79,22 @@ Add the scripts to your `package.json`, alongside the ones Quasar already gave y
 }
 ```
 
-## Boot files do not run, and nothing tells you
+## Boot files do not run, and the page does not say so
 
-Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute on their own. A component that reads something a boot file set finds it missing, and this fails quietly: the build succeeds, no error panel appears, the value is simply undefined.
+Poveste renders your components in its own app, so Quasar's boot files — which run in *your* app's entry — never execute on their own. A component that reads something a boot file set finds it missing: the value is simply undefined.
 
-App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements — again with no error.
+App extensions are the same problem wearing a different hat. An extension registers its components through a boot file it contributes, so with none of them running, `<q-calendar-day>` and friends stay in the page as unresolved elements.
 
-That is what `setupQuasar({ boot })` is for. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and listed alongside your own.
+Both fail quietly on the page: the build succeeds and no error panel appears. The browser console is where they show, and only under `poveste dev`, where Vue warns `Failed to resolve component: q-calendar-day`, or, for a global a template reads, `Property "$greeting" was accessed during render but is not defined on instance`. A built book logs nothing.
+
+That is what `setupQuasar({ boot })` is for. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and listed alongside your own. The extension itself is installed with `quasar ext add @quasar/qcalendar`, the short name.
 
 Only `app` is passed to them: a story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
 
 ::: warning What this is checked against
 Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension.
+
+Walked again since: on Poveste 0.16.2, both cases end to end, QCalendar included; and on Poveste 0.19.1 with Quasar 2.35.1 and `@quasar/app-vite` 3.10.3, a plain boot file with and without `setupQuasar({ boot })`, under `poveste dev` and in a built book.
 
 Quasar's SPA mode only, which is all the entrypoint returns. Not checked: components that need the router or a store at mount time. If you hit something, please [open an issue](https://github.com/poveste-dev/poveste/issues).
 :::
