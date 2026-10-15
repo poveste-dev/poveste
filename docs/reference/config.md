@@ -455,6 +455,8 @@ export default defineConfig({
 })
 ```
 
+The app's page gets a description of its own unless `head` sets one: "*`theme.title`*, a book of component stories." A `{ name: 'description', content: '…' }` entry in `meta` replaces it.
+
 ## `markdown`
 
 `(md: MarkdownIt) => MarkdownIt | Promise<MarkdownIt>`

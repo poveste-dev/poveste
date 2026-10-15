@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyHeadTransform } from '../util/head.js'
+import { applyHeadTransform, defaultDescription } from '../util/head.js'
 
 const BASE_HTML = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body></body></html>'
 
@@ -28,5 +28,30 @@ describe('applyHeadTransform', () => {
     })
     expect(out).not.toContain('lang="en"')
     expect(out).not.toMatch(/<meta[^>]*name="viewport"/)
+  })
+})
+
+// A built book had no description, so a search result and Lighthouse's SEO audit
+// had nothing to read (#316).
+describe('the default description', () => {
+  it('is added to a page whose head sets none', async () => {
+    const out = await applyHeadTransform(BASE_HTML, undefined, defaultDescription('Acme UI'))
+
+    expect(out).toContain('<meta name="description" content="Acme UI, a book of component stories.">')
+  })
+
+  it('gives way to the description the book sets', async () => {
+    const out = await applyHeadTransform(BASE_HTML, {
+      meta: [{ name: 'description', content: 'Our buttons.' }],
+    }, defaultDescription('Acme UI'))
+
+    expect(out).toContain('<meta name="description" content="Our buttons.">')
+    expect(out).not.toContain('a book of component stories')
+  })
+
+  it('escapes a title that carries markup', async () => {
+    const out = await applyHeadTransform(BASE_HTML, undefined, defaultDescription('A "quoted" <title>'))
+
+    expect(out).not.toContain('"quoted" <title>')
   })
 })

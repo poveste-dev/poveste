@@ -22,6 +22,7 @@ Everything lands in [`outDir`](../reference/config.md#outdir), `.poveste/dist` b
 | `assets/` | hashed JS and CSS, safe to cache forever |
 | `bundle-main.css`, `bundle-sandbox.css` | the chrome's stylesheet and the sandbox's |
 | `poveste.json` | the story index, fetched at runtime |
+| `robots.txt` | allows every crawler, unless your public directory has a `robots.txt` of its own |
 | anything in your public directory | copied through as-is |
 
 Deploy the contents of that directory. Two HTML files, and no per-story page — which is the whole of what follows.
@@ -41,6 +42,8 @@ GET /story/conformance-button  404   ← the URL in someone's bookmark
 The book works when you click into it from the home page, and breaks on reload, on a shared link, and on any deep link. So the host has to answer every unmatched path with `index.html`, at status 200.
 
 That is the standard SPA rewrite, and every host below spells it differently.
+
+It is also why a build writes a `robots.txt`. Without one, the rewrite answers `/robots.txt` with `index.html`, which a crawler reads as a malformed robots file rather than as no file. To keep crawlers out of a book on an internal domain, put your own in the public directory, `User-agent: *` then `Disallow: /`, and the build leaves it alone.
 
 ::: tip Not the same as a static docs site
 If you have written a Netlify config for a VitePress or Astro site, do not copy it. Those build one file per page and need no fallback — poveste.dev's own `netlify.toml` deliberately has none, because a status-200 catch-all made every missing path answer with the home page and read as a soft 404 to search engines. A book is the opposite case.

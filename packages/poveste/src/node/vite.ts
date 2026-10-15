@@ -29,7 +29,7 @@ import {
   userCssScopePlugin,
 } from './style-isolation/index.js'
 import { escapeRegExp } from './util/escape-regexp.js'
-import { applyHeadTransform } from './util/head.js'
+import { applyHeadTransform, defaultDescription } from './util/head.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
 import { chromePrebundles, collapseVendoredVue, vendorsFromPoveste } from './vendors.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
@@ -377,7 +377,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     <script type="module" src="/@fs/${APP_PATH}/bundle-main${process.env['POVESTE_DEV'] ? '-dev' : ''}.js"></script>
   </body>
 </html>`
-            html = await applyHeadTransform(html, ctx.config.head)
+            html = await applyHeadTransform(html, ctx.config.head, defaultDescription(ctx.config.theme?.title ?? 'Poveste'))
             // Apply Vite HTML transforms. This injects the Vite HMR client, and
             // also applies HTML transforms from Vite plugins
             html = await server.transformIndexHtml(req.url ?? '/', html)
