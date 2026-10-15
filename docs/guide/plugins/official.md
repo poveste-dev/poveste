@@ -67,4 +67,32 @@ export default defineConfig({
 })
 ```
 
-**Solid and React cannot share a book yet.** Both write stories as `.story.tsx`, and a file goes to whichever of the two plugins comes first in `plugins`. The other framework's stories then render nothing under Solid, or throw under React, and a `supportMatch` entry of your own does not change which plugin wins.
+**Solid and React can share a book.** Both claim `.story.tsx` and `.story.jsx`, so a file goes to the plugin it imports: a story that imports `defineStory` from `@poveste/plugin-solid` is rendered by Solid, and one that imports it from `@poveste/plugin-react` by React, whichever comes first in `plugins`.
+
+Two cases fall back to the plugin listed first in `plugins`, and Poveste says so once for that file when it finds the story:
+
+- a story file that imports from both plugins;
+- one that imports from neither, such as one that gets `defineStory` from a helper of your own. The warning names both plugins; import `defineStory` from one of them in the story file to choose.
+
+The two Vite plugins also have to stay out of each other's files, since both compile JSX. Keep each framework's components in a directory of its own and point each plugin at it. If your `tsconfig` names Solid's JSX, give React its own:
+
+```ts
+// vite.config.ts
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import solid from 'vite-plugin-solid'
+
+export default defineConfig({
+  plugins: [
+    solid({ include: 'src/solid/**' }),
+    react({ include: /src\/react\/.*\.[jt]sx$/, jsxImportSource: 'react' }),
+  ],
+})
+```
+
+```ts
+// poveste.config.ts
+export default defineConfig({
+  plugins: [HstSolid(), HstReact()],
+})
+```
