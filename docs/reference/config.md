@@ -96,12 +96,14 @@ Plugins contribute the defaults:
 
 The Vue, Svelte and built-in entries match on extension rather than on the `.story.` infix. `vue3` and `svelte4` are the ids those two support plugins have always had, and name no version: `svelte4` is what renders Svelte 5. Solid and React claim the same files, and the first entry that matches a file wins, which is why the two [cannot share a book yet](../guide/plugins/official.md#more-than-one-framework-in-a-book).
 
-Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry, which is what you want only if you are pointing at a plugin nothing else claims.
+Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry after every entry the plugins contributed, and since the first entry that matches a file wins, it only claims files none of theirs match. That is what you want only if you are pointing at a plugin nothing else claims.
 
-A story matching `storyMatch` and no `supportMatch` entry fails collection with `No support plugin found for file …`. That is the reason to set this key — TypeScript stories, for instance, since the built-in entry claims `**/*.js` alone.
+A story matching `storyMatch` and no `supportMatch` entry fails collection with `No support plugin found for file …`. That is the reason to set this key: plain TypeScript stories for the built-in renderer, `*.story.ts`, for instance, since its entry claims `**/*.js` alone. A `.story.tsx` file needs no entry, because the Solid and React plugins claim it.
 
 ```ts
 export default defineConfig({
+  // This replaces the default list: add '**/*.story.vue' and the rest back if
+  // the book has those stories too.
   storyMatch: ['**/*.story.ts'],
   supportMatch: [
     // Same `id` as the built-in entry, so this extends it rather than
@@ -183,7 +185,7 @@ export default defineConfig({
 
 `string | { browser: string, server: string }`
 
-A file of your own that Poveste loads with every story, in the app and in each preview. Import global CSS from it, and export the setup function your framework's plugin reads — `setupVue`, `setupSvelte`, `setupSolid` or `setupReact` — to run code before each story mounts.
+A file of your own that Poveste loads with every story, in Poveste's interface and in each preview. Import global CSS from it, and export the setup function your framework's plugin reads — `setupVue`, `setupSvelte`, `setupSolid` or `setupReact` — to run code before each story mounts.
 
 A default export is not called. The file is still loaded, so what it imports applies, but the function never runs and nothing warns.
 

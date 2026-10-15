@@ -152,3 +152,5 @@ Each variant calls `initState` for itself, so editing Red's text leaves Blue's a
 ## Available controls
 
 `Hst.Text`, `Hst.Textarea`, `Hst.Number`, `Hst.Checkbox`, `Hst.CheckboxList`, `Hst.Select`, `Hst.Radio`, `Hst.ButtonGroup`, `Hst.Slider`, `Hst.Color`, `Hst.Date`, `Hst.Json` and `Hst.Button` — reached through the `Hst` prop rather than as globals. `Hst.ColorSelect` is an older colour control that is still exported; `Hst.Color` is the picker. See [controls](../../guide/svelte/controls.md).
+
+`@poveste/controls` exports five more components that are not controls. `HstColorShades`, `HstTokenList` and `HstTokenGrid` draw the design-token pages `@poveste/plugin-tailwind` generates, and `HstCopyIcon` and `HstTooltip` are parts of Poveste's own interface. The first four are reachable from a story as `Hst.ColorShades` and so on, but these pages document only the controls.

@@ -131,3 +131,9 @@ function initState() {
   </Story>
 </template>
 ```
+
+## Available controls
+
+`HstText`, `HstTextarea`, `HstNumber`, `HstCheckbox`, `HstCheckboxList`, `HstSelect`, `HstRadio`, `HstButtonGroup`, `HstSlider`, `HstColor`, `HstDate`, `HstJson` and `HstButton`, registered globally in a Vue book, so a story uses them without importing them. `HstColorSelect` is an older colour control that is still exported; `HstColor` is the picker. See [controls](../../guide/vue/controls.md).
+
+`@poveste/controls` exports five more components that are not controls. `HstColorShades`, `HstTokenList` and `HstTokenGrid` draw the design-token pages `@poveste/plugin-tailwind` generates, and `HstCopyIcon` and `HstTooltip` are parts of Poveste's own interface. The first four are registered globally as well, but these pages document only the controls.

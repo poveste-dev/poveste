@@ -23,6 +23,8 @@ One book can hold stories for two frameworks, such as a Vue library with a few S
 pnpm i -D poveste @poveste/plugin-vue @poveste/plugin-solid
 ```
 
+For about a day after a release, pnpm installs the previous version without a word, and a plugin new in that release as its empty placeholder. If the versions look wrong, the tip under the Vue guide's [Installation](../vue/getting-started.md#installation) says how to get the current one.
+
 Each framework and its Vite plugin have to be installed too. A project that already uses both has them; one adding Vue for the first time installs `vue` and `@vitejs/plugin-vue`. Then list both in each config:
 
 ```ts
@@ -49,6 +51,8 @@ export default defineConfig({
 
 Each story is rendered by the plugin that claims its file: `.story.vue` by Vue, `.story.tsx` and `.story.jsx` by Solid. The two Vite plugins need no `include` or `exclude` to stay out of each other's way, since `vue()` compiles `.vue` files and `solid()` compiles JSX. Vue with React is the same, with `react()` and `HstReact()` in place of the Solid pair, and one thing more in a project made from Vite's Vue template: its tsconfig compiles JSX for Vue, so every React story shows "This component threw while rendering" and React error #31 until React's JSX is set. The React guide shows [what to set](../react/getting-started.md#in-a-vue-project).
 
+Svelte with Solid or React follows the same pattern, `HstSvelte()` beside the JSX framework's pair. No example book builds that combination, so it is untested; Vue with React is the pair CI builds, in `examples/react`.
+
 Each framework's stories are written as its own guide shows: [a Vue story](../vue/stories.md) is a `.story.vue` file, and a [Solid](../solid/getting-started.md#write-a-story) or [React](../react/getting-started.md#write-a-story) one is a `.story.tsx` file.
 
 **There is no [`storyMatch`](../../reference/config.md#storymatch) to set.** `@poveste/plugin-solid` and `@poveste/plugin-react` each add their patterns to the defaults, so Vue's are still there.
@@ -67,4 +71,4 @@ export default defineConfig({
 })
 ```
 
-**Solid and React cannot share a book yet.** Both write stories as `.story.tsx`, and a file goes to whichever of the two plugins comes first in `plugins`. The other framework's stories then render nothing under Solid, or throw under React, and a `supportMatch` entry of your own does not change which plugin wins.
+**Solid and React cannot share a book yet.** Both write stories as `.story.tsx`, and a file goes to whichever of the two plugins comes first in `plugins`. The other framework's stories then render nothing under Solid, or throw under React, and a [`supportMatch`](../../reference/config.md#supportmatch) entry of your own does not change which plugin wins. For both today, use two books: the Solid stories and the React stories in separate packages, each with its own `poveste.config.ts` and Vite config.

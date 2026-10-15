@@ -1,5 +1,5 @@
 ---
-title: 'Coming from Storybook — a Vite-native component playground for Vue, Nuxt, Svelte and Quasar, with Solid and React renderers'
+title: 'Coming from Storybook — a Vite-native component playground for Vue, Nuxt, Svelte, SvelteKit and Quasar, with Solid and React renderers'
 description: 'What a Poveste book is, how stories are written as ordinary components, what a built book weighs, and what Poveste does not do.'
 ---
 
@@ -33,7 +33,7 @@ import Button from './Button.vue'
 </template>
 ```
 
-That is the whole API for a basic story: `<Story>` and `<Variant>`. State and controls are added with [`initState` and the `Hst*` controls](./vue/controls.md) when a variant needs them, and Poveste builds a control per declared prop on its own — for [Vue](./vue/controls.md) from the rendered component, for [Svelte](./svelte/controls.md#automatic-controls) from the component's source.
+That is the whole API for a basic story: `<Story>` and `<Variant>`. State and controls are added with [`initState` and the `Hst*` controls](./vue/controls.md) when a variant needs them (`HstText`, `HstSelect` and the rest are Poveste's built-in controls; the prefix comes from histoire, which Poveste is a fork of), and Poveste builds a control per declared prop on its own — for [Vue](./vue/controls.md) from the rendered component, for [Svelte](./svelte/controls.md#automatic-controls) from the component's source.
 
 ## Your Vite config is the build
 
@@ -54,7 +54,7 @@ The highlighter had been importing from the `shiki` barrel, which ships every gr
 
 ## Five frameworks, each with a book CI builds
 
-[Vue](./vue/getting-started.md), [Nuxt](./nuxt/getting-started.md), [Svelte](./svelte/getting-started.md), [SvelteKit](./sveltekit/getting-started.md) and [Quasar](./quasar/getting-started.md) each have an example book in this repository, built and driven by Playwright on every commit. The shared specs run against all of them, so support means a job that fails rather than a row in a table.
+[Vue](./vue/getting-started.md), [Nuxt](./nuxt/getting-started.md), [Svelte](./svelte/getting-started.md), [SvelteKit](./sveltekit/getting-started.md) and [Quasar](./quasar/getting-started.md) each have an example book in [this repository](https://github.com/poveste-dev/poveste/tree/main/examples), built and driven by Playwright on every commit. The shared specs run against all of them, so support means a job that fails rather than a row in a table.
 
 [Solid](./solid/getting-started.md) and [React](./react/getting-started.md) are renderers only. Each has an example book that CI builds and runs that renderer's own specs on; the shared specs do not run on them.
 
@@ -67,6 +67,36 @@ Worth knowing before you spend an afternoon:
 - **No addon ecosystem.** Poveste has a [plugin API](./plugins/development.md) for collection and setup, and official plugins for the frameworks, Tailwind, Percy and screenshots. It is not a marketplace, and an addon you rely on has no equivalent here.
 - **It is a small project.** Poveste is a maintained fork of [histoire](https://github.com/histoire-dev/histoire), currently pre-1.0 — [what 1.0 means](./getting-started.md#what-1-0-means) is written down, along with [what a deprecation promises](./getting-started.md#deprecations).
 
+## Your existing stories
+
+Poveste does not read Storybook's `*.stories.*` files. A story here is a component file, `Button.story.vue` beside `Button.vue`, so each one is written again in that form. The variants, args and decorators of a CSF file map onto `<Variant>`, `initState` and [a setup file's wrappers](./vue/wrapper.md), but nothing converts them for you.
+
 ## Trying it
 
-`pnpm i -D poveste @poveste/plugin-vue`, a `poveste.config.ts` with the plugin in it, and `poveste dev`. The [Getting started](./getting-started.md) page has the exact commands per framework. The Solid and React pages have a story to copy on the page itself; the others link to the page that shows one.
+In a Vue project that already builds with Vite and `@vitejs/plugin-vue`:
+
+```sh
+pnpm i -D poveste @poveste/plugin-vue
+```
+
+```ts
+// poveste.config.ts
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue()],
+})
+```
+
+```json
+{
+  "scripts": {
+    "story:dev": "poveste dev",
+    "story:build": "poveste build",
+    "story:preview": "poveste preview"
+  }
+}
+```
+
+Poveste reads your existing `vite.config`, so nothing else is needed. The [Getting started](./getting-started.md) page has the commands for every framework. The Solid and React pages have a story to copy on the page itself; the others link to the page that shows one.
