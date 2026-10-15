@@ -5,7 +5,7 @@ describe('noVuePluginMessage', () => {
   // Vite's own message says to install @vitejs/plugin-vue, which a Quasar project
   // does not need: HstQuasar() is what was missing (#1337).
   it('names HstQuasar() in a Quasar project', () => {
-    // By file name: `join` writes the platform's separator, so Windows sees `\\app\\…`.
+    // By file name: `join` writes the platform's separator, so Windows sees `\app\…`.
     const message = noVuePluginMessage('/app', path => /[\\/]quasar\.config\.js$/.test(path))
 
     expect(message).toContain('`HstQuasar()` from `@poveste/plugin-quasar`')
