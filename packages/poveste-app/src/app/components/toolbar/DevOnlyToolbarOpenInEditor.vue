@@ -14,7 +14,6 @@ defineProps<{
   <HstTooltip :content="tooltip">
     <TopBarChipItem
       aria-label="Open story in editor"
-      target="_blank"
       class="poveste-toolbar-open-in-editor"
       @click="openInEditor(file)"
     >

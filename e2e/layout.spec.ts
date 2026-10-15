@@ -1,8 +1,17 @@
+import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 // The story-options tests need a story with controls, which the contract
 // guarantees `conformance-button` has.
 const CONTROLS_STORY = '/story/conformance-button'
+
+/** Tab forward from where focus is until `target` has it, as a keyboard reader would. */
+async function tabTo(page: Page, target: Locator) {
+  await expect(async () => {
+    await page.keyboard.press('Tab')
+    await expect(target).toBeFocused({ timeout: 50 })
+  }).toPass({ intervals: [0], timeout: 10_000 })
+}
 
 test.describe('layout customization', () => {
   test.beforeEach(async ({ page }) => {
@@ -57,6 +66,21 @@ test.describe('layout customization', () => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.reload()
     await expect(page.getByTestId('layout-btn')).toHaveCount(0)
+  })
+
+  // The chip and the pane's items were `<a>`s without an href, which are not
+  // focusable, so a keyboard reader could not open the pane at all (#1351).
+  test('opens with Enter and toggles with Space, reached by Tab alone', async ({ page }) => {
+    await expect(page.getByTestId('story-list-item').first()).toBeVisible()
+
+    await tabTo(page, page.getByTestId('layout-btn'))
+    await page.keyboard.press('Enter')
+    await expect(page.getByTestId('layout-modal')).toBeVisible()
+    await tabTo(page, page.getByTestId('layout-toggle-story-list'))
+    await page.keyboard.press('Space')
+    await page.keyboard.press('Escape')
+
+    await expect(page.getByTestId('story-list-item')).toHaveCount(0)
   })
 
   test('closes the modal with Escape', async ({ page }) => {
