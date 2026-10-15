@@ -189,6 +189,7 @@
     "VueVariantPropsGeneric"
   ],
   "@poveste/shared": [
+    "AutoDocsOptions",
     "AutoPropComponentDefinition",
     "Awaitable",
     "BackgroundPreset",
@@ -282,6 +283,7 @@
     "voidElements"
   ],
   "poveste": [
+    "AutoDocsOptions",
     "AutoPropComponentDefinition",
     "Awaitable",
     "BackgroundPreset",
