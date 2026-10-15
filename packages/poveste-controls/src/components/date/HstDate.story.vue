@@ -24,7 +24,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs">{{ state.day }}</pre>
+        <pre class="demo-value">{{ state.day }}</pre>
       </template>
       <template #controls="{ state }">
         <HstDate
@@ -39,7 +39,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs">{{ state.moment }}</pre>
+        <pre class="demo-value">{{ state.moment }}</pre>
       </template>
       <template #controls="{ state }">
         <HstDate
@@ -55,7 +55,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs">{{ state.empty || '(nothing)' }}</pre>
+        <pre class="demo-value">{{ state.empty || '(nothing)' }}</pre>
       </template>
       <template #controls="{ state }">
         <HstDate
@@ -66,3 +66,10 @@ function initState() {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-value {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+</style>

@@ -309,7 +309,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="rounded h-[100px]"
+            class="demo-shade"
             :style="{
               backgroundColor: color,
             } as CSSProperties"
@@ -327,7 +327,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="rounded h-[100px] text-5xl flex items-end"
+            class="demo-shade demo-shade-text"
             :style="{
               color,
             } as CSSProperties"
@@ -347,7 +347,7 @@ const colors = {
       >
         <template #default="{ color }">
           <div
-            class="rounded h-[100px] border-solid border-2"
+            class="demo-shade demo-shade-border"
             :style="{
               borderColor: color,
             } as CSSProperties"
@@ -390,3 +390,21 @@ const colors = {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-shade {
+  height: 100px;
+  border-radius: 0.25rem;
+}
+
+.demo-shade-text {
+  display: flex;
+  align-items: flex-end;
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.demo-shade-border {
+  border: 2px solid;
+}
+</style>

@@ -79,7 +79,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs bg-gray-50 dark:bg-gray-600 rounded p-4">{{ options }}</pre>
+        <pre class="demo-options">{{ options }}</pre>
         <HstSelect
           v-model="state.select"
           title="Games"
@@ -100,7 +100,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs bg-gray-50 dark:bg-gray-600 rounded p-4">{{ objectOptions }}</pre>
+        <pre class="demo-options">{{ objectOptions }}</pre>
         <HstSelect
           v-model="state.select"
           title="Games"
@@ -121,7 +121,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs bg-gray-50 dark:bg-gray-600 rounded p-4">{{ flatOptions }}</pre>
+        <pre class="demo-options">{{ flatOptions }}</pre>
         <HstSelect
           v-model="state.select"
           title="Select"
@@ -142,7 +142,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs bg-gray-50 dark:bg-gray-600 rounded p-4">{{ numberOptions }}</pre>
+        <pre class="demo-options">{{ numberOptions }}</pre>
         <HstSelect
           v-model="state.count"
           title="Select"
@@ -159,3 +159,17 @@ function initState() {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-options {
+  padding: 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  background: #f9fafb;
+}
+
+.dark .demo-options {
+  background: #4b5563;
+}
+</style>
