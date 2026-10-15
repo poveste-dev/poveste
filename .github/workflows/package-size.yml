@@ -35,6 +35,10 @@ jobs:
       pull-requests: write
     env:
       MEASURE: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON head/scripts/release/package-sizes.ts
+      # Packing needs no browser. And with two installs on one runner, the
+      # second one's puppeteer postinstall found the first's half-made browser
+      # folder and failed the install.
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - uses: actions/checkout@v7
         with:
