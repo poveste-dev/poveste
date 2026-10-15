@@ -73,7 +73,8 @@ export interface Story {
   docsOnly?: boolean
   file?: StoryFile
   lastSelectedVariant?: Variant
-  slots?: () => any
+  /** The story's own slots. Any of the three can be absent: a story may define none. */
+  slots?: () => { default?: any, controls?: any, source?: any }
   meta?: StoryMeta
 }
 
@@ -85,7 +86,8 @@ export interface Variant {
   icon?: string | undefined
   iconColor?: string | undefined
   setupApp?: ((payload: any) => unknown) | undefined
-  slots?: (() => { default: any, controls: any, source: any }) | undefined
+  /** The variant's own slots. Any of the three can be absent: a variant may define none. */
+  slots?: (() => { default?: any, controls?: any, source?: any }) | undefined
   state: any
   source?: string | undefined
   responsiveDisabled?: boolean | undefined
