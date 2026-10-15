@@ -1,5 +1,6 @@
+import type { PovesteConfig } from 'poveste'
 import { describe, expect, it } from 'vitest'
-import { findQuasarProject, isPackageAbsent, QUASAR_APP_VITE_REQUIRED, QUASAR_EXITED, quasarViteConfig, resolveTestingConfig, withoutProcessExit } from './index.ts'
+import { DEFAULT_SETUP_FILE, findQuasarProject, HstQuasar, isPackageAbsent, QUASAR_APP_VITE_REQUIRED, QUASAR_EXITED, quasarViteConfig, resolveTestingConfig, withoutProcessExit } from './index.ts'
 
 describe('resolveTestingConfig', () => {
   it('returns the entrypoint when it is there', async () => {
@@ -139,5 +140,25 @@ describe('withoutProcessExit', () => {
       throw new Error('boom')
     })).rejects.toThrow('boom')
     expect(process.exit).toBe(before)
+  })
+})
+
+// A book with no setup file built green, and every Quasar component in it threw
+// on render: nothing had installed Quasar into the story app (#1337).
+describe('the setup file', () => {
+  it('is supplied when the book names none', async () => {
+    const config = await HstQuasar().config!({} as PovesteConfig, 'build')
+
+    expect(config).toEqual({ setupFile: DEFAULT_SETUP_FILE })
+  })
+
+  it('is left alone when the book names its own', async () => {
+    const config = await HstQuasar().config!({ setupFile: '/src/poveste.setup.ts' } as PovesteConfig, 'build')
+
+    expect(config).toBeUndefined()
+  })
+
+  it('is a module of this package, beside the entry that names it', () => {
+    expect(DEFAULT_SETUP_FILE).toMatch(/[\\/]default-setup\.js$/)
   })
 })

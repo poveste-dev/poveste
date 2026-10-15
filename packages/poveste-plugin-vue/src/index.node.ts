@@ -8,6 +8,7 @@ import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
+import { requireVuePlugin } from './util/vue-plugin.js'
 
 export function HstVue(): Plugin {
   return {
@@ -29,6 +30,7 @@ export function HstVue(): Plugin {
       return {
         vite: {
           plugins: [
+            requireVuePlugin(),
             withoutVaporPlugin(),
             (() => {
               let root = process.cwd()

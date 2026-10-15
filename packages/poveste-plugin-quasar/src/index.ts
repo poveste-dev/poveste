@@ -1,6 +1,7 @@
 import type { Plugin } from '@poveste/shared'
 import { existsSync } from 'node:fs'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { dirname, join, parse } from 'pathe'
 
 /**
@@ -144,6 +145,9 @@ export function quasarViteConfig(viteConfig: QuasarViteConfig) {
   }
 }
 
+/** Installs Quasar with its defaults: what `setupQuasar()` does with no options. */
+export const DEFAULT_SETUP_FILE = fileURLToPath(new URL('./default-setup.js', import.meta.url))
+
 export function HstQuasar(options: HstQuasarOptions = {}): Plugin {
   return {
     name: '@poveste/plugin-quasar',
@@ -155,6 +159,17 @@ export function HstQuasar(options: HstQuasarOptions = {}): Plugin {
       const getTestingConfig = await resolveTestingConfig()
       const viteConfig = await withoutProcessExit(() => getTestingConfig(options.ctx ?? {}))
       return { vite: quasarViteConfig(viteConfig) as never }
+    },
+
+    // Every Quasar component needs Quasar installed into the app a story renders
+    // in, and a book with no setup file built green and threw on every one of
+    // them (#1337). A book that names its own is left to install it, with its
+    // own options and boot files.
+    config(config) {
+      if (!config.setupFile) {
+        return { setupFile: DEFAULT_SETUP_FILE }
+      }
+      return undefined
     },
   }
 }
