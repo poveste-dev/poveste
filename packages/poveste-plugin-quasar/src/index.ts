@@ -146,7 +146,7 @@ export function quasarViteConfig(viteConfig: QuasarViteConfig) {
 }
 
 /** Installs Quasar with its defaults: what `setupQuasar()` does with no options. */
-export const DEFAULT_SETUP_FILE = fileURLToPath(new URL('./default-setup.js', import.meta.url))
+const DEFAULT_SETUP_FILE = fileURLToPath(new URL('./default-setup.js', import.meta.url))
 
 export function HstQuasar(options: HstQuasarOptions = {}): Plugin {
   return {
