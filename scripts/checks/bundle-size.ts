@@ -13,7 +13,7 @@
 
 import type { CheckResult } from './support/check-result.ts'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, sep } from 'node:path'
+import { join, relative, sep } from 'node:path'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 
@@ -194,6 +194,65 @@ export function findBook(example: string): string | undefined {
     .find(dir => existsSync(join(dir, 'assets')))
 }
 
+/**
+ * What the vue book is built from, so a book older than any of it is refused
+ * rather than measured.
+ *
+ * The check measured whatever sat in `dist`. At the 0.16.0 cut that was a book
+ * from 78 commits earlier, read 216 KB under the real one, and passed: a stale
+ * book reads low, which looks like headroom (#1047). Modification times rather
+ * than a commit stamp, because the tree is usually dirty while working, and an
+ * edit moves a time where a stamp of `HEAD` would not. Not `pnpm-lock.yaml`:
+ * pnpm rewrites it, unchanged, on an ordinary run, which made a fresh book read
+ * as stale.
+ */
+export function bookInputs(root: string): string[] {
+  const packages = join(root, 'packages')
+  const dists = existsSync(packages)
+    ? readdirSync(packages).map(name => join(packages, name, 'dist')).filter(dir => existsSync(dir))
+    : []
+  return [
+    ...dists,
+    join(root, EXAMPLE, 'src'),
+    join(root, EXAMPLE, 'poveste.config.ts'),
+    join(root, EXAMPLE, 'vite.config.ts'),
+    join(root, EXAMPLE, 'package.json'),
+  ]
+}
+
+interface Stamped { path: string, mtimeMs: number }
+
+function filesUnder(path: string): Stamped[] {
+  if (!existsSync(path)) {
+    return []
+  }
+  if (!statSync(path).isDirectory()) {
+    return [{ path, mtimeMs: statSync(path).mtimeMs }]
+  }
+  return readdirSync(path, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.isFile())
+    .map(entry => join(entry.parentPath, entry.name))
+    .map(file => ({ path: file, mtimeMs: statSync(file).mtimeMs }))
+}
+
+/**
+ * When the book was built: the older of the two files `poveste build` writes
+ * itself. Not the oldest file in the book, which is a copy from the public
+ * directory and keeps the original's time.
+ */
+export const BUILT_FILES = ['index.html', 'poveste.json']
+
+/** Why the book is not the tree's, or `undefined` when nothing it is built from changed after it. */
+export function staleBook(book: string, inputs: string[], root: string): string | undefined {
+  const built = Math.min(...BUILT_FILES.flatMap(file => filesUnder(join(book, file))).map(file => file.mtimeMs))
+  const newest = inputs.flatMap(filesUnder).reduce<Stamped | undefined>((latest, file) => file.mtimeMs > (latest?.mtimeMs ?? -Infinity) ? file : latest, undefined)
+  if (!newest || newest.mtimeMs <= built) {
+    return undefined
+  }
+  const minutes = Math.round((newest.mtimeMs - built) / 60_000)
+  return `the book under ${EXAMPLE} was built before ${relative(root, newest.path)} last changed (${minutes} min later), so it is not the book this tree builds — rebuild it with \`pnpm --filter ./${EXAMPLE} run story:build\` and measure again`
+}
+
 const REMEDY = 'Raise a ceiling only with a reason written next to it. See scripts/checks/bundle-size.ts.'
 
 /**
@@ -252,6 +311,13 @@ export function checkBundleSize(root = ROOT, enforced = CEILINGS_ENFORCED, limit
 
   if (book === undefined) {
     return { problems: [`no built book under ${EXAMPLE} — run \`pnpm --filter ./${EXAMPLE} run story:build\` first`], remedy: REMEDY, notes: [] }
+  }
+
+  // Refused rather than measured: a stale book's number is the misleading part,
+  // so it is not printed either.
+  const stale = staleBook(book, bookInputs(root), root)
+  if (stale !== undefined) {
+    return { problems: [stale], remedy: REMEDY, notes: [] }
   }
 
   const { problems, notes } = report(chunksIn(book), limits, enforced)

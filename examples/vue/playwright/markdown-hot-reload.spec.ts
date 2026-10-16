@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
@@ -18,13 +18,18 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('editing a markdown file', () => {
   let original: string
+  let times: { atime: Date, mtime: Date }
 
   test.beforeAll(() => {
     original = readFileSync(MARKDOWN, 'utf8')
+    times = statSync(MARKDOWN)
   })
 
+  // The times as well as the text: the bundle-size check refuses a book older
+  // than its source, and CI runs it after this spec, on a book built before (#1047).
   test.afterAll(() => {
     writeFileSync(MARKDOWN, original)
+    utimesSync(MARKDOWN, times.atime, times.mtime)
   })
 
   test('re-renders the page without a restart', async ({ page }) => {
