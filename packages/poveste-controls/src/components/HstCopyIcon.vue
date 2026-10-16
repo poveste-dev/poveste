@@ -13,6 +13,8 @@ import HstTooltip from './HstTooltip.vue'
 
 const props = defineProps<{
   content: string | undefined | (() => Awaitable<string | undefined>)
+  /** The content is on its way, so an empty one is not yet "nothing" (#1314). */
+  loading?: boolean
 }>()
 
 const { copy, copied } = useClipboard()
@@ -20,22 +22,31 @@ const { copy, copied } = useClipboard()
 // hear a tooltip change (#827).
 const { polite } = useLiveAnnouncer()
 
-// `copy` skips an empty value without a word, leaving the clipboard holding
-// whatever was copied before — which then pastes as if it came from here (#1108).
-const empty = ref(false)
-const { start: clearEmpty } = useTimeoutFn(() => {
-  empty.value = false
+// Said in place of a copy. `copy` skips an empty value without a word, leaving
+// the clipboard holding whatever was copied before — which then pastes as if it
+// came from here (#1108).
+const notice = ref<string>()
+const { start: clearNotice } = useTimeoutFn(() => {
+  notice.value = undefined
 }, 1500, { immediate: false })
 
+function tell(message: string) {
+  notice.value = message
+  clearNotice()
+  polite(message)
+}
+
 async function action() {
-  const content = typeof props.content === 'function' ? await props.content() : props.content
-  if (!content) {
-    empty.value = true
-    clearEmpty()
-    polite('Nothing to copy')
+  if (props.loading) {
+    tell('Still loading')
     return
   }
-  empty.value = false
+  const content = typeof props.content === 'function' ? await props.content() : props.content
+  if (!content) {
+    tell('Nothing to copy')
+    return
+  }
+  notice.value = undefined
   await copy(content)
   if (copied.value) {
     polite('Copied')
@@ -45,8 +56,8 @@ async function action() {
 
 <template>
   <HstTooltip
-    :content="empty ? 'Nothing to copy' : 'Copied!'"
-    :open="copied || empty"
+    :content="notice ?? 'Copied!'"
+    :open="copied || !!notice"
     :offset="12"
   >
     <button

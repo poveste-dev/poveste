@@ -20,8 +20,8 @@ function tooltipText() {
 
 const mounted: VueWrapper[] = []
 
-async function click(content: unknown) {
-  const wrapper = mount(HstCopyIcon, { props: { content } as any, attachTo: document.body })
+async function click(content: unknown, props: { loading?: boolean } = {}) {
+  const wrapper = mount(HstCopyIcon, { props: { content, ...props } as any, attachTo: document.body })
   mounted.push(wrapper)
   await wrapper.get('button').trigger('click')
   await new Promise(resolve => setTimeout(resolve))
@@ -55,5 +55,16 @@ describe('hstCopyIcon', () => {
 
     expect(execCommand).not.toHaveBeenCalled()
     expect(tooltipText()).toBe('Nothing to copy')
+  })
+
+  // The source pane's content is empty until its source loads, and "Nothing to
+  // copy" in that window was false (#1314).
+  it('copies nothing and says it is still loading while its content loads', async () => {
+    const execCommand = stubCopy()
+
+    await click('', { loading: true })
+
+    expect(execCommand).not.toHaveBeenCalled()
+    expect(tooltipText()).toBe('Still loading')
   })
 })

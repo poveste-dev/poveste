@@ -19,8 +19,21 @@ const props = defineProps<{
 // down were both errors about a type nobody meant to declare.
 const generateSourceCodeFn = shallowRef<GenerateSourceCode | null>(null)
 
+// Until a source has settled, an empty one means "not yet", not "none": a copy in
+// that window said "Nothing to copy" with the source a moment away (#1314).
+const dynamicSettled = ref(false)
+const staticSettled = ref(false)
+
 watchEffect(async () => {
-  const generate = await loadGenerateSourceCode(props.story)
+  let generate: GenerateSourceCode | undefined
+  try {
+    generate = await loadGenerateSourceCode(props.story)
+  }
+  finally {
+    if (!generate) {
+      dynamicSettled.value = true
+    }
+  }
   if (generate) {
     generateSourceCodeFn.value = markRaw(generate)
   }
@@ -40,6 +53,7 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
   if (!generateSourceCodeFn.value) return
   error.value = null
   dynamicSourceCode.value = ''
+  dynamicSettled.value = false
   try {
     dynamicSourceCode.value = (await getDynamicSourceCode(props.variant, generateSourceCodeFn.value)) ?? ''
   }
@@ -47,6 +61,7 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
     console.error(e)
     error.value = e instanceof Error ? e.message : String(e)
   }
+  dynamicSettled.value = true
 
   // Auto-switch
   if (!dynamicSourceCode.value) {
@@ -62,10 +77,18 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
 const staticSourceCode = ref('')
 watch(() => [props.story, props.story?.file?.source], async () => {
   staticSourceCode.value = ''
-  staticSourceCode.value = (await getStaticSourceCode(props.story)) ?? ''
+  staticSettled.value = false
+  try {
+    staticSourceCode.value = (await getStaticSourceCode(props.story)) ?? ''
+  }
+  finally {
+    staticSettled.value = true
+  }
 }, {
   immediate: true,
 })
+
+const loading = computed(() => displayedSource.value === 'dynamic' ? !dynamicSettled.value : !staticSettled.value)
 
 const displayedSourceCode = computed(() => {
   if (displayedSource.value === 'dynamic') {
@@ -189,6 +212,7 @@ watch(sourceHtml, async () => {
 
       <HstCopyIcon
         :content="displayedSourceCode"
+        :loading="loading"
         class="flex-none"
       />
     </div>
@@ -205,7 +229,7 @@ watch(sourceHtml, async () => {
         icon="carbon:code-hide"
         class="w-8 h-8 opacity-50 mb-6"
       />
-      <span>Not available</span>
+      <span>{{ loading ? 'Loading' : 'Not available' }}</span>
     </BaseEmpty>
 
     <textarea
