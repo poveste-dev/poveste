@@ -16,6 +16,14 @@ describe('the docs a story\'s components answer with', () => {
       { file: 'src/Broken.vue', name: 'Broken', error: 'no props type' },
     ])
   })
+
+  it('names a component the extractor named, whatever file it was read from', () => {
+    const doc = { name: 'Button', props: [], slots: [], events: [] }
+
+    const entries = toEntries({ storyId: 'button', components: { 'src/Button.story.tsx': { doc } } })
+
+    expect(entries).toEqual([{ file: 'src/Button.story.tsx', name: 'Button', doc }])
+  })
 })
 
 describe('reading tags', () => {

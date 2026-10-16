@@ -5,7 +5,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 export interface ComponentDocsEntry {
   /** Relative to the book's root. */
   file: string
-  /** The file name without its extension. */
+  /** The component's own name, else the file name without its extension. */
   name: string
   doc?: ComponentDoc
   error?: string
@@ -19,7 +19,8 @@ interface StoryDocsResult {
 export function toEntries(result: StoryDocsResult): ComponentDocsEntry[] {
   return Object.entries(result.components).map(([file, { doc, error }]) => ({
     file,
-    name: file.split('/').pop()!.replace(/\.[^.]+$/, ''),
+    // A JSX story's result is keyed by the story file, so the extractor names the component.
+    name: doc?.name ?? file.split('/').pop()!.replace(/\.[^.]+$/, ''),
     ...doc ? { doc } : {},
     ...error ? { error } : {},
   }))
