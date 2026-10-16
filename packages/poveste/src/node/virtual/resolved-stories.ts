@@ -1,6 +1,7 @@
 import type { Context } from '../context.js'
 import { makeTree } from '../tree.js'
 import { jsString } from './codegen.js'
+import { storyIcons } from './story-icons.js'
 
 /**
  * How many times the story list has changed since the server started, per book.
@@ -36,26 +37,27 @@ ${resolvedStories.map((file, index) => {
 export let files = [${files.map(file => `{${JSON.stringify(file).slice(1, -1)}, component: Comp${file.index}, source: () => import(${jsString(`virtual:story-source:${file.story.id}`)})}`).join(',\n')}]
 export let tree = ${JSON.stringify(makeTree(ctx.config, resolvedStories))}
 export let generation = ${storiesGeneration.get(ctx) ?? 0}
+export let icons = ${JSON.stringify(storyIcons(ctx))}
 // Every copy of this module on a page shares these. A page can hold two: each
 // importer's URL is stamped when the server serves it, so a list that changes
 // between two of them gives each its own copy, and the one evaluated last takes
 // over the hot update. Kept per copy, the handlers stayed with the other one, and
 // the page applied every update to a list nobody was watching (#1237).
 const shared = import.meta.hot
-  ? (import.meta.hot.data.shared ??= { handlers: [], generation: -Infinity, files, tree })
-  : { handlers: [], generation, files, tree }
+  ? (import.meta.hot.data.shared ??= { handlers: [], generation: -Infinity, files, tree, icons })
+  : { handlers: [], generation, files, tree, icons }
 if (generation > shared.generation) {
   const announce = shared.generation !== -Infinity
-  Object.assign(shared, { generation, files, tree })
+  Object.assign(shared, { generation, files, tree, icons })
   if (announce) {
-    shared.handlers.forEach(h => h(files, tree))
+    shared.handlers.forEach(h => h(files, tree, icons))
   }
 }
 export function onUpdate (cb) {
   shared.handlers.push(cb)
   // Registered through a copy the page has already moved past.
   if (shared.generation > generation) {
-    cb(shared.files, shared.tree)
+    cb(shared.files, shared.tree, shared.icons)
   }
 }
 if (import.meta.hot) {

@@ -610,6 +610,12 @@ importers:
         specifier: ^3.5.43
         version: 3.5.43(typescript@6.0.3)
     devDependencies:
+      '@iconify-json/carbon':
+        specifier: ^1.2.27
+        version: 1.2.27
+      '@iconify-json/el':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.63.0
@@ -2679,6 +2685,9 @@ packages:
 
   '@iconify-json/carbon@1.2.27':
     resolution: {integrity: sha512-tufpkYXBDlXqczQEZo6QgvfwBd5aIK36gt+pHOI66eK4KOO8oh7CIHDZ4JsiSnOyjqRbApVHzXv4Nz8NO0GPFQ==}
+
+  '@iconify-json/el@1.2.2':
+    resolution: {integrity: sha512-tZV78JDjkMLCtXQoTJD2BSSkH953L9UkLms9KTyaiBq8DQ2MFxZ7P9Xn/lNxVi7H9MYo2jHWmNFFvgzEnZLj7A==}
 
   '@iconify-json/fluent@1.2.58':
     resolution: {integrity: sha512-KiWNF3LXZ4rvicH2MR8FKVN49MB++400rSiDpjVSP4V0GjsGViSPw5PJQ3pKDNPohL5wBW/ZDpo+rCYYFbmFkA==}
@@ -11325,6 +11334,10 @@ snapshots:
   '@humanwhocodes/retry@0.4.3': {}
 
   '@iconify-json/carbon@1.2.27':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/el@1.2.2':
     dependencies:
       '@iconify/types': 2.0.0
 
