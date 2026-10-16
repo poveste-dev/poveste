@@ -15,6 +15,7 @@ import { APP_PATH } from './alias.js'
 import { buildCounts, buildSummary, builtSomething, storyGuideUrl } from './build-counts.js'
 import { getSerializedStoryData } from './build-serialize.js'
 import { useCollectStories } from './collect/index.js'
+import { extractComponentDocs } from './docgen/build.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher } from './markdown.js'
 import { BuildPluginApi } from './plugin.js'
@@ -139,6 +140,8 @@ export async function build(ctx: Context) {
       // Same wrapper the dev path uses for these exact calls (server.ts).
       await wrapLogError('destroyCollectStories', () => destroyCollectStories())
     }
+
+    ctx.componentDocs = await extractComponentDocs(ctx, server.moduleGraph)
 
     const counts = buildCounts(ctx.storyFiles)
 

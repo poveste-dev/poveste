@@ -7,6 +7,7 @@ import type {
   ServerStoryFile,
 } from '@poveste/shared'
 import type { InlineConfig, ResolvedConfig } from 'vite'
+import type { StoryDocsResult } from './docgen/protocol.js'
 import { loadConfigFromFile as loadViteConfigFromFile, resolveConfig as resolveViteConfig } from 'vite'
 import { processConfig, resolveConfig } from './config.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
@@ -21,6 +22,8 @@ export interface Context {
   supportPlugins: FinalSupportPlugin[]
   markdownFiles: ServerMarkdownFile[]
   registeredCommands: PluginCommand[]
+  /** What `poveste build` extracted for auto-docs, by story id (#1159). */
+  componentDocs?: Record<string, StoryDocsResult['components']>
 }
 
 export interface CreateContextOptions {
