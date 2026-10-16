@@ -21,10 +21,16 @@ const variants: Array<{ name: string, bind?: unknown }> = [
     >
       <HstButton
         v-bind="variant.bind as {}"
-        class="p-2"
+        class="demo-pad"
       >
         Click me!
       </HstButton>
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-pad {
+  padding: 0.5rem;
+}
+</style>

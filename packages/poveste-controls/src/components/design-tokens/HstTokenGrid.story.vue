@@ -26,7 +26,7 @@ const tokens = {
       >
         <template #default="{ token }">
           <div
-            class="w-32 h-32 bg-white dark:bg-black rounded mb-2"
+            class="demo-token"
             :style="token.value"
           />
         </template>
@@ -34,3 +34,17 @@ const tokens = {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-token {
+  width: 8rem;
+  height: 8rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+  background: #fff;
+}
+
+.dark .demo-token {
+  background: #000;
+}
+</style>

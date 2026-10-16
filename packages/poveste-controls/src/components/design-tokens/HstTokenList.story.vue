@@ -66,9 +66,9 @@ const tokens = {
         :get-name="key => `w-${key}`"
       >
         <template #default="{ token }">
-          <div class="bg-gray-500/10">
+          <div class="demo-track">
             <div
-              class="h-20 bg-gray-500/50"
+              class="demo-bar"
               :style="{
                 width: token.value as string,
               } as CSSProperties"
@@ -79,3 +79,14 @@ const tokens = {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-track {
+  background: rgb(107 114 128 / 0.1);
+}
+
+.demo-bar {
+  height: 5rem;
+  background: rgb(107 114 128 / 0.5);
+}
+</style>

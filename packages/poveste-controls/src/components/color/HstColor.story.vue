@@ -24,7 +24,7 @@ function initState() {
     >
       <template #default="{ state }">
         <div
-          class="w-16 h-16 rounded"
+          class="demo-swatch"
           :style="{ backgroundColor: state.tint }"
         />
       </template>
@@ -41,7 +41,7 @@ function initState() {
       :init-state="initState"
     >
       <template #default="{ state }">
-        <pre class="text-xs">{{ state.empty || '(nothing)' }}</pre>
+        <pre class="demo-value">{{ state.empty || '(nothing)' }}</pre>
       </template>
       <template #controls="{ state }">
         <HstColor
@@ -52,3 +52,16 @@ function initState() {
     </Variant>
   </Story>
 </template>
+
+<style scoped>
+.demo-swatch {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.25rem;
+}
+
+.demo-value {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+</style>
