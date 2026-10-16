@@ -6,7 +6,7 @@ import { createServer as createViteServer, mergeConfig as mergeViteConfig } from
 import { useCollectStories } from './collect/index.js'
 import { socketOnBookPort } from './commands/port.js'
 import { answerDevEvent } from './dev-event.js'
-import { componentsOfStory } from './docgen/components-of.js'
+import { componentsOfStory, storyOf } from './docgen/components-of.js'
 import { createDocgenService } from './docgen/service.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
@@ -192,6 +192,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     enabled: ctx.config.autoDocs !== false,
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected,
+    storyOf: storyId => storyOf(ctx.storyFiles, storyId),
     componentsOf: storyId => componentsOfStory(ctx.storyFiles, nodeServer.moduleGraph, storyId),
     watch: files => server.watcher.add(files),
   })
