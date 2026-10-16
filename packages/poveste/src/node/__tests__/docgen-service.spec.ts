@@ -11,7 +11,11 @@ function fakeRunner() {
     send: vi.fn(async (request) => {
       sent.push(request)
       if (request.type !== 'extract') return { id: 0 }
-      return { id: 0, results: Object.fromEntries(request.requests.map(({ file }) => [file, { doc: { props: [], slots: [], events: [] } }])) }
+      return {
+        id: 0,
+        results: Object.fromEntries(request.requests.map(({ file }) => [file, { doc: { props: [], slots: [], events: [] } }])),
+        sources: ['/book/src/Button.vue', '/packages/ui/src/types.ts'],
+      }
     }),
     terminate: vi.fn(async () => {}),
   }
@@ -96,6 +100,21 @@ describe('the docgen service', () => {
     await docgen.request('button')
 
     expect(extracted(sent)).toEqual(['/book/src/Button.vue', '/book/src/Button.vue'])
+  })
+
+  // A types file outside the root, or one the browser never loads, is otherwise
+  // never seen to change, and the docs went stale until a restart (#1190).
+  it('hands the files the extractor read to the watcher, once each', async () => {
+    const watch = vi.fn()
+    const { docgen } = service({ watch })
+
+    await docgen.request('button')
+    await docgen.fileChanged('/packages/ui/src/types.ts')
+    await docgen.request('button')
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(watch).toHaveBeenCalledOnce()
+    expect(watch).toHaveBeenCalledWith(['/book/src/Button.vue', '/packages/ui/src/types.ts'])
   })
 
   it('leaves out a component the book excludes', async () => {

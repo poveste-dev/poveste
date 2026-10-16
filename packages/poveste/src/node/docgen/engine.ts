@@ -91,6 +91,17 @@ export function createDocgenEngine(options: DocgenEngineOptions) {
       return results
     },
 
+    /** Every live extractor's sources, for the dev server to watch. */
+    async sources(): Promise<string[]> {
+      const files = new Set<string>()
+      for (const extractor of live.values()) {
+        for (const file of await (await extractor.catch(() => undefined))?.sources?.() ?? []) {
+          files.add(file)
+        }
+      }
+      return [...files]
+    },
+
     async update(file: string) {
       for (const extractor of live.values()) {
         await (await extractor.catch(() => undefined))?.update?.(file)

@@ -40,6 +40,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
         checker.deleteFile(file)
       }
     },
+    sources: () => checker.getProgram()?.getSourceFiles().map(sourceFile => sourceFile.fileName).filter(file => !file.includes('/node_modules/')) ?? [],
     // The program is released with the checker; this drops what it cached.
     dispose: () => checker.clearCache(),
   }

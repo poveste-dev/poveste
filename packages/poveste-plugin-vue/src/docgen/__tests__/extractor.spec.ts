@@ -80,6 +80,15 @@ describe('vue auto-docs through vue-component-meta', () => {
     expect(events).toEqual([expect.objectContaining({ name: 'press', type: '[event: MouseEvent]' })])
   })
 
+  it('reports the files its program read, for the dev server to watch', async () => {
+    await button()
+
+    const sources = await extractor.sources!()
+
+    expect(sources).toContain(join(FIXTURE, 'base.ts'))
+    expect(sources.some(file => file.includes('/node_modules/'))).toBe(false)
+  })
+
   it('sees an edit to a file the component imports', async () => {
     const base = join(FIXTURE, 'base.ts')
     const original = readFileSync(base, 'utf8')

@@ -9,7 +9,7 @@ parentPort!.on('message', async (message: DocgenRequest) => {
   let response: DocgenResponse
   switch (message.type) {
     case 'extract':
-      response = { id: message.id, results: await engine.extract(message.requests), stats: { ...engine.stats } }
+      response = { id: message.id, results: await engine.extract(message.requests), stats: { ...engine.stats }, sources: await engine.sources() }
       break
     case 'update':
       await engine.update(message.file)

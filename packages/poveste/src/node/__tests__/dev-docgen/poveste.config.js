@@ -10,7 +10,7 @@ export default {
     docgen: {
       match: file => file.endsWith('.comp.js'),
       module: fileURLToPath(new URL('./fake-extractor.mjs', import.meta.url)),
-      options: { marker: process.env.POVESTE_DOCGEN_MARKER },
+      options: { marker: process.env.POVESTE_DOCGEN_MARKER, outside: process.env.POVESTE_DOCGEN_OUTSIDE },
     },
   }],
 }
