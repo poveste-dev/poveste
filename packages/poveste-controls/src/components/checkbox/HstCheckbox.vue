@@ -51,6 +51,19 @@ const isTrue = computed(() => {
 
   return props.modelValue ?? undefined
 })
+
+// Reka types what it emits as anything a checkbox could hold, which since 2.11
+// includes `undefined`. With `trueValue`/`falseValue` set it is only ever one of
+// those, so this narrows rather than casts.
+function isBooleanish(value: unknown): value is Booleanish {
+  return value === true || value === false || value === 'true' || value === 'false'
+}
+
+function onUpdate(value: unknown) {
+  if (isBooleanish(value)) {
+    emit('update:modelValue', value)
+  }
+}
 </script>
 
 <template>
@@ -64,7 +77,7 @@ const isTrue = computed(() => {
       :false-value="isString ? 'false' : false"
       class="poveste-checkbox-box"
       data-slot="control"
-      @update:model-value="(value: Booleanish) => emit('update:modelValue', value)"
+      @update:model-value="onUpdate"
     >
       <HstSimpleCheckbox :model-value="isTrue" />
     </CheckboxRoot>
