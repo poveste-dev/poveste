@@ -7,8 +7,8 @@ export default {
 <script lang="ts" setup>
 import type { Component } from 'vue'
 import type { Story } from '../../types'
-import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 import { markRaw, ref, watchEffect } from 'vue'
+import { loadClientPlugin } from '../../util/client-plugin.js'
 
 const props = defineProps<{
   story: Story
@@ -17,10 +17,8 @@ const props = defineProps<{
 const mountComponent = ref<Component | null>(null)
 
 watchEffect(async () => {
-  const supportPluginId = props.story.file?.supportPluginId
-  const clientPlugin = supportPluginId ? clientSupportPlugins[supportPluginId] : undefined
-  if (clientPlugin) {
-    const pluginModule = await clientPlugin()
+  const pluginModule = await loadClientPlugin(props.story.file?.supportPluginId)
+  if (pluginModule) {
     mountComponent.value = markRaw(pluginModule.MountStory)
   }
 })
