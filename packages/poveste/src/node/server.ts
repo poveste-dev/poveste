@@ -6,6 +6,7 @@ import { createServer as createViteServer, mergeConfig as mergeViteConfig } from
 import { useCollectStories } from './collect/index.js'
 import { socketOnBookPort } from './commands/port.js'
 import { answerDevEvent } from './dev-event.js'
+import { createDocgenService } from './docgen/service.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher, onMarkdownFileChange, onMarkdownListChange } from './markdown.js'
 import { DevEventPluginApi, DevPluginApi } from './plugin.js'
@@ -179,6 +180,43 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     ],
   })
 
+  // Auto-docs (#1159). Nothing here starts a worker: the first request does.
+  let markCollected!: () => void
+  const collected = new Promise<void>((resolve) => {
+    markCollected = resolve
+  })
+  const docgen = createDocgenService({
+    root: ctx.root,
+    plugins: ctx.config.plugins,
+    enabled: ctx.config.autoDocs !== false,
+    collected,
+    // The component files a story file imports, as collection resolved them.
+    componentsOf: (storyId) => {
+      const storyFile = ctx.storyFiles.find(file => file.story?.id === storyId)
+      const storyPaths = new Set(ctx.storyFiles.map(file => file.path))
+      const files = new Set<string>()
+      for (const mod of nodeServer.moduleGraph.getModulesByFile(storyFile?.path ?? '') ?? []) {
+        for (const imported of mod.importedModules) {
+          if (imported.file && !storyPaths.has(imported.file)) {
+            files.add(imported.file)
+          }
+        }
+      }
+      return [...files]
+    },
+  })
+  onOpen('docgen', () => docgen.dispose())
+  if (docgen.enabled) {
+    server.ws.on('poveste:docgen-request', async ({ storyId }: { storyId: string }) => {
+      server.ws.send('poveste:docgen-result', await docgen.request(storyId))
+    })
+    server.watcher.on('change', async (file) => {
+      if (await docgen.fileChanged(file)) {
+        server.ws.send('poveste:docgen-stale', {})
+      }
+    })
+  }
+
   // Invalidate modules
   const invalidateModule = (id: string) => {
     const mod = server.moduleGraph.getModuleById(id)
@@ -299,6 +337,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
         return
       }
       didAllStoriesYet = true
+      markCollected()
       server.ws.send('poveste:all-stories-loaded', {})
     }
     if (closed) {
