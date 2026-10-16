@@ -53,6 +53,14 @@ describe('the docgen engine', () => {
   })
 
   // storybookjs/storybook#35260: laziness alone did not cap memory.
+  it('answers a file with nothing to document with an empty result, not an error', async () => {
+    const { module } = fakeModule({ extract: vi.fn(() => undefined) })
+
+    const results = await engine(module).extract([{ name: 'vue', file: '/book/src/Plain.story.tsx' }])
+
+    expect(results).toEqual({ '/book/src/Plain.story.tsx': {} })
+  })
+
   it('disposes its extractors past the heap ceiling and builds afresh after', async () => {
     const { module, extractor } = fakeModule()
     let used = 80

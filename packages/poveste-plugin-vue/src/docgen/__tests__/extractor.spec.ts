@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'pathe'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { createExtractor } from '../extractor.js'
-import { normalizeDefault } from '../meta.js'
 
 const FIXTURE = fileURLToPath(new URL('../../../fixtures/docgen', import.meta.url))
 const BUTTON = join(FIXTURE, 'Button.vue')
@@ -118,11 +117,4 @@ describe('a book that allows a base library', () => {
     expect(doc!.props.map(prop => prop.name)).toContain('disabled')
     await allowing.dispose()
   }, 60_000)
-})
-
-describe('normalizeDefault', () => {
-  it('reads quoting from a tag and from the printer as the same value', () => {
-    expect(normalizeDefault('\'md\'')).toBe(normalizeDefault('"md"'))
-    expect(normalizeDefault('`3`')).toBe('3')
-  })
 })

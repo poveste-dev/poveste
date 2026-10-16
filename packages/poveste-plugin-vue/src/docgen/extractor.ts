@@ -1,17 +1,10 @@
 import type { DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
 import type { VueDocgenOptions } from './meta.js'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'pathe'
+import { findTsconfig } from 'poveste/docgen'
 import { toComponentDoc } from './meta.js'
 
-// `tsconfig.app.json` first: Vite's Vue template splits the app's settings into it
-// and leaves `tsconfig.json` holding only references, which type nothing.
-const TSCONFIGS = ['tsconfig.app.json', 'tsconfig.json']
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
-
-export function findTsconfig(root: string) {
-  return TSCONFIGS.map(name => join(root, name)).find(file => existsSync(file))
-}
 
 /**
  * Runs in the docgen worker. `vue-component-meta` is imported here rather than at
