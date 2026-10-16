@@ -7,6 +7,8 @@ import {
   deployMarker,
   documentTitles,
   htmlTwinProblems,
+  liveEditorButtonNames,
+  liveEditorButtonProblems,
   llmsFullProblems,
   llmsProblems,
   missingRedirectTargets,
@@ -563,6 +565,45 @@ describe('titleProblems', () => {
     ])
 
     expect(problems.map(problem => problem.split(' ')[0])).toEqual(['/guide/getting-started.html'])
+  })
+})
+
+// As VitePress renders `DemoLinks`, whitespace and all.
+function liveEditorButton(text: string, alt = ''): string {
+  return `<div class="demo-links space-y-2"><button type="button" class="btn-blue flex items-center gap-4 p-4">\n  <img src="/stackblitz.png" alt="${alt}" class="w-8 h-8">\n  ${text}\n</button></div>`
+}
+
+describe('liveEditorButtonNames', () => {
+  it('reads a button\'s name from its text and its image\'s alt', () => {
+    expect(liveEditorButtonNames(liveEditorButton('Try it in a live editor', 'StackBlitz'))).toEqual(['StackBlitz Try it in a live editor'])
+  })
+
+  it('ignores the page\'s other buttons', () => {
+    expect(liveEditorButtonNames('<button class="copy" title="Copy Code"></button><button aria-label="Search">Search</button>')).toEqual([])
+  })
+})
+
+describe('liveEditorButtonProblems', () => {
+  // The state that shipped: seven buttons, one name, and the Svelte and SvelteKit
+  // blocks marked by the same logo (#1342).
+  it('flags buttons that share a name', () => {
+    const html = titled(liveEditorButton('Try it in a live editor', 'StackBlitz').repeat(7))
+
+    expect(liveEditorButtonProblems([{ path: '/guide/getting-started.html', html }])).toEqual([
+      expect.stringMatching(/7 live-editor buttons named "StackBlitz Try it in a live editor"/),
+    ])
+  })
+
+  it('is silent when each button names its framework', () => {
+    const html = titled(['Vue', 'Svelte', 'SvelteKit'].map(name => liveEditorButton(`Try ${name} in a live editor`)).join(''))
+
+    expect(liveEditorButtonProblems([{ path: '/guide/getting-started.html', html }])).toEqual([])
+  })
+
+  it('allows the same button on two pages', () => {
+    const html = titled(liveEditorButton('Try Vue in a live editor'))
+
+    expect(liveEditorButtonProblems([{ path: '/guide/index.html', html }, { path: '/guide/vue/getting-started.html', html }])).toEqual([])
   })
 })
 

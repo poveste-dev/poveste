@@ -17,6 +17,7 @@
 //   8. one <title> per page, and none inside an <svg> — #571
 //   9. the home page carries one parseable ld+json block — #573
 //  10. llms.txt lists the built pages, and only those, and llms-full.txt carries each — #1127
+//  11. no two live-editor buttons on a page share a name — #1342
 //
 // Netlify reads redirects from two places, so this does too: a `_redirects`
 // file under `docs/public/` ships into the build and would reintroduce #343
@@ -389,6 +390,40 @@ export function titleProblems(pages: BuiltPage[]): string[] {
 }
 
 /**
+ * The accessible name of each "live editor" button: its text, with an image's
+ * `alt` in its place, as assistive technology computes it.
+ */
+export function liveEditorButtonNames(html: string): string[] {
+  return [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi)]
+    .map(match => decodeEntities(captured(match)
+      .replace(/<img\s[^>]*?\balt="([^"]*)"[^>]*>/gi, ' $1 ')
+      .replace(/<[^>]+>/g, ' '))
+      .replace(/\s+/g, ' ')
+      .trim())
+    .filter(name => /live editor/i.test(name))
+}
+
+/**
+ * Seven buttons with one name are seven identical buttons to a screen reader,
+ * and two of the logos that told them apart by sight are the same (#1342).
+ */
+export function liveEditorButtonProblems(pages: BuiltPage[]): string[] {
+  const problems: string[] = []
+
+  for (const { path, html } of pages) {
+    const names = liveEditorButtonNames(html)
+    for (const name of new Set(names)) {
+      const count = names.filter(other => other === name).length
+      if (count > 1) {
+        problems.push(`${path} has ${count} live-editor buttons named "${name}" — name the framework each one opens`)
+      }
+    }
+  }
+
+  return problems.sort()
+}
+
+/**
  * The home page's structured data, parsed rather than matched.
  *
  * A malformed `ld+json` block is ignored in silence and looks identical to a
@@ -553,6 +588,7 @@ function checkBuild(root: string, problems: string[], built: Built | undefined):
   // name — but it renders the same nav and footer, so it carries the same titles.
   problems.push(...selfDeclarationProblems(pages.filter(page => page.path !== '/404.html')))
   problems.push(...titleProblems(pages))
+  problems.push(...liveEditorButtonProblems(pages))
 
   if (built.paths.has('/index.html')) {
     const { version } = JSON.parse(readFileSync(join(root, 'packages', 'poveste', 'package.json'), 'utf8'))
