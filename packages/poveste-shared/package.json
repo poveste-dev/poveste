@@ -51,13 +51,13 @@
     "markdown-it": "^15.0.2",
     "pathe": "^2.0.3",
     "picocolors": "^1.1.1",
-    "unhead": "^3.4.1"
+    "unhead": "^3.4.3"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vue-router": "^5.3.1"
+    "vue-router": "^5.4.0"
   }
 }
