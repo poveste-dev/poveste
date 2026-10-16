@@ -9,6 +9,7 @@ import { TEMP_PATH } from '../alias.js'
 import { createPath } from '../tree.js'
 import { escapeRegExp } from '../util/escape-regexp.js'
 import { slash } from '../util/fs.js'
+import { NOOP_ID, SETUP_ID } from '../virtual/index.js'
 import { globalsFromDefine } from './define-globals.js'
 import { strayLayoutKeys } from './layout-keys.js'
 import { createModuleServer } from './module-server.js'
@@ -58,7 +59,18 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     invoke: (name, data) => node.invoke(name, data),
   })
 
+  // Resolved once: a change to the config restarts the server.
+  let setupFile: Promise<string | undefined> | undefined
+  function resolveSetupFile() {
+    return setupFile ??= server.pluginContainer.resolveId(SETUP_ID, undefined, { ssr: true })
+      .then(resolved => resolved && resolved.id !== NOOP_ID ? resolved.id : undefined)
+  }
+
+  // Every story the setup file reaches fails with it, so it is reported once a pass.
+  let setupFailureReported = false
+
   function clearCache() {
+    setupFailureReported = false
     server.moduleGraph.invalidateAll()
     node.clearCache()
     // Both of those make every module read again, and a worker told nothing would
@@ -86,6 +98,7 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
         base: server.config.base,
         storyFile,
         defineGlobals,
+        setupFile: await resolveSetupFile(),
       }
       const { storyData } = await threadPool.run(payload)
       const finalData = storyData[0]
@@ -125,12 +138,20 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
     catch (e) {
       // Work `destroy` cut short fails with whatever the pool or a closing server
       // throws. That is the shutdown, not the story, so it is not reported (#878).
-      if (destroying && !options.throws) {
+      // A build destroys only once a story has failed, which already threw.
+      if (destroying) {
         return
       }
       // A Vite transform error carries the code frame on `frame`.
-      const error = (e instanceof Error ? e : new Error(String(e))) as Error & { frame?: string }
-      console.error(pc.red(`Error while collecting story ${storyFile.path}:\n${error.frame ? `${pc.bold(error.message)}\n${error.frame}` : error.stack}`))
+      const error = (e instanceof Error ? e : new Error(String(e))) as Error & { frame?: string, setupFile?: string }
+      const detail = error.frame ? `${pc.bold(error.message)}\n${error.frame}` : error.stack
+      if (!error.setupFile) {
+        console.error(pc.red(`Error while collecting story ${storyFile.path}:\n${detail}`))
+      }
+      else if (!setupFailureReported) {
+        setupFailureReported = true
+        console.error(pc.red(`Error while loading the setup file ${error.setupFile}, so no story that needs it was collected:\n${detail}`))
+      }
       if (options.throws) {
         throw e
       }

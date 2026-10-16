@@ -11,6 +11,8 @@ export interface Payload {
   base: string
   storyFile: ServerStoryFile
   defineGlobals?: Record<string, unknown>
+  /** The book's setup file as the collect server resolved it, when it has one. */
+  setupFile?: string | undefined
 }
 
 export interface ReturnData {
