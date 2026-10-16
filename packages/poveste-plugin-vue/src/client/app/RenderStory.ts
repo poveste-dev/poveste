@@ -12,7 +12,7 @@ import {
 } from '@poveste/vendors/vue'
 import { reactive } from 'vue'
 import { createPreviewHost } from './host.js'
-import { syncStateBundledAndExternal } from './util.js'
+import { syncStateBundledAndExternal, warnIfForeignVue } from './util.js'
 
 export default _defineComponent({
   name: 'RenderStory',
@@ -39,6 +39,7 @@ export default _defineComponent({
   },
 
   setup(props, { emit }) {
+    warnIfForeignVue('RenderStory')
     const sandbox = _ref<HTMLDivElement>()
     let host: ReturnType<typeof createPreviewHost> | null = null
     let mounting = false

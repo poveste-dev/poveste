@@ -12,6 +12,7 @@ import {
 } from '@poveste/vendors/vue'
 import { reactive } from 'vue'
 import { createPreviewHost } from './host.js'
+import { warnIfForeignVue } from './util.js'
 
 export default _defineComponent({
   name: 'MountStory',
@@ -34,6 +35,7 @@ export default _defineComponent({
   },
 
   setup(props) {
+    warnIfForeignVue('MountStory')
     const el = _ref<HTMLDivElement>()
     const renderContext = reactive({
       mode: 'mount' as const,
