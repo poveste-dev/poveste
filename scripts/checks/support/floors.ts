@@ -24,6 +24,7 @@ export const FLOORS: Record<string, Floor> = {
   'config-reference': { exempt: '`parseConfig` throws when the interface it reads is gone, and a reference that reads empty reports every key as undocumented' },
   'conformance-config': { guard: 'defines no `:conformance` project' },
   'control-conventions': { guard: 'no controls found under' },
+  'controls-reference': { guard: 'no `components` object' },
   'dependency-engines': { walk: true },
   'doc-coverage': { guard: 'no entrypoint was measured at all' },
   'docs-site': { guard: 'no build at' },

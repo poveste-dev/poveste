@@ -317,4 +317,34 @@ Both load only when a book uses one — they are about 120 KB and 60 KB of a bui
 
 `Hst.ColorSelect` is a different and older control that is still exported: a text field beside the browser's own `<input type="color">`, which opens the operating system's picker. It takes a hex string too, so the signature will not tell you which one you have.
 
-Check out all the available controls in the [`@poveste/controls` package](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-controls).
+### Every builtin control
+
+Every control but the button takes a `title`, its label in the panel, and binds its value with `bind:value`.
+
+| Control | Value | Props besides `title` |
+| --- | --- | --- |
+| `Hst.Text` | a string | — |
+| `Hst.Textarea` | a string | — |
+| `Hst.Number` | a number | — |
+| `Hst.Slider` | a number | `min` and `max`, both required |
+| `Hst.Checkbox` | a boolean | — |
+| `Hst.CheckboxList` | an array of strings | `options`, required: strings, or `{ label, value }` objects |
+| `Hst.Select` | any value | `options`, required: an object of value to label, strings, or `{ label, value }` objects |
+| `Hst.Radio` | a string | `options`, required: an object of value to label, or an array of strings or `{ label, value }` objects |
+| `Hst.ButtonGroup` | a string | `options`, required, in any of `Select`'s forms |
+| `Hst.Color` | a hex string | — (the picker; see [Colour and date](#colour-and-date)) |
+| `Hst.ColorSelect` | a hex string | — (the older text field and native colour input) |
+| `Hst.Date` | an ISO date string | `time`, to pick a time as well |
+| `Hst.Json` | any value that survives JSON | — |
+| `Hst.Button` | none: a button, whose click your listener handles | `color`: `'default'`, `'primary'` or `'flat'` |
+
+These are registered alongside the controls and are not controls: they take no value and no `title`.
+
+| Component | Props | What it is |
+| --- | --- | --- |
+| `Hst.ColorShades` | `shades`, an object of shade to colour | draws a palette; `@poveste/plugin-tailwind` uses it for its colour pages |
+| `Hst.TokenList` | `tokens`, an object of name to value | lists design tokens; used for Tailwind's pages |
+| `Hst.TokenGrid` | `tokens`, as above, and `colSize` | the same tokens as a grid |
+| `Hst.CopyIcon` | `content`, the text to copy | a copy-to-clipboard button; the chrome uses it |
+
+`HstTooltip` is exported too, for Poveste's own interface, and is not registered for stories.
