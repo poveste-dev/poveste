@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { isInternalRequest, matches, normalizeRequestId } from '../collect/module-server.js'
+import type { ViteDevServer } from 'vite'
+import { describe, expect, it, vi } from 'vitest'
+import { createModuleServer, isInternalRequest, matches, normalizeRequestId } from '../collect/module-server.js'
 
 describe('normalizeRequestId', () => {
   it('strips the cache-busting query Vite appends', () => {
@@ -62,5 +63,54 @@ describe('isInternalRequest', () => {
     expect(isInternalRequest('@vite/env')).toBe(true)
     expect(isInternalRequest('/@vite/other')).toBe(false)
     expect(isInternalRequest('/src/@vite/client')).toBe(false)
+  })
+})
+
+/*
+ * A server with one module and a module graph whose invalidation times the test
+ * sets, the way Vite's clock does. That clock adds a millisecond for every call
+ * within one, so after a burst of transforms it runs ahead of `Date.now()`.
+ */
+function serverWithOneModule(invalidatedAt: number) {
+  const node = { lastHMRTimestamp: 0, lastInvalidationTimestamp: invalidatedAt }
+  const transformRequest = vi.fn(async () => ({ code: 'export default 1', map: null }))
+  const server = {
+    config: { root: '/book', cacheDir: '/book/node_modules/.pvt-vite', base: '/', ssr: {} },
+    moduleGraph: { getModuleById: () => node, getModulesByFile: () => new Set([node]) },
+    pluginContainer: { resolveId: async () => null },
+    transformRequest,
+    ssrTransform: async (code: string) => ({ code, map: null }),
+  } as unknown as ViteDevServer
+  return { node, transformRequest, server }
+}
+
+const fetchAgain = (moduleServer: ReturnType<typeof createModuleServer>) => moduleServer.invoke('fetchModule', ['/src/a.ts', undefined, { cached: true }])
+
+describe('a module fetched again in the same pass', () => {
+  // Compared with `Date.now()`, a module invalidated "in the future" read as
+  // stale on every fetch until the wall clock caught up, and each re-transform
+  // pushed Vite's clock further ahead: one reload re-collected a large book a
+  // hundred times over (#1352).
+  it('is answered from the cache while Vite\'s clock runs ahead of the wall clock', async () => {
+    const { transformRequest, server } = serverWithOneModule(Date.now() + 60_000)
+    const moduleServer = createModuleServer(server, { inline: [] })
+
+    await moduleServer.invoke('fetchModule', ['/src/a.ts', undefined, { cached: false }])
+    const second = await fetchAgain(moduleServer)
+
+    expect(second).toEqual({ cache: true })
+    expect(transformRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('is transformed again once Vite invalidates it', async () => {
+    const { node, transformRequest, server } = serverWithOneModule(Date.now() + 60_000)
+    const moduleServer = createModuleServer(server, { inline: [] })
+
+    await moduleServer.invoke('fetchModule', ['/src/a.ts', undefined, { cached: false }])
+    node.lastInvalidationTimestamp += 1
+    const second = await fetchAgain(moduleServer)
+
+    expect(second).toMatchObject({ invalidate: true })
+    expect(transformRequest).toHaveBeenCalledTimes(2)
   })
 })
