@@ -50,7 +50,7 @@ Poveste can also be configured entirely from `vite.config.ts` under a `poveste` 
 | before | 9,960 KB | 14,012 KB |
 | after | **1,346 KB** | **4,992 KB** |
 
-The highlighter had been importing from the `shiki` barrel, which ships every grammar and theme; it now names the two the source pane uses. `pnpm test:bundle-size` holds a built book to a **6,500 KB** ceiling and each chunk to its own, so this stays true rather than being a number from one afternoon.
+The highlighter had been importing from the `shiki` barrel, which ships every grammar and theme; it now names the two the source pane uses. `pnpm test:bundle-size` holds a built book to a ceiling, and its largest chunks to their own, so this stays true rather than being a number from one afternoon. The smoke test does the same for the chunk a reader downloads first in a book installed from npm, which is shaped differently from the one in this repository.
 
 ## Five frameworks, each with a book CI builds
 

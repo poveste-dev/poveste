@@ -353,6 +353,14 @@ install_and_build vue "$VUE_APP" \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
+# What a reader downloads first, in the one book here shaped like a consumer's:
+# the workspace book's chunking is not, and hid the lazy controls in `vendor` (#1343).
+echo "▸ [vue] Checking the chunks a consumer's book gets"
+if ! node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$ROOT/scripts/release/consumer-chunks.ts" "$VUE_APP/.poveste/dist"; then
+  echo "❌ Smoke test FAILED [vue] — the consumer book's chunks, above. See scripts/release/consumer-chunks.ts"
+  exit 1
+fi
+
 dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
 pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \
