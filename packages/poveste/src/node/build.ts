@@ -26,7 +26,7 @@ import {
   entryCssMergerPlugin,
   userCssScopePlugin,
 } from './style-isolation/index.js'
-import { applyHeadTransform } from './util/head.js'
+import { applyHeadTransform, defaultDescription } from './util/head.js'
 import { wrapLogError } from './util/log.js'
 import { viteMode } from './util/vite-mode.js'
 import { getViteConfigWithPlugins } from './vite.js'
@@ -328,7 +328,7 @@ export async function build(ctx: Context) {
     let indexHtml = generateEntryHtml(indexOutput.fileName, mainStyleOutput.fileName, {
       HEAD: `${preloadHtml}${prefetchHtml}`,
     }, ctx)
-    indexHtml = await applyHeadTransform(indexHtml, ctx.config.head)
+    indexHtml = await applyHeadTransform(indexHtml, ctx.config.head, defaultDescription(ctx.config.theme.title ?? 'Poveste'))
     await writeFile('index.html', indexHtml, ctx)
 
     // Sandbox
@@ -337,6 +337,13 @@ export async function build(ctx: Context) {
     await writeFile('__sandbox.html', sandboxHtml, ctx)
 
     await writeFile('poveste.json', JSON.stringify(getSerializedStoryData(ctx), null, 2), ctx)
+
+    // A host's SPA fallback answers a missing /robots.txt with index.html, which a
+    // crawler reads as a malformed robots file rather than as none (#316). One in
+    // the public directory is the book's own, and was copied here already.
+    if (!await fs.pathExists(join(ctx.config.outDir, 'robots.txt'))) {
+      await writeFile('robots.txt', 'User-agent: *\nAllow: /\n', ctx)
+    }
 
     const duration = performance.now() - startTime
     const { empty } = counts
