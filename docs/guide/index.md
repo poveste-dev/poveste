@@ -49,7 +49,7 @@ Poveste is a tool to generate stories applications (or "books").
 <div class="demo-links-box border-sky-200 dark:border-sky-900">
   <Icon icon="logos:solidjs-icon" class="w-10 h-10 mt-3" aria-label="Solid logo" />
   <div class="demo-links space-y-2">
-  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
+  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel yet." />
 
 [Solid guide &rarr;](./solid/getting-started.md)
 
@@ -59,7 +59,7 @@ Poveste is a tool to generate stories applications (or "books").
 <div class="demo-links-box border-cyan-200 dark:border-cyan-900">
   <Icon icon="logos:react" class="w-10 h-10 mt-3" aria-label="React logo" />
   <div class="demo-links space-y-2">
-  <DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel." />
+  <DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet." />
 
 [React guide &rarr;](./react/getting-started.md)
 

@@ -64,7 +64,7 @@ npm i -D poveste @poveste/plugin-<framework>
 <div class="demo-links-box border-sky-200 dark:border-sky-900">
   <Icon icon="logos:solidjs-icon" class="w-10 h-10 mt-3" aria-label="Solid logo" />
   <div class="demo-links space-y-2">
-  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel." />
+  <DemoLinks framework="solid" note="Solid, renderer only: stories and variants render, and a variant with initState gets the state editor. Solid has no controls panel yet." />
 
 [Solid guide &rarr;](./solid/getting-started.md)
 
@@ -74,7 +74,7 @@ npm i -D poveste @poveste/plugin-<framework>
 <div class="demo-links-box border-cyan-200 dark:border-cyan-900">
   <Icon icon="logos:react" class="w-10 h-10 mt-3" aria-label="React logo" />
   <div class="demo-links space-y-2">
-  <DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel." />
+  <DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet." />
 
 [React guide &rarr;](./react/getting-started.md)
 
@@ -89,8 +89,10 @@ npm i -D poveste @poveste/plugin-<framework>
 ## Supported versions
 
 Each row below is the range Poveste actually declares in `peerDependencies`, next to the
-thing that proves it. We deliberately do not advertise versions we cannot test — if a range
-is wider than the CI job behind it, the range is the bug.
+CI job that exercises it. A job installs from the repository's lockfile, so it tests the
+version the lockfile pins, which for most frameworks is above the floor of the range. Node is
+the exception, with a job that installs the tarballs on the floor itself. For the others the
+lower bound is declared, and not tested by a job of its own.
 
 | | Supported | Proven by |
 | --- | --- | --- |

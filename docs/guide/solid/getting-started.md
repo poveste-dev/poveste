@@ -150,7 +150,7 @@ export default defineStory<{ count: number }>({
 
 `render` runs **once**, as a Solid component does. `state` is a Solid store, so reading `state.count` inside the JSX is what keeps the output current — read it outside, at the top of `render`, and the value is fixed at the first render. `setState` is the store's setter, with the same path syntax.
 
-The state panel shows the state and lets you edit it, and an edit reaches the story without running `render` again. A variant's own `initState` takes precedence over the story's.
+The state editor shows the state and lets you edit it, and an edit reaches the story without running `render` again. A variant's own `initState` takes precedence over the story's.
 
 ## Setup and wrappers
 
@@ -177,5 +177,5 @@ The hook runs before the story mounts, so a wrapper is there for the first rende
 
 ## What is not here yet
 
-- **Controls.** A variant with `initState` gets the state panel; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
+- **Controls.** A variant with `initState` gets the state editor; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
 - **Generated source.** The source panel shows the story file. Solid compiles JSX to DOM operations and keeps no render tree, which is what generating per-variant source reads in Vue.

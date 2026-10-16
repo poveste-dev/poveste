@@ -91,7 +91,9 @@ html.dark {
 
 That becomes `:scope.dark`, which is the story root, so it paints the story and nothing else.
 
-A rule keyed on the class from further up, `.dark .card { … }`, which is what Tailwind's class strategy writes, matches too, whether the story renders in an iframe or without one.
+A rule keyed on the class on an ancestor of the element, `.dark .card { … }`, which is what Tailwind's class strategy writes, matches too, whether the story renders in an iframe or without one.
+
+The dropdown does not change what `@media (prefers-color-scheme: dark)` matches. That query follows the reader's system, in an iframe and without one, so a story styled with it ignores the dropdown. Key dark styles on the class to follow the preview. The dropdown also sets `color-scheme` on the story root, so the browser's own widgets in the story, such as form controls and scrollbars, follow the preview too.
 
 ::: danger Don't target the app's own dark class
 Poveste's chrome marks itself dark with a different class, on the document root. That element is outside your scope, so a rule keyed to it never matches — silently. Use `theme.darkClass` and let the story root carry it.
@@ -107,6 +109,14 @@ You can opt out per story:
 <Story :layout="{ type: 'grid', iframeGrid: false }">
   <Variant title="A"><MyComponent /></Variant>
 </Story>
+```
+
+In Svelte:
+
+```svelte
+<Hst.Story layout={{ type: 'grid', iframeGrid: false }}>
+  <Hst.Variant title="A"><MyComponent /></Hst.Variant>
+</Hst.Story>
 ```
 
 ## Why `@scope` and not a shadow root

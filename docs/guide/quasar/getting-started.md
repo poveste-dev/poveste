@@ -37,6 +37,8 @@ On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22
 
 You need an existing Quasar project. The plugin reads the Vite config Quasar builds, so it looks for a `quasar.config` file above the current directory and fails with a message saying so if there is none.
 
+The project also needs a Sass compiler, `sass` or `sass-embedded`, because Quasar's stylesheet is Sass. A project made with `npm init quasar` has one already; without one, Vite stops with `Preprocessor dependency "sass" not found`.
+
 ## Configuration
 
 ```ts
@@ -111,7 +113,7 @@ The config itself comes from an entrypoint whose own header says it is used excl
 
 Poveste has nothing to show until a story file exists, and `poveste build` on a book without one says so rather than failing.
 
-**[Writing Vue stories](../vue/stories.md)** is the page that shows one.
+**[Writing Vue stories](../vue/stories.md)** is the page that shows one. If a Quasar component, or an app extension's, does not show up in a story, [Quasar components in a story](../quasar-components-in-a-story.md) explains why.
 
 ## Community
 

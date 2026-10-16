@@ -71,7 +71,7 @@ of it.
 | --- | --- |
 | `app` | what Svelte's `mount()` returned — the mounted component instance |
 | `story` | the story being rendered |
-| `variant` | the variant, or `null` for the story-level mount that fills the controls panel |
+| `variant` | the variant, or `undefined` in the story-level mount that fills the controls panel, which calls only the global hook |
 
 Two things follow from `app` being a component instance rather than a Vue-style application
 object, and they are the main differences from [the Vue page](../vue/app-setup.md):
@@ -85,7 +85,8 @@ object, and they are the main differences from [the Vue page](../vue/app-setup.m
 
 ## Local setup
 
-A variant can define a `setupApp` prop, called after the global hook with the same argument:
+A variant can define a `setupApp` prop, called after the global hook with the same argument. Here
+`variant` is always the variant it is defined on:
 
 ```svelte
 <script>
@@ -162,12 +163,12 @@ Set it from the story instead, in a wrapper component:
 <script lang="ts">
   import { setContext } from 'svelte'
 
-  const { theme = 'dark' } = $props()
+  const { theme = 'dark', children } = $props()
 
   setContext('theme', theme)
 </script>
 
-<slot />
+{@render children?.()}
 ```
 
 ```svelte
@@ -193,8 +194,8 @@ error — so if a component works in your app and not in its story, this is the 
 check.
 
 The same shape covers anything a component needs at construction. It is also what to reach for
-until [`addWrapper`](./wrapper.md) exists, since there is no way to apply it to every story at
-once.
+until [`addWrapper`](./wrapper.md) exists (tracked in [#232](https://github.com/poveste-dev/poveste/issues/232)),
+since there is no way to apply it to every story at once.
 
 ## SvelteKit
 

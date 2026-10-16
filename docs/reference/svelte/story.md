@@ -35,8 +35,17 @@ Layout of the story. Object with the following properties:
     - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
   - with `type: 'grid'` you can specify:
     - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+    - `iframeGrid`: Whether each grid item renders in an iframe of its own. Default `true`; `false` renders the items in the app's document. See [Grid iframes](../../guide/css.md#grid-iframes).
   - with either type:
     - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
+
+A key the layout's `type` does not read is ignored, and `poveste dev` and `poveste build` say so when they collect the story. `iframe` belongs to a single layout and `iframeGrid` to a grid, so the usual case is one written on the other:
+
+```
+⚠️  …/src/Button.story.svelte: layout.iframe is not read by a grid layout, so it does nothing: use iframeGrid
+```
+
+A `type` other than `'single'` or `'grid'` is reported the same way.
 
 [Learn more](../../guide/svelte/stories.md#layout)
 
@@ -235,6 +244,20 @@ declare module 'poveste' {
 }
 ```
 
+The setup function is handed the story and the variant, so that is where a key is read. A variant's `meta` and its story's are separate objects. The function also runs once with no variant, for the mount that fills the controls panel, in the same document:
+
+```ts
+// src/poveste.setup.ts
+import { defineSetupSvelte } from '@poveste/plugin-svelte'
+
+export const setupSvelte = defineSetupSvelte(({ story, variant }) => {
+  if (!variant) {
+    return
+  }
+  document.documentElement.dataset.theme = variant.meta?.theme ?? story?.meta?.theme ?? 'light'
+})
+```
+
 ### `meta.storyOptions`
 
 Overrides the **Story Options** switch in the Layout menu, for this story only. The pane that switch shows and hides is the one beside or below the preview, with the story's controls, docs, events and source.
@@ -251,15 +274,15 @@ Overrides the **Story Options** switch in the Layout menu, for this story only. 
 
 Use it for a story with nothing to adjust, where the pane only takes room from the preview. In a Svelte book it needs Poveste 0.19.0 or later: earlier versions dropped a story's `meta`, so the key did nothing ([#1206](https://github.com/poveste-dev/poveste/issues/1206)).
 
-## Slot: `controls`
+## Snippet: `controls`
 
-Content of the 'Controls' pane used to interact with the story. This will be the default content for variants of the story but you can override it by defining a `controls` slot in a variant.
+Content of the 'Controls' pane used to interact with the story, passed as a `controls` snippet that receives the state. This will be the default content for variants of the story but you can override it by defining a `controls` snippet in a variant.
 
 ```svelte
 <Hst.Story>
-  <svelte:fragment slot="controls">
-    <!-- Interact with state here -->
-  </svelte:fragment>
+  {#snippet controls({ state })}
+    <Hst.Text bind:value={state.label} title="Label" />
+  {/snippet}
 
   <Hst.Variant>
     <!-- Controls reused here -->
@@ -267,4 +290,4 @@ Content of the 'Controls' pane used to interact with the story. This will be the
 </Hst.Story>
 ```
 
-[Learn more](../../guide/vue/controls.md#controls-panel)
+[Learn more](../../guide/svelte/controls.md#controls-panel)

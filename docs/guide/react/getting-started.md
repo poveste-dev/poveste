@@ -5,7 +5,7 @@ description: 'Install Poveste and the React plugin, add the config, and write yo
 
 # Getting started with React
 
-<DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel." />
+<DemoLinks framework="react" note="React 19, renderer only: stories and variants render, and a variant with initState gets the state editor. React has no controls panel yet." />
 
 ## Installation
 
@@ -18,6 +18,8 @@ yarn add -D poveste @poveste/plugin-react
 ```
 
 You also need `react@^19.0.0` and `react-dom@^19.0.0`, and a JSX transform in your Vite config — `@vitejs/plugin-react`, which a React project built with Vite already has. React 18 is not supported.
+
+Poveste builds the book with Vite whatever builds your app. In a project built with something else, install `vite` and `@vitejs/plugin-react` as dev dependencies and add the `vite.config.ts` below; only Poveste reads it.
 
 ::: tip Just installed and got an older version?
 For about a day after a release, pnpm installs the **previous** version, with no error and no warning. Current pnpm prints nothing to say a newer one exists. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
@@ -67,7 +69,7 @@ React stories can sit beside Vue ones in the same book, but not beside Solid one
 
 ### In a Vue project
 
-A project made from Vite's Vue template compiles JSX for Vue: its `tsconfig.app.json` extends `@vue/tsconfig`, which sets `"jsxImportSource": "vue"`, and Vite follows it. Your React components and stories then compile to Vue's vnodes, so the book builds and every React story shows "This component threw while rendering". The browser console says why:
+Skip this unless your React components live in a project made from Vite's Vue template. That template compiles JSX for Vue: its `tsconfig.app.json` extends `@vue/tsconfig`, which sets `"jsxImportSource": "vue"`, and Vite follows it. Your React components and stories then compile to Vue's vnodes, so the book builds and every React story shows "This component threw while rendering". The browser console says why:
 
 - under `poveste dev`, `Objects are not valid as a React child (found: object with keys {__v_isVNode, __v_skip, type, props, …})`;
 - in a built book, `Minified React error #31` with the same keys.
@@ -117,6 +119,8 @@ export default defineStory({
   ],
 })
 ```
+
+In a Vue project that keeps Vue TSX ([above](#in-a-vue-project)), `Badge.tsx` and `Badge.story.tsx` each start with `/** @jsxImportSource react */`, and so does every React file on this page.
 
 A story with no `variants` and a `render` of its own has one implicit variant. `id`, `group`, `icon`, `layout` and `source` work as they do for the other frameworks.
 
@@ -182,7 +186,7 @@ export default defineStory<{ count: number }>({
 
 `render` is a component body: it runs again on every change, with `state` a fresh snapshot each time, so hooks work inside it as they would in any component. `setState` merges what you pass into the state, as a class component's `setState` does — the keys that change, or a function of the current state.
 
-The state panel shows the state and lets you edit it, and an edit renders the story again with the new snapshot. A variant's own `initState` takes precedence over the story's.
+The state editor shows the state and lets you edit it, and an edit renders the story again with the new snapshot. A variant's own `initState` takes precedence over the story's.
 
 ## Setup and wrappers
 
@@ -205,11 +209,37 @@ export default defineConfig({
 })
 ```
 
-The hook runs before the story mounts, so a wrapper is there for the first render. The first wrapper added is the outermost. A variant can set its own `setupApp`, called after the global hook with the same argument: `{ story, variant, addWrapper }`.
+The hook runs before the story mounts, so a wrapper is there for the first render. The first wrapper added is the outermost.
 
-A story is not rendered inside `StrictMode`. Add it as a wrapper if you want its checks.
+A story or a variant can set its own `setupApp`, called after the global hook with the same argument, `{ story, variant, addWrapper }`. A variant's replaces the story's:
+
+```tsx
+// src/Badge.story.tsx
+export default defineStory({
+  title: 'Badge',
+  variants: [
+    {
+      title: 'On a dark frame',
+      setupApp: ({ addWrapper }) => addWrapper(({ children }) => <div className="dark">{children}</div>),
+      render: () => <Badge tone="info">Information</Badge>,
+    },
+  ],
+})
+```
+
+A story is not rendered inside `StrictMode`. To get its checks, add it as a wrapper in the setup file:
+
+```tsx
+// src/poveste.setup.tsx
+import { defineSetupReact } from '@poveste/plugin-react'
+import { StrictMode } from 'react'
+
+export const setupReact = defineSetupReact(({ addWrapper }) => {
+  addWrapper(({ children }) => <StrictMode>{children}</StrictMode>)
+})
+```
 
 ## What is not here yet
 
-- **Controls.** A variant with `initState` gets the state panel; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
+- **Controls.** A variant with `initState` gets the state editor; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
 - **Generated source.** The source panel shows the story file. React elements keep no source to generate per-variant code from, which is what the source panel reads in Vue.

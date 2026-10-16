@@ -39,8 +39,17 @@ Layout of the story. Object with the following properties:
     - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
   - with `type: 'grid'` you can specify:
     - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
+    - `iframeGrid`: Whether each grid item renders in an iframe of its own. Default `true`; `false` renders the items in the app's document. See [Grid iframes](../../guide/css.md#grid-iframes).
   - with either type:
     - `isolate`: Give every render of the story a fresh sandbox document instead of a reused one. For stories that leave JavaScript state behind (patched globals, leaked timers) that the next story must not see.
+
+A key the layout's `type` does not read is ignored, and `poveste dev` and `poveste build` say so when they collect the story. `iframe` belongs to a single layout and `iframeGrid` to a grid, so the usual case is one written on the other:
+
+```
+⚠️  …/src/Button.story.vue: layout.iframe is not read by a grid layout, so it does nothing: use iframeGrid
+```
+
+A `type` other than `'single'` or `'grid'` is reported the same way.
 
 [Learn more](../../guide/vue/stories.md#layout)
 
