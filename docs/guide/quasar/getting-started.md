@@ -51,7 +51,7 @@ export default defineConfig({
 })
 ```
 
-Quasar also has to be installed into the story app, the same way it is installed into yours. The boot import below is an example of your own file — a fresh `npm init quasar` project has none, so start from `setupQuasar()` with no arguments and add yours once you have one:
+Quasar also has to be installed into the story app, the same way it is installed into yours. With no `setupFile`, `HstQuasar()` installs it with Quasar's defaults, so a fresh `npm init quasar` project renders without one. Name a setup file once you need Quasar's options or your boot files: installing Quasar is then that file's job, and `setupQuasar()` does it. The boot import below is an example of your own file:
 
 ```ts
 // src/poveste.setup.ts

@@ -1,8 +1,8 @@
-import type { ServerStoryFile } from '@poveste/shared'
+import type { ServerStoryFile, SupportMatchPattern } from '@poveste/shared'
 import type { Context } from './context.js'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
-import { basename, resolve } from 'pathe'
+import { basename, extname, resolve } from 'pathe'
 import picomatch from 'picomatch'
 import { glob } from 'tinyglobby'
 import { unregister } from './util/unregister.js'
@@ -85,6 +85,25 @@ function getAbsoluteFilePath(relativeFilePath: string) {
   return resolve(context.root, relativeFilePath)
 }
 
+// The plugin a story's extension needs, where one plugin alone collects it. A
+// Quasar book without `HstVue()` was told only that nothing claimed its story,
+// which named neither the file's plugin nor which ones had looked (#1337).
+const PLUGIN_FOR_EXTENSION: Record<string, string> = {
+  '.vue': '`HstVue()` from `@poveste/plugin-vue`',
+  '.svelte': '`HstSvelte()` from `@poveste/plugin-svelte`',
+}
+
+export function noSupportPluginMessage(file: string, supportMatch: SupportMatchPattern[]): string {
+  const claimed = supportMatch.map(p => `${p.id} (${p.patterns.join(', ')})`).join(', ')
+  const extension = extname(file)
+  const needed = PLUGIN_FOR_EXTENSION[extension]
+  return [
+    `No support plugin found for file ${file}.`,
+    `What this book's plugins collect: ${claimed || 'nothing'}.`,
+    ...needed ? [`A \`${extension}\` story needs ${needed} in the config's \`plugins\`.`] : [],
+  ].join(' ')
+}
+
 export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
   const absoluteFilePath = getAbsoluteFilePath(relativeFilePath)
 
@@ -112,7 +131,7 @@ export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
   }
 
   if (!supportPluginId) {
-    throw new Error(`No support plugin found for file ${absoluteFilePath}`)
+    throw new Error(noSupportPluginMessage(absoluteFilePath, context.config.supportMatch))
   }
 
   const file: ServerStoryFile = {
