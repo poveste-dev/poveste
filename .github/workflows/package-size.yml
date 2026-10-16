@@ -1,0 +1,122 @@
+name: Package size
+
+# One comment on every PR, updated in place: each published package's packed
+# tarball, the PR's base against its head (#988). Nothing fails on a size; the
+# comment is for the reviewer.
+#
+# The base is the PR's own base commit, not `next`: a stacked PR's base is the
+# PR below it, and measuring against `next` would charge it the whole stack.
+#
+# Measuring a commit means installing, building and packing it, so each commit is
+# measured once and cached by its sha. A push to `next` or `main` measures that
+# commit and saves it, and every PR based on it restores the result instead of
+# building its base. A cache saved by a PR's own run is readable only by that PR,
+# which is why the push runs exist: a PR based on a feature branch, as in a stack,
+# builds its base itself the first time and reuses it on its later pushes.
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  package-size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Package size
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      MEASURE: node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON head/scripts/release/package-sizes.ts
+      # Packing needs no browser. And with two installs on one runner, the
+      # second one's puppeteer postinstall found the first's half-made browser
+      # folder and failed the install.
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: head
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6.1.0
+        with:
+          package_json_file: head/package.json
+
+      - name: Install node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: head/.node-version
+          cache: pnpm
+          cache-dependency-path: head/pnpm-lock.yaml
+
+      - name: Restore the base's sizes
+        id: base
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/cache/restore@v6
+        with:
+          path: base-sizes.json
+          key: package-sizes-v1-${{ github.event.pull_request.base.sha }}
+
+      - name: Check out the base
+        if: ${{ github.event_name == 'pull_request' && steps.base.outputs.cache-hit != 'true' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Build and measure the base
+        if: ${{ github.event_name == 'pull_request' && steps.base.outputs.cache-hit != 'true' }}
+        run: |
+          (cd base && pnpm install --frozen-lockfile && pnpm run build)
+          $MEASURE measure base base-sizes.json
+
+      - name: Save the base's sizes
+        if: ${{ github.event_name == 'pull_request' && steps.base.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: base-sizes.json
+          key: package-sizes-v1-${{ github.event.pull_request.base.sha }}
+
+      - name: Build and measure this commit
+        run: |
+          (cd head && pnpm install --frozen-lockfile && pnpm run build)
+          $MEASURE measure head head-sizes.json
+
+      # The key is the commit's own sha, which is what a PR based on it asks for.
+      - name: Save this commit's sizes
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/cache/save@v6
+        with:
+          path: head-sizes.json
+          key: package-sizes-v1-${{ github.sha }}
+
+      - name: Write the table
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          $MEASURE table base-sizes.json head-sizes.json "$BASE_REF" > table.md
+          cat table.md >> "$GITHUB_STEP_SUMMARY"
+
+      # A fork's PR gets a read-only token, so its table is in the run's summary
+      # only.
+      - name: Comment on the PR
+        if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- poveste:package-size -->"))) | .id' | head -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@table.md > /dev/null
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@table.md > /dev/null
+          fi
