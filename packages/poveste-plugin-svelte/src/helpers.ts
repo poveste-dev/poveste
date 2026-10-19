@@ -1,5 +1,5 @@
 import type { HstControlOption } from '@poveste/controls'
-import type { Story, StoryMeta, StoryProps, Variant, VariantMeta, VariantProps } from '@poveste/shared'
+import type { Awaitable, Story, StoryMeta, StoryProps, Variant, VariantMeta, VariantProps } from '@poveste/shared'
 import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
@@ -116,7 +116,7 @@ export interface Hst {
     value: unknown
     title: string
   }>
-  Shades: Component<{
+  ColorShades: Component<{
     shades: Record<string, any>
     getName?: (key: string, color: string) => string
     search?: string
@@ -131,7 +131,8 @@ export interface Hst {
     colSize?: number
   }>
   CopyIcon: Component<{
-    content: string
+    content: string | undefined | (() => Awaitable<string | undefined>)
+    loading?: boolean
   }>
   ColorSelect: Component<{
     value?: string
