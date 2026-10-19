@@ -230,7 +230,11 @@ export default defineConfig({
 
 `boolean | { allow?: string[], exclude?: string[] }` - Default: `true`
 
-A props, slots and events table for each component a story imports, read from the component's types. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story imports.
+For Vue books, for now: a props, slots and events table on a story's **Docs** tab, for each `.vue` component the story imports, read from the component's types. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story imports.
+
+It needs TypeScript in the book, version 6 or earlier: `npm i -D typescript@6`. The types are read with `vue-component-meta`, which cannot read TypeScript 7. In a book without TypeScript, or with TypeScript 7, auto-docs turns itself off and says so once in the log; the Docs tab shows no table, and props detected at runtime show as before.
+
+In a built book, a component whose types could not be read is left out of the docs, and the build log says how many were.
 
 It holds a type checker while it runs, which on a large component library costs up to about 1 GB. Set it to `false` to turn it off; props detected at runtime still show.
 
@@ -240,7 +244,7 @@ export default defineConfig({
 })
 ```
 
-Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` names packages to keep anyway, such as a design system your components build on. `exclude` leaves out components whose path contains one of its strings.
+Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` keeps the props your own components take from the packages it names, such as a design system whose prop types they extend. It does not add a table for a library's components: a component imported from a package's built JavaScript is not a `.vue` file, and gets none. `exclude` leaves out components whose path contains one of its strings.
 
 ```ts
 export default defineConfig({

@@ -82,6 +82,12 @@ export interface PluginDocgen {
   module: string
   /** Passed to `createExtractor`; it has to survive a structured clone. */
   options?: unknown
+  /**
+   * Why this plugin cannot document the book at `root`, or nothing when it can.
+   * With a reason, auto-docs is off for this plugin and the reason is logged once,
+   * in place of an error under every component (#1382).
+   */
+  unavailable?: (root: string) => string | undefined
 }
 
 /** `autoDocs` in the config, when it is more than on or off. */

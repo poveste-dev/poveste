@@ -2,7 +2,7 @@ import type { DocgenExtractor, DocgenExtractorModule } from '@poveste/shared'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
-import { createDocgenEngine, importable } from '../docgen/engine.js'
+import { createDocgenEngine, describeError, importable } from '../docgen/engine.js'
 
 const DOC = { props: [], slots: [], events: [] }
 
@@ -52,6 +52,18 @@ describe('the docgen engine', () => {
     expect(results).toEqual({ '/book/src/A.vue': { error: 'no props type' } })
   })
 
+  // A missing TypeScript reached the reader, and a built book, as Node's whole
+  // MODULE_NOT_FOUND message: its require stack, with the machine's paths (#1382).
+  it('answers with the error\'s first line, without the book\'s root or another absolute path', async () => {
+    const { module } = fakeModule({ extract: () => {
+      throw new Error('Cannot find module \'typescript\'\nRequire stack:\n- /book/node_modules/vue-component-meta/index.js')
+    } })
+
+    const results = await engine(module).extract([{ name: 'vue', file: '/book/src/A.vue' }])
+
+    expect(results).toEqual({ '/book/src/A.vue': { error: 'Cannot find module \'typescript\'' } })
+  })
+
   // storybookjs/storybook#35260: laziness alone did not cap memory.
   it('disposes its extractors past the heap ceiling and builds afresh after', async () => {
     const { module, extractor } = fakeModule()
@@ -83,6 +95,24 @@ describe('the docgen engine', () => {
     await docgen.extract([{ name: 'vue', file: '/book/src/A.vue' }])
 
     expect(extractor.dispose).not.toHaveBeenCalled()
+  })
+})
+
+describe('an extractor\'s error, as a reader sees it', () => {
+  it('makes a path inside the book relative to it', () => {
+    expect(describeError(new Error('Cannot read /book/src/A.vue'), '/book')).toBe('Cannot read src/A.vue')
+  })
+
+  it('cuts a path outside the book to its file name', () => {
+    expect(describeError(new Error('ENOENT: no such file, open \'/Users/someone/project/tsconfig.json\''), '/book')).toBe('ENOENT: no such file, open \'tsconfig.json\'')
+  })
+
+  it('cuts a Windows path to its file name', () => {
+    expect(describeError(new Error('Cannot find C:\\Users\\someone\\app\\tsconfig.json'), 'D:\\book')).toBe('Cannot find tsconfig.json')
+  })
+
+  it('leaves a message without a path as it is', () => {
+    expect(describeError(new Error('ts.readJsonConfigFile is not a function'), '/book')).toBe('ts.readJsonConfigFile is not a function')
   })
 })
 
