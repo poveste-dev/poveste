@@ -615,3 +615,14 @@ export const titles: Record<Framework, string> = {
   react: 'Poveste + React starter',
   quasar: 'Poveste + Quasar starter',
 }
+
+// What a button calls the framework, so seven of them are not one name to a screen reader (#1342).
+export const names: Record<Framework, string> = {
+  vue: 'Vue',
+  svelte: 'Svelte',
+  sveltekit: 'SvelteKit',
+  nuxt: 'Nuxt',
+  solid: 'Solid',
+  react: 'React',
+  quasar: 'Quasar',
+}
