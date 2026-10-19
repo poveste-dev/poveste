@@ -568,6 +568,10 @@ install_and_build react "$REACT_APP" \
   "react-dom@$(peer_range poveste-plugin-react react-dom)" vite@^8.0.0 \
   "@vitejs/plugin-react@$(peer_range poveste-plugin-react @vitejs/plugin-react)"
 
+# Nothing else starts `poveste dev` on a React book: the example runs built only (#1289).
+dev_renders react "$REACT_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4796
+one_dependency_pass react
+
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
 QUASAR_APP="$WORK/quasar"
@@ -707,6 +711,11 @@ install_and_build nuxt "$NUXT_APP" \
   "$(plugin_tgz poveste-plugin-nuxt)" \
   "nuxt@$(peer_range poveste-plugin-nuxt nuxt)" \
   "vue@$(peer_range poveste-plugin-vue vue)"
+
+# The Nuxt example has a dev project, but over the workspace; this is the tarballs (#1289).
+dev_renders nuxt "$NUXT_APP" "/story/app-button-story-vue" "Click me" 4797
+one_dependency_pass nuxt
+
 # ── Tailwind ─────────────────────────────────────────────────────────────────
 
 TAILWIND_APP="$WORK/tailwind"
