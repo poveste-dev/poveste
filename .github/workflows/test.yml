@@ -359,6 +359,18 @@ jobs:
       - name: Run tests
         run: pnpm run test
 
+      # Vite leaves a half-written bundle when a server closes during its first
+      # scan; the specs do that often, and seven a run filled a disk (#1325). The
+      # poveste suite's global teardown removes them, and this says when it stops.
+      - name: Check the tests left no Vite temp dirs in their fixtures
+        run: |
+          left=$(find packages -path '*/__tests__/*/node_modules/.pvt-vite*/*_temp_*' -prune -type d)
+          if [ -n "$left" ]; then
+            echo "::error::The tests left Vite temp dirs in their fixtures:"
+            echo "$left"
+            exit 1
+          fi
+
       # For the dev pass below. No cache: one browser, and this job runs once.
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
