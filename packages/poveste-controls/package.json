@@ -75,7 +75,7 @@
     "@vue/test-utils": "^2.5.1",
     "@vueuse/core": "catalog:",
     "concurrently": "^10.0.6",
-    "jsdom": "^30.1.2",
+    "jsdom": "^30.1.3",
     "postcss": "catalog:",
     "reka-ui": "^2.11.0",
     "tailwindcss": "catalog:",
