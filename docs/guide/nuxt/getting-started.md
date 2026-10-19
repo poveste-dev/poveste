@@ -38,6 +38,10 @@ Run `node -v` before you install. On an older Node, `npm i poveste` still succee
 On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22.2 || ^24.15.0 || >=26`.
 :::
 
+::: warning On Node 22, use npm 11.6 or later
+npm 10, the npm Node 22.22.2 ships with, stops with `Cannot read properties of null (reading 'edgesOut')` while resolving Nuxt's dependencies ([npm/cli#9787](https://github.com/npm/cli/issues/9787), fixed in npm 11.6). It fails on `npm i nuxt` alone, so it is not Poveste's install that triggers it. Update npm first with `npm install -g npm@11.6.0`, or use pnpm.
+:::
+
 ::: info Supported versions
 **Nuxt 4.5 is the supported floor** (`nuxt@^4.5.0`) — that is the first Nuxt whose
 `@nuxt/vite-builder` runs on Vite 8, which Poveste requires. Nuxt 4.0–4.4 are on Vite 7
