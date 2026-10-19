@@ -1,6 +1,6 @@
 ---
 title: 'Getting started with Quasar — build a book inside a Quasar project'
-description: 'Install Poveste in a Quasar project, register the plugin, and make your app boot files run in a story. Quasar 2.27 and @quasar/app-vite 3.8.'
+description: 'Install Poveste in a Quasar project, register the plugin, and make your app boot files run in a story. Quasar 2.24+ and @quasar/app-vite 3.8+.'
 ---
 
 # Getting started with Quasar
@@ -67,6 +67,27 @@ export const setupVue = defineSetupVue(setupQuasar({
 }))
 ```
 
+## Your own setup file
+
+A setup file you need for something else still has to install Quasar, because naming one replaces the default. `setupQuasar()` with no options installs it as the default does, and returns a function you can call from your own setup:
+
+```ts
+// src/poveste.setup.ts
+import { setupQuasar } from '@poveste/plugin-quasar/setup'
+import { defineSetupVue } from '@poveste/plugin-vue'
+
+const installQuasar = setupQuasar()
+
+export const setupVue = defineSetupVue(({ app }) => {
+  installQuasar({ app })
+  // The rest of your setup, for example app.use(createPinia())
+})
+```
+
+`setupQuasar()` takes two options: `boot`, above, and `quasar`, which is passed to `app.use(Quasar, …)` as Quasar's own plugin options.
+
+A setup file that does not install Quasar shows on the story, not in the terminal. A story with a Quasar component, `q-btn` for one, shows **This component threw while rendering** and `Cannot read properties of undefined (reading 'platform')`, in a built book and under `poveste dev`. Under `poveste dev` the browser console warns `injection "_q_" not found` first. Neither `poveste dev` nor `poveste build` prints anything about it.
+
 ## Command Line Interface
 
 Add the scripts to your `package.json`, alongside the ones Quasar already gave you:
@@ -94,7 +115,9 @@ That is what `setupQuasar({ boot })` is for. An extension's boot file comes from
 Only `app` is passed to them: a story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
 
 ::: warning What this is checked against
-Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension.
+**What it requires:** `quasar` `^2.24.0` and `@quasar/app-vite` `^3.8.0`, the ranges `@poveste/plugin-quasar` declares. CI builds the Quasar example with the versions its lockfile pins, which are above both floors; the floors themselves are not tested.
+
+**What was walked by hand:** Quasar 2.27 and `@quasar/app-vite` 3.8, on a project scaffolded by `npm init quasar` — layouts, router, `css/app.scss`, `quasar.variables.scss`, a boot file and an installed app extension.
 
 Walked again since: on Poveste 0.16.2, both cases end to end, QCalendar included; and on Poveste 0.19.1 with Quasar 2.35.1 and `@quasar/app-vite` 3.10.3, a plain boot file with and without `setupQuasar({ boot })`, under `poveste dev` and in a built book.
 
