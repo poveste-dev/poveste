@@ -132,6 +132,29 @@ describe('the docgen service', () => {
     expect(createRunner).not.toHaveBeenCalled()
   })
 
+  // A Vue book without a TypeScript vue-component-meta can read showed an error
+  // under every component (#1382). One line in the log says so instead.
+  it('leaves out a plugin that says it cannot document the book, and says why once', async () => {
+    const warn = vi.fn()
+    const { docgen, createRunner } = service({
+      plugins: [{ ...vue, docgen: { ...vue.docgen!, unavailable: () => 'Auto-docs is off: no TypeScript.' } }],
+      warn,
+    })
+
+    expect(await docgen.request('button')).toEqual({ storyId: 'button', components: {} })
+    await docgen.request('button')
+
+    expect(createRunner).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledExactlyOnceWith('[poveste] Auto-docs is off: no TypeScript.')
+  })
+
+  it('does not ask whether a plugin can document the book when the config turns it off', () => {
+    const unavailable = vi.fn(() => 'no TypeScript')
+    service({ enabled: false, plugins: [{ ...vue, docgen: { ...vue.docgen!, unavailable } }] })
+
+    expect(unavailable).not.toHaveBeenCalled()
+  })
+
   it('never starts without a plugin that documents components', async () => {
     const { docgen, createRunner } = service({ plugins: [{ name: 'vanilla' }] })
 

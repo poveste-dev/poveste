@@ -21,6 +21,7 @@ export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGrap
     return {}
   }
   const docs: Record<string, StoryDocsResult['components']> = {}
+  const failed = new Map<string, string>()
   try {
     for (const storyFile of ctx.storyFiles) {
       const storyId = storyFile.story?.id
@@ -28,13 +29,25 @@ export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGrap
         continue
       }
       const { components } = await docgen.request(storyId)
-      if (Object.keys(components).length) {
-        docs[storyId] = components
+      // A built book is published, so an extractor's error stays on the build
+      // machine: the component keeps its runtime props, as with auto-docs off (#1382).
+      const read = Object.entries(components).filter(([file, result]) => {
+        if (!result.doc) {
+          failed.set(file, result.error)
+        }
+        return result.doc
+      })
+      if (read.length) {
+        docs[storyId] = Object.fromEntries(read)
       }
     }
   }
   finally {
     await docgen.dispose()
+  }
+  if (failed.size) {
+    const [file, error] = [...failed][0]!
+    console.warn(`[poveste] auto-docs could not read ${failed.size} component${failed.size === 1 ? '' : 's'}, which show their runtime props instead. The first, ${file}: ${error}`)
   }
   return docs
 }

@@ -26,6 +26,20 @@ export interface DocgenEngineOptions {
   load?: (module: string) => Promise<DocgenExtractorModule>
 }
 
+// An absolute path, POSIX or Windows, of two segments or more; its last segment is kept.
+const ABSOLUTE_PATH = /(?:(?<![\w.])\/|\b[A-Z]:[\\/])(?:[^\s'"`/\\]+[\\/])+([^\s'"`/\\]+)/gi
+
+/**
+ * What a reader is shown of an extractor's failure: its first line, with the
+ * book's root made relative and any other absolute path cut to its file name.
+ * Node's `MODULE_NOT_FOUND` message carries a require stack of absolute paths,
+ * which a built book published under every component (#1382).
+ */
+export function describeError(error: unknown, root: string): string {
+  const firstLine = (error instanceof Error ? error.message : String(error)).split('\n')[0]!.trim()
+  return firstLine.replaceAll(`${root}/`, '').replaceAll(root, '.').replace(ABSOLUTE_PATH, '$1')
+}
+
 /** The extraction loop that runs inside the docgen worker, kept free of the thread. */
 /** `import()` takes a URL, and an absolute Windows path is not one: `D:` reads as its scheme. */
 export function importable(module: string) {
@@ -84,7 +98,7 @@ export function createDocgenEngine(options: DocgenEngineOptions) {
           results[file] = doc ? { doc } : { error: 'no component found' }
         }
         catch (error) {
-          results[file] = { error: error instanceof Error ? error.message : String(error) }
+          results[file] = { error: describeError(error, options.root) }
         }
         await recycleIfNeeded()
       }

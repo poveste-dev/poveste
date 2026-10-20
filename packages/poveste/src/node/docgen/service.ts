@@ -58,6 +58,8 @@ export interface DocgenServiceOptions {
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
   /** Called with files the extractors read that nothing was watching yet. */
   watch?: (files: string[]) => void
+  /** Where a plugin's reason for being unavailable is said. */
+  warn?: (message: string) => void
 }
 
 /**
@@ -67,7 +69,17 @@ export interface DocgenServiceOptions {
  * on disk drops what was extracted rather than re-extracting it unasked.
  */
 export function createDocgenService(options: DocgenServiceOptions) {
-  const plugins = options.plugins.filter(plugin => plugin.docgen)
+  const warn = options.warn ?? (message => console.warn(message))
+  const plugins = options.plugins.filter((plugin) => {
+    if (!plugin.docgen) {
+      return false
+    }
+    const reason = options.enabled ? plugin.docgen.unavailable?.(options.root) : undefined
+    if (reason) {
+      warn(`[poveste] ${reason}`)
+    }
+    return !reason
+  })
   const enabled = options.enabled && plugins.length > 0
   const createRunner = options.createRunner ?? createWorkerRunner
 
