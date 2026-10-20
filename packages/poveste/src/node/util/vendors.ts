@@ -11,6 +11,18 @@ const alias: Record<string, string> = {
   '@poveste/controls': path.resolve(__dirname, '../vendors/controls.js'),
 }
 
+/**
+ * Source as a reader is shown it: an import `getInjectedImport` wrote as a file
+ * URL on this machine reads as the package it stands for (#1383).
+ */
+export function withPackageImports(source: string) {
+  let result = source
+  for (const [request, file] of Object.entries(alias)) {
+    result = result.replaceAll(JSON.stringify(pathToFileURL(file).href), JSON.stringify(request))
+  }
+  return result
+}
+
 export function getInjectedImport(request: string) {
   let id: string = request
 
