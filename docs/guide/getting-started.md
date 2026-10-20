@@ -265,9 +265,9 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
-| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅ |
-| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | not checked |
-| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | not checked |
+| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
+| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
+| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
 | [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
 | [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | - |
 | [Solid →](./solid/getting-started.md) | renderer only | - | - |
@@ -284,7 +284,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
-*<u>*Auto-Docs*</u>: A props, slots and events table on a story's docs, read from the types of the components the story imports. On by default for Vue, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). Nuxt and Quasar books render through the same Vue plugin, but nobody has checked the table in either yet, so those rows say so rather than ✅. Svelte, SvelteKit, Solid and React have no table yet.
+*<u>*Auto-Docs*</u>: A props, slots and events table on a story's **Docs** tab, read from the types of the `.vue` components the story imports. On by default in Vue, Nuxt and Quasar books, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). It reads the types with TypeScript, which the book has to have, at version 6 or earlier: `npm i -D typescript@6`. Svelte, SvelteKit, Solid and React have no table yet.
 
 ## Community
 

@@ -36,7 +36,7 @@ Id of the story used in the URL. By default, the id is automatically generated f
 Layout of the story. Object with the following properties:
   - `type`: `'single'` or `'grid'`
   - with `type: 'single'` you can specify:
-    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complexe parameters that can't be serialized.
+    - `iframe`: Whether to isolate the story in an iframe. You might want to disable it if you want to pass complex parameters that can't be serialized.
   - with `type: 'grid'` you can specify:
     - `width`: Column size. Can be number (pixels) or string (like `'100%'`).
     - `iframeGrid`: Whether each grid item renders in an iframe of its own. Default `true`; `false` renders the items in the app's document. See [Grid iframes](../../guide/css.md#grid-iframes).
@@ -55,7 +55,7 @@ A `type` other than `'single'` or `'grid'` is reported the same way.
 
 ## `initState`
 
-Function that returns the intial state. Will be used as default value for variants.
+Function that returns the initial state. Will be used as default value for variants.
 
 ```vue
 <script setup>

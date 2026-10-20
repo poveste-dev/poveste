@@ -396,10 +396,10 @@ These are registered alongside the controls and are not controls: they take no v
 
 | Component | Props | What it is |
 | --- | --- | --- |
-| `HstColorShades` | `shades`, an object of shade to colour | draws a palette; `@poveste/plugin-tailwind` uses it for its colour pages |
-| `HstTokenList` | `tokens`, an object of name to value | lists design tokens; used for Tailwind's pages |
-| `HstTokenGrid` | `tokens`, as above, and `colSize` | the same tokens as a grid |
-| `HstCopyIcon` | `content`, the text to copy | a copy-to-clipboard button; the chrome uses it |
+| `HstColorShades` | `shades`, an object of shade to colour; `getName(key, color)`, which renames a shade; `search`, a case-insensitive pattern that keeps only the shades whose name matches | draws a palette; `@poveste/plugin-tailwind` uses it for its colour pages |
+| `HstTokenList` | `tokens`, an object of name to value; `getName(key, value)`, which renames a token | lists design tokens; used for Tailwind's pages |
+| `HstTokenGrid` | `tokens` and `getName`, as above, and `colSize` | the same tokens as a grid |
+| `HstCopyIcon` | `content`, the text to copy, or a function that returns it, at once or as a promise; `loading`, which makes a click say "Still loading" instead of copying | a copy-to-clipboard button; the chrome uses it |
 
 `HstTooltip` is exported too, for Poveste's own interface, and is not registered for stories.
 

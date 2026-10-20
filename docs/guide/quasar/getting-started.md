@@ -49,11 +49,10 @@ import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [HstVue(), HstQuasar()],
-  setupFile: '/src/poveste.setup.ts',
 })
 ```
 
-Quasar also has to be installed into the story app, the same way it is installed into yours. With no `setupFile`, `HstQuasar()` installs it with Quasar's defaults, so a fresh `npm init quasar` project renders without one. Name a setup file once you need Quasar's options or your boot files: installing Quasar is then that file's job, and `setupQuasar()` does it. The boot import below is an example of your own file:
+Quasar also has to be installed into the story app, the same way it is installed into yours. With no `setupFile`, `HstQuasar()` installs it with Quasar's defaults, so a fresh `npm init quasar` project renders with the config above. Name a setup file once you need Quasar's options or your boot files, by adding `setupFile: '/src/poveste.setup.ts'` to that config: installing Quasar is then that file's job, and `setupQuasar()` does it. The boot import below is an example of your own file:
 
 ```ts
 // src/poveste.setup.ts
@@ -113,6 +112,8 @@ Both fail quietly on the page: the build succeeds and no error panel appears. Th
 That is what `setupQuasar({ boot })` is for. An extension's boot file comes from its package rather than your `src/boot`, so it is imported from there — for QCalendar, `@quasar/quasar-app-extension-qcalendar/dist/boot/vite-register.js` — and listed alongside your own. The extension itself is installed with `quasar ext add @quasar/qcalendar`, the short name.
 
 Only `app` is passed to them: a story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
+
+Write a boot file you hand to `setupQuasar()` as a plain function, `export default ({ app }) => { … }`, without Quasar's `defineBoot` from `#q-app/wrappers`. A setup file that imports such a boot file fails to load: the terminal says `Error while loading the setup file …` with `"./wrappers" is not exported`, and the browser shows an empty book.
 
 ::: warning What this is checked against
 **What it requires:** `quasar` `^2.24.0` and `@quasar/app-vite` `^3.8.0`, the ranges `@poveste/plugin-quasar` declares. CI builds the Quasar example with the versions its lockfile pins, which are above both floors; the floors themselves are not tested.

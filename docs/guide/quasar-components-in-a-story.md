@@ -9,7 +9,7 @@ description: 'histoire does not support Quasar. Poveste, a fork of histoire, doe
 
 You write a story for a component from your Quasar app and part of it isn't there. Usually it's something an app extension provides, like `<q-calendar-day>` sitting in the page as an unknown element. Or it's a value one of your own boot files sets, which reads `undefined`.
 
-The build is green, no error panel appears, and nothing is logged.
+The build is green and no error panel appears. A built book logs nothing. Under `poveste dev`, the browser console warns `Failed to resolve component: q-calendar-day`, or, for a value a template reads, `Property "$greeting" was accessed during render but is not defined on instance`.
 
 ## Why it happens
 
@@ -37,7 +37,7 @@ An app extension's boot file comes from its package rather than your `src/boot`,
 Two limits worth knowing before you start:
 
 - **Only `app` is passed to a boot file.** A story has no router, no store and no SSR context, so a boot file that needs those has to be split or guarded.
-- **SPA mode only.** It's checked against Quasar 2.27 and `@quasar/app-vite` 3.8.
+- **SPA mode only.** The versions it needs, and the ones it was walked on, are under "What this is checked against" in the [Quasar guide](./quasar/getting-started.md).
 
 ## Where this comes from
 
