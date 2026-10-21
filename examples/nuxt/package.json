@@ -25,5 +25,10 @@
     "tailwindcss": "catalog:",
     "vue": "^3.5.44",
     "vue-i18n": "^11.4.14"
+  },
+  "overrides": {
+    "@intlify/bundle-utils": {
+      "esbuild": "^0.28.0"
+    }
   }
 }

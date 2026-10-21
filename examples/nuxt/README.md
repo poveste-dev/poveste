@@ -22,6 +22,15 @@ pnpm run story:preview  # serve the built book
 pnpm run dev            # the Nuxt app itself
 ```
 
+## Outside the workspace, with npm
+
+A copy of this directory installs with plain `npm install` once its
+`workspace:*` and `catalog:` versions are filled in. The `overrides` in
+`package.json` are for that case only, since pnpm reads overrides from the
+workspace root alone: `@nuxtjs/i18n` brings `@intlify/bundle-utils`, which
+depends on `esbuild` `^0.25`, and npm otherwise refuses it beside Vite 8's
+`esbuild` peer, `^0.27.0 || ^0.28.0`, with `ERESOLVE` (#1406).
+
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the wider development loop, and
 the [Nuxt guide](https://poveste.dev/guide/nuxt/getting-started) for how
 to set this up in your own project.
