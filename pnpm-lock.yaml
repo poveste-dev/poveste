@@ -837,6 +837,9 @@ importers:
       picomatch:
         specifier: ^4.0.7
         version: 4.0.7
+      postcss-load-config:
+        specifier: ^6.0.1
+        version: 6.0.1(jiti@2.7.0)(postcss@8.5.30)(yaml@2.9.1)
       sade:
         specifier: ^1.8.1
         version: 1.8.1

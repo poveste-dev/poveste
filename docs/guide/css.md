@@ -176,6 +176,10 @@ Both `poveste dev` and `poveste build` apply `@scope (.__poveste-render-story)` 
 
 Poveste's own sandbox-side defaults are wrapped in `@layer poveste-defaults` so unlayered user CSS overrides them without specificity tricks.
 
+## Your PostCSS config
+
+The book's PostCSS config, found the way Vite finds it or set in `css.postcss`, runs on your CSS and not on Poveste's own stylesheets, which ship compiled. A Tailwind 3 config, which rejects the `@layer utilities` those stylesheets declare, builds as it did under histoire.
+
 ## Browser support
 
 `@scope` is required. Supported in:
