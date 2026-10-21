@@ -88,18 +88,23 @@ export function overCeilings(sizes: Sizes, ceilings = CEILINGS): string[] {
 /**
  * The tarballs `pnpm pack` already wrote into `dir`, as `smoke-test.sh` packs them,
  * so the release gate weighs what it installs rather than packing a second time.
+ * A published package the smoke test does not pack, as it exempts the screenshot
+ * plugin, comes back in `unpacked`: the package-size check weighs it on every PR.
  */
-export function tarballSizes(root: string, dir: string): Sizes {
+export function tarballSizes(root: string, dir: string): { sizes: Sizes, unpacked: string[] } {
   const sizes: Sizes = {}
+  const unpacked: string[] = []
   for (const { dir: packageDir, name } of publishedPackages(root)) {
     const { version } = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')) as { version: string }
     const tarball = join(dir, `${name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`)
-    if (!existsSync(tarball)) {
-      throw new Error(`no tarball for ${name} in ${dir}: expected ${tarball}`)
+    if (existsSync(tarball)) {
+      sizes[name] = statSync(tarball).size
     }
-    sizes[name] = statSync(tarball).size
+    else {
+      unpacked.push(name)
+    }
   }
-  return sizes
+  return { sizes, unpacked }
 }
 
 function kb(bytes: number): string {
@@ -168,9 +173,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.stdout.write(sizeTable(read(args[0]!), read(args[1]!), args[2]!))
   }
   else if ((command === 'check' && args.length === 1) || (command === 'check-tarballs' && args.length === 2)) {
-    const sizes = command === 'check'
-      ? JSON.parse(readFileSync(args[0]!, 'utf8')) as Sizes
+    const { sizes, unpacked } = command === 'check'
+      ? { sizes: JSON.parse(readFileSync(args[0]!, 'utf8')) as Sizes, unpacked: [] }
       : tarballSizes(args[0]!, args[1]!)
+    for (const name of unpacked) {
+      console.log(`· ${name} is not packed here; the package-size check weighs it on every PR.`)
+    }
     const problems = overCeilings(sizes)
     for (const problem of problems) {
       console.error(`✗ ${problem}`)

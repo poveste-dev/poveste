@@ -118,14 +118,16 @@ describe('tarballSizes', () => {
     mkdirSync(tarballs)
     writeFileSync(join(tarballs, 'poveste-app-1.2.3.tgz'), 'x'.repeat(42))
 
-    expect(tarballSizes(root, tarballs)).toEqual({ '@poveste/app': 42 })
+    expect(tarballSizes(root, tarballs)).toEqual({ sizes: { '@poveste/app': 42 }, unpacked: [] })
   })
 
-  it('fails when a package\'s tarball is missing, rather than weighing nothing', () => {
+  // The smoke test exempts the screenshot plugin, which needs a real Chrome.
+  it('names a published package with no tarball there, rather than weighing it as nothing', () => {
     const root = mkdtempSync(join(tmpdir(), 'package-sizes-'))
-    mkdirSync(join(root, 'packages', 'core'), { recursive: true })
-    writeFileSync(join(root, 'packages', 'core', 'package.json'), JSON.stringify({ name: 'poveste', version: '1.2.3' }))
+    mkdirSync(join(root, 'packages', 'screenshot'), { recursive: true })
+    writeFileSync(join(root, 'packages', 'screenshot', 'package.json'), JSON.stringify({ name: '@poveste/plugin-screenshot', version: '1.2.3' }))
+    mkdirSync(join(root, 'tarballs'))
 
-    expect(() => tarballSizes(root, join(root, 'tarballs'))).toThrow('no tarball for poveste')
+    expect(tarballSizes(root, join(root, 'tarballs'))).toEqual({ sizes: {}, unpacked: ['@poveste/plugin-screenshot'] })
   })
 })
