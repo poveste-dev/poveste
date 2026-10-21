@@ -2,7 +2,7 @@
   "name": "@poveste/plugin-nuxt",
   "type": "module",
   "version": "0.20.0",
-  "description": "Poveste plugin to integrate with Nuxt 4",
+  "description": "Poveste plugin to integrate with Nuxt 4, including the props tables @poveste/plugin-vue reads from your components' types",
   "author": {
     "name": "Sorin Gitlan",
     "url": "https://x.com/50rayn"

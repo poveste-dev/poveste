@@ -107,8 +107,10 @@ lower bound is declared, and not tested by a job of its own.
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 | [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 
-On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts
-`^22.22.2 || ^24.15.0 || >=26`.
+On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own
+dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for
+each of them and installs anyway, and a Vue book built there, but nothing tests Poveste on a
+Node 24 before 24.15.
 
 Vite 8 is a hard floor, not a preference: Poveste's own build runs on Rolldown. That is also
 what sets the Nuxt and Svelte floors — Nuxt only moved to Vite 8 in `4.5.0`, and Svelte 4's

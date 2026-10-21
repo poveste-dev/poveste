@@ -44,6 +44,8 @@ import { defineSetupVue } from '@poveste/plugin-vue'
 export const setupVue = defineSetupVue(setupQuasar())
 ```
 
+Your Vue components get a props, slots and events table on each story's **Docs** tab, through `@poveste/plugin-vue`. It needs `typescript` 6 or earlier in the project (`npm i -D typescript@6`), which a Quasar project installed with npm doesn't have; without it, or with 7, it turns itself off and says so once.
+
 Quasar builds its Vite config asynchronously and exposes it through an
 entrypoint whose own header says it is for tooling. This plugin fetches it and
 makes the two adjustments a book needs — both of which are easy to get wrong and
