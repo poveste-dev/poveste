@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import replace from '@rollup/plugin-replace'
 import { onPovesteCleanup } from 'poveste'
 import { ignorePlugins, withoutIgnoredPlugins } from './ignored-plugins.js'
+import { NUXT_INLINE_DEPS } from './inline-deps.js'
 
 export interface HstNuxtOptions {
   /**
@@ -159,9 +160,7 @@ export async function setupVue3 () {
 }`,
         ],
         viteNodeInlineDeps: [
-          /\/(nuxt|nuxt3)\//,
-          /^#/,
-          /\.nuxt/,
+          ...NUXT_INLINE_DEPS,
           ...(nuxt.options.build.transpile.filter(
             r => typeof r === 'string' || r instanceof RegExp,
           ) as Array<string | RegExp>),
