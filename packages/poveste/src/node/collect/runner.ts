@@ -91,14 +91,43 @@ export function filenameOf(module: Readonly<EvaluatedModuleNode>, root: string):
 }
 
 /**
- * The keys an externalised module added to `globalThis` when Node ran it. Node
- * caches that module, so once a worker's reset deletes them nothing installs them
- * again. Vue's development build sets `__VUE_HMR_RUNTIME__` this way, and a story
- * compiled with HMR code reads it at its top level (#1320).
+ * The keys a module Node ran itself added to `globalThis`. Node caches that module,
+ * so once a worker's reset deletes them nothing installs them again. Vue's
+ * development build sets `__VUE_HMR_RUNTIME__` this way, and a story compiled with
+ * HMR code reads it at its top level (#1320). Node runs a module either as an
+ * external, or when an inlined CommonJS module requires it: an installed Nuxt or
+ * Quasar book's `vue.cjs.prod.js` is inlined and requires `@vue/runtime-dom` (#1404).
  */
 export const globalsFromExternals = new Set<string>()
 
 const ranExternals = new Set<string>()
+
+const requiredModules = new Set<string>()
+
+/** The `require` an inlined module gets, recording what each module it loads first installs. */
+function requireRecordingGlobals(filename: string): NodeJS.Require {
+  const nodeRequire = createRequire(filename)
+  const recording = (id: string) => {
+    const resolved = nodeRequire.resolve(id)
+    if (requiredModules.has(resolved)) {
+      return nodeRequire(id)
+    }
+    const before = new Set(Object.keys(globalThis))
+    try {
+      return nodeRequire(id)
+    }
+    finally {
+      requiredModules.add(resolved)
+      for (const key of Object.keys(globalThis)) {
+        if (!before.has(key)) {
+          globalsFromExternals.add(key)
+        }
+      }
+    }
+  }
+  // `resolve`, `cache` and the rest, as the module expects of `require`.
+  return Object.assign(recording, nodeRequire)
+}
 
 async function importRecordingGlobals(file: string) {
   const before = new Set(Object.keys(globalThis))
@@ -173,7 +202,7 @@ class InteropEvaluator implements ModuleEvaluator {
     // own scope it redeclared it, a syntax error that failed every story of the book
     // (#1301). The closing brace goes on a new line: the code may end in a line comment.
     const run = new AsyncFunction(ssrModuleExportsKey, ssrImportMetaKey, ssrImportKey, ssrDynamicImportKey, ssrExportAllKey, ssrExportNameKey, 'require', 'exports', 'module', '__filename', '__dirname', `"use strict";{\n${code}\n}`)
-    await run(context[ssrModuleExportsKey], context[ssrImportMetaKey], context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], context[ssrExportNameKey], createRequire(filename), cjsExports, moduleProxy, filename, dirname(filename))
+    await run(context[ssrModuleExportsKey], context[ssrImportMetaKey], context[ssrImportKey], context[ssrDynamicImportKey], context[ssrExportAllKey], context[ssrExportNameKey], requireRecordingGlobals(filename), cjsExports, moduleProxy, filename, dirname(filename))
   }
 
   async runExternalModule(file: string) {

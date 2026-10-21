@@ -38,6 +38,9 @@ describe('collecting a second story in the same worker', () => {
 
       expect(output).toContain('first.story.js')
       expect(output).toContain('second.story.js')
+      // Installed by a module an inlined CommonJS dependency requires (#1404).
+      expect(output).toContain('third.story.js')
+      expect(output).toContain('fourth.story.js')
       expect(output).not.toContain('Error while collecting story')
     }
     finally {
