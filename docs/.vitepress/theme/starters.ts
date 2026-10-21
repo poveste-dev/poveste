@@ -153,6 +153,8 @@ function svelteStarter(): Starter {
       // and it in turn requires `svelte ^5.46.4`.
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
+      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
+      'svelte2tsx': '^0.7.61',
       // Auto-docs reads types with TypeScript, an optional peer npm does not
       // install, and none of its extractors can read 7 (#1382, #1401).
       'typescript': '~6.0.3',
@@ -218,6 +220,8 @@ function svelteKitStarter(): Starter {
       '@sveltejs/kit': '^2.53.0',
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
+      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
+      'svelte2tsx': '^0.7.61',
       // Auto-docs reads types with TypeScript, an optional peer npm does not
       // install, and none of its extractors can read 7 (#1382, #1401).
       'typescript': '~6.0.3',

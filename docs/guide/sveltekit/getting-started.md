@@ -119,4 +119,5 @@ If you have questions or need help, reach out to the community on [GitHub Discus
 A story's **Docs** tab documents the `.svelte` components it imports, as in any Svelte book:
 see [Component docs](../svelte/getting-started.md#component-docs) in the Svelte guide. It
 reads the types `svelte-kit sync` generates, so `$lib` imports resolve as in your editor,
-and it needs `typescript` 6 or earlier installed in the project.
+and it needs `typescript` 6 or earlier and `svelte2tsx`
+installed in the project.

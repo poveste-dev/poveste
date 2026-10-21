@@ -270,10 +270,10 @@ Two limits are worth knowing, because neither is obvious from a green run:
 | [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
 | [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
 | [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
-| [Svelte →](./svelte/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier |
-| [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier |
+| [Svelte →](./svelte/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier and `svelte2tsx` |
+| [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier and `svelte2tsx` |
 | [Solid →](./solid/getting-started.md) | renderer only | - | ✅, needs TypeScript 6 or earlier |
-| [React →](./react/getting-started.md) | renderer only | - | ✅, needs TypeScript 6 or earlier |
+| [React →](./react/getting-started.md) | renderer only | - | ✅, needs TypeScript 6 or earlier and `@types/react` |
 | Angular | - | - | - |
 
 **<u>Support</u> means the following is available*:
