@@ -6,7 +6,7 @@
 // but nothing for the tarball, so a size read there would be a different number.
 
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -38,6 +38,66 @@ export function measure(root: string): Sizes {
   for (const { dir, name } of publishedPackages(root)) {
     const packed = JSON.parse(execFileSync('pnpm', ['pack', '--json', '--pack-destination', out], { cwd: dir, encoding: 'utf8' })) as { filename: string }
     sizes[name] = statSync(packed.filename).size
+  }
+  return sizes
+}
+
+/**
+ * The most each package's tarball may weigh, and the regression it is there to
+ * catch (#988). Each is the midpoint between 0.20.0 plus 0.21's planned growth and
+ * 0.20.0 plus the package's own tests, rounded to 100 B; where those are under 2 kB
+ * apart, 0.20.0 plus 1 kB. The derivation is on #988. Raise one only from a fresh
+ * measurement, saying in the PR what grew and why, as `bundle-size.ts` asks of its own.
+ * A ceiling with no bytes is a note, read but not enforced.
+ */
+export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
+  'poveste': { bytes: 141_900, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
+  '@poveste/app': { bytes: 435_300, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
+  '@poveste/plugin-vue': { bytes: 63_900, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
+  '@poveste/shared': { bytes: 26_100, reason: 'types and a small runtime; catches the tests' },
+  '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },
+  // 0.21's growth here was inferred from Solid's before React's auto-docs (#1161) had a
+  // PR; enforce it once that has merged and the number is measured again.
+  '@poveste/plugin-react': { reason: 'proposed 10,800 B, from an inferred growth: re-measure once React auto-docs has merged' },
+  '@poveste/plugin-solid': { bytes: 10_200, reason: 'room for the JSX extractor glue; catches the tests' },
+  '@poveste/plugin-quasar': { bytes: 7_700, reason: 'catches the tests' },
+  '@poveste/plugin-tailwind': { bytes: 9_900, reason: '0.20.0 plus 1 kB; catches the tests' },
+  '@poveste/plugin-percy': { bytes: 5_900, reason: '0.20.0 plus 1 kB; catches the tests' },
+  '@poveste/plugin-screenshot': { bytes: 4_400, reason: '0.20.0 plus 1 kB; catches source maps or a bundled dependency, not its 600 B of tests' },
+  // Stubs only: what a book gets from it is scavenged at build time (#305). Its shape
+  // moved in #347 and #935, so a PR that reshapes it re-derives this on purpose.
+  '@poveste/vendors': { bytes: 4_000, reason: 'catches bundled copies shipping again, as they did up to 0.15.0 (846 kB)' },
+}
+
+/** Each package over its ceiling, and each published package with none, as a sentence naming it. */
+export function overCeilings(sizes: Sizes, ceilings = CEILINGS): string[] {
+  return Object.entries(sizes).sort(([a], [b]) => a.localeCompare(b)).flatMap(([name, bytes]) => {
+    const ceiling = ceilings[name]
+    if (!ceiling) {
+      return [`\`${name}\` has no ceiling in scripts/release/package-sizes.ts. Add one with the regression it catches.`]
+    }
+    if (ceiling.bytes !== undefined && bytes > ceiling.bytes) {
+      return [`\`${name}\` packs to ${bytes} B, over its ceiling of ${ceiling.bytes} B (${ceiling.reason}).`]
+    }
+    return []
+  })
+}
+
+/**
+ * The tarballs `pnpm pack` already wrote into `dir`, as `smoke-test.sh` packs them,
+ * so the release gate weighs what it installs rather than packing a second time.
+ */
+export function tarballSizes(root: string, dir: string): Sizes {
+  const sizes: Sizes = {}
+  for (const { dir: packageDir, name } of publishedPackages(root)) {
+    const { version } = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8')) as { version: string }
+    const tarball = join(dir, `${name.replace(/^@/, '').replace('/', '-')}-${version}.tgz`)
+    if (!existsSync(tarball)) {
+      throw new Error(`no tarball for ${name} in ${dir}: expected ${tarball}`)
+    }
+    sizes[name] = statSync(tarball).size
   }
   return sizes
 }
@@ -107,8 +167,21 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const read = (file: string) => JSON.parse(readFileSync(file, 'utf8')) as Sizes
     process.stdout.write(sizeTable(read(args[0]!), read(args[1]!), args[2]!))
   }
+  else if ((command === 'check' && args.length === 1) || (command === 'check-tarballs' && args.length === 2)) {
+    const sizes = command === 'check'
+      ? JSON.parse(readFileSync(args[0]!, 'utf8')) as Sizes
+      : tarballSizes(args[0]!, args[1]!)
+    const problems = overCeilings(sizes)
+    for (const problem of problems) {
+      console.error(`✗ ${problem}`)
+    }
+    if (problems.length) {
+      process.exit(1)
+    }
+    console.log(`✓ Every package is within its ceiling (${Object.keys(sizes).length} packed).`)
+  }
   else {
-    console.error('usage: package-sizes.ts measure <built checkout> <out.json>\n       package-sizes.ts table <base.json> <head.json> <base label>')
+    console.error('usage: package-sizes.ts measure <built checkout> <out.json>\n       package-sizes.ts table <base.json> <head.json> <base label>\n       package-sizes.ts check <sizes.json>\n       package-sizes.ts check-tarballs <checkout> <tarball dir>')
     process.exit(2)
   }
 }
