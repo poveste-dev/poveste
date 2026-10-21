@@ -2,7 +2,7 @@ import type { ServerStoryFile, SupportMatchPattern } from '@poveste/shared'
 import type { Context } from './context.js'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
-import { basename, extname, resolve } from 'pathe'
+import { basename, extname, relative, resolve } from 'pathe'
 import picomatch from 'picomatch'
 import { glob } from 'tinyglobby'
 import { unregister } from './util/unregister.js'
@@ -134,12 +134,15 @@ export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
     throw new Error(noSupportPluginMessage(absoluteFilePath, context.config.supportMatch))
   }
 
+  // A plugin adds its story by absolute path, and `relativePath` and a virtual
+  // module's id are published in a built book (#1383).
+  const relativePath = relative(context.root, absoluteFilePath)
   const file: ServerStoryFile = {
     id: fileId, // The file id will be changed by the story id after it is collected
     path: absoluteFilePath,
-    relativePath: relativeFilePath,
+    relativePath,
     fileName,
-    moduleId: virtualModuleCode ? `virtual:story:${absoluteFilePath}` : absoluteFilePath,
+    moduleId: virtualModuleCode ? `virtual:story:${relativePath}` : absoluteFilePath,
     supportPluginId,
     virtual: !!virtualModuleCode,
     moduleCode: virtualModuleCode,

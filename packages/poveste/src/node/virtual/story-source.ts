@@ -1,6 +1,7 @@
 import type { Context } from '../context.js'
 import fs from 'fs-extra'
 import { resolve } from 'pathe'
+import { withPackageImports } from '../util/vendors.js'
 
 export async function storySource(ctx: Context, id: string) {
   const storyId = id.slice('/__resolved__virtual:story-source:'.length)
@@ -13,7 +14,7 @@ export async function storySource(ctx: Context, id: string) {
     else {
       source = await fs.readFile(resolve(ctx.root, storyFile.relativePath), 'utf-8')
     }
-    return `export default ${JSON.stringify(source)}`
+    return `export default ${JSON.stringify(withPackageImports(source))}`
   }
   return undefined
 }
