@@ -1,6 +1,6 @@
 ---
-title: 'Documentation in Vue — markdown beside a story'
-description: 'Write markdown documentation alongside a Vue story so the book explains the component as well as showing it.'
+title: 'Documentation in Vue — markdown and a props table beside a story'
+description: 'Write markdown documentation alongside a Vue story, and get a props, slots and events table read from the component''s types, so the book explains the component as well as showing it.'
 ---
 
 # Documentation
@@ -68,6 +68,28 @@ You can link to other stories using a relative path to the story file:
 - [Go to Story](./BaseButton.story.vue)
 - [Go to CodeGen > Slots](./CodeGen.story.vue?variantId=slots)
 - [Go to Markdown file](./MarkdownFile.story.md)
+```
+
+## Props, slots and events
+
+Each `.vue` component a story imports gets a table on the story's **Docs** tab, below any markdown: its props with their types, descriptions and defaults, its slots, and its events. Poveste reads them from the component's types with `vue-component-meta`, so nothing is written for it:
+
+- **Props** come from `defineProps`, including an interface that extends another from a separate file. Descriptions and tags come from each prop's JSDoc.
+- **Defaults** come from `withDefaults` or the props object, then from a `@default` or `@defaultValue` tag. In `poveste dev`, a default whose tag says something else is marked; the built book shows the one the code applies.
+- **`@deprecated`** is shown on its row; a prop tagged `@internal` or `@private` is left out.
+- **Slots** come from `defineSlots`, and **events** from `defineEmits`.
+- **Props a component inherits from installed packages**, such as the HTML attributes, are left out unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
+
+Nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it.
+
+It needs TypeScript 6 or earlier installed in the book: `npm i -D typescript@6`. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
+
+To turn it off, or narrow it, set [`autoDocs`](../../reference/config.md#autodocs) in the config:
+
+```ts
+export default defineConfig({
+  autoDocs: false,
+})
 ```
 
 ## Source code

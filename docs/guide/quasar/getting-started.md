@@ -20,19 +20,19 @@ yarn add -D poveste @poveste/plugin-vue @poveste/plugin-quasar
 ```
 
 ::: tip Just installed and got an older version?
-For about a day after a release, pnpm installs the **previous** version, with no error and no warning. Current pnpm prints nothing to say a newer one exists. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
+For about a day after a release, pnpm installs the **previous** version, with no error. Measured on 0.20.0's release day: pnpm 11.5.3 printed `+ poveste 0.19.1 (0.20.0 is available)`, and pnpm 12.14.0 printed nothing to say a newer one existed. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
 
 pnpm also saves the version it installed to `package.json` as `^x.y.z`, so waiting a day doesn't fix an install you've already run. Run the install line again with one of these:
 
 - the `npm` line above;
-- `--config.minimum-release-age=0` added to the `pnpm` line. Use the kebab-case spelling: pnpm 12.4 ignores `--config.minimumReleaseAge=0` without a word;
+- `--config.minimum-release-age=0` added to the `pnpm` line. Use the kebab-case spelling: pnpm 12.4.0 ignores `--config.minimumReleaseAge=0` without a word, though 12.14.0 accepts both;
 - exact versions: `poveste@x.y.z` and the plugin at the same version. pnpm installs them, saves them without the `^`, and lists them under `minimumReleaseAgeExclude` in a `pnpm-workspace.yaml` it creates. `@latest` doesn't get you past the cooldown.
 :::
 
 ::: warning Poveste needs Node `>=22.22.2`, and npm will not tell you
 Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, and on a recent Node the only warning it prints names a dependency, not Poveste. These docs then describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
 
-On Node 24, use 24.15 or later: Poveste's DOM dependency (jsdom) accepts `^22.22.2 || ^24.15.0 || >=26`.
+On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for each of them and installs anyway, and a Vue book built there, but nothing tests Poveste on a Node 24 before 24.15.
 :::
 
 You need an existing Quasar project. The plugin reads the Vite config Quasar builds, so it looks for a `quasar.config` file above the current directory and fails with a message saying so if there is none.
@@ -132,6 +132,10 @@ Two adjustments, both of which exist so you do not have to make them.
 `ssr.noExternal: [/quasar/]` is set for story collection. Quasar's own Vite plugin writes `__QUASAR_VERSION__` while transforming its source, so that source has to be transformed rather than externalised — otherwise the marker never lands. This is an implementation detail rather than something to copy into your own config, and [#365](https://github.com/poveste-dev/poveste/issues/365) may change it.
 
 The config itself comes from an entrypoint whose own header says it is used exclusively by Quasar's testing app extensions. That is the same footing as Tailwind's `__unstable__loadDesignSystem`: usable, and not something to ask every reader to import from their own config. The plugin does it once so your config stays a normal Quasar config.
+
+## Component docs
+
+A story's **Docs** tab shows a props, slots and events table for each `.vue` component the story imports, read from the component's types: see [Props, slots and events](../vue/docs.md#props-slots-and-events). It reads them with TypeScript, which the book needs installed at version 6 or earlier: `npm i -D typescript@6`. A Quasar project installed with npm doesn't have it. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal.
 
 ## Write your first story
 
