@@ -1,10 +1,13 @@
-import type { ServerStoryFile, SupportMatchPattern } from '@poveste/shared'
+import type { ServerStoryFile, SupportMatchPattern, SupportPlugin } from '@poveste/shared'
 import type { Context } from './context.js'
+import { readFileSync } from 'node:fs'
 import { kebabCase } from 'change-case'
 import chokidar from 'chokidar'
 import { basename, extname, relative, resolve } from 'pathe'
+import pc from 'picocolors'
 import picomatch from 'picomatch'
 import { glob } from 'tinyglobby'
+import { escapeRegExp } from './util/escape-regexp.js'
 import { unregister } from './util/unregister.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
 
@@ -104,6 +107,51 @@ export function noSupportPluginMessage(file: string, supportMatch: SupportMatchP
   ].join(' ')
 }
 
+function importsModule(source: string, moduleName: string): boolean {
+  return new RegExp(`(?:\\bfrom|\\bimport)\\s*\\(?\\s*['"]${escapeRegExp(moduleName)}(?:/[^'"]*)?['"]`).test(source)
+}
+
+/**
+ * Which support plugin renders a story file, and what to say when that is a guess.
+ *
+ * Solid and React both claim `*.story.tsx`, and the first plugin in `plugins`
+ * rendered every such file, so a book could not hold both (#1273). When more than
+ * one plugin claims a file, the one the file imports decides: every Solid or React
+ * story imports `defineStory` from its plugin. A file importing both, or neither
+ * (a helper re-exporting `defineStory`), goes to the first, as before, with a
+ * warning that names the plugins and the way to choose.
+ */
+export function chooseSupportPlugin(
+  file: string,
+  readSource: () => string | undefined,
+  supportMatch: SupportMatchPattern[],
+  supportPlugins: Pick<SupportPlugin, 'id' | 'moduleName'>[],
+): { pluginId: string | undefined, warning?: string } {
+  const claimants = [...new Set(supportMatch
+    .filter(p => picomatch.isMatch(file, p.patterns, { dot: true }))
+    .map(p => p.pluginIds[0])
+    .filter((id): id is string => id !== undefined))]
+  if (claimants.length <= 1) {
+    return { pluginId: claimants[0] }
+  }
+
+  const moduleOf = (id: string) => supportPlugins.find(p => p.id === id)?.moduleName ?? id
+  const source = readSource()
+  const imported = source === undefined ? [] : claimants.filter(id => importsModule(source, moduleOf(id)))
+  if (imported.length === 1) {
+    return { pluginId: imported[0] }
+  }
+
+  const first = claimants[0]!
+  const names = claimants.map(id => `\`${moduleOf(id)}\``).join(' and ')
+  return {
+    pluginId: first,
+    warning: imported.length > 1
+      ? `${file} imports both ${names}, so it is rendered by the first in \`plugins\`, \`${moduleOf(first)}\`.`
+      : `${file} is claimed by ${names} and imports neither, so it is rendered by the first in \`plugins\`, \`${moduleOf(first)}\`. To choose, import \`defineStory\` from one of them in the story file.`,
+  }
+}
+
 export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
   const absoluteFilePath = getAbsoluteFilePath(relativeFilePath)
 
@@ -119,15 +167,23 @@ export function addStory(relativeFilePath: string, virtualModuleCode?: string) {
     fileName = fileName.substring(0, fileName.indexOf('.'))
   }
 
-  let supportPluginId: string | undefined
-
-  for (const p of context.config.supportMatch) {
-    if (picomatch.isMatch(absoluteFilePath, p.patterns, {
-      dot: true,
-    })) {
-      supportPluginId = p.pluginIds[0]
-      break
-    }
+  // Once per file: a file already known returned above, so a reload or a
+  // re-collection does not print it again.
+  const { pluginId: supportPluginId, warning } = chooseSupportPlugin(
+    absoluteFilePath,
+    () => {
+      try {
+        return virtualModuleCode ?? readFileSync(absoluteFilePath, 'utf8')
+      }
+      catch {
+        return undefined
+      }
+    },
+    context.config.supportMatch,
+    context.supportPlugins,
+  )
+  if (warning) {
+    console.warn(pc.yellow(`⚠️  ${warning}`))
   }
 
   if (!supportPluginId) {
