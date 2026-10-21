@@ -111,6 +111,24 @@ function declaredIn(typescript: typeof ts, symbol: ts.Symbol, names: string[]) {
 }
 
 /**
+ * An event's parameters as `name: type`. A handler typed as a union, as props that
+ * are a union over a discriminant give each member its own, has one call signature
+ * that TypeScript merges by intersecting the parameters: bits-ui's Accordion printed
+ * `value: string & string[]`, which no value meets. So each member's are read and
+ * joined, `value: string | string[]` (#501).
+ */
+function payloadOf(checker: ts.TypeChecker, handler: ts.Type, print: (type: ts.Type) => string): string {
+  const members = handler.isUnion() ? handler.types : [handler]
+  const signatures = members.flatMap(member => member.getCallSignatures().slice(0, 1))
+  const count = Math.max(0, ...signatures.map(signature => signature.getParameters().length))
+  return Array.from({ length: count }, (_, index) => {
+    const parameters = signatures.flatMap(signature => signature.getParameters().slice(index, index + 1))
+    const types = [...new Set(parameters.map(parameter => print(checker.getTypeOfSymbol(parameter))))]
+    return `${parameters[0]!.name}: ${types.join(' | ')}`
+  }).join(', ')
+}
+
+/**
  * A props type as a docs table: filtered, tagged, split into props, slots and
  * events, defaults reconciled.
  */
@@ -134,9 +152,9 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
     const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
     const member = { name: symbol.name, ...description ? { description } : {}, tags }
 
-    const signature = checker.getNonNullableType(type).getCallSignatures()[0]
-    if ((reading.eventName ?? EVENT_NAME).test(symbol.name) && signature) {
-      const payload = signature.getParameters().map(parameter => `${parameter.name}: ${print(checker.getTypeOfSymbol(parameter))}`).join(', ')
+    const handler = checker.getNonNullableType(type)
+    if ((reading.eventName ?? EVENT_NAME).test(symbol.name) && handler.getCallSignatures().length) {
+      const payload = payloadOf(checker, handler, print)
       doc.events.push({ ...member, ...payload ? { type: payload } : {} } satisfies DocEvent)
       continue
     }

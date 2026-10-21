@@ -137,3 +137,13 @@ describe('svelte auto-docs, with a package allowed', () => {
     await own.dispose()
   })
 })
+
+// TypeScript merges a union of handlers into one signature by intersecting their
+// parameters, which printed `value: string & string[]`, a payload no value meets (#501).
+describe('a component whose props are a union over a discriminant', () => {
+  it('prints an event\'s payload as either member\'s, not both at once', async () => {
+    const doc = (await extractor.extract(file('Choice.svelte')))!
+
+    expect(doc.events).toEqual([{ name: 'onValueChange', type: 'value: string | string[]', tags: [] }])
+  })
+})
