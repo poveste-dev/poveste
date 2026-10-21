@@ -311,12 +311,26 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     },
 
     configureServer(server) {
+      // A page load re-collected the whole book even with nothing changed (#1405).
+      // A reload is still how an edit to a module a story imports reaches the story
+      // list, since only a story file's own edit re-collects it, so it re-collects
+      // when any project file changed since the last time.
       let firstMount = true
+      let changedSinceMount = false
+      const markChanged = (file: string) => {
+        if (!/[\\/](?:node_modules|\.poveste)[\\/]/.test(file)) {
+          changedSinceMount = true
+        }
+      }
+      for (const event of ['add', 'change', 'unlink'] as const) {
+        server.watcher.on(event, markChanged)
+      }
       server.ws.on('poveste:mount', () => {
-        if (!firstMount) {
+        if (!firstMount && changedSinceMount) {
           notifyStoryChange()
         }
         firstMount = false
+        changedSinceMount = false
       })
 
       server.middlewares.use(async (req, res, next) => {
