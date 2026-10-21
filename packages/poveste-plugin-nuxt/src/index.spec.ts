@@ -7,6 +7,7 @@ import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { __povesteTolerant } from '../runtime/tolerant-plugins.mjs'
 import { withoutIgnoredPlugins } from './ignored-plugins'
 import { HstNuxt, isPluginExcluded, wrapPluginsForTolerantBoot, wrapPluginTemplates } from './index'
+import { NUXT_INLINE_DEPS } from './inline-deps'
 
 const I18N_DEFAULT = /[\\/]@nuxtjs[\\/]i18n[\\/].*[\\/]plugins[\\/]/
 
@@ -232,5 +233,30 @@ describe('withoutIgnoredPlugins', () => {
 
   it('leaves a config with no plugin list alone', () => {
     expect(withoutIgnoredPlugins(undefined)).toBeUndefined()
+  })
+})
+
+describe('what collection inlines for a Nuxt book', () => {
+  const inlined = (id: string) => NUXT_INLINE_DEPS.some(pattern => pattern.test(id))
+
+  it.for([
+    '/work/app/node_modules/nuxt/dist/app/nuxt.js',
+    '/work/app/node_modules/nuxt3/dist/app/index.mjs',
+    '/work/app/node_modules/.pnpm/nuxt@4.5.2/node_modules/nuxt/dist/app/nuxt.js',
+    '#app',
+    '#build/components',
+    '/work/app/.nuxt/poveste/app.config.mjs',
+  ])('inlines %s', (id) => {
+    expect(inlined(id)).toBe(true)
+  })
+
+  // A book under a directory named `nuxt` inlined its whole `node_modules` (#1371).
+  it.for([
+    '/work/nuxt/my-app/node_modules/vue/index.mjs',
+    '/work/nuxt/my-app/node_modules/@nuxt/kit/dist/index.mjs',
+    '/work/my.nuxt-app/node_modules/pinia/dist/pinia.mjs',
+    '/work/app/node_modules/nuxt-icon/dist/module.mjs',
+  ])('leaves %s to Node', (id) => {
+    expect(inlined(id)).toBe(false)
   })
 })
