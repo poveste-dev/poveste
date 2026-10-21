@@ -54,9 +54,20 @@ export function onlySections(entries: ComponentDocsEntry[], autoDocs: boolean | 
 /** Above this many, a story's components after the first start collapsed: a compound story can name 27 parts (#1432). */
 export const OPEN_PARTS = 3
 
-/** A compound component's root first, `SelectRoot` before `SelectTrigger`, else the order they came in. */
-export function rootFirst(entries: ComponentDocsEntry[]): ComponentDocsEntry[] {
-  const root = entries.find(entry => entry.name.endsWith('Root'))
+/**
+ * A compound component's root first, `SelectRoot` before `SelectTrigger`, else the order
+ * they came in. A story rendering two families, such as a Select inside a Calendar, opens
+ * the root its own folder or file is named for: `Calendar/story/CalendarSelect.story.vue`
+ * opens `CalendarRoot`, not the `SelectRoot` it imported first.
+ */
+export function rootFirst(entries: ComponentDocsEntry[], storyFile?: string): ComponentDocsEntry[] {
+  const roots = entries.filter(entry => entry.name.endsWith('Root'))
+  const family = (entry: ComponentDocsEntry) => entry.name.slice(0, -'Root'.length)
+  const segments = storyFile?.split(/[\\/]/) ?? []
+  const fileName = segments.at(-1) ?? ''
+  const root = roots.find(entry => segments.slice(0, -1).includes(family(entry)))
+    ?? roots.find(entry => fileName.startsWith(family(entry)))
+    ?? roots[0]
   return root ? [root, ...entries.filter(entry => entry !== root)] : entries
 }
 

@@ -1,5 +1,5 @@
 import type { HstControlOption } from '@poveste/controls'
-import type { Awaitable, Story, StoryMeta, StoryProps, Variant, VariantMeta, VariantProps } from '@poveste/shared'
+import type { Awaitable, Story, StoryComponentOptions, StoryMeta, StoryProps, Variant, VariantMeta, VariantProps } from '@poveste/shared'
 import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
@@ -51,7 +51,8 @@ type WithState<P> = Omit<P, 'source'> & {
 
 export interface Hst {
   // Main built-ins
-  Story: Component<WithState<WithChildren<StoryProps>> & { meta?: StoryMeta }>
+  // `component`: what the Docs tab documents, read from the source by auto-docs (#1432).
+  Story: Component<WithState<WithChildren<StoryProps>> & StoryComponentOptions<Component<any> | Component<any>[]> & { meta?: StoryMeta }>
   Variant: Component<WithState<WithChildren<VariantProps>> & { meta?: VariantMeta }>
   // Controls
   // Deliberately permissive. This was previously a bare `SvelteComponentTyped`,

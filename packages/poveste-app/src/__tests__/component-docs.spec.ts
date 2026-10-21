@@ -80,6 +80,19 @@ describe('a compound story\'s components', () => {
     expect(rootFirst([entry('SelectTrigger'), entry('SelectRoot'), entry('SelectContent')]).map(e => e.name)).toEqual(['SelectRoot', 'SelectTrigger', 'SelectContent'])
   })
 
+  // reka-ui's CalendarSelect imports SelectRoot before CalendarRoot (#1432).
+  it('opens the root of the family the story\'s folder is named for', () => {
+    const entries = [entry('SelectRoot'), entry('SelectTrigger'), entry('CalendarRoot')]
+
+    expect(rootFirst(entries, 'packages/core/src/Calendar/story/CalendarSelect.story.vue')[0]!.name).toBe('CalendarRoot')
+  })
+
+  it('opens the root the story\'s file is named for when no folder is', () => {
+    const entries = [entry('DialogRoot'), entry('SelectRoot')]
+
+    expect(rootFirst(entries, 'src/stories/SelectWithinDialog.story.vue')[0]!.name).toBe('SelectRoot')
+  })
+
   it('keeps the order when no component is a root', () => {
     expect(rootFirst([entry('Card'), entry('Button')]).map(e => e.name)).toEqual(['Card', 'Button'])
   })

@@ -6,9 +6,11 @@ import { OPEN_PARTS, rootFirst, tagHref, tagText } from '../../util/component-do
 
 const props = defineProps<{
   components: ComponentDocsEntry[]
+  /** The story's file, which names the family whose root opens first. */
+  storyFile?: string | undefined
 }>()
 
-const ordered = computed(() => rootFirst(props.components))
+const ordered = computed(() => rootFirst(props.components, props.storyFile))
 
 function shownDefault(prop: DocProp) {
   return prop.default ?? prop.defaultTag
