@@ -190,6 +190,7 @@
   ],
   "@poveste/shared": [
     "AutoDocsOptions",
+    "AutoDocsSection",
     "AutoPropComponentDefinition",
     "Awaitable",
     "BackgroundPreset",
@@ -285,6 +286,7 @@
   ],
   "poveste": [
     "AutoDocsOptions",
+    "AutoDocsSection",
     "AutoPropComponentDefinition",
     "Awaitable",
     "BackgroundPreset",
