@@ -265,9 +265,9 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
-| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
-| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
-| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 |
+| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
+| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
+| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
 | [Svelte →](./svelte/getting-started.md) | ✅ | - | - |
 | [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | - |
 | [Solid →](./solid/getting-started.md) | renderer only | - | - |

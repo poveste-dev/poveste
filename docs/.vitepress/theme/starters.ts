@@ -81,6 +81,9 @@ function vueStarter(): Starter {
         '@poveste/plugin-vue': POVESTE,
         // v6 peers `^5 || ^6 || ^7 || ^8`, so it already spans Vite 8.
         '@vitejs/plugin-vue': '^6.0.0',
+        // Auto-docs reads types with TypeScript, an optional peer npm does not
+        // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
+        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { vue: '^3.5.26' },
@@ -299,6 +302,9 @@ function nuxtStarter(): Starter {
       // 4.6, whose dev error reporter constructs a `BroadcastChannel` that
       // StackBlitz's WebContainer throws on (#1244).
       'nuxt': '~4.5.2',
+      // Auto-docs reads types with TypeScript, an optional peer npm does not
+      // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
+      'typescript': '~6.0.3',
       'vite': VITE,
       'vue': '^3.5.26',
     }), {
@@ -521,6 +527,9 @@ function quasarStarter(): Starter {
         // The plugin's own peer floor. It brings `@vitejs/plugin-vue` and
         // `@quasar/vite-plugin` itself, so neither is listed here.
         '@quasar/app-vite': '^3.8.0',
+        // Auto-docs reads types with TypeScript, an optional peer npm does not
+        // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
+        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { quasar: '^2.24.0', vue: '^3.5.43' },
