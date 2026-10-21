@@ -106,6 +106,12 @@ export interface PluginDocgen {
    */
   typescript?: 'book' | (string & {})
   /**
+   * Type packages the book must have for the extractor to read its framework's types,
+   * such as `@types/react`. Missing one, auto-docs is off for this plugin with one log
+   * line naming it, rather than an error under every component it would read as `any`.
+   */
+  types?: string[]
+  /**
    * Why this plugin cannot document the book at `root`, or nothing when it can.
    * With a reason, auto-docs is off for this plugin and the reason is logged once,
    * in place of an error under every component (#1382).

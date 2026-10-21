@@ -3,7 +3,7 @@ import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
-import { typescriptProblem } from './typescript.js'
+import { typescriptProblem, typesProblem } from './typescript.js'
 
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
 
@@ -77,9 +77,11 @@ export function createDocgenService(options: DocgenServiceOptions) {
     if (!plugin.docgen) {
       return false
     }
-    const { typescript, unavailable } = plugin.docgen
+    const { typescript, types, unavailable } = plugin.docgen
     const reason = options.enabled
-      ? (typescript ? typescriptProblem(options.root, typescript) : undefined) ?? unavailable?.(options.root)
+      ? (typescript ? typescriptProblem(options.root, typescript) : undefined)
+      ?? (types ? typesProblem(options.root, types) : undefined)
+      ?? unavailable?.(options.root)
       : undefined
     if (reason) {
       warn(`[poveste] ${reason}`)

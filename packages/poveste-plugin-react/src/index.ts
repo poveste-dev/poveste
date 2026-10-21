@@ -18,8 +18,9 @@ export function HstReact(): Plugin {
       scope: 'story',
       match: file => /\.story\.[jt]sx$/.test(file),
       module: new URL(DOCGEN_EXTRACTOR, import.meta.url).href,
-      // The JSX walker loads the book's TypeScript (#1401).
+      // The JSX walker loads the book's TypeScript (#1401). React ships no types of its own.
       typescript: 'book',
+      types: ['@types/react'],
     },
 
     defaultConfig() {

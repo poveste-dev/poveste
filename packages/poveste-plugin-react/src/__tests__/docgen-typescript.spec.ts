@@ -1,21 +1,24 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { typescriptProblem } from 'poveste/docgen'
+import { typescriptProblem, typesProblem } from 'poveste/docgen'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { HstReact } from '../index'
 
 // A book outside the workspace, whose own TypeScript is found before anything the
 // workspace or `NODE_PATH` adds (#1401).
-function book(typescript: string) {
+function book(typescript: string, packages: Record<string, string> = {}) {
   const root = mkdtempSync(join(tmpdir(), 'poveste-react-ts-'))
   onTestFinished(() => rmSync(root, { recursive: true, force: true }))
-  mkdirSync(join(root, 'node_modules', 'typescript'), { recursive: true })
-  writeFileSync(join(root, 'node_modules', 'typescript', 'package.json'), JSON.stringify({ name: 'typescript', version: typescript }))
+  for (const [name, version] of Object.entries({ typescript, ...packages })) {
+    mkdirSync(join(root, 'node_modules', name), { recursive: true })
+    writeFileSync(join(root, 'node_modules', name, 'package.json'), JSON.stringify({ name, version }))
+  }
   return root
 }
 
 const from = HstReact().docgen!.typescript!
+const types = HstReact().docgen!.types!
 
 describe('react auto-docs in a book', () => {
   it('reads types with the book\'s own TypeScript', () => {
@@ -28,5 +31,14 @@ describe('react auto-docs in a book', () => {
 
   it('stays on with TypeScript 6', () => {
     expect(typescriptProblem(book('6.0.3'), from)).toBeUndefined()
+  })
+
+  // Without them every component reads as `any`: 189 of a library's 236 did (#1161).
+  it('turns off without `@types/react`, naming it', () => {
+    expect(typesProblem(book('6.0.3'), types)).toMatch(/from `@types\/react`, which this book does not have/)
+  })
+
+  it('stays on with `@types/react`', () => {
+    expect(typesProblem(book('6.0.3', { '@types/react': '19.3.0' }), types)).toBeUndefined()
   })
 })
