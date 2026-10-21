@@ -190,9 +190,12 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       />
     </div>
 
-    <!-- The same empty panel said "still reading" and "off, for a reason" alike (#1400). -->
+    <!--
+      The same empty panel said "still reading" and "off, for a reason" alike (#1400).
+      A built book's data is a chunk away, so it shows nothing until then, not a spinner.
+    -->
     <BaseEmpty
-      v-if="!renderedDoc && !components?.length && pending"
+      v-if="__POVESTE_DEV__ && !renderedDoc && !components?.length && pending"
       data-testid="docs-pending"
     >
       <Icon
@@ -203,7 +206,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       <span class="text-sm opacity-70 mt-2">The first time can take a while.</span>
     </BaseEmpty>
     <BaseEmpty
-      v-else-if="!renderedDoc && !components?.length && off"
+      v-else-if="!pending && !renderedDoc && !components?.length && off"
       data-testid="docs-off"
     >
       <Icon
@@ -213,7 +216,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       {{ off }}
     </BaseEmpty>
     <BaseEmpty
-      v-else-if="!renderedDoc && !components?.length"
+      v-else-if="!pending && !renderedDoc && !components?.length"
     >
       <Icon
         icon="carbon:document-unknown"

@@ -73,10 +73,13 @@ export function useComponentDocs(storyId: Ref<string | undefined>) {
   const off = ref<string>()
   const hot = import.meta.hot
   if (!hot) {
+    // The chunk loads on first use, and until then the tab said there were no docs (#1400).
     watch(storyId, async (id) => {
+      pending.value = true
       const { componentDocs } = await import('./component-docs-data')
       const docs = id ? componentDocs[id] : undefined
       components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
+      pending.value = false
     }, { immediate: true })
     return { components, pending, off }
   }

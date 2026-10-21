@@ -149,3 +149,27 @@ test.describe('the Docs tab before it has a table', () => {
     await expect(page.getByTestId('docs-pending')).toHaveCount(0)
   })
 })
+
+// A built book's docs data is a chunk loaded on first use: until it arrived, the tab
+// said "No documentation available", then showed the table (#1400).
+test('a built book says nothing about its docs until their data has loaded', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.endsWith(':dev'), 'dev answers over the socket, covered above')
+  let release!: () => void
+  const released = new Promise<void>(resolve => (release = resolve))
+  let held!: () => void
+  const holding = new Promise<void>(resolve => (held = resolve))
+  await page.route(/component-docs-data-.*\.js/, async (route) => {
+    held()
+    await released
+    await route.continue()
+  })
+  await page.goto(STORY)
+  await holding
+  await expect(page.locator('.poveste-story-docs')).toBeVisible()
+
+  await expect(page.getByText('No documentation available')).toHaveCount(0)
+  await expect(page.getByTestId('docs-pending')).toHaveCount(0)
+
+  release()
+  await expect(page.locator('[data-component="AutoDocsButton"]')).toBeVisible()
+})
