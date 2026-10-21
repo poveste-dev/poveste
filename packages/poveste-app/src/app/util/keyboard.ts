@@ -85,27 +85,31 @@ export function onKeyboardShortcut(shortcut: KeyboardShortcut | Ref<KeyboardShor
     modifiers.alt.pressed = event.altKey
     modifiers.shift.pressed = event.shiftKey
     modifiers.meta.pressed = event.metaKey
-    if (isMatchingShortcut(isRef(shortcut) ? shortcut.value : shortcut)) {
+    if (isMatchingShortcut(isRef(shortcut) ? shortcut.value : shortcut, event.key.toLocaleLowerCase())) {
       handler(event)
     }
   })
 }
 
-function isMatchingShortcut(shortcut: KeyboardShortcut): boolean {
+function isMatchingShortcut(shortcut: KeyboardShortcut, eventKey: string): boolean {
   for (const combination of shortcut) {
-    if (isMatchingCombination(combination.toLowerCase())) {
+    if (isMatchingCombination(combination.toLowerCase(), eventKey)) {
       return true
     }
   }
   return false
 }
 
-function isMatchingCombination(combination: string): boolean {
+function isMatchingCombination(combination: string, eventKey: string): boolean {
   const splitted = combination.split('+').map(key => key.trim())
   const targetKey = splitted.pop()
   // `split` always yields at least one element, so this is unreachable for any
   // real combination — an empty or blank one matches nothing, which is right.
   if (!targetKey) return false
+  // Only on the event for the key itself. A released key leaves `pressedKeys` on the
+  // next frame, so a modifier pressed again inside it matched too: two quick presses
+  // of ctrl+shift+d toggled three times (#1346).
+  if (eventKey !== targetKey) return false
   for (const [name, mod] of Object.entries(modifiers)) {
     if (splitted.includes(name) !== mod.pressed) {
       return false
