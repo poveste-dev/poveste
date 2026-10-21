@@ -1,3 +1,6 @@
-// What `poveste build` extracted, in a chunk of its own: loaded when a reader first
-// opens a story's docs, so a book whose docs nobody opens never downloads it.
-export { componentDocs } from 'virtual:$poveste-component-docs'
+import type { ComponentDoc } from '@poveste/shared'
+import { componentDocs as data } from 'virtual:$poveste-component-docs'
+
+// What `poveste build` extracted: a small map from each story to its components, each
+// in a chunk of its own, so a reader downloads only the tables of the stories they open (#1429).
+export const componentDocs: Record<string, Record<string, () => Promise<{ default: { doc: ComponentDoc } }>>> = data

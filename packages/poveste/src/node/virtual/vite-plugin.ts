@@ -77,6 +77,10 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       // return `\0${id}`
       }
 
+      if (id.startsWith(VirtualFiles.COMPONENT_DOC_PREFIX)) {
+        return `/__resolved__${id}`
+      }
+
       if (id.startsWith('virtual:md:')) {
         return `/__resolved__${id}`
       // @TODO
@@ -112,7 +116,11 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
 
       // Filled by `poveste build`; in dev the docs come over the dev socket instead.
       if (id === VirtualFiles.RESOLVED_COMPONENT_DOCS_ID) {
-        return `export const componentDocs = ${JSON.stringify(ctx.componentDocs ?? {})}\n`
+        return VirtualFiles.componentDocsMap(ctx)
+      }
+
+      if (id.startsWith(VirtualFiles.RESOLVED_COMPONENT_DOC_PREFIX)) {
+        return VirtualFiles.componentDoc(ctx, id)
       }
 
       if (id === VirtualFiles.RESOLVED_GENERATED_GLOBAL_SETUP) {

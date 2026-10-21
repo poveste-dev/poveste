@@ -37,6 +37,7 @@ export const RESOLVED_MARKDOWN_FILES = `\0${MARKDOWN_FILES}`
 export const COMMANDS = 'virtual:$poveste-commands'
 export const RESOLVED_COMMANDS = `/__resolved__${COMMANDS}`
 
+export * from './component-docs.js'
 export * from './markdown.js'
 export * from './noop.js'
 export * from './resolved-commands.js'

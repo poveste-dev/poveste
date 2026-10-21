@@ -77,7 +77,12 @@ export function useComponentDocs(storyId: Ref<string | undefined>) {
     watch(storyId, async (id) => {
       pending.value = true
       const { componentDocs } = await import('./component-docs-data')
-      const docs = id ? componentDocs[id] : undefined
+      const loaders = id ? componentDocs[id] : undefined
+      const docs = loaders && Object.fromEntries(await Promise.all(Object.entries(loaders).map(async ([file, load]) => [file, (await load()).default])))
+      // Another story was opened while these loaded.
+      if (id !== storyId.value) {
+        return
+      }
       components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
       pending.value = false
     }, { immediate: true })

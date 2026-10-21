@@ -68,11 +68,12 @@ test.describe('the docs of a React story\'s component', () => {
 test('ships docs data with no path of the machine that built it', () => {
   const here = dirname(fileURLToPath(import.meta.url))
   const assets = join(here, '..', '.poveste', 'dist', 'assets')
-  const chunks = readdirSync(assets).filter(file => /^component-docs-data-.*\.js$/.test(file))
-  expect(chunks).toHaveLength(1)
-  const data = readFileSync(join(assets, chunks[0]!), 'utf8')
+  // The story map, and a chunk per component, whose table is a JSON string (#1429).
+  const chunks = readdirSync(assets).filter(file => /component-docs-data[-_].*\.js$/.test(file))
+  expect(chunks.length).toBeGreaterThan(1)
+  const data = chunks.map(file => readFileSync(join(assets, file), 'utf8')).join('')
 
   expect(data).toContain('AutoDocsButton')
   expect(data).not.toContain(resolve(here, '..', '..', '..'))
-  expect(data).not.toMatch(/"error"|Require stack/)
+  expect(data).not.toMatch(/\\?"error\\?"|Require stack/)
 })
