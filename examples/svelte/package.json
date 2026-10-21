@@ -13,13 +13,13 @@
     "svelte": "^5.57.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.64.1",
     "@poveste/plugin-svelte": "workspace:*",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "lottie-web": "^5.12.2",
     "poveste": "workspace:*",
-    "sass": "^1.105.1",
-    "svelte-check": "^4.7.6",
+    "sass": "^1.105.2",
+    "svelte-check": "^4.7.7",
     "svelte-preprocess": "^6.0.5",
     "typescript": "catalog:",
     "vite": "catalog:"
