@@ -15,8 +15,6 @@ const EVENT_NAME = /^on[a-z]/i
 // disk carries it, unlike `x.svelte.ts`, which is a rune module a book may have.
 const VIRTUAL = '.tsx'
 
-const ownRequire = createRequire(import.meta.url)
-
 function isVirtual(file: string) {
   return file.endsWith(`.svelte${VIRTUAL}`) && !file.includes('/node_modules/')
 }
@@ -31,13 +29,13 @@ function realOf(file: string) {
  * requested component's `ComponentProps`, which the checker resolves through
  * imported and extended types the way the book's editor does (#501, #1160).
  */
-export async function createExtractor(context: DocgenExtractorContext): Promise<DocgenExtractor> {
+export function createExtractor(context: DocgenExtractorContext): DocgenExtractor {
   const root = context.root
   const options = (context.options ?? {}) as DocgenOptions
   const typescript = loadFromBook<typeof ts>(root, 'typescript', 'reads Svelte components\' types')
   const { VERSION, parse } = loadFromBook<typeof import('svelte/compiler')>(root, 'svelte/compiler', 'reads Svelte components\' source')
-  const { svelte2tsx } = await import('svelte2tsx')
-  const shims = ['svelte-shims-v4.d.ts', 'svelte-jsx-v4.d.ts'].map(file => join(dirname(ownRequire.resolve('svelte2tsx/package.json')), file))
+  const { svelte2tsx } = loadFromBook<typeof import('svelte2tsx')>(root, 'svelte2tsx', 'reads Svelte components\' types through it')
+  const shims = ['svelte-shims-v4.d.ts', 'svelte-jsx-v4.d.ts'].map(file => join(dirname(createRequire(join(root, 'package.json')).resolve('svelte2tsx/package.json')), file))
 
   const parsed = readTsconfig(typescript, root)
   // The book's `app.d.ts` and other globals, which the probe's imports would not reach.

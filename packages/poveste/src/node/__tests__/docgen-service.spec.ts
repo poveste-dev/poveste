@@ -232,6 +232,23 @@ describe('the docgen service', () => {
     }
   })
 
+  it('names TypeScript, not the plugin\'s own reason, in a book that has neither', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'poveste-no-ts-book-'))
+    try {
+      mkdirSync(join(root, 'node_modules', 'typescript'), { recursive: true })
+      writeFileSync(join(root, 'node_modules', 'typescript', 'package.json'), JSON.stringify({ name: 'typescript', version: '7.0.2' }))
+      const warn = vi.fn()
+      const unavailable = vi.fn(() => 'Auto-docs is off: no svelte2tsx.')
+      service({ root, plugins: [{ ...vue, docgen: { ...vue.docgen!, typescript: 'book', unavailable } }], warn })
+
+      expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/has TypeScript 7\.0\.2/))
+      expect(unavailable).not.toHaveBeenCalled()
+    }
+    finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   it('does not ask whether a plugin can document the book when the config turns it off', () => {
     const unavailable = vi.fn(() => 'no TypeScript')
     service({ enabled: false, plugins: [{ ...vue, docgen: { ...vue.docgen!, unavailable } }] })
