@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { formatDiff, formatPercent, MARKER, publishedPackages, sizeTable } from './package-sizes.ts'
+import { CEILINGS, formatDiff, formatPercent, MARKER, overCeilings, publishedPackages, sizeTable, tarballSizes } from './package-sizes.ts'
 
 describe('formatDiff', () => {
   it('prints an unchanged package as 0', () => {
@@ -70,5 +70,64 @@ describe('publishedPackages', () => {
     }
 
     expect(publishedPackages(root).map(p => p.name)).toEqual(['poveste'])
+  })
+})
+
+describe('overCeilings', () => {
+  const ceilings = {
+    'poveste': { bytes: 1000, reason: 'catches the tests' },
+    '@poveste/plugin-react': { reason: 'not measured yet' },
+  }
+
+  it('passes a package at or under its ceiling', () => {
+    expect(overCeilings({ poveste: 1000 }, ceilings)).toEqual([])
+  })
+
+  it('names a package over its ceiling, with its size and the reason the ceiling is there', () => {
+    expect(overCeilings({ poveste: 1001 }, ceilings)).toEqual(['`poveste` packs to 1001 B, over its ceiling of 1000 B (catches the tests).'])
+  })
+
+  // A new package would otherwise publish with nothing watching it.
+  it('names a published package with no ceiling', () => {
+    expect(overCeilings({ '@poveste/plugin-new': 10 }, ceilings)).toEqual(['`@poveste/plugin-new` has no ceiling in scripts/release/package-sizes.ts. Add one with the regression it catches.'])
+  })
+
+  it('reads a ceiling with no bytes as a note, not a limit', () => {
+    expect(overCeilings({ '@poveste/plugin-react': 1_000_000 }, ceilings)).toEqual([])
+  })
+})
+
+describe('the ceilings', () => {
+  const root = join(import.meta.dirname, '..', '..')
+
+  it('cover every published package, so a new one cannot publish unwatched', () => {
+    expect(publishedPackages(root).map(p => p.name).filter(name => !CEILINGS[name])).toEqual([])
+  })
+
+  it('each say what they catch', () => {
+    expect(Object.entries(CEILINGS).filter(([, ceiling]) => !ceiling.reason)).toEqual([])
+  })
+})
+
+describe('tarballSizes', () => {
+  it('weighs the tarball `pnpm pack` named for each published package', () => {
+    const root = mkdtempSync(join(tmpdir(), 'package-sizes-'))
+    mkdirSync(join(root, 'packages', 'app'), { recursive: true })
+    writeFileSync(join(root, 'packages', 'app', 'package.json'), JSON.stringify({ name: '@poveste/app', version: '1.2.3' }))
+    const tarballs = join(root, 'tarballs')
+    mkdirSync(tarballs)
+    writeFileSync(join(tarballs, 'poveste-app-1.2.3.tgz'), 'x'.repeat(42))
+
+    expect(tarballSizes(root, tarballs)).toEqual({ sizes: { '@poveste/app': 42 }, unpacked: [] })
+  })
+
+  // The smoke test exempts the screenshot plugin, which needs a real Chrome.
+  it('names a published package with no tarball there, rather than weighing it as nothing', () => {
+    const root = mkdtempSync(join(tmpdir(), 'package-sizes-'))
+    mkdirSync(join(root, 'packages', 'screenshot'), { recursive: true })
+    writeFileSync(join(root, 'packages', 'screenshot', 'package.json'), JSON.stringify({ name: '@poveste/plugin-screenshot', version: '1.2.3' }))
+    mkdirSync(join(root, 'tarballs'))
+
+    expect(tarballSizes(root, join(root, 'tarballs'))).toEqual({ sizes: {}, unpacked: ['@poveste/plugin-screenshot'] })
   })
 })

@@ -120,3 +120,7 @@ jobs:
           else
             gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@table.md > /dev/null
           fi
+
+      # After the table, so a PR over a ceiling still shows by how much.
+      - name: Hold each package to its ceiling
+        run: $MEASURE check head-sizes.json

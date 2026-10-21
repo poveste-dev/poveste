@@ -63,6 +63,11 @@ for p in "${CORE_PACKAGES[@]}" "${PLUGIN_PACKAGES[@]}"; do
   echo "  ✓ $p"
 done
 
+# What a consumer downloads, weighed from these same tarballs against each
+# package's ceiling, so a release cannot publish one that doubled (#988).
+echo "▸ Weighing the tarballs"
+node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$ROOT/scripts/release/package-sizes.ts" check-tarballs "$ROOT" "$TARBALLS"
+
 # Absolute paths to the core tarballs, for a single npm install. Plugins are
 # added per pass so a Vue consumer never pulls the Svelte plugin, or vice versa.
 CORE_TGZ=()
