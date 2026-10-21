@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
 /*
@@ -63,5 +66,42 @@ test.describe('the docs of a story\'s component', () => {
 
     await expect(component.locator('[data-slot="slots"] [data-slot-name="icon"]')).toContainText('Shown before the label.', { timeout: 60_000 })
     await expect(component.locator('[data-slot="events"] [data-event="press"]')).toContainText('MouseEvent')
+  })
+})
+
+// A story's own `autoDocs` (#1398). Both stories import `AutoDocsButton`, which the
+// story above documents in full.
+test.describe('a story that chooses its own table', () => {
+  test('shows only the sections it names', async ({ page }) => {
+    await page.goto('/story/auto-docs-props-only?tab=docs')
+    const component = page.locator('[data-component="AutoDocsButton"]')
+
+    await expect(component.locator('[data-slot="props"] [data-prop="label"]')).toBeVisible({ timeout: 60_000 })
+    await expect(component.locator('[data-slot="slots"]')).toHaveCount(0)
+    await expect(component.locator('[data-slot="events"]')).toHaveCount(0)
+  })
+
+  test('shows no table when it turns it off, and its components are never read', async ({ page }, testInfo) => {
+    if (testInfo.project.name.endsWith(':dev')) {
+      // The server answers over the HMR socket; its answer for this story is empty.
+      const answered = new Promise<string>((resolve) => {
+        page.on('websocket', socket => socket.on('framereceived', ({ payload }) => {
+          if (String(payload).includes('poveste:docgen-result') && String(payload).includes('"auto-docs-off"')) {
+            resolve(String(payload))
+          }
+        }))
+      })
+      await page.goto('/story/auto-docs-off?tab=docs')
+      expect(JSON.parse(await answered).data).toEqual({ storyId: 'auto-docs-off', components: {} })
+    }
+    else {
+      // What `poveste build` extracted holds the other stories' docs and none for this one.
+      const assets = join(dirname(fileURLToPath(import.meta.url)), '..', '.poveste', 'dist', 'assets')
+      const data = readdirSync(assets).filter(file => /^component-docs-data-.*\.js$/.test(file)).map(file => readFileSync(join(assets, file), 'utf8')).join('')
+      expect(data).toContain('"auto-docs-button"')
+      expect(data).not.toContain('"auto-docs-off"')
+      await page.goto('/story/auto-docs-off?tab=docs')
+    }
+    await expect(page.locator('[data-component]')).toHaveCount(0)
   })
 })

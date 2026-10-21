@@ -15,6 +15,7 @@ export async function run({ file, storyData }: ServerRunPayload) {
     icon: options.icon,
     iconColor: options.iconColor,
     docsOnly: options.docsOnly ?? false,
+    ...options.autoDocs !== undefined ? { autoDocs: options.autoDocs } : {},
     variants: [],
   }
 

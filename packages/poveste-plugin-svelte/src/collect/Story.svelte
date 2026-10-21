@@ -8,6 +8,7 @@
   export let icon = null
   export let iconColor = null
   export let docsOnly = false
+  export let autoDocs
   export let autoPropsDisabled = null
   export let initState = null
   export let meta = null
@@ -33,6 +34,7 @@
     icon,
     iconColor,
     docsOnly,
+    ...autoDocs !== undefined ? { autoDocs } : {},
     // Collected rather than inherited down: `MountStory` forwards story props
     // only to an implicit variant (#466). Left undefined when unset, or the
     // collector's `??=` merge could never apply `defaultStoryProps`.

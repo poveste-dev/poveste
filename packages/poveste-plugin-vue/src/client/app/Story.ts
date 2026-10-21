@@ -25,6 +25,12 @@ export default defineComponent({
       type: Object as PropType<Story['meta']>,
       default: undefined,
     },
+
+    // Read at collection; declared so it is not passed on to the variants (#1398).
+    autoDocs: {
+      type: [Boolean, Array] as PropType<Story['autoDocs']>,
+      default: undefined,
+    },
   },
 
   setup(props) {

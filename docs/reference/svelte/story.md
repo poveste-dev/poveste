@@ -229,6 +229,18 @@ That means it covers components the story imports and renders directly. A compon
 A story that declares a **variant** inside `{#if}`, `{#each}` or `{#await}` gets no auto-props at all. Those variants are registered in an order nothing can predict before the story runs, so the whole story is left alone rather than risk driving the wrong one.
 :::
 
+## `autoDocs`
+
+The auto-docs table on this story's **Docs** tab, when the book's [`autoDocs`](../config.md#autodocs) is on. `false` shows none, and the story's components are never read for it, in dev or in a build. A list shows only the sections it names, in the table's own order: `props`, `slots`, `events`. A component with nothing in those sections gets no table. Left out, the story shows the whole table.
+
+```svelte
+<Hst.Story autoDocs={['props', 'events']}>
+  <!-- ... -->
+</Hst.Story>
+```
+
+It belongs to the story, not to a variant: the table lists the components the story imports.
+
 ## `meta`
 
 `StoryMeta`, an object of your own keys plus `storyOptions`.

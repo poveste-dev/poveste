@@ -255,6 +255,8 @@ export default defineConfig({
 })
 ```
 
+A story can choose its own table with its `autoDocs` option: `false` for none, or a list of the sections to show, such as `['props', 'events']`. See the [Vue](./vue/story.md#autodocs) and [Svelte](./svelte/story.md#autodocs) story references; a Solid or React story sets the same field in `defineStory`. A story can't turn auto-docs on in a book that has it off. It isn't a way to save memory: a list still reads the whole component, and `false` skips only that story's components, so once another story's docs are opened the checker is held anyway. To avoid that cost, set `autoDocs: false` here.
+
 ## `globalStyles`
 
 `string[]` - Default: `[]`

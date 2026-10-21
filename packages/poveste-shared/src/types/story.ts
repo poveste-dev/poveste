@@ -45,10 +45,19 @@ export interface VariantProps extends CommonProps, InheritedProps {
   // No additional properties
 }
 
+/** A section of the auto-docs table on a story's Docs tab. */
+export type AutoDocsSection = 'props' | 'slots' | 'events'
+
 export interface StoryProps extends CommonProps, InheritedProps {
   group?: string
   layout?: StoryLayout
   docsOnly?: boolean
+  /**
+   * The auto-docs table on this story's Docs tab: `false` for none, never extracting
+   * the story's components; an array for only those sections. Left out, the story
+   * follows the book's `autoDocs`, which a story cannot turn on (#1398).
+   */
+  autoDocs?: boolean | AutoDocsSection[]
 }
 
 export interface CommonMeta {}
@@ -71,6 +80,7 @@ export interface Story {
   icon?: string
   iconColor?: string
   docsOnly?: boolean
+  autoDocs?: boolean | AutoDocsSection[] | undefined
   file?: StoryFile
   lastSelectedVariant?: Variant
   /** The story's own slots. Any of the three can be absent: a story may define none. */
@@ -180,6 +190,7 @@ export interface ServerStory {
   icon?: string | undefined
   iconColor?: string | undefined
   docsOnly?: boolean | undefined
+  autoDocs?: boolean | AutoDocsSection[] | undefined
   docsText?: string | undefined
   meta?: StoryMeta | undefined
 }

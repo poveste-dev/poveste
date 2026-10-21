@@ -30,6 +30,15 @@ describe('collecting a React story file', () => {
     expect(story?.variants.map(v => [v.id, v.title])).toEqual([['primary', 'Primary'], ['src-button-story-tsx-1', 'Ghost']])
   })
 
+  // The server reads it before extracting anything for the story (#1398).
+  it('carries the story\'s own `autoDocs`, and leaves it out when unset', async () => {
+    const [off] = await collect(`export default { autoDocs: false, render: () => null }`)
+    const [plain] = await collect(`export default { render: () => null }`)
+
+    expect(off?.autoDocs).toBe(false)
+    expect(plain).not.toHaveProperty('autoDocs')
+  })
+
   it('gives a story with only its own render one implicit variant', async () => {
     const [story] = await collect(`export default { render: () => null }`)
 

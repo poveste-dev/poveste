@@ -7,6 +7,8 @@ export const omitInheritStoryProps = [
   'file',
   'slots',
   'lastSelectedVariant',
+  // The Docs tab belongs to the story, not to a variant (#1398).
+  'autoDocs',
 ]
 
 /**

@@ -1,4 +1,4 @@
-import type { AutoDocsOptions, Plugin } from '@poveste/shared'
+import type { AutoDocsOptions, AutoDocsSection, Plugin } from '@poveste/shared'
 import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
@@ -57,7 +57,7 @@ export interface DocgenServiceOptions {
   /** The component files a story imports, resolved to absolute paths. */
   componentsOf: (storyId: string) => string[] | Promise<string[]>
   /** The story's own file and the framework collection gave it, for a plugin whose `docgen.scope` is `story`. */
-  storyOf?: (storyId: string) => { file: string, supportPluginId: string } | undefined
+  storyOf?: (storyId: string) => { file: string, supportPluginId: string, autoDocs?: boolean | AutoDocsSection[] | undefined } | undefined
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
   /** Called with files the extractors read that nothing was watching yet. */
   watch?: (files: string[]) => void
@@ -161,6 +161,11 @@ export function createDocgenService(options: DocgenServiceOptions) {
         return { storyId, components: {} }
       }
       await options.collected
+      const story = options.storyOf?.(storyId)
+      // A story that turns its table off is never extracted, in dev or in a build (#1398).
+      if (story?.autoDocs === false) {
+        return { storyId, components: {} }
+      }
       const files: string[] = []
       function own(file: string, plugin: Plugin | undefined) {
         if (plugin) {
@@ -168,7 +173,6 @@ export function createDocgenService(options: DocgenServiceOptions) {
           files.push(file)
         }
       }
-      const story = options.storyOf?.(storyId)
       if (story) {
         own(story.file, storyPluginFor(story.file, story.supportPluginId))
       }

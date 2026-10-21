@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { tagHref, tagText, toEntries } from '../app/util/component-docs'
+import { onlySections, tagHref, tagText, toEntries } from '../app/util/component-docs'
 
 describe('the docs a story\'s components answer with', () => {
   it('names each component after its file', () => {
@@ -47,5 +47,28 @@ describe('reading tags', () => {
   it('links a @see only when it carries a URL', () => {
     expect(tagHref('the guide https://poveste.dev/guide')).toBe('https://poveste.dev/guide')
     expect(tagHref('BaseButton')).toBeUndefined()
+  })
+})
+
+describe('a story that names the sections of its table', () => {
+  const prop = { name: 'label', type: 'string', required: true, tags: [] }
+  const slot = { name: 'default', tags: [] }
+  const event = { name: 'click', tags: [] }
+  const button = { file: 'src/Button.vue', name: 'Button', doc: { props: [prop], slots: [slot], events: [event] } }
+
+  it('shows the whole table when it names none', () => {
+    expect(onlySections([button], undefined)).toEqual([button])
+    expect(onlySections([button], true)).toEqual([button])
+  })
+
+  it('shows only the sections it names', () => {
+    expect(onlySections([button], ['events', 'props'])).toEqual([{ ...button, doc: { props: [prop], slots: [], events: [event] } }])
+  })
+
+  it('drops a component with nothing in those sections, and keeps one that failed', () => {
+    const slotsOnly = { file: 'src/Layout.vue', name: 'Layout', doc: { props: [], slots: [slot], events: [] } }
+    const broken = { file: 'src/Broken.vue', name: 'Broken', error: 'no props type' }
+
+    expect(onlySections([slotsOnly, broken], ['props'])).toEqual([broken])
   })
 })

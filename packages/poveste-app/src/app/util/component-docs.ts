@@ -1,4 +1,4 @@
-import type { ComponentDoc, DocTag } from '@poveste/shared'
+import type { AutoDocsSection, ComponentDoc, DocTag } from '@poveste/shared'
 import type { Ref } from 'vue'
 import { onBeforeUnmount, ref, watch } from 'vue'
 
@@ -25,6 +25,28 @@ export function toEntries(result: StoryDocsResult): ComponentDocsEntry[] {
     ...doc ? { doc } : {},
     ...error ? { error } : {},
   }))
+}
+
+/**
+ * Only the sections a story's `autoDocs` names, in the table's own order. A component
+ * left with nothing to show is dropped; one that failed keeps its error (#1398).
+ */
+export function onlySections(entries: ComponentDocsEntry[], autoDocs: boolean | AutoDocsSection[] | undefined): ComponentDocsEntry[] {
+  if (!Array.isArray(autoDocs)) {
+    return entries
+  }
+  return entries.flatMap((entry) => {
+    if (!entry.doc) {
+      return [entry]
+    }
+    const doc = {
+      ...entry.doc,
+      props: autoDocs.includes('props') ? entry.doc.props : [],
+      slots: autoDocs.includes('slots') ? entry.doc.slots : [],
+      events: autoDocs.includes('events') ? entry.doc.events : [],
+    }
+    return doc.props.length || doc.slots.length || doc.events.length ? [{ ...entry, doc }] : []
+  })
 }
 
 export function tagText(tags: DocTag[], name: string): string | undefined {
