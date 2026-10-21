@@ -27,7 +27,9 @@ test.describe('generating a story from a component', () => {
   async function generate(page: import('@playwright/test').Page) {
     await page.getByRole('button', { name: 'Search stories' }).click()
     await page.getByPlaceholder(/Search for stories/).fill('Generate')
-    await page.getByText('Generate Vue 3 story from component').click()
+    // The result, not any text: the search's screen-reader announcement names the
+    // selected result too, and matching both failed under load (#1347).
+    await page.getByTestId('search-item').filter({ hasText: 'Generate Vue 3 story from component' }).click()
     await page.getByLabel('Choose a component').fill('Amsterdam')
     await page.getByText('src/components/Amsterdam.vue', { exact: true }).click()
     await expect(page.getByLabel('File name')).toHaveValue('Amsterdam.story.vue')
