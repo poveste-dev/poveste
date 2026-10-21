@@ -58,7 +58,8 @@ overrides:
   # MISSING_EXPORT errors and no Nuxt story build. Pinned so the family resolves
   # as one, so it moves with `vue-i18n`: left at 11.4.12 under 11.4.14, core-base
   # imported `getOwn` and no Vue story collected (#1328). Drop it when the ranges
-  # agree without help.
+  # agree without help. They did not on 21 Oct: without it pnpm resolved
+  # `@intlify/shared` and `@intlify/core-base` 11.4.9 beside 11.4.14 (#1406).
   '@intlify/shared': 11.4.14
   # Scoped to the 2.x line, which the advisories are about: `examples/sveltekit3`
   # asks for Kit 3, and an unscoped override resolved it to 2.70 (#1200).
