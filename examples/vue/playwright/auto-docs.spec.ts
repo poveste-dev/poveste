@@ -196,3 +196,18 @@ test('a built book downloads the opened story\'s docs data, not the book\'s', as
   expect(fetched).toHaveLength(1)
   expect(readFileSync(join(assets, fetched[0]!), 'utf8')).toContain('The text on the button.')
 })
+
+// A tab left open across a deploy asks for a chunk the server no longer has: the tab
+// stopped at "loading" for good, with an unhandled rejection.
+test('a built book whose docs chunk fails to load says it has no documentation', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.endsWith(':dev'), 'dev answers over the socket')
+  await page.route(/__resolved__virtual_component-docs-data_\d+-[\w-]+\.js$/, route => route.abort())
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+
+  await page.goto(STORY)
+
+  await expect(page.getByText('No documentation available')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('[data-component]')).toHaveCount(0)
+  expect(errors).toEqual([])
+})

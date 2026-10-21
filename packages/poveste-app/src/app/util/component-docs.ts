@@ -74,17 +74,32 @@ export function useComponentDocs(storyId: Ref<string | undefined>) {
   const hot = import.meta.hot
   if (!hot) {
     // The chunk loads on first use, and until then the tab said there were no docs (#1400).
-    watch(storyId, async (id) => {
+    watch(storyId, async (id, _, onCleanup) => {
+      // Another story opened while these loaded.
+      let stale = false
+      onCleanup(() => stale = true)
       pending.value = true
-      const { componentDocs } = await import('./component-docs-data')
-      const loaders = id ? componentDocs[id] : undefined
-      const docs = loaders && Object.fromEntries(await Promise.all(Object.entries(loaders).map(async ([file, load]) => [file, (await load()).default])))
-      // Another story was opened while these loaded.
-      if (id !== storyId.value) {
-        return
+      try {
+        const { componentDocs } = await import('./component-docs-data')
+        const loaders = id ? componentDocs[id] : undefined
+        const docs = loaders && Object.fromEntries(await Promise.all(Object.entries(loaders).map(async ([file, load]) => [file, (await load()).default])))
+        if (!stale) {
+          components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
+        }
       }
-      components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
-      pending.value = false
+      catch (error) {
+        // A chunk the server no longer has, as in a tab left open across a deploy:
+        // no table, rather than a tab that waits forever.
+        if (!stale) {
+          components.value = undefined
+          console.error('[poveste] could not load this story\'s component docs:', error)
+        }
+      }
+      finally {
+        if (!stale) {
+          pending.value = false
+        }
+      }
     }, { immediate: true })
     return { components, pending, off }
   }

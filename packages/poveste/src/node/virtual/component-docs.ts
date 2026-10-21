@@ -3,9 +3,18 @@ import type { Context } from '../context.js'
 export const COMPONENT_DOC_PREFIX = 'virtual:component-docs-data:'
 export const RESOLVED_COMPONENT_DOC_PREFIX = `/__resolved__${COMPONENT_DOC_PREFIX}`
 
-/** Every documented file once, so a component two stories import is one chunk. */
-function documentedFiles(ctx: Context): string[] {
-  return [...new Set(Object.values(ctx.componentDocs ?? {}).flatMap(Object.keys))].sort()
+const indexes = new WeakMap<NonNullable<Context['componentDocs']>, { files: string[], results: Map<string, unknown> }>()
+
+/** Every documented file once, so a component two stories import is one chunk; built once per build. */
+function documentedFiles(ctx: Context): { files: string[], results: Map<string, unknown> } {
+  const docs = ctx.componentDocs ?? {}
+  let index = indexes.get(docs)
+  if (!index) {
+    const results = new Map(Object.values(docs).flatMap(components => Object.entries(components)))
+    index = { files: [...results.keys()].sort(), results }
+    indexes.set(docs, index)
+  }
+  return index
 }
 
 /**
@@ -13,7 +22,7 @@ function documentedFiles(ctx: Context): string[] {
  * Docs tab downloads its own tables, not the book's (#1429).
  */
 export function componentDocsMap(ctx: Context): string {
-  const index = new Map(documentedFiles(ctx).map((file, i) => [file, i]))
+  const index = new Map(documentedFiles(ctx).files.map((file, i) => [file, i]))
   const stories = Object.entries(ctx.componentDocs ?? {}).map(([storyId, components]) => {
     const loaders = Object.keys(components).map(file => `${JSON.stringify(file)}:()=>import(${JSON.stringify(`${COMPONENT_DOC_PREFIX}${index.get(file)}`)})`)
     return `${JSON.stringify(storyId)}:{${loaders.join(',')}}`
@@ -22,8 +31,9 @@ export function componentDocsMap(ctx: Context): string {
 }
 
 export function componentDoc(ctx: Context, id: string): string | undefined {
-  const file = documentedFiles(ctx)[Number(id.slice(RESOLVED_COMPONENT_DOC_PREFIX.length))]
-  const result = file ? Object.values(ctx.componentDocs!).find(components => components[file])?.[file] : undefined
+  const { files, results } = documentedFiles(ctx)
+  const file = files[Number(id.slice(RESOLVED_COMPONENT_DOC_PREFIX.length))]
+  const result = file ? results.get(file) : undefined
   // A string, which the unminified build leaves compact, where it would print an object literal out in full.
   return result ? `export default JSON.parse(${JSON.stringify(JSON.stringify(result))})\n` : undefined
 }
