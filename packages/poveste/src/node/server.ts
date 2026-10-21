@@ -193,7 +193,7 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected,
     storyOf: storyId => storyOf(ctx.storyFiles, storyId),
-    componentsOf: storyId => componentsOfStory(ctx.storyFiles, nodeServer.moduleGraph, storyId),
+    componentsOf: storyId => componentsOfStory(ctx.storyFiles, nodeServer, storyId),
     watch: files => server.watcher.add(files),
   })
   onOpen('docgen', () => docgen.dispose())

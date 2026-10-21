@@ -5,6 +5,13 @@ import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
 import { typescriptProblem, typesProblem } from './typescript.js'
 
+type StoryComponentsListed = string[] | { files: string[], unresolved?: number }
+
+async function listed(value: StoryComponentsListed | Promise<StoryComponentsListed>): Promise<{ files: string[], unresolved: number }> {
+  const result = await value
+  return Array.isArray(result) ? { files: result, unresolved: 0 } : { files: result.files, unresolved: result.unresolved ?? 0 }
+}
+
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
 
 export interface DocgenRunner {
@@ -54,8 +61,11 @@ export interface DocgenServiceOptions {
   bookOptions?: AutoDocsOptions | undefined
   /** Settles once the first full collection has finished. */
   collected: Promise<void>
-  /** The component files a story imports, resolved to absolute paths. */
-  componentsOf: (storyId: string) => string[] | Promise<string[]>
+  /**
+   * The component files a story names, resolved to absolute paths, and how many of its
+   * capitalised imports reached no component file (#1432).
+   */
+  componentsOf: (storyId: string) => StoryComponentsListed | Promise<StoryComponentsListed>
   /** The story's own file and the framework collection gave it, for a plugin whose `docgen.scope` is `story`. */
   storyOf?: (storyId: string) => { file: string, supportPluginId: string, autoDocs?: boolean | AutoDocsSection[] | undefined } | undefined
   createRunner?: (data: DocgenWorkerData) => DocgenRunner
@@ -124,7 +134,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
       return undefined
     }
     const story = options.storyOf?.(storyId)
-    const files = await options.componentsOf(storyId)
+    const { files } = await listed(options.componentsOf(storyId))
     for (const [plugin, reason] of unavailable) {
       const { scope = 'imports', match } = plugin.docgen!
       const documents = scope === 'story'
@@ -135,6 +145,13 @@ export function createDocgenService(options: DocgenServiceOptions) {
       }
     }
     return undefined
+  }
+
+  /** Why a story that imports components got no table: none of them reached a file auto-docs reads (#1432). */
+  function untraced(unresolved: number): string | undefined {
+    return unresolved
+      ? `No table: auto-docs found no component file behind ${unresolved === 1 ? 'the component' : `the ${unresolved} components`} this story imports. It follows imports and re-exports to a component's own file; a component rendered by a helper, or exported some other way, it cannot reach. Name the components this story documents with \`component\` on its \`<Story>\`.`
+      : undefined
   }
 
   function start() {
@@ -203,11 +220,12 @@ export function createDocgenService(options: DocgenServiceOptions) {
       if (story) {
         own(story.file, storyPluginFor(story.file, story.supportPluginId))
       }
-      for (const file of await options.componentsOf(storyId)) {
+      const named = await listed(options.componentsOf(storyId))
+      for (const file of named.files) {
         own(file, pluginFor(file))
       }
       const components = Object.fromEntries(await extract(files))
-      const off = Object.keys(components).length ? undefined : await offReason(storyId)
+      const off = Object.keys(components).length ? undefined : await offReason(storyId) ?? untraced(named.unresolved)
       return { storyId, components, ...off ? { off } : {} }
     },
 

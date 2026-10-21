@@ -148,7 +148,7 @@ export async function build(ctx: Context) {
       await wrapLogError('destroyCollectStories', () => destroyCollectStories())
     }
 
-    ctx.componentDocs = await extractComponentDocs(ctx, server.moduleGraph)
+    ctx.componentDocs = await extractComponentDocs(ctx, server)
 
     const counts = buildCounts(ctx.storyFiles)
 

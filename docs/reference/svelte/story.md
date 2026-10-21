@@ -241,6 +241,25 @@ The auto-docs table on this story's **Docs** tab, when the book's [`autoDocs`](.
 
 It belongs to the story, not to a variant: the table lists the components the story imports.
 
+## `component`
+
+The component, or a list of them, that this story's **Docs** tab documents, in place of the components it imports. Use it when the story renders a helper that wraps what it shows:
+
+```svelte
+<script lang="ts">
+  import { SelectRoot, SelectTrigger } from '..'
+  import SelectDemo from './_SelectDemo.svelte'
+
+  const { Hst } = $props()
+</script>
+
+<Hst.Story component={[SelectRoot, SelectTrigger]}>
+  <SelectDemo />
+</Hst.Story>
+```
+
+Auto-docs reads it from the story's source, so name components the story imports, or members of a namespace it imports (`Select.Root`). A named component that can't be traced to a file gets no table, and `poveste dev` says why.
+
 ## `meta`
 
 `StoryMeta`, an object of your own keys plus `storyOptions`.

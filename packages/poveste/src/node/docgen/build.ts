@@ -1,4 +1,4 @@
-import type { ModuleGraph } from 'vite'
+import type { ViteDevServer } from 'vite'
 import type { Context } from '../context.js'
 import type { StoryDocsResult } from './protocol.js'
 import { componentsOfStory, storyOf } from './components-of.js'
@@ -8,7 +8,7 @@ import { createDocgenService } from './service.js'
  * The build's pass (#1159): with no reader to wait for, every story's named
  * components are extracted once, after collection, into what the book ships.
  */
-export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGraph): Promise<Record<string, StoryDocsResult['components']>> {
+export async function extractComponentDocs(ctx: Context, server: Pick<ViteDevServer, 'moduleGraph' | 'pluginContainer'>): Promise<Record<string, StoryDocsResult['components']>> {
   const docgen = createDocgenService({
     root: ctx.root,
     plugins: ctx.config.plugins,
@@ -16,7 +16,7 @@ export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGrap
     bookOptions: typeof ctx.config.autoDocs === 'object' ? ctx.config.autoDocs : undefined,
     collected: Promise.resolve(),
     storyOf: storyId => storyOf(ctx.storyFiles, storyId),
-    componentsOf: storyId => componentsOfStory(ctx.storyFiles, moduleGraph, storyId),
+    componentsOf: storyId => componentsOfStory(ctx.storyFiles, server, storyId),
   })
   if (!docgen.enabled) {
     return {}

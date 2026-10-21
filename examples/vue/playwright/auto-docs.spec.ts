@@ -211,3 +211,35 @@ test('a built book whose docs chunk fails to load says it has no documentation',
   await expect(page.locator('[data-component]')).toHaveCount(0)
   expect(errors).toEqual([])
 })
+
+// Stories that import their components through a barrel got no table (#1432).
+test.describe('a story\'s components, through re-exports', () => {
+  test('documents each part a story imports through a barrel, the root first and open', async ({ page }) => {
+    await page.goto('/story/auto-docs-tabs?tab=docs')
+    const parts = page.locator('[data-slot="component"]')
+
+    await expect(parts).toHaveCount(4, { timeout: 60_000 })
+    await expect(parts.first()).toHaveAttribute('data-component', 'AutoDocsTabsRoot')
+    await expect(parts.first().locator('[data-prop="modelValue"]')).toBeVisible()
+    await expect(page.locator('[data-slot="component"][open]')).toHaveCount(1)
+  })
+
+  test('documents exactly what a story names in `component`, not the helper it renders', async ({ page }) => {
+    await page.goto('/story/auto-docs-named?tab=docs')
+
+    await expect(page.locator('[data-component="AutoDocsTabsTrigger"] [data-prop="value"]')).toBeVisible({ timeout: 60_000 })
+    await expect(page.locator('[data-slot="component"]')).toHaveCount(1)
+  })
+
+  test('says why a story whose components it cannot reach has no table, in dev', async ({ page }, testInfo) => {
+    await page.goto('/story/auto-docs-untraced?tab=docs')
+
+    if (testInfo.project.name.endsWith(':dev')) {
+      await expect(page.getByTestId('docs-off')).toContainText('auto-docs found no component file behind the component this story imports', { timeout: 60_000 })
+    }
+    else {
+      await expect(page.getByText('No documentation available')).toBeVisible({ timeout: 60_000 })
+    }
+    await expect(page.locator('[data-slot="component"]')).toHaveCount(0)
+  })
+})

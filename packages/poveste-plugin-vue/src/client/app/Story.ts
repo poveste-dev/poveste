@@ -1,5 +1,5 @@
 import type { Story } from '@poveste/shared'
-import type { PropType, VNode } from 'vue'
+import type { Component, PropType, VNode } from 'vue'
 import type { PreviewRenderContext } from './render-context.js'
 import { omitInheritStoryProps } from '@poveste/shared'
 import { cloneVNode, computed, defineComponent, h, isRef, reactive, useAttrs } from 'vue'
@@ -29,6 +29,12 @@ export default defineComponent({
     // Read at collection; declared so it is not passed on to the variants (#1398).
     autoDocs: {
       type: [Boolean, Array] as PropType<Story['autoDocs']>,
+      default: undefined,
+    },
+
+    // The components the Docs tab documents, read from the source by auto-docs (#1432).
+    component: {
+      type: [Object, Function, Array] as PropType<Component | Component[]>,
       default: undefined,
     },
   },

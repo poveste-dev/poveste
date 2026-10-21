@@ -51,6 +51,15 @@ export function onlySections(entries: ComponentDocsEntry[], autoDocs: boolean | 
   })
 }
 
+/** Above this many, a story's components after the first start collapsed: a compound story can name 27 parts (#1432). */
+export const OPEN_PARTS = 3
+
+/** A compound component's root first, `SelectRoot` before `SelectTrigger`, else the order they came in. */
+export function rootFirst(entries: ComponentDocsEntry[]): ComponentDocsEntry[] {
+  const root = entries.find(entry => entry.name.endsWith('Root'))
+  return root ? [root, ...entries.filter(entry => entry !== root)] : entries
+}
+
 export function tagText(tags: DocTag[], name: string): string | undefined {
   const tag = tags.find(tag => tag.name === name)
   return tag ? (tag.text ?? '') : undefined

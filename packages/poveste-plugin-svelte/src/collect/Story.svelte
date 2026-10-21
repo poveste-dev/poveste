@@ -9,6 +9,9 @@
   export let iconColor = null
   export let docsOnly = false
   export let autoDocs
+  // Read from the source by auto-docs, not here (#1432).
+  // svelte-ignore export_let_unused
+  export let component
   export let autoPropsDisabled = null
   export let initState = null
   export let meta = null
