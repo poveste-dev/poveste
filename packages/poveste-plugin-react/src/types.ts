@@ -1,4 +1,4 @@
-import type { Awaitable, Story, StoryProps, Variant, VariantProps } from '@poveste/shared'
+import type { Awaitable, Story, StoryComponentOptions, StoryProps, Variant, VariantProps } from '@poveste/shared'
 import type { ComponentType, ReactNode } from 'react'
 
 // The same story format as `@poveste/plugin-solid`: a default-exported object of
@@ -40,7 +40,7 @@ export interface VariantOptions<S extends object = Record<string, any>> extends 
   setupApp?: ReactStorySetupHandler
 }
 
-export interface StoryOptions<S extends object = Record<string, any>> extends Omit<StoryProps, 'setupApp'> {
+export interface StoryOptions<S extends object = Record<string, any>> extends Omit<StoryProps, 'setupApp'>, StoryComponentOptions<ComponentType<any>> {
   /** A story with no `variants` and a `render` of its own has one implicit variant. */
   variants?: VariantOptions<S>[]
   render?: (api: ReactRenderApi<S>) => ReactNode
