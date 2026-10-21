@@ -22,6 +22,8 @@ export function HstSvelte(): Plugin {
     docgen: {
       match: file => file.endsWith('.svelte') && !file.endsWith('.story.svelte'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
+      // `svelte2tsx`'s output is read with the book's TypeScript (#1401).
+      typescript: 'book',
     },
 
     async defaultConfig() {
