@@ -13,14 +13,15 @@ export interface ComponentDocsEntry {
 
 interface StoryDocsResult {
   storyId: string
-  components: Record<string, { doc?: ComponentDoc, error?: string }>
+  components: Record<string, { doc?: ComponentDoc, error?: string, name?: string }>
 }
 
 export function toEntries(result: StoryDocsResult): ComponentDocsEntry[] {
-  return Object.entries(result.components).map(([file, { doc, error }]) => ({
+  return Object.entries(result.components).map(([file, { doc, error, name }]) => ({
     file,
-    // A JSX story's result is keyed by the story file, so the extractor names the component.
-    name: doc?.name ?? file.split('/').pop()!.replace(/\.[^.]+$/, ''),
+    // A JSX story's result is keyed by the story file, so the extractor names the component,
+    // and an unnamed one, such as an inline function, goes by the story's file name.
+    name: doc?.name ?? name ?? file.split('/').pop()!.replace(/(?:\.story)?\.[^.]+$/, ''),
     ...doc ? { doc } : {},
     ...error ? { error } : {},
   }))

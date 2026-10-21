@@ -52,6 +52,16 @@ describe('the docgen engine', () => {
     expect(results).toEqual({ '/book/src/A.vue': { error: 'no props type' } })
   })
 
+  it('answers with the component an extractor names in its failure', async () => {
+    const { module } = fakeModule({ extract: () => {
+      throw Object.assign(new Error('`Alert` has no props type to read'), { component: 'Alert' })
+    } })
+
+    const results = await engine(module).extract([{ name: 'vue', file: '/book/src/Alert.story.tsx' }])
+
+    expect(results).toEqual({ '/book/src/Alert.story.tsx': { error: '`Alert` has no props type to read', name: 'Alert' } })
+  })
+
   // A missing TypeScript reached the reader, and a built book, as Node's whole
   // MODULE_NOT_FOUND message: its require stack, with the machine's paths (#1382).
   it('answers with the error\'s first line, without the book\'s root or another absolute path', async () => {

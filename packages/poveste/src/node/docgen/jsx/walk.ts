@@ -34,19 +34,24 @@ export function documentStory(typescript: typeof ts, program: ts.Program, file: 
   if (declaredIn && options.exclude?.some(pattern => declaredIn.includes(pattern))) {
     return undefined
   }
-  const type = checker.getTypeAtLocation(component)
-  const props = propsType(typescript, checker, type)
-  if (!props) {
-    throw new Error(`\`${nameOf(typescript, component) ?? 'the component'}\` has no props type to read`)
-  }
   const name = nameOf(typescript, component)
-  return documentProps(typescript, checker, props, {
-    location: component,
-    ...name ? { name } : {},
-    defaults: codeDefaults(typescript, checker, component, dialect),
-    slotType: dialect.slotType,
-    childrenFrom: dialect.childrenTypes,
-  }, options)
+  try {
+    const props = propsType(typescript, checker, checker.getTypeAtLocation(component))
+    if (!props) {
+      throw new Error(`\`${name ?? 'the component'}\` has no props type to read`)
+    }
+    return documentProps(typescript, checker, props, {
+      location: component,
+      ...name ? { name } : {},
+      defaults: codeDefaults(typescript, checker, component, dialect),
+      slotType: dialect.slotType,
+      childrenFrom: dialect.childrenTypes,
+    }, options)
+  }
+  catch (error) {
+    // The result is keyed by the story file, so the failure names the component for the reader.
+    throw name && error instanceof Error ? Object.assign(error, { component: name }) : error
+  }
 }
 
 /** `Button`, `Tabs.Root`, or the component inside `memo(Button)`; nothing for an inline function. */

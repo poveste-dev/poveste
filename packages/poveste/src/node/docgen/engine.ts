@@ -10,8 +10,11 @@ export interface EngineExtractorSpec {
   options?: unknown
 }
 
-/** An empty result is a file the extractor found nothing to document in, such as a story naming no component. */
-export type ExtractResult = { doc: ComponentDoc } | { doc?: undefined, error: string } | { doc?: undefined, error?: undefined }
+/**
+ * An empty result is a file the extractor found nothing to document in, such as a story naming no component.
+ * A failure's `name` is the component's, when the extractor knew it and the file is not the component's own.
+ */
+export type ExtractResult = { doc: ComponentDoc } | { doc?: undefined, error: string, name?: string } | { doc?: undefined, error?: undefined }
 
 export interface DocgenEngineOptions {
   root: string
@@ -99,7 +102,8 @@ export function createDocgenEngine(options: DocgenEngineOptions) {
           results[file] = doc ? { doc } : {}
         }
         catch (error) {
-          results[file] = { error: describeError(error, options.root) }
+          const component = (error as { component?: unknown } | undefined)?.component
+          results[file] = { error: describeError(error, options.root), ...typeof component === 'string' ? { name: component } : {} }
         }
         await recycleIfNeeded()
       }

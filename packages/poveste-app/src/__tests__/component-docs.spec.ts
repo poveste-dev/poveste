@@ -24,6 +24,18 @@ describe('the docs a story\'s components answer with', () => {
 
     expect(entries).toEqual([{ file: 'src/Button.story.tsx', name: 'Button', doc }])
   })
+
+  it('names a component the extractor named in its failure, not the story file it was read from', () => {
+    const entries = toEntries({ storyId: 'alert', components: { 'src/Banner.story.tsx': { error: 'no props type', name: 'Alert' } } })
+
+    expect(entries).toEqual([{ file: 'src/Banner.story.tsx', name: 'Alert', error: 'no props type' }])
+  })
+
+  it('names an unnamed component after its story file, without `.story`', () => {
+    const entries = toEntries({ storyId: 'alert', components: { 'src/Alert.story.tsx': { error: 'TypeScript did not read the story file' } } })
+
+    expect(entries).toEqual([{ file: 'src/Alert.story.tsx', name: 'Alert', error: 'TypeScript did not read the story file' }])
+  })
 })
 
 describe('reading tags', () => {

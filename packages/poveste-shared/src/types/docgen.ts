@@ -50,6 +50,10 @@ export interface ComponentDoc {
  * memory this whole design is about: `dispose` must let it go.
  */
 export interface DocgenExtractor {
+  /**
+   * A failure is thrown. When the file is not named after the component, as with a
+   * JSX story, an error carrying a `component` string names it for the reader.
+   */
   extract: (file: string) => ComponentDoc | undefined | Promise<ComponentDoc | undefined>
   /** A file changed on disk. Called for any file, not only components. */
   update?: (file: string) => void | Promise<void>
