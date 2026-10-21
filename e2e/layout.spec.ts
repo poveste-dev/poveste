@@ -83,6 +83,36 @@ test.describe('layout customization', () => {
     await expect(page.getByTestId('story-list-item')).toHaveCount(0)
   })
 
+  // Focus stayed on the chip, behind the pane, and the next Tab went to the top
+  // bar (#1372).
+  test('is a dialog that takes focus, keeps Tab inside, and gives it back on close', async ({ page }) => {
+    const chip = page.getByTestId('layout-btn')
+    const dialog = page.getByRole('dialog', { name: 'Customize Layout' })
+    const focusIsInside = async () => dialog.evaluate(el => el.contains(document.activeElement))
+    await expect(page.getByTestId('story-list-item').first()).toBeVisible()
+
+    await tabTo(page, chip)
+    await page.keyboard.press('Enter')
+    await expect(dialog).toBeVisible()
+    await expect(page.getByTestId('layout-modal-close')).toBeFocused()
+
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press('Tab')
+      expect(await focusIsInside()).toBe(true)
+    }
+    await page.keyboard.press('Shift+Tab')
+    expect(await focusIsInside()).toBe(true)
+
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(chip).toBeFocused()
+
+    await page.keyboard.press('Enter')
+    await expect(dialog).toBeVisible()
+    await page.getByTestId('layout-modal-close').click()
+    await expect(chip).toBeFocused()
+  })
+
   test('closes the modal with Escape', async ({ page }) => {
     await page.getByTestId('layout-btn').click()
     await expect(page.getByTestId('layout-modal')).toBeVisible()
