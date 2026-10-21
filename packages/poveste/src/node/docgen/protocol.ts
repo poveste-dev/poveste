@@ -18,4 +18,6 @@ export interface StoryDocsResult {
   storyId: string
   /** Keyed by component file, relative to the book's root. */
   components: Record<string, ExtractResult>
+  /** Why the plugin that would document this story is off, as the log says it (#1400). */
+  off?: string
 }

@@ -105,3 +105,47 @@ test.describe('a story that chooses its own table', () => {
     await expect(page.locator('[data-component]')).toHaveCount(0)
   })
 })
+
+// What the Docs tab says before it has a table, read in `poveste dev`, where the
+// answer comes over the HMR socket (#1400). The socket is routed so the test
+// decides when, and with what, the server's answer arrives.
+test.describe('the Docs tab before it has a table', () => {
+  const devOnly = (testInfo: import('@playwright/test').TestInfo) =>
+    test.skip(!testInfo.project.name.endsWith(':dev'), 'a built book has its docs before the tab opens')
+
+  async function routeDocgen(page: import('@playwright/test').Page, answer: (data: { storyId: string, components: object }) => object | undefined) {
+    await page.routeWebSocket(/.*/, (socket) => {
+      const server = socket.connectToServer()
+      server.onMessage((message) => {
+        const frame = typeof message === 'string' ? JSON.parse(message) : undefined
+        if (frame?.event !== 'poveste:docgen-result') {
+          socket.send(message)
+          return
+        }
+        const data = answer(frame.data)
+        if (data) {
+          socket.send(JSON.stringify({ ...frame, data }))
+        }
+      })
+    })
+  }
+
+  test('says it is reading component types while the answer is on its way', async ({ page }, testInfo) => {
+    devOnly(testInfo)
+    await routeDocgen(page, () => undefined)
+    await page.goto(STORY)
+
+    await expect(page.getByTestId('docs-pending')).toContainText('Reading component types', { timeout: 60_000 })
+    await expect(page.locator('[data-component]')).toHaveCount(0)
+  })
+
+  test('says why auto-docs is off, in the words the terminal uses', async ({ page }, testInfo) => {
+    devOnly(testInfo)
+    const off = 'Auto-docs is off: it reads component types with TypeScript, which this book does not have. Install `typescript@6` in the book to turn it on, or set `autoDocs: false` to turn it off without this message.'
+    await routeDocgen(page, data => ({ storyId: data.storyId, components: {}, off }))
+    await page.goto(STORY)
+
+    await expect(page.getByTestId('docs-off')).toHaveText(off, { timeout: 60_000 })
+    await expect(page.getByTestId('docs-pending')).toHaveCount(0)
+  })
+})

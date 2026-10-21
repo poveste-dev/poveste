@@ -14,6 +14,8 @@ export interface ComponentDocsEntry {
 interface StoryDocsResult {
   storyId: string
   components: Record<string, { doc?: ComponentDoc, error?: string, name?: string }>
+  /** Why auto-docs is off for this story, as the terminal says it. */
+  off?: string
 }
 
 export function toEntries(result: StoryDocsResult): ComponentDocsEntry[] {
@@ -66,6 +68,9 @@ export function tagHref(text: string): string | undefined {
  */
 export function useComponentDocs(storyId: Ref<string | undefined>) {
   const components = ref<ComponentDocsEntry[]>()
+  // Asked and not yet answered: the first answer can take many seconds (#1400).
+  const pending = ref(false)
+  const off = ref<string>()
   const hot = import.meta.hot
   if (!hot) {
     watch(storyId, async (id) => {
@@ -73,17 +78,20 @@ export function useComponentDocs(storyId: Ref<string | undefined>) {
       const docs = id ? componentDocs[id] : undefined
       components.value = id && docs ? toEntries({ storyId: id, components: docs }) : undefined
     }, { immediate: true })
-    return { components }
+    return { components, pending, off }
   }
 
   function ask() {
     if (storyId.value) {
+      pending.value = true
       hot!.send('poveste:docgen-request', { storyId: storyId.value })
     }
   }
   function onResult(result: StoryDocsResult) {
     if (result.storyId === storyId.value) {
       components.value = toEntries(result)
+      off.value = result.off
+      pending.value = false
     }
   }
 
@@ -95,8 +103,10 @@ export function useComponentDocs(storyId: Ref<string | undefined>) {
   })
   watch(storyId, () => {
     components.value = undefined
+    off.value = undefined
+    pending.value = false
     ask()
   }, { immediate: true })
 
-  return { components }
+  return { components, pending, off }
 }
