@@ -21,8 +21,8 @@ async function freePort(): Promise<number> {
 /**
  * Where a restart that did not finish stopped, read from what `poveste dev` printed.
  *
- * The three are different defects. No restart is the edit landing before the
- * config watcher was ready, which is this test's timing. A restart with no
+ * The three are different defects. No restart, after ten seconds of saves, is
+ * the config watcher not seeing them. A restart with no
  * collection after it is the dev server coming back with no stories, which is
  * what the test exists to catch (#1288).
  */
@@ -50,7 +50,7 @@ describe('saying where a restart stalled', () => {
 
 // A real `poveste dev`, because collection runs in worker threads that only the
 // built package has. The fixture's one story takes three seconds to import, so a
-// config edit a second in lands while it is being collected (#878).
+// config edit made once collection starts lands while it is in flight (#878).
 describe('restarting poveste dev while stories are being collected', () => {
   it('stops that collection without reporting the shutdown as a story error', async () => {
     const original = readFileSync(CONFIG, 'utf8')
@@ -64,12 +64,25 @@ describe('restarting poveste dev while stories are being collected', () => {
     child.stderr.setEncoding('utf8').on('data', collect)
 
     try {
-      await vi.waitFor(() => expect(output).toContain('Local:'), { timeout: 60_000, interval: 100 })
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      expect(output, 'the slow story finished before the edit, so nothing was in flight').not.toContain('Collect stories end')
+      // The thread count is printed when the first collection starts, and the
+      // slow story then keeps it in flight for three seconds.
+      await vi.waitFor(() => expect(output).toContain('story collection'), { timeout: 60_000, interval: 100 })
 
       const edited = output.length
-      appendFileSync(CONFIG, '\n')
+      // One save, a fixed second after `Local:`, timed out once in #1288 with no
+      // restart printed, and nothing could say whether the save was missed. This
+      // spec is about a restart during collection, so it saves until the server
+      // says it is restarting, and then checks the collection was still running.
+      await vi.waitFor(() => {
+        if (!output.includes('restarting...')) {
+          appendFileSync(CONFIG, '\n')
+        }
+        expect(output).toContain('restarting...')
+      }, { timeout: 10_000, interval: 250 })
+        .catch(() => {
+          throw new Error(`${stalledAt(output)}, 10 s of saving the config. What \`poveste dev\` printed:\n${output}`)
+        })
+      expect(output.split('restarting...')[0], 'the slow story finished before the restart, so nothing was in flight').not.toContain('Collect stories end')
       // The restarted server's own collection, which starts after it prints its thread count.
       await vi.waitFor(() => expect(output.split('restarting...')[1]?.split('story collection')[1]).toContain('Collect stories end'), { timeout: 60_000, interval: 100 })
         .catch(() => {
