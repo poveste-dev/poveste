@@ -10,7 +10,7 @@ import pc from 'picocolors'
 import { EvaluatedModules } from 'vite/module-runner'
 import { createDomEnv, resetDomEnv } from '../dom/env.js'
 import { invokeOver } from './rpc.js'
-import { createRunner, globalsFromExternals } from './runner.js'
+import { createRunner, globalsFromExternals, stubStylesheetsForNode } from './runner.js'
 import { serveTasks } from './task.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -74,6 +74,8 @@ if (!parentPort) {
 // The port it answers over is the one tasks arrive on, so nothing is handed over
 // per story.
 const _invoke: Invoke = invokeOver(parentPort)
+
+stubStylesheetsForNode()
 
 serveTasks(parentPort, { invalidate, invalidateAll, collect })
 

@@ -1,5 +1,6 @@
 import type { EvaluatedModuleNode, ModuleEvaluator, ModuleRunnerContext, ModuleRunnerImportMeta } from 'vite/module-runner'
 import { existsSync } from 'node:fs'
+import * as nodeModule from 'node:module'
 import { createRequire } from 'node:module'
 import { dirname, isAbsolute, join } from 'node:path'
 import process from 'node:process'
@@ -139,6 +140,27 @@ async function importRecordingGlobals(file: string) {
     }
   }
   return imported
+}
+
+const STYLESHEET = /\.(?:css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:[?#]|$)/
+
+/**
+ * Lets a dependency Node runs natively import its own stylesheet. A `type: module`
+ * package's `.js` is externalised, and @primer/react 38's `dist` imports `.css`
+ * files, which Node has no format for (#1392). Nothing in collection reads a
+ * stylesheet, so for this thread it is an empty module; the book still gets it from
+ * Vite. Checked rather than assumed, because a runtime that is not Node, such as
+ * StackBlitz's, may not have the hook.
+ */
+export function stubStylesheetsForNode() {
+  if (typeof nodeModule.registerHooks !== 'function') {
+    return
+  }
+  nodeModule.registerHooks({
+    load: (url, context, nextLoad) => STYLESHEET.test(url)
+      ? { format: 'module', source: 'export default {}', shortCircuit: true }
+      : nextLoad(url, context),
+  })
 }
 
 /** As vite-node did: a CJS package's named exports are read through its default. */
