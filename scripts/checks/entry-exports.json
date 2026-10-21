@@ -414,7 +414,10 @@
     "findTsconfig",
     "loadFromBook",
     "normalizeDefault",
-    "readTsconfig"
+    "readTsconfig",
+    "typescriptProblem",
+    "typescriptProblemIn",
+    "typescriptVersionIn"
   ],
   "poveste/plugin": [
     "openStory",

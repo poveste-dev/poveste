@@ -2,8 +2,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'pathe'
 
-// `vue-component-meta` 3.3 calls `ts.readJsonConfigFile`, which TypeScript 7 no
-// longer has, and no release of it reads TypeScript 7 yet (#1382).
+// Every extractor reads types through TypeScript's JavaScript API. TypeScript 7
+// removed it: `vue-component-meta` 3.3 calls `ts.readJsonConfigFile`, and the JSX
+// walker and Svelte's `svelte2tsx` host need a `LanguageService` (#1382, #1401).
 const NEWEST_MAJOR = 6
 
 const FIX = 'Install `typescript@6` in the book to turn it on, or set `autoDocs: false` to turn it off without this message.'
@@ -19,7 +20,7 @@ export function typescriptVersionIn(dirs: string[]): string | undefined {
   return undefined
 }
 
-/** Why auto-docs cannot read a Vue component's types with the TypeScript in `dirs`, or nothing when it can. */
+/** Why auto-docs cannot read component types with the TypeScript in `dirs`, or nothing when it can. */
 export function typescriptProblemIn(dirs: string[]): string | undefined {
   const version = typescriptVersionIn(dirs)
   if (!version) {
@@ -32,10 +33,10 @@ export function typescriptProblemIn(dirs: string[]): string | undefined {
 }
 
 /**
- * The same question for the TypeScript `vue-component-meta` will load: it requires
- * `typescript` from where it is installed, an optional peer that npm does not add.
+ * The same question for the `typescript` an extractor will load: required from
+ * `from`, a file, or from the book's own root for `'book'`.
  */
-export function typescriptProblem(): string | undefined {
-  const meta = createRequire(import.meta.url).resolve('vue-component-meta')
-  return typescriptProblemIn(createRequire(meta).resolve.paths('typescript') ?? [])
+export function typescriptProblem(root: string, from: string): string | undefined {
+  const require = createRequire(from === 'book' ? join(root, 'package.json') : from)
+  return typescriptProblemIn(require.resolve.paths('typescript') ?? [])
 }
