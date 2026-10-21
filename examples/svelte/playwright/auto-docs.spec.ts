@@ -1,4 +1,7 @@
 import type { Page } from '@playwright/test'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
 
 /*
@@ -70,4 +73,18 @@ test.describe('the docs of a Svelte story\'s component', () => {
     // `children` comes with the button attributes it extends, and it never takes it.
     await expect(component(page).locator('[data-slot="slots"] [data-slot-name="children"]')).toHaveCount(0)
   })
+})
+
+// What a reader downloads: the docs data in the built book carries no extractor's
+// error and no path of the machine that built it (#1382, #1401).
+test('ships docs data with no path of the machine that built it', () => {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const assets = join(here, '..', '.poveste', 'dist', 'assets')
+  const chunks = readdirSync(assets).filter(file => /^component-docs-data-.*\.js$/.test(file))
+  expect(chunks).toHaveLength(1)
+  const data = readFileSync(join(assets, chunks[0]!), 'utf8')
+
+  expect(data).toContain('AutoDocsButton')
+  expect(data).not.toContain(resolve(here, '..', '..', '..'))
+  expect(data).not.toMatch(/"error"|Require stack/)
 })
