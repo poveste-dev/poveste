@@ -16,6 +16,8 @@
     "vue": "^3.5.44"
   },
   "devDependencies": {
+    "@iconify-json/carbon": "^1.2.28",
+    "@iconify-json/el": "^1.2.2",
     "@playwright/test": "^1.64.0",
     "@poveste/app": "workspace:*",
     "@poveste/plugin-tailwind": "workspace:*",
