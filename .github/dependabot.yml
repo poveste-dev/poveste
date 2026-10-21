@@ -9,6 +9,11 @@
 # A pull request bumping a scoped package gets a title with a bare `@scope` in it,
 # which the PR title check rejects: retitle it with the name in backticks before
 # merging, or the release notes mention a stranger (#399).
+#
+# `increase-if-necessary` on npm: a range that already admits the new version is
+# left as it is, and only the lockfile moves, which is what CI tests against. The
+# default raised every range naming the bumped package, peer ranges included, so a
+# Vue patch became every consumer's new Vue floor, unasked (#953, #1376, #1377).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -18,6 +23,7 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
+    versioning-strategy: increase-if-necessary
     commit-message:
       prefix: chore
       include: scope
