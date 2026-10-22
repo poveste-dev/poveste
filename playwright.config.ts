@@ -40,6 +40,12 @@ interface Example {
      * List them in `devOnly` too, or the built book runs them.
      */
     alone?: string[]
+    /**
+     * Writes the dev server's output to `poveste-dev.log` in the example, for a spec
+     * that holds the log: a `webServer`'s output never reaches a test (#1373). The
+     * server's errors then go to that file, not the run's console.
+     */
+    log?: boolean
   }
   /** Carries the conformance story set, so the shared `e2e/` suite runs on it. */
   conformance?: boolean
@@ -73,7 +79,7 @@ const ALL_EXAMPLES: Example[] = [
     reference: true,
     dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts', '**/auto-docs.spec.ts', '**/setup-file-throws.spec.ts', '**/story-icons.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'], alone: ['**/stale-story-list.spec.ts'] },
   },
-  { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts', '**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts'] } },
+  { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts', '**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts', '**/dev-log.spec.ts'], alone: ['**/dev-log.spec.ts'], log: true } },
   {
     name: 'svelte',
     port: 4569,
@@ -259,7 +265,7 @@ export default defineConfig({
       ? [{
           // `exec`, not `run`: pnpm drops a flag forwarded to a script, and the
           // dev server would come up on its default port instead.
-          command: `pnpm --filter ./examples/${example.name} exec poveste dev --port ${example.dev.port}`,
+          command: `pnpm --filter ./examples/${example.name} exec poveste dev --port ${example.dev.port}${example.dev.log ? ` > examples/${example.name}/poveste-dev.log 2>&1` : ''}`,
           url: `http://localhost:${example.dev.port}`,
           // Still reused locally: a dev server re-transforms from source on
           // request, so it does not go stale the same way, and it costs ~30s to
