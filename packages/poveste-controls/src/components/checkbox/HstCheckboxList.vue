@@ -114,7 +114,7 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   background: none;
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--_poveste-primary-500);
     outline-offset: 2px;
   }
 }

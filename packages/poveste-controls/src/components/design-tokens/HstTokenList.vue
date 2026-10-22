@@ -33,30 +33,71 @@ const hover = ref<string | null>(null)
   <div
     v-for="token of processedTokens"
     :key="token.key"
-    class="poveste-token-list flex flex-col gap-2 my-8"
+    class="poveste-token-list"
+    data-slot="token"
     @mouseenter="hover = token.key"
     @mouseleave="hover = null"
   >
     <slot
       :token="token"
     />
-    <div class="mx-4">
-      <div class="flex gap-1">
-        <pre class="my-0 truncate shrink">{{ token.name }}</pre>
+    <div class="poveste-token-list-labels">
+      <div class="poveste-token-row">
+        <pre class="poveste-token-text" data-slot="name">{{ token.name }}</pre>
         <HstCopyIcon
           v-if="hover === token.key"
           :content="token.name"
-          class="flex-none"
+          class="poveste-token-copy"
         />
       </div>
-      <div class="flex gap-1">
-        <pre class="my-0 opacity-50 truncate shrink">{{ token.value }}</pre>
+      <div class="poveste-token-row">
+        <pre class="poveste-token-text" data-slot="value">{{ token.value }}</pre>
         <HstCopyIcon
           v-if="hover === token.key"
           :content="typeof token.value === 'string' ? token.value : JSON.stringify(token.value)"
-          class="flex-none"
+          class="poveste-token-copy"
         />
       </div>
     </div>
   </div>
 </template>
+
+<style lang="postcss">
+.poveste-token-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-block: 2rem;
+}
+
+.poveste-token-list-labels {
+  margin-inline: 1rem;
+}
+
+.poveste-token-item {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.poveste-token-row {
+  display: flex;
+  gap: .25rem;
+}
+
+.poveste-token-text {
+  flex-shrink: 1;
+  margin-block: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &[data-slot='value'] {
+    opacity: .5;
+  }
+}
+
+.poveste-token-copy {
+  flex: none;
+}
+</style>

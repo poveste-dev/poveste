@@ -177,17 +177,17 @@ const tooltipStyle = computed<CSSProperties>(() => ({
     appearance: none;
     border: 1px solid rgb(0 0 0 / .25);
     border-radius: 9999px;
-    background: var(--color-white);
+    background: var(--_poveste-white);
   }
 
   &:where(.ptw-dark, .ptw-dark *)::-webkit-slider-thumb {
     border-color: rgb(255 255 255 / .25);
-    background: var(--color-gray-700);
+    background: var(--_poveste-gray-700);
   }
 
   &:hover::-webkit-slider-thumb {
-    border-color: var(--color-primary-500);
-    background: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
+    background: var(--_poveste-primary-500);
   }
 
   /* Separate rules per prefix: Safari drops the whole list if one selector in it
@@ -198,17 +198,17 @@ const tooltipStyle = computed<CSSProperties>(() => ({
     appearance: none;
     border: 1px solid rgb(0 0 0 / .25);
     border-radius: 9999px;
-    background: var(--color-white);
+    background: var(--_poveste-white);
   }
 
   &:where(.ptw-dark, .ptw-dark *)::-moz-range-thumb {
     border-color: rgb(255 255 255 / .25);
-    background: var(--color-gray-700);
+    background: var(--_poveste-gray-700);
   }
 
   &:hover::-moz-range-thumb {
-    border-color: var(--color-primary-500);
-    background: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
+    background: var(--_poveste-primary-500);
   }
 }
 </style>

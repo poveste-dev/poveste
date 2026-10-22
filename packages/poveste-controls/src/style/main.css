@@ -10,6 +10,7 @@
 /* The chrome's tokens, shared with `@poveste/app` — see the file for why both
    packages read them rather than each declaring its own. */
 @import './tokens.css';
+@import './private-tokens.css';
 
 /* Chrome dark mode. Deliberately a distinct class from the story-side
    `theme.darkClass` default (`dark`) so chrome and story themes stay independent —

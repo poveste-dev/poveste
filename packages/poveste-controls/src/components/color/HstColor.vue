@@ -211,7 +211,7 @@ function write(value: Color) {
   padding: .125rem;
   margin-block: -.25rem;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   cursor: pointer;
 
@@ -222,14 +222,14 @@ function write(value: Color) {
   }
 
   &:hover {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 }
 
 .poveste-color-swatch-fill {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 }
 
 .poveste-color-field-root {
@@ -242,7 +242,7 @@ function write(value: Color) {
   padding: .25rem .5rem;
   margin-block: -.25rem;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   color: inherit;
   outline: none;
@@ -252,7 +252,7 @@ function write(value: Color) {
   }
 
   &:focus {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 }
 
@@ -262,14 +262,14 @@ function write(value: Color) {
   flex-direction: column;
   gap: .5rem;
   padding: .5rem;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-sm);
-  background: var(--color-gray-50);
+  border: 1px solid var(--_poveste-gray-200);
+  border-radius: var(--_poveste-radius-sm);
+  background: var(--_poveste-gray-50);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
 
   &:where(.ptw-dark, .ptw-dark *) {
-    border-color: var(--color-gray-850);
-    background: var(--color-gray-700);
+    border-color: var(--_poveste-gray-850);
+    background: var(--_poveste-gray-700);
   }
 }
 
@@ -281,7 +281,7 @@ function write(value: Color) {
 .poveste-color-area-surface {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 }
 
 .poveste-color-hue {
@@ -298,7 +298,7 @@ function write(value: Color) {
 .poveste-color-thumb {
   width: .75rem;
   height: .75rem;
-  border: 2px solid var(--color-white);
+  border: 2px solid var(--_poveste-white);
   border-radius: 9999px;
 
   /* A ring rather than a token: this separates the thumb from whatever colour is

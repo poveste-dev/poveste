@@ -155,13 +155,14 @@ watch(() => internalValue.value, () => {
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-json cursor-text"
+    class="poveste-json"
     :class="$attrs.class"
     :style="$attrs.style"
   >
     <div
       ref="editorElement"
-      class="__poveste-json-code w-full border border-solid border-black/25 dark:border-white/25 focus-within:border-primary-500 dark:focus-within:border-primary-500 rounded-sm box-border overflow-auto resize-y min-h-32 h-48 relative"
+      class="__poveste-json-code"
+      data-slot="editor"
       v-bind="{ ...$attrs, class: null, style: null }"
     />
 
@@ -176,7 +177,8 @@ watch(() => internalValue.value, () => {
       >
         <Icon
           icon="carbon:warning-alt"
-          class="poveste-json-invalid flex-none text-orange-500"
+          class="poveste-json-invalid"
+          data-slot="invalid"
         />
       </HstTooltip>
 
@@ -186,7 +188,8 @@ watch(() => internalValue.value, () => {
       >
         <Icon
           icon="carbon:view"
-          class="poveste-json-read-only flex-none text-gray-500 dark:text-gray-400"
+          class="poveste-json-read-only"
+          data-slot="read-only"
         />
       </HstTooltip>
 
@@ -199,5 +202,45 @@ watch(() => internalValue.value, () => {
 .__poveste-json-code :deep(.cm-editor) {
   height: 100%;
   min-width: 280px;
+}
+</style>
+
+<style lang="postcss">
+.poveste-json {
+  cursor: text;
+}
+
+.__poveste-json-code {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 12rem;
+  min-height: 8rem;
+  overflow: auto;
+  resize: vertical;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--_poveste-radius-sm);
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus-within {
+    border-color: var(--_poveste-primary-500);
+  }
+}
+
+.poveste-json-invalid {
+  flex: none;
+  color: var(--_poveste-warning);
+}
+
+.poveste-json-read-only {
+  flex: none;
+  color: var(--_poveste-gray-500);
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    color: var(--_poveste-gray-400);
+  }
 }
 </style>

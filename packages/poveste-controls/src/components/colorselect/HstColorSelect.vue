@@ -31,7 +31,8 @@ function throttle<Args extends unknown[]>(cb: (...args: Args) => void, delay = 1
   const timeoutFunc = () => {
     if (waitingArgs == null) {
       shouldWait = false
-    } else {
+    }
+    else {
       cb(...waitingArgs)
       waitingArgs = null
       setTimeout(timeoutFunc, delay)
@@ -57,26 +58,24 @@ function processChange(inp: string) {
 }
 </script>
 
-<script>
-
-</script>
-
 <template>
   <HstWrapper
     :title="title"
-    class="poveste-select cursor-text items-center"
+    class="poveste-select poveste-color-select"
     :class="$attrs.class"
     :style="$attrs.style"
   >
-    <div class="flex flex-row gap-1">
+    <div class="poveste-color-select-fields">
       <input
         v-bind="{ ...$attrs, class: null, style: null }"
         v-model="stringModel"
         type="text"
-        class="text-inherit bg-transparent w-full outline-none px-2 py-1 -my-1 border border-solid border-black/25 dark:border-white/25 focus:border-primary-500 dark:focus:border-primary-500 rounded-sm"
+        class="poveste-color-select-input"
+        data-slot="input"
       >
       <input
         type="color"
+        data-slot="picker"
         :value="modelValue"
         @input="((e) => processChange((e.target as HTMLInputElement).value as string))"
       >
@@ -87,3 +86,36 @@ function processChange(inp: string) {
     </template>
   </HstWrapper>
 </template>
+
+<style lang="postcss">
+.poveste-color-select {
+  align-items: center;
+  cursor: text;
+}
+
+.poveste-color-select-fields {
+  display: flex;
+  gap: .25rem;
+}
+
+/* The same field as `HstText`'s. */
+.poveste-color-select-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: .25rem .5rem;
+  margin-block: -.25rem;
+  border: 1px solid rgb(0 0 0 / .25);
+  border-radius: var(--_poveste-radius-sm);
+  background: transparent;
+  color: inherit;
+  outline: none;
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    border-color: rgb(255 255 255 / .25);
+  }
+
+  &:focus {
+    border-color: var(--_poveste-primary-500);
+  }
+}
+</style>

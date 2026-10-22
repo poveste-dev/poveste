@@ -252,7 +252,7 @@ onMounted(() => {
   padding-inline: .5rem;
   margin-block: -.25rem;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 
   /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
      descendant rule keyed on it never matches from in here (#101). */
@@ -261,18 +261,18 @@ onMounted(() => {
   }
 
   &:focus-within {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 }
 
 .poveste-date-segment {
   padding-inline: .125rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 
   &:focus {
     outline: none;
-    background: var(--color-primary-500);
-    color: var(--color-white);
+    background: var(--_poveste-primary-500);
+    color: var(--_poveste-white);
   }
 
   &[data-placeholder] {
@@ -296,7 +296,7 @@ onMounted(() => {
 
   &:hover {
     opacity: 1;
-    color: var(--color-primary-500);
+    color: var(--_poveste-primary-500);
   }
 }
 
@@ -307,14 +307,14 @@ onMounted(() => {
 
 .poveste-date-calendar {
   z-index: 100;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-sm);
-  background: var(--color-gray-50);
+  border: 1px solid var(--_poveste-gray-200);
+  border-radius: var(--_poveste-radius-sm);
+  background: var(--_poveste-gray-50);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
 
   &:where(.ptw-dark, .ptw-dark *) {
-    border-color: var(--color-gray-850);
-    background: var(--color-gray-700);
+    border-color: var(--_poveste-gray-850);
+    background: var(--_poveste-gray-700);
   }
 }
 
@@ -333,16 +333,16 @@ onMounted(() => {
   display: flex;
   padding: .25rem;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   color: inherit;
   cursor: pointer;
 
   &:hover {
-    background: var(--color-primary-100);
+    background: var(--_poveste-primary-100);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      background: var(--color-primary-800);
+      background: var(--_poveste-primary-800);
     }
   }
 }
@@ -365,7 +365,7 @@ onMounted(() => {
   width: 1.75rem;
   height: 1.75rem;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -375,15 +375,15 @@ onMounted(() => {
   }
 
   &[data-today] {
-    color: var(--color-primary-500);
+    color: var(--_poveste-primary-500);
     font-weight: 700;
   }
 
   &:hover:not([data-selected]) {
-    background: var(--color-primary-100);
+    background: var(--_poveste-primary-100);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      background: var(--color-primary-800);
+      background: var(--_poveste-primary-800);
     }
   }
 
@@ -391,8 +391,8 @@ onMounted(() => {
      its fill while the pointer is over it — which is what the `:not()` in the
      hover rule was for. */
   &[data-selected] {
-    background: var(--color-primary-500);
-    color: var(--color-white);
+    background: var(--_poveste-primary-500);
+    color: var(--_poveste-white);
   }
 }
 </style>

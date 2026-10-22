@@ -134,7 +134,7 @@ function selectValue(value: unknown) {
   padding-inline: .5rem;
   margin-block: -.25rem;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -150,7 +150,7 @@ function selectValue(value: unknown) {
   }
 
   &:hover {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 }
 
@@ -196,19 +196,19 @@ function selectValue(value: unknown) {
    */
   max-height: var(--reka-popover-content-available-height);
   overflow-y: auto;
-  border: 1px solid var(--color-gray-200);
-  border-radius: var(--radius-sm);
-  background: var(--color-gray-50);
+  border: 1px solid var(--_poveste-gray-200);
+  border-radius: var(--_poveste-radius-sm);
+  background: var(--_poveste-gray-50);
   /* Stated rather than inherited: the popper is portalled to `body`, so it is
      outside the panel whose colour the trigger picks up, and `body` carries
      none — which left the options at the UA default, black on the dark panel. */
-  color: var(--color-gray-900);
+  color: var(--_poveste-gray-900);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1);
 
   &:where(.ptw-dark, .ptw-dark *) {
-    border-color: var(--color-gray-850);
-    background: var(--color-gray-700);
-    color: var(--color-gray-100);
+    border-color: var(--_poveste-gray-850);
+    background: var(--_poveste-gray-700);
+    color: var(--_poveste-gray-100);
   }
 }
 
@@ -227,10 +227,10 @@ function selectValue(value: unknown) {
   outline: none;
 
   &[data-state='checked'] {
-    background: var(--color-primary-200);
+    background: var(--_poveste-primary-200);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      background: var(--color-primary-800);
+      background: var(--_poveste-primary-800);
     }
   }
 
@@ -241,10 +241,10 @@ function selectValue(value: unknown) {
    * all to a keyboard, because there was no keyboard.
    */
   &[data-highlighted] {
-    background: var(--color-primary-100);
+    background: var(--_poveste-primary-100);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      background: var(--color-primary-700);
+      background: var(--_poveste-primary-700);
     }
   }
 }

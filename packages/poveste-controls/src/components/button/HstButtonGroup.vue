@@ -104,7 +104,7 @@ function onUpdate(value: unknown) {
   gap: 1px;
   padding: 1px;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 
   &:where(.ptw-dark, .ptw-dark *) {
     border-color: rgb(255 255 255 / .25);
@@ -128,16 +128,16 @@ function onUpdate(value: unknown) {
 
   &[data-state='off'] {
     --_poveste-button-surface: transparent;
-    --_poveste-button-surface-hover: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
+    --_poveste-button-surface-hover: color-mix(in oklab, var(--_poveste-gray-500) 20%, transparent);
   }
 
   &[data-state='on'] {
-    --_poveste-button-surface: var(--color-primary-500);
-    --_poveste-button-surface-hover: var(--color-primary-600);
-    --_poveste-button-text: var(--color-white);
+    --_poveste-button-surface: var(--_poveste-primary-500);
+    --_poveste-button-surface-hover: var(--_poveste-primary-600);
+    --_poveste-button-text: var(--_poveste-white);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      --_poveste-button-text: var(--color-black);
+      --_poveste-button-text: var(--_poveste-black);
     }
   }
 }

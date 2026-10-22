@@ -1,5 +1,5 @@
-// The conventions a control is written to, for the two of them a script can
-// hold (#978). The rest are in `packages/poveste-controls/CONVENTIONS.md`.
+// The conventions a control is written to, for the ones a script can hold
+// (#978). The rest are in `packages/poveste-controls/CONVENTIONS.md`.
 //
 // Two controls were on Reka when #955 was about to put ten more there, and they
 // disagreed: one styled in a `<style>` block with semantic class names, the
@@ -12,10 +12,9 @@
 //   1. every control carries `data-slot` on the parts a consumer can reach
 //   2. no opaque colour literal in a control's styles — those are tokens
 //   3. no `dark:` inside an `@apply` — the one rule with a shipped bug behind it
-//
-// Both lists below are skip-lists with a reason each, in the style of
-// `preview-position.ts`: a control nobody has classified fails rather than
-// being assumed fine, which is what makes a *new* control meet the rule.
+//   4. a control reads the controls' own `--_poveste-*` tokens, never the
+//      chrome's `--color-*` or `--radius-*`, which a sandboxed story's realm
+//      does not define (#1443)
 
 import type { CheckResult } from './support/check-result.ts'
 import { globSync, readFileSync } from 'node:fs'
@@ -24,22 +23,6 @@ import { join } from 'node:path'
 const ROOT = join(import.meta.dirname, '..', '..')
 
 export const CONTROLS = 'packages/poveste-controls/src/components'
-
-/**
- * Controls #955 has not migrated yet. Each is still histoire's, and each leaves
- * this list when it moves onto a Reka primitive — that is the point of the
- * list rather than a general exemption.
- */
-export const NOT_YET_MIGRATED = new Set([
-  'HstColorSelect.vue',
-  'HstJson.vue',
-  'HstColorShades.vue',
-  'HstTokenGrid.vue',
-  'HstTokenList.vue',
-  'HstCopyIcon.vue',
-  'HstTooltip.vue',
-  'HstWrapper.vue',
-])
 
 /** A hex, or an `rgb()`/`hsl()` with no alpha channel. */
 const OPAQUE_LITERAL = /#[0-9a-f]{3,8}\b|\b(?:rgb|hsl)\([^)/]*\)/gi
@@ -96,6 +79,18 @@ function darkInsideApply(style: string): string[] {
   return [...style.matchAll(APPLY_WITH_DARK)].map(match => match[0].trim())
 }
 
+/**
+ * A chrome token read by a control. A sandboxed story's realm loads the controls'
+ * component CSS and none of the chrome's, so `var(--color-gray-200)` resolves to
+ * nothing there and the control renders unstyled; the controls carry their own
+ * tokens under `--_poveste-*` instead (#1443).
+ */
+const CHROME_TOKEN = /var\(\s*--(?:color|radius)-[\w-]*/g
+
+function chromeTokens(style: string): string[] {
+  return [...new Set([...style.matchAll(CHROME_TOKEN)].map(match => `${match[0].replace(/^var\(\s*/, '')}`))]
+}
+
 function templateBlock(source: string): string {
   return [...source.matchAll(/<template>([\s\S]*?)<\/template>/g)].map(block => block[1]).join('\n')
 }
@@ -104,12 +99,6 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
   const problems: string[] = []
 
   for (const { file, source } of files) {
-    const name = file.split('/').pop()!
-
-    if (NOT_YET_MIGRATED.has(name)) {
-      continue
-    }
-
     const template = templateBlock(source)
 
     // A control with no template of its own has no part to name.
@@ -122,6 +111,12 @@ export function problemsIn(files: { file: string, source: string }[]): string[] 
 
     if (literals.length) {
       problems.push(`${file}: opaque colour literal ${literals.map(l => `\`${l}\``).join(', ')} — no book can theme that`)
+    }
+
+    const chrome = chromeTokens(style)
+
+    if (chrome.length) {
+      problems.push(`${file}: reads the chrome's ${chrome.map(t => `\`${t}\``).join(', ')}, which a sandboxed story does not define — read \`--_poveste-…\` instead`)
     }
 
     if (darkInsideApply(style).length) {
@@ -141,16 +136,10 @@ function repositoryProblems(root = ROOT): string[] {
     return [`no controls found under ${CONTROLS} — this check is looking in the wrong place`]
   }
 
-  const migrated = files.filter(({ file }) => !NOT_YET_MIGRATED.has(file.split('/').pop()!))
-
-  if (migrated.length === 0) {
-    return ['every control is on the not-yet-migrated list — this check is asserting nothing']
-  }
-
   return problemsIn(files)
 }
 
-const REMEDY = 'See packages/poveste-controls/CONVENTIONS.md. A part a consumer can reach carries `data-slot="<part>"`, a colour comes from `var(--color-…)` rather than a literal, and dark mode is written as `&:where(.ptw-dark, .ptw-dark *)` in CSS rather than as a `dark:` variant inside `@apply` — `@scope` removes a consumer\'s CSS from our markup, so the attribute is the only seam they have.'
+const REMEDY = 'See packages/poveste-controls/CONVENTIONS.md. A part a consumer can reach carries `data-slot="<part>"`, a colour comes from the controls\' own `var(--_poveste-…)` rather than a literal or the chrome\'s `var(--color-…)`, and dark mode is written as `&:where(.ptw-dark, .ptw-dark *)` in CSS rather than as a `dark:` variant inside `@apply` — `@scope` removes a consumer\'s CSS from our markup, so the attribute is the only seam they have.'
 
 export function checkControlConventions(root = ROOT): CheckResult {
   return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }

@@ -112,7 +112,7 @@ onUnmounted(() => {
   padding: .25rem 0 .25rem .5rem;
   margin-block: -.25rem;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: transparent;
   color: inherit;
   cursor: ew-resize;
@@ -125,7 +125,7 @@ onUnmounted(() => {
   }
 
   &:focus {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 }
 </style>

@@ -66,6 +66,7 @@ onMounted(() => {
       >
         <TooltipContent
           class="poveste-tooltip"
+          data-slot="tooltip"
           :side="side"
           :side-offset="offset"
         >
@@ -74,6 +75,7 @@ onMounted(() => {
           </slot>
           <TooltipArrow
             class="poveste-tooltip-arrow"
+            data-slot="arrow"
             :width="10"
             :height="5"
           />
@@ -88,7 +90,7 @@ onMounted(() => {
    like and what the app never overrode. */
 .poveste-tooltip {
   background: rgb(0 0 0 / .8);
-  color: #fff;
+  color: var(--_poveste-white);
   border-radius: 6px;
   padding: 7px 12px 6px;
   line-height: normal;

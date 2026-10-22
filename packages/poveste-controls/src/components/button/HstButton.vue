@@ -35,12 +35,12 @@ defineProps<{
 
 <style lang="postcss">
 .poveste-button {
-  --_poveste-button-surface: var(--color-gray-200);
-  --_poveste-button-surface-hover: var(--color-primary-200);
-  --_poveste-button-text: var(--color-gray-900);
+  --_poveste-button-surface: var(--_poveste-gray-200);
+  --_poveste-button-surface-hover: var(--_poveste-primary-200);
+  --_poveste-button-text: var(--_poveste-gray-900);
 
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
   background: var(--_poveste-button-surface);
   color: var(--_poveste-button-text);
   cursor: pointer;
@@ -48,9 +48,9 @@ defineProps<{
   /* Spelled out on the subject: `.ptw-dark` sits above the `@scope` root, so a
      descendant rule keyed on it never matches from in here (#101). */
   &:where(.ptw-dark, .ptw-dark *) {
-    --_poveste-button-surface: var(--color-gray-750);
-    --_poveste-button-surface-hover: var(--color-primary-900);
-    --_poveste-button-text: var(--color-gray-100);
+    --_poveste-button-surface: var(--_poveste-gray-750);
+    --_poveste-button-surface-hover: var(--_poveste-primary-900);
+    --_poveste-button-text: var(--_poveste-gray-100);
   }
 
   &:hover {
@@ -58,14 +58,14 @@ defineProps<{
   }
 
   &[data-color='primary'] {
-    --_poveste-button-surface: var(--color-primary-500);
-    --_poveste-button-surface-hover: var(--color-primary-600);
-    --_poveste-button-text: var(--color-white);
+    --_poveste-button-surface: var(--_poveste-primary-500);
+    --_poveste-button-surface-hover: var(--_poveste-primary-600);
+    --_poveste-button-text: var(--_poveste-white);
 
     &:where(.ptw-dark, .ptw-dark *) {
-      --_poveste-button-surface: var(--color-primary-500);
-      --_poveste-button-surface-hover: var(--color-primary-600);
-      --_poveste-button-text: var(--color-black);
+      --_poveste-button-surface: var(--_poveste-primary-500);
+      --_poveste-button-surface-hover: var(--_poveste-primary-600);
+      --_poveste-button-text: var(--_poveste-black);
     }
   }
 
@@ -73,11 +73,11 @@ defineProps<{
     --_poveste-button-surface: transparent;
     /* What `bg-gray-500/20` compiles to, written out: the utility is a
        `color-mix` against transparent and this is the same declaration. */
-    --_poveste-button-surface-hover: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
+    --_poveste-button-surface-hover: color-mix(in oklab, var(--_poveste-gray-500) 20%, transparent);
 
     &:where(.ptw-dark, .ptw-dark *) {
       --_poveste-button-surface: transparent;
-      --_poveste-button-surface-hover: color-mix(in oklab, var(--color-gray-500) 20%, transparent);
+      --_poveste-button-surface-hover: color-mix(in oklab, var(--_poveste-gray-500) 20%, transparent);
     }
   }
 }
