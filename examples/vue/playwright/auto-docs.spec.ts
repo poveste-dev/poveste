@@ -97,7 +97,7 @@ test.describe('a story that chooses its own table', () => {
     else {
       // What `poveste build` extracted holds the other stories' docs and none for this one.
       const assets = join(dirname(fileURLToPath(import.meta.url)), '..', '.poveste', 'dist', 'assets')
-      const data = readdirSync(assets).filter(file => /^component-docs-data-.*\.js$/.test(file)).map(file => readFileSync(join(assets, file), 'utf8')).join('')
+      const data = readdirSync(assets).filter(file => /component-docs-data[-_].*\.js$/.test(file)).map(file => readFileSync(join(assets, file), 'utf8')).join('')
       expect(data).toContain('"auto-docs-button"')
       expect(data).not.toContain('"auto-docs-off"')
       await page.goto('/story/auto-docs-off?tab=docs')
@@ -172,4 +172,42 @@ test('a built book says nothing about its docs until their data has loaded', asy
 
   release()
   await expect(page.locator('[data-component="AutoDocsButton"]')).toBeVisible()
+})
+
+// A built book used to put every story's tables in one chunk, which the first Docs tab
+// downloaded whole. Each component is now a chunk of its own, loaded by the stories that
+// import it (#1429).
+test('a built book downloads the opened story\'s docs data, not the book\'s', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.endsWith(':dev'), 'dev answers over the socket')
+  const assets = join(dirname(fileURLToPath(import.meta.url)), '..', '.poveste', 'dist', 'assets')
+  const COMPONENT_CHUNK = /__resolved__virtual_component-docs-data_\d+-[\w-]+\.js$/
+  const fetched: string[] = []
+  page.on('request', (request) => {
+    const chunk = COMPONENT_CHUNK.exec(request.url())?.[0]
+    if (chunk) {
+      fetched.push(chunk)
+    }
+  })
+
+  await page.goto(STORY)
+  await expect(page.locator('[data-component="AutoDocsButton"] [data-slot="props"] [data-prop]')).toHaveCount(4, { timeout: 60_000 })
+
+  expect(readdirSync(assets).filter(file => COMPONENT_CHUNK.test(file)).length).toBeGreaterThan(1)
+  expect(fetched).toHaveLength(1)
+  expect(readFileSync(join(assets, fetched[0]!), 'utf8')).toContain('The text on the button.')
+})
+
+// A tab left open across a deploy asks for a chunk the server no longer has: the tab
+// stopped at "loading" for good, with an unhandled rejection.
+test('a built book whose docs chunk fails to load says it has no documentation', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.endsWith(':dev'), 'dev answers over the socket')
+  await page.route(/__resolved__virtual_component-docs-data_\d+-[\w-]+\.js$/, route => route.abort())
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+
+  await page.goto(STORY)
+
+  await expect(page.getByText('No documentation available')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('[data-component]')).toHaveCount(0)
+  expect(errors).toEqual([])
 })
