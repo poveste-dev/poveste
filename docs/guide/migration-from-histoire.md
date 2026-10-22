@@ -63,6 +63,31 @@ Then reinstall:
 pnpm install
 ```
 
+### Vite 8 comes with it
+
+`poveste` peers `vite: ^8.0.0`. A histoire book is usually on Vite 5 or 6 — reka-ui's
+peered Vite 5 — so upgrade Vite, and the Vite plugin your framework uses, in the same
+step:
+
+```bash
+# Vue or Nuxt
+pnpm add -D vite@8 @vitejs/plugin-vue@6
+# Svelte
+pnpm add -D vite@8 @sveltejs/vite-plugin-svelte@7
+```
+
+What changes for the book coming from Vite 5 or 6:
+
+- **Vite 8 bundles with Rolldown**, not Rollup and esbuild. Most books need nothing for
+  it; a `vite.config` that sets Rollup- or esbuild-specific options should be read
+  against Vite's [migration guide](https://vite.dev/guide/migration).
+- **Plugins need a release that accepts Vite 8.** `@vitejs/plugin-vue` 4, which
+  reka-ui's histoire book used, peers up to Vite 5, and 5 up to Vite 6; 6 accepts
+  `^8.0.0`.
+  `@sveltejs/vite-plugin-svelte` 7 is the first to peer Vite 8. Any other Vite plugin
+  in your config needs the same check.
+- **Nuxt** 4.5 or later brings Vite 8 itself.
+
 ## 2. Update your config file
 
 Your existing `histoire.config.ts` **keeps working as-is** — poveste resolves it
