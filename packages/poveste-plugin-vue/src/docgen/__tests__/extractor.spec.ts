@@ -104,6 +104,31 @@ describe('vue auto-docs through vue-component-meta', () => {
   })
 })
 
+// vue-component-meta returned every event's description and tags empty, in both
+// syntaxes, because it reads them off Vue's own `EmitFn` signatures (#1462).
+describe('an event\'s JSDoc', () => {
+  async function event(file: string, name: string) {
+    const doc = (await extractor.extract(join(FIXTURE, file)))!
+    return doc.events.find(candidate => candidate.name === name)
+  }
+
+  it.each(['TupleEmits.vue', 'CallEmits.vue'])('reaches the table from %s', async (file) => {
+    expect(await event(file, 'change')).toMatchObject({ description: 'Fired when the value changes.', type: '[value: string]' })
+  })
+
+  it.each(['TupleEmits.vue', 'CallEmits.vue'])('keeps its tags in %s', async (file) => {
+    expect((await event(file, 'close'))?.tags).toContainEqual({ name: 'deprecated', text: 'use `change`' })
+  })
+
+  it('is read from an emits interface another file declares', async () => {
+    expect(await event('ImportedEmits.vue', 'pick')).toMatchObject({ description: 'Fired when a date is picked.' })
+  })
+
+  it('leaves an event without a comment without a description', async () => {
+    expect((await event('TupleEmits.vue', 'open'))?.description).toBeUndefined()
+  })
+})
+
 // Last, and with its own checker: while a second checker lives in the process, the
 // first stops seeing `updateFile`. The engine keeps one per framework and disposes
 // before it builds again, so only the spec could hold two.

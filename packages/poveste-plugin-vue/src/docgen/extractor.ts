@@ -1,7 +1,10 @@
 import type { DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
+import type ts from 'typescript'
 import type { VueDocgenOptions } from './meta.js'
 import { existsSync, readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { findTsconfig } from 'poveste/docgen'
+import { readEventDocs } from './events.js'
 import { toComponentDoc } from './meta.js'
 
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
@@ -16,12 +19,17 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
   const options = (context.options ?? {}) as VueDocgenOptions
   const checkerOptions = { forceUseTs: true, printer: { newLine: 1 } }
   const tsconfig = findTsconfig(context.root)
+  // The copy vue-component-meta loaded, so the syntax kinds match the program it builds.
+  const typescript: typeof ts = createRequire(createRequire(import.meta.url).resolve('vue-component-meta'))('typescript')
   const checker = tsconfig
     ? createChecker(tsconfig, checkerOptions)
     : createCheckerByJson(context.root, { include: ['**/*'], exclude: ['node_modules'] }, checkerOptions)
 
   return {
-    extract: file => toComponentDoc(checker.getComponentMeta(file), options),
+    extract(file) {
+      const meta = checker.getComponentMeta(file)
+      return toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
+    },
     update(file) {
       if (!SOURCE.test(file)) {
         return
