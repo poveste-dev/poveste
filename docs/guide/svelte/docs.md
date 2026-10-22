@@ -74,7 +74,13 @@ The docs tab shows a props, slots and events table for each component a story im
 - A `Snippet` prop is a slot, and an `on…` function prop is an event. The `children` that `svelte/elements` declares counts as a slot only when the component's `$props()` takes it.
 - HTML attributes from `svelte/elements` and other props declared in installed packages are left out, unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
 
-It needs `typescript` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. A component without `lang="ts"` is read from what its destructuring implies.
+It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`:
+
+```sh
+npm i -D typescript@6 svelte2tsx
+```
+
+`svelte2tsx` is an optional peer of `@poveste/plugin-svelte`, so a book with `autoDocs: false` installs neither. Without it, auto-docs turns off and says so once in the log. A component without `lang="ts"` is read from what its destructuring implies.
 
 ## Source code
 

@@ -481,6 +481,9 @@ importers:
       svelte-preprocess:
         specifier: ^6.0.5
         version: 6.0.5(@babel/core@7.29.7(supports-color@10.2.2))(postcss-load-config@6.0.1(jiti@2.7.0)(postcss@8.5.26)(yaml@2.9.1))(postcss@8.5.26)(sass@1.105.1)(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      svelte2tsx:
+        specifier: ^0.7.61
+        version: 0.7.61(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -527,6 +530,9 @@ importers:
       svelte-preprocess:
         specifier: ^6.0.5
         version: 6.0.5(@babel/core@7.29.7(supports-color@10.2.2))(postcss-load-config@6.0.1(jiti@2.7.0)(postcss@8.5.26)(yaml@2.9.1))(postcss@8.5.26)(sass@1.105.1)(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      svelte2tsx:
+        specifier: ^0.7.61
+        version: 0.7.61(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -563,6 +569,9 @@ importers:
       svelte-check:
         specifier: ^4.7.6
         version: 4.7.6(picomatch@4.0.7)(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      svelte2tsx:
+        specifier: ^0.7.61
+        version: 0.7.61(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1336,9 +1345,6 @@ importers:
       pathe:
         specifier: ^2.0.3
         version: 2.0.3
-      svelte2tsx:
-        specifier: ^0.7.61
-        version: 0.7.61(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
       tinyglobby:
         specifier: ^0.2.17
         version: 0.2.17
@@ -1367,6 +1373,9 @@ importers:
       svelte-preprocess:
         specifier: ^6.0.5
         version: 6.0.5(@babel/core@7.29.7(supports-color@10.2.2))(postcss-load-config@6.0.1(jiti@2.7.0)(postcss@8.5.26)(yaml@2.9.1))(postcss@8.5.26)(sass@1.103.1)(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
+      svelte2tsx:
+        specifier: ^0.7.61
+        version: 0.7.61(svelte@5.57.2(@typescript-eslint/types@8.70.0))(typescript@6.0.3)
       typescript:
         specifier: 'catalog:'
         version: 6.0.3

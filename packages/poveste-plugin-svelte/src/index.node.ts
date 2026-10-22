@@ -14,6 +14,20 @@ import { syncSvelteKit } from './util/kit-sync.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
 
+/**
+ * `svelte2tsx` is an optional peer, loaded from the book like TypeScript, so a book
+ * with auto-docs off installs neither. Looked for up the book's own `node_modules`,
+ * where a check that passes means the extractor's load finds it.
+ */
+function svelte2tsxProblem(root: string): string | undefined {
+  for (let dir = root; dir !== dirname(dir); dir = dirname(dir)) {
+    if (existsSync(join(dir, 'node_modules', 'svelte2tsx', 'package.json'))) {
+      return undefined
+    }
+  }
+  return 'Auto-docs is off: it reads Svelte components\' types through `svelte2tsx`, which this book does not have. Install `svelte2tsx` in the book to turn it on, or set `autoDocs: false` to turn it off without this message.'
+}
+
 export function HstSvelte(): Plugin {
   return {
     name: '@poveste/plugin-svelte',
@@ -24,6 +38,7 @@ export function HstSvelte(): Plugin {
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
       // `svelte2tsx`'s output is read with the book's TypeScript (#1401).
       typescript: 'book',
+      unavailable: svelte2tsxProblem,
     },
 
     async defaultConfig() {
