@@ -1,3 +1,4 @@
+import type { SandboxCssBudget } from '../playwright.config'
 import { expect, test } from '@playwright/test'
 
 /*
@@ -20,14 +21,8 @@ const SANDBOX_JS_BUDGET = 4 * 1024 * 1024
 const SANDBOX_CSS_BUDGET = 48 * 1024
 
 test('the sandbox boots inside its script budget, without the highlighter', async ({ page }, testInfo) => {
-  /*
-   * Quasar ships ~262 KB of its own CSS into every sandbox, five times this
-   * budget. Skipped rather than raised: the budget is what makes the number
-   * visible, and raising it to accommodate one framework would hide the same
-   * regression everywhere else. Filed as #542 as a finding about shipping a
-   * Quasar book, and deliberately not a blocker on promoting it (#499).
-   */
-  test.skip(testInfo.project.metadata?.overSandboxCssBudget, 'known to exceed the CSS budget — #542')
+  // See `sandboxCssBudget` in `playwright.config.ts` (#542).
+  const own: SandboxCssBudget | undefined = testInfo.project.metadata?.sandboxCssBudget
 
   const scripts: { name: string, bytes: number }[] = []
   const styles: { name: string, bytes: number }[] = []
@@ -55,7 +50,11 @@ test('the sandbox boots inside its script budget, without the highlighter', asyn
 
   expect(highlighter, `sandbox loaded ${highlighter.map(s => s.name).join(', ')}`).toHaveLength(0)
   expect(totalJs, `sandbox booted with ${scripts.length} scripts totalling ${totalJs} bytes`).toBeLessThan(SANDBOX_JS_BUDGET)
-  expect(totalCss, `sandbox booted with ${styles.length} stylesheets totalling ${totalCss} bytes`).toBeLessThan(SANDBOX_CSS_BUDGET)
+  expect(totalCss, `sandbox booted with ${styles.length} stylesheets totalling ${totalCss} bytes${own ? `, against this book's own budget: ${own.reason}` : ''}`).toBeLessThan(own?.bytes ?? SANDBOX_CSS_BUDGET)
+  // A ceiling alone passes a realm the book's own stylesheet stopped reaching.
+  if (own) {
+    expect(totalCss, `sandbox booted with ${totalCss} bytes of CSS, under half this book's own budget: ${own.reason}`).toBeGreaterThan(own.bytes / 2)
+  }
   // A realm that needs the network to boot is a realm that fails offline.
   expect(external, `sandbox reached out to ${external.join(', ')}`).toEqual([])
 })

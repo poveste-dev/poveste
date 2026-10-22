@@ -56,11 +56,14 @@ interface Example {
    */
   reference?: boolean
   /**
-   * Known to boot a sandbox over the CSS budget, so `sandbox-payload` is skipped
-   * for it rather than the budget being raised for everyone (#542).
+   * A sandbox CSS budget of its own, for a book whose framework ships a large global
+   * stylesheet into every realm. Held, rather than skipped, so the book still fails
+   * when it gets heavier, and the reason sits beside the number (#542).
    */
-  overSandboxCssBudget?: boolean
+  sandboxCssBudget?: SandboxCssBudget
 }
+
+export interface SandboxCssBudget { bytes: number, reason: string }
 
 const ALL_EXAMPLES: Example[] = [
   {
@@ -91,7 +94,8 @@ const ALL_EXAMPLES: Example[] = [
     // the 19 shared specs — classified with vike, which is an interop guard for
     // a framework we do not support (#499).
     conformance: true,
-    overSandboxCssBudget: true,
+    // A little above what the built book loads, so a heavier one still fails.
+    sandboxCssBudget: { bytes: 240 * 1024, reason: 'Quasar loads its own ~232 KiB stylesheet into every realm (#542)' },
     // Same reason as vike: the contract is a runtime one, and dev and build
     // reach the sandbox by different paths.
     dev: { port: 4673, specs: ['**/quasar-interop.spec.ts'] },
@@ -202,7 +206,7 @@ export default defineConfig({
       ? [{
           name: `${example.name}:conformance`,
           testDir: './e2e',
-          metadata: { reference: Boolean(example.reference), overSandboxCssBudget: Boolean(example.overSandboxCssBudget) },
+          metadata: { reference: Boolean(example.reference), sandboxCssBudget: example.sandboxCssBudget },
           use: chrome(`http://localhost:${example.port}`),
         }]
       : [],
