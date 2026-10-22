@@ -11,20 +11,20 @@
   },
   "devDependencies": {
     "@nuxtjs/i18n": "^10.6.0",
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.64.1",
     "@poveste/plugin-nuxt": "workspace:*",
     "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "floating-vue": "5.4.0",
     "lottie-web": "^5.12.2",
-    "nuxt": "^4.6.1",
-    "pinia": "^4.0.3",
+    "nuxt": "^4.6.2",
+    "pinia": "^4.1.0",
     "poveste": "workspace:*",
-    "sass": "^1.105.1",
+    "sass": "^1.105.2",
     "tailwindcss": "catalog:",
     "vue": "^3.5.44",
-    "vue-i18n": "^11.4.14"
+    "vue-i18n": "^11.4.16"
   },
   "overrides": {
     "@intlify/bundle-utils": {
