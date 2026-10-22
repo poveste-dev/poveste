@@ -71,6 +71,20 @@ export function rootFirst(entries: ComponentDocsEntry[], storyFile?: string): Co
   return root ? [root, ...entries.filter(entry => entry !== root)] : entries
 }
 
+/**
+ * The `v-model` a prop and its `update:` event make together, as a template writes it:
+ * `v-model` for `modelValue`, `v-model:open` for `open` (#1436). Asked with either name,
+ * so the two rows of a pair, one under Props and one under Events, carry the same mark.
+ */
+export function modelLabel(doc: ComponentDoc, name: string): string | undefined {
+  const prop = name.startsWith('update:') ? name.slice('update:'.length) : name
+  const paired = doc.props.some(candidate => candidate.name === prop) && doc.events.some(event => event.name === `update:${prop}`)
+  if (!paired) {
+    return undefined
+  }
+  return prop === 'modelValue' ? 'v-model' : `v-model:${prop}`
+}
+
 export function tagText(tags: DocTag[], name: string): string | undefined {
   const tag = tags.find(tag => tag.name === name)
   return tag ? (tag.text ?? '') : undefined

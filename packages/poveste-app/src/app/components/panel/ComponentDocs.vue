@@ -2,7 +2,7 @@
 import type { DocProp } from '@poveste/shared'
 import type { ComponentDocsEntry } from '../../util/component-docs'
 import { computed } from 'vue'
-import { OPEN_PARTS, rootFirst, tagHref, tagText } from '../../util/component-docs'
+import { modelLabel, OPEN_PARTS, rootFirst, tagHref, tagText } from '../../util/component-docs'
 
 const props = defineProps<{
   components: ComponentDocsEntry[]
@@ -69,6 +69,11 @@ function shownDefault(prop: DocProp) {
                   title="Required"
                   data-slot="required"
                 >*</span>
+                <code
+                  v-if="modelLabel(component.doc, prop.name)"
+                  :title="`Bound two ways with ${modelLabel(component.doc, prop.name)}, through the update:${prop.name} event`"
+                  data-slot="model"
+                >{{ modelLabel(component.doc, prop.name) }}</code>
               </td>
               <td><code>{{ prop.type }}</code></td>
               <td>
@@ -151,7 +156,14 @@ function shownDefault(prop: DocProp) {
               :key="event.name"
               :data-event="event.name"
             >
-              <td><code>{{ event.name }}</code></td>
+              <td>
+                <code>{{ event.name }}</code>
+                <code
+                  v-if="modelLabel(component.doc, event.name)"
+                  :title="`Bound two ways with ${modelLabel(component.doc, event.name)}, with the ${event.name.slice('update:'.length)} prop`"
+                  data-slot="model"
+                >{{ modelLabel(component.doc, event.name) }}</code>
+              </td>
               <td><code v-if="event.type">{{ event.type }}</code></td>
               <td>{{ event.description }}</td>
             </tr>
@@ -237,6 +249,17 @@ pre code {
 [data-slot='required'] {
   color: var(--color-red-500);
   margin-inline-start: .125rem;
+}
+
+[data-slot='model'] {
+  display: inline-block;
+  margin-inline-start: .375rem;
+  color: var(--color-primary-600);
+  cursor: help;
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    color: var(--color-primary-400);
+  }
 }
 
 [data-slot='deprecated'],
