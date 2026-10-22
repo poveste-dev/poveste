@@ -12,13 +12,13 @@
   "dependencies": {
     "floating-vue": "5.4.0",
     "lottie-web": "^5.12.2",
-    "pinia": "^4.0.3",
+    "pinia": "^4.1.0",
     "vue": "^3.5.44"
   },
   "devDependencies": {
     "@iconify-json/carbon": "^1.2.28",
     "@iconify-json/el": "^1.2.2",
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.64.1",
     "@poveste/app": "workspace:*",
     "@poveste/plugin-tailwind": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
@@ -26,9 +26,9 @@
     "@vitejs/plugin-vue": "^6.0.10",
     "nodemon": "^3.1.14",
     "poveste": "workspace:*",
-    "sass": "^1.105.1",
+    "sass": "^1.105.2",
     "tailwindcss": "catalog:",
     "vite": "catalog:",
-    "vue-i18n": "^11.4.14"
+    "vue-i18n": "^11.4.16"
   }
 }
