@@ -82,6 +82,8 @@ What each table reads:
 - **Slots** come from `defineSlots`, and **events** from `defineEmits`.
 - **Props a component inherits from installed packages**, such as the HTML attributes, are left out unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
 
+If a story's markdown already has hand-written Props, Emits or Slots sections, delete them once auto-docs is on: the table shows beside them, and the two drift apart. Keep the prose a table can't carry, such as usage, accessibility notes and examples.
+
 Nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it.
 
 It needs TypeScript 6 or earlier installed in the book: `npm i -D typescript@6`. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
