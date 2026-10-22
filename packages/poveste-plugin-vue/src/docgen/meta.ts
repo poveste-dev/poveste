@@ -46,12 +46,34 @@ function toMember(member: Pick<SlotMeta | EventMeta, 'name' | 'description' | 't
   }
 }
 
+/**
+ * An event's payload, which vue-component-meta prints as the tuple it is declared as,
+ * `[event: KeyboardEvent]`, written as the parameter list a handler takes (#1436). Only
+ * when the outer brackets enclose the whole of it: `[a: A] | [b: B]` is left as it is.
+ */
+export function asParameters(type: string): string {
+  if (!type.startsWith('[')) {
+    return type
+  }
+  let depth = 0
+  for (let i = 0; i < type.length; i++) {
+    if ('[(<{'.includes(type[i]!)) {
+      depth++
+    }
+    // The `>` of an arrow, `() => void`, closes nothing.
+    else if (']>)}'.includes(type[i]!) && !(type[i] === '>' && type[i - 1] === '=') && --depth === 0) {
+      return i === type.length - 1 ? `(${type.slice(1, -1)})` : type
+    }
+  }
+  return type
+}
+
 // What vue-component-meta returns for an event is empty wherever its own reading is (#1462).
 function withDocs(event: EventMeta, doc: EventDoc | undefined): Pick<EventMeta, 'name' | 'description' | 'type' | 'tags'> {
   return {
     name: event.name,
     description: event.description || doc?.description || '',
-    type: event.type,
+    type: asParameters(event.type),
     tags: event.tags.length ? event.tags : doc?.tags ?? [],
   }
 }
