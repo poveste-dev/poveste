@@ -23,6 +23,7 @@ import { runDevCommand } from './dev-event.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
+import { postcssOffChrome } from './style-isolation/consumer-postcss.js'
 import {
   chromeCssScopePlugin,
   globalStylesPlugin,
@@ -196,7 +197,9 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
       isStoryFile: (id: string) => ctx.storyFiles.some(file => normalizePath(file.path) === id),
     },
 
-    config(_, { command }) {
+    async config(userConfig, { command }) {
+      // The chrome's stylesheets are compiled already; under `POVESTE_DEV` they are source.
+      const postcss = process.env['POVESTE_DEV'] ? undefined : await postcssOffChrome(userConfig.root ?? ctx.root, userConfig.css?.postcss, APP_PATH)
       const collapsedVue = isServer || process.env['POVESTE_DEV'] ? {} : collapseVendoredVue({ root: ctx.root })
       return {
         // The book is a single-page app whatever the project's framework says: a
@@ -294,6 +297,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
           '__HST_COLLECT__': isServer,
         },
         cacheDir: isServer ? 'node_modules/.pvt-vite-server' : 'node_modules/.pvt-vite',
+        ...postcss ? { css: { postcss: postcss as NonNullable<NonNullable<ViteConfig['css']>['postcss']> } } : {},
       }
     },
 
