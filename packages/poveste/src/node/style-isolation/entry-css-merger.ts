@@ -77,7 +77,7 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
 
       for (const [entryName, sources] of mergedByEntry) {
         const fileName = `${entryName}.css`
-        const merged = sources.join('\n')
+        const merged = hoistImports(sources.join('\n'))
         const finalSource = entryName === mainEntryName && opts.isolateStyles
           ? wrapMarkedUserCss(merged, scopeRoot)
           : stripMarkers(merged)
@@ -141,4 +141,23 @@ export function wrapMarkedUserCss(css: string, scopeRoot: string): string {
 
 function minifyCss(fileName: string, css: string): string {
   return transform({ filename: fileName, code: new TextEncoder().encode(css), minify: true }).code.toString()
+}
+
+// A whole statement, quotes respected: a font URL carries `;` in its query string.
+const IMPORT_RULE = /@import\s+(?:url\((?:'[^']*'|"[^"]*"|[^)]*)\)|'[^']*'|"[^"]*")[^;]*;/g
+
+/**
+ * Every `@import` at the head of the file, where CSS allows it. A stylesheet's own
+ * imports open its chunk, and merged behind another chunk's rules they were dropped
+ * by the browser without a word, and refused by a minifier (#1441).
+ */
+export function hoistImports(css: string): string {
+  const imports: string[] = []
+  const rest = css.replace(IMPORT_RULE, (rule) => {
+    if (!imports.includes(rule)) {
+      imports.push(rule)
+    }
+    return ''
+  })
+  return imports.length ? `${imports.join('\n')}\n${rest}` : css
 }

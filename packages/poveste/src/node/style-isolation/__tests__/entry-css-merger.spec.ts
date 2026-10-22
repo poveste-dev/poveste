@@ -1,6 +1,6 @@
 import type { Rolldown } from 'vite'
 import { describe, expect, it } from 'vitest'
-import { entryCssMergerPlugin } from '../entry-css-merger.js'
+import { entryCssMergerPlugin, hoistImports } from '../entry-css-merger.js'
 import { USER_CSS_MARK_END, USER_CSS_MARK_START } from '../vite-plugin.js'
 
 function fakeChunk(name: string, importedCss: string[], code = '', extra: Partial<any> = {}) {
@@ -160,5 +160,34 @@ describe('entry-css-merger, minifying', () => {
     expect(css).toMatch(/@scope\s*\(\.__poveste-render-story\)[^{]*\{\.card\{padding:4px\}/)
     expect(css).toContain('.poveste-chrome{color:red}')
     expect(css).not.toContain('__PVT_USER_CSS')
+  })
+})
+
+// A story stylesheet opening with a font `@import` sat behind the chrome's rules once
+// merged: the browser dropped it, and Lightning CSS refused the file (#1441).
+describe('a merged file\'s imports', () => {
+  const FONT = '@import url(\'https://fonts.example/css2?family=Roboto:wght@0,400;0,500&display=swap\');'
+
+  it('come first, so a minified book with a story font import builds', () => {
+    const plugin = entryCssMergerPlugin({ isolateStyles: true, minify: true })
+    const bundle: Rolldown.OutputBundle = {
+      'bundle-main.js': fakeChunk('bundle-main', ['chrome.css', 'story.css']),
+      'chrome.css': fakeAsset('chrome.css', '.poveste-chrome { color: red; }'),
+      'story.css': fakeAsset('story.css', mark(`${FONT}\n.card { padding: 4px; }`)),
+    }
+
+    const css = String(runMerger(plugin, bundle).get('bundle-main.css').source)
+
+    // Lightning CSS writes `@import url('…')` as `@import "…"`.
+    expect(css).toMatch(/^@import (?:url\()?["']?https:\/\/fonts\.example\/css2\?family=Roboto:wght@0,400;0,500&display=swap/)
+    expect(css).toMatch(/@scope\s*\(\.__poveste-render-story\)[^{]*\{\.card\{padding:4px\}/)
+  })
+
+  it('are read whole, past the `;` a URL can carry, and kept once each', () => {
+    expect(hoistImports(`.a{}\n${FONT}\n.b{}\n${FONT}`)).toBe(`${FONT}\n.a{}\n\n.b{}\n`)
+  })
+
+  it('leave a file without any as it was', () => {
+    expect(hoistImports('.a{}\n.b{}')).toBe('.a{}\n.b{}')
   })
 })
