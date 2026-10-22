@@ -15,7 +15,7 @@ const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
  * error, and keeps its runtime props.
  */
 export async function createExtractor(context: DocgenExtractorContext): Promise<DocgenExtractor> {
-  const { createChecker, createCheckerByJson } = await import('vue-component-meta')
+  const { createChecker, createCheckerByJson, TypeMeta } = await import('vue-component-meta')
   const options = (context.options ?? {}) as VueDocgenOptions
   const checkerOptions = { forceUseTs: true, printer: { newLine: 1 } }
   const tsconfig = findTsconfig(context.root)
@@ -25,10 +25,22 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
     ? createChecker(tsconfig, checkerOptions)
     : createCheckerByJson(context.root, { include: ['**/*'], exclude: ['node_modules'] }, checkerOptions)
 
+  // A script file is offered for its default export, which is a component only when it is
+  // `defineComponent`'s: a function, a helper or a plain object throws or reads as Unknown.
+  function scriptComponent(file: string) {
+    try {
+      const meta = checker.getComponentMeta(file, 'default')
+      return meta.type === TypeMeta.Unknown ? undefined : meta
+    }
+    catch {
+      return undefined
+    }
+  }
+
   return {
     extract(file) {
-      const meta = checker.getComponentMeta(file)
-      return toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
+      const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(file)
+      return meta && toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
     },
     update(file) {
       if (!SOURCE.test(file)) {
