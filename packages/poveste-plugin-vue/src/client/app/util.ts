@@ -254,6 +254,27 @@ export function isComponentBinding(value: unknown): boolean {
     || ('setup' in value && typeof value.setup === 'function')
 }
 
+function isVueApp(value: unknown): boolean {
+  return isObject(value) && '_context' in value && '_component' in value && 'mount' in value
+}
+
+/**
+ * A Vue app, or an object holding one in a data property of its own, as the
+ * Nuxt app `useNuxtApp()` returns does. Implicit state skips it: the state sync
+ * deep-watches what it holds, so it walked the whole app on every sync, as far
+ * as the dev-only `app.config.compilerOptions` getter that warns when read
+ * (#1457). Read through descriptors, so no getter runs to find out.
+ */
+export function holdsVueApp(value: unknown): boolean {
+  if (!isObject(value)) {
+    return false
+  }
+  if (isVueApp(value)) {
+    return true
+  }
+  return Object.values(Object.getOwnPropertyDescriptors(value)).some(descriptor => 'value' in descriptor && isVueApp(descriptor.value))
+}
+
 export function useInstance(name: string): ComponentInternalInstance {
   const vm = getCurrentInstance()
   if (!vm) {
