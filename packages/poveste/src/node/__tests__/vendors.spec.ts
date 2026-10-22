@@ -334,15 +334,19 @@ describe('pre-bundling the chrome\'s vendored packages', () => {
     ])
   })
 
-  it('leaves a book with its own Vue to the collapse', () => {
-    const vendors = vendorsWith({ 'poveste-vue': 'npm:vue@^3.5.26' })
+  // The scan never enters `@poveste/vendors`, so in a Vue book the rest were found
+  // only when the page asked for them, and a cold dev server reloaded it (#1347).
+  it('leaves only the collapsed Vue to the project in a book with its own', () => {
+    const vendors = vendorsWith({ 'poveste-vue': 'npm:vue@^3.5.26', 'poveste-vue-router': 'npm:vue-router@^5.3.1' })
     const resolve = resolverOver({
       '/book|vue': '/book/node_modules/vue/index.js',
       '/book|poveste/package.json': '/book/node_modules/poveste/package.json',
       '/poveste|@poveste/vendors/vue': join(vendors, 'vue.js'),
     })
 
-    expect(chromePrebundles({ root: '/book', resolve, vendorsFrom: '/poveste' })).toEqual([])
+    expect(chromePrebundles({ root: '/book', collapsed: ['poveste-vue'], resolve, vendorsFrom: '/poveste' })).toEqual([
+      'poveste > @poveste/vendors > poveste-vue-router',
+    ])
   })
 
   it('names nothing the project cannot reach, so Vite has no include to warn about', () => {
