@@ -1,0 +1,49 @@
+/*
+ * The controls' own tokens, under names only the controls use (#1443).
+ *
+ * A control renders wherever a story puts it, and a sandboxed story's realm has none
+ * of the chrome's stylesheet: no `--color-*`, no `--radius-*`. Declaring those public
+ * names there would put them in the document the user's own CSS shares, where a
+ * book on Tailwind 4 defines the same names. So each control element carries these,
+ * and a control reads `--_poveste-*` rather than `--color-*`.
+ *
+ * Mirrors `tokens.css`, colour for colour, with the same bridge to
+ * `--_poveste-color-<name>-<key>`, which a book supplies from `theme.colors`.
+ * `src/__tests__/private-tokens.spec.ts` holds the two in agreement.
+ */
+:where([class*='poveste-']) {
+  --_poveste-primary-50: var(--_poveste-color-primary-50, #ecfdf5);
+  --_poveste-primary-100: var(--_poveste-color-primary-100, #d1fae5);
+  --_poveste-primary-200: var(--_poveste-color-primary-200, #a7f3d0);
+  --_poveste-primary-300: var(--_poveste-color-primary-300, #6ee7b7);
+  --_poveste-primary-400: var(--_poveste-color-primary-400, #34d399);
+  --_poveste-primary-500: var(--_poveste-color-primary-500, #10b981);
+  --_poveste-primary-600: var(--_poveste-color-primary-600, #059669);
+  --_poveste-primary-700: var(--_poveste-color-primary-700, #047857);
+  --_poveste-primary-800: var(--_poveste-color-primary-800, #065f46);
+  --_poveste-primary-900: var(--_poveste-color-primary-900, #064e3b);
+  --_poveste-gray-50: var(--_poveste-color-gray-50, #fafafa);
+  --_poveste-gray-100: var(--_poveste-color-gray-100, #f4f4f5);
+  --_poveste-gray-200: var(--_poveste-color-gray-200, #e4e4e7);
+  --_poveste-gray-300: var(--_poveste-color-gray-300, #d4d4d8);
+  --_poveste-gray-400: var(--_poveste-color-gray-400, #a1a1aa);
+  --_poveste-gray-500: var(--_poveste-color-gray-500, #71717a);
+  --_poveste-gray-600: var(--_poveste-color-gray-600, #52525b);
+  --_poveste-gray-700: var(--_poveste-color-gray-700, #3f3f46);
+  --_poveste-gray-750: var(--_poveste-color-gray-750, #323238);
+  --_poveste-gray-800: var(--_poveste-color-gray-800, #27272a);
+  --_poveste-gray-850: var(--_poveste-color-gray-850, #1f1f21);
+  --_poveste-gray-900: var(--_poveste-color-gray-900, #18181b);
+  --_poveste-gray-950: var(--_poveste-color-gray-950, #101012);
+  --_poveste-radius-sm: 0.25rem;
+  --_poveste-radius: 0.375rem;
+  --_poveste-radius-md: 0.5rem;
+  --_poveste-radius-lg: 0.75rem;
+  --_poveste-radius-xl: 1rem;
+  --_poveste-radius-2xl: 1.5rem;
+  --_poveste-radius-3xl: 2rem;
+  --_poveste-white: #fff;
+  --_poveste-black: #000;
+  /* Not a theme colour: what Tailwind 4 calls `orange-500`, for `HstJson`'s warning. */
+  --_poveste-warning: oklch(70.5% .213 47.604);
+}

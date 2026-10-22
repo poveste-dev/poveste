@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkControlConventions, NOT_YET_MIGRATED, problemsIn } from './control-conventions.ts'
+import { checkControlConventions, problemsIn } from './control-conventions.ts'
 import { assertNoProblems } from './support/assert-no-problems.ts'
 import { tree } from './support/fixture-tree.ts'
 
@@ -49,7 +49,7 @@ describe('a colour a book cannot theme', () => {
   })
 
   it('allows a token', () => {
-    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x { color: var(--color-primary-500); }') }]
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x { color: var(--_poveste-primary-500); }') }]
 
     expect(problemsIn(files)).toEqual([])
   })
@@ -57,7 +57,7 @@ describe('a colour a book cannot theme', () => {
   it('does not read an issue reference as a hex', () => {
     // `(#101)` is three hex digits to a regex, and this codebase cites issues
     // in comments constantly.
-    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '/* see #101 and #955 */ .x { color: var(--color-white); }') }]
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '/* see #101 and #955 */ .x { color: var(--_poveste-white); }') }]
 
     expect(problemsIn(files)).toEqual([])
   })
@@ -73,7 +73,7 @@ describe('a dark variant that compiles to nothing', () => {
   })
 
   it('passes the same colours written as CSS on the subject', () => {
-    const style = `.x:where(.ptw-dark, .ptw-dark *)::-webkit-slider-thumb { background: var(--color-gray-700); }`
+    const style = `.x:where(.ptw-dark, .ptw-dark *)::-webkit-slider-thumb { background: var(--_poveste-gray-700); }`
     const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', style) }]
 
     expect(problemsIn(files)).toEqual([])
@@ -88,40 +88,26 @@ describe('a dark variant that compiles to nothing', () => {
   // The codebase writes `dark:` in prose constantly, including in the comments
   // explaining why not to use it.
   it('does not read a `dark:` in a comment as one in an `@apply`', () => {
-    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '/* never `@apply dark:bg-gray-700` here */ .x { color: var(--color-white); }') }]
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '/* never `@apply dark:bg-gray-700` here */ .x { color: var(--_poveste-white); }') }]
 
     expect(problemsIn(files)).toEqual([])
   })
 })
 
-describe('the not-yet-migrated list', () => {
-  it('exempts a control on it', () => {
-    const files = [{ file: 'json/HstJson.vue', source: control('<div class="poveste-json">', '.poveste-json { color: #333; }') }]
+// A sandboxed story's realm loads the controls' component CSS and none of the chrome's (#1443).
+describe('a token a sandboxed story does not define', () => {
+  it('fails on the chrome\'s colour and radius tokens', () => {
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x { color: var(--color-gray-200); border-radius: var(--radius-sm); }') }]
 
-    expect(problemsIn(files)).toEqual([])
+    expect(problemsIn(files)).toEqual([
+      'a/HstThing.vue: reads the chrome\'s `--color-gray-200`, `--radius-sm`, which a sandboxed story does not define — read `--_poveste-…` instead',
+    ])
   })
 
-  it('still holds every control #955 has moved', () => {
-    // A control leaves the list when it migrates. If one that has already moved
-    // is still on it, the check is exempting something it should be holding.
-    for (const migrated of [
-      'HstCheckbox.vue',
-      'HstCheckboxList.vue',
-      'HstSimpleCheckbox.vue',
-      'HstButton.vue',
-      'HstText.vue',
-      'HstTextarea.vue',
-      'HstButtonGroup.vue',
-      'HstSelect.vue',
-      'CustomSelect.vue',
-      'HstNumber.vue',
-      'HstSlider.vue',
-      'HstRadio.vue',
-      'HstColor.vue',
-      'HstDate.vue',
-    ]) {
-      expect(NOT_YET_MIGRATED.has(migrated)).toBe(false)
-    }
+  it('allows the controls\' own', () => {
+    const files = [{ file: 'a/HstThing.vue', source: control('<b data-slot="x" />', '.x { color: var(--_poveste-gray-200); border-radius: var(--_poveste-radius-sm); }') }]
+
+    expect(problemsIn(files)).toEqual([])
   })
 })
 
@@ -131,14 +117,6 @@ describe('checkControlConventions', () => {
 
     expect(checkControlConventions(root).problems).toEqual([
       'no controls found under packages/poveste-controls/src/components — this check is looking in the wrong place',
-    ])
-  })
-
-  it('reports a list that has swallowed every control', () => {
-    const root = tree({ 'packages/poveste-controls/src/components/json/HstJson.vue': '<template><div></div></template>' })
-
-    expect(checkControlConventions(root).problems).toEqual([
-      'every control is on the not-yet-migrated list — this check is asserting nothing',
     ])
   })
 })

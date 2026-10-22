@@ -150,11 +150,11 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
 
   &:hover,
   &[data-state='checked'] {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--_poveste-primary-500);
     outline-offset: 2px;
   }
 }
@@ -164,7 +164,7 @@ const formattedOptions: ComputedRef<Record<string, string>> = computed(() => {
   inset: 3px;
   display: block;
   border-radius: 9999px;
-  background: var(--color-primary-500);
+  background: var(--_poveste-primary-500);
   transform: scale(0);
 
   @media (prefers-reduced-motion: no-preference) {

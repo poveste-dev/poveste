@@ -56,10 +56,10 @@ const emit = defineEmits({
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-white);
+  color: var(--_poveste-white);
 
   &:focus-visible {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--_poveste-primary-500);
     outline-offset: 2px;
   }
 }
@@ -79,7 +79,7 @@ const emit = defineEmits({
   inset: 0;
   box-sizing: border-box;
   border: 1px solid rgb(0 0 0 / .25);
-  border-radius: var(--radius-sm);
+  border-radius: var(--_poveste-radius-sm);
 
   /* Opt in, matching `HomeCounter`: an engine without the query animates
      nothing, rather than animating for someone who asked it not to. */
@@ -95,7 +95,7 @@ const emit = defineEmits({
   }
 
   .poveste-simple-checkbox[data-checked] & {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
     border-width: 8px;
 
     @media (prefers-reduced-motion: no-preference) {
@@ -104,7 +104,7 @@ const emit = defineEmits({
   }
 
   .poveste-simple-checkbox:hover & {
-    border-color: var(--color-primary-500);
+    border-color: var(--_poveste-primary-500);
   }
 
   .poveste-simple-checkbox:active & {
@@ -117,7 +117,7 @@ const emit = defineEmits({
   z-index: 10;
 
   path {
-    stroke: var(--color-white);
+    stroke: var(--_poveste-white);
     stroke-width: 2;
   }
 }

@@ -1,6 +1,6 @@
 # Writing a control
 
-Six rules, each with the reason it exists. `scripts/checks/control-conventions.ts` fails CI on the two that can be checked mechanically; the other four are here because a reader will meet them before they meet a reviewer.
+Six rules, each with the reason it exists. `scripts/checks/control-conventions.ts` fails CI on the three that can be checked mechanically — rules 2, 3 and 4; the other three are here because a reader will meet them before they meet a reviewer.
 
 Settled in #978, before #955 wrote ten more controls against whichever convention happened to be copied. Two existed at the time and disagreed.
 
@@ -12,13 +12,15 @@ Both read the same tokens, so this is not about correctness. It is about a varia
 
 `HstCheckbox` is the example to copy.
 
-## 2. Colours come from the tokens, never from a literal
+## 2. Colours come from the controls' own tokens, never from a literal or the chrome's
 
-`src/style/tokens.css` bridges every themable colour to `--_poveste-color-<name>-<key>`, which each book supplies from `theme.colors`. Write `var(--color-primary-500)`, never `#10b981`.
+`src/style/private-tokens.css` gives every control element `--_poveste-<name>-<key>`, bridged to `--_poveste-color-<name>-<key>`, which each book supplies from `theme.colors`. Write `var(--_poveste-primary-500)`, never `#10b981`, and never the chrome's `var(--color-primary-500)`.
 
-`scripts/checks/theme-tokens.ts` already holds the bridge in both directions. This rule is about the other end: a literal in a control is a colour no book can theme, and nothing reports it.
+The chrome's names are not defined where a control often renders. A sandboxed story's realm loads the controls' CSS and none of the chrome's, so `var(--color-…)` resolved to nothing there and the control rendered unstyled (#1443). Declaring the public names in that realm would put them in the document a book's own CSS shares, where Tailwind 4 defines the same names. So the controls carry their own.
 
-A literal is fine where no token exists and none should — a tooltip's translucent black is not a brand colour. `--color-white` and `--color-black` are Tailwind's own and are tokens too.
+`private-tokens.spec.ts` holds the private layer to `tokens.css`, colour for colour, and `scripts/checks/theme-tokens.ts` holds the bridge. This rule is about the other end: a literal in a control is a colour no book can theme, and nothing reports it.
+
+A literal is fine where no token exists and none should — a tooltip's translucent black is not a brand colour. `--_poveste-white`, `--_poveste-black` and `--_poveste-warning` are tokens too.
 
 ## 3. Dark mode goes on the subject, not on an ancestor
 

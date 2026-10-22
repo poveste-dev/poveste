@@ -51,7 +51,8 @@ function truncatedValue(value: string | any[] | Record<string, any>, width: numb
 
 <template>
   <div
-    class="poveste-token-grid bind-col-size grid gap-4 m-4"
+    class="poveste-token-grid bind-col-size"
+    data-slot="grid"
     :style="{
       '--poveste-col-size': colSizePx,
     }"
@@ -59,7 +60,7 @@ function truncatedValue(value: string | any[] | Record<string, any>, width: numb
     <div
       v-for="token of processedTokens"
       :key="token.key"
-      class="flex flex-col gap-2"
+      class="poveste-token-item"
       @mouseenter="hover = token.key"
       @mouseleave="hover = null"
     >
@@ -67,24 +68,24 @@ function truncatedValue(value: string | any[] | Record<string, any>, width: numb
         :token="token"
       />
       <div>
-        <div class="flex gap-1">
+        <div class="poveste-token-row">
           <HstTooltip :content="token.name.length > colSize / 8 ? token.name : ''">
-            <pre class="my-0 truncate shrink">{{ token.name }}</pre>
+            <pre class="poveste-token-text" data-slot="name">{{ token.name }}</pre>
           </HstTooltip>
           <HstCopyIcon
             v-if="hover === token.key"
             :content="token.name"
-            class="flex-none"
+            class="poveste-token-copy"
           />
         </div>
-        <div class="flex gap-1">
+        <div class="poveste-token-row">
           <HstTooltip :content="truncatedValue(token.value, colSize / 8)">
-            <pre class="my-0 opacity-50 truncate shrink">{{ token.value }}</pre>
+            <pre class="poveste-token-text" data-slot="value">{{ token.value }}</pre>
           </HstTooltip>
           <HstCopyIcon
             v-if="hover === token.key"
             :content="typeof token.value === 'string' ? token.value : JSON.stringify(token.value)"
-            class="flex-none"
+            class="poveste-token-copy"
           />
         </div>
       </div>
@@ -92,8 +93,41 @@ function truncatedValue(value: string | any[] | Record<string, any>, width: numb
   </div>
 </template>
 
-<style>
+<style lang="postcss">
+.poveste-token-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem;
+}
+
 .bind-col-size {
   grid-template-columns: repeat(auto-fill, minmax(var(--poveste-col-size), 1fr));
+}
+
+.poveste-token-item {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.poveste-token-row {
+  display: flex;
+  gap: .25rem;
+}
+
+.poveste-token-text {
+  flex-shrink: 1;
+  margin-block: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &[data-slot='value'] {
+    opacity: .5;
+  }
+}
+
+.poveste-token-copy {
+  flex: none;
 }
 </style>

@@ -63,13 +63,40 @@ async function action() {
     <button
       type="button"
       aria-label="Copy"
-      class="flex p-0 bg-transparent border-0 text-inherit opacity-50 hover:opacity-100 focus-visible:opacity-100 hover:text-primary-500 cursor-pointer"
+      class="poveste-copy-icon"
+      data-slot="copy"
       @click="action()"
     >
       <Icon
         icon="carbon:copy-file"
-        class="w-4 h-4"
+        class="poveste-copy-icon-glyph"
       />
     </button>
   </HstTooltip>
 </template>
+
+<style lang="postcss">
+.poveste-copy-icon {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: .5;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 1;
+    color: var(--_poveste-primary-500);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.poveste-copy-icon-glyph {
+  width: 1rem;
+  height: 1rem;
+}
+</style>

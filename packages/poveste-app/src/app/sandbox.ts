@@ -18,6 +18,8 @@ import { applyPreviewSettings, loadStoredPreviewSettings, receivedSettings } fro
 import { createStateBridge } from './util/state-bridge.js'
 import { toRawDeep } from './util/state.js'
 import { isBenignResizeObserverEvent } from './util/uncaught.js'
+// The book's `theme.colors`, under the private names the controls' tokens read (#1443).
+import 'virtual:$poveste-theme'
 
 const query = parseQuery(window.location.search)
 
@@ -115,6 +117,9 @@ watch(previewDark, (value) => {
       el.classList.toggle(className, value)
     }
   }
+  // A builtin control in the story keys its dark rules on `.ptw-dark`, so it follows
+  // the preview it sits in, not the chrome around it (#1443).
+  document.documentElement.classList.toggle('ptw-dark', value)
 }, {
   immediate: true,
 })

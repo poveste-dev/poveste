@@ -53,12 +53,13 @@ const hover = ref<string | null>(null)
 <template>
   <div
     v-if="displayedShades.length"
-    class="poveste-color-shades grid gap-4 grid-cols-[repeat(auto-fill,minmax(200px,1fr))] m-4"
+    class="poveste-color-shades"
+    data-slot="shades"
   >
     <div
       v-for="shade of displayedShades"
       :key="shade.key"
-      class="flex flex-col gap-2"
+      class="poveste-token-item"
       @mouseenter="hover = shade.key"
       @mouseleave="hover = null"
     >
@@ -66,34 +67,77 @@ const hover = ref<string | null>(null)
         :color="shade.color"
       >
         <div
-          class="rounded-full w-16 h-16"
+          class="poveste-color-shades-swatch"
+          data-slot="swatch"
           :style="{
             backgroundColor: shade.color,
           } as CSSProperties"
         />
       </slot>
       <div>
-        <div class="flex gap-1">
+        <div class="poveste-token-row">
           <HstTooltip :content="shade.name.length > 23 ? shade.name : ''">
-            <pre class="my-0 truncate shrink">{{ shade.name }}</pre>
+            <pre class="poveste-token-text" data-slot="name">{{ shade.name }}</pre>
           </HstTooltip>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.name"
-            class="flex-none"
+            class="poveste-token-copy"
           />
         </div>
-        <div class="flex gap-1">
+        <div class="poveste-token-row">
           <HstTooltip :content="shade.color.length > 23 ? shade.color : ''">
-            <pre class="my-0 opacity-50 truncate shrink">{{ shade.color }}</pre>
+            <pre class="poveste-token-text" data-slot="value">{{ shade.color }}</pre>
           </HstTooltip>
           <HstCopyIcon
             v-if="hover === shade.key"
             :content="shade.color"
-            class="flex-none"
+            class="poveste-token-copy"
           />
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style lang="postcss">
+.poveste-color-shades {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1rem;
+}
+
+.poveste-color-shades-swatch {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+}
+
+.poveste-token-item {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.poveste-token-row {
+  display: flex;
+  gap: .25rem;
+}
+
+.poveste-token-text {
+  flex-shrink: 1;
+  margin-block: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &[data-slot='value'] {
+    opacity: .5;
+  }
+}
+
+.poveste-token-copy {
+  flex: none;
+}
+</style>
