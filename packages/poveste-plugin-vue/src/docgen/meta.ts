@@ -1,6 +1,7 @@
 import type { ComponentDoc, DocEvent, DocProp, DocSlot, DocTag } from '@poveste/shared'
 import type { DocgenOptions } from 'poveste/docgen'
 import type { ComponentMeta, EventMeta, PropertyMeta, SlotMeta } from 'vue-component-meta'
+import type { EventDoc } from './events.js'
 import { declaredOnlyInPackages, DEFAULT_TAGS, HIDDEN_TAGS, normalizeDefault } from 'poveste/docgen'
 
 export type VueDocgenOptions = DocgenOptions
@@ -36,7 +37,7 @@ function toProp(prop: PropertyMeta): DocProp {
   }
 }
 
-function toMember(member: SlotMeta | EventMeta): DocSlot & DocEvent {
+function toMember(member: Pick<SlotMeta | EventMeta, 'name' | 'description' | 'type' | 'tags'>): DocSlot & DocEvent {
   return {
     name: member.name,
     ...member.description ? { description: member.description } : {},
@@ -45,11 +46,21 @@ function toMember(member: SlotMeta | EventMeta): DocSlot & DocEvent {
   }
 }
 
-export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}): ComponentDoc {
+// What vue-component-meta returns for an event is empty wherever its own reading is (#1462).
+function withDocs(event: EventMeta, doc: EventDoc | undefined): Pick<EventMeta, 'name' | 'description' | 'type' | 'tags'> {
+  return {
+    name: event.name,
+    description: event.description || doc?.description || '',
+    type: event.type,
+    tags: event.tags.length ? event.tags : doc?.tags ?? [],
+  }
+}
+
+export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>()): ComponentDoc {
   const allow = options.allow ?? []
   return {
     props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(toProp),
     slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(toMember),
-    events: meta.events.filter(event => !isHidden(event.tags)).map(toMember),
+    events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).map(toMember),
   }
 }
