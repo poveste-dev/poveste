@@ -90,6 +90,8 @@ export interface PropsReading {
    * HTML attributes a component extends, it is filtered like any other attribute.
    */
   childrenFrom?: string[]
+  /** The component's own code takes `children`, as a Svelte `$props()` destructuring shows, wherever it is declared. */
+  takesChildren?: boolean
 }
 
 function tagsOf(typescript: typeof ts, symbol: ts.Symbol, checker: ts.TypeChecker): DocTag[] {
@@ -109,6 +111,24 @@ function declaredIn(typescript: typeof ts, symbol: ts.Symbol, names: string[]) {
 }
 
 /**
+ * An event's parameters as `name: type`. A handler typed as a union, as props that
+ * are a union over a discriminant give each member its own, has one call signature
+ * that TypeScript merges by intersecting the parameters: bits-ui's Accordion printed
+ * `value: string & string[]`, which no value meets. So each member's are read and
+ * joined, `value: string | string[]` (#501).
+ */
+function payloadOf(checker: ts.TypeChecker, handler: ts.Type, print: (type: ts.Type) => string): string {
+  const members = handler.isUnion() ? handler.types : [handler]
+  const signatures = members.flatMap(member => member.getCallSignatures().slice(0, 1))
+  const count = Math.max(0, ...signatures.map(signature => signature.getParameters().length))
+  return Array.from({ length: count }, (_, index) => {
+    const parameters = signatures.flatMap(signature => signature.getParameters().slice(index, index + 1))
+    const types = [...new Set(parameters.map(parameter => print(checker.getTypeOfSymbol(parameter))))]
+    return `${parameters[0]!.name}: ${types.join(' | ')}`
+  }).join(', ')
+}
+
+/**
  * A props type as a docs table: filtered, tagged, split into props, slots and
  * events, defaults reconciled.
  */
@@ -121,7 +141,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
   for (const symbol of checker.getPropertiesOfType(checker.getApparentType(props))) {
     const tags = tagsOf(typescript, symbol, checker)
     const files = (symbol.getDeclarations() ?? []).map(declaration => declaration.getSourceFile().fileName)
-    const parentChildren = symbol.name === 'children' && declaredIn(typescript, symbol, reading.childrenFrom ?? [])
+    const parentChildren = symbol.name === 'children' && (reading.takesChildren || declaredIn(typescript, symbol, reading.childrenFrom ?? []))
     if (tags.some(tag => HIDDEN_TAGS.includes(tag.name)) || (!parentChildren && declaredOnlyInPackages(files, allow))) {
       continue
     }
@@ -132,9 +152,9 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
     const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
     const member = { name: symbol.name, ...description ? { description } : {}, tags }
 
-    const signature = checker.getNonNullableType(type).getCallSignatures()[0]
-    if ((reading.eventName ?? EVENT_NAME).test(symbol.name) && signature) {
-      const payload = signature.getParameters().map(parameter => `${parameter.name}: ${print(checker.getTypeOfSymbol(parameter))}`).join(', ')
+    const handler = checker.getNonNullableType(type)
+    if ((reading.eventName ?? EVENT_NAME).test(symbol.name) && handler.getCallSignatures().length) {
+      const payload = payloadOf(checker, handler, print)
       doc.events.push({ ...member, ...payload ? { type: payload } : {} } satisfies DocEvent)
       continue
     }

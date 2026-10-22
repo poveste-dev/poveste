@@ -230,9 +230,9 @@ export default defineConfig({
 
 `boolean | { allow?: string[], exclude?: string[] }` - Default: `true`
 
-For Vue and Solid books, for now: a props, slots and events table on a story's **Docs** tab, read from the component's types, for each `.vue` component a Vue story imports. A Solid story names its component in its `component` field instead, since JSX stories import much besides it. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story names.
+For Vue, Svelte and Solid books, for now: a props, slots and events table on a story's **Docs** tab, read from the component's types: Vue's through `vue-component-meta`, Svelte's from the type on `$props()`, for each component a Vue or Svelte story imports. A Solid story names its component in its `component` field instead, since JSX stories import much besides it. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story names.
 
-It needs TypeScript in the book, version 6 or earlier: `npm i -D typescript@6`. The types are read with `vue-component-meta`, which cannot read TypeScript 7. In a book without TypeScript, or with TypeScript 7, auto-docs turns itself off and says so once in the log; the Docs tab shows no table, and props detected at runtime show as before.
+It needs TypeScript in the book, version 6 or earlier: `npm i -D typescript@6`. Every framework reads the types through TypeScript's own API, which TypeScript 7 no longer has. In a book without TypeScript, or with TypeScript 7, auto-docs turns itself off and says so once in the log; the Docs tab shows no table, and props detected at runtime show as before.
 
 In a built book, a component whose types could not be read is left out of the docs, and the build log says how many were.
 

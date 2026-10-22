@@ -66,6 +66,16 @@ You can link to other stories using a relative path to the story file:
 - [Go to Markdown file](./MarkdownFile.story.md)
 ```
 
+## Component docs
+
+The docs tab shows a props, slots and events table for each component a story imports, read from the type on its `$props()` the way your editor reads it: through an imported `Props`, the interfaces it extends, and `$lib` paths. Descriptions and tags come from the props' JSDoc.
+
+- A default is the destructuring default (`size = 'md'`, through `$bindable(...)`), or an `export let` initialiser, then a `@default` or `@defaultValue` tag. Where both are written and disagree, the code's is shown, and dev marks the difference.
+- A `Snippet` prop is a slot, and an `on…` function prop is an event. The `children` that `svelte/elements` declares counts as a slot only when the component's `$props()` takes it.
+- HTML attributes from `svelte/elements` and other props declared in installed packages are left out, unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
+
+It needs `typescript` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. A component without `lang="ts"` is read from what its destructuring implies.
+
 ## Source code
 
 ::: warning
