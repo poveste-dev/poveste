@@ -11,6 +11,8 @@ import { listComponentFiles } from './util/list-components.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
 import { requireVuePlugin } from './util/vue-plugin.js'
 
+const SCRIPT_COMPONENT = /(?<!\.d)\.[cm]?[jt]sx?$/
+
 export function HstVue(): Plugin {
   return {
     name: '@poveste/plugin-vue',
@@ -62,9 +64,11 @@ export function HstVue(): Plugin {
       }
     },
 
-    // A story file documents nothing: it names the components that do.
+    // A story file documents nothing: it names the components that do. A script file is
+    // offered too, for a component written with `defineComponent` (#1463); the extractor
+    // answers nothing for one that isn't.
     docgen: {
-      match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'),
+      match: file => (file.endsWith('.vue') || SCRIPT_COMPONENT.test(file)) && !/\.story\.[^/]+$/.test(file) && !file.includes('/node_modules/'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
       // `vue-component-meta` requires `typescript` from where it is installed, an optional peer npm does not add.
       typescript: createRequire(import.meta.url).resolve('vue-component-meta'),

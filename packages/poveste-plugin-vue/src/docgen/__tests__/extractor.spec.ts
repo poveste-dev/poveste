@@ -142,6 +142,21 @@ describe('an event\'s JSDoc', () => {
   })
 })
 
+// reka-ui's `Presence` is `export default defineComponent({…})` in a `.ts` file (#1463).
+describe('a component a script file exports', () => {
+  it('is read when defineComponent makes it', async () => {
+    const doc = await extractor.extract(join(FIXTURE, 'Presence.ts'))
+
+    expect(doc?.props).toEqual([expect.objectContaining({ name: 'present', description: 'Whether the child is mounted.', required: true })])
+  })
+
+  it('answers nothing for a helper a story imports, rather than a table or an error', async () => {
+    expect(await extractor.extract(join(FIXTURE, 'format-date.ts'))).toBeUndefined()
+    expect(await extractor.extract(join(FIXTURE, 'settings.ts'))).toBeUndefined()
+    expect(await extractor.extract(join(FIXTURE, 'emits.ts'))).toBeUndefined()
+  })
+})
+
 // Last, and with its own checker: while a second checker lives in the process, the
 // first stops seeing `updateFile`. The engine keeps one per framework and disposes
 // before it builds again, so only the spec could hold two.

@@ -59,8 +59,9 @@ function parseInto(shape: ModuleShape, file: string, code: string, lang: Lang) {
         }
       }
     }
-    else if (node.type === 'ExportDefaultDeclaration' && node.declaration.type === 'Identifier') {
-      shape.exports.set('default', { source: '', imported: node.declaration.name })
+    else if (node.type === 'ExportDefaultDeclaration') {
+      // An expression, such as `defineComponent({…})`, is a value this file defines, so it imports nothing.
+      shape.exports.set('default', { source: '', imported: node.declaration.type === 'Identifier' ? node.declaration.name : '' })
     }
     else if (node.type === 'ExportAllDeclaration' && !node.exported) {
       shape.stars.push(String(node.source.value))
@@ -110,7 +111,9 @@ function shapeOf(file: string): ModuleShape {
 /**
  * The component file `name` reaches from `file`, through `export … from`, `export *` and
  * a re-exported import, as a story importing from a barrel does (#1432). A component is
- * a non-script file reached as its default export, such as `export { default as SelectRoot } from './SelectRoot.vue'`.
+ * a non-script file reached as its default export, such as `export { default as SelectRoot } from './SelectRoot.vue'`,
+ * or a script file's own default export, such as `export default defineComponent({…})` (#1463).
+ * Whether that one is a component is the framework's extractor's to say.
  */
 export async function followName(file: string, name: string, resolve: Resolve, depth = 0): Promise<string | undefined> {
   if (!SCRIPT.test(file)) {
@@ -123,7 +126,10 @@ export async function followName(file: string, name: string, resolve: Resolve, d
   const exported = shape.exports.get(name)
   if (exported) {
     const binding = exported.source ? exported : shape.imports.get(exported.imported)
-    if (!binding || binding.imported === '*') {
+    if (!binding) {
+      return name === 'default' ? file : undefined
+    }
+    if (binding.imported === '*') {
       return undefined
     }
     const target = await resolve(binding.source, file)

@@ -27,6 +27,12 @@ describe('a story\'s components, through re-exports', () => {
     expect(await followName(file('components/index.ts'), 'Card', resolve)).toBe(file('components/Card.vue'))
   })
 
+  // reka-ui's `Presence` is a `defineComponent` in a `.ts` file, reached through its barrel (#1463).
+  it('reaches a script file\'s own default export, as a component written with defineComponent is', async () => {
+    expect(await followName(file('components/Presence/index.ts'), 'Presence', resolve)).toBe(file('components/Presence/Presence.ts'))
+    expect(await followName(file('components/Presence/index.ts'), 'Toggle', resolve)).toBe(file('components/Presence/Toggle.ts'))
+  })
+
   it('reaches no component for a value that is not one, nor for a type', async () => {
     expect(await followName(file('components/index.ts'), 'SELECT_VERSION', resolve)).toBeUndefined()
     expect(await followName(file('components/index.ts'), 'CardProps', resolve)).toBeUndefined()
