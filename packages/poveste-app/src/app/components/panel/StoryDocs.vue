@@ -79,7 +79,7 @@ const { story } = toRefs(props)
 const { renderedDoc } = useStoryDoc(story)
 
 // Opening the docs is what starts auto-docs extraction (#1159).
-const { components: allComponents } = useComponentDocs(computed(() => story.value?.id))
+const { components: allComponents, pending, off } = useComponentDocs(computed(() => story.value?.id))
 const components = computed(() => allComponents.value && onlySections(allComponents.value, story.value?.autoDocs))
 
 // Markdown links to other stories
@@ -190,8 +190,33 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       />
     </div>
 
+    <!--
+      The same empty panel said "still reading" and "off, for a reason" alike (#1400).
+      A built book's data is a chunk away, so it shows nothing until then, not a spinner.
+    -->
     <BaseEmpty
-      v-if="!renderedDoc && !components?.length"
+      v-if="__POVESTE_DEV__ && !renderedDoc && !components?.length && pending"
+      data-testid="docs-pending"
+    >
+      <Icon
+        icon="carbon:circle-dash"
+        class="w-8 h-8 opacity-50 mb-6 animate-spin"
+      />
+      Reading component types…
+      <span class="text-sm opacity-70 mt-2">The first time can take a while.</span>
+    </BaseEmpty>
+    <BaseEmpty
+      v-else-if="!pending && !renderedDoc && !components?.length && off"
+      data-testid="docs-off"
+    >
+      <Icon
+        icon="carbon:document-unknown"
+        class="w-8 h-8 opacity-50 mb-6"
+      />
+      {{ off }}
+    </BaseEmpty>
+    <BaseEmpty
+      v-else-if="!pending && !renderedDoc && !components?.length"
     >
       <Icon
         icon="carbon:document-unknown"

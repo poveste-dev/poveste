@@ -200,7 +200,8 @@ describe('the docgen service', () => {
       warn,
     })
 
-    expect(await docgen.request('button')).toEqual({ storyId: 'button', components: {} })
+    // The Docs tab says why, in the log's words (#1400).
+    expect(await docgen.request('button')).toEqual({ storyId: 'button', components: {}, off: 'Auto-docs is off: no TypeScript.' })
     await docgen.request('button')
 
     expect(createRunner).not.toHaveBeenCalled()
@@ -282,6 +283,16 @@ describe('the docgen service', () => {
 
     expect(Object.keys((await docgen.request('button')).components)).toEqual(['src/Button.vue'])
     expect(extracted(sent)).toEqual(['/book/src/Button.vue'])
+  })
+
+  it('gives no reason for a story another plugin documents', async () => {
+    const svelte: Plugin = { name: 'svelte', docgen: { match: file => file.endsWith('.svelte'), module: 'fake', unavailable: () => 'Auto-docs is off: no TypeScript.' } }
+    // A Vue story importing no component: nothing to show, and Svelte's reason is not its reason.
+    const { docgen } = service({ plugins: [vue, svelte], warn: () => {}, componentsOf: () => ['/book/src/types.ts'] })
+
+    const result = await docgen.request('helpers')
+
+    expect(result).toEqual({ storyId: 'helpers', components: {} })
   })
 
   it('does not ask whether a plugin can document the book when the config turns it off', () => {

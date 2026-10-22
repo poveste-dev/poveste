@@ -73,18 +73,22 @@ export interface DocgenServiceOptions {
  */
 export function createDocgenService(options: DocgenServiceOptions) {
   const warn = options.warn ?? (message => console.warn(message))
+  // Each plugin left out, with the reason it gave, so a story it would have
+  // documented can say why its Docs tab is empty (#1400).
+  const unavailable = new Map<Plugin, string>()
   const plugins = options.plugins.filter((plugin) => {
     if (!plugin.docgen) {
       return false
     }
-    const { typescript, types, unavailable } = plugin.docgen
+    const { typescript, types } = plugin.docgen
     const reason = options.enabled
       ? (typescript ? typescriptProblem(options.root, typescript) : undefined)
       ?? (types ? typesProblem(options.root, types) : undefined)
-      ?? unavailable?.(options.root)
+      ?? plugin.docgen.unavailable?.(options.root)
       : undefined
     if (reason) {
       warn(`[poveste] ${reason}`)
+      unavailable.set(plugin, reason)
     }
     return !reason
   })
@@ -112,6 +116,25 @@ export function createDocgenService(options: DocgenServiceOptions) {
   // only the extractor knows here, so it applies it.
   function storyPluginFor(file: string, supportPluginId: string) {
     return plugins.find(plugin => plugin.docgen!.scope === 'story' && plugin.supportPlugin?.id === supportPluginId && plugin.docgen!.match(file))
+  }
+
+  /** The reason a left-out plugin gave, when it is the one that would document this story. */
+  async function offReason(storyId: string): Promise<string | undefined> {
+    if (!unavailable.size) {
+      return undefined
+    }
+    const story = options.storyOf?.(storyId)
+    const files = await options.componentsOf(storyId)
+    for (const [plugin, reason] of unavailable) {
+      const { scope = 'imports', match } = plugin.docgen!
+      const documents = scope === 'story'
+        ? story !== undefined && plugin.supportPlugin?.id === story.supportPluginId && match(story.file)
+        : files.some(file => match(file))
+      if (documents) {
+        return reason
+      }
+    }
+    return undefined
   }
 
   function start() {
@@ -157,7 +180,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
     },
 
     async request(storyId: string): Promise<StoryDocsResult> {
-      if (!enabled) {
+      if (!options.enabled) {
         return { storyId, components: {} }
       }
       await options.collected
@@ -165,6 +188,10 @@ export function createDocgenService(options: DocgenServiceOptions) {
       // A story that turns its table off is never extracted, in dev or in a build (#1398).
       if (story?.autoDocs === false) {
         return { storyId, components: {} }
+      }
+      if (!enabled) {
+        const off = await offReason(storyId)
+        return { storyId, components: {}, ...off ? { off } : {} }
       }
       const files: string[] = []
       function own(file: string, plugin: Plugin | undefined) {
@@ -179,7 +206,9 @@ export function createDocgenService(options: DocgenServiceOptions) {
       for (const file of await options.componentsOf(storyId)) {
         own(file, pluginFor(file))
       }
-      return { storyId, components: Object.fromEntries(await extract(files)) }
+      const components = Object.fromEntries(await extract(files))
+      const off = Object.keys(components).length ? undefined : await offReason(storyId)
+      return { storyId, components, ...off ? { off } : {} }
     },
 
     /**
