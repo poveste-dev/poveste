@@ -11,6 +11,9 @@ import { listComponentFiles } from './util/list-components.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
 import { requireVuePlugin } from './util/vue-plugin.js'
 
+/** What the client code imports from npm, for the optimizer to bundle up front. */
+export const CLIENT_DEPENDENCIES = ['change-case']
+
 const SCRIPT_COMPONENT = /(?<!\.d)\.[cm]?[jt]sx?$/
 
 export function HstVue(): Plugin {
@@ -32,6 +35,14 @@ export function HstVue(): Plugin {
     config() {
       return {
         vite: {
+          // The chrome's client code imports these, and the scan never reaches them: it
+          // loads through virtual modules, so a cold `poveste dev` found them only when the
+          // page asked, re-bundled and reloaded a Nuxt reader's first page (#1477). Named
+          // through this package, which every Vue, Nuxt and Quasar book lists, because the
+          // book itself cannot resolve them under pnpm.
+          optimizeDeps: {
+            include: CLIENT_DEPENDENCIES.map(name => `@poveste/plugin-vue > ${name}`),
+          },
           plugins: [
             requireVuePlugin(),
             withoutVaporPlugin(),
