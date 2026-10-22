@@ -18,15 +18,15 @@
     "story:preview": "poveste preview --port 4575"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.64.1",
     "@poveste/plugin-svelte": "workspace:*",
     "@sveltejs/adapter-auto": "^8.0.0",
     "@sveltejs/kit": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "poveste": "workspace:*",
     "svelte": "^5.57.2",
-    "svelte-check": "^4.7.6",
-    "svelte2tsx": "^0.7.61",
+    "svelte-check": "^4.7.7",
+    "svelte2tsx": "^0.7.62",
     "typescript": "catalog:",
     "vite": "^8.3.4"
   }
