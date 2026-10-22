@@ -68,7 +68,7 @@ You can link to other stories using a relative path to the story file:
 
 ## Component docs
 
-The docs tab shows a props, slots and events table for each component a story imports, read from the type on its `$props()` the way your editor reads it: through an imported `Props`, the interfaces it extends, and `$lib` paths. Descriptions and tags come from the props' JSDoc.
+The docs tab shows a props, slots and events table for each component a story imports, read from the type on its `$props()` the way your editor reads it: through an imported `Props`, the interfaces it extends, and `$lib` paths. Descriptions and tags come from the props' JSDoc. A component counts when the story imports it directly or through re-exports, such as `import { Button } from '$lib/components'`. When a story renders a helper instead, name what it documents with [`component`](../../reference/svelte/story.md#component). A compound component's root comes first and open, and above three parts the rest start collapsed. In `poveste dev`, a story that imports components auto-docs can't trace to a file says so on its Docs tab.
 
 - A default is the destructuring default (`size = 'md'`, through `$bindable(...)`), or an `export let` initialiser, then a `@default` or `@defaultValue` tag. Where both are written and disagree, the code's is shown, and dev marks the difference.
 - A `Snippet` prop is a slot, and an `on…` function prop is an event. The `children` that `svelte/elements` declares counts as a slot only when the component's `$props()` takes it.

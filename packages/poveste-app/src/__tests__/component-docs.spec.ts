@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { onlySections, tagHref, tagText, toEntries } from '../app/util/component-docs'
+import { onlySections, rootFirst, tagHref, tagText, toEntries } from '../app/util/component-docs'
 
 describe('the docs a story\'s components answer with', () => {
   it('names each component after its file', () => {
@@ -70,5 +70,30 @@ describe('a story that names the sections of its table', () => {
     const broken = { file: 'src/Broken.vue', name: 'Broken', error: 'no props type' }
 
     expect(onlySections([slotsOnly, broken], ['props'])).toEqual([broken])
+  })
+})
+
+describe('a compound story\'s components', () => {
+  const entry = (name: string) => ({ file: `src/${name}.vue`, name })
+
+  it('puts the root first and keeps the parts in their order', () => {
+    expect(rootFirst([entry('SelectTrigger'), entry('SelectRoot'), entry('SelectContent')]).map(e => e.name)).toEqual(['SelectRoot', 'SelectTrigger', 'SelectContent'])
+  })
+
+  // reka-ui's CalendarSelect imports SelectRoot before CalendarRoot (#1432).
+  it('opens the root of the family the story\'s folder is named for', () => {
+    const entries = [entry('SelectRoot'), entry('SelectTrigger'), entry('CalendarRoot')]
+
+    expect(rootFirst(entries, 'packages/core/src/Calendar/story/CalendarSelect.story.vue')[0]!.name).toBe('CalendarRoot')
+  })
+
+  it('opens the root the story\'s file is named for when no folder is', () => {
+    const entries = [entry('DialogRoot'), entry('SelectRoot')]
+
+    expect(rootFirst(entries, 'src/stories/SelectWithinDialog.story.vue')[0]!.name).toBe('SelectRoot')
+  })
+
+  it('keeps the order when no component is a root', () => {
+    expect(rootFirst([entry('Card'), entry('Button')]).map(e => e.name)).toEqual(['Card', 'Button'])
   })
 })

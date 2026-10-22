@@ -1,11 +1,16 @@
 <script lang="ts" setup>
 import type { DocProp } from '@poveste/shared'
 import type { ComponentDocsEntry } from '../../util/component-docs'
-import { tagHref, tagText } from '../../util/component-docs'
+import { computed } from 'vue'
+import { OPEN_PARTS, rootFirst, tagHref, tagText } from '../../util/component-docs'
 
-defineProps<{
+const props = defineProps<{
   components: ComponentDocsEntry[]
+  /** The story's file, which names the family whose root opens first. */
+  storyFile?: string | undefined
 }>()
+
+const ordered = computed(() => rootFirst(props.components, props.storyFile))
 
 function shownDefault(prop: DocProp) {
   return prop.default ?? prop.defaultTag
@@ -17,15 +22,18 @@ function shownDefault(prop: DocProp) {
     class="poveste-component-docs"
     data-testid="component-docs"
   >
-    <section
-      v-for="component of components"
+    <details
+      v-for="(component, index) of ordered"
       :key="component.file"
+      :open="ordered.length <= OPEN_PARTS || index === 0"
       data-slot="component"
       :data-component="component.name"
     >
-      <h3 data-slot="component-name">
-        {{ component.name }}
-      </h3>
+      <summary>
+        <h3 data-slot="component-name">
+          {{ component.name }}
+        </h3>
+      </summary>
 
       <p
         v-if="component.error"
@@ -150,7 +158,7 @@ function shownDefault(prop: DocProp) {
           </tbody>
         </table>
       </template>
-    </section>
+    </details>
   </div>
 </template>
 
@@ -166,14 +174,19 @@ function shownDefault(prop: DocProp) {
   }
 }
 
-section + section {
+details + details {
   margin-top: 1.5rem;
 }
 
+summary {
+  cursor: pointer;
+  margin-bottom: .5rem;
+}
+
 h3 {
+  display: inline;
   font-weight: 600;
   font-size: 1rem;
-  margin-bottom: .5rem;
 }
 
 table {

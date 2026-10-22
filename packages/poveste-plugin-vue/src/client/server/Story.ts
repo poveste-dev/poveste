@@ -1,5 +1,5 @@
 import type { AutoDocsSection, ServerStory, ServerVariant } from '@poveste/shared'
-import type { PropType } from 'vue'
+import type { Component, PropType } from 'vue'
 import { defineComponent, onMounted } from 'vue'
 import { addStoryContext, addVariantContext, serverStoryContext, storyFileContext } from './context.js'
 import { autoStubComponents } from './stub.js'
@@ -48,6 +48,12 @@ export default defineComponent({
     // A default, so an absent prop stays `undefined` rather than Vue's `false` for a Boolean.
     autoDocs: {
       type: [Boolean, Array] as PropType<boolean | AutoDocsSection[]>,
+      default: undefined,
+    },
+
+    // Read from the source by auto-docs, not at collection (#1432).
+    component: {
+      type: [Object, Function, Array] as PropType<Component | Component[]>,
       default: undefined,
     },
 

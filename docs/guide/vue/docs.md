@@ -72,7 +72,9 @@ You can link to other stories using a relative path to the story file:
 
 ## Props, slots and events
 
-Each `.vue` component a story imports gets a table on the story's **Docs** tab, below any markdown: its props with their types, descriptions and defaults, its slots, and its events. Poveste reads them from the component's types with `vue-component-meta`, so nothing is written for it:
+Each `.vue` component a story imports gets a table on the story's **Docs** tab, below any markdown: its props with their types, descriptions and defaults, its slots, and its events. Poveste reads them from the component's types with `vue-component-meta`, so nothing is written for it. A component counts when the story imports it directly or through re-exports, such as `import { SelectRoot } from '..'` from a folder whose `index.ts` re-exports its `.vue` files. When a story renders a helper instead, name what it documents with [`component`](../../reference/vue/story.md#component). A compound component's root comes first and open, and above three parts the rest start collapsed. In `poveste dev`, a story that imports components auto-docs can't trace to a file says so on its Docs tab.
+
+What each table reads:
 
 - **Props** come from `defineProps`, including an interface that extends another from a separate file. Descriptions and tags come from each prop's JSDoc.
 - **Defaults** come from `withDefaults` or the props object, then from a `@default` or `@defaultValue` tag. In `poveste dev`, a default whose tag says something else is marked; the built book shows the one the code applies.

@@ -250,6 +250,22 @@ describe('the docgen service', () => {
     }
   })
 
+  // #1432: a story importing components through what auto-docs cannot follow got no table and no word why.
+  it('says why a story whose imported components reached no file has no table', async () => {
+    const { docgen } = service({ componentsOf: () => ({ files: [], unresolved: 2 }) })
+
+    const { components, off } = await docgen.request('button')
+
+    expect(components).toEqual({})
+    expect(off).toMatch(/^No table: auto-docs found no component file behind the 2 components this story imports\..*`component` on its `<Story>`/)
+  })
+
+  it('says nothing more for a story whose components reached a file', async () => {
+    const { docgen } = service({ componentsOf: () => ({ files: ['/book/src/Button.vue'], unresolved: 1 }) })
+
+    expect((await docgen.request('button')).off).toBeUndefined()
+  })
+
   it('leaves out a plugin whose declared type package the book lacks, naming it once', async () => {
     const root = mkdtempSync(join(tmpdir(), 'poveste-untyped-book-'))
     try {

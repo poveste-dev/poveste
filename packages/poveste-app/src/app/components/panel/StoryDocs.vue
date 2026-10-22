@@ -234,6 +234,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
     <ComponentDocs
       v-if="components?.length"
       :components="components"
+      :story-file="story.file?.filePath"
     />
   </div>
 </template>

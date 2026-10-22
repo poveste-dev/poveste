@@ -89,3 +89,11 @@ test('ships docs data with no path of the machine that built it', () => {
   expect(data).not.toContain(resolve(here, '..', '..', '..'))
   expect(data).not.toMatch(/\\?"error\\?"|Require stack/)
 })
+
+// A story that imports its component through a barrel, and names it in `component` (#1432).
+test('documents a component a story imports through a barrel and names', async ({ page }) => {
+  await page.goto('/story/auto-docs-barrel?tab=docs')
+
+  await expect(page.locator('[data-component="AutoDocsButton"] [data-prop="label"]')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('[data-slot="component"]')).toHaveCount(1)
+})
