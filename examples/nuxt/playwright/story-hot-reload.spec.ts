@@ -2,13 +2,14 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
+import { openStory } from '../../../e2e/support'
 
 // Editing a story in a Nuxt book left its preview throwing "Identifier
 // '__povesteTolerant' has already been declared" until the server restarted: Nuxt
 // regenerates its plugin templates on the edit and the tolerant wrap ran twice
 // (#1177). A dev-server spec, because only a running `poveste dev` regenerates.
 const STORY_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'components', 'Simple.story.vue')
-const STORY = '/story/app-components-simple-story-vue?variantId=_default'
+const STORY = 'app-components-simple-story-vue'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -24,9 +25,12 @@ test.describe('editing a story in a Nuxt book', () => {
   })
 
   test('reaches the preview without a restart', async ({ page }) => {
-    await page.goto(STORY)
+    // A cold server is still collecting when the page loads, and a dependency it finds late
+    // reloads the page, so the book and the preview get their own waits rather than the
+    // default 5 s: under load that raced them, before any edit (#1471).
+    await openStory(page, STORY, '?variantId=_default')
     const preview = page.getByTestId('preview-iframe').contentFrame()
-    await expect(preview.getByText('Simple story in Nuxt')).toBeVisible()
+    await expect(preview.getByText('Simple story in Nuxt')).toBeVisible({ timeout: 20_000 })
 
     // The write is retried as well as the assertion, as in the markdown spec: the
     // watcher has to be up before an edit is delivered at all.
