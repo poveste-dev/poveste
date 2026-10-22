@@ -92,9 +92,10 @@ const ALL_EXAMPLES: Example[] = [
     // the 19 shared specs — classified with vike, which is an interop guard for
     // a framework we do not support (#499).
     conformance: true,
-    // Quasar's own stylesheet, in every realm: 283,099 bytes of sandbox CSS on 22 Oct,
-    // against the shared 48 KiB. Set a little above that, so a heavier book still fails.
-    sandboxCssBudget: { bytes: 288 * 1024, reason: 'Quasar loads its own ~280 KB stylesheet into every realm (#542)' },
+    // Quasar's own stylesheet, in every realm: 237,552 bytes of sandbox CSS on 22 Oct,
+    // minified since #1441, against the shared 48 KiB. Set a little above that, so a
+    // heavier book still fails.
+    sandboxCssBudget: { bytes: 240 * 1024, reason: 'Quasar loads its own ~230 KB stylesheet into every realm (#542)' },
     // Same reason as vike: the contract is a runtime one, and dev and build
     // reach the sandbox by different paths.
     dev: { port: 4673, specs: ['**/quasar-interop.spec.ts'] },
