@@ -30,6 +30,20 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Majors that cannot land, so their pull requests only ever get closed. One entry
+    # covers the whole workspace, so a version range would also stop the book already
+    # on the next major; skipping majors leaves each book its own minors and patches.
+    ignore:
+      # `examples/sveltekit` is the Kit 2 book and `examples/sveltekit3` the Kit 3 one
+      # (#1200, #1205): a major is never right for both, and the adapter follows Kit.
+      - dependency-name: '@sveltejs/kit'
+        update-types: [version-update:semver-major]
+      - dependency-name: '@sveltejs/adapter-auto'
+        update-types: [version-update:semver-major]
+      # `@poveste/plugin-nuxt` builds an h3 app for Nuxt's Nitro, which runs h3 1:
+      # h3 2 drops `App` and `createApp`, so it waits for Nuxt.
+      - dependency-name: h3
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
