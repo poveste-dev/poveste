@@ -25,3 +25,22 @@ describe('a book whose PostCSS config rejects the chrome\'s stylesheets', () => 
     }
   }, 180_000)
 })
+
+// The same, with the real Tailwind 3 (`tailwindcss3`, an alias of `tailwindcss@3`).
+describe('a book on Tailwind 3', () => {
+  it('builds, with Tailwind 3 generating its classes', () => {
+    const fixture = path.resolve(__dirname, './build-tailwind3')
+    const outDir = path.join(fixture, '.poveste', 'dist')
+    try {
+      const result = spawnSync(process.execPath, [BIN, 'build'], { cwd: fixture, encoding: 'utf8', timeout: 120_000 })
+      expect(result.status, result.stderr).toBe(0)
+
+      const css = readdirSync(outDir, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.css')).map(file => readFileSync(path.join(outDir, file), 'utf8')).join('\n')
+      expect(css).toMatch(/\.book-card\s*\{\s*border-radius:\s*0?\.5rem;\s*padding:\s*1rem/)
+      expect(css).toMatch(/\.p-2\s*\{\s*padding:\s*0?\.5rem/)
+    }
+    finally {
+      rmSync(path.join(fixture, '.poveste'), { recursive: true, force: true })
+    }
+  }, 180_000)
+})
