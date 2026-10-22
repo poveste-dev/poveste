@@ -258,27 +258,35 @@ export function vendorsFromPoveste(): VitePlugin {
 }
 
 /**
- * The chrome's vendored packages, as nested pre-bundle specifiers, for a book with no
- * Vue of its own (Svelte, Solid, React).
+ * The chrome's vendored packages, as nested pre-bundle specifiers, except those the
+ * collapse already points at the project's own copy.
  *
- * There the collapse has no project Vue to point at, and under pnpm `poveste-vue`
- * and the `vue` that `poveste-vue-router` imports are one file in the store. Vite
- * pre-bundled the first and served the second raw: one file, two module instances,
- * and a book that rendered no story. Pre-bundling every vendored package together,
- * reached through Poveste's own install, puts their Vue in one shared chunk (#1201).
+ * In a book with no Vue of its own (Svelte, Solid, React) the collapse has no project
+ * Vue to point at, and under pnpm `poveste-vue` and the `vue` that `poveste-vue-router`
+ * imports are one file in the store. Vite pre-bundled the first and served the second
+ * raw: one file, two module instances, and a book that rendered no story. Pre-bundling
+ * every vendored package together, reached through Poveste's own install, puts their
+ * Vue in one shared chunk (#1201).
  *
- * Empty wherever the collapse applies, or when the chain cannot be resolved from
- * the project, where Vite would only warn about an include it cannot find.
+ * A Vue book needs the rest too. `@poveste/vendors` is excluded from the scan, so the
+ * scanner never saw what it imports, and a cold `poveste dev` found `poveste-vue-router`,
+ * `poveste-pinia`, `poveste-vueuse-core` and `poveste-iconify-vue` only once the page
+ * asked for them, then re-bundled and reloaded the page under the reader (#1347).
+ *
+ * Empty when the chain cannot be resolved from the project, where Vite would only warn
+ * about an include it cannot find.
  */
 export function chromePrebundles(options: {
   root: string
+  /** The aliases `collapseVendoredVue` points at the project's copy. */
+  collapsed?: string[]
   resolve?: Resolver
   vendorsFrom?: string
 }): string[] {
-  const { root } = options
+  const { root, collapsed = [] } = options
   const resolve = options.resolve ?? nodeResolver
 
-  if (resolve('vue', root) || !resolve('poveste/package.json', root)) {
+  if (!resolve('poveste/package.json', root)) {
     return []
   }
   const vendorsEntry = resolve('@poveste/vendors/vue', options.vendorsFrom ?? dirname(POVESTE_FILE))
@@ -286,5 +294,7 @@ export function chromePrebundles(options: {
     return []
   }
   const aliases = vendoredAliases(readJson<{ dependencies?: Record<string, string> }>(join(vendorsEntry, '..', 'package.json'))?.dependencies)
-  return Object.keys(aliases).map(installedAs => `poveste > @poveste/vendors > ${installedAs}`)
+  return Object.keys(aliases)
+    .filter(installedAs => !collapsed.includes(installedAs))
+    .map(installedAs => `poveste > @poveste/vendors > ${installedAs}`)
 }
