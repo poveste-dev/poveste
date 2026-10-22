@@ -120,6 +120,15 @@ describe('an event\'s JSDoc', () => {
     expect((await event(file, 'close'))?.tags).toContainEqual({ name: 'deprecated', text: 'use `change`' })
   })
 
+  // Both put the setup inside the component's initializer in the generated code.
+  it('is read from a generic setup', async () => {
+    expect(await event('GenericEmits.vue', 'change')).toMatchObject({ description: 'Fired when the value changes.' })
+  })
+
+  it('is read from a setup beside a plain script block', async () => {
+    expect(await event('PairedEmits.vue', 'update:open')).toMatchObject({ description: 'Fired when the dialog opens or closes.' })
+  })
+
   it('is read from an emits interface another file declares', async () => {
     expect(await event('ImportedEmits.vue', 'pick')).toMatchObject({ description: 'Fired when a date is picked.' })
   })
