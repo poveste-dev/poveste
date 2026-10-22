@@ -13,11 +13,19 @@ export interface EventDoc {
  * and all, as a `__VLS_Emit` alias in the generated code, and this reads it there,
  * through the same program, so an emits type imported from another file resolves too.
  */
+// Not only at the top: a `generic` setup, or a `<script>` block beside `<script setup>`,
+// puts the setup, and the alias with it, inside the component's initializer.
+function findEmitAlias(typescript: typeof ts, node: ts.Node): ts.TypeAliasDeclaration | undefined {
+  if (typescript.isTypeAliasDeclaration(node) && node.name.text === '__VLS_Emit') {
+    return node
+  }
+  return typescript.forEachChild(node, child => findEmitAlias(typescript, child))
+}
+
 export function readEventDocs(typescript: typeof ts, program: ts.Program | undefined, file: string): Map<string, EventDoc> {
   const docs = new Map<string, EventDoc>()
   const source = program?.getSourceFile(file)
-  const alias = source?.statements.find((statement): statement is ts.TypeAliasDeclaration =>
-    typescript.isTypeAliasDeclaration(statement) && statement.name.text === '__VLS_Emit')
+  const alias = source && findEmitAlias(typescript, source)
   if (!program || !alias) {
     return docs
   }
