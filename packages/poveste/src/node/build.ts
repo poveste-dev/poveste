@@ -280,6 +280,10 @@ export async function build(ctx: Context) {
           // returns whatever the minifier left — `codegen-vue.spec.ts` fails
           // on three cases with this on (#329).
           minify: false,
+          // CSS too, whatever a book's own config says: Vite's minifier strips the
+          // comments story CSS is found by before it is wrapped in `@scope`. The
+          // entry-css-merger minifies instead, after wrapping (#1441).
+          cssMinify: false,
           // Don't build in SSR mode
           ssr: false,
         })
@@ -291,7 +295,7 @@ export async function build(ctx: Context) {
     const isolate = ctx.config.isolateStyles !== false
     buildPlugins.push(userCssScopePlugin({ enabled: isolate }))
     buildPlugins.push(chromeCssScopePlugin({ enabled: isolate }))
-    buildPlugins.push(entryCssMergerPlugin({ isolateStyles: isolate }))
+    buildPlugins.push(entryCssMergerPlugin({ isolateStyles: isolate, minify: true }))
 
     for (const cb of changeViteConfigCallbacks) {
       await cb(buildViteConfig)

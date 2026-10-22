@@ -143,3 +143,22 @@ describe('entry-css-merger', () => {
     expect(main.source).not.toContain(USER_CSS_MARK_START)
   })
 })
+
+// Vite's own CSS minifier stripped the sentinels before the merger looked for them, and
+// every story's CSS shipped unscoped (#1441). Minified here, it is minified after wrapping.
+describe('entry-css-merger, minifying', () => {
+  it('keeps a story\'s rules inside its scope, minified', () => {
+    const plugin = entryCssMergerPlugin({ isolateStyles: true, minify: true })
+    const bundle: Rolldown.OutputBundle = {
+      'bundle-main.js': fakeChunk('bundle-main', ['chrome.css', 'story.css']),
+      'chrome.css': fakeAsset('chrome.css', '.poveste-chrome {\n  color: red;\n}\n'),
+      'story.css': fakeAsset('story.css', mark('.card {\n  padding: 4px;\n}\n')),
+    }
+
+    const css = String(runMerger(plugin, bundle).get('bundle-main.css').source)
+
+    expect(css).toMatch(/@scope\s*\(\.__poveste-render-story\)[^{]*\{\.card\{padding:4px\}/)
+    expect(css).toContain('.poveste-chrome{color:red}')
+    expect(css).not.toContain('__PVT_USER_CSS')
+  })
+})
