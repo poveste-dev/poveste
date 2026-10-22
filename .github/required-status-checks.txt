@@ -19,6 +19,7 @@ Example e2e (vue)
 Example e2e (nuxt)
 Example e2e (svelte)
 Example e2e (sveltekit)
+Example e2e (sveltekit3)
 Example e2e (vue-tailwind)
 Collection (windows)
 Node floor
