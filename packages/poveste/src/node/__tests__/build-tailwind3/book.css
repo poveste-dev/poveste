@@ -1,0 +1,8 @@
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .book-card {
+    @apply rounded-lg p-4;
+  }
+}
