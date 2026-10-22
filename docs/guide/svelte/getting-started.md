@@ -134,6 +134,12 @@ ReferenceError: BaseButton is not defined
 verbatimModuleSyntax is now required when using Svelte files with lang="ts"`), but the
 warning is easy to miss in the middle of a collection run.
 
+## Component docs
+
+A story's **Docs** tab shows a props, slots and events table for each `.svelte` component the story imports, read from the type on its `$props()` as your editor reads it, through the book's `tsconfig.app.json` or `tsconfig.json`. A component without `lang="ts"` is read too: an untyped `let { title = 'Untitled' } = $props()` documents `title`.
+
+Descriptions and tags come from the props' JSDoc. A default is read from the `$props()` destructuring, through `$bindable(...)`, or from a Svelte 4 `export let`, then from a `@default` tag. Props typed `Snippet` are slots; `on*` functions are events. It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book: `npm i -D typescript@6 svelte2tsx`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `bits-ui`. A story's own [`autoDocs`](/reference/svelte/story#autodocs) chooses its table.
+
 ## Command Line Interface
 
 Poveste provides the following commands:

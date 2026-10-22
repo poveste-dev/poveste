@@ -153,6 +153,11 @@ function svelteStarter(): Starter {
       // and it in turn requires `svelte ^5.46.4`.
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
+      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
+      'svelte2tsx': '^0.7.61',
+      // Auto-docs reads types with TypeScript, an optional peer npm does not
+      // install, and none of its extractors can read 7 (#1382, #1401).
+      'typescript': '~6.0.3',
       'vite': VITE,
     }),
     files: {
@@ -215,6 +220,11 @@ function svelteKitStarter(): Starter {
       '@sveltejs/kit': '^2.53.0',
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
+      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
+      'svelte2tsx': '^0.7.61',
+      // Auto-docs reads types with TypeScript, an optional peer npm does not
+      // install, and none of its extractors can read 7 (#1382, #1401).
+      'typescript': '~6.0.3',
       'vite': VITE,
     }),
     files: {
@@ -376,6 +386,9 @@ function solidStarter(): Starter {
         '@poveste/plugin-solid': POVESTE,
         // The plugin's own peer ranges. npm resolves the newest 2.11, and 2.11.11
         // is the first to peer Vite 8.
+        // Auto-docs reads types with TypeScript, an optional peer npm does not
+        // install, and none of its extractors can read 7 (#1382, #1401).
+        'typescript': '~6.0.3',
         'vite': VITE,
         'vite-plugin-solid': '^2.11.0',
       },
@@ -426,6 +439,8 @@ import { MyButton } from './MyButton'
 
 export default defineStory<{ clicks: number }>({
   title: 'MyButton',
+  // Names the component the Docs tab documents.
+  component: MyButton,
   variants: [
     { title: 'default', render: () => <MyButton /> },
     {
@@ -452,7 +467,13 @@ function reactStarter(): Starter {
         // Each inside the plugin's peer range, and held to a minor: the starters
         // run in a WebContainer nobody tests upstream releases against, and a
         // floating range is how Nuxt 4.6 broke one with no change here (#1244).
+        // React ships no types of its own: without them auto-docs reads every
+        // React type as `any`, and an `on*` handler is not an event.
+        '@types/react': '~19.3.0',
         '@vitejs/plugin-react': '~6.1.0',
+        // Auto-docs reads types with TypeScript, an optional peer npm does not
+        // install, and none of its extractors can read 7 (#1382, #1401).
+        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { 'react': '~19.3.0', 'react-dom': '~19.3.0' },
@@ -500,6 +521,8 @@ import { MyButton } from './MyButton'
 
 export default defineStory<{ clicks: number }>({
   title: 'MyButton',
+  // Names the component the Docs tab documents.
+  component: MyButton,
   variants: [
     { title: 'default', render: () => <MyButton /> },
     {
