@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue'
 import { markdownFiles } from 'virtual:$poveste-markdown-files'
 import { computed, nextTick, ref, toRefs, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useComponentDocs } from '../../util/component-docs.js'
+import { onlySections, useComponentDocs } from '../../util/component-docs.js'
 import { povesteConfig } from '../../util/config.js'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import DevOnlyToolbarOpenInEditor from '../toolbar/DevOnlyToolbarOpenInEditor.vue'
@@ -79,7 +79,8 @@ const { story } = toRefs(props)
 const { renderedDoc } = useStoryDoc(story)
 
 // Opening the docs is what starts auto-docs extraction (#1159).
-const { components } = useComponentDocs(computed(() => story.value?.id))
+const { components: allComponents } = useComponentDocs(computed(() => story.value?.id))
+const components = computed(() => allComponents.value && onlySections(allComponents.value, story.value?.autoDocs))
 
 // Markdown links to other stories
 const router = useRouter()

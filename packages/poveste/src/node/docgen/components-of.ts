@@ -1,10 +1,10 @@
-import type { ServerStoryFile } from '@poveste/shared'
+import type { ServerStory, ServerStoryFile } from '@poveste/shared'
 import type { ModuleGraph } from 'vite'
 
-/** The story's own file, absolute, and the framework collection gave it. */
-export function storyOf(storyFiles: ServerStoryFile[], storyId: string): { file: string, supportPluginId: string } | undefined {
+/** The story's own file, absolute, the framework collection gave it, and its own `autoDocs`. */
+export function storyOf(storyFiles: ServerStoryFile[], storyId: string): { file: string, supportPluginId: string, autoDocs?: ServerStory['autoDocs'] } | undefined {
   const storyFile = storyFiles.find(file => file.story?.id === storyId)
-  return storyFile && { file: storyFile.path, supportPluginId: storyFile.supportPluginId }
+  return storyFile && { file: storyFile.path, supportPluginId: storyFile.supportPluginId, autoDocs: storyFile.story?.autoDocs }
 }
 
 /**

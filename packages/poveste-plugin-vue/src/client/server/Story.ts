@@ -1,4 +1,4 @@
-import type { ServerStory, ServerVariant } from '@poveste/shared'
+import type { AutoDocsSection, ServerStory, ServerVariant } from '@poveste/shared'
 import type { PropType } from 'vue'
 import { defineComponent, onMounted } from 'vue'
 import { addStoryContext, addVariantContext, serverStoryContext, storyFileContext } from './context.js'
@@ -45,6 +45,12 @@ export default defineComponent({
       default: false,
     },
 
+    // A default, so an absent prop stays `undefined` rather than Vue's `false` for a Boolean.
+    autoDocs: {
+      type: [Boolean, Array] as PropType<boolean | AutoDocsSection[]>,
+      default: undefined,
+    },
+
     meta: {
       type: Object as PropType<ServerStory['meta']>,
       default: undefined,
@@ -70,6 +76,7 @@ export default defineComponent({
       icon: props.icon,
       iconColor: props.iconColor,
       docsOnly: props.docsOnly,
+      ...props.autoDocs !== undefined ? { autoDocs: props.autoDocs } : {},
       meta: props.meta,
       variants: [],
     }

@@ -125,6 +125,8 @@ export default defineStory({
 
 Descriptions and tags come from the props' JSDoc. A default is read from the object passed before `props` to `mergeProps`, or from a destructured parameter, then from a `@default` tag. Props typed `JSX.Element`, and `children` taken through `ParentProps` or `FlowProps`, are slots; `on*` functions are events. The `children` every element's attributes declare is left out with the rest of them. It needs `typescript` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `@kobalte/core`.
 
+A story's `autoDocs` field chooses its own table: `false` for none, or a list of the sections to show, such as `['props', 'events']`. See [`autoDocs`](/reference/config#autodocs).
+
 ## State
 
 Give a story or a variant an `initState`, and `render` receives that state and a way to change it. `Counter` again stands in for your own component:

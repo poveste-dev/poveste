@@ -270,6 +270,20 @@ describe('the docgen service', () => {
     }
   })
 
+  // `autoDocs: false` on a story is about that story only: a component another story
+  // imports is still read for it (#1398).
+  it('extracts nothing for a story that turns its table off, and still does for another', async () => {
+    const { docgen, sent, createRunner } = service({
+      storyOf: storyId => ({ file: `/book/src/${storyId}.story.vue`, supportPluginId: 'vue3', autoDocs: storyId === 'wrapper' ? false : undefined }),
+    })
+
+    expect(await docgen.request('wrapper')).toEqual({ storyId: 'wrapper', components: {} })
+    expect(createRunner).not.toHaveBeenCalled()
+
+    expect(Object.keys((await docgen.request('button')).components)).toEqual(['src/Button.vue'])
+    expect(extracted(sent)).toEqual(['/book/src/Button.vue'])
+  })
+
   it('does not ask whether a plugin can document the book when the config turns it off', () => {
     const unavailable = vi.fn(() => 'no TypeScript')
     service({ enabled: false, plugins: [{ ...vue, docgen: { ...vue.docgen!, unavailable } }] })
