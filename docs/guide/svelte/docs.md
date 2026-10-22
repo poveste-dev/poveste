@@ -74,6 +74,8 @@ The docs tab shows a props, slots and events table for each component a story im
 - A `Snippet` prop is a slot, and an `on…` function prop is an event. The `children` that `svelte/elements` declares counts as a slot only when the component's `$props()` takes it.
 - HTML attributes from `svelte/elements` and other props declared in installed packages are left out, unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
 
+If a story's markdown already has hand-written Props, Emits or Slots sections, delete them once auto-docs is on: the table shows beside them, and the two drift apart. Keep the prose a table can't carry, such as usage, accessibility notes and examples.
+
 It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`:
 
 ```sh

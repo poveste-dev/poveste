@@ -39,6 +39,7 @@ Everything histoire gave you keeps working, and a few things are new:
 - **Five frameworks, each with its own example book and CI job.** Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar are each built and end-to-end tested on every commit.
 - **Quasar.** histoire does not support Quasar. Poveste does, including the app boot files a story otherwise skips. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
 - **Automatic controls for Svelte 5.** Poveste reads a Svelte component's declared props out of its source when the book is built, so a variant gets a control per prop without writing one. See [Automatic controls](./svelte/controls.md#automatic-controls).
+- **Auto-docs.** A story's Docs tab shows a props, slots and events table read from the component's types ([Vue](./vue/docs.md#props-slots-and-events), [Svelte](./svelte/docs.md#component-docs)). Once it's on, delete the Props, Emits and Slots sections your `.story.md` files write by hand, which would show beside the table and drift from it; keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
 You don't have to move. If histoire does what you need, it's fine to stay. For Vue and Nuxt the move is a dependency swap, and for Svelte it's one change per story that uses controls, so it costs about the same later as it does now.
 
