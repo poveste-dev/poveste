@@ -233,6 +233,14 @@ test.describe('a story\'s components, through re-exports', () => {
     await expect(root.locator('[data-event="update:modelValue"] [data-slot="model"]')).toHaveText('v-model')
   })
 
+  // A prop typed `T` says nothing of what `T` may be; the heading carries the declaration (#1436).
+  test('shows a generic component\'s type parameters beside its name', async ({ page }) => {
+    await page.goto('/story/auto-docs-tabs?tab=docs')
+
+    await expect(page.locator('[data-component="AutoDocsTabsContent"] [data-slot="generic"]')).toHaveText('<T extends string = string>', { timeout: 60_000 })
+    await expect(page.locator('[data-component="AutoDocsTabsRoot"] [data-slot="generic"]')).toHaveCount(0)
+  })
+
   test('documents exactly what a story names in `component`, not the helper it renders', async ({ page }) => {
     await page.goto('/story/auto-docs-named?tab=docs')
 

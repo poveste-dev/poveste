@@ -31,7 +31,11 @@ function shownDefault(prop: DocProp) {
     >
       <summary>
         <h3 data-slot="component-name">
-          {{ component.name }}
+          {{ component.name }}<code
+            v-if="component.doc?.generic"
+            title="The component's type parameters, as its script declares them"
+            data-slot="generic"
+          >&lt;{{ component.doc.generic }}&gt;</code>
         </h3>
       </summary>
 
@@ -244,6 +248,16 @@ pre code {
 
 .deprecated {
   text-decoration: line-through;
+}
+
+/* Its own line: a constraint wrapped beside the name broke mid-phrase in the narrow panel. */
+[data-slot='generic'] {
+  display: block;
+  width: fit-content;
+  margin-top: .25rem;
+  font-size: .75rem;
+  font-weight: 400;
+  cursor: help;
 }
 
 [data-slot='required'] {

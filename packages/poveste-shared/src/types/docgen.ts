@@ -39,6 +39,8 @@ export interface DocEvent {
 export interface ComponentDoc {
   /** The component's own name, when the file it was read from is not named after it. */
   name?: string
+  /** Its type parameters as the source declares them, `T extends string = string`, when it has any. */
+  generic?: string
   props: DocProp[]
   slots: DocSlot[]
   events: DocEvent[]

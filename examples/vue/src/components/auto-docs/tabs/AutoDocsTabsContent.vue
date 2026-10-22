@@ -1,7 +1,7 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string = string">
 defineProps<{
   /** The tab this content belongs to. */
-  value: string
+  value: T
 }>()
 </script>
 

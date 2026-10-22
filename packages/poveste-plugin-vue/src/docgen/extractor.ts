@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { findTsconfig } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
+import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
 
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
@@ -40,7 +41,12 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
   return {
     extract(file) {
       const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(file)
-      return meta && toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
+      if (!meta) {
+        return undefined
+      }
+      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
+      const generic = file.endsWith('.vue') ? readGeneric(readFileSync(file, 'utf8')) : undefined
+      return generic ? { ...doc, generic } : doc
     },
     update(file) {
       if (!SOURCE.test(file)) {
