@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { typescriptProblem, typescriptProblemIn } from '../docgen/typescript.js'
+import { typescriptProblem, typescriptProblemIn, typesProblem } from '../docgen/typescript.js'
 
 // A book outside the workspace, searched up its own `node_modules` chain only: the
 // workspace hoists TypeScript, and `pnpm exec` sets `NODE_PATH`, so a book inside
@@ -60,5 +60,22 @@ describe('where an extractor loads TypeScript from', () => {
     writeFileSync(join(meta, 'index.js'), '')
 
     expect(typescriptProblem(root, join(meta, 'index.js'))).toBeUndefined()
+  })
+})
+
+// TypeScript finds a type package up the book's own `node_modules` chain, not on `NODE_PATH`.
+describe('the type packages an extractor declares', () => {
+  it('turn auto-docs off when the book lacks one, naming it', () => {
+    expect(typesProblem(book(), ['@types/react'])).toMatch(/from `@types\/react`, which this book does not have\. Install `@types\/react`/)
+  })
+
+  it('leave auto-docs on when one is installed in a directory above the book', () => {
+    const root = book()
+    mkdirSync(join(root, 'node_modules', '@types', 'react'), { recursive: true })
+    writeFileSync(join(root, 'node_modules', '@types', 'react', 'package.json'), JSON.stringify({ name: '@types/react', version: '19.3.0' }))
+    const nested = join(root, 'apps', 'book')
+    mkdirSync(nested, { recursive: true })
+
+    expect(typesProblem(nested, ['@types/react'])).toBeUndefined()
   })
 })

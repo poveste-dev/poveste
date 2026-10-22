@@ -147,6 +147,20 @@ And then run them with `npm run story:dev` or `npm run story:build`.
 
 You can specify additional CLI options like `--port`. For a full list of CLI options, run `npx poveste --help` in your project.
 
+## Component docs
+
+Name the component a story documents in its `component` field, and its docs tab shows a props, slots and events table read from the type of the component's first parameter:
+
+```tsx
+export default defineStory({
+  title: 'Badge',
+  component: Badge,
+  variants: [/* ... */],
+})
+```
+
+A function component, one typed `FC<Props>`, and one wrapped in `forwardRef` or `memo` are all read; so is a class component, from its constructor's props. Descriptions and tags come from the props' JSDoc. A default is read from a destructured parameter, then from a `@default` tag. Props typed `ReactNode` or `ReactElement`, and `children` taken through `PropsWithChildren`, are slots; `on*` functions are events. The attributes a component inherits from React's own types, such as `ButtonHTMLAttributes`, are left out. It needs `typescript` 6 or earlier and `@types/react` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. React ships no types of its own, so without `@types/react` every component would read as `any`: auto-docs turns off instead, and says so once in the log. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package.
+
 ## State
 
 Give a story or a variant an `initState`, and `render` receives that state and a way to change it. `Counter` again stands in for your own component:

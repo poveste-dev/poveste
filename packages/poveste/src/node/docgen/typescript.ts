@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { join } from 'pathe'
+import { dirname, join } from 'pathe'
 
 // Every extractor reads types through TypeScript's JavaScript API. TypeScript 7
 // removed it: `vue-component-meta` 3.3 calls `ts.readJsonConfigFile`, and the JSX
@@ -18,6 +18,29 @@ export function typescriptVersionIn(dirs: string[]): string | undefined {
     }
   }
   return undefined
+}
+
+/** The `node_modules` directories from `root` up, which is where TypeScript looks for a type package. */
+function nodeModulesUp(root: string): string[] {
+  const dirs: string[] = []
+  for (let dir = root; dir !== dirname(dir); dir = dirname(dir)) {
+    dirs.push(join(dir, 'node_modules'))
+  }
+  return dirs
+}
+
+/**
+ * Why auto-docs cannot read component types without `packages`, such as `@types/react`
+ * for React 19, which ships no types: without it every component reads as `any`.
+ */
+export function typesProblem(root: string, packages: string[]): string | undefined {
+  const dirs = nodeModulesUp(root)
+  const missing = packages.filter(name => !dirs.some(dir => existsSync(join(dir, name, 'package.json'))))
+  if (!missing.length) {
+    return undefined
+  }
+  const names = missing.map(name => `\`${name}\``).join(' and ')
+  return `Auto-docs is off: it reads component types from ${names}, which this book does not have. Install ${names} in the book to turn it on, or set \`autoDocs: false\` to turn it off without this message.`
 }
 
 /** Why auto-docs cannot read component types with the TypeScript in `dirs`, or nothing when it can. */

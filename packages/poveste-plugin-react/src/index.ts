@@ -5,9 +5,23 @@ import type { Plugin } from '@poveste/shared'
 
 export const REACT_SETUP_HOOK_NAMES = ['setupReact']
 
+// A variable, not a literal: Vite turns `new URL('<literal>', import.meta.url)` into
+// an asset, and this entry is bundled for the browser too.
+const DOCGEN_EXTRACTOR = './docgen/extractor.js'
+
 export function HstReact(): Plugin {
   return {
     name: '@poveste/plugin-react',
+
+    // A React story names its component in `component`, so the extractor reads the story (#1161).
+    docgen: {
+      scope: 'story',
+      match: file => /\.story\.[jt]sx$/.test(file),
+      module: new URL(DOCGEN_EXTRACTOR, import.meta.url).href,
+      // The JSX walker loads the book's TypeScript (#1401). React ships no types of its own.
+      typescript: 'book',
+      types: ['@types/react'],
+    },
 
     defaultConfig() {
       return {

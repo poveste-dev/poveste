@@ -91,6 +91,12 @@ describe('the JSX extractor', () => {
     expect(card).toMatchObject({ name: 'Card', props: [{ name: 'elevation', default: '1' }, { name: 'title' }] })
   })
 
+  it('names the component in its failure, since the result is keyed by the story file', async () => {
+    const failure = await Promise.resolve().then(() => shared.extract(file('Untyped.story.tsx'))).catch(error => error)
+
+    expect(failure).toMatchObject({ message: '`Alert` has no props type to read', component: 'Alert' })
+  })
+
   it('documents nothing for a story that names no component', async () => {
     expect(await shared.extract(file('Plain.story.tsx'))).toBeUndefined()
   })

@@ -249,6 +249,27 @@ describe('the docgen service', () => {
     }
   })
 
+  it('leaves out a plugin whose declared type package the book lacks, naming it once', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'poveste-untyped-book-'))
+    try {
+      const warn = vi.fn()
+      const { docgen, createRunner } = service({
+        root,
+        plugins: [{ ...solid, docgen: { ...solid.docgen!, types: ['@types/react'] } }],
+        componentsOf: () => [join(root, 'src/Button.story.tsx')],
+        warn,
+      })
+
+      expect(await docgen.request('button')).toEqual({ storyId: 'button', components: {} })
+
+      expect(createRunner).not.toHaveBeenCalled()
+      expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/^\[poveste\] Auto-docs is off: .*from `@types\/react`, which this book does not have/))
+    }
+    finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+
   it('does not ask whether a plugin can document the book when the config turns it off', () => {
     const unavailable = vi.fn(() => 'no TypeScript')
     service({ enabled: false, plugins: [{ ...vue, docgen: { ...vue.docgen!, unavailable } }] })
