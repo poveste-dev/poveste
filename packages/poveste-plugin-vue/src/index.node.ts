@@ -6,7 +6,6 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import generateStoryCommand from './commands/generate-story.server.js'
-import { typescriptProblem } from './docgen/typescript.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
@@ -67,7 +66,8 @@ export function HstVue(): Plugin {
     docgen: {
       match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
-      unavailable: () => typescriptProblem(),
+      // `vue-component-meta` requires `typescript` from where it is installed, an optional peer npm does not add.
+      typescript: createRequire(import.meta.url).resolve('vue-component-meta'),
     },
 
     supportPlugin: {

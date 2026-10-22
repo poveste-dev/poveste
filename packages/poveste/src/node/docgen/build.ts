@@ -32,8 +32,10 @@ export async function extractComponentDocs(ctx: Context, moduleGraph: ModuleGrap
       const { components } = await docgen.request(storyId)
       // A built book is published, so an extractor's error stays on the build
       // machine: the component keeps its runtime props, as with auto-docs off (#1382).
+      // A result with neither is a file with nothing to document, such as a JSX
+      // story that names no component, and is not a failure.
       const read = Object.entries(components).filter(([file, result]) => {
-        if (!result.doc) {
+        if (!result.doc && result.error !== undefined) {
           failed.set(file, result.error)
         }
         return result.doc

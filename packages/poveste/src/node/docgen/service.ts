@@ -3,6 +3,7 @@ import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
+import { typescriptProblem } from './typescript.js'
 
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
 
@@ -76,7 +77,10 @@ export function createDocgenService(options: DocgenServiceOptions) {
     if (!plugin.docgen) {
       return false
     }
-    const reason = options.enabled ? plugin.docgen.unavailable?.(options.root) : undefined
+    const { typescript, unavailable } = plugin.docgen
+    const reason = options.enabled
+      ? (typescript ? typescriptProblem(options.root, typescript) : undefined) ?? unavailable?.(options.root)
+      : undefined
     if (reason) {
       warn(`[poveste] ${reason}`)
     }
@@ -120,7 +124,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
     return runner
   }
 
-  function extract(files: string[]) {
+  async function extract(files: string[]) {
     const missing = files.filter(file => !cache.has(file))
     if (missing.length) {
       const response = start().send({
@@ -138,7 +142,8 @@ export function createDocgenService(options: DocgenServiceOptions) {
         }
       })
     }
-    return Promise.all(files.map(async file => [relative(options.root, file), await cache.get(file)!] as const))
+    const results = await Promise.all(files.map(async file => [relative(options.root, file), await cache.get(file)!] as const))
+    return results.filter(([, result]) => result.doc || result.error)
   }
 
   return {

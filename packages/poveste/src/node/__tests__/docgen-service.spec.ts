@@ -1,5 +1,8 @@
 import type { Plugin } from '@poveste/shared'
 import type { DocgenRunner } from '../docgen/service.js'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createDocgenService } from '../docgen/service.js'
 
@@ -171,6 +174,16 @@ describe('the docgen service', () => {
     expect(extracted(sent)).toEqual([])
   })
 
+  it('leaves out a file its extractor found nothing to document in', async () => {
+    const { docgen } = service({
+      plugins: [solid],
+      storyOf: () => ({ file: '/book/src/Plain.story.tsx', supportPluginId: 'solid' }),
+      createRunner: () => ({ send: async () => ({ id: 0, results: { '/book/src/Plain.story.tsx': {} } }), terminate: async () => {} }),
+    })
+
+    expect((await docgen.request('plain')).components).toEqual({})
+  })
+
   it('never starts when the config turns it off', async () => {
     const { docgen, createRunner } = service({ enabled: false })
 
@@ -192,6 +205,31 @@ describe('the docgen service', () => {
 
     expect(createRunner).not.toHaveBeenCalled()
     expect(warn).toHaveBeenCalledExactlyOnceWith('[poveste] Auto-docs is off: no TypeScript.')
+  })
+
+  // A plugin whose entry also runs in the browser can't import the check, so it
+  // declares where its extractor loads TypeScript from, and the service asks (#1401).
+  it('leaves out a plugin whose extractor would load a TypeScript newer than 6 from the book', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'poveste-ts7-book-'))
+    try {
+      mkdirSync(join(root, 'node_modules', 'typescript'), { recursive: true })
+      writeFileSync(join(root, 'node_modules', 'typescript', 'package.json'), JSON.stringify({ name: 'typescript', version: '7.0.2' }))
+      const warn = vi.fn()
+      const { docgen, createRunner } = service({
+        root,
+        plugins: [{ ...solid, docgen: { ...solid.docgen!, typescript: 'book' } }],
+        componentsOf: () => [join(root, 'src/Button.story.tsx')],
+        warn,
+      })
+
+      expect(await docgen.request('button')).toEqual({ storyId: 'button', components: {} })
+
+      expect(createRunner).not.toHaveBeenCalled()
+      expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/^\[poveste\] Auto-docs is off: .*has TypeScript 7\.0\.2/))
+    }
+    finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('does not ask whether a plugin can document the book when the config turns it off', () => {

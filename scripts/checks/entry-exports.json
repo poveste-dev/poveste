@@ -401,6 +401,24 @@
     "logEvent",
     "toggleDark"
   ],
+  "poveste/docgen": [
+    "DEFAULT_TAGS",
+    "DocgenOptions",
+    "HIDDEN_TAGS",
+    "JsxDialect",
+    "PropsReading",
+    "ambientFiles",
+    "createJsxExtractor",
+    "declaredOnlyInPackages",
+    "documentProps",
+    "findTsconfig",
+    "loadFromBook",
+    "normalizeDefault",
+    "readTsconfig",
+    "typescriptProblem",
+    "typescriptProblemIn",
+    "typescriptVersionIn"
+  ],
   "poveste/plugin": [
     "openStory",
     "sendEvent"

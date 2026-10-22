@@ -94,6 +94,14 @@ export interface PluginDocgen {
   /** Passed to `createExtractor`; it has to survive a structured clone. */
   options?: unknown
   /**
+   * Where the extractor loads `typescript` from, when it reads types with it: a file
+   * whose `require` it uses, or `'book'` for the book's own root. In a book where that
+   * finds no TypeScript, or one newer than 6, auto-docs is off for this plugin with one
+   * log line (#1382, #1401). A value rather than a function, so a plugin whose entry
+   * also runs in the browser can declare it.
+   */
+  typescript?: 'book' | (string & {})
+  /**
    * Why this plugin cannot document the book at `root`, or nothing when it can.
    * With a reason, auto-docs is off for this plugin and the reason is logged once,
    * in place of an error under every component (#1382).
