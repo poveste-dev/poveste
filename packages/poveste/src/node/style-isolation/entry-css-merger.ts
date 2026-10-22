@@ -1,4 +1,5 @@
 import type { Plugin as VitePlugin } from 'vite'
+import { transform } from 'lightningcss'
 import { CONTROLS_SLOT, STORY_SCOPE_ROOT } from './selectors.js'
 import { wrapUserCss } from './transforms.js'
 import { USER_CSS_MARK_END, USER_CSS_MARK_START } from './vite-plugin.js'
@@ -7,6 +8,12 @@ export interface EntryCssMergerOptions {
   isolateStyles: boolean
   scopeRoot?: string
   mainEntryName?: string
+  /**
+   * Minify each merged file once it is wrapped. Vite's own `cssMinify` cannot do it:
+   * it strips the sentinel comments the wrapping is found by, so every story's CSS
+   * shipped unscoped (#1441).
+   */
+  minify?: boolean
 }
 
 export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyles: false }): VitePlugin {
@@ -70,11 +77,11 @@ export function entryCssMergerPlugin(opts: EntryCssMergerOptions = { isolateStyl
 
       for (const [entryName, sources] of mergedByEntry) {
         const fileName = `${entryName}.css`
-        const merged = sources.join('\n')
+        const merged = hoistImports(sources.join('\n'))
         const finalSource = entryName === mainEntryName && opts.isolateStyles
           ? wrapMarkedUserCss(merged, scopeRoot)
           : stripMarkers(merged)
-        this.emitFile({ type: 'asset', fileName, source: finalSource })
+        this.emitFile({ type: 'asset', fileName, source: opts.minify ? minifyCss(fileName, finalSource) : finalSource })
       }
 
       // Re-point CSS metadata: entries claim their own merged file; non-entry
@@ -130,4 +137,27 @@ export function wrapMarkedUserCss(css: string, scopeRoot: string): string {
     cursor = end + USER_CSS_MARK_END.length
   }
   return out
+}
+
+function minifyCss(fileName: string, css: string): string {
+  return transform({ filename: fileName, code: new TextEncoder().encode(css), minify: true }).code.toString()
+}
+
+// A whole statement, quotes respected: a font URL carries `;` in its query string.
+const IMPORT_RULE = /@import\s+(?:url\((?:'[^']*'|"[^"]*"|[^)]*)\)|'[^']*'|"[^"]*")[^;]*;/g
+
+/**
+ * Every `@import` at the head of the file, where CSS allows it. A stylesheet's own
+ * imports open its chunk, and merged behind another chunk's rules they were dropped
+ * by the browser without a word, and refused by a minifier (#1441).
+ */
+export function hoistImports(css: string): string {
+  const imports: string[] = []
+  const rest = css.replace(IMPORT_RULE, (rule) => {
+    if (!imports.includes(rule)) {
+      imports.push(rule)
+    }
+    return ''
+  })
+  return imports.length ? `${imports.join('\n')}\n${rest}` : css
 }
