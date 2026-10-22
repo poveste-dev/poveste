@@ -148,8 +148,11 @@ const useIframe = computed(() => {
 
     <!-- Body -->
     <div
-      class="border bg-white dark:bg-gray-700 rounded flex-1 p-4 relative"
+      class="border rounded flex-1 p-4 relative"
       :class="{
+        // The preview's scheme, not the chrome's, which `dark:` would follow (#1449).
+        'bg-gray-700': previewDark,
+        'bg-white': !previewDark,
         'border-gray-100 dark:border-gray-800': !isActive,
         'border-primary-200 dark:border-primary-900': isActive,
       }"

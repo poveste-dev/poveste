@@ -11,15 +11,12 @@ import { openStory } from './support.js'
  * it keeps the whole set (#257 only took the resize furniture).
  */
 
-/** Elements inside `root` painting the chrome's white/gray surface. */
+/** Elements inside `root` painting the white or gray surface, whichever the preview's scheme picks (#1449). */
 function surfaces(page: Page, root: string) {
   return page.evaluate((selector) => {
     const scope = document.querySelector(selector)
     if (!scope) return -1
-    return [...scope.querySelectorAll('*')].filter((el) => {
-      const cls = String((el as HTMLElement).className)
-      return cls.includes('bg-white') && cls.includes('dark:bg-gray-700')
-    }).length
+    return [...scope.querySelectorAll('*')].filter(el => el.classList.contains('bg-white') || el.classList.contains('bg-gray-700')).length
   }, root)
 }
 

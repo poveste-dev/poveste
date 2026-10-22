@@ -6,6 +6,7 @@ import { HstTooltip } from '@poveste/controls'
 import { useEventListener } from '@vueuse/core'
 import { computed, onUnmounted, ref } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
+import { usePreviewDark } from '../../util/color-scheme'
 import CheckerboardPattern from '../misc/CheckerboardPattern.vue'
 import HatchedPattern from '../misc/HatchedPattern.vue'
 
@@ -21,6 +22,7 @@ const props = withDefaults(defineProps<{
 })
 
 const settings = usePreviewSettingsStore().currentSettings
+const previewDark = usePreviewDark(settings)
 
 // Resize
 
@@ -183,7 +185,8 @@ const sizeTooltip = computed(() => `${responsiveWidth.value ?? 'Auto'} × ${resp
           // padding (#264). Gated on `responsive`, not `isResponsiveEnabled`:
           // a single-view story with `responsiveDisabled` still needs its own
           // chrome, it just loses the draggers.
-          responsive ? 'bg-white dark:bg-gray-700' : '',
+          // The preview's scheme, not the chrome's, which `dark:` would follow (#1449).
+          responsive ? (previewDark ? 'bg-gray-700' : 'bg-white') : '',
           isResponsiveEnabled ? {
             'w-fit': !!finalWidth,
             'h-fit': !!finalHeight,
