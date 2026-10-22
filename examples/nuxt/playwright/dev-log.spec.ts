@@ -11,9 +11,10 @@ import { expect, test } from '@playwright/test'
 // workspace's single copy of `unctx` (#1373).
 const LOG = join(dirname(fileURLToPath(import.meta.url)), '..', 'poveste-dev.log')
 // It runs alone, after the other dev specs: their pages' console warnings reach
-// the same log. And it edits a story no other dev spec loads.
-const STORY_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'components', 'BaseButton.story.vue')
-const STORY = '/story/app-components-basebutton-story-vue'
+// the same log. And it edits a story no other dev spec loads, one that holds
+// Nuxt's runtime config, which a component check used to read on mount (#1454).
+const STORY_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'components', 'AutoImport.story.vue')
+const STORY = '/story/app-components-autoimport-story-vue?variantId=_default'
 const COMPLAINT = /NUXT_E\d+|\[Vue warn\]|\[nostics\]/
 
 test.describe.configure({ mode: 'serial' })
@@ -38,12 +39,12 @@ test.describe('the Nuxt dev log', () => {
     const since = () => stripVTControlCharacters(readFileSync(LOG).subarray(offset).toString('utf8'))
 
     await page.goto(STORY)
-    const preview = page.getByTestId('preview-iframe').first().contentFrame()
-    await expect(preview.getByText('Click me').first()).toBeVisible()
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+    await expect(preview.getByText('Nuxt runtime config')).toBeVisible()
 
     await expect(async () => {
-      writeFileSync(STORY_FILE, original.replace('Click me', 'Click me EDITED-BY-SPEC'))
-      await expect(preview.getByText('EDITED-BY-SPEC').first()).toBeVisible({ timeout: 5_000 })
+      writeFileSync(STORY_FILE, original.replace('Nuxt runtime config', 'Nuxt runtime config EDITED-BY-SPEC'))
+      await expect(preview.getByText('EDITED-BY-SPEC')).toBeVisible({ timeout: 5_000 })
     }).toPass({ timeout: 60_000 })
     await expect.poll(() => since().includes('Collect stories end'), { message: 'the edit re-collected nothing in the log' }).toBe(true)
     // The complaints came just after a collection ended, so give them time to arrive.

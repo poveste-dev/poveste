@@ -235,6 +235,25 @@ export function isWritableBinding(value: unknown): boolean {
   return !(isRef(value) && isReadonly(value))
 }
 
+/**
+ * A component a story holds in its setup, which implicit state skips.
+ *
+ * Each key is asked with `in` before it is read. Nuxt's runtime config is, in
+ * dev, a proxy that warns on any key it does not carry, and reading `__file`,
+ * `render` and `setup` off it printed `NUXT_E1003` three times a mount (#1454).
+ */
+export function isComponentBinding(value: unknown): boolean {
+  if (typeof value === 'function') {
+    return true
+  }
+  if (!isObject(value)) {
+    return false
+  }
+  return ('__file' in value && !!value.__file)
+    || ('render' in value && typeof value.render === 'function')
+    || ('setup' in value && typeof value.setup === 'function')
+}
+
 export function useInstance(name: string): ComponentInternalInstance {
   const vm = getCurrentInstance()
   if (!vm) {
