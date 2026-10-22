@@ -56,11 +56,16 @@ function withDocs(event: EventMeta, doc: EventDoc | undefined): Pick<EventMeta, 
   }
 }
 
-export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>()): ComponentDoc {
+function toSlot(slot: SlotMeta, slotProps: (slot: SlotMeta) => DocSlot['props'] & {}): DocSlot {
+  const props = slotProps(slot)
+  return { ...toMember(slot), ...props.length ? { props } : {} }
+}
+
+export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => []): ComponentDoc {
   const allow = options.allow ?? []
   return {
     props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(toProp),
-    slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(toMember),
+    slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(slot => toSlot(slot, slotProps)),
     events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).map(toMember),
   }
 }

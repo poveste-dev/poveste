@@ -241,6 +241,15 @@ test.describe('a story\'s components, through re-exports', () => {
     await expect(page.locator('[data-component="AutoDocsTabsRoot"] [data-slot="generic"]')).toHaveCount(0)
   })
 
+  // A slot's props, each with its JSDoc, rather than one type string (#1436).
+  test('lists a slot\'s props under it, each with its type and description', async ({ page }) => {
+    await page.goto('/story/auto-docs-tabs?tab=docs')
+    const active = page.locator('[data-component="AutoDocsTabsRoot"] [data-slot="slots"] [data-slot-prop="active"]')
+
+    await expect(active).toContainText('The tab shown, for content that depends on it.', { timeout: 60_000 })
+    await expect(active).toContainText('string')
+  })
+
   test('documents exactly what a story names in `component`, not the helper it renders', async ({ page }) => {
     await page.goto('/story/auto-docs-named?tab=docs')
 

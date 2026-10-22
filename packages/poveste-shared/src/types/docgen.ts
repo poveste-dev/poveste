@@ -26,6 +26,11 @@ export interface DocSlot {
   name: string
   description?: string
   type?: string
+  /**
+   * What it passes its content, `open` in `<template #default="{ open }">`, one row each,
+   * so the JSDoc on each shows (#1436).
+   */
+  props?: { name: string, type: string, description?: string }[]
   tags: DocTag[]
 }
 

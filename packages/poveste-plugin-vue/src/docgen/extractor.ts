@@ -7,6 +7,7 @@ import { findTsconfig } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
+import { readSlotProps } from './slots.js'
 
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
 
@@ -44,7 +45,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       if (!meta) {
         return undefined
       }
-      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined)
+      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined, slot => readSlotProps(typescript, checker.getProgram(), slot))
       const generic = file.endsWith('.vue') ? readGeneric(readFileSync(file, 'utf8')) : undefined
       return generic ? { ...doc, generic } : doc
     },

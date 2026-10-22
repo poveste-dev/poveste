@@ -131,15 +131,26 @@ function shownDefault(prop: DocProp) {
             </tr>
           </thead>
           <tbody>
-            <tr
+            <template
               v-for="slot of component.doc.slots"
               :key="slot.name"
-              :data-slot-name="slot.name"
             >
-              <td><code>{{ slot.name }}</code></td>
-              <td><code v-if="slot.type">{{ slot.type }}</code></td>
-              <td>{{ slot.description }}</td>
-            </tr>
+              <tr :data-slot-name="slot.name">
+                <td><code>{{ slot.name }}</code></td>
+                <!-- Its props are listed below, one row each; the type string would only repeat them. -->
+                <td><code v-if="slot.type && !slot.props?.length">{{ slot.type }}</code></td>
+                <td>{{ slot.description }}</td>
+              </tr>
+              <tr
+                v-for="slotProp of slot.props ?? []"
+                :key="`${slot.name}.${slotProp.name}`"
+                :data-slot-prop="slotProp.name"
+              >
+                <td><code>{{ slotProp.name }}</code></td>
+                <td><code>{{ slotProp.type }}</code></td>
+                <td>{{ slotProp.description }}</td>
+              </tr>
+            </template>
           </tbody>
         </table>
 
@@ -251,6 +262,11 @@ pre code {
 }
 
 /* Its own line: a constraint wrapped beside the name broke mid-phrase in the narrow panel. */
+/* A prop a slot passes its content, under the slot it belongs to. */
+[data-slot-prop] td:first-child {
+  padding-inline-start: 1rem;
+}
+
 [data-slot='generic'] {
   display: block;
   width: fit-content;
