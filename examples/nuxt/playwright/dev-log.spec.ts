@@ -15,6 +15,7 @@ const LOG = join(dirname(fileURLToPath(import.meta.url)), '..', 'poveste-dev.log
 // Nuxt's runtime config, which a component check used to read on mount (#1454).
 const STORY_FILE = join(dirname(fileURLToPath(import.meta.url)), '..', 'app', 'components', 'AutoImport.story.vue')
 const STORY = '/story/app-components-autoimport-story-vue?variantId=_default'
+const PLUGIN_PROVIDE = '/story/app-components-pluginprovide-story-vue?variantId=app-components-pluginprovide-story-vue-0'
 const COMPLAINT = /NUXT_E\d+|\[Vue warn\]|\[nostics\]/
 
 test.describe.configure({ mode: 'serial' })
@@ -30,7 +31,7 @@ test.describe('the Nuxt dev log', () => {
     writeFileSync(STORY_FILE, original)
   })
 
-  test('has no line that reads as an error across a page mount and a story edit', async ({ page }, testInfo) => {
+  test('has no line that reads as an error across page mounts and a story edit', async ({ page }, testInfo) => {
     expect(existsSync(LOG), `no ${LOG}: a reused dev server writes none, so stop it and run again`).toBe(true)
     // From the end of the first collection: a cold server is still collecting when
     // the spec starts, and the story is not on the page until it is done.
@@ -47,6 +48,11 @@ test.describe('the Nuxt dev log', () => {
       await expect(preview.getByText('EDITED-BY-SPEC')).toBeVisible({ timeout: 5_000 })
     }).toPass({ timeout: 60_000 })
     await expect.poll(() => since().includes('Collect stories end'), { message: 'the edit re-collected nothing in the log' }).toBe(true)
+
+    // The story that holds `useNuxtApp()`: the state sync walked the whole app and
+    // printed a `compilerOptions` warning per walk (#1457).
+    await page.goto(PLUGIN_PROVIDE)
+    await expect(page.getByTestId('preview-iframe').contentFrame().getByTestId('plugin-provided')).toBeVisible()
     // The complaints came just after a collection ended, so give them time to arrive.
     await page.waitForTimeout(3_000)
 

@@ -5,7 +5,7 @@ import { omitInheritStoryProps } from '@poveste/shared'
 import { cloneVNode, computed, defineComponent, h, isRef, reactive, useAttrs } from 'vue'
 import { implicitStateContext, storyContext } from './context.js'
 import { useRenderContext } from './render-context.js'
-import { isComponentBinding, isWritableBinding, useInstance } from './util.js'
+import { holdsVueApp, isComponentBinding, isWritableBinding, useInstance } from './util.js'
 import Variant from './Variant.js'
 
 export default defineComponent({
@@ -65,7 +65,7 @@ export default defineComponent({
     function addImplicitState(source: Record<string, any>, key: string) {
       const value = source[key]
 
-      if (isComponentBinding(value)) {
+      if (isComponentBinding(value) || holdsVueApp(value)) {
         return
       }
 
