@@ -167,6 +167,31 @@ describe('the range @poveste/vendors really declares', () => {
   })
 })
 
+// npm and pnpm make an undeclared peer reachable anyway, and Yarn PnP gives a
+// package only what its parent declares: the vendored pinia found no
+// `@vue/devtools-api` there, and `poveste dev` failed before rendering (#1481).
+describe('the peers of what @poveste/vendors vendors', () => {
+  it('are each declared by @poveste/vendors, Vue aside', () => {
+    const vendorsDir = join(nodeResolver('@poveste/vendors/vue', import.meta.dirname)!, '..')
+    const dependencies = (JSON.parse(readFileSync(join(vendorsDir, 'package.json'), 'utf8')) as {
+      dependencies: Record<string, string>
+    }).dependencies
+
+    const missing = Object.entries(vendoredAliases(dependencies)).flatMap(([installedAs, { name }]) => {
+      const manifest = JSON.parse(readFileSync(join(vendorsDir, 'node_modules', installedAs, 'package.json'), 'utf8')) as {
+        peerDependencies?: Record<string, string>
+        peerDependenciesMeta?: Record<string, { optional?: boolean }>
+      }
+      return Object.keys(manifest.peerDependencies ?? {})
+        // Vue is vendored under its alias, and the collapse points that at the book's own.
+        .filter(peer => peer !== 'vue' && !manifest.peerDependenciesMeta?.[peer]?.optional && !(peer in dependencies))
+        .map(peer => `${name} needs ${peer}`)
+    })
+
+    expect(missing).toEqual([])
+  })
+})
+
 describe('collapsing the chrome Vue onto the project Vue', () => {
   /*
    * The defect. An npm alias is a distinct package name, so `poveste-vue` is a
