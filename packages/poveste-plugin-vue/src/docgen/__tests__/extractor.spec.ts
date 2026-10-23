@@ -157,6 +157,19 @@ describe('a component a script file exports', () => {
   })
 })
 
+// The table prints a prop as `T | T[]`; the attribute says what `T` may be (#1436).
+describe('a generic component', () => {
+  it('carries its type parameters as the source declares them', async () => {
+    const doc = await extractor.extract(join(FIXTURE, 'GenericSelect.vue'))
+
+    expect(doc?.generic).toBe('T extends string | number = string, M extends boolean = false')
+  })
+
+  it('carries none when it declares none', async () => {
+    expect((await extractor.extract(BUTTON))?.generic).toBeUndefined()
+  })
+})
+
 // Last, and with its own checker: while a second checker lives in the process, the
 // first stops seeing `updateFile`. The engine keeps one per framework and disposes
 // before it builds again, so only the spec could hold two.
