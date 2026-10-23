@@ -3,6 +3,11 @@ defineProps<{
   /** The tab shown. */
   modelValue?: string
 }>()
+
+defineEmits<{
+  /** A tab was chosen. */
+  'update:modelValue': [value: string]
+}>()
 </script>
 
 <template>

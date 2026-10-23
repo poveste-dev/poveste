@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { onlySections, rootFirst, tagHref, tagText, toEntries } from '../app/util/component-docs'
+import { modelLabel, onlySections, rootFirst, tagHref, tagText, toEntries } from '../app/util/component-docs'
 
 describe('the docs a story\'s components answer with', () => {
   it('names each component after its file', () => {
@@ -47,6 +47,25 @@ describe('reading tags', () => {
   it('links a @see only when it carries a URL', () => {
     expect(tagHref('the guide https://poveste.dev/guide')).toBe('https://poveste.dev/guide')
     expect(tagHref('BaseButton')).toBeUndefined()
+  })
+})
+
+// A prop and its `update:` event are one `v-model`, listed in two tables (#1436).
+describe('a v-model', () => {
+  const prop = (name: string) => ({ name, type: 'boolean', required: false, tags: [] })
+  const event = (name: string) => ({ name, tags: [] })
+  const doc = { props: [prop('modelValue'), prop('open'), prop('size')], slots: [], events: [event('update:modelValue'), event('update:open'), event('close')] }
+
+  it('is named as a template binds it, from either of its two rows', () => {
+    expect(modelLabel(doc, 'modelValue')).toBe('v-model')
+    expect(modelLabel(doc, 'open')).toBe('v-model:open')
+    expect(modelLabel(doc, 'update:open')).toBe('v-model:open')
+  })
+
+  it('needs both halves', () => {
+    expect(modelLabel(doc, 'size')).toBeUndefined()
+    expect(modelLabel(doc, 'close')).toBeUndefined()
+    expect(modelLabel({ ...doc, props: [] }, 'update:open')).toBeUndefined()
   })
 })
 

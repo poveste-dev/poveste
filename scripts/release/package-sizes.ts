@@ -52,7 +52,9 @@ export function measure(root: string): Sizes {
  */
 export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   'poveste': { bytes: 141_900, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
-  '@poveste/app': { bytes: 435_300, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 435_300 for #1436's table: v-model marks, type parameters and slot-prop
+  // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
+  '@poveste/app': { bytes: 437_000, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   '@poveste/plugin-vue': { bytes: 63_900, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },

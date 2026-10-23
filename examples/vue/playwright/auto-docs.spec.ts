@@ -224,6 +224,15 @@ test.describe('a story\'s components, through re-exports', () => {
     await expect(page.locator('[data-slot="component"][open]')).toHaveCount(1)
   })
 
+  // A prop and its `update:` event are one `v-model`, marked on both rows (#1436).
+  test('marks a v-model on its prop and on its event', async ({ page }) => {
+    await page.goto('/story/auto-docs-tabs?tab=docs')
+    const root = page.locator('[data-component="AutoDocsTabsRoot"]')
+
+    await expect(root.locator('[data-prop="modelValue"] [data-slot="model"]')).toHaveText('v-model', { timeout: 60_000 })
+    await expect(root.locator('[data-event="update:modelValue"] [data-slot="model"]')).toHaveText('v-model')
+  })
+
   test('documents exactly what a story names in `component`, not the helper it renders', async ({ page }) => {
     await page.goto('/story/auto-docs-named?tab=docs')
 
