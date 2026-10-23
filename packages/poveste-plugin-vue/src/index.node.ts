@@ -5,14 +5,12 @@ import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { CLIENT_DEPENDENCIES } from './client-dependencies.js'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
 import { requireVuePlugin } from './util/vue-plugin.js'
-
-/** What the client code imports from npm, for the optimizer to bundle up front. */
-export const CLIENT_DEPENDENCIES = ['change-case']
 
 const SCRIPT_COMPONENT = /(?<!\.d)\.[cm]?[jt]sx?$/
 

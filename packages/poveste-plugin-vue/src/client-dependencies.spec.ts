@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { CLIENT_DEPENDENCIES, HstVue } from './index.node.js'
+import { CLIENT_DEPENDENCIES } from './client-dependencies.js'
+import { HstVue } from './index.node.js'
 
 const SRC = import.meta.dirname
 
