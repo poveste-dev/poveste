@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { CLIENT_DEPENDENCIES } from './client-dependencies.js'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
@@ -32,6 +33,14 @@ export function HstVue(): Plugin {
     config() {
       return {
         vite: {
+          // The chrome's client code imports these, and the scan never reaches them: it
+          // loads through virtual modules, so a cold `poveste dev` found them only when the
+          // page asked, re-bundled and reloaded a Nuxt reader's first page (#1477). Named
+          // through this package, which every Vue, Nuxt and Quasar book lists, because the
+          // book itself cannot resolve them under pnpm.
+          optimizeDeps: {
+            include: CLIENT_DEPENDENCIES.map(name => `@poveste/plugin-vue > ${name}`),
+          },
           plugins: [
             requireVuePlugin(),
             withoutVaporPlugin(),
