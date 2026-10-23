@@ -374,4 +374,32 @@ describe('nodeResolver', () => {
 
     expect(found).toBe('none')
   })
+
+  // Yarn PnP's runtime sets `process.versions.pnp` and answers resolution from its
+  // dependency map, with no `node_modules` anywhere; a hook doing both stands in for it.
+  it('asks Node under Yarn PnP, where there is no node_modules to walk (#1480)', () => {
+    const project = tempRoot()
+    const cache = tempRoot()
+    const vue = join(writePackage(cache, 'vue', '3.5.44'), 'index.js')
+    const hook = join(project, 'pnp.cjs')
+    writeFileSync(hook, [
+      `process.versions.pnp = '3'`,
+      `const Module = require('node:module')`,
+      `const resolve = Module._resolveFilename`,
+      `Module._resolveFilename = function (request, ...rest) {`,
+      `  return request === 'vue' ? ${JSON.stringify(vue)} : resolve.call(this, request, ...rest)`,
+      `}`,
+    ].join('\n'))
+    const vendors = join(import.meta.dirname, '..', 'vendors.ts')
+
+    const found = execFileSync(process.execPath, [
+      '--require',
+      hook,
+      '--input-type=module',
+      '-e',
+      `const { nodeResolver } = await import(${JSON.stringify(pathToFileURL(vendors).href)}); console.log(nodeResolver('vue', ${JSON.stringify(project)}) ?? 'none')`,
+    ], { encoding: 'utf8' }).trim()
+
+    expect(found).toBe(vue)
+  })
 })
