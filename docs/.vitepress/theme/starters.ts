@@ -33,7 +33,6 @@ export interface Manifest {
   scripts: Record<string, string>
   dependencies: Record<string, string>
   devDependencies: Record<string, string>
-  overrides?: Record<string, string>
 }
 
 export interface Starter {
@@ -58,10 +57,6 @@ function manifest(name: string, extraDev: Record<string, string>, deps: Record<s
       ...extraDev,
     },
   }
-}
-
-function withOverrides(base: Manifest, overrides: Record<string, string>): Manifest {
-  return { ...base, overrides }
 }
 
 /** The starter's files as StackBlitz wants them, with the manifest serialised back in. */
@@ -304,7 +299,7 @@ export default defineConfig({
 function nuxtStarter(): Starter {
   return {
     openFile: 'components/MyButton.story.vue',
-    manifest: withOverrides(manifest('poveste-nuxt-starter', {
+    manifest: manifest('poveste-nuxt-starter', {
       '@poveste/plugin-nuxt': POVESTE,
       '@poveste/plugin-vue': POVESTE,
       // Nuxt only moved to Vite 8 in 4.5 — 4.5.2's `@nuxt/vite-builder`
@@ -315,16 +310,12 @@ function nuxtStarter(): Starter {
       // Auto-docs reads types with TypeScript, an optional peer npm does not
       // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
       'typescript': '~6.0.3',
-      'vite': VITE,
+      // StackBlitz runs npm 10, which crashes with `Cannot read properties of null
+      // (reading 'edgesOut')` (npm/cli#9787) on a Nuxt tree with Vite 8.3.4 or older,
+      // whose peer range for `@vitejs/devtools` stops short of the 0.8 that
+      // `@nuxt/devtools` resolves. 8.3.5 admits it (#1485).
+      'vite': '^8.3.5',
       'vue': '^3.5.26',
-    }), {
-      // `@nuxt/devtools` peers `@vitejs/devtools: *`, and its 0.8.0 (14 Oct) makes
-      // npm 10 crash resolving the tree, `Cannot read properties of null (reading
-      // 'edgesOut')` (npm/cli#9787, fixed in npm 11.6). StackBlitz runs npm 10.
-      '@vitejs/devtools': '0.7.6',
-      '@vitejs/devtools-oxc': '0.7.6',
-      '@vitejs/devtools-rolldown': '0.7.6',
-      '@vitejs/devtools-vite': '0.7.6',
     }),
     files: {
       'nuxt.config.ts': `export default defineNuxtConfig({
