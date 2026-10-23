@@ -170,6 +170,24 @@ describe('a generic component', () => {
   })
 })
 
+// A slot's props came as one type string, the JSDoc on each lost inside it (#1436).
+describe('a slot\'s props', () => {
+  async function slot(name: string) {
+    return (await extractor.extract(join(FIXTURE, 'SlotProps.vue')))!.slots.find(candidate => candidate.name === name)
+  }
+
+  it('are read one each, with their type and their JSDoc', async () => {
+    expect((await slot('default'))?.props).toEqual([
+      { name: 'open', type: 'boolean', description: 'Current open state' },
+      { name: 'close', type: '() => void', description: 'Close the dialog' },
+    ])
+  })
+
+  it('are none for a slot that passes nothing', async () => {
+    expect((await slot('trigger'))?.props).toBeUndefined()
+  })
+})
+
 // Last, and with its own checker: while a second checker lives in the process, the
 // first stops seeing `updateFile`. The engine keeps one per framework and disposes
 // before it builds again, so only the spec could hold two.
