@@ -373,7 +373,14 @@ jobs:
 
       # For the dev pass below. No cache: one browser, and this job runs once.
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
+        timeout-minutes: 3
+        run: pnpm exec playwright install chromium
+
+      # Best-effort, as in the e2e jobs: the runner image already ships the
+      # browser's libraries, and apt has stalled here for 10-12 minutes, which
+      # cancelled the whole job with no test failed (#1489).
+      - name: Install Playwright system deps
+        run: timeout 300 pnpm exec playwright install-deps chromium || echo 'install-deps skipped'
 
       # `:dev` also runs `poveste dev` over the Vue and Svelte installs and opens
       # a story, which the build alone cannot see: that path shipped blank twice
