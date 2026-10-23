@@ -60,6 +60,7 @@
     "node": ">=22.22.2"
   },
   "dependencies": {
+    "@vue/devtools-api": "^8.2.1",
     "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
     "poveste-pinia": "npm:pinia@^4.0.3",
     "poveste-vue": "npm:vue@^3.5.26",
