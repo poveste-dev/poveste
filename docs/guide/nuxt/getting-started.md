@@ -38,8 +38,8 @@ Run `node -v` before you install. On an older Node, `npm i poveste` still succee
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for each of them and installs anyway, and a Vue book built there, but nothing tests Poveste on a Node 24 before 24.15.
 :::
 
-::: warning On Node 22, use npm 11.6 or later
-npm 10, the npm Node 22.22.2 ships with, stops with `Cannot read properties of null (reading 'edgesOut')` while resolving Nuxt's dependencies ([npm/cli#9787](https://github.com/npm/cli/issues/9787), fixed in npm 11.6). It fails on `npm i nuxt` alone, so it is not Poveste's install that triggers it. Update npm first with `npm install -g npm@11.6.0`, or use pnpm.
+::: warning On npm 10, keep Vite at 8.3.5 or later
+npm 10, the npm Node 22.22.2 ships with, stops with `Cannot read properties of null (reading 'edgesOut')` when a Nuxt project resolves Vite 8.3.4 or older ([npm/cli#9787](https://github.com/npm/cli/issues/9787)). A fresh install gets a newer Vite and is unaffected; a project whose lockfile or `package.json` holds an older one still fails. Raise it with `npm i -D vite@^8.3.5`, or update npm with `npm install -g npm@11.6.0`, or use pnpm.
 :::
 
 ::: info Supported versions
