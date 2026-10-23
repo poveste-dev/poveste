@@ -81,6 +81,9 @@ export async function watchStories(newContext: Context) {
       notifyStoryListChange()
     })
 
+  // The markdown watcher starts next and links each doc to its story, so a story
+  // its scan has not reached yet left a link to it throwing (#1479).
+  await new Promise<void>(resolve => watcher.once('ready', () => resolve()))
   return watcher
 }
 
