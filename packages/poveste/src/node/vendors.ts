@@ -24,8 +24,20 @@ function packageName(specifier: string) {
  * Node folds NODE_PATH into every lookup, even with `paths`, and pnpm's bin shims
  * point it at the whole store, so a Svelte book run through `poveste` "had" a Vue of
  * its own and the chrome was collapsed onto a Vue Vite could not find (#1201).
+ *
+ * Yarn PnP installs no `node_modules` to walk. There `require.resolve` is the only
+ * lookup that works, answered from the dependency map, and NODE_PATH plays no part
+ * (#1480).
  */
 export const nodeResolver: Resolver = (specifier, from) => {
+  if (process.versions['pnp']) {
+    try {
+      return createRequire(join(from, 'noop.js')).resolve(specifier)
+    }
+    catch {
+      return undefined
+    }
+  }
   const name = packageName(specifier)
   for (let dir = from; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', name)
