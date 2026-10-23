@@ -76,7 +76,7 @@ describe('vue auto-docs through vue-component-meta', () => {
   it('reads an event with its payload type', async () => {
     const { events } = await button()
 
-    expect(events).toEqual([expect.objectContaining({ name: 'press', type: '[event: MouseEvent]' })])
+    expect(events).toEqual([expect.objectContaining({ name: 'press', type: '(event: MouseEvent)' })])
   })
 
   it('reports the files its program read, for the dev server to watch', async () => {
@@ -113,7 +113,7 @@ describe('an event\'s JSDoc', () => {
   }
 
   it.each(['TupleEmits.vue', 'CallEmits.vue'])('reaches the table from %s', async (file) => {
-    expect(await event(file, 'change')).toMatchObject({ description: 'Fired when the value changes.', type: '[value: string]' })
+    expect(await event(file, 'change')).toMatchObject({ description: 'Fired when the value changes.', type: '(value: string)' })
   })
 
   it.each(['TupleEmits.vue', 'CallEmits.vue'])('keeps its tags in %s', async (file) => {
