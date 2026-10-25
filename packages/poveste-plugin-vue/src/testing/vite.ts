@@ -1,5 +1,5 @@
 import type { PovesteConfig } from 'poveste'
-import type { Plugin } from 'vite'
+import type { Plugin, UserConfig } from 'vite'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
@@ -12,6 +12,11 @@ import { VAPOR_INTEROP_ID, vaporInteropModule } from '../util/vapor.js'
 const EMPTY_SETUP_ID = '\0poveste-testing:empty-setup'
 const CONFIG_RESOLVED_ID = `\0${VIRTUAL_IDS.config}`
 const ENVIRONMENT_ID = 'virtual:$poveste-testing-environment'
+
+// Vitest hands what it finds in `node_modules` to Node, which can't load the
+// `virtual:` modules these packages import, so in a book that installs them no test
+// ran (#1503). The workspace links them, and Vitest inlines a linked package.
+const POVESTE_PACKAGES = [/\/node_modules\/poveste\//, /\/node_modules\/@poveste\//]
 
 const EMPTY_SETUP = VUE_SETUP_HOOK_NAMES.map(name => `export const ${name} = undefined`).join('\n')
 
@@ -69,9 +74,10 @@ export interface PovesteTestingOptions {
 
 /**
  * What a story needs in the user's own Vitest to render as `poveste dev` renders
- * it: the book's setup file and the modules Poveste's client imports. Nothing
- * else: no alias, no `optimizeDeps` entry and no change to how anything
- * resolves, so the test sees the project's Vite config as the project wrote it.
+ * it: the book's setup file and the modules Poveste's client imports, with
+ * Poveste's own packages inlined so Vitest can serve those. Nothing else: no
+ * alias, no `optimizeDeps` entry and no change to how anything resolves, so the
+ * test sees the project's Vite config as the project wrote it.
  *
  * Setup code that a plugin generates for `poveste dev`, such as the Nuxt app
  * `@poveste/plugin-nuxt` boots, is left to the test environment, which already
@@ -83,6 +89,14 @@ export function povesteTesting(options: PovesteTestingOptions = {}): Plugin {
 
   return {
     name: 'poveste:testing',
+
+    config(user) {
+      // `true` already inlines everything, and an array merged into it would not.
+      if ((user as { test?: { server?: { deps?: { inline?: unknown } } } }).test?.server?.deps?.inline === true) {
+        return
+      }
+      return { test: { server: { deps: { inline: POVESTE_PACKAGES } } } } as UserConfig
+    },
 
     async configResolved(resolved) {
       root = resolved.root

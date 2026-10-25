@@ -371,6 +371,36 @@ pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
+# The Vue testing guide, as it prints, in the same install. In the workspace Vitest
+# inlines the linked packages; installed, it handed them to Node, which can't load
+# their `virtual:` imports, and no test ran (#1503).
+echo "▸ [vue] Running a story test from docs/guide/vue/testing.md"
+GUIDE="$ROOT/docs/guide/vue/testing.md"
+mkdir -p "$VUE_APP/src/components"
+node "$ROOT/scripts/release/guide-block.mjs" "$GUIDE" vitest.config.ts > "$VUE_APP/vitest.config.ts"
+node "$ROOT/scripts/release/guide-block.mjs" "$GUIDE" src/components/BaseButton.story.test.ts > "$VUE_APP/src/components/BaseButton.story.test.ts"
+cp "$VUE_APP/src/Button.vue" "$VUE_APP/src/components/Button.vue"
+sed 's/title="Button"/title="BaseButton"/' "$VUE_APP/src/Button.story.vue" > "$VUE_APP/src/components/BaseButton.story.vue"
+(
+  cd "$VUE_APP"
+  npm install --no-audit --no-fund --loglevel=error \
+    "vitest@$(node -p "require('$ROOT/packages/poveste-plugin-vue/node_modules/vitest/package.json').version")" \
+    "jsdom@$(node -p "require('$ROOT/packages/poveste-plugin-vue/node_modules/jsdom/package.json').version")"
+)
+STORY_TESTS="$WORK/story-tests-vue.json"
+( cd "$VUE_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-vue.log" 2>&1 || true
+if ! node -e '
+  const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+  const names = report.testResults.flatMap(file => file.assertionResults).filter(test => test.status === "passed").map(test => test.fullName)
+  if (report.numFailedTests || report.numFailedTestSuites || !names.includes("BaseButton.story.vue BaseButton default")) process.exit(1)
+  console.log(`   ${names.join(", ")}`)
+' "$STORY_TESTS" 2>/dev/null; then
+  echo "❌ Smoke test FAILED [vue] — the testing guide's story test did not pass in an installed book"
+  tail -30 "$WORK/story-tests-vue.log"
+  exit 1
+fi
+echo "✅ [vue] story tests run as the guide prints them"
+
 # ── Svelte ───────────────────────────────────────────────────────────────────
 
 SVELTE_APP="$WORK/svelte"
@@ -720,6 +750,51 @@ install_and_build nuxt "$NUXT_APP" \
 # The Nuxt example has a dev project, but over the workspace; this is the tarballs (#1289).
 dev_renders nuxt "$NUXT_APP" "/story/app-button-story-vue" "Click me" 4797
 one_dependency_pass nuxt
+
+# The testing guide's Nuxt section, in the same install. Its story calls a Nuxt
+# composable, which only resolves inside the app `@nuxt/test-utils` boots.
+echo "▸ [nuxt] Running a story test from docs/guide/vue/testing.md, In Nuxt"
+mkdir -p "$NUXT_APP/test"
+node "$ROOT/scripts/release/guide-block.mjs" "$GUIDE" vitest.config.ts "In Nuxt" > "$NUXT_APP/vitest.config.ts"
+cat > "$NUXT_APP/app/Config.story.vue" <<'VUE'
+<script setup lang="ts">
+const config = useRuntimeConfig()
+</script>
+
+<template>
+  <Story title="Config">
+    <Variant title="default">
+      <p>{{ config.app.baseURL }}</p>
+    </Variant>
+  </Story>
+</template>
+VUE
+cat > "$NUXT_APP/test/Config.story.test.ts" <<'TS'
+import { testStories } from '@poveste/plugin-vue/testing'
+import Config from '../app/Config.story.vue'
+
+testStories(Config)
+TS
+(
+  cd "$NUXT_APP"
+  npm install --no-audit --no-fund --loglevel=error \
+    "vitest@$(node -p "require('$ROOT/packages/poveste-plugin-vue/node_modules/vitest/package.json').version")" \
+    "jsdom@$(node -p "require('$ROOT/packages/poveste-plugin-vue/node_modules/jsdom/package.json').version")" \
+    "@nuxt/test-utils@$(node -p "require('$ROOT/examples/nuxt/node_modules/@nuxt/test-utils/package.json').version")"
+)
+STORY_TESTS="$WORK/story-tests-nuxt.json"
+( cd "$NUXT_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-nuxt.log" 2>&1 || true
+if ! node -e '
+  const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+  const names = report.testResults.flatMap(file => file.assertionResults).filter(test => test.status === "passed").map(test => test.fullName)
+  if (report.numFailedTests || report.numFailedTestSuites || !names.includes("Config.story.vue Config default")) process.exit(1)
+  console.log(`   ${names.join(", ")}`)
+' "$STORY_TESTS" 2>/dev/null; then
+  echo "❌ Smoke test FAILED [nuxt] — the testing guide's Nuxt story test did not pass in an installed book"
+  tail -30 "$WORK/story-tests-nuxt.log"
+  exit 1
+fi
+echo "✅ [nuxt] story tests run as the guide prints them"
 
 # ── Tailwind ─────────────────────────────────────────────────────────────────
 
