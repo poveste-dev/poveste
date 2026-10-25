@@ -1,11 +1,13 @@
+import { VIRTUAL_IDS } from '@poveste/shared'
+
 // @TODO wait for virtual modules HMR to work in vite to use `virtual:` and `\0` prefix
 // https://github.com/vitejs/vite/pull/10313
 export const STORIES_ID = 'virtual:$poveste-stories'
 export const RESOLVED_STORIES_ID = `/__resolved__${STORIES_ID}`
 // export const RESOLVED_STORIES_ID = `\0${STORIES_ID}`
-export const SETUP_ID = 'virtual:$poveste-setup'
+export const SETUP_ID = VIRTUAL_IDS.setup
 export const NOOP_ID = 'virtual:$poveste-noop'
-export const CONFIG_ID = 'virtual:$poveste-config'
+export const CONFIG_ID = VIRTUAL_IDS.config
 // export const RESOLVED_CONFIG_ID = `/__resolved__${CONFIG_ID}`
 export const RESOLVED_CONFIG_ID = `\0${CONFIG_ID}`
 export const THEME_ID = 'virtual:$poveste-theme'
@@ -17,21 +19,21 @@ export const RESOLVED_SEARCH_TITLE_DATA_ID = `\0${SEARCH_TITLE_DATA_ID}`
 export const SEARCH_DOCS_DATA_ID = 'virtual:$poveste-search-docs-data'
 // export const RESOLVED_SEARCH_DOCS_DATA_ID = `/__resolved__${SEARCH_DOCS_DATA_ID}`
 export const RESOLVED_SEARCH_DOCS_DATA_ID = `\0${SEARCH_DOCS_DATA_ID}`
-export const COMPONENT_DOCS_ID = 'virtual:$poveste-component-docs'
+export const COMPONENT_DOCS_ID = VIRTUAL_IDS.componentDocs
 export const RESOLVED_COMPONENT_DOCS_ID = `\0${COMPONENT_DOCS_ID}`
-export const GENERATED_GLOBAL_SETUP = 'virtual:$poveste-generated-global-setup'
+export const GENERATED_GLOBAL_SETUP = VIRTUAL_IDS.generatedGlobalSetup
 // export const RESOLVED_GENERATED_GLOBAL_SETUP = `/__resolved__${GENERATED_GLOBAL_SETUP}`
 export const RESOLVED_GENERATED_GLOBAL_SETUP = `\0${GENERATED_GLOBAL_SETUP}`
 export const GENERATED_SETUP_CODE = 'virtual:$poveste-generated-setup-code'
 // export const RESOLVED_GENERATED_SETUP_CODE = `/__resolved__${GENERATED_SETUP_CODE}`
 export const RESOLVED_GENERATED_SETUP_CODE = `\0${GENERATED_SETUP_CODE}`
-export const SUPPORT_PLUGINS_CLIENT = 'virtual:$poveste-support-plugins-client'
+export const SUPPORT_PLUGINS_CLIENT = VIRTUAL_IDS.supportPluginsClient
 // export const RESOLVED_SUPPORT_PLUGINS_CLIENT = `/__resolved__${SUPPORT_PLUGINS_CLIENT}`
 export const RESOLVED_SUPPORT_PLUGINS_CLIENT = `\0${SUPPORT_PLUGINS_CLIENT}`
 export const SUPPORT_PLUGINS_COLLECT = 'virtual:$poveste-support-plugins-collect'
 // export const RESOLVED_SUPPORT_PLUGINS_COLLECT = `/__resolved__${SUPPORT_PLUGINS_COLLECT}`
 export const RESOLVED_SUPPORT_PLUGINS_COLLECT = `\0${SUPPORT_PLUGINS_COLLECT}`
-export const MARKDOWN_FILES = 'virtual:$poveste-markdown-files'
+export const MARKDOWN_FILES = VIRTUAL_IDS.markdownFiles
 // export const RESOLVED_MARKDOWN_FILES = `/__resolved__${MARKDOWN_FILES}`
 export const RESOLVED_MARKDOWN_FILES = `\0${MARKDOWN_FILES}`
 export const COMMANDS = 'virtual:$poveste-commands'

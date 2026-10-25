@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Label from './Label.vue'
 import Throws from './Throws.vue'
+import ThrowsLater from './ThrowsLater.vue'
 
 function rejects() {
   return Promise.reject(new Error('initState rejected on purpose'))
@@ -11,6 +12,10 @@ function rejects() {
   <Story title="Failing">
     <Variant title="throws in setup">
       <Throws />
+    </Variant>
+
+    <Variant title="throws after an await">
+      <ThrowsLater />
     </Variant>
 
     <Variant title="warns">

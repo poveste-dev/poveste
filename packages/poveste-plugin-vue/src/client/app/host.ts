@@ -29,7 +29,9 @@ interface PreviewHostOptions {
   wrapInDiv?: boolean
   /** A story test's: what the app would only log, it fails on. */
   onError?: (err: unknown) => void
-  onWarn?: (message: string) => void
+  onWarn?: (message: string, trace: string) => void
+  /** A story test's: when the render's async setups have settled. */
+  onResolve?: () => void
   /** A story test's, run after the app's own registrations and setup hooks. */
   configureApp?: (app: App) => void
 }
@@ -91,7 +93,7 @@ export function createPreviewHost(options: PreviewHostOptions) {
           vnode = h('div', vnode)
         }
 
-        return h(Suspense, {}, vnode)
+        return h(Suspense, options.onResolve ? { onResolve: options.onResolve } : {}, vnode)
       },
     })
 
@@ -113,7 +115,7 @@ export function createPreviewHost(options: PreviewHostOptions) {
 
     if (options.onWarn) {
       const onWarn = options.onWarn
-      app.config.warnHandler = (message, _instance, trace) => onWarn(`[Vue warn]: ${message}${trace ? `\n${trace}` : ''}`)
+      app.config.warnHandler = (message, _instance, trace) => onWarn(message, trace)
     }
 
     // From Vue 3.6, a Vapor component inside a VDOM tree mounts only through this

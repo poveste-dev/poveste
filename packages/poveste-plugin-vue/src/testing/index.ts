@@ -78,16 +78,26 @@ async function collect(component: StoryComponent, name: string) {
   const problems: unknown[] = []
   const el = document.createElement('div')
 
-  await collectComponent(component, { file, storyData, el }, (app) => {
-    app.config.errorHandler = (err) => {
-      problems.push(err)
-    }
-    app.config.warnHandler = (message, _instance, trace) => {
-      problems.push(vueWarning(message, trace))
-    }
-    copyMissing(app._context.components, controlComponents())
-    inheritEnvironmentApp(app)
-  })
+  try {
+    await collectComponent(component, { file, storyData, el }, {
+      beforeSetup(app) {
+        app.config.errorHandler = (err) => {
+          problems.push(err)
+        }
+        app.config.warnHandler = (message, _instance, trace) => {
+          problems.push(vueWarning(message, trace))
+        }
+      },
+      afterSetup(app) {
+        copyMissing(app._context.components, controlComponents())
+        inheritEnvironmentApp(app)
+      },
+    })
+  }
+  catch (err) {
+    // A setup file that throws, reported as the file's one failing test.
+    problems.push(err)
+  }
 
   const storyFile = {
     id: file.id,
@@ -133,9 +143,10 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
   const onError = (err: unknown) => {
     found.push(err)
   }
-  const onWarn = (message: string) => {
-    found.push(message)
+  const onWarn = (message: string, trace: string) => {
+    found.push(vueWarning(message, trace))
   }
+  let resolved = false
   const el = document.createElement('div')
   document.body.appendChild(el)
 
@@ -174,6 +185,9 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
     wrapInDiv: true,
     onError,
     onWarn,
+    onResolve: () => {
+      resolved = true
+    },
     configureApp: inheritEnvironmentApp,
   })
 
@@ -184,7 +198,11 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
     }
     if (!found.length) {
       await renderHost.mount()
-      await settled(() => false, 0)
+      // Until its async setups settle: one that throws after an `await` is caught
+      // only once it does.
+      if (!await settled(() => resolved || found.length > 0, timeout)) {
+        found.push(new Error(`its render did not settle within ${timeout} ms`))
+      }
     }
   }
   catch (err) {
@@ -200,11 +218,6 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
   return found
 }
 
-/**
- * Gives a story's app the context of the app the test environment boots, so the
- * story's `useNuxtApp()` and the plugins' injections resolve as in `poveste dev`.
- * What `@nuxt/test-utils`' own mounts copy.
- */
 // The controls' globals, registered without the warning a second registration of
 // a name the book's setup file already took would print.
 function controlComponents(): Record<string, Component> {
@@ -215,6 +228,11 @@ function controlComponents(): Record<string, Component> {
   return registry
 }
 
+/**
+ * Gives a story's app the context of the app the test environment boots, so the
+ * story's `useNuxtApp()` and the plugins' injections resolve as in `poveste dev`.
+ * What `@nuxt/test-utils`' own mounts copy.
+ */
 function inheritEnvironmentApp(app: App) {
   const host: App | undefined = environmentApp()
   if (!host) {

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import vue from '@vitejs/plugin-vue'
 import { resolveConfig } from 'vite'
-import { afterAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { povesteTesting } from '../vite.js'
 
 const BOOK = fileURLToPath(new URL('../../../fixtures/testing/book', import.meta.url))
@@ -47,10 +47,12 @@ async function run(project: string): Promise<Map<string, Assertion>> {
 describe.each(['jsdom', 'browser'])('a story file as tests, in %s', (project) => {
   let results: Map<string, Assertion>
 
-  it('runs', async () => {
+  beforeAll(async () => {
     results = await run(project)
+  })
 
-    expect(results.size).toBe(9)
+  it('reports every variant of the book', () => {
+    expect(results.size).toBe(10)
   })
 
   it('passes every variant of a story that renders, setup file, controls and docs block included', () => {
@@ -67,6 +69,13 @@ describe.each(['jsdom', 'browser'])('a story file as tests, in %s', (project) =>
 
     expect(result.status).toBe('failed')
     expect(result.failureMessages.join('\n')).toContain('setup threw on purpose')
+  })
+
+  it('fails a variant whose async setup throws after an await, once it settles', () => {
+    const result = results.get('Failing.story.vue Failing throws after an await')!
+
+    expect(result.status).toBe('failed')
+    expect(result.failureMessages.join('\n')).toContain('threw after an await on purpose')
   })
 
   it('fails a variant that makes Vue warn, quoting the warning', () => {

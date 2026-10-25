@@ -1,16 +1,16 @@
 import type { PovesteConfig } from 'poveste'
 import type { Plugin } from 'vite'
-import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname, join, resolve } from 'node:path'
+import { clientConfig, VIRTUAL_IDS } from '@poveste/shared'
 import { getDefaultConfig, loadConfigFile, mergeConfig, resolveConfigFile } from 'poveste'
 import { VUE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
 import { projectVueVersion } from '../util/project-vue.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule } from '../util/vapor.js'
 
-const SETUP_ID = 'virtual:$poveste-setup'
-const GENERATED_GLOBAL_SETUP_ID = 'virtual:$poveste-generated-global-setup'
-const CONFIG_ID = 'virtual:$poveste-config'
 const EMPTY_SETUP_ID = '\0poveste-testing:empty-setup'
-const CONFIG_RESOLVED_ID = `\0${CONFIG_ID}`
+const CONFIG_RESOLVED_ID = `\0${VIRTUAL_IDS.config}`
 const ENVIRONMENT_ID = 'virtual:$poveste-testing-environment'
 
 const EMPTY_SETUP = VUE_SETUP_HOOK_NAMES.map(name => `export const ${name} = undefined`).join('\n')
@@ -20,23 +20,26 @@ const EMPTY_SETUP = VUE_SETUP_HOOK_NAMES.map(name => `export const ${name} = und
 // the imports, and one it can't resolve skips pre-bundling and reloads the
 // browser run partway through.
 const INERT: Record<string, string> = {
-  'virtual:$poveste-markdown-files': 'export const markdownFiles = []\n',
-  'virtual:$poveste-component-docs': 'export const componentDocs = {}\n',
-  'virtual:$poveste-support-plugins-client': 'export const clientSupportPlugins = {}\n',
+  [VIRTUAL_IDS.markdownFiles]: 'export const markdownFiles = []\n',
+  [VIRTUAL_IDS.componentDocs]: 'export const componentDocs = {}\n',
+  [VIRTUAL_IDS.supportPluginsClient]: 'export const clientSupportPlugins = {}\n',
 }
 
 // Nuxt boots in `@nuxt/test-utils`' `beforeAll`, after Vitest has collected the
 // tests, and a story's own setup can call a Nuxt composable while it is being
-// collected. So it boots before collection, through the same entry and into the
-// same promise that `beforeAll` awaits, and Nuxt still boots once.
-const NUXT_ENVIRONMENT = `import { tryUseNuxtApp } from '#imports'
+// collected. So its own `setupNuxt` runs before collection, into the promise that
+// `beforeAll` awaits, and Nuxt boots once and in full. Both names are internal to
+// `@nuxt/test-utils`: if a version renames them, the story tests fail loudly.
+function nuxtEnvironment(setupNuxt: string) {
+  return `import { tryUseNuxtApp } from '#app/nuxt'
+import { setupNuxt } from ${JSON.stringify(setupNuxt)}
 
 export async function environmentReady() {
   const win = window
   if (!win.__NUXT_VITEST_ENVIRONMENT__ || tryUseNuxtApp()) {
     return
   }
-  win.__NUXT_VITEST_ENVIRONMENT_PROMISE__ ??= import('#app/nuxt-vitest-app-entry').then(entry => entry.default())
+  win.__NUXT_VITEST_ENVIRONMENT_PROMISE__ ??= setupNuxt()
   await win.__NUXT_VITEST_ENVIRONMENT_PROMISE__
 }
 
@@ -44,6 +47,20 @@ export function environmentApp() {
   return tryUseNuxtApp()?.vueApp
 }
 `
+}
+
+const NO_ENVIRONMENT = `export async function environmentReady() {}\nexport function environmentApp() {\n  return undefined\n}\n`
+
+// `@nuxt/test-utils`' own boot, by file: its `exports` don't list it.
+function setupNuxtFile(root: string): string | undefined {
+  try {
+    const file = join(dirname(createRequire(join(root, 'package.json')).resolve('@nuxt/test-utils/package.json')), 'dist/runtime/shared/nuxt.mjs')
+    return existsSync(file) ? file : undefined
+  }
+  catch {
+    return undefined
+  }
+}
 
 export interface PovesteTestingOptions {
   /** The book's poveste config file. Found from the Vite root by default. */
@@ -78,7 +95,7 @@ export function povesteTesting(options: PovesteTestingOptions = {}): Plugin {
     },
 
     async resolveId(id, importer) {
-      if (id === SETUP_ID) {
+      if (id === VIRTUAL_IDS.setup) {
         const setupFile = config.setupFile
         const file = typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
         if (file) {
@@ -86,16 +103,16 @@ export function povesteTesting(options: PovesteTestingOptions = {}): Plugin {
         }
         return EMPTY_SETUP_ID
       }
-      if (id === GENERATED_GLOBAL_SETUP_ID) {
+      if (id === VIRTUAL_IDS.generatedGlobalSetup) {
         return EMPTY_SETUP_ID
       }
-      if (id === CONFIG_ID) {
+      if (id === VIRTUAL_IDS.config) {
         return CONFIG_RESOLVED_ID
       }
       if (id === VAPOR_INTEROP_ID) {
         return `\0${VAPOR_INTEROP_ID}`
       }
-      if (id in INERT) {
+      if (Object.hasOwn(INERT, id)) {
         return `\0${id}`
       }
       if (id === ENVIRONMENT_ID) {
@@ -123,40 +140,20 @@ export function povesteTesting(options: PovesteTestingOptions = {}): Plugin {
       if (id === `\0${VAPOR_INTEROP_ID}`) {
         return vaporInteropModule(projectVueVersion(root))
       }
-      if (id.startsWith('\0') && id.slice(1) in INERT) {
+      if (id.startsWith('\0') && Object.hasOwn(INERT, id.slice(1))) {
         return INERT[id.slice(1)]
       }
-      // The app the test environment boots, through the project's own `#imports`:
-      // Nuxt's, under `@nuxt/test-utils`' `nuxt` environment. `poveste dev` renders
-      // a story inside the Nuxt app its plugin boots, and a test does the same.
+      // The app the test environment boots: Nuxt's, under `@nuxt/test-utils`' `nuxt`
+      // environment. `poveste dev` renders a story inside the Nuxt app its plugin
+      // boots, and a test does the same. Told by Nuxt's own `#app` alias and the
+      // test utils being installed, not by `#imports`, which unimport also serves.
       if (id === `\0${ENVIRONMENT_ID}`) {
-        return await this.resolve('#imports', resolve(root, 'index.html'))
-          ? NUXT_ENVIRONMENT
-          : `export async function environmentReady() {}\nexport function environmentApp() {\n  return undefined\n}\n`
+        const setupNuxt = setupNuxtFile(root)
+        return setupNuxt && await this.resolve('#app/nuxt', resolve(root, 'index.html'))
+          ? nuxtEnvironment(setupNuxt)
+          : NO_ENVIRONMENT
       }
       return undefined
     },
-  }
-}
-
-// The fields core's `virtual:$poveste-config` gives the browser. The rest of a
-// config is build-side, and its `vite` key can hold plugins that don't serialize.
-function clientConfig(config: Partial<PovesteConfig>) {
-  const { theme = {} } = config
-  return {
-    theme: {
-      title: theme.title,
-      logoHref: theme.logoHref,
-      defaultColorScheme: theme.defaultColorScheme,
-      hideColorSchemeSwitch: theme.hideColorSchemeSwitch,
-      storeColorScheme: theme.storeColorScheme,
-      darkClass: theme.darkClass,
-    },
-    routerMode: config.routerMode,
-    autoApplyContrastColor: config.autoApplyContrastColor,
-    responsivePresets: config.responsivePresets,
-    backgroundPresets: config.backgroundPresets,
-    preview: config.preview,
-    isolateStyles: config.isolateStyles,
   }
 }

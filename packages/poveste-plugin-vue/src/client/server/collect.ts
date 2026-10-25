@@ -19,7 +19,12 @@ import Variant from './Variant.js'
 export async function collectComponent(
   Comp: Component & { doc?: string },
   { file, storyData, el }: ServerRunPayload,
-  configureApp?: (app: App) => void,
+  hooks: {
+    /** Before the setup hooks, so what they report is seen. */
+    beforeSetup?: (app: App) => void
+    /** After them, so what it adds fills gaps rather than replacing the app's own. */
+    afterSetup?: (app: App) => void
+  } = {},
 ) {
   const app = createApp({
     // Provided from `setup` rather than the options object so the keys can be
@@ -38,6 +43,8 @@ export async function collectComponent(
   app.component('Story', Story)
 
   app.component('Variant', Variant)
+
+  hooks.beforeSetup?.(app)
 
   // Call app setups to resolve global assets such as components
 
@@ -59,8 +66,7 @@ export async function collectComponent(
     await setupFn(setupApi)
   }
 
-  // Last, so what it adds fills gaps rather than replacing the app's own.
-  configureApp?.(app)
+  hooks.afterSetup?.(app)
 
   app.mount(el)
 
