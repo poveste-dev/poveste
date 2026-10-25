@@ -148,10 +148,12 @@
   ],
   "@poveste/plugin-vue": [
     "HstVue",
+    "PovesteTestingOptions",
     "Vue3StorySetupApi",
     "Vue3StorySetupHandler",
     "defineSetupVue",
-    "defineSetupVue3"
+    "defineSetupVue3",
+    "povesteTesting"
   ],
   "@poveste/plugin-vue/client": [
     "MountStory",
@@ -187,6 +189,10 @@
     "VueVariantInternalPropsGeneric",
     "VueVariantProps",
     "VueVariantPropsGeneric"
+  ],
+  "@poveste/plugin-vue/testing": [
+    "TestStoriesOptions",
+    "testStories"
   ],
   "@poveste/shared": [
     "AutoDocsOptions",
@@ -260,6 +266,7 @@
     "SupportPlugin",
     "TextPrompt",
     "TreeGroupConfig",
+    "VIRTUAL_IDS",
     "Variant",
     "VariantMeta",
     "VariantProps",
@@ -267,6 +274,7 @@
     "WatchEvent",
     "applyState",
     "autoPropsStateKeys",
+    "clientConfig",
     "clone",
     "createAutoBuildingObject",
     "createStateBaseline",
@@ -360,6 +368,7 @@
     "SupportPlugin",
     "TextPrompt",
     "TreeGroupConfig",
+    "VIRTUAL_IDS",
     "Variant",
     "VariantMeta",
     "VariantProps",
@@ -367,6 +376,7 @@
     "WatchEvent",
     "applyState",
     "autoPropsStateKeys",
+    "clientConfig",
     "clone",
     "configFileNames",
     "createAutoBuildingObject",

@@ -6,3 +6,5 @@ node_modules
 .output
 .env
 dist
+# Written by `@nuxt/test-utils` when the story tests boot Nuxt.
+.nuxtrc

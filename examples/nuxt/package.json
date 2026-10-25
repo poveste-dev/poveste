@@ -7,9 +7,11 @@
     "story:dev": "poveste dev",
     "story:build": "poveste build",
     "story:preview": "poveste preview --port 4568",
+    "test:stories": "vitest run",
     "test:build-dir": "node scripts/assert-host-build-dir.mjs"
   },
   "devDependencies": {
+    "@nuxt/test-utils": "^4.3.4",
     "@nuxtjs/i18n": "^10.6.0",
     "@playwright/test": "^1.64.1",
     "@poveste/plugin-nuxt": "workspace:*",
@@ -17,12 +19,14 @@
     "@poveste/plugin-vue": "workspace:*",
     "@tailwindcss/vite": "catalog:",
     "floating-vue": "5.4.0",
+    "jsdom": "^30.1.3",
     "lottie-web": "^5.12.2",
     "nuxt": "^4.6.2",
     "pinia": "^4.1.0",
     "poveste": "workspace:*",
     "sass": "^1.105.2",
     "tailwindcss": "catalog:",
+    "vitest": "catalog:",
     "vue": "^3.5.44",
     "vue-i18n": "^11.4.16"
   },

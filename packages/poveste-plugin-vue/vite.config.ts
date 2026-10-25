@@ -59,6 +59,7 @@ export default defineConfig({
       input: [
         'src/client/client.ts',
         'src/client/server.ts',
+        'src/testing/index.ts',
       ],
 
       output: {

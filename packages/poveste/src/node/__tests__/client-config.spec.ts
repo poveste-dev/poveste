@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { clientConfig } from '@poveste/shared'
 import { describe, expect, it } from 'vitest'
-import { clientConfig } from '../virtual/resolved-config.js'
 
 const APP = path.resolve(__dirname, '../../../../poveste-app/src')
 
