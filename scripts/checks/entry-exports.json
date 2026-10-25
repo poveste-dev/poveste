@@ -148,10 +148,12 @@
   ],
   "@poveste/plugin-vue": [
     "HstVue",
+    "PovesteTestingOptions",
     "Vue3StorySetupApi",
     "Vue3StorySetupHandler",
     "defineSetupVue",
-    "defineSetupVue3"
+    "defineSetupVue3",
+    "povesteTesting"
   ],
   "@poveste/plugin-vue/client": [
     "MountStory",
@@ -187,6 +189,10 @@
     "VueVariantInternalPropsGeneric",
     "VueVariantProps",
     "VueVariantPropsGeneric"
+  ],
+  "@poveste/plugin-vue/testing": [
+    "TestStoriesOptions",
+    "testStories"
   ],
   "@poveste/shared": [
     "AutoDocsOptions",

@@ -329,6 +329,10 @@ module.exports = {
               link: '/guide/vue/docs',
             },
             {
+              text: 'Story tests',
+              link: '/guide/vue/testing',
+            },
+            {
               text: 'Hierarchy',
               link: '/guide/vue/hierarchy',
             },

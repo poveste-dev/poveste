@@ -56,7 +56,9 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   '@poveste/app': { bytes: 437_000, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
-  '@poveste/plugin-vue': { bytes: 63_900, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
+  // 9,421 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
+  '@poveste/plugin-vue': { bytes: 71_900, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   '@poveste/shared': { bytes: 26_100, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },

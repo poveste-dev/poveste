@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -11,6 +11,11 @@ export default defineConfig({
       load: id => id.startsWith('\0virtual:$poveste-') ? 'export {}' : undefined,
     },
   ],
+  test: {
+    // The story-test book is run by its own config, which needs a browser:
+    // `test:story-tests`.
+    exclude: [...configDefaults.exclude, 'fixtures/**', 'src/testing/__tests__/story-tests.spec.ts'],
+  },
   resolve: {
     alias: {
       // Point at the source, not `dist`. The state-sync tests exist to catch a

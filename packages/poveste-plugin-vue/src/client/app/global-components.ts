@@ -28,6 +28,10 @@ export function registerGlobalComponents(app: App) {
 
   app.component('Variant', Variant)
 
+  registerControlComponents(app)
+}
+
+export function registerControlComponents(app: App) {
   for (const [key, component] of Object.entries(components)) {
     app.component(key, wrapControlComponent(component))
   }

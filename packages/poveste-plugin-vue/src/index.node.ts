@@ -1,14 +1,13 @@
 import type { Plugin } from 'poveste'
 
-import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { CLIENT_DEPENDENCIES } from './client-dependencies.js'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { VUE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { listComponentFiles } from './util/list-components.js'
+import { projectVueVersion } from './util/project-vue.js'
 import { VAPOR_INTEROP_ID, vaporInteropModule, withoutVaporPlugin } from './util/vapor.js'
 import { requireVuePlugin } from './util/vue-plugin.js'
 
@@ -106,14 +105,6 @@ export function HstVue(): Plugin {
   }
 }
 
-function projectVueVersion(root: string): string | undefined {
-  try {
-    const manifest = createRequire(join(root, 'package.json')).resolve('vue/package.json')
-    return JSON.parse(readFileSync(manifest, 'utf8')).version
-  }
-  catch {
-    return undefined
-  }
-}
-
 export * from './helpers.js'
+export { povesteTesting } from './testing/vite.js'
+export type { PovesteTestingOptions } from './testing/vite.js'
