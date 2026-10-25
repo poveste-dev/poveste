@@ -197,10 +197,12 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
     watch: files => server.watcher.add(files),
   })
   onOpen('docgen', () => docgen.dispose())
+  // Answered when auto-docs is off too: the answer is what says why, and the Docs
+  // tab waits for it (#1502).
+  server.ws.on('poveste:docgen-request', async ({ storyId }: { storyId: string }) => {
+    server.ws.send('poveste:docgen-result', await docgen.request(storyId))
+  })
   if (docgen.enabled) {
-    server.ws.on('poveste:docgen-request', async ({ storyId }: { storyId: string }) => {
-      server.ws.send('poveste:docgen-result', await docgen.request(storyId))
-    })
     server.watcher.on('change', async (file) => {
       if (await docgen.fileChanged(file)) {
         server.ws.send('poveste:docgen-stale', {})

@@ -104,4 +104,43 @@ describe('auto-docs in poveste dev', () => {
       child.kill('SIGKILL')
     }
   }, 120_000)
+
+  // The Docs tab shows its spinner until this answer comes, so an unanswered request
+  // spun forever in a book whose auto-docs was off (#1502).
+  it.each([
+    ['turned off in the config', { POVESTE_DOCGEN_OFF: '1' }, {}],
+    ['off for a missing prerequisite', { POVESTE_DOCGEN_UNAVAILABLE: 'Auto-docs is off: no checker.' }, { off: 'Auto-docs is off: no checker.' }],
+  ])('answers a request when auto-docs is %s, starting no extractor', async (_, env, answer) => {
+    const marker = path.join(mkdtempSync(path.join(tmpdir(), 'poveste-docgen-')), 'created.log')
+    const port = await freePort()
+    const child = spawn(process.execPath, [BIN, 'dev', '--port', String(port)], {
+      cwd: FIXTURE,
+      stdio: 'pipe',
+      env: { ...process.env, POVESTE_DOCGEN_MARKER: marker, ...env },
+    })
+    let output = ''
+    child.stdout.setEncoding('utf8').on('data', (chunk: string) => {
+      output += stripVTControlCharacters(chunk)
+    })
+
+    try {
+      await vi.waitFor(() => expect(output).toContain('Collect stories end'), { timeout: 60_000, interval: 100 })
+      const socket = new WebSocket(`ws://localhost:${port}`, 'vite-hmr')
+      await new Promise(resolve => socket.addEventListener('open', resolve, { once: true }))
+      const result = new Promise<any>((resolve) => {
+        socket.addEventListener('message', (event) => {
+          const message = JSON.parse(String(event.data))
+          if (message.event === 'poveste:docgen-result') resolve(message.data)
+        })
+      })
+      socket.send(JSON.stringify({ type: 'custom', event: 'poveste:docgen-request', data: { storyId: 'button' } }))
+
+      expect(await Promise.race([result, new Promise(resolve => setTimeout(resolve, 10_000, 'no answer'))])).toEqual({ storyId: 'button', components: {}, ...answer })
+      expect(existsSync(marker)).toBe(false)
+      socket.close()
+    }
+    finally {
+      child.kill('SIGKILL')
+    }
+  }, 120_000)
 })
