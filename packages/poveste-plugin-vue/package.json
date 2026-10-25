@@ -70,7 +70,8 @@
     "collect.d.ts",
     "components.d.ts",
     "dist",
-    "src"
+    "src",
+    "testing.d.ts"
   ],
   "engines": {
     "node": ">=22.22.2"
