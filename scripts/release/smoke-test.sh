@@ -401,6 +401,50 @@ if ! node -e '
 fi
 echo "✅ [vue] story tests run as the guide prints them"
 
+# The guide's browser config, on a cold cache: the first run of a fresh checkout.
+# Vite's scan missed `vue` and the setup file's imports, bundled them partway
+# through, and reloaded into two copies of Vue, so that run failed (#1503). Opt-in
+# with the dev pass, which has Chromium.
+if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
+  echo "▸ [vue] Running the story test in the guide's browser mode, on a cold cache"
+  node "$ROOT/scripts/release/guide-block.mjs" "$GUIDE" vitest.config.ts "In a browser" > "$VUE_APP/vitest.config.ts"
+  # A setup file, so its imports have to reach pre-bundling too.
+  cat > "$VUE_APP/src/poveste.setup.ts" <<'TS'
+import { defineSetupVue } from '@poveste/plugin-vue'
+
+export const setupVue3 = defineSetupVue(() => {})
+TS
+  cat > "$VUE_APP/poveste.config.ts" <<'TS'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue()],
+  setupFile: './src/poveste.setup.ts',
+})
+TS
+  (
+    cd "$VUE_APP"
+    npm install --no-audit --no-fund --loglevel=error \
+      "@vitest/browser-playwright@$(node -p "require('$ROOT/packages/poveste-plugin-vue/node_modules/@vitest/browser-playwright/package.json').version")" \
+      "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
+    rm -rf node_modules/.vite
+  )
+  STORY_TESTS="$WORK/story-tests-vue-browser.json"
+  ( cd "$VUE_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-vue-browser.log" 2>&1 || true
+  if grep -aq 'unexpectedly reloaded' "$WORK/story-tests-vue-browser.log" || ! node -e '
+    const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+    const names = report.testResults.flatMap(file => file.assertionResults).filter(test => test.status === "passed").map(test => test.fullName)
+    if (report.numFailedTests || report.numFailedTestSuites || !names.includes("BaseButton.story.vue BaseButton default")) process.exit(1)
+    console.log(`   ${names.join(", ")}`)
+  ' "$STORY_TESTS" 2>/dev/null; then
+    echo "❌ Smoke test FAILED [vue] — the testing guide's browser mode did not pass its first run"
+    tail -30 "$WORK/story-tests-vue-browser.log"
+    exit 1
+  fi
+  echo "✅ [vue] story tests pass a first run in browser mode"
+fi
+
 # ── Svelte ───────────────────────────────────────────────────────────────────
 
 SVELTE_APP="$WORK/svelte"

@@ -58,7 +58,9 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
-  '@poveste/plugin-vue': { bytes: 71_900, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  // Raised from 71_900 for #1503: the story tests' inlining and pre-bundling, 1,010 B
+  // over the 0.21 pass's pin at 71,193.
+  '@poveste/plugin-vue': { bytes: 72_700, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   '@poveste/shared': { bytes: 26_100, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },

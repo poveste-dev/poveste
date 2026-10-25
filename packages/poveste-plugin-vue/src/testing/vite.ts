@@ -2,7 +2,7 @@ import type { PovesteConfig } from 'poveste'
 import type { Plugin, UserConfig } from 'vite'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { clientConfig, VIRTUAL_IDS } from '@poveste/shared'
 import { getDefaultConfig, loadConfigFile, mergeConfig, resolveConfigFile } from 'poveste'
 import { VUE_SETUP_HOOK_NAMES } from '../setup-hooks.js'
@@ -67,6 +67,11 @@ function setupNuxtFile(root: string): string | undefined {
   }
 }
 
+function setupFileOf(config: Partial<PovesteConfig>): string | undefined {
+  const setupFile = config.setupFile
+  return typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
+}
+
 export interface PovesteTestingOptions {
   /** The book's poveste config file. Found from the Vite root by default. */
   configFile?: string
@@ -75,9 +80,10 @@ export interface PovesteTestingOptions {
 /**
  * What a story needs in the user's own Vitest to render as `poveste dev` renders
  * it: the book's setup file and the modules Poveste's client imports, with
- * Poveste's own packages inlined so Vitest can serve those. Nothing else: no
- * alias, no `optimizeDeps` entry and no change to how anything resolves, so the
- * test sees the project's Vite config as the project wrote it.
+ * Poveste's own packages inlined so Vitest can serve those, and `vue` and the
+ * setup file pre-bundled for browser mode. Nothing else: no alias and no change
+ * to how anything resolves, so the test sees the project's Vite config as the
+ * project wrote it.
  *
  * Setup code that a plugin generates for `poveste dev`, such as the Nuxt app
  * `@poveste/plugin-nuxt` boots, is left to the test environment, which already
@@ -90,28 +96,39 @@ export function povesteTesting(options: PovesteTestingOptions = {}): Plugin {
   return {
     name: 'poveste:testing',
 
-    config(user) {
-      // `true` already inlines everything, and an array merged into it would not.
-      if ((user as { test?: { server?: { deps?: { inline?: unknown } } } }).test?.server?.deps?.inline === true) {
-        return
-      }
-      return { test: { server: { deps: { inline: POVESTE_PACKAGES } } } } as UserConfig
-    },
-
-    async configResolved(resolved) {
-      root = resolved.root
+    async config(user) {
+      root = resolve(user.root ?? process.cwd())
       const file = options.configFile ? resolve(root, options.configFile) : resolveConfigFile(root)
       const fromFile = file ? await loadConfigFile(file) : {}
       // As `poveste dev` reads it: the config file, then the Vite config's key.
-      const fromVite = ((resolved as { poveste?: unknown, histoire?: unknown }).poveste
-        ?? (resolved as { histoire?: unknown }).histoire ?? {}) as Partial<PovesteConfig>
+      const fromVite = ((user as { poveste?: unknown, histoire?: unknown }).poveste
+        ?? (user as { histoire?: unknown }).histoire ?? {}) as Partial<PovesteConfig>
       config = mergeConfig(fromFile, fromVite) as Partial<PovesteConfig>
+
+      // In browser mode Vite pre-bundles what its scan finds. It never sees `vue`,
+      // which compiled templates and this package's own bundle import, nor the
+      // setup file, which arrives as a virtual module. Each was bundled later,
+      // with a reload partway through the first run, and two copies of Vue
+      // failed it (#1503).
+      const setupFile = setupFileOf(config)
+      const optimizeDeps = {
+        include: ['vue'],
+        ...setupFile ? { entries: [relative(root, resolve(root, setupFile)).split(sep).join('/')] } : {},
+      }
+      // `true` already inlines everything, and an array merged into it would not.
+      if ((user as { test?: { server?: { deps?: { inline?: unknown } } } }).test?.server?.deps?.inline === true) {
+        return { optimizeDeps }
+      }
+      return { optimizeDeps, test: { server: { deps: { inline: POVESTE_PACKAGES } } } } as UserConfig
+    },
+
+    configResolved(resolved) {
+      root = resolved.root
     },
 
     async resolveId(id, importer) {
       if (id === VIRTUAL_IDS.setup) {
-        const setupFile = config.setupFile
-        const file = typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
+        const file = setupFileOf(config)
         if (file) {
           return this.resolve(resolve(root, file), importer, { skipSelf: true })
         }

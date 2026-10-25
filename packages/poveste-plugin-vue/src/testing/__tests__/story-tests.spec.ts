@@ -107,10 +107,12 @@ describe.each(['jsdom', 'browser'])('a story file as tests, in %s', (project) =>
 describe('the Vite config a story test runs under', () => {
   async function resolved(plugins: unknown[]) {
     const config = await resolveConfig({ root: BOOK, configFile: false, logLevel: 'silent', plugins: plugins as never[] }, 'serve')
-    return { include: config.optimizeDeps.include, exclude: config.optimizeDeps.exclude, alias: config.resolve.alias }
+    return { include: config.optimizeDeps.include ?? [], exclude: config.optimizeDeps.exclude, entries: config.optimizeDeps.entries ?? [], alias: config.resolve.alias }
   }
 
-  it('is the project\'s own, with nothing added to pre-bundling or to its aliases', async () => {
-    expect(await resolved([vue(), povesteTesting()])).toEqual(await resolved([vue()]))
+  it('is the project\'s own, with only `vue` and the setup file added to pre-bundling and nothing to its aliases', async () => {
+    const own = await resolved([vue()])
+
+    expect(await resolved([vue(), povesteTesting()])).toEqual({ ...own, include: [...own.include, 'vue'], entries: [...own.entries, 'src/setup.ts'] })
   })
 })
