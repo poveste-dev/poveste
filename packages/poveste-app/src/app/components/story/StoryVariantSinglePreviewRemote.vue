@@ -50,7 +50,7 @@ function postState(changes: Record<string, any>) {
   iframe.value?.contentWindow?.postMessage({
     type: STATE_SYNC,
     state: changes,
-  })
+  }, window.location.origin)
 }
 
 let bridge = createStateBridge(postState)
@@ -105,9 +105,11 @@ function fromCurrentOccupant(data: { storyId?: string, variantId?: string }) {
 useEventListener(window, 'message', (event) => {
   // With many grid iframes mounted, every sandbox postMessage hits every
   // parent listener. Skip events that didn't originate from this iframe.
-  // Paired with the origin check in `sandbox.ts`, which guards the other
-  // direction (#379).
   if (event.source !== iframe.value?.contentWindow) return
+  // And from the book's own origin: the frame keeps its window when a story
+  // navigates it off-site, and the site it lands on could post here (#1494).
+  // The other direction is `sandbox.ts`'s check (#379).
+  if (event.origin !== window.location.origin) return
   switch (event.data?.type) {
     case STATE_SYNC:
       if (!fromCurrentOccupant(event.data)) break
@@ -279,7 +281,7 @@ function syncSettings() {
     iframe.value.contentWindow.postMessage({
       type: PREVIEW_SETTINGS_SYNC,
       settings: toRaw(settings),
-    })
+    }, window.location.origin)
   }
 }
 
