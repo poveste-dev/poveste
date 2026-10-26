@@ -161,6 +161,8 @@ export default defineStory({
 
 A function component, one typed `FC<Props>`, and one wrapped in `forwardRef` or `memo` are all read; so is a class component, from its constructor's props. Descriptions and tags come from the props' JSDoc. A default is read from a destructured parameter, then from a `@default` tag. Props typed `ReactNode` or `ReactElement`, and `children` taken through `PropsWithChildren`, are slots; `on*` functions are events. The attributes a component inherits from React's own types, such as `ButtonHTMLAttributes`, are left out. It needs `typescript` 6 or earlier and `@types/react` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. React ships no types of its own, so without `@types/react` every component would read as `any`: auto-docs turns off instead, and says so once in the log. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package.
 
+`component` takes one component, not a list. A story without it gets no table, and its Docs tab says why unless the story has docs of its own. A story that names a library's component, such as `Button` from `@mantine/core`, shows the component's name and no rows until `allow` names the package, because every prop it has is declared there; with `allow: ['@mantine/core']` it gets the full table.
+
 A story's `autoDocs` field chooses its own table: `false` for none, or a list of the sections to show, such as `['props', 'events']`. See [`autoDocs`](/reference/config#autodocs).
 
 ## State

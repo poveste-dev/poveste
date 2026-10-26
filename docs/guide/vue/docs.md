@@ -82,9 +82,13 @@ What each table reads:
 - **Slots** come from `defineSlots`, and **events** from `defineEmits`.
 - **Props a component inherits from installed packages**, such as the HTML attributes, are left out unless [`autoDocs.allow`](../../reference/config.md#autodocs) names the package.
 
+A component written with the Options API gets its props from its `props` option, with the types and defaults that option declares. One that `defineComponent` makes in a `.ts` or `.tsx` file gets a table too, read from that file's default export; a plain object, a function or a type exported by default from a script file gets none.
+
+In a Nuxt book, a component a story uses without importing it, because Nuxt registers it, counts as imported: Nuxt adds the import before auto-docs reads the story. Quasar's own components, such as `QBtn`, come from the `quasar` package's built JavaScript and get no table, as with any library; your own components in a Quasar book do.
+
 If a story's markdown already has hand-written Props, Emits or Slots sections, delete them once auto-docs is on: the table shows beside them, and the two drift apart. Keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
-Nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it.
+In `poveste dev`, nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it. `poveste build` reads every story's components in one pass, so a build pays for the whole book at once: see [`autoDocs`](../../reference/config.md#autodocs) for the time and memory.
 
 It needs TypeScript 6 or earlier installed in the book: `npm i -D typescript@6`. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
 

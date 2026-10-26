@@ -106,6 +106,9 @@ lower bound is declared, and not tested by a job of its own.
 | [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 | [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
+| [Vitest](https://vitest.dev), optional, for [story tests](./vue/testing.md) | `^5.0.0` | `Unit tests and smoke` — runs story tests in the workspace, and the testing guide's own setups in books installed from the tarballs |
+| [svelte2tsx](https://www.npmjs.com/package/svelte2tsx), optional, for Svelte auto-docs | `^0.7.61` | `Example e2e (svelte)` — that book's auto-docs specs |
+| [@vitejs/plugin-react](https://www.npmjs.com/package/@vitejs/plugin-react), optional | `^6.0.0` | `Example e2e (react)` — builds that book with it |
 
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own
 dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for
