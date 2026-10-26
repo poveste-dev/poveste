@@ -67,9 +67,13 @@ function setupNuxtFile(root: string): string | undefined {
   }
 }
 
+// Root-relative, as `poveste dev` reads it: the docs write `/src/poveste.setup.ts`,
+// which `resolve` takes as absolute, so pre-bundling scanned a file outside the
+// book and the setup file's imports were found late, with a reload (#1507).
 function setupFileOf(config: Partial<PovesteConfig>): string | undefined {
   const setupFile = config.setupFile
-  return typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
+  const file = typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
+  return file?.replace(/^\/+/, '')
 }
 
 export interface PovesteTestingOptions {

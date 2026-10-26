@@ -452,7 +452,7 @@ import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [HstVue()],
-  setupFile: './src/poveste.setup.ts',
+  setupFile: '/src/poveste.setup.ts',
 })
 TS
   (
@@ -470,7 +470,7 @@ TS
     if (report.numFailedTests || report.numFailedTestSuites || !names.includes("BaseButton.story.vue BaseButton default")) process.exit(1)
     console.log(`   ${names.join(", ")}`)
   ' "$STORY_TESTS" 2>/dev/null; then
-    echo "❌ Smoke test FAILED [vue] — the testing guide's browser mode did not pass its first run"
+    echo "❌ Smoke test FAILED [vue] — the testing guide's browser mode did not pass its first run without a reload"
     tail -30 "$WORK/story-tests-vue-browser.log"
     exit 1
   fi
