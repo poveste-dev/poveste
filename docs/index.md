@@ -88,14 +88,14 @@ ratio and the boxes would otherwise be ragged. -->
     class="w-40 p-6 rounded bg-gray-100 dark:bg-gray-900 transition-colors hover:bg-sky-100 dark:hover:bg-sky-950 flex flex-col items-center justify-center gap-3"
   >
     <Icon icon="logos:solidjs-icon" class="w-12 h-12" aria-hidden="true" />
-    <span class="text-sm font-medium text-center">Solid<span class="block text-xs font-normal opacity-80">renderer only</span></span>
+    <span class="text-sm font-medium text-center">Solid<span class="block text-xs font-normal opacity-80">no controls yet</span></span>
   </a>
   <a
     href="./guide/react/getting-started"
     class="w-40 p-6 rounded bg-gray-100 dark:bg-gray-900 transition-colors hover:bg-cyan-100 dark:hover:bg-cyan-950 flex flex-col items-center justify-center gap-3"
   >
     <Icon icon="logos:react" class="w-12 h-12" aria-hidden="true" />
-    <span class="text-sm font-medium text-center">React 19<span class="block text-xs font-normal opacity-80">renderer only</span></span>
+    <span class="text-sm font-medium text-center">React 19<span class="block text-xs font-normal opacity-80">no controls yet</span></span>
   </a>
 </div>
 

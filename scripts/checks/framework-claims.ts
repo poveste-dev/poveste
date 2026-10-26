@@ -94,7 +94,7 @@ function repositoryProblems(root: string): string[] {
     .map(framework => `${file} says "${phrase}", and ${framework} has a guide at docs/guide/${guideOf(framework)}/getting-started.md`))
 }
 
-const REMEDY = 'Say what the framework\'s plugin does instead. A plugin that does less than the others is "renderer only" wherever it is listed, as `QUALIFIED` in docs/.vitepress/llms.js has it.'
+const REMEDY = 'Say what the framework\'s plugin does instead. A plugin that does less than the others says what it lacks wherever it is listed, as `QUALIFIED` in docs/.vitepress/llms.js has it.'
 
 export function checkFrameworkClaims(root = ROOT): CheckResult {
   return { problems: repositoryProblems(root), remedy: REMEDY, notes: [] }

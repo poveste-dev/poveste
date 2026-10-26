@@ -10,7 +10,7 @@ const SITE = 'https://poveste.dev'
 // The home page is `layout: home` and carries no title of its own, so this is
 // what it falls back to — and `||`, not `??`, because what it has is empty.
 const CARD_TITLE = 'Poveste — interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit, Quasar, Solid and React'
-const DESCRIPTION = 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar, plus Solid and React (renderer only) — a drop-in fork of histoire, with Quasar support histoire does not ship.'
+const DESCRIPTION = 'Interactive component playgrounds for Vue, Nuxt, Svelte, SvelteKit and Quasar, plus Solid and React without controls yet, all with props tables read from your components\' types — a drop-in fork of histoire, with Quasar support histoire does not ship.'
 
 // `index.md` is the directory itself; everything else drops the extension. This
 // is the shape `cleanUrls` links to, so the canonical matches what the site

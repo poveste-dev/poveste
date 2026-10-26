@@ -9,8 +9,8 @@ description: 'The plugins Poveste publishes, what each one is for, and which you
 - [@poveste/plugin-nuxt](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-nuxt): Nuxt 4
 - [@poveste/plugin-quasar](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-quasar): Quasar 2 (support plugin)
 - [@poveste/plugin-svelte](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-svelte): Svelte 5 and SvelteKit
-- [@poveste/plugin-solid](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-solid): SolidJS (renderer only)
-- [@poveste/plugin-react](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-react): React 19 (renderer only)
+- [@poveste/plugin-solid](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-solid): SolidJS, with the props table and no controls yet
+- [@poveste/plugin-react](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-react): React 19, with the props table and no controls yet
 - [@poveste/plugin-tailwind](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-tailwind): Renders a Tailwind design system as a story
 - [@poveste/plugin-percy](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-percy): Visual regression testing with Percy
 - [@poveste/plugin-screenshot](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-plugin-screenshot): Visual regression testing (simple)
