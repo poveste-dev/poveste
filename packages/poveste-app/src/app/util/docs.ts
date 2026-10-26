@@ -7,8 +7,15 @@ export type GenerateSourceCode = ClientSupportPlugin['generateSourceCode']
 
 /** What the variant declares, or what its framework generates from it; `undefined` when neither has anything. */
 export async function getDynamicSourceCode(variant: Variant, generate: GenerateSourceCode | undefined): Promise<string | undefined> {
-  if (variant.source) {
-    return variant.source
+  // A Svelte story's `source` can be a function of the variant's state, so the
+  // panel follows the controls; handed on as it was, it reached the highlighter and
+  // threw (#1511).
+  const source: unknown = variant.source
+  if (typeof source === 'function') {
+    return source(variant.state) || undefined
+  }
+  if (source) {
+    return source as string
   }
   const sourceSlot = variant.slots?.().source
   if (sourceSlot) {
