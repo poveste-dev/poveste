@@ -17,7 +17,7 @@
     "@poveste/plugin-vue": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.10",
     "poveste": "workspace:*",
-    "puppeteer": "^25.14.0",
+    "puppeteer": "^25.16.0",
     "vite": "catalog:"
   }
 }

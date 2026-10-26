@@ -99,7 +99,7 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "ignore": "^7.0.10",
+    "ignore": "^7.0.13",
     "launch-editor": "^2.14.2",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17",
