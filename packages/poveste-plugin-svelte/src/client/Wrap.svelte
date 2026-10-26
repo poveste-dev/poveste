@@ -1,72 +1,39 @@
 <script>
-  import {
-    createApp as _createApp,
-    h as _h,
-    reactive as _reactive,
-  } from '@poveste/vendors/vue'
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte'
+  // MEASUREMENT ONLY (#1114) — the bridge replaced by a generic custom-element wrapper.
+  import { createEventDispatcher, onMount } from 'svelte'
+  import { controlTag } from './elements.js'
 
   export let controlComponent
   export let value
 
   const dispatch = createEventDispatcher()
+  const tag = controlTag(controlComponent)
 
   let el
 
-  let app
-
-  const state = _reactive({})
-
-  function updateState(value, attrs) {
-    Object.assign(state, {
-      value,
-      attrs,
-    })
+  $: if (el) {
+    el.modelValue = value
+    for (const key in $$restProps) {
+      el[key] = $$restProps[key]
+    }
   }
 
   onMount(() => {
-    updateState(value, $$restProps)
-
-    app = _createApp({
-      render() {
-        const finalListeners = {}
-        if (controlComponent.emits) {
-          for (const k in controlComponent.emits) {
-            const key = Array.isArray(controlComponent.emits) ? controlComponent.emits[k] : k
-            const finalKey = key === 'input' ? 'update:modelValue' : key
-            finalListeners[`on${finalKey.charAt(0).toUpperCase()}${finalKey.substring(1)}`] = (...args) => {
-              if (key === 'update:modelValue') {
-                value = args[0]
-              }
-              else {
-                dispatch(key, ...args)
-              }
-            }
-          }
+    const emits = controlComponent.emits
+      ? (Array.isArray(controlComponent.emits) ? controlComponent.emits : Object.keys(controlComponent.emits))
+      : []
+    for (const key of emits) {
+      const eventName = key === 'input' ? 'update:modelValue' : key
+      el.addEventListener(eventName, (event) => {
+        if (eventName === 'update:modelValue') {
+          value = event.detail[0]
         }
-
-        // `state` is the Vue-reactive mirror kept in sync by the `$:` below.
-        // Reading the plain `value` here would make the render depend on a
-        // variable Vue cannot track — it only saw fresh values because the
-        // `state` mutation was what triggered the re-render in the first place.
-        return _h(controlComponent, {
-          modelValue: state.value,
-          ...state.attrs,
-          ...finalListeners,
-          key: 'component',
-        })
-      },
-    })
-    app.mount(el)
+        else {
+          dispatch(key, ...event.detail)
+        }
+      })
+    }
   })
-
-  onDestroy(() => {
-    app?.unmount()
-  })
-
-  $: updateState(value, $$restProps)
 </script>
 
-<div bind:this={el}>
-  {controlComponent.name}
-</div>
+<svelte:element this={tag} bind:this={el} />

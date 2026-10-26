@@ -1,23 +1,12 @@
 import type {
-  App as _App,
-  Component as _Component,
-} from '@poveste/vendors/vue'
-import type {
   App,
 } from 'vue'
 import { components } from '@poveste/controls'
-import {
-  createApp as _createApp,
-  h as _h,
-  reactive as _reactive,
-} from '@poveste/vendors/vue'
+import { defineCustomElement } from '@poveste/vendors/vue'
 import {
   defineComponent,
   h,
-  onBeforeUnmount,
-  onBeforeUpdate,
   onMounted,
-  onUpdated,
   ref,
 } from 'vue'
 import Story from './Story.js'
@@ -33,105 +22,34 @@ export function registerGlobalComponents(app: App) {
   }
 }
 
-function wrapControlComponent(controlComponent: (typeof components)[keyof typeof components]) {
-  // Which control this is decides at runtime, and its props are the story's untyped
-  // attrs, so it renders through Vue's dynamic `Component` rather than a union of every
-  // control's props, where a slider would be claimed renderable without `min` (#835).
-  const dynamicControl: _Component = controlComponent
+// MEASUREMENT ONLY (#1114) — the bridge replaced by a generic custom-element wrapper.
+const tags = new Map<unknown, string>()
+for (const [key, component] of Object.entries(components)) {
+  const tag = `pvt-${key.replace(/[A-Z]/g, (c, i) => (i ? '-' : '') + c.toLowerCase())}`
+  tags.set(component, tag)
+  if (!customElements.get(tag)) {
+    customElements.define(tag, defineCustomElement(component as any, { shadowRoot: false }))
+  }
+}
 
+function wrapControlComponent(controlComponent: (typeof components)[keyof typeof components]) {
+  const tag = tags.get(controlComponent)!
   return defineComponent({
     ...controlComponent.name ? { name: controlComponent.name } : {},
     inheritAttrs: false,
-    setup(props, { attrs }) {
-      const el = ref<HTMLDivElement>()
-      const slotEl = ref<HTMLDivElement>()
-
-      // Attrs
-
-      const state = _reactive({})
-
-      function applyState(data: Record<string, unknown>) {
-        Object.assign(state, data)
-      }
-
-      applyState(attrs)
-      onBeforeUpdate(() => {
-        applyState(attrs)
-      })
-
-      // Slots
-
-      let newSlotCalls: Record<string, unknown>[] = []
-      const slotCalls = ref<Record<string, unknown>[]>([])
-
-      function moveSlotContent() {
-        slotCalls.value.forEach((props, index) => {
-          const renderedEl = slotEl.value?.querySelector(`[renderslotid="${index}"]`)
-          const targetEl = el.value?.querySelector(`[slotid="${index}"]`)
-          if (!renderedEl || !targetEl) return
-          while (targetEl.lastChild) {
-            targetEl.removeChild(targetEl.lastChild)
-          }
-          targetEl.appendChild(renderedEl)
-        })
-      }
-
-      // App
-
-      let app: _App
-
+    setup(_props, { attrs }) {
+      // Vue's DOM patcher skips `onUpdate:*` on a native element — it is a v-model
+      // listener, meant for components — and a custom element counts as native.
+      const el = ref<HTMLElement>()
       onMounted(() => {
-        app = _createApp({
-          mounted() {
-            slotCalls.value = newSlotCalls
-            newSlotCalls = []
-          },
-          updated() {
-            slotCalls.value = newSlotCalls
-            newSlotCalls = []
-          },
-          render() {
-            return _h(dynamicControl, {
-              ...state,
-              key: 'component',
-            }, {
-              default: (props: Record<string, unknown>) => {
-                newSlotCalls.push(props)
-                return _h('div', {
-                  slotId: newSlotCalls.length - 1,
-                })
-              },
-            })
-          },
-        })
-        app.mount(el.value)
+        for (const key of Object.keys(attrs).filter(key => /^on[A-Z]/.test(key))) {
+          const event = key[2]!.toLowerCase() + key.slice(3)
+          el.value!.addEventListener(event, (e) => {
+            (attrs[key] as ((...args: unknown[]) => void) | undefined)?.(...((e as CustomEvent).detail ?? []))
+          })
+        }
       })
-
-      onUpdated(() => {
-        moveSlotContent()
-      })
-
-      onBeforeUnmount(() => {
-        app.unmount()
-      })
-
-      return {
-        el,
-        slotEl,
-        slotCalls,
-      }
-    },
-    render() {
-      return [
-        h('div', {
-          ref: 'el',
-        }),
-        h('div', {
-          ref: 'slotEl',
-        }, this.slotCalls.map((props, index) => h('div', {
-          renderSlotId: index,
-        }, this.$slots['default']?.(props)))),
-      ]
+      return () => h(tag, { ref: el, ...Object.fromEntries(Object.entries(attrs).filter(([key]) => !/^on[A-Z]/.test(key))) })
     },
   })
 }
