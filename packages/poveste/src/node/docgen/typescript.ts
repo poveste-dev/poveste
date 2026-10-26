@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import process from 'node:process'
 import { dirname, join } from 'pathe'
 
 // Every extractor reads types through TypeScript's JavaScript API. TypeScript 7
@@ -20,6 +21,21 @@ export function typescriptVersionIn(dirs: string[]): string | undefined {
   return undefined
 }
 
+/**
+ * The manifest of `name` as `from` resolves it under Yarn PnP, which installs no
+ * `node_modules` to search, so every check here read "does not have" (#1508).
+ * Elsewhere the search stays on disk: `pnpm exec` sets `NODE_PATH`, which a
+ * resolution would follow (#1382).
+ */
+function pnpManifest(from: string, name: string): string | undefined {
+  try {
+    return createRequire(from).resolve(`${name}/package.json`)
+  }
+  catch {
+    return undefined
+  }
+}
+
 /** The `node_modules` directories from `root` up, which is where TypeScript looks for a type package. */
 function nodeModulesUp(root: string): string[] {
   const dirs: string[] = []
@@ -35,7 +51,9 @@ function nodeModulesUp(root: string): string[] {
  */
 export function typesProblem(root: string, packages: string[]): string | undefined {
   const dirs = nodeModulesUp(root)
-  const missing = packages.filter(name => !dirs.some(dir => existsSync(join(dir, name, 'package.json'))))
+  const missing = packages.filter(name => process.versions['pnp']
+    ? !pnpManifest(join(root, 'package.json'), name)
+    : !dirs.some(dir => existsSync(join(dir, name, 'package.json'))))
   if (!missing.length) {
     return undefined
   }
@@ -45,7 +63,10 @@ export function typesProblem(root: string, packages: string[]): string | undefin
 
 /** Why auto-docs cannot read component types with the TypeScript in `dirs`, or nothing when it can. */
 export function typescriptProblemIn(dirs: string[]): string | undefined {
-  const version = typescriptVersionIn(dirs)
+  return versionProblem(typescriptVersionIn(dirs))
+}
+
+function versionProblem(version: string | undefined): string | undefined {
   if (!version) {
     return `Auto-docs is off: it reads component types with TypeScript, which this book does not have. ${FIX}`
   }
@@ -60,6 +81,10 @@ export function typescriptProblemIn(dirs: string[]): string | undefined {
  * `from`, a file, or from the book's own root for `'book'`.
  */
 export function typescriptProblem(root: string, from: string): string | undefined {
-  const require = createRequire(from === 'book' ? join(root, 'package.json') : from)
-  return typescriptProblemIn(require.resolve.paths('typescript') ?? [])
+  const file = from === 'book' ? join(root, 'package.json') : from
+  if (process.versions['pnp']) {
+    const manifest = pnpManifest(file, 'typescript')
+    return versionProblem(manifest ? JSON.parse(readFileSync(manifest, 'utf8')).version : undefined)
+  }
+  return typescriptProblemIn(createRequire(file).resolve.paths('typescript') ?? [])
 }

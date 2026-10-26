@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import { typescriptProblem, typescriptProblemIn, typesProblem } from '../docgen/typescript.js'
 
@@ -77,5 +79,59 @@ describe('the type packages an extractor declares', () => {
     mkdirSync(nested, { recursive: true })
 
     expect(typesProblem(nested, ['@types/react'])).toBeUndefined()
+  })
+})
+
+// Yarn PnP's runtime sets `process.versions.pnp` and answers resolution from its
+// dependency map, with no `node_modules` anywhere; a hook doing both stands in for
+// it. Every check read "does not have" in a PnP book that had TypeScript (#1508).
+describe('the checks under Yarn PnP', () => {
+  function underPnp(packages: Record<string, string>, expression: string): string {
+    const root = mkdtempSync(join(tmpdir(), 'poveste-ts-pnp-'))
+    books.push(root)
+    const cache = join(root, 'cache')
+    const map: Record<string, string> = {}
+    for (const [name, version] of Object.entries(packages)) {
+      mkdirSync(join(cache, name), { recursive: true })
+      writeFileSync(join(cache, name, 'package.json'), JSON.stringify({ name, version }))
+      map[`${name}/package.json`] = join(cache, name, 'package.json')
+    }
+    const hook = join(root, 'pnp.cjs')
+    writeFileSync(hook, [
+      `process.versions.pnp = '3'`,
+      `const map = ${JSON.stringify(map)}`,
+      `const Module = require('node:module')`,
+      `const resolve = Module._resolveFilename`,
+      `Module._resolveFilename = function (request, ...rest) {`,
+      `  if (request in map) return map[request]`,
+      `  if (/^(typescript|@types\\/react)\\//.test(request)) throw Object.assign(new Error('not in the map'), { code: 'MODULE_NOT_FOUND' })`,
+      `  return resolve.call(this, request, ...rest)`,
+      `}`,
+    ].join('\n'))
+    const module = pathToFileURL(join(import.meta.dirname, '..', 'docgen', 'typescript.ts')).href
+    return execFileSync(process.execPath, [
+      '--require',
+      hook,
+      '--input-type=module',
+      '-e',
+      `const { typescriptProblem, typesProblem } = await import(${JSON.stringify(module)}); const book = ${JSON.stringify(join(root, 'book'))}; console.log(${expression} ?? 'on')`,
+    ], { encoding: 'utf8' }).trim()
+  }
+
+  it('find the TypeScript the book resolves, with no node_modules to search', () => {
+    expect(underPnp({ typescript: '6.0.3' }, `typescriptProblem(book, 'book')`)).toBe('on')
+  })
+
+  it('still turn auto-docs off when the book resolves TypeScript 7', () => {
+    expect(underPnp({ typescript: '7.0.2' }, `typescriptProblem(book, 'book')`)).toMatch(/has TypeScript 7\.0\.2/)
+  })
+
+  it('still turn auto-docs off when the book resolves no TypeScript', () => {
+    expect(underPnp({}, `typescriptProblem(book, 'book')`)).toMatch(/which this book does not have/)
+  })
+
+  it('find a type package the book resolves, and name one it does not', () => {
+    expect(underPnp({ '@types/react': '19.3.0' }, `typesProblem(book, ['@types/react'])`)).toBe('on')
+    expect(underPnp({}, `typesProblem(book, ['@types/react'])`)).toMatch(/from `@types\/react`, which this book does not have/)
   })
 })
