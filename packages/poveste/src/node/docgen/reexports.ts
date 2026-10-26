@@ -69,6 +69,53 @@ function parseInto(shape: ModuleShape, file: string, code: string, lang: Lang) {
   }
 }
 
+/**
+ * Whether a JSX story's default export can name a `component`. False only when it is
+ * an object, or `defineStory` of one, that has no `component` key and no spread: the
+ * extractor would start, with its type checker, to read nothing (#1510). Anything
+ * else is left to the extractor, which reads the story with types.
+ */
+export function mayNameComponent(file: string): boolean {
+  const lang = file.match(/\.[cm]?([jt]sx?)$/)?.[1] as Lang | undefined
+  let code: string
+  try {
+    code = readFileSync(file, 'utf8')
+  }
+  catch {
+    return true
+  }
+  const { program, errors } = parseSync(file, code, { lang: lang ?? 'tsx' })
+  if (errors.length) {
+    return true
+  }
+  interface Node {
+    type: string
+    name?: string
+    value?: unknown
+    declaration?: Node
+    declarations?: { id: Node, init?: Node }[]
+    expression?: Node
+    arguments?: Node[]
+    properties?: (Node & { key: Node })[]
+  }
+  const body = program.body as Node[]
+  let value = body.find(node => node.type === 'ExportDefaultDeclaration')?.declaration
+  if (value?.type === 'Identifier') {
+    const name = value.name
+    value = body.flatMap(node => node.declarations ?? []).find(declarator => declarator.id.name === name)?.init
+  }
+  while (value?.expression && ['TSAsExpression', 'TSSatisfiesExpression', 'ParenthesizedExpression'].includes(value.type)) {
+    value = value.expression
+  }
+  if (value?.type === 'CallExpression') {
+    value = value.arguments?.[0]
+  }
+  if (value?.type !== 'ObjectExpression') {
+    return true
+  }
+  return (value.properties ?? []).some(property => property.type !== 'Property' || nameOf(property.key) === 'component')
+}
+
 /** The identifiers in a Vue `<Story :component="…">` or a Svelte `<Hst.Story component={…}>`. */
 function storyComponentField(source: string): string[] {
   const tag = /<(?:Hst\.)?Story\b/g
