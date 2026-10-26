@@ -46,7 +46,7 @@ testStories(BaseButton)
 
 `vitest run` now lists a test for each variant, under the story's title. Both files are `examples/vue`'s, which CI runs.
 
-`povesteTesting()` serves your [setup file](./app-setup.md) and the modules Poveste's client imports, and compiles a story's `<docs>` block to nothing. It adds no alias and nothing to `optimizeDeps`, so the tests resolve modules exactly as the rest of your Vite config does.
+`povesteTesting()` serves your [setup file](./app-setup.md) and the modules Poveste's client imports, and compiles a story's `<docs>` block to nothing. It has Vitest inline Poveste's own packages, which import those modules, through `test.server.deps.inline`. For browser mode, it adds `vue` to `optimizeDeps.include` and your setup file to `optimizeDeps.entries`, so Vite pre-bundles them, and the libraries the setup file imports, before the first test, without reloading partway through it. It adds no alias, so the tests resolve modules exactly as the rest of your Vite config does.
 
 ## In a browser
 
