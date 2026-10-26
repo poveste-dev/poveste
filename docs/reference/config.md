@@ -96,7 +96,7 @@ Plugins contribute the defaults:
 
 The Vue, Svelte and built-in entries match on extension rather than on the `.story.` infix. `vue3` and `svelte4` are the ids those two support plugins have always had, and name no version: `svelte4` is what renders Svelte 5. Solid and React claim the same files. When more than one entry matches a file, the plugin the file imports from wins; a file importing both or neither goes to the first entry that matches, with a warning. See [More than one framework in a book](../guide/plugins/official.md#more-than-one-framework-in-a-book).
 
-Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry after every entry the plugins contributed, and since the first entry that matches a file wins, it only claims files none of theirs match. That is what you want only if you are pointing at a plugin nothing else claims.
+Entries merge by `id` rather than replacing: reuse an existing `id` and your `patterns` and `pluginIds` are appended to it, so the plugin's own are kept. A new `id` adds a new entry after every entry the plugins contributed. A file it shares with one of theirs goes to the plugin the file imports from, as above, and to theirs when the file imports neither, since theirs comes first. So a new entry reliably claims only files none of theirs match. That is what you want only if you are pointing at a plugin nothing else claims.
 
 A story matching `storyMatch` and no `supportMatch` entry fails collection with `No support plugin found for file …`. That is the reason to set this key: plain TypeScript stories for the built-in renderer, `*.story.ts`, for instance, since its entry claims `**/*.js` alone. A `.story.tsx` file needs no entry, because the Solid and React plugins claim it.
 
@@ -230,13 +230,13 @@ export default defineConfig({
 
 `boolean | { allow?: string[], exclude?: string[] }` - Default: `true`
 
-For Vue, Svelte, Solid and React books, for now: a props, slots and events table on a story's **Docs** tab, read from the component's types: Vue's through `vue-component-meta`, Svelte's from the type on `$props()`, for each component a Vue or Svelte story imports, directly or through re-exports, or names in its [`component`](./vue/story.md#component). A Solid or React story names its component in its `component` field instead, since JSX stories import much besides it, and its props are read from the type of the component's first parameter. Nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story names. Until it answers, the Docs tab says it is reading component types; the first time can take many seconds.
+For Vue, Svelte, Solid and React books, for now: a props, slots and events table on a story's **Docs** tab, read from the component's types: Vue's through `vue-component-meta`, Svelte's from the type on `$props()`, for each component a Vue or Svelte story imports, directly or through re-exports, or names in its [`component`](./vue/story.md#component). A Solid or React story names its component in its `component` field instead, since JSX stories import much besides it, and its props are read from the type of the component's first parameter. In `poveste dev`, nothing runs until a reader first opens a story's docs: extraction then starts in a worker, after stories are collected, and only for the components that story names. Until it answers, the Docs tab says it is reading component types; the first time can take many seconds. `poveste build` has no reader to wait for, so it reads every story's components in one pass after collection, and the book carries the tables it read. That pass adds to the build's time: about 2 seconds on the Vue example book's 74 stories.
 
 It needs TypeScript in the book, version 6 or earlier: `npm i -D typescript@6`. Every framework reads the types through TypeScript's own API, which TypeScript 7 no longer has. In a book without TypeScript, or with TypeScript 7, auto-docs turns itself off and says so once in the log, and in `poveste dev` on the Docs tab, in the same words; a built book's Docs tab shows no table, and props detected at runtime show as before. A Svelte book also needs `svelte2tsx`, an optional peer of `@poveste/plugin-svelte`, and a React book needs `@types/react`, since React ships no types of its own; without it, auto-docs for that framework turns off the same way.
 
 In a built book, a component whose types could not be read is left out of the docs, and the build log says how many were.
 
-It holds a type checker while it runs, which on a large component library costs up to about 1 GB. Set it to `false` to turn it off; props detected at runtime still show.
+It holds a type checker while it runs, which on a large component library costs up to about 1 GB. A build reads every component, so it pays the whole of that; `poveste dev` pays for the components whose docs have been opened. Set it to `false` to turn it off; props detected at runtime still show.
 
 ```ts
 export default defineConfig({
@@ -244,7 +244,7 @@ export default defineConfig({
 })
 ```
 
-Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` keeps the props your own components take from the packages it names, such as a design system whose prop types they extend. It does not add a table for a library's components: a component imported from a package's built JavaScript is not a `.vue` file, and gets none. `exclude` leaves out components whose path contains one of its strings.
+Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` keeps the props your own components take from the packages it names, such as a design system whose prop types they extend. In a Vue or Svelte book it does not add a table for a library's components: importing one from a package reaches the package's JavaScript entry, not a `.vue` or `.svelte` file, and gets none. A Solid or React story that names a library's component in `component` does get a table, read from the package's types, and since every one of its props is declared in that package, `allow` naming it is what fills the table: without it the table is the component's name and no rows. `exclude` leaves out components whose path contains one of its strings.
 
 ```ts
 export default defineConfig({
