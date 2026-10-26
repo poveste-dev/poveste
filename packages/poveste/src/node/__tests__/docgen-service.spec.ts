@@ -326,3 +326,51 @@ describe('the docgen service', () => {
     expect(createRunner).not.toHaveBeenCalled()
   })
 })
+
+// The extractor reads a JSX story's `component` and nothing else, so a story without
+// one held a type checker, about 250 MB in a Solid book, for no table (#1510).
+describe('a JSX story and its `component` field', () => {
+  function story(source: string) {
+    const root = mkdtempSync(join(tmpdir(), 'poveste-jsx-story-'))
+    const file = join(root, 'Badge.story.tsx')
+    writeFileSync(file, source)
+    return { root, file, remove: () => rmSync(root, { recursive: true, force: true }) }
+  }
+
+  it.each([
+    ['in `defineStory`', `import { defineStory } from '@poveste/plugin-solid'\nexport default defineStory({ title: 'Badge', variants: [] })\n`],
+    ['in a plain object', `export default { title: 'Badge', variants: [] }\n`],
+    ['through a binding', `const story = defineStory({ title: 'Badge', variants: [] }) satisfies object\nexport default story\n`],
+  ])('starts no extractor for a story that names none %s, and says to name one', async (_, source) => {
+    const { file, remove } = story(source)
+    const { docgen, createRunner } = service({ plugins: [solid], storyOf: () => ({ file, supportPluginId: 'solid' }), componentsOf: () => [] })
+
+    try {
+      const result = await docgen.request('badge')
+
+      expect(createRunner).not.toHaveBeenCalled()
+      expect(result.off).toMatch(/names no component\. Name the component it documents in its `component` field/)
+    }
+    finally {
+      remove()
+    }
+  })
+
+  it.each([
+    ['by key', `export default defineStory({ title: 'Badge', component: Badge, variants: [] })\n`],
+    ['in shorthand', `export default defineStory({ title: 'Badge', component, variants: [] })\n`],
+    ['possibly, through a spread', `export default defineStory({ ...shared, title: 'Badge' })\n`],
+  ])('hands the extractor a story that names one %s', async (_, source) => {
+    const { file, remove } = story(source)
+    const { docgen, sent } = service({ plugins: [solid], storyOf: () => ({ file, supportPluginId: 'solid' }), componentsOf: () => [] })
+
+    try {
+      await docgen.request('badge')
+
+      expect(extracted(sent)).toEqual([file])
+    }
+    finally {
+      remove()
+    }
+  })
+})

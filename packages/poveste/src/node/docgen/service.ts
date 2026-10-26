@@ -3,6 +3,7 @@ import type { EngineExtractorSpec, ExtractResult } from './engine.js'
 import type { DocgenRequest, DocgenResponse, StoryDocsResult } from './protocol.js'
 import { Worker } from 'node:worker_threads'
 import { relative } from 'pathe'
+import { mayNameComponent } from './reexports.js'
 import { typescriptProblem, typesProblem } from './typescript.js'
 
 type StoryComponentsListed = string[] | { files: string[], unresolved?: number }
@@ -147,6 +148,9 @@ export function createDocgenService(options: DocgenServiceOptions) {
     return undefined
   }
 
+  /** Why a JSX story got no table: it names no `component`, which is all its extractor reads (#1510). */
+  const UNNAMED = 'No table: this story names no component. Name the component it documents in its `component` field, and the table is read from that component\'s type.'
+
   /** Why a story that imports components got no table: none of them reached a file auto-docs reads (#1432). */
   function untraced(unresolved: number): string | undefined {
     return unresolved
@@ -217,15 +221,20 @@ export function createDocgenService(options: DocgenServiceOptions) {
           files.push(file)
         }
       }
+      let unnamed = false
       if (story) {
-        own(story.file, storyPluginFor(story.file, story.supportPluginId))
+        const plugin = storyPluginFor(story.file, story.supportPluginId)
+        unnamed = !!plugin && !mayNameComponent(story.file)
+        own(story.file, unnamed ? undefined : plugin)
       }
       const named = await listed(options.componentsOf(storyId))
       for (const file of named.files) {
         own(file, pluginFor(file))
       }
       const components = Object.fromEntries(await extract(files))
-      const off = Object.keys(components).length ? undefined : await offReason(storyId) ?? untraced(named.unresolved)
+      const off = Object.keys(components).length
+        ? undefined
+        : await offReason(storyId) ?? (unnamed ? UNNAMED : untraced(named.unresolved))
       return { storyId, components, ...off ? { off } : {} }
     },
 
