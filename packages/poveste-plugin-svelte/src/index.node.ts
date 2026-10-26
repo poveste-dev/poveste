@@ -17,9 +17,17 @@ import { disableStoryComponentHmr } from './util/story-hmr.js'
 /**
  * `svelte2tsx` is an optional peer, loaded from the book like TypeScript, so a book
  * with auto-docs off installs neither. Looked for up the book's own `node_modules`,
- * where a check that passes means the extractor's load finds it.
+ * where a check that passes means the extractor's load finds it, or resolved from
+ * the book under Yarn PnP, which has none (#1508).
  */
 function svelte2tsxProblem(root: string): string | undefined {
+  if (process.versions['pnp']) {
+    try {
+      createRequire(join(root, 'package.json')).resolve('svelte2tsx/package.json')
+      return undefined
+    }
+    catch {}
+  }
   for (let dir = root; dir !== dirname(dir); dir = dirname(dir)) {
     if (existsSync(join(dir, 'node_modules', 'svelte2tsx', 'package.json'))) {
       return undefined
