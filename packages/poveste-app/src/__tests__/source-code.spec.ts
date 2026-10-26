@@ -52,4 +52,12 @@ describe('getSourceCode with a framework plugin', () => {
     expect(source).toBe('<Declared />')
     expect(plugin.loads).toBe(0)
   })
+
+  it('calls a declared source that is a function of the variant\'s state, as a Svelte story can declare it', async () => {
+    const variant = { state: { disabled: true }, source: (state: { disabled: boolean }) => `<Button${state.disabled ? ' disabled' : ''} />` } as unknown as Variant
+
+    const source = await getSourceCode(storyWithFile(), variant)
+
+    expect(source).toBe('<Button disabled />')
+  })
 })
