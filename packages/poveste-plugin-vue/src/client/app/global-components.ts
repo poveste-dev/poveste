@@ -81,6 +81,11 @@ function wrapControlComponent(controlComponent: (typeof components)[keyof typeof
       let app: _App
 
       onMounted(() => {
+        // SPIKE #348 instrumentation — see Wrap.svelte. Not for merge.
+        const _c = ((globalThis as any).__pvt348 ??= { apps: 0, docs: [] })
+        _c.apps++
+        _c.docs.push('vue')
+
         app = _createApp({
           mounted() {
             slotCalls.value = newSlotCalls

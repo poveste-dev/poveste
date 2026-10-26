@@ -27,6 +27,12 @@
   onMount(() => {
     updateState(value, $$restProps)
 
+    // SPIKE #348 instrumentation — counts the Vue applications this bridge boots
+    // and which document each one lands in. Not for merge.
+    const _c = (globalThis.__pvt348 ??= { apps: 0, docs: [] })
+    _c.apps++
+    _c.docs.push(el.ownerDocument === globalThis.document ? 'host' : 'iframe')
+
     app = _createApp({
       render() {
         const finalListeners = {}
