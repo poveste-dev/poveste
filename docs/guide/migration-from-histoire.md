@@ -27,10 +27,14 @@ only if you deploy or ignore that path (see step 5).
 
 ::: warning Check your versions first
 Poveste's floors are higher than histoire's — it requires Vite 8, and with it Nuxt 4.5+
-and Svelte 5+. If your project is below any of them, that upgrade comes first and is the
-real work; the dependency swap below is the easy part. See
+and Svelte 5+, and it requires Vue `^3.5.43`. If your project is below any of them, that
+upgrade comes first and is the real work; the dependency swap below is the easy part. See
 [supported versions](./getting-started.md#supported-versions).
 :::
+
+`isolateStyles` is on by default, so your global CSS is scoped to each story: a custom property
+it sets on `:root` applies inside the story and reads empty on `<html>`. See
+[root selectors](./css.md#root-selectors).
 
 ## What it adds, and whether you need to move
 
@@ -58,9 +62,12 @@ Rename the packages in your `package.json`:
 | `@histoire/plugin-percy` | `@poveste/plugin-percy` |
 | `@histoire/plugin-screenshot` | `@poveste/plugin-screenshot` |
 
-Then reinstall:
+Then reinstall from scratch. The old lockfile still pins Vue and Vite where histoire's
+packages wanted them, and an install over it fails on Poveste's peers, or with pnpm keeps
+the old Vue with only a warning:
 
 ```bash
+rm -rf node_modules pnpm-lock.yaml # or package-lock.json
 pnpm install
 ```
 
@@ -112,6 +119,17 @@ export default defineConfig({
 
 `defineConfig` is unchanged. If you type your config explicitly, the
 `HistoireConfig` type is still exported as a deprecated alias of `PovesteConfig`.
+
+### Story and setup files keep their imports
+
+A story or setup file can go on importing from histoire: `histoire/client` (`logEvent`,
+`isCollecting`, `toggleDark`), `@histoire/plugin-vue` (`defineSetupVue3`) and
+`@histoire/plugin-svelte` (`defineSetupSvelte`) resolve to Poveste's packages, which export
+the same names, and so do the other `@histoire/*` packages histoire 0.17 publishes. Three
+have no Poveste equivalent and still fail: `@histoire/plugin-vue2`, since Poveste has no
+Vue 2 support, and `@histoire/vendors/floating-vue` and `@histoire/vendors/scroll`. The
+config file is the exception: Poveste loads it before any of this applies, so its imports
+change as above.
 
 ## 3. Update npm scripts (optional)
 

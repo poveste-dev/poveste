@@ -220,7 +220,8 @@ patch, so an upgrade inside 0.x never breaks on a deprecation.
 
 **Histoire compatibility shims do not expire.** The `histoire.config.*` filename, the `histoire`
 key in a Vite config, the `HistoireConfig` type, the `histoire` CLI alias, the
-`--histoire-*` CSS variables and the `.histoire-*` render classes are what make Poveste a
+`--histoire-*` CSS variables, the `.histoire-*` render classes and the `histoire/client` and
+`@histoire/*` imports in story and setup files are what make Poveste a
 drop-in for [histoire](https://github.com/histoire-dev/histoire). Removing them would retire the
 reason to switch, so they are not on a clock and 1.0 does not remove them. A name that is both
 ours and a shim — kept for compatibility *and* superseded by a newer spelling — is a shim, and

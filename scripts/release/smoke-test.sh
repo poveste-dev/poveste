@@ -574,6 +574,140 @@ pnpm_dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantI
 install_typescript "$SVELTE_APP"
 docs_tab_says svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" "Auto-docs is off: it reads Svelte components' types through" 4799
 
+# ── histoire books ───────────────────────────────────────────────────────────
+
+# A histoire 0.17 book after the migration guide's swap: its dependencies are
+# poveste's, its config imports poveste as the guide says, and its story and setup
+# files are histoire's, unchanged. Those import `histoire/client` and
+# `@histoire/plugin-vue`, which nothing installs any more, and the book failed to
+# collect a story until poveste resolved them (#1530).
+HISTOIRE_VUE_APP="$WORK/histoire-vue"
+mkdir -p "$HISTOIRE_VUE_APP/src/components"
+echo "▸ Scaffolding a histoire Vue book → $HISTOIRE_VUE_APP"
+consumer_package_json "$HISTOIRE_VUE_APP" histoire-vue
+
+cat > "$HISTOIRE_VUE_APP/histoire.config.ts" <<'TS'
+import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstVue()],
+  setupFile: '/src/histoire.setup.ts',
+})
+TS
+
+cat > "$HISTOIRE_VUE_APP/vite.config.ts" <<'TS'
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [vue()],
+})
+TS
+
+cat > "$HISTOIRE_VUE_APP/src/histoire.setup.ts" <<'TS'
+import { defineSetupVue3 } from '@histoire/plugin-vue'
+import './global.css'
+
+export const setupVue3 = defineSetupVue3(({ app }) => {
+  app.provide('greeting', 'Provided by the histoire setup')
+})
+TS
+
+cat > "$HISTOIRE_VUE_APP/src/global.css" <<'CSS'
+:root {
+  --brand: rgb(200, 0, 0);
+}
+CSS
+
+cat > "$HISTOIRE_VUE_APP/src/components/MyButton.vue" <<'VUE'
+<script setup lang="ts">
+import { inject } from 'vue'
+
+const greeting = inject<string>('greeting', 'no setup ran')
+</script>
+
+<template>
+  <button>{{ greeting }}</button>
+</template>
+VUE
+
+cat > "$HISTOIRE_VUE_APP/src/components/MyButton.story.vue" <<'VUE'
+<script setup lang="ts">
+import { logEvent } from 'histoire/client'
+import MyButton from './MyButton.vue'
+</script>
+
+<template>
+  <Story title="MyButton">
+    <Variant title="default">
+      <MyButton @click="logEvent('click', $event)" />
+    </Variant>
+  </Story>
+</template>
+VUE
+
+install_and_build histoire-vue "$HISTOIRE_VUE_APP" \
+  "$(plugin_tgz poveste-plugin-vue)" \
+  "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+
+dev_renders histoire-vue "$HISTOIRE_VUE_APP" "/story/src-components-mybutton-story-vue" "Provided by the histoire setup" 4801
+
+# The same for a histoire Svelte book: `@histoire/plugin-svelte` in the setup file.
+HISTOIRE_SVELTE_APP="$WORK/histoire-svelte"
+mkdir -p "$HISTOIRE_SVELTE_APP/src"
+echo "▸ Scaffolding a histoire Svelte book → $HISTOIRE_SVELTE_APP"
+consumer_package_json "$HISTOIRE_SVELTE_APP" histoire-svelte
+
+cat > "$HISTOIRE_SVELTE_APP/histoire.config.ts" <<'TS'
+import { HstSvelte } from '@poveste/plugin-svelte'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstSvelte()],
+  setupFile: '/src/histoire.setup.ts',
+})
+TS
+
+cat > "$HISTOIRE_SVELTE_APP/vite.config.ts" <<'TS'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [svelte()],
+})
+TS
+
+cat > "$HISTOIRE_SVELTE_APP/src/histoire.setup.ts" <<'TS'
+import { defineSetupSvelte } from '@histoire/plugin-svelte'
+
+// At the top level, which runs when the file is imported, before any story mounts.
+;(globalThis as { histoireSetup?: string }).histoireSetup = 'Ran the histoire setup'
+
+export const setupSvelte = defineSetupSvelte(() => {})
+TS
+
+cat > "$HISTOIRE_SVELTE_APP/src/Greeting.story.svelte" <<'SVELTE'
+<script>
+  import { logEvent } from 'histoire/client'
+
+  export let Hst
+</script>
+
+<Hst.Story title="Greeting">
+  <Hst.Variant title="default">
+    <button on:click={event => logEvent('click', event)}>{globalThis.histoireSetup ?? 'no setup ran'}</button>
+  </Hst.Variant>
+</Hst.Story>
+SVELTE
+
+install_and_build histoire-svelte "$HISTOIRE_SVELTE_APP" \
+  "$(plugin_tgz poveste-plugin-svelte)" \
+  "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
+  "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
+
+dev_renders histoire-svelte "$HISTOIRE_SVELTE_APP" "/story/src-greeting-story-svelte?variantId=src-greeting-story-svelte-0" "Ran the histoire setup" 4802
+
 # ── Solid ────────────────────────────────────────────────────────────────────
 
 SOLID_APP="$WORK/solid"
@@ -1020,4 +1154,4 @@ install_and_build percy "$WORK/percy" \
 #
 # Percy stays: its puppeteer is optional, and its pass is green on a CI runner.
 
-echo "✅ Smoke test passed — vue, svelte, solid, react, quasar, nuxt, tailwind, percy"
+echo "✅ Smoke test passed — vue, svelte, histoire-vue, histoire-svelte, solid, react, quasar, nuxt, tailwind, percy"
