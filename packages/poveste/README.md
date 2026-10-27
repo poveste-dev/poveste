@@ -5,7 +5,7 @@
 Poveste builds a browsable *book* of stories from your components, powered by
 [Vite](https://vite.dev). It is a drop-in fork of
 [histoire](https://github.com/histoire-dev/histoire), covering Vue, Nuxt, Svelte,
-SvelteKit and Quasar — the last of which histoire does not support. Solid and React
+SvelteKit and Quasar — the last of which no released version of histoire includes. Solid and React
 are supported as renderers only: their stories render, and they have no controls
 panel.
 
