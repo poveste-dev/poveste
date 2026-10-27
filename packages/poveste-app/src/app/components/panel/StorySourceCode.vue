@@ -6,7 +6,7 @@ import { Icon } from '@iconify/vue'
 import { HstCopyIcon, HstTooltip } from '@poveste/controls'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { isDark } from '../../util/dark'
-import { getDynamicSourceCode, getStaticSourceCode, loadGenerateSourceCode } from '../../util/docs'
+import { getDynamicSourceCode, getStaticSourceCode, loadGenerateSourceCode, sourceLang } from '../../util/docs'
 import { getHighlighter } from '../../util/highlighter'
 import BaseEmpty from '../base/BaseEmpty.vue'
 
@@ -112,7 +112,7 @@ onMounted(async () => {
 
 const sourceHtml = computed(() => displayedSourceCode.value
   ? highlighter.value?.codeToHtml(displayedSourceCode.value, {
-      lang: 'html',
+      lang: sourceLang(props.story),
       theme: isDark.value ? 'github-dark' : 'github-light-high-contrast',
     })
   : '')

@@ -25,6 +25,15 @@ export async function getDynamicSourceCode(variant: Variant, generate: GenerateS
   return (await generate?.(variant)) || undefined
 }
 
+/**
+ * The grammar a story's source reads in: a Vue or Svelte story is HTML with script
+ * inside, and a Solid or React story file is TypeScript with JSX, which the HTML
+ * grammar left plain (#1521). A variant's own source follows its story's.
+ */
+export function sourceLang(story: Story | undefined): 'html' | 'tsx' {
+  return /\.[cm]?[jt]sx$/.test(story?.file?.filePath ?? '') ? 'tsx' : 'html'
+}
+
 export async function getStaticSourceCode(story: Story): Promise<string | undefined> {
   const sourceLoader = story.file?.source
   return sourceLoader ? (await sourceLoader()).default : undefined
