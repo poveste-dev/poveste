@@ -24,6 +24,10 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    },
     "./*": "./*"
   },
   "main": "./dist/index.js",
@@ -42,7 +46,13 @@
     "test:dev": "vitest"
   },
   "peerDependencies": {
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "vitest": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@poveste/vendors": "workspace:^",
