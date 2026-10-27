@@ -1,6 +1,6 @@
 import type { Story, Variant } from '../app/types'
 import { describe, expect, it, vi } from 'vitest'
-import { getSourceCode } from '../app/util/docs'
+import { getSourceCode, sourceLang } from '../app/util/docs'
 
 const plugin = vi.hoisted(() => ({ generateSourceCode: (() => undefined) as (variant: unknown) => unknown, loads: 0 }))
 
@@ -59,5 +59,16 @@ describe('getSourceCode with a framework plugin', () => {
     const source = await getSourceCode(storyWithFile(), variant)
 
     expect(source).toBe('<Button disabled />')
+  })
+})
+
+describe('sourceLang', () => {
+  it.each([
+    ['src/Button.story.tsx', 'tsx'],
+    ['src/Button.story.jsx', 'tsx'],
+    ['src/Button.story.vue', 'html'],
+    ['src/Button.story.svelte', 'html'],
+  ])('reads %s as %s', (filePath, lang) => {
+    expect(sourceLang({ file: { filePath } } as unknown as Story)).toBe(lang)
   })
 })

@@ -19,9 +19,10 @@ let highlighterPromise: Promise<HighlighterCore> | undefined
  */
 export function getHighlighter(): Promise<HighlighterCore> {
   highlighterPromise ??= createHighlighterCore({
+    // `tsx` reads JSX too, and a `.story.tsx` file's types besides (#1521).
     langs: [
       import('shiki/langs/html.mjs'),
-      import('shiki/langs/jsx.mjs'),
+      import('shiki/langs/tsx.mjs'),
     ],
     /*
      * `github-light-high-contrast`, not `github-light`. The plain one paints
