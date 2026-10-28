@@ -20,6 +20,7 @@ import {
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { collectionLogger } from './collect/logger.js'
 import { runDevCommand } from './dev-event.js'
+import { histoireImports } from './histoire-imports.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
@@ -410,6 +411,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   })
 
   plugins.push(vendorsFromPoveste())
+  plugins.push(histoireImports())
   plugins.push(createVirtualFilesPlugin(ctx, isServer))
   plugins.push(globalStylesPlugin({
     files: ctx.config.globalStyles ?? [],
