@@ -3,7 +3,7 @@ import type ts from 'typescript'
 import type { VueDocgenOptions } from './meta.js'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { findTsconfig } from 'poveste/docgen'
+import { bookTsconfig } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
@@ -20,9 +20,9 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
   const { createChecker, createCheckerByJson, TypeMeta } = await import('vue-component-meta')
   const options = (context.options ?? {}) as VueDocgenOptions
   const checkerOptions = { forceUseTs: true, printer: { newLine: 1 } }
-  const tsconfig = findTsconfig(context.root)
   // The copy vue-component-meta loaded, so the syntax kinds match the program it builds.
   const typescript: typeof ts = createRequire(createRequire(import.meta.url).resolve('vue-component-meta'))('typescript')
+  const tsconfig = bookTsconfig(typescript, context.root)
   const checker = tsconfig
     ? createChecker(tsconfig, checkerOptions)
     : createCheckerByJson(context.root, { include: ['**/*'], exclude: ['node_modules'] }, checkerOptions)
@@ -41,6 +41,10 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
 
   return {
     extract(file) {
+      // vue-component-meta's own message says "not part of the project" and not which one.
+      if (tsconfig && file.endsWith('.vue') && !checker.getProgram()?.getSourceFile(file)) {
+        throw new Error(`'${file}' is not in the program of ${tsconfig}, the tsconfig auto-docs reads. Add it to that tsconfig's \`include\`.`)
+      }
       const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(file)
       if (!meta) {
         return undefined

@@ -420,6 +420,7 @@
     "JsxDialect",
     "PropsReading",
     "ambientFiles",
+    "bookTsconfig",
     "createJsxExtractor",
     "declaredOnlyInPackages",
     "documentProps",

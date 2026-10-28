@@ -31,6 +31,48 @@ export function findTsconfig(root: string) {
   return TSCONFIGS.map(name => join(root, name)).find(file => existsSync(file))
 }
 
+/**
+ * The tsconfig the book's components are typed by. A root one holding only
+ * `references`, as Nuxt 4's does, types nothing, and every component read through
+ * it was "not part of the project" (#1535). Its referenced project with the most
+ * of the book's sources is read instead: the app's, not the one for its config files.
+ */
+export function bookTsconfig(typescript: typeof ts, root: string): string | undefined {
+  const tsconfig = findTsconfig(root)
+  return tsconfig === undefined ? undefined : projectOf(typescript, tsconfig, new Set()).file
+}
+
+// So `include: ['../app/**/*']` lists the components, not only the `.ts` beside them.
+function componentExtensions(typescript: typeof ts): ts.FileExtensionInfo[] {
+  return ['.vue', '.svelte'].map(extension => ({ extension, isMixedContent: true, scriptKind: typescript.ScriptKind.Deferred }))
+}
+
+function parse(typescript: typeof ts, file: string) {
+  return typescript.getParsedCommandLineOfConfigFile(file, {}, {
+    ...typescript.sys,
+    onUnRecoverableConfigFileDiagnostic: () => {},
+  }, undefined, undefined, componentExtensions(typescript))
+}
+
+function projectOf(typescript: typeof ts, file: string, seen: Set<string>): { file: string, sources: number } {
+  seen.add(file)
+  const parsed = parse(typescript, file)
+  const sources = parsed?.fileNames.filter(name => !name.endsWith('.d.ts') && !name.includes('/node_modules/')).length ?? 0
+  const references = parsed?.fileNames.length ? [] : parsed?.projectReferences ?? []
+  let best = { file, sources }
+  for (const reference of references) {
+    const referenced = typescript.resolveProjectReferencePath(reference)
+    if (!seen.has(referenced) && existsSync(referenced)) {
+      const project = projectOf(typescript, referenced, seen)
+      // Ties keep the earlier reference, and Nuxt and Vite both list the app's first.
+      if (project.sources > best.sources) {
+        best = project
+      }
+    }
+  }
+  return best
+}
+
 /** A package as the book resolves it, so types are read as its editor reads them. */
 export function loadFromBook<T>(root: string, id: string, why: string): T {
   try {
@@ -43,13 +85,8 @@ export function loadFromBook<T>(root: string, id: string, why: string): T {
 
 /** The book's tsconfig, parsed; nothing when it has none. */
 export function readTsconfig(typescript: typeof ts, root: string): ts.ParsedCommandLine | undefined {
-  const tsconfig = findTsconfig(root)
-  return tsconfig === undefined
-    ? undefined
-    : typescript.getParsedCommandLineOfConfigFile(tsconfig, {}, {
-        ...typescript.sys,
-        onUnRecoverableConfigFileDiagnostic: () => {},
-      })
+  const tsconfig = bookTsconfig(typescript, root)
+  return tsconfig === undefined ? undefined : parse(typescript, tsconfig)
 }
 
 /**
