@@ -4,6 +4,22 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.21.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.21.0...v0.21.1)
+
+**Auto-docs works in a Nuxt 4 book made by `nuxi init`, and the histoire migration guide's first two steps work as written.**
+
+It is a `patch`, and upgrading needs no change to a book. Nothing is renamed or removed, and no peer range or version floor moved. `poveste/docgen` exports one new name, `bookTsconfig`, which `@poveste/plugin-vue` uses.
+
+### 🩹 Fixes
+
+- **A Nuxt 4 book made by `nuxi init` gets its auto-docs table** ([#1535](https://github.com/poveste-dev/poveste/issues/1535), [#1541](https://github.com/poveste-dev/poveste/pull/1541)). Its root `tsconfig.json` lists no files and only `references` to `.nuxt/tsconfig.app.json` and the others, so auto-docs read a project with nothing in it, and every component's Docs tab said "Could not read this component's types". 0.20.0 did the same. A root tsconfig that holds only `references` is now followed to the referenced project with most of the book's sources, `.nuxt/tsconfig.app.json` in a Nuxt book. A component still outside it gets a Docs tab message naming the tsconfig that was read, and `poveste dev` prints the first such failure once in the terminal. The Nuxt guide says which tsconfig is read.
+
+### 📖 Documentation
+
+- **The histoire migration guide swaps the packages by command** ([#1539](https://github.com/poveste-dev/poveste/issues/1539), [#1542](https://github.com/poveste-dev/poveste/pull/1542)). Renaming the keys in `package.json` kept histoire's ranges, such as `^0.17.17`, which no Poveste version matches, so the install failed with `ETARGET`. The guide now removes the histoire packages and adds Poveste's with Vite 8. Step 2 says in one place that `histoire.config.ts` keeps its name and its imports change. The version check names Vite 7 for a book on histoire `1.0.0-beta.1`.
+
 ## v0.21.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.20.0...v0.21.0)
