@@ -16,10 +16,10 @@ read a story's state, so story state moves onto `initState` — see
 [Svelte: story state moves to `initState`](#svelte-story-state-moves-to-initstate) below.
 
 ::: tip TL;DR
-Replace `histoire` → `poveste` and `@histoire/*` → `@poveste/*` in your
-`package.json`, reinstall, and you're done. The API, story files, config, CLI,
-CSS variables, and render classes all keep working. The **one** thing that moves
-is the build output directory (`.histoire/dist` → `.poveste/dist`) — update it
+Swap `histoire` → `poveste` and `@histoire/*` → `@poveste/*` by command (step 1),
+change the imports in your config file (step 2), and you're done. The API, story files,
+config format, CLI, CSS variables, and render classes all keep working. The **one** thing
+that moves is the build output directory (`.histoire/dist` → `.poveste/dist`) — update it
 only if you deploy or ignore that path (see step 5).
 
 **Svelte only:** stories that use controls also need their state moved onto `initState`
@@ -28,7 +28,8 @@ only if you deploy or ignore that path (see step 5).
 
 ::: warning Check your versions first
 Poveste's floors are higher than histoire's — it requires Vite 8, and with it Nuxt 4.5+
-and Svelte 5+, and it requires Vue `^3.5.43`. If your project is below any of them, that
+and Svelte 5+, and it requires Vue `^3.5.43`. A histoire 0.x book is usually on Vite 5 or
+6, and a `1.0.0-beta.1` book on Vite 7. If your project is below any of them, that
 upgrade comes first and is the real work; the dependency swap below is the easy part. See
 [supported versions](./getting-started.md#supported-versions).
 :::
@@ -53,7 +54,7 @@ For reference, as of 27 October 2026 histoire's npm `latest` is `1.0.0-beta.1`, 
 
 ## 1. Swap the dependencies
 
-Rename the packages in your `package.json`:
+Each histoire package has a Poveste one:
 
 | histoire | poveste |
 | --- | --- |
@@ -64,29 +65,31 @@ Rename the packages in your `package.json`:
 | `@histoire/plugin-percy` | `@poveste/plugin-percy` |
 | `@histoire/plugin-screenshot` | `@poveste/plugin-screenshot` |
 
-Then reinstall from scratch. The old lockfile still pins Vue and Vite where histoire's
-packages wanted them, and an install over it fails on Poveste's peers, or with pnpm keeps
-the old Vue with only a warning:
+Swap them by command, not by renaming the keys in your `package.json`: a renamed key keeps
+histoire's range, such as `^0.17.17`, which no Poveste version matches, and the install fails with
+`ETARGET`. Remove the histoire packages, then add Poveste's from scratch. The old lockfile
+still pins Vue and Vite where histoire's packages wanted them, and an install over it fails
+on Poveste's peers, or with pnpm keeps the old Vue with only a warning:
 
 ```bash
+pnpm remove histoire @histoire/plugin-vue # and every other @histoire/* package you have
 rm -rf node_modules pnpm-lock.yaml # or package-lock.json
-pnpm install
+# Vue
+pnpm add -D poveste @poveste/plugin-vue vite@8 @vitejs/plugin-vue@6
+# Svelte
+pnpm add -D poveste @poveste/plugin-svelte vite@8 @sveltejs/vite-plugin-svelte@7
 ```
+
+Nuxt 4.5 or later brings Vite 8 itself, so a Nuxt book adds `poveste`, `@poveste/plugin-vue`
+and `@poveste/plugin-nuxt`.
 
 ### Vite 8 comes with it
 
-`poveste` peers `vite: ^8.0.0`. A histoire book is usually on Vite 5 or 6 — reka-ui's
-peered Vite 5 — so upgrade Vite, and the Vite plugin your framework uses, in the same
-step:
+`poveste` peers `vite: ^8.0.0`, which is why the install above upgrades Vite and the Vite
+plugin your framework uses in the same command. A histoire 0.x book is usually on Vite 5
+or 6 — reka-ui's peered Vite 5 — and a `1.0.0-beta.1` book on Vite 7, which it peers.
 
-```bash
-# Vue or Nuxt
-pnpm add -D vite@8 @vitejs/plugin-vue@6
-# Svelte
-pnpm add -D vite@8 @sveltejs/vite-plugin-svelte@7
-```
-
-What changes for the book coming from Vite 5 or 6:
+What changes for the book coming from Vite 5, 6 or 7:
 
 - **Vite 8 bundles with Rolldown**, not Rollup and esbuild. Most books need nothing for
   it; a `vite.config` that sets Rollup- or esbuild-specific options should be read
@@ -100,8 +103,10 @@ What changes for the book coming from Vite 5 or 6:
 
 ## 2. Update your config file
 
-Your existing `histoire.config.ts` **keeps working as-is** — poveste resolves it
-as a fallback. To fully adopt the new name, rename it (optional):
+Poveste still finds a `histoire.config.ts`, so the filename can stay, but the imports in it
+must change: Poveste loads the config before it maps histoire's imports, so `'histoire'` and
+`'@histoire/plugin-vue'` fail there with "Cannot find module". Rename the file too if you
+like:
 
 ```bash
 mv histoire.config.ts poveste.config.ts
@@ -130,8 +135,7 @@ A story or setup file can go on importing from histoire: `histoire/client` (`log
 the same names, and so do the other `@histoire/*` packages histoire 0.17 publishes. Three
 have no Poveste equivalent and still fail: `@histoire/plugin-vue2`, since Poveste has no
 Vue 2 support, and `@histoire/vendors/floating-vue` and `@histoire/vendors/scroll`. The
-config file is the exception: Poveste loads it before any of this applies, so its imports
-change as above.
+config file is the exception, as above.
 
 ## 3. Update npm scripts (optional)
 
