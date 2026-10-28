@@ -199,8 +199,18 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
   onOpen('docgen', () => docgen.dispose())
   // Answered when auto-docs is off too: the answer is what says why, and the Docs
   // tab waits for it (#1502).
+  let failureSaid = false
   server.ws.on('poveste:docgen-request', async ({ storyId }: { storyId: string }) => {
-    server.ws.send('poveste:docgen-result', await docgen.request(storyId))
+    const result = await docgen.request(storyId)
+    // The Docs tab shows each failure; the terminal says the first, as a build does (#1535).
+    for (const [file, read] of failureSaid ? [] : Object.entries(result.components)) {
+      if (!read.doc && read.error !== undefined) {
+        failureSaid = true
+        console.warn(`[poveste] auto-docs could not read ${file}: ${read.error}`)
+        break
+      }
+    }
+    server.ws.send('poveste:docgen-result', result)
   })
   if (docgen.enabled) {
     server.watcher.on('change', async (file) => {
