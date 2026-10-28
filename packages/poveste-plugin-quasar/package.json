@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-quasar",
   "type": "module",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Poveste plugin that builds a book inside a Quasar project, including the props tables @poveste/plugin-vue reads from your components' types",
   "author": {
     "name": "Sorin Gitlan",
