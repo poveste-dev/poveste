@@ -5,8 +5,9 @@ description: 'Poveste is a drop-in fork of histoire, so your stories and configu
 
 # Migrating from Histoire
 
-**poveste** is a community-maintained, **drop-in fork** of
-[histoire](https://github.com/histoire-dev/histoire). It keeps the same
+**poveste** is a **drop-in fork** of [histoire](https://github.com/histoire-dev/histoire),
+released every one to two weeks and tested on books installed from npm. This guide was written
+against histoire 0.x and `1.0.0-beta.1`, and checked on 27 October 2026. Poveste keeps the same
 `<Story>` / `<Variant>` API, the same `.story.*` file convention, and the same
 configuration format — so for Vue and Nuxt, migrating is a matter of swapping dependencies.
 
@@ -37,13 +38,13 @@ real work; the dependency swap below is the easy part. See
 Everything histoire gave you keeps working, and a few things are new:
 
 - **Five frameworks, each with its own example book and CI job.** Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar are each built and end-to-end tested on every commit.
-- **Quasar.** histoire does not support Quasar. Poveste does, including the app boot files a story otherwise skips. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
+- **Quasar.** No released version of histoire supports Quasar. Poveste does, including the app boot files a story otherwise skips. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
 - **Automatic controls for Svelte 5.** Poveste reads a Svelte component's declared props out of its source when the book is built, so a variant gets a control per prop without writing one. See [Automatic controls](./svelte/controls.md#automatic-controls).
 - **Auto-docs.** A story's Docs tab shows a props, slots and events table read from the component's types ([Vue](./vue/docs.md#props-slots-and-events), [Svelte](./svelte/docs.md#component-docs)). Once it's on, delete the Props, Emits and Slots sections your `.story.md` files write by hand, which would show beside the table and drift from it; keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
 You don't have to move. If histoire does what you need, it's fine to stay. For Vue and Nuxt the move is a dependency swap, and for Svelte it's one change per story that uses controls, so it costs about the same later as it does now.
 
-For reference, as of 15 September 2026 histoire's npm `latest` is `1.0.0-beta.1`, published 7 January 2026.
+For reference, as of 27 October 2026 histoire's npm `latest` is `1.0.0-beta.1`, published 7 January 2026. Its `main` branch is in active development towards a breaking 1.0, and no npm release includes that work yet.
 
 ## 1. Swap the dependencies
 

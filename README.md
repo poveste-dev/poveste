@@ -8,9 +8,9 @@
 
 > Fast and beautiful interactive component playgrounds
 
-**poveste** — /poˈveste/ (_po-VES-teh_), Romanian for "story." A community-maintained,
-**drop-in fork** of [histoire](https://github.com/histoire-dev/histoire) by
-[Guillaume Chau](https://github.com/Akryum). For **Vue and Nuxt**, existing histoire projects
+**poveste** — /poˈveste/ (_po-VES-teh_), Romanian for "story." A **drop-in fork** of
+[histoire](https://github.com/histoire-dev/histoire) by [Guillaume Chau](https://github.com/Akryum),
+released every one to two weeks and tested on books installed from npm. For **Vue and Nuxt**, existing histoire projects
 migrate by swapping one dependency — the `<Story>`/`<Variant>` API, `.story.*` files, and
 `histoire.config.*` all keep working. **Svelte** needs one code change as well: Svelte 5 removed
 the API histoire used to read a story's state, so story state moves onto `initState`

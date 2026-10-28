@@ -1,5 +1,5 @@
 ---
-title: 'Why Poveste — a maintained drop-in fork of histoire'
+title: 'Why Poveste — a drop-in fork of histoire, released every one to two weeks'
 description: 'What Poveste is, how it differs from histoire, and why the fork exists.'
 sidebarDepth: 2
 ---

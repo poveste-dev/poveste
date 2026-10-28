@@ -65,7 +65,7 @@ Worth knowing before you spend an afternoon:
 - **No controls panel for Solid or React.** Their stories and variants render, a variant with `initState` gets the state editor, and the source panel shows the story file. Nothing builds a control per prop for them, as Storybook's Controls does from `args`.
 - **No Angular, Preact, Lit or Qwik.** The plugin interface is public and a framework plugin is possible, but nobody has written those.
 - **No addon ecosystem.** Poveste has a [plugin API](./plugins/development.md) for collection and setup, and official plugins for the frameworks, Tailwind, Percy and screenshots. It is not a marketplace, and an addon you rely on has no equivalent here.
-- **It is a small project.** Poveste is a maintained fork of [histoire](https://github.com/histoire-dev/histoire), currently pre-1.0 — [what 1.0 means](./getting-started.md#what-1-0-means) is written down, along with [what a deprecation promises](./getting-started.md#deprecations).
+- **It is a small project.** Poveste is a fork of [histoire](https://github.com/histoire-dev/histoire), currently pre-1.0 — [what 1.0 means](./getting-started.md#what-1-0-means) is written down, along with [what a deprecation promises](./getting-started.md#deprecations).
 
 ## Your existing stories
 

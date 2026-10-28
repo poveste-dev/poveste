@@ -80,7 +80,7 @@ function preamble(nav, version) {
   return [
     '# Poveste',
     '',
-    '> Interactive component playgrounds, built with Vite from story files: a maintained, drop-in fork of histoire.',
+    '> Interactive component playgrounds, built with Vite from story files: a drop-in fork of histoire, released every one to two weeks.',
     '',
     `Supported frameworks: ${list(named)}.${unsupported.length ? ` ${list(unsupported)} have no plugin, so their components cannot be written as stories.` : ''}`,
     '',
