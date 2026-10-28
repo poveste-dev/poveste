@@ -52,6 +52,9 @@ ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- docs/ netlify.toml 
 # if `.node-version` ever goes.
 NODE_VERSION = "26"
 
+# The docs build opens no browser, and a half-cached Chrome failed a deploy (#1544).
+PUPPETEER_SKIP_DOWNLOAD = "true"
+
 # pnpm comes from `packageManager`, through Corepack, the only way Netlify installs
 # it. Until October 2026 the build image's Corepack was 0.34.0, which cannot run
 # pnpm 12 (it loads `bin/pnpm.cjs`, which pnpm 12 does not ship), so the deploy was
