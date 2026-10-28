@@ -1,7 +1,7 @@
 {
   "name": "@poveste/plugin-react",
   "type": "module",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Poveste plugin for React support, with props tables read from your components' types and no controls yet",
   "author": {
     "name": "Sorin Gitlan",
