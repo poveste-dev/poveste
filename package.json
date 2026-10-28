@@ -70,7 +70,7 @@
     "sync:conformance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sync-conformance.ts"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.5.1",
+    "@antfu/eslint-config": "^10.0.0",
     "@arethetypeswrong/cli": "^0.18.5",
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
