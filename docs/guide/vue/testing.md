@@ -147,4 +147,4 @@ The stories of `examples/quasar`, which render `<q-btn>` and `<q-banner>`, pass 
 
 It doesn't run play functions or interactions: those wait on play functions in stories. It renders the default slot and not the `<docs>` block. There's no option yet to accept a known `[Vue warn]` or to skip a variant: every variant of the file runs, and any warning fails it. To leave a story out, don't give it a test file. And it leaves to the test environment the app a plugin boots for `poveste dev`, which is why a Nuxt book uses `@nuxt/test-utils`.
 
-Solid stories run as tests too: see [Story tests in Solid](../solid/testing.md).
+Solid and React stories run as tests too: see [Story tests in Solid](../solid/testing.md) and [in React](../react/testing.md).
