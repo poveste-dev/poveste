@@ -206,6 +206,16 @@ export default defineStory<{ count: number }>({
 
 The state editor shows the state and lets you edit it, and an edit renders the story again with the new snapshot. A variant's own `initState` takes precedence over the story's.
 
+## Source
+
+The Source panel's **Dynamic** view prints what a variant's `render` returns, as JSX, with each value as it is now, and follows the state as the panel or the story changes it:
+
+```
+<Counter count={10} label="Clicked" onIncrement={…} />
+```
+
+A function prop prints as `{…}`. A hook's own state, such as a `useState` inside `render`, lives in the preview, so the source shows its starting value. A variant's own `source` string replaces the generated code, and **Static** shows the story file.
+
 ## Setup and wrappers
 
 Export `setupReact` from your [setup file](../config.md#global-js-and-css) to run code before every story mounts. `addWrapper` puts a component around each one — a theme provider, a router, a context:
@@ -260,4 +270,3 @@ export const setupReact = defineSetupReact(({ addWrapper }) => {
 ## What is not here yet
 
 - **Controls.** A variant with `initState` gets the state editor; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
-- **Generated source.** The source panel shows the story file. React elements keep no source to generate per-variant code from, which is what the source panel reads in Vue.
