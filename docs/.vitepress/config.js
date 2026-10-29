@@ -439,6 +439,10 @@ module.exports = {
               link: '/guide/sveltekit/getting-started',
             },
             {
+              text: 'Story tests',
+              link: '/guide/svelte/testing',
+            },
+            {
               text: 'Stories',
               link: '/guide/svelte/stories',
             },

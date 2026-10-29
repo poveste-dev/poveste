@@ -597,6 +597,35 @@ pnpm_dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantI
 install_typescript "$SVELTE_APP"
 docs_tab_says svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" "Auto-docs is off: it reads Svelte components' types through" 4799
 
+# The Svelte testing guide, as it prints, in the same install (#1522).
+echo "▸ [svelte] Running a story test from docs/guide/svelte/testing.md"
+SVELTE_GUIDE="$ROOT/docs/guide/svelte/testing.md"
+node "$ROOT/scripts/release/guide-block.mjs" "$SVELTE_GUIDE" vitest.config.ts > "$SVELTE_APP/vitest.config.ts"
+node "$ROOT/scripts/release/guide-block.mjs" "$SVELTE_GUIDE" src/Badge.story.test.ts > "$SVELTE_APP/src/Badge.story.test.ts"
+cp "$SVELTE_APP/src/MyButton.svelte" "$SVELTE_APP/src/Badge.svelte"
+sed 's/MyButton/Badge/g' "$SVELTE_APP/src/MyButton.story.svelte" > "$SVELTE_APP/src/Badge.story.svelte"
+(
+  cd "$SVELTE_APP"
+  npm install --no-audit --no-fund --loglevel=error \
+    "vitest@$(node -p "require('$ROOT/packages/poveste-plugin-svelte/node_modules/vitest/package.json').version")" \
+    "jsdom@$(node -p "require('$ROOT/packages/poveste-plugin-svelte/node_modules/jsdom/package.json').version")"
+)
+run_story_tests svelte jsdom "$SVELTE_APP" "Badge Badge default"
+
+# The guide's browser config on a cold cache: the book's setup file is already one
+# whose imports have to reach pre-bundling. Opt-in with the dev pass, which has Chromium.
+if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
+  node "$ROOT/scripts/release/guide-block.mjs" "$SVELTE_GUIDE" vitest.config.ts "In a browser" > "$SVELTE_APP/vitest.config.ts"
+  (
+    cd "$SVELTE_APP"
+    npm install --no-audit --no-fund --loglevel=error \
+      "@vitest/browser-playwright@$(node -p "require('$ROOT/packages/poveste-plugin-svelte/node_modules/@vitest/browser-playwright/package.json').version")" \
+      "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
+    rm -rf node_modules/.vite
+  )
+  run_story_tests svelte browser "$SVELTE_APP" "Badge Badge default"
+fi
+
 # ── histoire books ───────────────────────────────────────────────────────────
 
 # A histoire 0.17 book after the migration guide's swap: its dependencies are

@@ -131,7 +131,8 @@ async function renderVariant(framework: StoryTestFramework<any>, story: Story, v
     }
   }
 
-  const restore = captureConsole(found)
+  const restoreConsole = captureConsole(found)
+  const restoreUncaught = captureUncaught(found)
   let rendered = false
   try {
     mountApp.mount(mountEl)
@@ -157,7 +158,8 @@ async function renderVariant(framework: StoryTestFramework<any>, story: Story, v
       renderApp.unmount()
     }
     mountApp.unmount()
-    restore()
+    restoreConsole()
+    restoreUncaught()
     mountEl.remove()
     renderEl.remove()
   }
@@ -177,6 +179,44 @@ function captureConsole(found: unknown[]): () => void {
   return () => {
     console.error = error
     console.warn = warn
+  }
+}
+
+/**
+ * Takes what escapes the hosts into `found`, as the preview's sandbox does: a Svelte
+ * effect that throws, for one, reaches no host and no console. Under jsdom it escapes
+ * to Node's process rather than the window.
+ */
+function captureUncaught(found: unknown[]): () => void {
+  const onError = (event: ErrorEvent) => {
+    // The browser saying a resize observer skipped a frame, which the sandbox ignores too.
+    if (!/ResizeObserver loop/.test(event.message)) {
+      event.preventDefault()
+      found.push(event.error ?? event.message)
+    }
+  }
+  const onRejection = (event: PromiseRejectionEvent) => {
+    event.preventDefault()
+    found.push(event.reason)
+  }
+  const onProcess = (error: unknown) => {
+    found.push(error)
+  }
+  const node = (globalThis as { process?: { on?: (event: string, listener: (error: unknown) => void) => void, off: (event: string, listener: (error: unknown) => void) => void } }).process
+  const listens = typeof node?.on === 'function'
+  window.addEventListener('error', onError)
+  window.addEventListener('unhandledrejection', onRejection)
+  if (listens) {
+    node!.on!('uncaughtException', onProcess)
+    node!.on!('unhandledRejection', onProcess)
+  }
+  return () => {
+    window.removeEventListener('error', onError)
+    window.removeEventListener('unhandledrejection', onRejection)
+    if (listens) {
+      node!.off('uncaughtException', onProcess)
+      node!.off('unhandledRejection', onProcess)
+    }
   }
 }
 
