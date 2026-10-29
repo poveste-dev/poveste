@@ -49,7 +49,7 @@ Id of the variant used in the URL. By default, the id is automatically generated
 
 ## `initState`
 
-Function that returns the intial state.
+Function that returns the initial state.
 
 ```vue
 <script setup>

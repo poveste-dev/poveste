@@ -128,6 +128,14 @@ Display many variants of your story on a single grid page. Finally, you can glan
 
 Add documentation to your stories with (extendable) Markdown with code snippets and syntax highlighting.
 
+### :page_facing_up: Props tables
+
+A story's Docs tab shows a props, slots and events table read from your components' types, in Vue, Svelte, Solid and React, so the book documents what it shows without anyone writing it down. See [Auto-docs](/reference/config#autodocs).
+
+### :test_tube: Story tests
+
+Run each variant of a story file as a test under your own Vitest, failing on a render error or anything printed as an error or a warning. See [Story tests](./vue/testing.md).
+
 ### :moon: Dark theme
 
 Rest your eyes with the alternative darker theme for your book.

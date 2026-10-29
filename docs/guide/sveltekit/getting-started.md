@@ -23,7 +23,7 @@ yarn add -D poveste @poveste/plugin-svelte
 ```
 
 ::: tip Just installed and got an older version?
-For about a day after a release, pnpm installs the **previous** version, with no error. Measured on 0.20.0's release day: pnpm 11.5.3 printed `+ poveste 0.19.1 (0.20.0 is available)`, and pnpm 12.14.0 printed nothing to say a newer one existed. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
+For about a day after a release, pnpm installs the **previous** version, with no error. Nothing says so: on 0.21.0's release day pnpm 11.28.9 and 12.15.0 each installed 0.20.0 and printed no word of a newer one, so check what landed with `pnpm list poveste`. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
 
 pnpm also saves the version it installed to `package.json` as `^x.y.z`, so waiting a day doesn't fix an install you've already run. Run the install line again with one of these:
 
