@@ -6,11 +6,11 @@ import { relative } from 'pathe'
 import { mayNameComponent } from './reexports.js'
 import { typescriptProblem, typesProblem } from './typescript.js'
 
-type StoryComponentsListed = string[] | { files: string[], unresolved?: number }
+type StoryComponentsListed = string[] | { files: string[], unresolved?: number, packaged?: number }
 
-async function listed(value: StoryComponentsListed | Promise<StoryComponentsListed>): Promise<{ files: string[], unresolved: number }> {
+async function listed(value: StoryComponentsListed | Promise<StoryComponentsListed>): Promise<{ files: string[], unresolved: number, packaged: number }> {
   const result = await value
-  return Array.isArray(result) ? { files: result, unresolved: 0 } : { files: result.files, unresolved: result.unresolved ?? 0 }
+  return Array.isArray(result) ? { files: result, unresolved: 0, packaged: 0 } : { files: result.files, unresolved: result.unresolved ?? 0, packaged: result.packaged ?? 0 }
 }
 
 type Outgoing = DocgenRequest extends infer R ? R extends { id: number } ? Omit<R, 'id'> : never : never
@@ -158,6 +158,13 @@ export function createDocgenService(options: DocgenServiceOptions) {
       : undefined
   }
 
+  /** Why a Vue or Svelte story documenting a library's component got no table (#1538). */
+  function packaged(count: number): string | undefined {
+    return count
+      ? `No table: ${count === 1 ? 'the component this story documents comes' : `the ${count} components this story documents come`} from an installed package. Auto-docs reads a component's own \`.vue\` or \`.svelte\` file, and a package is reached through its JavaScript entry, so a library's components get no table. A component of your own that wraps one gets its table.`
+      : undefined
+  }
+
   function start() {
     runner ??= createRunner({
       root: options.root,
@@ -222,8 +229,10 @@ export function createDocgenService(options: DocgenServiceOptions) {
         }
       }
       let unnamed = false
+      let storyScoped = false
       if (story) {
         const plugin = storyPluginFor(story.file, story.supportPluginId)
+        storyScoped = !!plugin
         unnamed = !!plugin && !mayNameComponent(story.file)
         own(story.file, unnamed ? undefined : plugin)
       }
@@ -234,7 +243,7 @@ export function createDocgenService(options: DocgenServiceOptions) {
       const components = Object.fromEntries(await extract(files))
       const off = Object.keys(components).length
         ? undefined
-        : await offReason(storyId) ?? (unnamed ? UNNAMED : untraced(named.unresolved))
+        : await offReason(storyId) ?? (unnamed ? UNNAMED : untraced(named.unresolved) ?? (storyScoped ? undefined : packaged(named.packaged)))
       return { storyId, components, ...off ? { off } : {} }
     },
 

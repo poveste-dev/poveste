@@ -260,6 +260,20 @@ describe('the docgen service', () => {
     expect(off).toMatch(/^No table: auto-docs found no component file behind the 2 components this story imports\..*`component` on its `<Story>`/)
   })
 
+  it('says a library\'s components get no table, rather than to name the one already named', async () => {
+    const { docgen } = service({ componentsOf: () => ({ files: [], unresolved: 0, packaged: 1 }) })
+
+    const { off } = await docgen.request('button')
+
+    expect(off).toMatch(/^No table: the component this story documents comes from an installed package\..*a library's components get no table/)
+  })
+
+  it('names what auto-docs could not follow in the book before what came from a package', async () => {
+    const { docgen } = service({ componentsOf: () => ({ files: [], unresolved: 1, packaged: 1 }) })
+
+    expect((await docgen.request('button')).off).toMatch(/^No table: auto-docs found no component file/)
+  })
+
   it('says nothing more for a story whose components reached a file', async () => {
     const { docgen } = service({ componentsOf: () => ({ files: ['/book/src/Button.vue'], unresolved: 1 }) })
 
@@ -368,6 +382,23 @@ describe('a JSX story and its `component` field', () => {
       await docgen.request('badge')
 
       expect(extracted(sent)).toEqual([file])
+    }
+    finally {
+      remove()
+    }
+  })
+
+  // Its extractor reads a package's types, so a library component can get a table there (#1538).
+  it('does not tell a story whose extractor answered nothing that a package\'s components get no table', async () => {
+    const { file, remove } = story(`import { Badge } from 'some-ui'\nexport default defineStory({ title: 'Badge', component: Badge, variants: [] })\n`)
+    const silent: DocgenRunner = {
+      send: vi.fn(async request => request.type === 'extract' ? { id: 0, results: { [file]: {} } } : { id: 0 }),
+      terminate: vi.fn(async () => {}),
+    }
+    const { docgen } = service({ plugins: [solid], storyOf: () => ({ file, supportPluginId: 'solid' }), componentsOf: () => ({ files: [], packaged: 1 }), createRunner: () => silent })
+
+    try {
+      expect((await docgen.request('badge')).off).toBeUndefined()
     }
     finally {
       remove()

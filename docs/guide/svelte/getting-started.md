@@ -138,7 +138,22 @@ warning is easy to miss in the middle of a collection run.
 
 A story's **Docs** tab shows a props, slots and events table for each `.svelte` component the story imports, directly or through re-exports, or names in [`component`](/reference/svelte/story#component), read from the type on its `$props()` as your editor reads it, through the book's `tsconfig.app.json` or `tsconfig.json`. A component without `lang="ts"` is read too: an untyped `let { title = 'Untitled' } = $props()` documents `title`.
 
-Descriptions and tags come from the props' JSDoc. A default is read from the `$props()` destructuring, through `$bindable(...)`, or from a Svelte 4 `export let`, then from a `@default` tag. Props typed `Snippet` are slots; `on*` functions are events. It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book: `npm i -D typescript@6 svelte2tsx`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `bits-ui`. A story's own [`autoDocs`](/reference/svelte/story#autodocs) chooses its table.
+Descriptions and tags come from the props' JSDoc. A default is read from the `$props()` destructuring, through `$bindable(...)`, or from a Svelte 4 `export let`, then from a `@default` tag. Props typed `Snippet` are slots; `on*` functions are events. It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book: `npm i -D typescript@6 svelte2tsx`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, which keeps the props your own components take from a design system's types. A library's own components, such as `bits-ui`'s, get no table, `allow` or not: a package is reached through its JavaScript entry, not a `.svelte` file. A story's own [`autoDocs`](/reference/svelte/story#autodocs) chooses its table.
+
+When the story renders a helper rather than the component itself, name the component:
+
+```svelte
+<script lang="ts">
+  import Alert from './Alert.svelte'
+  import AlertDemo from './AlertDemo.svelte'
+
+  const { Hst } = $props()
+</script>
+
+<Hst.Story title="Alert" component={Alert}>
+  <AlertDemo />
+</Hst.Story>
+```
 
 ## Command Line Interface
 
