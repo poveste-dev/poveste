@@ -428,6 +428,7 @@
     "loadFromBook",
     "normalizeDefault",
     "readTsconfig",
+    "resolveType",
     "typescriptProblem",
     "typescriptProblemIn",
     "typescriptVersionIn",

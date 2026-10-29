@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import type { DocProp } from '@poveste/shared'
 import type { ComponentDocsEntry } from '../../util/component-docs'
+import { HstTooltip } from '@poveste/controls'
 import { computed } from 'vue'
 import { modelLabel, OPEN_PARTS, rootFirst, tagHref, tagText } from '../../util/component-docs'
+import TypeCode from './TypeCode.vue'
 
 const props = defineProps<{
   components: ComponentDocsEntry[]
@@ -79,7 +81,26 @@ function shownDefault(prop: DocProp) {
                   data-slot="model"
                 >{{ modelLabel(component.doc, prop.name) }}</code>
               </td>
-              <td><code>{{ prop.type }}</code></td>
+              <td>
+                <HstTooltip v-if="prop.resolved">
+                  <TypeCode
+                    :type="prop.type"
+                    tabindex="0"
+                    data-resolved
+                  />
+                  <template #content>
+                    <TypeCode
+                      :type="prop.resolved"
+                      dark
+                      data-slot="resolved-type"
+                    />
+                  </template>
+                </HstTooltip>
+                <TypeCode
+                  v-else
+                  :type="prop.type"
+                />
+              </td>
               <td>
                 <code v-if="shownDefault(prop) !== undefined">{{ shownDefault(prop) }}</code>
                 <span
@@ -138,7 +159,12 @@ function shownDefault(prop: DocProp) {
               <tr :data-slot-name="slot.name">
                 <td><code>{{ slot.name }}</code></td>
                 <!-- Its props are listed below, one row each; the type string would only repeat them. -->
-                <td><code v-if="slot.type && !slot.props?.length">{{ slot.type }}</code></td>
+                <td>
+                  <TypeCode
+                    v-if="slot.type && !slot.props?.length"
+                    :type="slot.type"
+                  />
+                </td>
                 <td>{{ slot.description }}</td>
               </tr>
               <tr
@@ -147,7 +173,7 @@ function shownDefault(prop: DocProp) {
                 :data-slot-prop="slotProp.name"
               >
                 <td><code>{{ slotProp.name }}</code></td>
-                <td><code>{{ slotProp.type }}</code></td>
+                <td><TypeCode :type="slotProp.type" /></td>
                 <td>{{ slotProp.description }}</td>
               </tr>
             </template>
@@ -179,7 +205,12 @@ function shownDefault(prop: DocProp) {
                   data-slot="model"
                 >{{ modelLabel(component.doc, event.name) }}</code>
               </td>
-              <td><code v-if="event.type">{{ event.type }}</code></td>
+              <td>
+                <TypeCode
+                  v-if="event.type"
+                  :type="event.type"
+                />
+              </td>
               <td>{{ event.description }}</td>
             </tr>
           </tbody>
@@ -315,6 +346,31 @@ pre code {
 a[data-slot='see'] {
   color: var(--color-primary-500);
   text-decoration: underline;
+}
+
+/* A type that opens on hover or focus says so before it is touched. */
+[data-resolved] {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: .2em;
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 1px;
+  }
+}
+
+/* Inside the tooltip, which is dark in both themes and narrower than a long union. */
+[data-slot='resolved-type'] {
+  display: block;
+  max-width: min(32rem, 80vw);
+  padding: 0;
+  background: none;
+  white-space: pre-wrap;
+
+  &:where(.ptw-dark, .ptw-dark *) {
+    background: none;
+  }
 }
 
 [data-slot='error'] {

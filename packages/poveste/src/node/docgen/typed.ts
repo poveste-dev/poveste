@@ -3,6 +3,7 @@ import type ts from 'typescript'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'pathe'
+import { resolveType } from './resolve.js'
 
 /*
  * What every extractor that reads props through a TypeScript checker shares: Vue's
@@ -186,6 +187,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
     const type = checker.getTypeOfSymbolAtLocation(symbol, location)
     // Optional members print with the `| undefined` strict mode adds; the table says optional already.
     const printed = required ? print(type) : print(type).replace(/ \| undefined$/, '')
+    const resolved = resolveType(typescript, checker, type, printed, location)
     const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
     const member = { name: symbol.name, ...description ? { description } : {}, tags }
 
@@ -207,6 +209,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
     doc.props.push({
       ...member,
       type: printed,
+      ...resolved !== undefined && resolved !== printed ? { resolved } : {},
       required,
       ...code !== undefined ? { default: code } : {},
       ...defaultTag !== undefined ? { defaultTag } : {},
