@@ -11,7 +11,7 @@ By default, Poveste isolates its own UI ("chrome") from the CSS imported via you
 
 Two CSS scopes:
 
-- Your CSS, transitively imported via `poveste.setup.ts` (or directly from a story file), is wrapped in `@scope (.__poveste-render-story)`. It only reaches DOM rendered inside a story container.
+- Your CSS, transitively imported via `poveste.setup.ts` (or directly from a story file), is wrapped in `@scope (.__poveste-render-story)` wherever it shares a document with the chrome. It only reaches DOM rendered inside a story container. The sandbox iframe a preview renders in is the story's own document, so there it is applied as written.
 - Poveste's own CSS is wrapped in `@scope (.poveste-app-root) to (.__poveste-render-story)`. It only reaches Poveste's chrome and stops at story boundaries.
 
 `@scope` gives *one-directional* containment: it limits which elements a rule can match. The mutual protection above exists because both sides are wrapped, not because `@scope` provides it. CSS that is wrapped by neither — `globalStyles`, [`?global`](#global-per-import-escape), or anything loaded outside the setup path — is outside both scopes and reaches everything.
@@ -46,6 +46,8 @@ html {
 ### Root selectors
 
 `:root`, `html` and `body` all sit above the scoping root once your CSS is wrapped, so a rule targeting them could never match. Poveste rewrites all three to `:scope`, which resolves to `.__poveste-render-story` — inside a story that is the only root there is.
+
+The rewrite applies only where your CSS is wrapped: a story rendered in the app's own document. In the sandbox iframe nothing is rewritten, so `:root` is the iframe's `<html>` and `getComputedStyle(document.documentElement)` reads your tokens there, in `poveste dev` and in a built book alike.
 
 | You write | It runs as |
 | --- | --- |
@@ -125,7 +127,7 @@ A shadow root is the other obvious way to isolate story CSS, and it is a reasona
 
 **There is already a harder boundary where it counts.** Single-variant previews and grid items render in an iframe, which is a separate document — nothing crosses it, in either direction. A shadow root would be a third isolation mechanism, weaker than the one already there. `@scope` exists for the paths that have no iframe: inline stories, grid items with [`iframeGrid: false`](#grid-iframes), and keeping the app's own CSS off story content when both sit in the same document.
 
-**Shadow roots break anything that teleports.** Dialogs, tooltips and popovers usually render to `document.body` — that is what `floating-vue`, and most component libraries, do. Moved out of the shadow root, they leave their styles behind and render unstyled. Your components would look correct until the moment one of them opened a menu. `@scope` has the same gap under `poveste dev`: a component that teleports outside the story loses its styling there too ([Dev vs. build behaviour](#dev-vs-build-behaviour)). A built book keeps it, inside the sandbox iframe.
+**Shadow roots break anything that teleports.** Dialogs, tooltips and popovers usually render to `document.body` — that is what `floating-vue`, and most component libraries, do. Moved out of the shadow root, they leave their styles behind and render unstyled. Your components would look correct until the moment one of them opened a menu. `@scope` has the same gap for a story rendered without an iframe: a component that teleports outside the story loses its styling there too. Inside the sandbox iframe, where your CSS is not wrapped, it keeps it.
 
 **`@font-face` does not apply inside a shadow root.** It has to be declared at document level, so a book isolating stories that way would silently drop every custom font your components use.
 
@@ -170,9 +172,9 @@ The file loads exactly as if you had written it without isolation — at your ow
 
 ## Dev vs. build behaviour
 
-Both `poveste dev` and `poveste build` apply `@scope (.__poveste-render-story)` to user CSS, which keeps it from leaking into Poveste's chrome (popovers, tooltips, dropdowns).
+There is none to plan around. Both `poveste dev` and `poveste build` apply `@scope (.__poveste-render-story)` to user CSS in the app's document, which keeps it from leaking into Poveste's chrome (popovers, tooltips, dropdowns), and both leave it unwrapped in the sandbox iframe.
 
-`@scope` only matches descendants of the story container, so user styling for components that teleport outside the story (e.g. `floating-vue` popper, modal overlays) does not visually apply in `poveste dev`. The build path emits per-bundle isolation that keeps that styling working inside the sandbox iframe — verify the final visuals with `poveste build`.
+`@scope` only matches descendants of the story container, so user styling for components that teleport outside the story (e.g. `floating-vue` popper, modal overlays) does not apply to a story rendered without an iframe — `iframe: false`, or a grid with [`iframeGrid: false`](#grid-iframes). In the sandbox iframe it does, in either mode.
 
 Poveste's own sandbox-side defaults are wrapped in `@layer poveste-defaults` so unlayered user CSS overrides them without specificity tricks.
 

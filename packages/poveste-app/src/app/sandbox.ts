@@ -283,9 +283,8 @@ const app = createApp({
 app.use(createPinia())
 app.mount('#app')
 
-// Tagging body itself as a story render root puts components teleported to
-// document.body (poppers, dialogs) inside the user-CSS @scope
-// boundary applied in dev. The custom-controls class opts out of poveste-app
+// Body is the iframe's render root, the element the height report measures.
+// The custom-controls class opts out of poveste-app
 // source-level rules that add overflow/min-height to the render root.
 document.body.classList.add('__poveste-render-story', '__poveste-render-custom-controls')
 

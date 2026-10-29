@@ -35,9 +35,10 @@ upgrade comes first and is the real work; the dependency swap below is the easy 
 :::
 
 `isolateStyles` is on by default, so your global CSS is scoped to each story: a custom property
-it sets on `:root` applies inside the story. Read from `<html>`, it comes back empty in
-`poveste dev` but set in a built book, so code that reads it from `document.documentElement`
-sees different values in the two. See [root selectors](./css.md#root-selectors).
+it sets on `:root` applies inside the story. A preview renders in an iframe that is the story's
+own document, so code that reads the property from `document.documentElement` finds it there,
+in `poveste dev` and in a built book alike. A story rendered without an iframe shares the
+app's document, where `<html>` does not carry it. See [root selectors](./css.md#root-selectors).
 
 ## What it adds, and whether you need to move
 

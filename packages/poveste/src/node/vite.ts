@@ -28,6 +28,8 @@ import { postcssOffChrome } from './style-isolation/consumer-postcss.js'
 import {
   chromeCssScopePlugin,
   globalStylesPlugin,
+  SANDBOX_FLAG,
+  sandboxCssPlugin,
   userCssScopePlugin,
 } from './style-isolation/index.js'
 import { escapeRegExp } from './util/escape-regexp.js'
@@ -352,6 +354,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
 <body>
   <div id="app"></div>
   <script>
+  window.${SANDBOX_FLAG} = true
   // Hide spammy vite messages
   const origConsoleLog = console.log
   console.log = (...args) => {
@@ -419,13 +422,13 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
   }))
 
   // Dev-mode isolation. User CSS is wrapped in `@scope (.__poveste-render-story)`
-  // so it cannot leak into chrome (popovers, tooltips, dropdowns). The build
-  // path emits stronger per-bundle isolation that ALSO keeps the user's
-  // teleporting-component styling working inside the sandbox iframe — in dev
-  // that case is a known trade-off, see docs/guide/css.md.
+  // so it cannot leak into chrome (popovers, tooltips, dropdowns). The sandbox
+  // iframe takes it unwrapped, as a built book's does.
   const isolate = ctx.config.isolateStyles !== false
   if (ctx.mode === 'dev' && !isServer) {
-    plugins.push(userCssScopePlugin({ enabled: isolate, mode: 'wrap' }))
+    const sources = new Map<string, string>()
+    plugins.push(userCssScopePlugin({ enabled: isolate, mode: 'wrap', sources }))
+    plugins.push(sandboxCssPlugin(sources))
     plugins.push(chromeCssScopePlugin({ enabled: isolate }))
   }
 
