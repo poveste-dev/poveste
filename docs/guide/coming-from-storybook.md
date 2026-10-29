@@ -41,6 +41,10 @@ Poveste resolves your Vite config and runs the book through it, so aliases, plug
 
 Poveste can also be configured entirely from `vite.config.ts` under a `poveste` key, with no config file of its own — which is how `examples/svelte` and `examples/sveltekit` are set up.
 
+## A props table and story tests from what you already wrote
+
+A story's Docs tab shows a props, slots and events table read from your components' types, in Vue, Svelte, Solid and React ([Vue's, for instance](./vue/docs.md#props-slots-and-events)). And a story file can run as tests under your own Vitest, one test per variant, failing on a render error or anything printed as an error or a warning ([story tests](./vue/testing.md)).
+
 ## What a book weighs
 
 `examples/vue`, same `story:build` command either side of [#590](https://github.com/poveste-dev/poveste/pull/590):
@@ -73,7 +77,7 @@ Poveste does not read Storybook's `*.stories.*` files. A story here is a compone
 
 ## Trying it
 
-In a Vue project that already builds with Vite and `@vitejs/plugin-vue`:
+In a Vue project that already builds with Vite and `@vitejs/plugin-vue`, on Node 22.22.2 or later ([supported versions](./getting-started.md#supported-versions)):
 
 ```sh
 pnpm i -D poveste @poveste/plugin-vue

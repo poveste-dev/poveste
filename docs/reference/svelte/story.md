@@ -104,7 +104,7 @@ It receives a payload object with the following properties:
 </Hst.Story>
 ```
 
-Every variant inherits it, including explicit `<Hst.Variant>` children. A [`setupApp` on the variant](./variant.md#setupapp) overrides it for that variant.
+It runs when a variant renders, so `variant` is always set. The setup file's `setupSvelte` also runs once with no variant, for the mount that fills the controls panel, which is why the [`meta`](#meta) example checks for one. Every variant inherits it, including explicit `<Hst.Variant>` children. A [`setupApp` on the variant](./variant.md#setupapp) overrides it for that variant.
 
 [Learn more](../../guide/svelte/app-setup.md#local-setup)
 
