@@ -71,3 +71,18 @@ describe('a story whose components cannot be traced', () => {
     expect(unresolved).toBe(1)
   })
 })
+
+// bits-ui and flowbite-svelte ship their components behind a JavaScript entry (#1538).
+describe('a story that documents a library\'s component', () => {
+  it('counts a named member of a package\'s export as packaged, not unresolved', async () => {
+    const { files, unresolved, packaged } = await storyComponents(file('stories/Library.story.svelte'), resolve)
+
+    expect({ files, unresolved, packaged }).toEqual({ files: [], unresolved: 0, packaged: 1 })
+  })
+
+  it('counts a capitalised import from a package as packaged, and not a lowercase one', async () => {
+    const { files, unresolved, packaged } = await storyComponents(file('stories/LibraryImported.story.vue'), resolve)
+
+    expect({ files, unresolved, packaged }).toEqual({ files: [], unresolved: 0, packaged: 1 })
+  })
+})
