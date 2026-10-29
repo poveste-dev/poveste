@@ -114,6 +114,14 @@
   "@poveste/plugin-solid/collect": [
     "run"
   ],
+  "@poveste/plugin-solid/testing": [
+    "TestStoriesOptions",
+    "testStories"
+  ],
+  "@poveste/plugin-solid/vitest": [
+    "PovesteTestingOptions",
+    "povesteTesting"
+  ],
   "@poveste/plugin-svelte": [
     "Hst",
     "HstSvelte",
@@ -292,6 +300,11 @@
     "unindent",
     "voidElements"
   ],
+  "@poveste/shared/testing": [
+    "DescribeStoriesOptions",
+    "StoryTestFramework",
+    "describeStories"
+  ],
   "poveste": [
     "AutoDocsOptions",
     "AutoDocsSection",
@@ -337,6 +350,7 @@
     "PluginCommand",
     "PluginDocgen",
     "PovesteConfig",
+    "PovesteTestingPluginOptions",
     "PreviewConfig",
     "PreviewStoryCallback",
     "Prompt",
@@ -397,6 +411,7 @@
     "omit",
     "omitInheritStoryProps",
     "onPovesteCleanup",
+    "povesteTestingPlugin",
     "processConfig",
     "reportStoryError",
     "resolveConfig",
