@@ -37,7 +37,7 @@ On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of
 
 Keep `vite-plugin-solid` in your Vite config — Poveste reads it, so story files compile the way your components do:
 
-```ts
+```ts twoslash
 // vite.config.ts
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
@@ -49,7 +49,7 @@ export default defineConfig({
 
 Then add the plugin. It tells Poveste that `.story.tsx` and `.story.jsx` files are stories, alongside any `.story.vue` or `.story.svelte` your book already has. React stories are `.story.tsx` files too, so in a book with both, each goes to the plugin it imports `defineStory` from: see [More than one framework in a book](../plugins/official.md#more-than-one-framework-in-a-book).
 
-```ts
+```ts twoslash
 // poveste.config.ts
 import { HstSolid } from '@poveste/plugin-solid'
 import { defineConfig } from 'poveste'
@@ -63,7 +63,9 @@ export default defineConfig({
 
 A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX. `Badge` stands in for a component of your own; to follow along as written, this one is enough:
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
+// ---cut---
 // src/Badge.tsx
 import type { JSX } from 'solid-js'
 
@@ -72,7 +74,8 @@ export function Badge(props: { tone: 'info' | 'warn', children: JSX.Element }) {
 }
 ```
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
 // src/Badge.story.tsx
 import { defineStory } from '@poveste/plugin-solid'
 import { Badge } from './Badge'
@@ -84,6 +87,9 @@ export default defineStory({
     { title: 'Warning', render: () => <Badge tone="warn">Careful</Badge> },
   ],
 })
+// ---cut-after---
+// @filename: Badge.tsx
+export declare function Badge(props: { tone: 'info' | 'warn', children: import('solid-js').JSX.Element }): import('solid-js').JSX.Element
 ```
 
 A story with no `variants` and a `render` of its own has one implicit variant. `id`, `group`, `icon`, `layout` and `source` work as they do for the other frameworks.
@@ -115,12 +121,19 @@ You can specify additional CLI options like `--port`. For a full list of CLI opt
 
 Name the component a story documents in its `component` field, and its docs tab shows a props, slots and events table read from the type of the component's first parameter:
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
+import { defineStory } from '@poveste/plugin-solid'
+import { Badge } from './Badge'
+// ---cut---
 export default defineStory({
   title: 'Badge',
   component: Badge,
   variants: [/* ... */],
 })
+// ---cut-after---
+// @filename: Badge.tsx
+export declare function Badge(props: { tone: 'info' | 'warn', children: import('solid-js').JSX.Element }): import('solid-js').JSX.Element
 ```
 
 Descriptions and tags come from the props' JSDoc. A default is read from the object passed before `props` to `mergeProps`, or from a destructured parameter, then from a `@default` tag. Props typed `JSX.Element`, and `children` taken through `ParentProps` or `FlowProps`, are slots; `on*` functions are events. The `children` every element's attributes declare is left out with the rest of them. It needs `typescript` 6 or earlier installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `@kobalte/core`.
@@ -133,14 +146,17 @@ A story's `autoDocs` field chooses its own table: `false` for none, or a list of
 
 Give a story or a variant an `initState`, and `render` receives that state and a way to change it. `Counter` again stands in for your own component:
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
+// ---cut---
 // src/Counter.tsx
 export function Counter(props: { count: number, onIncrement: () => void }) {
   return <button onClick={props.onIncrement}>{`Count: ${props.count}`}</button>
 }
 ```
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
 // src/Counter.story.tsx
 import { defineStory } from '@poveste/plugin-solid'
 import { Counter } from './Counter'
@@ -164,6 +180,9 @@ export default defineStory<{ count: number }>({
     },
   ],
 })
+// ---cut-after---
+// @filename: Counter.tsx
+export declare function Counter(props: { count: number, onIncrement: () => void }): import('solid-js').JSX.Element
 ```
 
 `render` runs **once**, as a Solid component does. `state` is a Solid store, so reading `state.count` inside the JSX is what keeps the output current — read it outside, at the top of `render`, and the value is fixed at the first render. `setState` is the store's setter, with the same path syntax.
@@ -174,7 +193,9 @@ The state editor shows the state and lets you edit it, and an edit reaches the s
 
 Export `setupSolid` from your [setup file](../config.md#global-js-and-css) to run code before every story mounts. `addWrapper` puts a component around each one — a theme provider, a layout frame, a context:
 
-```tsx
+```tsx twoslash
+// @jsxImportSource: solid-js
+// ---cut---
 // src/poveste.setup.tsx
 import { defineSetupSolid } from '@poveste/plugin-solid'
 
@@ -183,7 +204,10 @@ export const setupSolid = defineSetupSolid(({ addWrapper }) => {
 })
 ```
 
-```ts
+```ts twoslash
+import { HstSolid } from '@poveste/plugin-solid'
+import { defineConfig } from 'poveste'
+// ---cut---
 // poveste.config.ts
 export default defineConfig({
   plugins: [HstSolid()],

@@ -41,7 +41,7 @@ The project also needs a Sass compiler, `sass` or `sass-embedded`, because Quasa
 
 ## Configuration
 
-```ts
+```ts twoslash
 // poveste.config.ts
 import { HstQuasar } from '@poveste/plugin-quasar'
 import { HstVue } from '@poveste/plugin-vue'
@@ -70,7 +70,7 @@ export const setupVue = defineSetupVue(setupQuasar({
 
 A setup file you need for something else still has to install Quasar, because naming one replaces the default. `setupQuasar()` with no options installs it as the default does, and returns a function you can call from your own setup:
 
-```ts
+```ts twoslash
 // src/poveste.setup.ts
 import { setupQuasar } from '@poveste/plugin-quasar/setup'
 import { defineSetupVue } from '@poveste/plugin-vue'

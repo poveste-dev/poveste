@@ -41,7 +41,7 @@ On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of
 
 Keep `@vitejs/plugin-react` in your Vite config — Poveste reads it, so story files compile the way your components do, and editing a component refreshes it in place:
 
-```ts
+```ts twoslash
 // vite.config.ts
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -53,7 +53,7 @@ export default defineConfig({
 
 Then add the plugin:
 
-```ts
+```ts twoslash
 // poveste.config.ts
 import { HstReact } from '@poveste/plugin-react'
 import { defineConfig } from 'poveste'
@@ -87,7 +87,7 @@ If the project has no Vue components written in TSX, set React's JSX in `tsconfi
 
 If it has some, leave the tsconfig as it is, because that change makes each of them render `[object Object]`. Start every React file with this line instead, the stories and the components they import alike:
 
-```tsx
+```tsx twoslash
 /** @jsxImportSource react */
 ```
 
@@ -97,7 +97,7 @@ A pragma on the story file alone is not enough: the component it imports still c
 
 A story is a `.story.tsx` file whose default export describes it. Each variant has a `render` that returns JSX. `Badge` stands in for a component of your own; to follow along as written, this one is enough:
 
-```tsx
+```tsx twoslash
 // src/Badge.tsx
 import type { ReactNode } from 'react'
 
@@ -106,7 +106,7 @@ export function Badge({ tone, children }: { tone: 'info' | 'warn', children: Rea
 }
 ```
 
-```tsx
+```tsx twoslash
 // src/Badge.story.tsx
 import { defineStory } from '@poveste/plugin-react'
 import { Badge } from './Badge'
@@ -118,6 +118,9 @@ export default defineStory({
     { title: 'Warning', render: () => <Badge tone="warn">Careful</Badge> },
   ],
 })
+// ---cut-after---
+// @filename: Badge.tsx
+export declare function Badge(props: { tone: 'info' | 'warn', children?: import('react').ReactNode }): import('react').ReactNode
 ```
 
 In a Vue project that keeps Vue TSX ([above](#in-a-vue-project)), `Badge.tsx` and `Badge.story.tsx` each start with `/** @jsxImportSource react */`, and so does every React file on this page.
@@ -151,12 +154,18 @@ You can specify additional CLI options like `--port`. For a full list of CLI opt
 
 Name the component a story documents in its `component` field, and its docs tab shows a props, slots and events table read from the type of the component's first parameter:
 
-```tsx
+```tsx twoslash
+import { defineStory } from '@poveste/plugin-react'
+import { Badge } from './Badge'
+// ---cut---
 export default defineStory({
   title: 'Badge',
   component: Badge,
   variants: [/* ... */],
 })
+// ---cut-after---
+// @filename: Badge.tsx
+export declare function Badge(props: { tone: 'info' | 'warn', children?: import('react').ReactNode }): import('react').ReactNode
 ```
 
 A function component, one typed `FC<Props>`, and one wrapped in `forwardRef` or `memo` are all read; so is a class component, from its constructor's props. Descriptions and tags come from the props' JSDoc. A default is read from a destructured parameter, then from a `@default` tag. Props typed `ReactNode` or `ReactElement`, and `children` taken through `PropsWithChildren`, are slots; `on*` functions are events. The attributes a component inherits from React's own types, such as `ButtonHTMLAttributes`, are left out. It needs `typescript` 6 or earlier and `@types/react` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. React ships no types of its own, so without `@types/react` every component would read as `any`: auto-docs turns off instead, and says so once in the log. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package.
@@ -169,14 +178,14 @@ A story's `autoDocs` field chooses its own table: `false` for none, or a list of
 
 Give a story or a variant an `initState`, and `render` receives that state and a way to change it. `Counter` again stands in for your own component:
 
-```tsx
+```tsx twoslash
 // src/Counter.tsx
 export function Counter({ count, onIncrement }: { count: number, onIncrement: () => void }) {
   return <button type="button" onClick={onIncrement}>{`Count: ${count}`}</button>
 }
 ```
 
-```tsx
+```tsx twoslash
 // src/Counter.story.tsx
 import { defineStory } from '@poveste/plugin-react'
 import { Counter } from './Counter'
@@ -200,6 +209,9 @@ export default defineStory<{ count: number }>({
     },
   ],
 })
+// ---cut-after---
+// @filename: Counter.tsx
+export declare function Counter(props: { count: number, onIncrement: () => void }): import('react').ReactNode
 ```
 
 `render` is a component body: it runs again on every change, with `state` a fresh snapshot each time, so hooks work inside it as they would in any component. `setState` merges what you pass into the state, as a class component's `setState` does — the keys that change, or a function of the current state.
@@ -210,7 +222,7 @@ The state editor shows the state and lets you edit it, and an edit renders the s
 
 Export `setupReact` from your [setup file](../config.md#global-js-and-css) to run code before every story mounts. `addWrapper` puts a component around each one — a theme provider, a router, a context:
 
-```tsx
+```tsx twoslash
 // src/poveste.setup.tsx
 import { defineSetupReact } from '@poveste/plugin-react'
 
@@ -219,7 +231,10 @@ export const setupReact = defineSetupReact(({ addWrapper }) => {
 })
 ```
 
-```ts
+```ts twoslash
+import { HstReact } from '@poveste/plugin-react'
+import { defineConfig } from 'poveste'
+// ---cut---
 // poveste.config.ts
 export default defineConfig({
   plugins: [HstReact()],
@@ -231,7 +246,10 @@ The hook runs before the story mounts, so a wrapper is there for the first rende
 
 A story or a variant can set its own `setupApp`, called after the global hook with the same argument, `{ story, variant, addWrapper }`. A variant's replaces the story's:
 
-```tsx
+```tsx twoslash
+import { defineStory } from '@poveste/plugin-react'
+import { Badge } from './Badge'
+// ---cut---
 // src/Badge.story.tsx
 export default defineStory({
   title: 'Badge',
@@ -243,11 +261,14 @@ export default defineStory({
     },
   ],
 })
+// ---cut-after---
+// @filename: Badge.tsx
+export declare function Badge(props: { tone: 'info' | 'warn', children?: import('react').ReactNode }): import('react').ReactNode
 ```
 
 A story is not rendered inside `StrictMode`. To get its checks, add it as a wrapper in the setup file:
 
-```tsx
+```tsx twoslash
 // src/poveste.setup.tsx
 import { defineSetupReact } from '@poveste/plugin-react'
 import { StrictMode } from 'react'

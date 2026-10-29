@@ -55,7 +55,7 @@ On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of
 
 Create a `poveste.config.js` or `poveste.config.ts` file in your project root to enable the Vue plugin:
 
-```ts
+```ts twoslash
 import { HstVue } from '@poveste/plugin-vue'
 import { defineConfig } from 'poveste'
 
@@ -85,7 +85,7 @@ npm i -D vite @vitejs/plugin-vue
 yarn add -D vite @vitejs/plugin-vue
 ```
 
-```ts
+```ts twoslash
 // vite.config.ts
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
