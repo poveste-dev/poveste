@@ -153,6 +153,14 @@
   "@poveste/plugin-svelte/collect": [
     "run"
   ],
+  "@poveste/plugin-svelte/testing": [
+    "TestStoriesOptions",
+    "testStories"
+  ],
+  "@poveste/plugin-svelte/vitest": [
+    "PovesteTestingOptions",
+    "povesteTesting"
+  ],
   "@poveste/plugin-tailwind": [
     "HstTailwind",
     "TAILWIND_V4_REQUIRED",
