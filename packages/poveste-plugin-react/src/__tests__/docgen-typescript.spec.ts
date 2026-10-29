@@ -5,12 +5,12 @@ import { typescriptProblem, typesProblem } from 'poveste/docgen'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { HstReact } from '../index'
 
-// A book outside the workspace, whose own TypeScript is found before anything the
-// workspace or `NODE_PATH` adds (#1401).
-function book(typescript: string, packages: Record<string, string> = {}) {
+// A book outside the workspace, whose own TypeScript would be found first if the plugin
+// read the book's (#1401).
+function book(typescript: string | undefined, packages: Record<string, string> = {}) {
   const root = mkdtempSync(join(tmpdir(), 'poveste-react-ts-'))
   onTestFinished(() => rmSync(root, { recursive: true, force: true }))
-  for (const [name, version] of Object.entries({ typescript, ...packages })) {
+  for (const [name, version] of Object.entries({ ...typescript ? { typescript } : {}, ...packages })) {
     mkdirSync(join(root, 'node_modules', name), { recursive: true })
     writeFileSync(join(root, 'node_modules', name, 'package.json'), JSON.stringify({ name, version }))
   }
@@ -21,16 +21,9 @@ const from = HstReact().docgen!.typescript!
 const types = HstReact().docgen!.types!
 
 describe('react auto-docs in a book', () => {
-  it('reads types with the book\'s own TypeScript', () => {
-    expect(from).toBe('book')
-  })
-
-  it('turns off on TypeScript 7, naming the version to install', () => {
-    expect(typescriptProblem(book('7.0.2'), from)).toMatch(/has TypeScript 7\.0\.2\. Install `typescript@6`/)
-  })
-
-  it('stays on with TypeScript 6', () => {
-    expect(typescriptProblem(book('6.0.3'), from)).toBeUndefined()
+  // Its own TypeScript 6 reads the book, whatever the book has, so neither turns it off (#1464).
+  it.each([['7.0.2'], ['6.0.3'], [undefined]])('stays on in a book whose TypeScript is %s', (version) => {
+    expect(typescriptProblem(book(version), from)).toBeUndefined()
   })
 
   // Without them every component reads as `any`: 189 of a library's 236 did (#1161).

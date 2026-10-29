@@ -1,6 +1,5 @@
 import type { Plugin } from 'poveste'
 
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 
 import { CLIENT_DEPENDENCIES } from './client-dependencies.js'
@@ -78,8 +77,8 @@ export function HstVue(): Plugin {
     docgen: {
       match: file => (file.endsWith('.vue') || SCRIPT_COMPONENT.test(file)) && !/\.story\.[^/]+$/.test(file) && !file.includes('/node_modules/'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
-      // `vue-component-meta` requires `typescript` from where it is installed, an optional peer npm does not add.
-      typescript: createRequire(import.meta.url).resolve('vue-component-meta'),
+      // This plugin's own TypeScript 6, whatever the book has (#1464).
+      typescript: import.meta.url,
     },
 
     supportPlugin: {

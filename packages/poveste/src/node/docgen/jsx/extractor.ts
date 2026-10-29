@@ -30,8 +30,7 @@ function compilerOptions(typescript: typeof ts, parsed: ts.ParsedCommandLine | u
  * over the book's tsconfig, read through a dialect. A plugin's extractor module
  * is this with its dialect bound.
  */
-export function createJsxExtractor(context: DocgenExtractorContext, dialect: JsxDialect): DocgenExtractor {
-  const typescript = loadFromBook<typeof ts>(context.root, 'typescript', 'reads JSX components\' types')
+export function createJsxExtractor(context: DocgenExtractorContext, dialect: JsxDialect, typescript: typeof ts = loadFromBook<typeof ts>(context.root, 'typescript', 'reads JSX components\' types')): DocgenExtractor {
   const options = (context.options ?? {}) as DocgenOptions
   const parsed = readTsconfig(typescript, context.root)
   const settings = compilerOptions(typescript, parsed, dialect)

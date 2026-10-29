@@ -1,31 +1,50 @@
 import type { DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
 import type ts from 'typescript'
+import type { createChecker } from 'vue-component-meta'
 import type { VueDocgenOptions } from './meta.js'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
+import { dirname, join } from 'pathe'
 import { bookTsconfig } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
 import { readSlotProps } from './slots.js'
 
+type VueChecker = ReturnType<typeof createChecker>
+
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
 
 /**
- * Runs in the docgen worker. `vue-component-meta` is imported here rather than at
- * the top, so a book without TypeScript fails this one request, answered with its
- * error, and keeps its runtime props.
+ * Runs in the docgen worker, reading the book with this plugin's own TypeScript 6
+ * whatever the book has (#1464). `vue-component-meta`'s entry requires whichever
+ * `typescript` it finds beside it, which in a book on TypeScript 7 is the book's, so
+ * its checker is built here from `createCheckerBase`, which takes the copy to use.
  */
 export async function createExtractor(context: DocgenExtractorContext): Promise<DocgenExtractor> {
-  const { createChecker, createCheckerByJson, TypeMeta } = await import('vue-component-meta')
+  const require = createRequire(import.meta.url)
+  const typescript: typeof ts = require('typescript')
+  const meta = require.resolve('vue-component-meta')
+  const { createCheckerBase } = await import(pathToFileURL(join(dirname(meta), 'lib/checker.js')).href)
+  const { TypeMeta } = await import(pathToFileURL(join(dirname(meta), 'lib/types.js')).href)
+  const core = createRequire(meta)('@vue/language-core')
   const options = (context.options ?? {}) as VueDocgenOptions
   const checkerOptions = { forceUseTs: true, printer: { newLine: 1 } }
-  // The copy vue-component-meta loaded, so the syntax kinds match the program it builds.
-  const typescript: typeof ts = createRequire(createRequire(import.meta.url).resolve('vue-component-meta'))('typescript')
   const tsconfig = bookTsconfig(typescript, context.root)
-  const checker = tsconfig
-    ? createChecker(tsconfig, checkerOptions)
-    : createCheckerByJson(context.root, { include: ['**/*'], exclude: ['node_modules'] }, checkerOptions)
+  // `vue-component-meta`'s own `createChecker` and `createCheckerByJson`, with this copy.
+  const fileNames = (commandLine: { vueOptions: unknown }, read: (extensions: ts.FileExtensionInfo[]) => string[]) =>
+    read(core.getAllExtensions(commandLine.vueOptions).map((extension: string) => ({ extension: extension.slice(1), isMixedContent: true, scriptKind: typescript.ScriptKind.Deferred })))
+  const checker: VueChecker = tsconfig
+    ? createCheckerBase(typescript, () => {
+        const commandLine = core.createParsedCommandLine(typescript, typescript.sys, tsconfig)
+        return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonSourceFileConfigFileContent(typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile), typescript.sys, dirname(tsconfig), {}, tsconfig, undefined, extensions).fileNames)]
+      }, checkerOptions, dirname(tsconfig))
+    : createCheckerBase(typescript, () => {
+        const json = { include: ['**/*'], exclude: ['node_modules'] }
+        const commandLine = core.createParsedCommandLineByJson(typescript, typescript.sys, context.root, json)
+        return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonConfigFileContent(json, typescript.sys, context.root, {}, undefined, undefined, extensions).fileNames)]
+      }, checkerOptions, context.root)
 
   // A script file is offered for its default export, which is a component only when it is
   // `defineComponent`'s: a function, a helper or a plain object throws or reads as Unknown.

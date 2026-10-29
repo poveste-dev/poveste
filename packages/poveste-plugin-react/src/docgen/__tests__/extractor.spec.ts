@@ -1,5 +1,6 @@
-import { join } from 'node:path'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createExtractor } from '../extractor'
 
 const root = join(import.meta.dirname, '..', '..', '..', 'fixtures', 'docgen')
@@ -59,4 +60,29 @@ describe('the React extractor', () => {
       expect.objectContaining({ name: 'raised', default: 'false' }),
     ])
   })
+})
+
+// #1464: a book on TypeScript 7, whose `require('typescript')` gives only its version,
+// is read with the plugin's own TypeScript 6. A copy of the fixture, because Node caches
+// where a directory's `typescript` resolved, and the cases above resolved it first.
+describe('a book on TypeScript 7', () => {
+  const book = join(dirname(root), `docgen-ts7-${process.pid}`)
+
+  beforeAll(() => {
+    cpSync(root, book, { recursive: true })
+    const typescript = join(book, 'node_modules', 'typescript')
+    mkdirSync(typescript, { recursive: true })
+    writeFileSync(join(typescript, 'package.json'), JSON.stringify({ name: 'typescript', version: '7.0.2', main: 'index.js' }))
+    writeFileSync(join(typescript, 'index.js'), 'module.exports = { version: \'7.0.2\', versionMajorMinor: \'7.0\' }\n')
+  })
+  afterAll(() => rmSync(book, { recursive: true, force: true }))
+
+  it('is read with the plugin\'s own TypeScript 6', async () => {
+    const extractor = await createExtractor({ root: book, options: {} })
+
+    const doc = await extractor.extract(join(book, 'src', 'Button.story.tsx'))
+
+    expect(doc!.props.map(prop => prop.name)).toContain('label')
+    await extractor.dispose?.()
+  }, 60_000)
 })

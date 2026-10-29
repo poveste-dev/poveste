@@ -77,14 +77,10 @@
     "@sveltejs/kit": "^2.53.0 || ^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "poveste": "workspace:^",
-    "svelte": "^5.46.4",
-    "svelte2tsx": "^0.7.61"
+    "svelte": "^5.46.4"
   },
   "peerDependenciesMeta": {
     "@sveltejs/kit": {
-      "optional": true
-    },
-    "svelte2tsx": {
       "optional": true
     }
   },
@@ -96,7 +92,9 @@
     "ignore": "^7.0.10",
     "launch-editor": "^2.14.2",
     "pathe": "^2.0.3",
-    "tinyglobby": "^0.2.17"
+    "svelte2tsx": "^0.7.62",
+    "tinyglobby": "^0.2.17",
+    "typescript": "6.0.3"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
@@ -107,8 +105,6 @@
     "poveste": "workspace:*",
     "svelte": "5.57.2",
     "svelte-preprocess": "^6.0.5",
-    "svelte2tsx": "^0.7.62",
-    "typescript": "catalog:",
     "vite": "^8.3.4",
     "vitest": "catalog:"
   }

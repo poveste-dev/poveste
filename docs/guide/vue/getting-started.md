@@ -124,7 +124,7 @@ Running several books at once is fine: give each `poveste dev` a distinct `--por
 
 ## TypeScript
 
-The props, slots and events table on a story's **Docs** tab is read from your components' types with TypeScript, version 6 or earlier: `npm i -D typescript@6`. Without it, or with TypeScript 7, it turns itself off and says so once in the terminal. See [Props, slots and events](./docs.md#props-slots-and-events).
+The props, slots and events table on a story's **Docs** tab is read from your components' types with a TypeScript 6 the plugin installs, so the book needs none of its own, whatever version it has. See [Props, slots and events](./docs.md#props-slots-and-events).
 
 To enable the global components types in your project, create an `env.d.ts` file at the root of your project if it doesn't already exist.
 

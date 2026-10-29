@@ -40,8 +40,8 @@ import MyButton from './MyButton.vue'
 Each story's **Docs** tab shows a props, slots and events table for the `.vue`
 components it imports, read from their types with `vue-component-meta`: descriptions
 and tags from JSDoc, defaults from `withDefaults`, slots from `defineSlots` and events
-from `defineEmits`. It needs `typescript` 6 or earlier in the project
-(`npm i -D typescript@6`); without it, or with 7, it turns itself off and says so once.
+from `defineEmits`. It reads them with a TypeScript 6 this plugin installs, so the
+project needs no TypeScript of its own, and one on TypeScript 7 is read the same way.
 Set `autoDocs: false` in the config to turn it off.
 
 Coming from histoire? The Vue API is unchanged: swap the dependency and your existing
