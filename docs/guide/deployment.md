@@ -89,7 +89,16 @@ Every emitted URL picks up the prefix:
 <script type="module" src="/book/assets/bundle-main-BTtSWPu-.js"></script>
 ```
 
-Keep the leading and trailing slash. The router reads the same value, so the fallback rule has to point at `/book/index.html` rather than `/index.html`.
+Keep the leading and trailing slash. The router reads the same value, so the fallback rule has to point at `/book/index.html` rather than `/index.html`. The host snippets below are written for the root; under `/book/`, prefix both sides of the rule. On Netlify:
+
+```toml
+[[redirects]]
+from = "/book/*"
+to = "/book/index.html"
+status = 200
+```
+
+In nginx, `location /book/ { try_files $uri $uri/ /book/index.html; }`. The other hosts change the same way.
 
 ## Hosts
 
@@ -168,6 +177,17 @@ RewriteRule . /index.html [L]
 ```
 
 Each says the same thing: serve the file if it exists, otherwise `index.html`.
+
+## Caching
+
+Only `assets/` carries content hashes in its file names, so only it is safe to cache forever. `index.html`, `__sandbox.html`, `bundle-main.css`, `bundle-sandbox.css` and `poveste.json` keep their names from one deploy to the next: a host or CDN that caches them long serves the previous shell beside the new scripts. Give them a header that revalidates, and `assets/` one that doesn't:
+
+```
+/assets/*   Cache-Control: public, max-age=31536000, immutable
+/*          Cache-Control: no-cache
+```
+
+Netlify and Vercel revalidate everything by default, so there only the `assets/` rule is a gain. On a CDN in front of a plain host, set both.
 
 ## Checking it before you ship
 
