@@ -66,6 +66,22 @@ You can link to other stories using a relative path to the story file:
 - [Go to Markdown file](./MarkdownFile.story.md)
 ```
 
+### Types on hover
+
+A TypeScript block marked `twoslash` is compiled when the book renders it, and shows each name's type when the reader hovers it or reaches it with the keyboard, as [Twoslash](https://twoslash.netlify.app) does on a VitePress site:
+
+````md
+```ts twoslash
+type Size = 'sm' | 'md' | 'lg'
+
+const size: Size = 'md'
+```
+````
+
+It needs `@shikijs/twoslash` and TypeScript 6 or earlier in the book: `npm i -D @shikijs/twoslash typescript@6`. Without them, or with TypeScript 7, a marked block renders as plain code and the log says why, once. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
+
+A block with types wraps its long lines rather than scrolling them, so a type's popup is not cut off at the edge.
+
 ## Component docs
 
 The docs tab shows a props, slots and events table for each component a story imports, read from the type on its `$props()` the way your editor reads it: through an imported `Props`, the interfaces it extends, and `$lib` paths. Descriptions and tags come from the props' JSDoc. A component counts when the story imports it directly or through re-exports, such as `import { Button } from '$lib/components'`. When a story renders a helper instead, name what it documents with [`component`](../../reference/svelte/story.md#component). A compound component's root comes first and open, and above three parts the rest start collapsed. In `poveste dev`, a story that imports components auto-docs can't trace to a file says so on its Docs tab.

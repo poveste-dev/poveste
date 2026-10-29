@@ -124,6 +124,47 @@
     background: transparent !important;
   }
 
+  /*
+   * A `twoslash` fence's types (#1525), shown on hover and on keyboard focus: each
+   * hover token is focusable. A popup inside a scrolling `<pre>` would be cut off,
+   * so such a block wraps its long lines instead of scrolling them.
+   */
+  .__poveste-code .shiki.twoslash {
+    overflow: visible;
+    white-space: pre-wrap;
+  }
+
+  .__poveste-code .twoslash-hover {
+    position: relative;
+    text-decoration: underline dotted rgb(255 255 255 / .4);
+    text-underline-offset: .2em;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: 1px;
+    }
+  }
+
+  .__poveste-code .twoslash-popup-container {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    margin-top: .25rem;
+    padding: .375rem .5rem;
+    width: max-content;
+    max-width: min(32rem, 80vw);
+    white-space: pre-wrap;
+    background: var(--color-gray-900);
+    border: 1px solid var(--color-gray-700);
+    border-radius: .25rem;
+  }
+
+  .__poveste-code .twoslash-hover:is(:hover, :focus-visible) .twoslash-popup-container {
+    display: block;
+  }
+
   .prose {
     h1, h2, h3, h4 {
       &:not(:hover) {

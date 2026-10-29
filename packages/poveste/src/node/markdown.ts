@@ -2,6 +2,7 @@ import type { ServerMarkdownFile } from '@poveste/shared'
 import type { Highlighter } from 'shiki'
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
+import type { FenceAt } from './twoslash.js'
 import { createRequire } from 'node:module'
 import matter from '@11ty/gray-matter'
 import { kebabCase } from 'change-case'
@@ -15,6 +16,7 @@ import path from 'pathe'
 import pc from 'picocolors'
 import { bundledLanguagesInfo, createHighlighter, guessEmbeddedLanguages, isSpecialLang } from 'shiki'
 import { addStory, notifyStoryChange, removeStory } from './stories.js'
+import { createTwoslash } from './twoslash.js'
 import { slugify } from './util/slugify.js'
 import { unregister } from './util/unregister.js'
 import { createWatchIgnore } from './util/watch-ignore.js'
@@ -113,6 +115,11 @@ function loadGrammar(highlighter: Highlighter, lang: string): string {
 
 export async function createMarkdownRenderer(ctx: Context) {
   const highlighter = await getHighlighter()
+  const twoslash = createTwoslash(ctx.root, (code, lang, transformers) => highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang), transformers: transformers as never }))
+  // The fence being highlighted, for a Twoslash message to name: `highlight` is handed neither.
+  let fence: FenceAt = {}
+  const html = (code: string, lang: string, attrs: string) => (/(?:^|\s)twoslash(?:\s|$)/.test(attrs) ? twoslash(code, lang, fence) : undefined)
+    ?? highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang) })
 
   const md = new MarkdownIt({
     /*
@@ -122,7 +129,7 @@ export async function createMarkdownRenderer(ctx: Context) {
      * block back *into* prose. These classes are generated because main.pcss
      * `@source`s this file — v4 auto-detection only scans the app package.
      */
-    highlight: (code, lang) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang) })}</div>`,
+    highlight: (code, lang, attrs) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${html(code, lang, attrs)}</div>`,
     linkify: true,
     html: true,
     breaks: false,
@@ -132,6 +139,13 @@ export async function createMarkdownRenderer(ctx: Context) {
   // `www.example.com` by default. Docs written against the previous release
   // relied on it, so it stays on.
   md.linkify.set({ fuzzyLink: true })
+
+  const renderFence = md.renderer.rules['fence']!
+  md.renderer.rules['fence'] = (tokens, idx, options, env, self) => {
+    const line = tokens[idx]?.map?.[0]
+    fence = { ...env?.['file'] ? { file: path.relative(ctx.root, String(env['file'])) } : {}, ...line !== undefined ? { line: line + 1 } : {} }
+    return renderFence(tokens, idx, options, env, self)
+  }
 
   md.use(anchor, {
     slugify,
