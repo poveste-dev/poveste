@@ -27,6 +27,7 @@ const { join } = require('node:path')
 // nobody notices — bumpp moves every manifest in lockstep, so this cannot drift.
 const { version } = require('../../packages/poveste/package.json')
 const { llmsFullTxt, llmsTxt, publishedPlugins } = require('./llms.js')
+const twoslashOptions = require('./twoslash.js')
 
 // Filled as each page is transformed and read at the end of the build, which is
 // the only point where every page's frontmatter has been seen.
@@ -54,7 +55,7 @@ const STRUCTURED_DATA = {
   'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
 }
 
-module.exports = {
+const config = {
   title: 'Poveste',
   description: DESCRIPTION,
 
@@ -115,7 +116,7 @@ module.exports = {
       })
     writeFileSync(join(outDir, '_redirects'), `${rules.sort().join('\n')}\n`)
 
-    const { nav, sidebar } = module.exports.themeConfig
+    const { nav, sidebar } = config.themeConfig
     const plugins = publishedPlugins(join(__dirname, '..', '..', 'packages'))
     writeFileSync(join(outDir, 'llms.txt'), llmsTxt({ site: SITE, nav, sidebar, descriptions, plugins, version }))
     writeFileSync(join(outDir, 'llms-full.txt'), llmsFullTxt({ site: SITE, nav, sidebar, srcDir: join(__dirname, '..'), version }))
@@ -606,4 +607,17 @@ module.exports = {
       indexName: 'poveste',
     },
   },
+}
+
+// A fence marked `ts twoslash` is compiled at build time and shows types on hover, so an
+// example that stops compiling fails `docs:build` (#1526). Unmarked fences are as before.
+// A function, because the integration is ESM and a CommonJS config cannot `require` it.
+module.exports = async () => {
+  const { transformerTwoslash } = await import('@shikijs/vitepress-twoslash')
+  return {
+    ...config,
+    markdown: {
+      codeTransformers: [transformerTwoslash({ explicitTrigger: true, twoslashOptions })],
+    },
+  }
 }

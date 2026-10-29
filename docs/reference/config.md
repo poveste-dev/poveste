@@ -22,9 +22,10 @@ Learn more about configuring Poveste [here](../guide/config.md).
 
 Array of plugins. Learn more about [official plugins](../guide/plugins/official.md) and [how to develop them](../guide/plugins/development.md).
 
-```ts
+```ts twoslash
 import { HstNuxt } from '@poveste/plugin-nuxt'
 import { HstVue } from '@poveste/plugin-vue'
+import { defineConfig } from 'poveste'
 
 export default defineConfig({
   plugins: [
@@ -40,7 +41,9 @@ export default defineConfig({
 
 Output directory.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   outDir: '.poveste/dist',
 })
@@ -52,7 +55,9 @@ export default defineConfig({
 
 Glob patterns for story files to include.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   storyMatch: [
     '**/*.story.vue',
@@ -70,7 +75,9 @@ A framework plugin can add its own patterns to the default: `@poveste/plugin-sol
 
 Glob patterns to ignore files while searching for story files. Patterns you set are added to the defaults, so `node_modules` and `dist` stay ignored without being spelled out again.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   storyIgnored: [
     '**/fixtures/**',
@@ -100,7 +107,9 @@ Entries merge by `id` rather than replacing: reuse an existing `id` and your `pa
 
 A story matching `storyMatch` and no `supportMatch` entry fails collection with `No support plugin found for file …`. That is the reason to set this key: plain TypeScript stories for the built-in renderer, `*.story.ts`, for instance, since its entry claims `**/*.js` alone. A `.story.tsx` file needs no entry, because the Solid and React plugins claim it.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   // This replaces the default list: add '**/*.story.vue' and the rest back if
   // the book has those stories too.
@@ -126,7 +135,9 @@ Properties:
 - `file: 'title' | 'path' | ((file: TreeFile) => string[])`: How to get the path of a story.
 - `order: 'asc' | ((a: string, b: string) => number)`: How to sort the stories.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   tree: {
     file: 'title',
@@ -158,8 +169,8 @@ Properties:
 - `hideColorSchemeSwitch: boolean`: Hides the dark mode button in the toolbar, and the color scheme buttons in the preview appearance dropdown — the story preview then stays on `defaultColorScheme`.
 - `storeColorScheme: boolean`: Enable persistence of the color scheme in the browser's local storage.
 
-```ts
-import { defaultColors } from 'poveste'
+```ts twoslash
+import { defaultColors, defineConfig } from 'poveste'
 
 export default defineConfig({
   theme: {
@@ -193,7 +204,9 @@ The path is resolved from the project root. The leading slash means that root, n
 
 [Learn more](../guide/config.md#global-js-and-css)
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   setupFile: '/src/poveste.setup.ts',
 })
@@ -201,7 +214,9 @@ export default defineConfig({
 
 If you need a different version for the NodeJS server (while collecting stories), you can use an object:
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   setupFile: {
     browser: '/src/poveste.setup.ts',
@@ -220,7 +235,9 @@ Master switch for CSS isolation between Poveste's chrome and your stories. When 
 
 See [the Styles & CSS guide](../guide/css.md) for details.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   isolateStyles: false, // restore pre-isolation behaviour
 })
@@ -238,7 +255,9 @@ In a built book, a component whose types could not be read is left out of the do
 
 It holds a type checker while it runs, which on a large component library costs up to about 1 GB. A build reads every component, so it pays the whole of that; `poveste dev` pays for the components whose docs have been opened. Set it to `false` to turn it off; props detected at runtime still show.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   autoDocs: false,
 })
@@ -246,7 +265,9 @@ export default defineConfig({
 
 Props declared in installed packages are left out, which drops the HTML attributes a component inherits. `allow` keeps the props your own components take from the packages it names, such as a design system whose prop types they extend. In a Vue or Svelte book it does not add a table for a library's components: importing one from a package reaches the package's JavaScript entry, not a `.vue` or `.svelte` file, and gets none. A Solid or React story that names a library's component in `component` does get a table, read from the package's types, and since every one of its props is declared in that package, `allow` naming it is what fills the table: without it the table is the component's name and no rows. `exclude` leaves out components whose path contains one of its strings.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   autoDocs: {
     allow: ['reka-ui'],
@@ -263,7 +284,9 @@ A story can choose its own table with its `autoDocs` option: `false` for none, o
 
 CSS files to load into the main app (not into stories). They are wrapped in `@layer poveste-user-globals`, which keeps them lower priority than chrome rules. Use for design tokens or anything you want to apply across both chrome and stories.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   globalStyles: ['./src/styles/tokens.css'],
 })
@@ -275,7 +298,9 @@ export default defineConfig({
 
 Default values for story props.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   defaultStoryProps: {
     icon: 'carbon:assembly-reference',
@@ -322,7 +347,9 @@ Each object in the array is a preset with the following properties:
 
 Default values are shown in the example below:
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   responsivePresets: [
     {
@@ -383,7 +410,9 @@ Each object in the array is a preset with the following properties:
 
 Default values are shown in the example below:
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   backgroundPresets: [
     {
@@ -429,7 +458,9 @@ You can use the current contrast color via the css variable `--poveste-contrast-
 
 What the story preview opens at, before the reader changes it in the toolbar. Each field mirrors the toolbar setting of the same name, and each is optional.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   preview: {
     backgroundColor: '#fff',
@@ -462,7 +493,9 @@ Still honoured where it is set. When `preview.backgroundColor` is set too, that 
 
 Automatically apply the contrast color to the story preview text.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   autoApplyContrastColor: true,
 })
@@ -474,7 +507,9 @@ export default defineConfig({
 
 Extra `<head>` tags injected into the Poveste app **and** the story sandbox iframe. Same input shape as Nuxt's [`useHead`](https://unhead.unjs.io/), rendered at build time. Use for global stylesheets, web fonts, analytics snippets, or any meta tag that needs to apply in both contexts.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   head: {
     link: [
@@ -498,11 +533,13 @@ Customize the [markdown-it](https://github.com/markdown-it/markdown-it) renderer
 
 The renderer is markdown-it 15, so a plugin passed to `md.use` has to support it: one that calls `md.utils.assign` or imports `markdown-it/lib/*` throws. Its types ship with `markdown-it` itself, so `@types/markdown-it` is not needed.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+
+declare const SomeMarkdownItPlugin: (md: any) => void
+// ---cut---
 export default defineConfig({
-  markdown: (md) => {
-    md.use(SomeMarkdownItPlugin)
-  },
+  markdown: md => md.use(SomeMarkdownItPlugin),
 })
 ```
 
@@ -514,7 +551,9 @@ Changes the router mode:
 - `'history'`: HTML 5 history mode with cleaner URLs.
 - `'hash'`: Use the hashtag hack in the URL to support more servers and static hosting services.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   routerMode: 'hash',
 })
@@ -526,7 +565,9 @@ export default defineConfig({
 
 [Vite config](https://vitejs.dev/config/) override.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   vite: {
     server: {
@@ -542,7 +583,9 @@ export default defineConfig({
 
 List of Vite plugin names to exclude for Poveste.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   viteIgnorePlugins: [
     'vite-plugin-example',
@@ -574,7 +617,9 @@ Vite plugins will receive `ssr: false` flag when processing those files.
 
 When you use JSX as component models other than React (e.g. Vue JSX or SolidJS), you might want to config as following to make `.tsx` / `.jsx` transformed as client-side components:
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   viteNodeTransformMode: {
     web: [/\.[jt]sx$/],
@@ -596,7 +641,9 @@ For example, if you have a dependency that contains ESM code but Node tries to l
 
 We can see that the `some-library` (made-up name) is misconfigured and Node treats it as CommonJS code (the `cjs/loader` is being used) but it contains ESM code. Hence the error.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   viteNodeInlineDeps: [
     /some-library/,
@@ -610,7 +657,9 @@ export default defineConfig({
 
 Number of maximum threads used to collect stories (both for development and building). Threads count will never go above this limit but might be lower.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   collectMaxThreads: 4,
 })
@@ -628,7 +677,9 @@ Build-time options, applying to `poveste build` only.
 
 Dependencies to keep out of the single `vendors` chunk that everything in `node_modules` is bundled into by default. Use it for a dependency large enough that loading it with the first story costs more than fetching it separately.
 
-```ts
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
 export default defineConfig({
   build: {
     excludeFromVendorsChunk: ['lottie-web', /^@my-org\//],
