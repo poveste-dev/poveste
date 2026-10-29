@@ -34,7 +34,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "testing.d.ts"
   ],
   "engines": {
     "node": ">=22.22.2"
