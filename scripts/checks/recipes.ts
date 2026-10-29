@@ -67,10 +67,21 @@ export function section(markdown: string, heading: string): string | undefined {
 // told to create, and is compared. A block without one is an illustration — a
 // fragment showing how to call something — and is not a file to match.
 export function tsBlocks(markdown: string): string[] {
-  return [...markdown.matchAll(/```ts\n([\s\S]*?)```/g)]
-    .map(match => captured(match).split('\n'))
+  return [...markdown.matchAll(/```ts(?: twoslash)?\n([\s\S]*?)```/g)]
+    .map(match => shown(captured(match)).split('\n'))
     .filter(lines => /^\/\/ [\w./-]+\.\w+$/.test(lines[0] ?? ''))
     .map(lines => lines.slice(1).join('\n'))
+}
+
+/**
+ * What a reader sees of a block that Twoslash compiles (#1526): what follows its
+ * `// ---cut---` and before its `// ---cut-after---`, without the `// @flag` lines it removes.
+ */
+function shown(block: string): string {
+  const cut = block.indexOf('// ---cut---\n')
+  const after = block.indexOf('// ---cut-after---')
+  const visible = (cut === -1 ? block : block.slice(cut + '// ---cut---\n'.length, after === -1 ? undefined : after))
+  return visible.split('\n').filter(line => !/^\/\/ @\w+(?::|$)/.test(line)).join('\n')
 }
 
 /**

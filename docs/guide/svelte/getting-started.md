@@ -55,7 +55,7 @@ On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of
 
 Create a `poveste.config.js` or `poveste.config.ts` file in your project root to enable the Svelte plugin:
 
-```ts
+```ts twoslash
 import { HstSvelte } from '@poveste/plugin-svelte'
 import { defineConfig } from 'poveste'
 
@@ -94,7 +94,7 @@ npm i -D vite @sveltejs/vite-plugin-svelte
 yarn add -D vite @sveltejs/vite-plugin-svelte
 ```
 
-```ts
+```ts twoslash
 // vite.config.ts
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'

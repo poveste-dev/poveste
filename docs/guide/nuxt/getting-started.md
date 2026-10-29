@@ -54,7 +54,7 @@ reproduce or fix. `examples/nuxt` is what CI actually proves.
 
 Create a `poveste.config.js` or `poveste.config.ts` file in your project root, and register both plugins — `HstNuxt()` extends `HstVue()` rather than replacing it:
 
-```ts
+```ts twoslash
 import { HstNuxt } from '@poveste/plugin-nuxt'
 import { HstVue } from '@poveste/plugin-vue'
 import { defineConfig } from 'poveste'
@@ -101,7 +101,7 @@ that cannot run is dropped.
 That leaves the story app without an i18n instance, so install one yourself in the
 [setup file](../vue/app-setup.md) — the same `app` your stories mount into:
 
-```ts
+```ts twoslash
 // poveste.setup.ts
 import { defineSetupVue } from '@poveste/plugin-vue'
 import { createI18n } from 'vue-i18n'
