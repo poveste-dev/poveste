@@ -77,14 +77,25 @@ function versionProblem(version: string | undefined): string | undefined {
 }
 
 /**
+ * A plugin that brings its own TypeScript 6 finds none only when its install is broken:
+ * the book's own TypeScript, whatever its version, is not the one it reads with (#1464).
+ */
+function ownCopyProblem(version: string | undefined): string | undefined {
+  return version && Number.parseInt(version, 10) <= NEWEST_MAJOR
+    ? undefined
+    : 'Auto-docs is off: the TypeScript 6 its plugin installs beside itself is missing. Reinstall the book\'s dependencies, or set `autoDocs: false` to turn it off without this message.'
+}
+
+/**
  * The same question for the `typescript` an extractor will load: required from
- * `from`, a file, or from the book's own root for `'book'`.
+ * `from`, a file or file URL, or from the book's own root for `'book'`.
  */
 export function typescriptProblem(root: string, from: string): string | undefined {
   const file = from === 'book' ? join(root, 'package.json') : from
+  const problem = from === 'book' ? versionProblem : ownCopyProblem
   if (process.versions['pnp']) {
     const manifest = pnpManifest(file, 'typescript')
-    return versionProblem(manifest ? JSON.parse(readFileSync(manifest, 'utf8')).version : undefined)
+    return problem(manifest ? JSON.parse(readFileSync(manifest, 'utf8')).version : undefined)
   }
-  return typescriptProblemIn(createRequire(file).resolve.paths('typescript') ?? [])
+  return problem(typescriptVersionIn(createRequire(file).resolve.paths('typescript') ?? []))
 }

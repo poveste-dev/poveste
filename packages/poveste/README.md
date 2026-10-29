@@ -10,9 +10,9 @@ Solid and React, whose stories render with no controls panel yet.
 
 In every one of those books, each story's **Docs** tab also shows a props, slots and
 events table read from its components' types: the ones a Vue or Svelte story imports, or
-the one a Solid or React story names in its `component` field. That needs `typescript` 6
-or earlier in the book, plus `svelte2tsx` in a Svelte book and `@types/react` in a React
-one.
+the one a Solid or React story names in its `component` field, with a TypeScript 6 the
+framework plugin installs, whatever TypeScript the book has. A React book needs
+`@types/react`.
 
 <img src="https://raw.githubusercontent.com/poveste-dev/poveste/main/screenshot.png" alt="A poveste book: the story list, a variant grid, and the controls panel" width="900">
 
@@ -64,7 +64,7 @@ what proves each range.
 
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for each of them and installs anyway, and a Vue book built there, but nothing tests Poveste on a Node 24 before 24.15.
 
-Auto-docs, the props, slots and events table in Vue, Nuxt, Quasar, Svelte, SvelteKit, Solid and React books, needs `typescript` 6 or earlier in the book: `npm i -D typescript@6`. A Svelte or SvelteKit book also needs `svelte2tsx`, and a React book `@types/react`. Without them, or with TypeScript 7, it turns itself off and says so once. See [`autoDocs`](https://poveste.dev/reference/config#autodocs).
+Auto-docs, the props, slots and events table in Vue, Nuxt, Quasar, Svelte, SvelteKit, Solid and React books, reads the types with a TypeScript 6 each framework plugin installs, so a book needs none of its own, and one on TypeScript 7 is read the same way. A React book needs `@types/react`; without it, auto-docs for React turns itself off and says so once. See [`autoDocs`](https://poveste.dev/reference/config#autodocs).
 
 ## Links
 

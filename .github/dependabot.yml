@@ -44,6 +44,11 @@ updates:
       # h3 2 drops `App` and `createApp`, so it waits for Nuxt.
       - dependency-name: h3
         update-types: [version-update:semver-major]
+      # The framework plugins pin `typescript` 6.0.3 and read every book with it, because
+      # TypeScript 7 has no JavaScript API to read types through (#1464). A 7 would install
+      # cleanly and turn auto-docs off in every book, so it waits for the extractors' port.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /

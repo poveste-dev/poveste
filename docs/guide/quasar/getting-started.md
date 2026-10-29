@@ -135,7 +135,7 @@ The config itself comes from an entrypoint whose own header says it is used excl
 
 ## Component docs
 
-A story's **Docs** tab shows a props, slots and events table for each `.vue` component the story imports, read from the component's types: see [Props, slots and events](../vue/docs.md#props-slots-and-events). It reads them with TypeScript, which the book needs installed at version 6 or earlier: `npm i -D typescript@6`. A Quasar project installed with npm doesn't have it. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal.
+A story's **Docs** tab shows a props, slots and events table for each `.vue` component the story imports, read from the component's types: see [Props, slots and events](../vue/docs.md#props-slots-and-events). It reads them with a TypeScript 6 its plugin installs, so a Quasar project needs no TypeScript of its own for it, and one on TypeScript 7 is read the same way.
 
 ## Write your first story
 
