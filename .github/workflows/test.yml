@@ -390,9 +390,11 @@ jobs:
         run: |
           pnpm --filter @poveste/plugin-vue run test:story-tests
           pnpm --filter @poveste/plugin-solid run test:story-tests
+          pnpm --filter @poveste/plugin-react run test:story-tests
           pnpm --filter ./examples/vue run test:stories
           pnpm --filter ./examples/nuxt run test:stories
           pnpm --filter ./examples/solid run test:stories
+          pnpm --filter ./examples/react run test:stories
 
       # `:dev` also runs `poveste dev` over the Vue and Svelte installs and opens
       # a story, which the build alone cannot see: that path shipped blank twice

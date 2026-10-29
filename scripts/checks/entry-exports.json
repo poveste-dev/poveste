@@ -87,6 +87,14 @@
   "@poveste/plugin-react/collect": [
     "run"
   ],
+  "@poveste/plugin-react/testing": [
+    "TestStoriesOptions",
+    "testStories"
+  ],
+  "@poveste/plugin-react/vitest": [
+    "PovesteTestingOptions",
+    "povesteTesting"
+  ],
   "@poveste/plugin-screenshot": [
     "HstScreenshot",
     "ScreenshotPluginOptions",
