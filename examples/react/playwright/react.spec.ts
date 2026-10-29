@@ -40,10 +40,24 @@ test.describe('a React book', () => {
     await expect(page.getByTestId('story-controls').locator('.poveste-state-presets')).toBeVisible()
   })
 
-  test('shows the story file as its source', async ({ page }) => {
+  // Dynamic source prints what `render` returns, with each value as it is now (#1524).
+  test('shows the variant as JSX, and the story file under Static', async ({ page }) => {
     await open(page, 'src-badge-story-tsx', 'info')
+    const source = page.locator('.poveste-story-source-code')
 
-    await expect(page.locator('.poveste-story-source-code')).toContainText('defineStory')
+    await expect(source).toContainText('<Badge tone="info">Information</Badge>')
+    await page.getByRole('button', { name: 'Static' }).click()
+    await expect(source).toContainText('defineStory')
+  })
+
+  test('follows an edit in the panel in its Dynamic source', async ({ page }) => {
+    await open(page, 'src-counter-story-tsx', 'ten')
+    const source = page.locator('.poveste-story-source-code')
+    await expect(source).toContainText('<Counter count={10} label="Clicked" onIncrement={…} />')
+
+    await countField(page).fill('42')
+
+    await expect(source).toContainText('<Counter count={42} label="Clicked" onIncrement={…} />')
   })
 
   test('starts a variant from its own initState rather than the story\'s', async ({ page }) => {
