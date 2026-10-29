@@ -1,9 +1,10 @@
 import type { DocgenExtractor, DocgenExtractorContext } from '@poveste/shared'
 import type ts from 'typescript'
+import type { PropertyMeta } from 'vue-component-meta'
 import type { VueDocgenOptions } from './meta.js'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { bookTsconfig } from 'poveste/docgen'
+import { bookTsconfig, resolveType } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
@@ -49,7 +50,10 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       if (!meta) {
         return undefined
       }
-      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, checker.getProgram(), file) : undefined, slot => readSlotProps(typescript, checker.getProgram(), slot))
+      const program = checker.getProgram()
+      // Against the type as the table prints an optional one, without its `undefined`.
+      const resolve = (prop: PropertyMeta) => program && resolveType(typescript, program.getTypeChecker(), prop.getTypeObject(), prop.required ? prop.type : prop.type.replace(/ \| undefined$/, ''))
+      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, program, file) : undefined, slot => readSlotProps(typescript, program, slot), resolve)
       const generic = file.endsWith('.vue') ? readGeneric(readFileSync(file, 'utf8')) : undefined
       return generic ? { ...doc, generic } : doc
     },
