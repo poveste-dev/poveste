@@ -70,6 +70,22 @@ You can link to other stories using a relative path to the story file:
 - [Go to Markdown file](./MarkdownFile.story.md)
 ```
 
+### Types on hover
+
+A TypeScript block marked `twoslash` is compiled when the book renders it, and shows each name's type when the reader hovers it or reaches it with the keyboard, as [Twoslash](https://twoslash.netlify.app) does on a VitePress site:
+
+````md
+```ts twoslash
+type Size = 'sm' | 'md' | 'lg'
+
+const size: Size = 'md'
+```
+````
+
+It needs `@shikijs/twoslash` and TypeScript 6 or earlier in the book: `npm i -D @shikijs/twoslash typescript@6`. Without them, or with TypeScript 7, a marked block renders as plain code and the log says why, once. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
+
+A block with types wraps its long lines rather than scrolling them, so a type's popup is not cut off at the edge.
+
 ## Props, slots and events
 
 Each component a story imports gets a table on the story's **Docs** tab, whether it is a `.vue` file or one `defineComponent` makes in a `.ts` or `.tsx` file, below any markdown: its props with their types, descriptions and defaults, its slots, and its events. Poveste reads them from the component's types with `vue-component-meta`, so nothing is written for it. A component counts when the story imports it directly or through re-exports, such as `import { SelectRoot } from '..'` from a folder whose `index.ts` re-exports its `.vue` files. When a story renders a helper instead, name what it documents with [`component`](../../reference/vue/story.md#component). A compound component's root comes first and open, and above three parts the rest start collapsed. In `poveste dev`, a story that imports components auto-docs can't trace to a file says so on its Docs tab.
