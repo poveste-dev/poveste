@@ -107,6 +107,21 @@ function onClick(e: MouseEvent) {
   }
 }
 
+// A `twoslash` block is one tab stop, and the arrow keys move between the names whose types it shows (#1525).
+function onKeydown(e: KeyboardEvent) {
+  const block = (e.target as Element).closest('pre.twoslash')
+  if (!block || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) {
+    return
+  }
+  const names = [...block.querySelectorAll<HTMLElement>('.twoslash-hover[tabindex]')]
+  const at = names.indexOf(e.target as HTMLElement)
+  const next = names[e.key === 'ArrowRight' ? at + 1 : (at === -1 ? names.length : at) - 1]
+  if (next) {
+    e.preventDefault()
+    next.focus()
+  }
+}
+
 // Handle URL anchor
 
 function getHash() {
@@ -175,6 +190,7 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
   <div
     class="poveste-story-docs"
     @click.capture="onClick"
+    @keydown="onKeydown"
   >
     <div
       v-if="__POVESTE_DEV__ && renderedDoc && filePath"

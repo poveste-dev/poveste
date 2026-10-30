@@ -113,23 +113,27 @@ function loadGrammar(highlighter: Highlighter, lang: string): string {
   return id
 }
 
+/** The line of `source` that `content` starts on: frontmatter and a Vue SFC's other blocks come first. */
+function firstLineIn(source: string, content: string): number {
+  const start = source.indexOf(content)
+  return start <= 0 ? 1 : source.slice(0, start).split('\n').length
+}
+
 export async function createMarkdownRenderer(ctx: Context) {
   const highlighter = await getHighlighter()
-  const twoslash = createTwoslash(ctx.root, (code, lang, transformers) => highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang), transformers: transformers as never }))
-  // The fence being highlighted, for a Twoslash message to name: `highlight` is handed neither.
-  let fence: FenceAt = {}
-  const html = (code: string, lang: string, attrs: string) => (/(?:^|\s)twoslash(?:\s|$)/.test(attrs) ? twoslash(code, lang, fence) : undefined)
-    ?? highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang) })
+  const toHtml = (code: string, lang: string, transformers?: unknown[]) => highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang), transformers: transformers as never })
+  const twoslash = createTwoslash(ctx.root, toHtml)
+  /*
+   * Unprefixed utilities: the `ptw-` prefix went away with Tailwind v4, and
+   * `not-prose` in particular is matched by the typography plugin's own
+   * `[class~="not-prose"]` selector, so a prefixed spelling silently opts the
+   * block back *into* prose. These classes are generated because main.pcss
+   * `@source`s this file — v4 auto-detection only scans the app package.
+   */
+  const codeBlock = (lang: string, html: string) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${html}</div>`
 
   const md = new MarkdownIt({
-    /*
-     * Unprefixed utilities: the `ptw-` prefix went away with Tailwind v4, and
-     * `not-prose` in particular is matched by the typography plugin's own
-     * `[class~="not-prose"]` selector, so a prefixed spelling silently opts the
-     * block back *into* prose. These classes are generated because main.pcss
-     * `@source`s this file — v4 auto-detection only scans the app package.
-     */
-    highlight: (code, lang, attrs) => `<div class="relative not-prose __poveste-code __histoire-code"><div class="absolute top-0 right-0 text-xs text-white/40">${lang}</div>${html(code, lang, attrs)}</div>`,
+    highlight: (code, lang) => codeBlock(lang, toHtml(code, lang)),
     linkify: true,
     html: true,
     breaks: false,
@@ -140,11 +144,16 @@ export async function createMarkdownRenderer(ctx: Context) {
   // relied on it, so it stays on.
   md.linkify.set({ fuzzyLink: true })
 
+  // Here rather than in `highlight`, which is handed neither the file nor the line a Twoslash message names.
   const renderFence = md.renderer.rules['fence']!
   md.renderer.rules['fence'] = (tokens, idx, options, env, self) => {
-    const line = tokens[idx]?.map?.[0]
-    fence = { ...env?.['file'] ? { file: path.relative(ctx.root, String(env['file'])) } : {}, ...line !== undefined ? { line: line + 1 } : {} }
-    return renderFence(tokens, idx, options, env, self)
+    const token = tokens[idx]!
+    if (!token.info.trim().split(/\s+/).slice(1).includes('twoslash')) {
+      return renderFence(tokens, idx, options, env, self)
+    }
+    const line = token.map ? token.map[0] + (Number(env?.['firstLine']) || 1) : undefined
+    const at: FenceAt = { ...env?.['file'] ? { file: path.relative(ctx.root, String(env['file'])) } : {}, ...line !== undefined ? { line } : {} }
+    return renderFence(tokens, idx, { ...options, highlight: (code, lang) => codeBlock(lang, twoslash(code, lang, at) ?? toHtml(code, lang)) }, env, self)
   }
 
   md.use(anchor, {
@@ -232,6 +241,7 @@ export async function createMarkdownPlugins(ctx: Context) {
       const file = id.substring(0, id.indexOf('?vue'))
       const html = md.render(code, {
         file,
+        firstLine: firstLineIn(fs.readFileSync(file, 'utf8'), code),
       })
       return `export default Comp => {
         Comp.doc = ${JSON.stringify(html)}
@@ -277,7 +287,8 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     const truncatedName = path.basename(absolutePath, '.md')
     const isRelatedToStory = dirFiles.some(file => !file.endsWith('.md') && file.startsWith(truncatedName))
 
-    const { data: frontmatter, content } = matter(fs.readFileSync(absolutePath, 'utf8'))
+    const source = fs.readFileSync(absolutePath, 'utf8')
+    const { data: frontmatter, content } = matter(source)
 
     let html: string | undefined
 
@@ -287,6 +298,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     if (watcherIsReady) {
       html = md.render(content, {
         file: absolutePath,
+        firstLine: firstLineIn(source, content),
       })
     }
 
@@ -355,7 +367,8 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
       return
     }
 
-    const { data: frontmatter, content } = matter(fs.readFileSync(file.absolutePath, 'utf8'))
+    const source = fs.readFileSync(file.absolutePath, 'utf8')
+    const { data: frontmatter, content } = matter(source)
 
     file.frontmatter = frontmatter
     file.content = content
@@ -369,6 +382,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     }
     file.html = md.render(content, {
       file: file.absolutePath,
+      firstLine: firstLineIn(source, content),
     })
 
     notifyMarkdownFileChange(file)
@@ -402,6 +416,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     for (const mdFile of ctx.markdownFiles) {
       mdFile.html = md.render(mdFile.content ?? '', {
         file: mdFile.absolutePath,
+        firstLine: firstLineIn(fs.readFileSync(mdFile.absolutePath, 'utf8'), mdFile.content ?? ''),
       })
     }
     watcherIsReady = true

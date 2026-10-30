@@ -11,6 +11,11 @@ export interface FenceAt {
 
 type Highlighter = (code: string, lang: string, at: FenceAt) => string | undefined
 
+const LANGS = ['ts', 'tsx', 'js', 'jsx']
+const ALIASES: Record<string, string> = { typescript: 'ts', javascript: 'js' }
+// A dev server edits blocks for hours; the oldest compiled block goes first past this.
+const CACHED_BLOCKS = 500
+
 /*
  * A fence marked `twoslash` in a book's markdown docs shows types on hover (#1525).
  * Nothing loads until the first one is met: a book that marks none never loads
@@ -30,15 +35,26 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
       const { createTwoslasher } = fromShiki('twoslash/core')
       const twoslasher = createTwoslasher({ tsModule: bundledTypescript(), tsLibDirectory: dirname(own.resolve('typescript')), vfsRoot: root })
       const factory = createTransformerFactory(twoslasher, rendererRich({
-        // Focusable, so a type opens from the keyboard as well as on hover.
-        hast: { hoverToken: { properties: { tabindex: 0 } } },
+        // Out of the tab order: the block is one stop, and the docs panel moves between its names with the arrow keys.
+        hast: { hoverToken: { properties: { tabindex: -1 } } },
       }))
+      const compiled = new Map<string, unknown>()
+      const typesCache = {
+        read: (code: string, lang: string) => compiled.get(`${lang}\0${code}`),
+        write: (code: string, result: unknown, lang: string) => {
+          compiled.set(`${lang}\0${code}`, result)
+          if (compiled.size > CACHED_BLOCKS) {
+            compiled.delete(compiled.keys().next().value!)
+          }
+        },
+      }
       return {
         transformer: (at: FenceAt) => factory({
+          langs: LANGS,
           explicitTrigger: false,
+          typesCache,
           onTwoslashError: (error: unknown) => {
-            const where = at.file ? `${at.file}${at.line ? `:${at.line}` : ''}` : 'a markdown file'
-            warn(pc.yellow(`[poveste] Twoslash could not compile the block at ${where}, so it renders without types: ${firstLine(error)}`))
+            warn(pc.yellow(`[poveste] Twoslash could not compile the block at ${where(at)}, so it renders without types: ${firstLine(error)}`))
           },
         }),
       }
@@ -49,14 +65,25 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
   }
 
   return (code, lang, at) => {
-    if (!state) {
-      state = load()
-      if ('off' in state) {
-        warn(pc.yellow(`[poveste] ${state.off}`))
-      }
+    const name = ALIASES[lang] ?? lang
+    if (!LANGS.includes(name)) {
+      warn(pc.yellow(`[poveste] Twoslash reads TypeScript and JavaScript only, so the \`${lang}\` block at ${where(at)} renders without types.`))
+      return undefined
     }
-    return 'off' in state ? undefined : highlight(code, lang, [state.transformer(at)])
+    // A failed load is tried again, so reinstalling during `poveste dev` needs no restart.
+    if (!state || 'off' in state) {
+      const loaded = load()
+      if ('off' in loaded && (!state || loaded.off !== state.off)) {
+        warn(pc.yellow(`[poveste] ${loaded.off}`))
+      }
+      state = loaded
+    }
+    return 'off' in state ? undefined : highlight(code, name, [state.transformer(at)])
   }
+}
+
+function where(at: FenceAt): string {
+  return at.file ? `${at.file}${at.line ? `:${at.line}` : ''}` : 'a markdown file'
 }
 
 function firstLine(error: unknown): string {
