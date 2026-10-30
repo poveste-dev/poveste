@@ -19,7 +19,7 @@ export default defineConfig({
 })
 ```
 
-Your Vue components get a props, slots and events table on each story's **Docs** tab, through `@poveste/plugin-vue`. It reads the types with a TypeScript 6 that plugin installs, so the project needs no TypeScript of its own, and one on TypeScript 7 is read the same way.
+Your Vue components get a props, slots and events table on each story's **Docs** tab, through `@poveste/plugin-vue`. It reads the types with a TypeScript 6 Poveste installs, so the project needs no TypeScript of its own, and one on TypeScript 7 is read the same way.
 
 [Nuxt guide](https://poveste.dev/guide/nuxt/getting-started) ·
 [Documentation](https://poveste.dev)

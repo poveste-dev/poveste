@@ -7,7 +7,7 @@
 // reaches that path.
 //
 // With `--prop`, it fails unless the tab shows that prop's row instead: a book with no
-// TypeScript, or with TypeScript 7, is read with the plugin's own TypeScript 6 (#1464).
+// TypeScript, or with TypeScript 7, is read with Poveste's TypeScript 6 (#1464).
 //
 // Usage: node docs-off.mjs <origin> <story path> <text the tab shows> [--prop]
 

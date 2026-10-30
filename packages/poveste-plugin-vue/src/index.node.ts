@@ -77,8 +77,8 @@ export function HstVue(): Plugin {
     docgen: {
       match: file => (file.endsWith('.vue') || SCRIPT_COMPONENT.test(file)) && !/\.story\.[^/]+$/.test(file) && !file.includes('/node_modules/'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
-      // This plugin's own TypeScript 6, whatever the book has (#1464).
-      typescript: import.meta.url,
+      // Poveste's own TypeScript 6, whatever the book has (#1464).
+      typescript: 'poveste',
     },
 
     supportPlugin: {

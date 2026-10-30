@@ -115,6 +115,7 @@
     "sade": "^1.8.1",
     "shiki": "^4.5.0",
     "tinyglobby": "^0.2.17",
+    "typescript": "6.0.3",
     "unhead": "^3.4.3"
   },
   "devDependencies": {
@@ -126,7 +127,6 @@
     "jiti": "^2.7.0",
     "solid-js": "^1.9.17",
     "tailwindcss3": "npm:tailwindcss@^3.4.17",
-    "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }
