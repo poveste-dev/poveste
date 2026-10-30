@@ -51,6 +51,16 @@ describe('markdown', async () => {
     expect(html).toContain('🎉')
   })
 
+  it('names a `twoslash` block\'s line in its file, counting from where the markdown starts', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const md = await createMarkdownRenderer(ctx)
+
+    md.render('Intro\n\n```ts twoslash\nconst n: number = \'one\'\n```\n', { file: path.resolve(__dirname, './markdown/Button.story.vue'), firstLine: 40 })
+
+    expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('block at Button.story.vue:42,'))
+    warn.mockRestore()
+  }, 60_000)
+
   it('puts a fenced block\'s attributes on its code element', async () => {
     const md = await createMarkdownRenderer(ctx)
 

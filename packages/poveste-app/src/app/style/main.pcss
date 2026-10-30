@@ -125,8 +125,8 @@
   }
 
   /*
-   * A `twoslash` fence's types (#1525), shown on hover and on keyboard focus: each
-   * hover token is focusable. A popup inside a scrolling `<pre>` would be cut off,
+   * A `twoslash` fence's types (#1525), shown on hover and on keyboard focus: the
+   * block is one tab stop and the arrow keys move between its names. A popup inside a scrolling `<pre>` would be cut off,
    * so such a block wraps its long lines instead of scrolling them.
    */
   .__poveste-code .shiki.twoslash {
@@ -136,7 +136,7 @@
 
   .__poveste-code .twoslash-hover {
     position: relative;
-    text-decoration: underline dotted rgb(255 255 255 / .4);
+    text-decoration: underline dotted color-mix(in oklab, currentColor 40%, transparent);
     text-underline-offset: .2em;
 
     &:focus-visible {
@@ -161,7 +161,9 @@
     border-radius: .25rem;
   }
 
-  .__poveste-code .twoslash-hover:is(:hover, :focus-visible) .twoslash-popup-container {
+  /* A `// ^?` query pins its type open. */
+  .__poveste-code .twoslash-hover:is(:hover, :focus-visible) .twoslash-popup-container,
+  .__poveste-code .twoslash-query-persisted .twoslash-popup-container {
     display: block;
   }
 

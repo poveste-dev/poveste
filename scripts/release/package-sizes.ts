@@ -59,8 +59,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 437_700 for #1527: type cells highlighted and a named type's hover,
   // 2,061 B over 0.22's `next` at 437,267.
   // Raised from 439_800 for #1525: the hover styles of a `twoslash` fence and the arrow
-  // keys that move between its names, 1,560 B over `next` with #1527 in it.
-  '@poveste/app': { bytes: 441_400, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // keys that move between its names, 1,348 B over `next` at 439,298.
+  '@poveste/app': { bytes: 441_100, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
