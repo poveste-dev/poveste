@@ -95,6 +95,7 @@
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
+    "@shikijs/twoslash": "^4.5.0",
     "change-case": "^5.4.4",
     "chokidar": "^5.0.0",
     "defu": "^6.1.4",
