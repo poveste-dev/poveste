@@ -19,7 +19,7 @@ export default defineConfig({
 })
 ```
 
-Your Vue components get a props, slots and events table on each story's **Docs** tab, through `@poveste/plugin-vue`. It needs `typescript` 6 or earlier in the project (`npm i -D typescript@6`), which npm doesn't install with Nuxt; without it, or with 7, it turns itself off and says so once.
+Your Vue components get a props, slots and events table on each story's **Docs** tab, through `@poveste/plugin-vue`. It reads the types with a TypeScript 6 Poveste installs, so the project needs no TypeScript of its own, and one on TypeScript 7 is read the same way.
 
 [Nuxt guide](https://poveste.dev/guide/nuxt/getting-started) ·
 [Documentation](https://poveste.dev)

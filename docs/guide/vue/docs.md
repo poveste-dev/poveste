@@ -90,7 +90,7 @@ If a story's markdown already has hand-written Props, Emits or Slots sections, d
 
 In `poveste dev`, nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it. `poveste build` reads every story's components in one pass, so a build pays for the whole book at once: see [`autoDocs`](../../reference/config.md#autodocs) for the time and memory.
 
-It needs TypeScript 6 or earlier installed in the book: `npm i -D typescript@6`. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
+It reads the types with a TypeScript 6 `@poveste/plugin-vue` installs, so the book needs no TypeScript of its own, and one on TypeScript 7 is read the same way. A book without a `tsconfig.json` is read as if it included every file. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
 
 To turn it off, or narrow it, set [`autoDocs`](../../reference/config.md#autodocs) in the config:
 

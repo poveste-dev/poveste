@@ -1,8 +1,8 @@
 import type { DocgenExtractor } from '@poveste/shared'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { join } from 'pathe'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { dirname, join } from 'pathe'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createExtractor } from '../extractor.js'
 
 const FIXTURE = fileURLToPath(new URL('../../../fixtures/docgen', import.meta.url))
@@ -200,5 +200,30 @@ describe('a book that allows a base library', () => {
 
     expect(doc!.props.map(prop => prop.name)).toContain('disabled')
     await allowing.dispose()
+  }, 60_000)
+})
+
+// #1464: a book on TypeScript 7, whose `require('typescript')` gives only its version,
+// is read with Poveste's TypeScript 6. A copy of the fixture, because Node caches
+// where a directory's `typescript` resolved, and the cases above resolved it first.
+describe('a book on TypeScript 7', () => {
+  const book = join(dirname(FIXTURE), `docgen-ts7-${process.pid}`)
+
+  beforeAll(() => {
+    cpSync(FIXTURE, book, { recursive: true })
+    const typescript = join(book, 'node_modules', 'typescript')
+    mkdirSync(typescript, { recursive: true })
+    writeFileSync(join(typescript, 'package.json'), JSON.stringify({ name: 'typescript', version: '7.0.2', main: 'index.js' }))
+    writeFileSync(join(typescript, 'index.js'), 'module.exports = { version: \'7.0.2\', versionMajorMinor: \'7.0\' }\n')
+  })
+  afterAll(() => rmSync(book, { recursive: true, force: true }))
+
+  it('is read with Poveste\'s TypeScript 6', async () => {
+    const extractor = await createExtractor({ root: book, options: {} })
+
+    const doc = await extractor.extract(join(book, 'Button.vue'))
+
+    expect(doc!.props.map(prop => prop.name)).toContain('label')
+    await extractor.dispose?.()
   }, 60_000)
 })

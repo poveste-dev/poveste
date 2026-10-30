@@ -42,4 +42,4 @@ export default defineStory({
 
 ## What it does
 
-It renders stories and variants. The source panel shows the story file. A story that names its component in its `component` field gets a props, slots and events table on its Docs tab, read from the component's types; it needs `typescript` 6 or earlier and `@types/react` in the book. See [Component docs](https://poveste.dev/guide/react/getting-started#component-docs). The controls panel is not wired to React: a variant with `initState` gets the generic state editor, and one without says why there is nothing there.
+It renders stories and variants. The source panel shows the story file. A story that names its component in its `component` field gets a props, slots and events table on its Docs tab, read from the component's types; it needs `@types/react` in the book, and reads the types with a TypeScript 6 Poveste installs, whatever TypeScript the book has. See [Component docs](https://poveste.dev/guide/react/getting-started#component-docs). The controls panel is not wired to React: a variant with `initState` gets the generic state editor, and one without says why there is nothing there.

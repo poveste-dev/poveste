@@ -55,7 +55,7 @@ and your content reads it from the snippet:
 >
 > [How, and why](https://poveste.dev/guide/migration-from-histoire#svelte-story-state-moves-to-initstate)
 
-A story's Docs tab shows a props, slots and events table for each component it imports, read from the type on the component's `$props()`. It needs `typescript` 6 or earlier and `svelte2tsx` in the book: `npm i -D typescript@6 svelte2tsx`. See [Component docs](https://poveste.dev/guide/svelte/getting-started#component-docs).
+A story's Docs tab shows a props, slots and events table for each component it imports, read from the type on the component's `$props()`. It reads it with a TypeScript 6 and `svelte2tsx` this plugin installs, so the book needs neither, whatever TypeScript it has. See [Component docs](https://poveste.dev/guide/svelte/getting-started#component-docs).
 
 [Svelte guide](https://poveste.dev/guide/svelte/getting-started) ·
 [SvelteKit](https://poveste.dev/guide/sveltekit/getting-started) ·

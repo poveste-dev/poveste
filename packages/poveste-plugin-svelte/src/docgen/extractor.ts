@@ -32,10 +32,12 @@ function realOf(file: string) {
 export function createExtractor(context: DocgenExtractorContext): DocgenExtractor {
   const root = context.root
   const options = (context.options ?? {}) as DocgenOptions
-  const typescript = loadFromBook<typeof ts>(root, 'typescript', 'reads Svelte components\' types')
+  // This plugin's own TypeScript 6 and `svelte2tsx`, which resolves the same copy (#1464).
+  const own = createRequire(import.meta.url)
+  const typescript: typeof ts = own('typescript')
   const { VERSION, parse } = loadFromBook<typeof import('svelte/compiler')>(root, 'svelte/compiler', 'reads Svelte components\' source')
-  const { svelte2tsx } = loadFromBook<typeof import('svelte2tsx')>(root, 'svelte2tsx', 'reads Svelte components\' types through it')
-  const shims = ['svelte-shims-v4.d.ts', 'svelte-jsx-v4.d.ts'].map(file => join(dirname(createRequire(join(root, 'package.json')).resolve('svelte2tsx/package.json')), file))
+  const { svelte2tsx } = own('svelte2tsx') as typeof import('svelte2tsx')
+  const shims = ['svelte-shims-v4.d.ts', 'svelte-jsx-v4.d.ts'].map(file => join(dirname(own.resolve('svelte2tsx/package.json')), file))
 
   const parsed = readTsconfig(typescript, root)
   // The book's `app.d.ts` and other globals, which the probe's imports would not reach.

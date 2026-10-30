@@ -76,13 +76,7 @@ The docs tab shows a props, slots and events table for each component a story im
 
 If a story's markdown already has hand-written Props, Emits or Slots sections, delete them once auto-docs is on: the table shows beside them, and the two drift apart. Keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
-It needs `typescript` 6 or earlier and `svelte2tsx` installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`:
-
-```sh
-npm i -D typescript@6 svelte2tsx
-```
-
-`svelte2tsx` is an optional peer of `@poveste/plugin-svelte`, so a book with `autoDocs: false` installs neither. Without it, auto-docs turns off and says so once in the log. A component without `lang="ts"` is read from what its destructuring implies.
+It reads the types with a TypeScript 6 and `svelte2tsx` that `@poveste/plugin-svelte` installs, so the book needs neither, and one on TypeScript 7 is read the same way. It reads the book's `tsconfig.app.json` or `tsconfig.json`. A book that installed `svelte2tsx` for an earlier release can remove it; on TypeScript 7 it has to, since `svelte2tsx` refuses TypeScript 7 as a peer and npm stops the install. A component without `lang="ts"` is read from what its destructuring implies.
 
 ## Source code
 

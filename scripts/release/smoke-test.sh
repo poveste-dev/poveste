@@ -248,16 +248,16 @@ dev_renders() {
 # off. Opt-in with the dev pass. Only an installed book lacks what auto-docs needs:
 # the workspace hoists it, and the tab spun forever there unseen (#1502).
 docs_tab_says() {
-  local name="$1" app="$2" path="$3" expected="$4" port="$5"
+  local name="$1" app="$2" path="$3" expected="$4" port="$5" mode="${6:-}"
   [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
 
   echo "▸ [$name] Running poveste dev and opening the Docs tab at $path"
-  local dev_log="$WORK/dev-docs-$name.log"
+  local dev_log="$WORK/dev-docs-$name-$port.log"
   ( cd "$app" && exec ./node_modules/.bin/poveste dev --port "$port" ) > "$dev_log" 2>&1 &
   DEV_PID=$!
 
-  if ! node "$ROOT/scripts/release/docs-off.mjs" "http://localhost:$port" "$path" "$expected"; then
-    echo "❌ Smoke test FAILED [$name] — the Docs tab did not say why auto-docs is off"
+  if ! node "$ROOT/scripts/release/docs-off.mjs" "http://localhost:$port" "$path" "$expected" $mode; then
+    echo "❌ Smoke test FAILED [$name] — the Docs tab did not show what it should: $expected"
     tail -20 "$dev_log"
     exit 1
   fi
@@ -265,13 +265,12 @@ docs_tab_says() {
   kill "$DEV_PID" 2>/dev/null
   wait "$DEV_PID" 2>/dev/null || true
   DEV_PID=""
-  echo "✅ [$name] Docs tab says auto-docs is off"
+  echo "✅ [$name] Docs tab shows $expected"
 }
 
-# The workspace's TypeScript, into a consumer whose remaining pass needs it.
-install_typescript() {
-  [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
-  ( cd "$1" && npm install --no-audit --no-fund --loglevel=error "typescript@$(node -p "require('$ROOT/node_modules/typescript/package.json').version")" )
+# docs_tab_shows <name> <app> <path> <prop> <port> — the Docs tab documents <prop>.
+docs_tab_shows() {
+  docs_tab_says "$1" "$2" "$3" "$4" "$5" --prop
 }
 
 # one_dependency_pass <name> — after `dev_renders`, over the log it left.
@@ -397,8 +396,9 @@ if ! node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$ROOT/scripts/release/
 fi
 
 dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
-# This book installs no TypeScript, as a JavaScript Vue project doesn't.
-docs_tab_says vue "$VUE_APP" "/story/src-button-story-vue?tab=docs" "Auto-docs is off: it reads component types with TypeScript, which this book does not have." 4798
+# This book installs no TypeScript, as a JavaScript Vue project doesn't, and is
+# read with Poveste's TypeScript 6 (#1464).
+docs_tab_shows vue "$VUE_APP" "/story/src-button-story-vue?tab=docs" label 4798
 pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
@@ -570,9 +570,14 @@ pnpm_dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantI
   "$(plugin_tgz poveste-plugin-svelte)" \
   "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
   "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
-# With TypeScript and without the optional `svelte2tsx`, which npm leaves out.
-install_typescript "$SVELTE_APP"
-docs_tab_says svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" "Auto-docs is off: it reads Svelte components' types through" 4799
+# Neither TypeScript nor `svelte2tsx` in the book: the plugin carries both (#1464).
+docs_tab_shows svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" label 4799
+# A book on TypeScript 7, which `svelte2tsx` peers out, installs with no ERESOLVE and
+# is still read with the plugin's own TypeScript 6.
+if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
+  ( cd "$SVELTE_APP" && npm install --no-audit --no-fund --loglevel=error -D "typescript@^7" )
+  docs_tab_shows svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" label 4803
+fi
 
 # ── histoire books ───────────────────────────────────────────────────────────
 
@@ -819,8 +824,7 @@ install_and_build react "$REACT_APP" \
 # Nothing else starts `poveste dev` on a React book: the example runs built only (#1289).
 dev_renders react "$REACT_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4796
 one_dependency_pass react
-# With TypeScript and without `@types/react`, since React ships no types of its own.
-install_typescript "$REACT_APP"
+# Without `@types/react`, which React needs for types since it ships none of its own.
 docs_tab_says react "$REACT_APP" "/story/src-button-story-tsx?tab=docs" "Auto-docs is off: it reads component types from" 4800
 
 # ── Quasar ───────────────────────────────────────────────────────────────────
