@@ -82,7 +82,7 @@ const size: Size = 'md'
 ```
 ````
 
-It compiles with the TypeScript 6 Poveste installs for auto-docs, so the book needs nothing more, whatever TypeScript it has. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
+It compiles with the TypeScript 6 Poveste installs for auto-docs, so the book needs nothing more, whatever TypeScript it has. In a book that installs TypeScript 7 with npm, `npm ls` reports `typescript` as invalid, because Twoslash asks for TypeScript 5 or 6 beside it: that is expected, and the blocks still compile with Poveste's copy. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
 
 A block with types wraps its long lines rather than scrolling them, so a type's popup is not cut off at the edge.
 
