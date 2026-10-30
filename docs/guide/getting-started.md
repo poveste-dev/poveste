@@ -289,7 +289,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
-*<u>*Auto-Docs*</u>: A props, slots and events table on a story's **Docs** tab, read from the types of the `.vue` or `.svelte` components the story imports, or, in Solid and React, of the component a story names in its `component` field. On by default, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). It reads the types with a TypeScript 6 its plugin installs, so the book needs none of its own, and one on TypeScript 7 is read the same way. A React book needs `@types/react`.
+*<u>*Auto-Docs*</u>: A props, slots and events table on a story's **Docs** tab, read from the types of the `.vue` or `.svelte` components the story imports, or, in Solid and React, of the component a story names in its `component` field. On by default, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). It reads the types with a TypeScript 6 Poveste installs, so the book needs none of its own, and one on TypeScript 7 is read the same way. A React book needs `@types/react`.
 
 ## Community
 

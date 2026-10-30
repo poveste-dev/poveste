@@ -73,6 +73,15 @@ function projectOf(typescript: typeof ts, file: string, seen: Set<string>): { fi
   return best
 }
 
+/**
+ * The TypeScript 6 Poveste installs and reads every book with, whatever the book has
+ * (#1464): TypeScript 7 has no JavaScript API to read types through. One copy, here,
+ * so an npm book on TypeScript 7 gets it nested once rather than under each plugin.
+ */
+export function bundledTypescript(): typeof ts {
+  return createRequire(import.meta.url)('typescript')
+}
+
 /** A package as the book resolves it, so types are read as its editor reads them. */
 export function loadFromBook<T>(root: string, id: string, why: string): T {
   try {

@@ -106,12 +106,13 @@ export interface PluginDocgen {
   options?: unknown
   /**
    * Where the extractor loads `typescript` from, when it reads types with it: a file
-   * whose `require` it uses, or `'book'` for the book's own root. In a book where that
+   * whose `require` it uses, `'book'` for the book's own root, or `'poveste'` for the
+   * TypeScript 6 Poveste installs (#1464). In a book where that
    * finds no TypeScript, or one newer than 6, auto-docs is off for this plugin with one
    * log line (#1382, #1401). A value rather than a function, so a plugin whose entry
    * also runs in the browser can declare it.
    */
-  typescript?: 'book' | (string & {})
+  typescript?: 'book' | 'poveste' | (string & {})
   /**
    * Type packages the book must have for the extractor to read its framework's types,
    * such as `@types/react`. Missing one, auto-docs is off for this plugin with one log

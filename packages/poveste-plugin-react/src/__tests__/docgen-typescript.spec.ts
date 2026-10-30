@@ -21,7 +21,7 @@ const from = HstReact().docgen!.typescript!
 const types = HstReact().docgen!.types!
 
 describe('react auto-docs in a book', () => {
-  // Its own TypeScript 6 reads the book, whatever the book has, so neither turns it off (#1464).
+  // Poveste's TypeScript 6 reads the book, whatever the book has, so neither turns it off (#1464).
   it.each([['7.0.2'], ['6.0.3'], [undefined]])('stays on in a book whose TypeScript is %s', (version) => {
     expect(typescriptProblem(book(version), from)).toBeUndefined()
   })

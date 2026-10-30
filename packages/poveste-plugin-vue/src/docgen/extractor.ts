@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { dirname, join } from 'pathe'
-import { bookTsconfig } from 'poveste/docgen'
+import { bookTsconfig, bundledTypescript } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
@@ -17,15 +17,14 @@ type VueChecker = ReturnType<typeof createChecker>
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
 
 /**
- * Runs in the docgen worker, reading the book with this plugin's own TypeScript 6
+ * Runs in the docgen worker, reading the book with Poveste's own TypeScript 6
  * whatever the book has (#1464). `vue-component-meta`'s entry requires whichever
  * `typescript` it finds beside it, which in a book on TypeScript 7 is the book's, so
  * its checker is built here from `createCheckerBase`, which takes the copy to use.
  */
 export async function createExtractor(context: DocgenExtractorContext): Promise<DocgenExtractor> {
-  const require = createRequire(import.meta.url)
-  const typescript: typeof ts = require('typescript')
-  const meta = require.resolve('vue-component-meta')
+  const typescript = bundledTypescript()
+  const meta = createRequire(import.meta.url).resolve('vue-component-meta')
   const { createCheckerBase } = await import(pathToFileURL(join(dirname(meta), 'lib/checker.js')).href)
   const { TypeMeta } = await import(pathToFileURL(join(dirname(meta), 'lib/types.js')).href)
   const core = createRequire(meta)('@vue/language-core')

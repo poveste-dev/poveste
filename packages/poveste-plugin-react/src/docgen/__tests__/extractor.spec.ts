@@ -63,7 +63,7 @@ describe('the React extractor', () => {
 })
 
 // #1464: a book on TypeScript 7, whose `require('typescript')` gives only its version,
-// is read with the plugin's own TypeScript 6. A copy of the fixture, because Node caches
+// is read with Poveste's TypeScript 6. A copy of the fixture, because Node caches
 // where a directory's `typescript` resolved, and the cases above resolved it first.
 describe('a book on TypeScript 7', () => {
   const book = join(dirname(root), `docgen-ts7-${process.pid}`)
@@ -77,7 +77,7 @@ describe('a book on TypeScript 7', () => {
   })
   afterAll(() => rmSync(book, { recursive: true, force: true }))
 
-  it('is read with the plugin\'s own TypeScript 6', async () => {
+  it('is read with Poveste\'s TypeScript 6', async () => {
     const extractor = await createExtractor({ root: book, options: {} })
 
     const doc = await extractor.extract(join(book, 'src', 'Button.story.tsx'))

@@ -397,7 +397,7 @@ fi
 
 dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
 # This book installs no TypeScript, as a JavaScript Vue project doesn't, and is
-# read with the plugin's own TypeScript 6 (#1464).
+# read with Poveste's TypeScript 6 (#1464).
 docs_tab_shows vue "$VUE_APP" "/story/src-button-story-vue?tab=docs" label 4798
 pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \

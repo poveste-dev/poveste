@@ -74,8 +74,7 @@
   },
   "dependencies": {
     "@poveste/shared": "workspace:^",
-    "@poveste/vendors": "workspace:^",
-    "typescript": "6.0.3"
+    "@poveste/vendors": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "catalog:",
@@ -86,6 +85,7 @@
     "poveste": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "typescript": "catalog:",
     "vite": "^8.3.4",
     "vitest": "catalog:"
   }

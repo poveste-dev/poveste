@@ -77,21 +77,22 @@ function versionProblem(version: string | undefined): string | undefined {
 }
 
 /**
- * A plugin that brings its own TypeScript 6 finds none only when its install is broken:
+ * A plugin reading with Poveste's TypeScript 6, or its own, finds none only when the install is broken:
  * the book's own TypeScript, whatever its version, is not the one it reads with (#1464).
  */
 function ownCopyProblem(version: string | undefined): string | undefined {
   return version && Number.parseInt(version, 10) <= NEWEST_MAJOR
     ? undefined
-    : 'Auto-docs is off: the TypeScript 6 its plugin installs beside itself is missing. Reinstall the book\'s dependencies, or set `autoDocs: false` to turn it off without this message.'
+    : 'Auto-docs is off: the TypeScript 6 Poveste installs to read types with is missing. Reinstall the book\'s dependencies, or set `autoDocs: false` to turn it off without this message.'
 }
 
 /**
  * The same question for the `typescript` an extractor will load: required from
- * `from`, a file or file URL, or from the book's own root for `'book'`.
+ * `from`, a file or file URL, from the book's own root for `'book'`, or Poveste's
+ * own copy for `'poveste'`.
  */
 export function typescriptProblem(root: string, from: string): string | undefined {
-  const file = from === 'book' ? join(root, 'package.json') : from
+  const file = from === 'book' ? join(root, 'package.json') : from === 'poveste' ? import.meta.url : from
   const problem = from === 'book' ? versionProblem : ownCopyProblem
   if (process.versions['pnp']) {
     const manifest = pnpManifest(file, 'typescript')
