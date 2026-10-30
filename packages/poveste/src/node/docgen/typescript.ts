@@ -6,7 +6,7 @@ import { dirname, join } from 'pathe'
 // Every extractor reads types through TypeScript's JavaScript API. TypeScript 7
 // removed it: `vue-component-meta` 3.3 calls `ts.readJsonConfigFile`, and the JSX
 // walker and Svelte's `svelte2tsx` host need a `LanguageService` (#1382, #1401).
-export const NEWEST_MAJOR = 6
+const NEWEST_MAJOR = 6
 
 const FIX = 'Install `typescript@6` in the book to turn it on, or set `autoDocs: false` to turn it off without this message.'
 
