@@ -82,7 +82,7 @@ const size: Size = 'md'
 ```
 ````
 
-It needs `@shikijs/twoslash` and TypeScript 6 or earlier in the book: `npm i -D @shikijs/twoslash typescript@6`. Without them, or with TypeScript 7, a marked block renders as plain code and the log says why, once. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
+It compiles with the TypeScript 6 Poveste installs for auto-docs, so the book needs nothing more, whatever TypeScript it has. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
 
 A block with types wraps its long lines rather than scrolling them, so a type's popup is not cut off at the edge.
 
