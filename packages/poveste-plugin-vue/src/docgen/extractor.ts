@@ -59,9 +59,15 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
 
   return {
     extract(file) {
-      // vue-component-meta's own message says "not part of the project" and not which one.
-      if (tsconfig && file.endsWith('.vue') && !checker.getProgram()?.getSourceFile(file)) {
-        throw new Error(`'${file}' is not in the program of ${tsconfig}, the tsconfig auto-docs reads. Add it to that tsconfig's \`include\`.`)
+      if (!checker.getProgram()?.getSourceFile(file)) {
+        // vue-component-meta's own message says "not part of the project" and not which one.
+        if (tsconfig && file.endsWith('.vue')) {
+          throw new Error(`'${file}' is not in the program of ${tsconfig}, the tsconfig auto-docs reads. Add it to that tsconfig's \`include\`.`)
+        }
+        // Without a tsconfig the program is the book's root, and a story can reach a component beside it (#1559).
+        if (!tsconfig && existsSync(file)) {
+          checker.updateFile(file, readFileSync(file, 'utf8'))
+        }
       }
       const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(file)
       if (!meta) {
