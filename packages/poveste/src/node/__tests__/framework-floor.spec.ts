@@ -1,10 +1,11 @@
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { describe, expect, it, onTestFinished } from 'vitest'
 // @ts-expect-error plain ES2015, deliberately outside `src` and outside `dist`
-import { frameworkProblems, rangeFloor } from '../../../framework-floor.mjs'
+import { frameworkProblems, rangeFloor, viteProblem } from '../../../framework-floor.mjs'
 
 const PACKAGE = path.resolve(__dirname, '../../..')
 
@@ -71,6 +72,50 @@ describe('a Nuxt below the plugin\'s peer floor', () => {
     }
 
     expect(stderr).not.toContain('You are using nuxt')
+  })
+})
+
+const POVESTE = { poveste: { version: '0.22.0', peerDependencies: { vite: '^8.0.0' } } }
+
+// A book still on a histoire-era Vite, installed with `--legacy-peer-deps` (#1551).
+describe('a Vite below Poveste\'s peer floor', () => {
+  it('is a problem naming the installed Vite and Poveste\'s range', () => {
+    const root = project({ ...POVESTE, vite: { version: '7.3.6' } })
+
+    expect(viteProblem(path.join(root, 'node_modules', 'poveste'))).toBe('You are using Vite 7.3.6. poveste requires Vite ^8.0.0. Please upgrade Vite.')
+  })
+
+  it('is read where Poveste finds Vite, so a copy installed for it wins over the book\'s', () => {
+    const root = project({ ...POVESTE, vite: { version: '7.3.6' } })
+    const own = path.join(root, 'node_modules', 'poveste', 'node_modules', 'vite')
+    mkdirSync(own, { recursive: true })
+    writeFileSync(path.join(own, 'package.json'), JSON.stringify({ name: 'vite', version: '8.1.0' }))
+
+    expect(viteProblem(path.join(root, 'node_modules', 'poveste'))).toBeNull()
+  })
+
+  it('exits 1 before the CLI is loaded, saying so on stderr', () => {
+    const root = project({ ...POVESTE, vite: { version: '5.4.21' } })
+    const floor = pathToFileURL(path.join(PACKAGE, 'framework-floor.mjs')).href
+    const script = `import(${JSON.stringify(floor)}).then(m => { m.supportedFrameworks(process.cwd(), ${JSON.stringify(path.join(root, 'node_modules', 'poveste'))}) })`
+
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: root, encoding: 'utf8' })
+
+    expect(result.status).toBe(1)
+    expect(result.stderr).toBe('You are using Vite 5.4.21. poveste requires Vite ^8.0.0. Please upgrade Vite.\n')
+  })
+
+  it('is fine at the floor and above it', () => {
+    expect(viteProblem(path.join(project({ ...POVESTE, vite: { version: '8.0.0' } }), 'node_modules', 'poveste'))).toBeNull()
+    expect(viteProblem(path.join(project({ ...POVESTE, vite: { version: '8.3.4' } }), 'node_modules', 'poveste'))).toBeNull()
+  })
+
+  it('is fine with no Vite installed, which is the package manager\'s to report', () => {
+    expect(viteProblem(path.join(project(POVESTE), 'node_modules', 'poveste'))).toBeNull()
+  })
+
+  it('is fine in this workspace', () => {
+    expect(viteProblem(PACKAGE)).toBeNull()
   })
 })
 
