@@ -11,11 +11,14 @@
 // Nuxt only, until a second instance is reported. One measured case does not
 // justify holding six plugins' peers here; another is one line in `PEERS`.
 //
+// Vite is Poveste's own peer, and checked here for the same reason (#1551).
+//
 // Plain ES2015 beside `node-floor.mjs`, for the reason that file gives.
 
 import { readFileSync, writeSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { floorOf, isBelow } from './node-floor.mjs'
 
 /** Each plugin whose framework is checked, and the peer that names it. */
@@ -75,9 +78,24 @@ export function frameworkProblems(dir) {
   return problems
 }
 
+/**
+ * A sentence when the Vite that Poveste imports is below Poveste's peer, or `null`.
+ *
+ * Read from Poveste's own directory, as Node resolves its `import 'vite'`, not from
+ * the book's. Below the floor the CLI's commands fail on import, naming neither:
+ * Vite 5 has no `vite/module-runner`, and Vite 6 and 7 no `parseSync`.
+ */
+export function viteProblem(povesteDir) {
+  const range = JSON.parse(readFileSync(join(povesteDir, 'package.json'), 'utf8')).peerDependencies?.vite
+  const floor = rangeFloor(range)
+  const version = installedManifest('vite', povesteDir)?.version
+  return floor && version && isBelow(version, floor) ? unsupportedFrameworkMessage('Vite', version, 'poveste', range) : null
+}
+
 /** Whether the project's frameworks may run the CLI, saying so on stderr when not. */
-export function supportedFrameworks(dir = process.cwd()) {
-  const problems = frameworkProblems(dir)
+export function supportedFrameworks(dir = process.cwd(), povesteDir = dirname(fileURLToPath(import.meta.url))) {
+  const vite = viteProblem(povesteDir)
+  const problems = vite ? [vite, ...frameworkProblems(dir)] : frameworkProblems(dir)
   if (problems.length === 0) {
     return true
   }
