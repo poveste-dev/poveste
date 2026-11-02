@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GLOBAL_LAYER_QUERY } from '../selectors.js'
-import { USER_CSS_MARK_START, userCssScopePlugin } from '../vite-plugin.js'
+import { SANDBOX_FLAG, sandboxCssPlugin, USER_CSS_MARK_START, userCssScopePlugin } from '../vite-plugin.js'
 
 function transform(id: string, code = 'body { color: red }', enabled = true) {
   const plugin = userCssScopePlugin({ enabled })
@@ -35,5 +35,50 @@ describe('userCssScopePlugin', () => {
 
   it('does nothing when isolation is disabled', () => {
     expect(transform('/project/src/poveste.css', 'body {}', false)).toBeNull()
+  })
+})
+
+describe('sandboxCssPlugin', () => {
+  const id = '/project/src/poveste.css'
+
+  // Vite's dev CSS module, as `vite:css-post` emits it.
+  function viteModule(css: string) {
+    return [
+      `import { updateStyle as __vite__updateStyle } from "/@vite/client"`,
+      `const __vite__id = ${JSON.stringify(id)}`,
+      `const __vite__css = ${JSON.stringify(css)}`,
+      `__vite__updateStyle(__vite__id, __vite__css)`,
+    ].join('\n')
+  }
+
+  function serve(css: string, moduleFor = viteModule) {
+    const sources = new Map<string, string>()
+    const wrapped = (userCssScopePlugin({ enabled: true, mode: 'wrap', sources }).transform as any).call({}, css, id).code
+    const result = (sandboxCssPlugin(sources).transform as any).call({}, moduleFor(wrapped), id) as { code: string } | null
+    return { wrapped, result }
+  }
+
+  function sheetIn(code: string, sandbox: boolean): string {
+    const declaration = code.split('\n').find(line => line.startsWith('const __vite__css'))!
+    // eslint-disable-next-line no-new-func
+    return new Function(`const globalThis = { ${SANDBOX_FLAG}: ${sandbox} }\n${declaration}\nreturn __vite__css`)()
+  }
+
+  it('gives the sandbox iframe the sheet as written', () => {
+    const { result } = serve(':root { --brand: #c80000 }')
+
+    expect(sheetIn(result!.code, true)).toBe(':root { --brand: #c80000 }')
+  })
+
+  it('gives the app the wrapped sheet', () => {
+    const { wrapped, result } = serve(':root { --brand: #c80000 }')
+
+    expect(sheetIn(result!.code, false)).toBe(wrapped)
+  })
+
+  it('leaves a module in any other shape wrapped', () => {
+    const { result } = serve(':root { --brand: #c80000 }', css => `export default ${JSON.stringify(css)}`)
+
+    expect(result).toBeNull()
   })
 })

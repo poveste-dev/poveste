@@ -37,14 +37,28 @@ test.describe('root selectors in setup-file CSS', () => {
     expect(await readTokens(page, `[data-testid="sandbox-render"] ${STORY}`)).toEqual(TOKENS)
   })
 
-  // `bundle-sandbox.css` is not wrapped — inside the iframe the story root *is*
-  // the body, so these selectors resolve natively. Pins that, nothing more.
+  // The sandbox iframe's CSS is not wrapped, so these selectors resolve natively.
+  // Pins that, nothing more.
   test('reach a story rendered in the sandbox iframe', async ({ page }) => {
     await page.goto(IFRAME_STORY)
     const frame = page.getByTestId('preview-iframe').contentFrame()
     await expect(frame.locator(STORY)).toBeVisible()
 
     expect(await readTokens(frame, STORY)).toEqual(TOKENS)
+  })
+
+  // The iframe is the story's own document, so its CSS is not wrapped there, in
+  // dev or in a build, and `:root` is `document.documentElement` (#1532).
+  test('land on the sandbox iframe\'s own root as written', async ({ page }) => {
+    await page.goto(IFRAME_STORY)
+    const frame = page.getByTestId('preview-iframe').contentFrame()
+    await expect(frame.locator(STORY)).toBeVisible()
+
+    expect(await readTokens(frame, 'html')).toEqual({
+      '--user-html-token': 'rebeccapurple',
+      '--user-body-token': '',
+      '--user-primary': 'tomato',
+    })
   })
 
   // The wrap exists to keep consumer CSS off the chrome; a rewrite that landed

@@ -13,6 +13,8 @@ export interface UserCssScopePluginOptions {
    * no merger).
    */
   mode?: 'mark' | 'wrap'
+  /** Filled in 'wrap' mode with each sheet as it was before wrapping, for `sandboxCssPlugin`. */
+  sources?: Map<string, string>
 }
 
 export function userCssScopePlugin(opts: UserCssScopePluginOptions): VitePlugin {
@@ -29,10 +31,39 @@ export function userCssScopePlugin(opts: UserCssScopePluginOptions): VitePlugin 
       if (!isCssPath(path, query)) return null
       if (hasGlobalQuery(query)) return null
       if (mode === 'wrap') {
+        opts.sources?.set(id, code)
         return { code: wrapUserCss(code, { scopeRoot: STORY_SCOPE_ROOT, excludeRootClass: CONTROLS_SLOT.slice(1) }), map: null }
       }
       return {
         code: `${USER_CSS_MARK_START}\n${code}\n${USER_CSS_MARK_END}\n`,
+        map: null,
+      }
+    },
+  }
+}
+
+/** Set by the dev sandbox page before any module runs. */
+export const SANDBOX_FLAG = '__POVESTE_SANDBOX__'
+
+// Vite's dev CSS module, one line: `const __vite__css = "<the sheet>"`.
+const VITE_DEV_CSS_RE = /^const __vite__css = (".*")$/m
+
+/**
+ * A built book gives the sandbox iframe its own stylesheet, unwrapped: the iframe
+ * is the story's document, so `:root` is the story's root (#1532). Dev serves one
+ * module to the app and the iframe alike, so the sheet is picked where it runs.
+ * A module in any other shape keeps the wrapped sheet.
+ */
+export function sandboxCssPlugin(sources: Map<string, string>): VitePlugin {
+  return {
+    name: 'poveste:style-isolation:sandbox-css',
+    enforce: 'post',
+    transform(code, id) {
+      const source = sources.get(id)
+      const declaration = source === undefined ? null : VITE_DEV_CSS_RE.exec(code)
+      if (!declaration) return null
+      return {
+        code: code.replace(declaration[0], () => `const __vite__css = globalThis.${SANDBOX_FLAG} ? ${JSON.stringify(source)} : ${declaration[1]}`),
         map: null,
       }
     },
