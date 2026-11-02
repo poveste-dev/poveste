@@ -88,6 +88,9 @@ export default defineConfig({
         // in front of every story that has a prop (#233).
         'src/client/auto-props.ts',
         'src/collect/index.ts',
+        // Imported by a story test, in the book's own Vitest, which compiles the
+        // `.svelte` hosts it reaches as the book compiles its stories.
+        'src/testing/index.ts',
       ],
 
       output: {

@@ -3,6 +3,7 @@
   "exclude": [
     "src/client",
     "src/collect",
+    "src/testing",
     "src/**/*.spec.ts"
   ]
 }
