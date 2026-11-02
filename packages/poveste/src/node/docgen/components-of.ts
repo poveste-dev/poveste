@@ -15,6 +15,8 @@ export function storyOf(storyFiles: ServerStoryFile[], storyId: string): { file:
 export interface StoryComponents {
   files: string[]
   unresolved: number
+  /** Of those, the ones that came from an installed package instead. */
+  packaged: number
 }
 
 /**
@@ -25,15 +27,15 @@ export interface StoryComponents {
 export async function componentsOfStory(storyFiles: ServerStoryFile[], server: Pick<ViteDevServer, 'moduleGraph' | 'pluginContainer'>, storyId: string): Promise<StoryComponents> {
   const storyFile = storyOf(storyFiles, storyId)?.file
   if (!storyFile) {
-    return { files: [], unresolved: 0 }
+    return { files: [], unresolved: 0, packaged: 0 }
   }
   const resolve: Resolve = async (specifier, importer) => {
     const id = (await server.pluginContainer.resolveId(specifier, importer, { ssr: true }))?.id.split('?')[0]
     return id && isAbsolute(id) && existsSync(id) ? id : undefined
   }
-  const traced = await storyComponents(storyFile, resolve).catch(() => ({ files: [], named: false, unresolved: 0 }))
+  const traced = await storyComponents(storyFile, resolve).catch(() => ({ files: [], named: false, unresolved: 0, packaged: 0 }))
   if (traced.named) {
-    return { files: traced.files, unresolved: traced.unresolved }
+    return { files: traced.files, unresolved: traced.unresolved, packaged: traced.packaged }
   }
   const storyPaths = new Set(storyFiles.map(file => file.path))
   const files = new Set(traced.files)
@@ -44,5 +46,5 @@ export async function componentsOfStory(storyFiles: ServerStoryFile[], server: P
       }
     }
   }
-  return { files: [...files], unresolved: traced.unresolved }
+  return { files: [...files], unresolved: traced.unresolved, packaged: traced.packaged }
 }

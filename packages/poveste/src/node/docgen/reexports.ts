@@ -198,28 +198,37 @@ export async function followName(file: string, name: string, resolve: Resolve, d
 /**
  * The component files a story names: its `component` field when it has one, else every
  * value it imports from the book, followed through re-exports. A capitalised import that
- * reaches no component is counted in `unresolved`, so the Docs tab can say why it has no table.
+ * reaches no component is counted in `unresolved`, or in `packaged` when it comes from an
+ * installed package, so the Docs tab can say why it has no table.
  */
-export async function storyComponents(storyFile: string, resolve: Resolve): Promise<{ files: string[], named: boolean, unresolved: number }> {
+export async function storyComponents(storyFile: string, resolve: Resolve): Promise<{ files: string[], named: boolean, unresolved: number, packaged: number }> {
   const shape = shapeOf(storyFile)
   const named = shape.named.length > 0
   const files = new Set<string>()
   let unresolved = 0
+  let packaged = 0
   for (const local of named ? shape.named : [...shape.imports.keys()]) {
     const [head, member] = local.split('.')
     const binding = shape.imports.get(head!)
-    const target = binding && (binding.imported === '*') === (member !== undefined) ? await resolve(binding.source, storyFile) : undefined
+    const source = binding && await resolve(binding.source, storyFile)
+    const target = binding && (binding.imported === '*') === (member !== undefined) ? source : undefined
+    const fromPackage = !!source?.includes('/node_modules/')
+    const component = named || /^[A-Z]/.test(local)
     // A package's own exports, such as `vue` or `@iconify/vue`, are not the book's components.
-    if (!named && (!target || target.includes('/node_modules/'))) {
+    if (!named && (!target || fromPackage)) {
+      packaged += fromPackage && component ? 1 : 0
       continue
     }
     const found = target && await followName(target, member ?? binding!.imported, resolve)
     if (found) {
       files.add(found)
     }
-    else if (named || /^[A-Z]/.test(local)) {
+    else if (fromPackage) {
+      packaged++
+    }
+    else if (component) {
       unresolved++
     }
   }
-  return { files: [...files], named, unresolved }
+  return { files: [...files], named, unresolved, packaged }
 }
