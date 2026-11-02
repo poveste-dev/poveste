@@ -65,6 +65,23 @@ describe('tsBlocks', () => {
     expect(tsBlocks(section(page, '### Quasar')!)).toEqual(['export default {}\n'])
   })
 
+  // #1526: what the reader sees is what is compared, not the context Twoslash compiles it in.
+  it('reads a Twoslash block from after its hidden preamble, without its flags', () => {
+    const page = [
+      '### Quasar',
+      '',
+      '```ts twoslash',
+      '// @jsxImportSource: solid-js',
+      'import { defineConfig } from \'poveste\'',
+      '// ---cut---',
+      '// poveste.config.ts',
+      'export default defineConfig({})',
+      '```',
+    ].join('\n')
+
+    expect(tsBlocks(section(page, '### Quasar')!)).toEqual(['export default defineConfig({})\n'])
+  })
+
   it('drops the path comment, which labels the block rather than belonging to it', () => {
     expect(tsBlocks(section(PAGE, '### Quasar')!)).toEqual([
       'export default {}\n',
