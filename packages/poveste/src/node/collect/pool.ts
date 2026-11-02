@@ -20,6 +20,7 @@ interface Task<P, R> {
 
 export interface PoolOptions {
   filename: string | URL
+  /** The most workers it holds. Each starts when a task finds none idle, not before (#415). */
   threads: number
   /** Answers the `invoke` calls workers make while they run. */
   invoke: Invoke
@@ -45,7 +46,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
 
   let nextId = 0
 
-  for (let i = 0; i < options.threads; i++) {
+  function spawn() {
     const worker = new Worker(options.filename, { stdout: false, stderr: false })
     const handle: WorkerHandle = { worker, current: undefined }
 
@@ -87,7 +88,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
     })
 
     workers.push(handle)
-    idle.push(handle)
+    return handle
   }
 
   function drop(handle: WorkerHandle) {
@@ -130,7 +131,7 @@ export function createPool<P, R>(options: PoolOptions): Pool<P, R> {
         return
       }
       const task: Task<P, R> = { id: nextId++, payload, resolve, reject }
-      const handle = idle.shift()
+      const handle = idle.shift() ?? (workers.length < options.threads ? spawn() : undefined)
       if (handle) {
         dispatch(handle, task)
       }

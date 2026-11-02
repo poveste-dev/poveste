@@ -295,6 +295,55 @@ describe('createPool', () => {
     expect([first, second]).toEqual(['a', 'b'])
   })
 
+  describe('starting workers', () => {
+    const THREAD_ID = `
+      import { threadId } from 'node:worker_threads'
+      parentPort.on('message', async (m) => {
+        if (m?.kind !== TASK) return
+        if (m.payload === 'exit') process.exit(1)
+        await new Promise(r => setTimeout(r, m.payload))
+        parentPort.postMessage({ kind: DONE, id: m.id, result: threadId })
+      })
+    `
+
+    it('runs stories that arrive one at a time on one worker, whatever the ceiling', async () => {
+      const created = pool<number, number>(workerFile('one-at-a-time', THREAD_ID), 4)
+      const threads = new Set<number>()
+
+      for (let i = 0; i < 8; i++) {
+        threads.add(await created.run(0))
+      }
+
+      expect(threads.size).toBe(1)
+    })
+
+    it('starts one worker for each story that finds none idle, up to the ceiling', async () => {
+      const created = pool<number, number>(workerFile('burst', THREAD_ID), 4)
+
+      const threads = await Promise.all(Array.from({ length: 12 }, () => created.run(50)))
+
+      expect(new Set(threads).size).toBe(4)
+    })
+
+    it('starts no more workers than a burst smaller than the ceiling needs', async () => {
+      const created = pool<number, number>(workerFile('small-burst', THREAD_ID), 8)
+
+      const threads = await Promise.all([created.run(50), created.run(50)])
+
+      expect(new Set(threads).size).toBe(2)
+    })
+
+    it('replaces a worker that died when the next story arrives', async () => {
+      // A dev server outlives its workers. One story that takes the last of them down
+      // must not leave every later edit waiting on a queue nothing will ever serve.
+      const created = pool<number | string, number>(workerFile('replaced', THREAD_ID), 1)
+
+      await expect(created.run('exit')).rejects.toThrow(/exited before its story finished/)
+
+      await expect(created.run(0)).resolves.toEqual(expect.any(Number))
+    })
+  })
+
   it('refuses to start work once destroyed', async () => {
     const file = workerFile('idle', `parentPort.on('message', () => {})`)
     const created = pool(file)

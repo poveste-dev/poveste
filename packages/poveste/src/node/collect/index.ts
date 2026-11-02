@@ -15,6 +15,7 @@ import { strayLayoutKeys } from './layout-keys.js'
 import { createModuleServer } from './module-server.js'
 import { createPool } from './pool.js'
 import { INVALIDATE, INVALIDATE_ALL } from './task.js'
+import { threadCeiling } from './threads.js'
 
 export interface UseCollectStoriesOptions {
   server: ViteDevServer
@@ -46,12 +47,8 @@ export function useCollectStories(options: UseCollectStoriesOptions, ctx: Contex
 
   const defineGlobals = globalsFromDefine(server.config.define)
 
-  const maxThreads = ctx.config.collectMaxThreads ?? cpus().length
-
-  const threadsCount = ctx.mode === 'dev'
-    ? Math.max(Math.min(maxThreads, Math.floor(cpus().length / 2)), 1)
-    : Math.max(Math.min(maxThreads, cpus().length - 1), 1)
-  console.log(pc.blue(`Using ${threadsCount} thread${threadsCount === 1 ? '' : 's'} for story collection`))
+  const threadsCount = threadCeiling(ctx.config.collectMaxThreads, ctx.mode, cpus().length)
+  console.log(pc.blue(`Using up to ${threadsCount} thread${threadsCount === 1 ? '' : 's'} for story collection`))
 
   const threadPool = createPool<Payload, ReturnData>({
     filename: new URL('./worker.js', import.meta.url),
