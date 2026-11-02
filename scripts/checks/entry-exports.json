@@ -452,6 +452,7 @@
     "PropsReading",
     "ambientFiles",
     "bookTsconfig",
+    "bundledTypescript",
     "createJsxExtractor",
     "declaredOnlyInPackages",
     "documentProps",

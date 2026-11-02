@@ -76,9 +76,6 @@ function vueStarter(): Starter {
         '@poveste/plugin-vue': POVESTE,
         // v6 peers `^5 || ^6 || ^7 || ^8`, so it already spans Vite 8.
         '@vitejs/plugin-vue': '^6.0.0',
-        // Auto-docs reads types with TypeScript, an optional peer npm does not
-        // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
-        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { vue: '^3.5.26' },
@@ -148,11 +145,6 @@ function svelteStarter(): Starter {
       // and it in turn requires `svelte ^5.46.4`.
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
-      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
-      'svelte2tsx': '^0.7.61',
-      // Auto-docs reads types with TypeScript, an optional peer npm does not
-      // install, and none of its extractors can read 7 (#1382, #1401).
-      'typescript': '~6.0.3',
       'vite': VITE,
     }),
     files: {
@@ -215,11 +207,6 @@ function svelteKitStarter(): Starter {
       '@sveltejs/kit': '^2.53.0',
       '@sveltejs/vite-plugin-svelte': '^7.0.0',
       'svelte': '^5.46.4',
-      // Auto-docs turns a component into types with it: an optional peer, as is TypeScript.
-      'svelte2tsx': '^0.7.61',
-      // Auto-docs reads types with TypeScript, an optional peer npm does not
-      // install, and none of its extractors can read 7 (#1382, #1401).
-      'typescript': '~6.0.3',
       'vite': VITE,
     }),
     files: {
@@ -307,9 +294,6 @@ function nuxtStarter(): Starter {
       // 4.6, whose dev error reporter constructs a `BroadcastChannel` that
       // StackBlitz's WebContainer throws on (#1244).
       'nuxt': '~4.5.2',
-      // Auto-docs reads types with TypeScript, an optional peer npm does not
-      // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
-      'typescript': '~6.0.3',
       // StackBlitz runs npm 10, which crashes with `Cannot read properties of null
       // (reading 'edgesOut')` (npm/cli#9787) on a Nuxt tree with Vite 8.3.4 or older,
       // whose peer range for `@vitejs/devtools` stops short of the 0.8 that
@@ -377,9 +361,6 @@ function solidStarter(): Starter {
         '@poveste/plugin-solid': POVESTE,
         // The plugin's own peer ranges. npm resolves the newest 2.11, and 2.11.11
         // is the first to peer Vite 8.
-        // Auto-docs reads types with TypeScript, an optional peer npm does not
-        // install, and none of its extractors can read 7 (#1382, #1401).
-        'typescript': '~6.0.3',
         'vite': VITE,
         'vite-plugin-solid': '^2.11.0',
       },
@@ -462,9 +443,6 @@ function reactStarter(): Starter {
         // React type as `any`, and an `on*` handler is not an event.
         '@types/react': '~19.3.0',
         '@vitejs/plugin-react': '~6.1.0',
-        // Auto-docs reads types with TypeScript, an optional peer npm does not
-        // install, and none of its extractors can read 7 (#1382, #1401).
-        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { 'react': '~19.3.0', 'react-dom': '~19.3.0' },
@@ -541,9 +519,6 @@ function quasarStarter(): Starter {
         // The plugin's own peer floor. It brings `@vitejs/plugin-vue` and
         // `@quasar/vite-plugin` itself, so neither is listed here.
         '@quasar/app-vite': '^3.8.0',
-        // Auto-docs reads types with TypeScript, an optional peer npm does not
-        // install, and `vue-component-meta` 3.3 can't read 7 (#1382, #1384).
-        'typescript': '~6.0.3',
         'vite': VITE,
       },
       { quasar: '^2.24.0', vue: '^3.5.43' },

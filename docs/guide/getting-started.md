@@ -107,7 +107,6 @@ lower bound is declared, and not tested by a job of its own.
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 | [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
 | [Vitest](https://vitest.dev), optional, for [story tests](./vue/testing.md) | `^5.0.0` | `Unit tests and smoke` — runs story tests in the workspace, and the testing guide's own setups in books installed from the tarballs |
-| [svelte2tsx](https://www.npmjs.com/package/svelte2tsx), optional, for Svelte auto-docs | `^0.7.61` | `Example e2e (svelte)` — that book's auto-docs specs |
 | [@vitejs/plugin-react](https://www.npmjs.com/package/@vitejs/plugin-react), optional | `^6.0.0` | `Example e2e (react)` — builds that book with it |
 
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own
@@ -271,13 +270,13 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 | Framework | Support* | Auto-CodeGen* | Auto-Docs* |
 | --------- | ------- | ------------ | ---- |
-| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
-| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
-| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅, needs TypeScript 6 or earlier |
-| [Svelte →](./svelte/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier and `svelte2tsx` |
-| [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | ✅, needs TypeScript 6 or earlier and `svelte2tsx` |
-| [Solid →](./solid/getting-started.md) | renderer only | - | ✅, needs TypeScript 6 or earlier |
-| [React →](./react/getting-started.md) | renderer only | - | ✅, needs TypeScript 6 or earlier and `@types/react` |
+| [Vue →](./vue/getting-started.md) | ✅ | ✅ | ✅ |
+| [Nuxt →](./nuxt/getting-started.md) | ✅ | ✅ | ✅ |
+| [Quasar →](./quasar/getting-started.md) | ✅ | ✅ | ✅ |
+| [Svelte →](./svelte/getting-started.md) | ✅ | - | ✅ |
+| [SvelteKit →](./sveltekit/getting-started.md) | ✅ | - | ✅ |
+| [Solid →](./solid/getting-started.md) | renderer only | - | ✅ |
+| [React →](./react/getting-started.md) | renderer only | - | ✅, needs `@types/react` |
 | Angular | - | - | - |
 
 **<u>Support</u> means the following is available*:
@@ -290,7 +289,7 @@ Two limits are worth knowing, because neither is obvious from a green run:
 
 *<u>*Auto-CodeGen*</u>: Generates copiable source code dynamically from the current story state. Generally requires a Virtual DOM.
 
-*<u>*Auto-Docs*</u>: A props, slots and events table on a story's **Docs** tab, read from the types of the `.vue` or `.svelte` components the story imports, or, in Solid and React, of the component a story names in its `component` field. On by default, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). It reads the types with TypeScript, which the book has to have, at version 6 or earlier: `npm i -D typescript@6`.
+*<u>*Auto-Docs*</u>: A props, slots and events table on a story's **Docs** tab, read from the types of the `.vue` or `.svelte` components the story imports, or, in Solid and React, of the component a story names in its `component` field. On by default, and turned off or narrowed with [`autoDocs`](../reference/config.md#autodocs). It reads the types with a TypeScript 6 Poveste installs, so the book needs none of its own, and one on TypeScript 7 is read the same way. A React book needs `@types/react`.
 
 ## Community
 

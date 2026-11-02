@@ -183,7 +183,7 @@ Poveste still finds them, because it looks for story files itself and does not g
 
 ## Component docs
 
-A story's **Docs** tab shows a props, slots and events table for each `.vue` component the story imports, read from the component's types: see [Props, slots and events](../vue/docs.md#props-slots-and-events). It reads them with TypeScript, which the book needs installed at version 6 or earlier: `npm i -D typescript@6`. A Nuxt project installed with npm doesn't have it. Without it, or with TypeScript 7, auto-docs turns itself off and says so once in the terminal.
+A story's **Docs** tab shows a props, slots and events table for each `.vue` component the story imports, read from the component's types: see [Props, slots and events](../vue/docs.md#props-slots-and-events). It reads them with a TypeScript 6 Poveste installs, so a Nuxt project needs no TypeScript of its own for it, and one on TypeScript 7 is read the same way.
 
 It reads the types through the book's `tsconfig.app.json` or `tsconfig.json`. The `tsconfig.json` that `nuxi init` writes holds only `references`, so auto-docs follows them to the referenced project with the most of your files: `.nuxt/tsconfig.app.json`, which `nuxt prepare` writes when you install. A component outside that project's `include` gets no table, and its Docs tab names the tsconfig that was read. The terminal says the first such failure once.
 

@@ -14,39 +14,17 @@ import { syncSvelteKit } from './util/kit-sync.js'
 import { listComponentFiles } from './util/list-components.js'
 import { disableStoryComponentHmr } from './util/story-hmr.js'
 
-/**
- * `svelte2tsx` is an optional peer, loaded from the book like TypeScript, so a book
- * with auto-docs off installs neither. Looked for up the book's own `node_modules`,
- * where a check that passes means the extractor's load finds it, or resolved from
- * the book under Yarn PnP, which has none (#1508).
- */
-function svelte2tsxProblem(root: string): string | undefined {
-  if (process.versions['pnp']) {
-    try {
-      createRequire(join(root, 'package.json')).resolve('svelte2tsx/package.json')
-      return undefined
-    }
-    catch {}
-  }
-  for (let dir = root; dir !== dirname(dir); dir = dirname(dir)) {
-    if (existsSync(join(dir, 'node_modules', 'svelte2tsx', 'package.json'))) {
-      return undefined
-    }
-  }
-  return 'Auto-docs is off: it reads Svelte components\' types through `svelte2tsx`, which this book does not have. Install `svelte2tsx` in the book to turn it on, or set `autoDocs: false` to turn it off without this message.'
-}
-
 export function HstSvelte(): Plugin {
   return {
     name: '@poveste/plugin-svelte',
 
-    // Props through `svelte2tsx` and the book's own TypeScript, read in the docgen worker (#501).
+    // Props through `svelte2tsx` and this plugin's own TypeScript 6, read in the docgen
+    // worker (#501). Both are its dependencies, so `svelte2tsx` resolves that same copy
+    // whatever the book has (#1464).
     docgen: {
       match: file => file.endsWith('.svelte') && !file.endsWith('.story.svelte'),
       module: fileURLToPath(new URL('./docgen/extractor.js', import.meta.url)),
-      // `svelte2tsx`'s output is read with the book's TypeScript (#1401).
-      typescript: 'book',
-      unavailable: svelte2tsxProblem,
+      typescript: import.meta.url,
     },
 
     async defaultConfig() {

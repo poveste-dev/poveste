@@ -5,28 +5,23 @@ import { typescriptProblem } from 'poveste/docgen'
 import { describe, expect, it, onTestFinished } from 'vitest'
 import { HstSolid } from '../index'
 
-// A book outside the workspace, whose own TypeScript is found before anything the
-// workspace or `NODE_PATH` adds (#1401).
-function book(typescript: string) {
+// A book outside the workspace, whose own TypeScript would be found first if the plugin
+// read the book's (#1401).
+function book(typescript: string | undefined) {
   const root = mkdtempSync(join(tmpdir(), 'poveste-solid-ts-'))
   onTestFinished(() => rmSync(root, { recursive: true, force: true }))
-  mkdirSync(join(root, 'node_modules', 'typescript'), { recursive: true })
-  writeFileSync(join(root, 'node_modules', 'typescript', 'package.json'), JSON.stringify({ name: 'typescript', version: typescript }))
+  if (typescript) {
+    mkdirSync(join(root, 'node_modules', 'typescript'), { recursive: true })
+    writeFileSync(join(root, 'node_modules', 'typescript', 'package.json'), JSON.stringify({ name: 'typescript', version: typescript }))
+  }
   return root
 }
 
 const from = HstSolid().docgen!.typescript!
 
 describe('solid auto-docs in a book', () => {
-  it('reads types with the book\'s own TypeScript', () => {
-    expect(from).toBe('book')
-  })
-
-  it('turns off on TypeScript 7, naming the version to install', () => {
-    expect(typescriptProblem(book('7.0.2'), from)).toMatch(/has TypeScript 7\.0\.2\. Install `typescript@6`/)
-  })
-
-  it('stays on with TypeScript 6', () => {
-    expect(typescriptProblem(book('6.0.3'), from)).toBeUndefined()
+  // Poveste's TypeScript 6 reads the book, whatever the book has, so neither turns it off (#1464).
+  it.each([['7.0.2'], ['6.0.3'], [undefined]])('stays on in a book whose TypeScript is %s', (version) => {
+    expect(typescriptProblem(book(version), from)).toBeUndefined()
   })
 })
