@@ -23,6 +23,16 @@ const INERT: Record<string, string> = {
   [VIRTUAL_IDS.supportPluginsClient]: 'export const clientSupportPlugins = {}\n',
 }
 
+// A story's hosts run on the vendored Vue in every framework, which in browser mode
+// is its esm-bundler build, and that warns once per test file about any flag not
+// defined, in a React book too (#1570). `@vitejs/plugin-vue`'s values, which a Vue
+// book gets anyway. Under jsdom Node loads Vue's CommonJS build, which has no flags.
+const VUE_FEATURE_FLAGS: Record<string, string> = {
+  __VUE_OPTIONS_API__: 'true',
+  __VUE_PROD_DEVTOOLS__: 'false',
+  __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
+}
+
 // Root-relative, as `poveste dev` reads it: the docs write `/src/poveste.setup.ts`,
 // which `resolve` takes as absolute, so pre-bundling scanned a file outside the
 // book and the setup file's imports were found late, with a reload (#1507).
@@ -48,11 +58,11 @@ export interface PovesteTestingPluginOptions {
 /**
  * What a story needs in the user's own Vitest to render as `poveste dev` renders
  * it, for any framework: the book's setup file and the modules Poveste's client
- * imports, with Poveste's own packages inlined so Vitest can serve those, and the
- * framework's runtime and the setup file pre-bundled for browser mode. Nothing
- * else: no alias and no change to how anything resolves, so the test sees the
- * project's Vite config as the project wrote it. Each framework plugin's
- * `povesteTesting()` is this, with its own hook names.
+ * imports, with Poveste's own packages inlined so Vitest can serve those, the
+ * framework's runtime and the setup file pre-bundled for browser mode, and Vue's
+ * feature flags defined. Nothing else: no alias and no change to how anything
+ * resolves, so the test sees the project's Vite config as the project wrote it.
+ * Each framework plugin's `povesteTesting()` is this, with its own hook names.
  */
 export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plugin {
   let root = process.cwd()
@@ -81,11 +91,13 @@ export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plug
         include: options.include,
         ...setupFile ? { entries: [relative(root, resolve(root, setupFile)).split(sep).join('/')] } : {},
       }
+      // A book's own value stands, since a plugin's config is merged over what it was given.
+      const define = Object.fromEntries(Object.entries(VUE_FEATURE_FLAGS).map(([flag, value]) => [flag, user.define?.[flag] ?? value]))
       // `true` already inlines everything, and an array merged into it would not.
       if ((user as { test?: { server?: { deps?: { inline?: unknown } } } }).test?.server?.deps?.inline === true) {
-        return { optimizeDeps }
+        return { define, optimizeDeps }
       }
-      return { optimizeDeps, test: { server: { deps: { inline: POVESTE_PACKAGES } } } } as UserConfig
+      return { define, optimizeDeps, test: { server: { deps: { inline: POVESTE_PACKAGES } } } } as UserConfig
     },
 
     configResolved(resolved) {
