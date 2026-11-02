@@ -18,7 +18,7 @@ yarn add -D poveste @poveste/plugin-solid
 You also need `solid-js@^1.9.0` and `vite-plugin-solid@^2.11.0`, which a Solid project built with Vite already has.
 
 ::: tip Just installed and got an older version?
-For about a day after a release, pnpm installs the **previous** version, with no error. Measured on 0.20.0's release day: pnpm 11.5.3 printed `+ poveste 0.19.1 (0.20.0 is available)`, and pnpm 12.14.0 printed nothing to say a newer one existed. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
+For about a day after a release, pnpm installs the **previous** version, with no error. Nothing says so: on 0.21.0's release day pnpm 11.28.9 and 12.15.0 each installed 0.20.0 and printed no word of a newer one, so check what landed with `pnpm list poveste`. That's pnpm's release-age cooldown, not a broken publish. A plugin that's new in that release is worse off: nothing comes before its `0.0.1` placeholder, which has no code, so pnpm installs that beside the previous `poveste`, and the only sign is a `deprecated` warning.
 
 pnpm also saves the version it installed to `package.json` as `^x.y.z`, so waiting a day doesn't fix an install you've already run. Run the install line again with one of these:
 
@@ -123,7 +123,7 @@ export default defineStory({
 })
 ```
 
-Descriptions and tags come from the props' JSDoc. A default is read from the object passed before `props` to `mergeProps`, or from a destructured parameter, then from a `@default` tag. Props typed `JSX.Element`, and `children` taken through `ParentProps` or `FlowProps`, are slots; `on*` functions are events. The `children` every element's attributes declare is left out with the rest of them. It needs `typescript` 6 or earlier installed in the book, and reads its `tsconfig.app.json` or `tsconfig.json`. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `@kobalte/core`.
+Descriptions and tags come from the props' JSDoc. A default is read from the object passed before `props` to `mergeProps`, or from a destructured parameter, then from a `@default` tag. Props typed `JSX.Element`, and `children` taken through `ParentProps` or `FlowProps`, are slots; `on*` functions are events. The `children` every element's attributes declare is left out with the rest of them. It needs `typescript` 6 or earlier installed in the book, `npm i -D typescript@6`, and reads its `tsconfig.app.json` or `tsconfig.json`. Vite's `solid-ts` template installs TypeScript 7, so a book made from it needs that line. Props declared in installed packages are left out unless [`autoDocs.allow`](/reference/config#autodocs) names the package, such as `@kobalte/core`.
 
 `component` takes one component, not a list. A story without it gets no table, and its Docs tab says why unless the story has docs of its own. A story that names a library's component, such as one from `@kobalte/core`, shows the component's name and no rows until `allow` names the package, because every prop it has is declared there.
 
