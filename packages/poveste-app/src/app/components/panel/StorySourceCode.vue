@@ -48,14 +48,18 @@ const error = ref<string | null>(null)
 // and a story whose `slots()` throws reaches the auto-switch below before its
 // first `await` — with the declaration underneath, that path hits the TDZ.
 const displayedSource = ref<'dynamic' | 'static'>('dynamic')
+const dynamicUnavailable = ref<string>()
 
 watch(() => [props.variant, generateSourceCodeFn.value], async () => {
   if (!generateSourceCodeFn.value) return
   error.value = null
   dynamicSourceCode.value = ''
+  dynamicUnavailable.value = undefined
   dynamicSettled.value = false
   try {
-    dynamicSourceCode.value = (await getDynamicSourceCode(props.variant, generateSourceCodeFn.value)) ?? ''
+    dynamicSourceCode.value = (await getDynamicSourceCode(props.variant, generateSourceCodeFn.value, (reason) => {
+      dynamicUnavailable.value = reason
+    })) ?? ''
   }
   catch (e) {
     console.error(e)
@@ -159,7 +163,7 @@ watch(sourceHtml, async () => {
       <!-- Display source modes -->
       <div class="flex flex-none gap-px h-full py-2">
         <HstTooltip
-          :content="!dynamicSourceCode ? 'Dynamic source code is not available' : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
+          :content="!dynamicSourceCode ? (dynamicUnavailable ?? 'Dynamic source code is not available') : displayedSource !== 'dynamic' ? 'Switch to dynamic source' : null"
         >
           <button
             class="flex items-center gap-1 h-full px-1 bg-gray-500/10 rounded-l transition-all ease-[cubic-bezier(0,1,.6,1)] duration-300 overflow-hidden"

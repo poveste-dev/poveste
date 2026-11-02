@@ -60,6 +60,20 @@ test.describe('a React book', () => {
     await expect(source).toContainText('<Counter count={42} label="Clicked" onIncrement={…} />')
   })
 
+  // #1569: the panel says why, and the next variant has its Dynamic source back.
+  test('falls back to the story file for a component with no name, and returns for one with a name', async ({ page }) => {
+    await open(page, 'src-unnamed-story-tsx', 'unnamed')
+    const source = page.locator('.poveste-story-source-code')
+    await expect(source).toContainText('defineStory')
+
+    await page.getByRole('button', { name: 'Dynamic' }).hover()
+    await expect(page.getByText('no name to print')).toBeVisible()
+
+    await page.getByRole('link', { name: 'Named', exact: true }).click()
+    await expect(source).toContainText('<b>named</b>')
+    await expect(source).not.toContainText('defineStory')
+  })
+
   test('starts a variant from its own initState rather than the story\'s', async ({ page }) => {
     await open(page, 'src-counter-story-tsx', 'ten')
 

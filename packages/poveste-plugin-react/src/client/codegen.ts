@@ -1,4 +1,4 @@
-import type { Variant } from '@poveste/shared'
+import type { ClientSupportPlugin, Variant } from '@poveste/shared'
 import type { ReactElement, ReactNode } from 'react'
 import type { ReactRenderApi } from '../types.js'
 import { clone } from '@poveste/shared'
@@ -8,36 +8,59 @@ import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
 type Render = (api: ReactRenderApi<any>) => ReactNode
+type GeneratedSource = ReturnType<ClientSupportPlugin['generateSourceCode']>
 
 /** Past this, a tag's props go one per line. */
 const WIDTH = 80
 
+const EDGE_SPACE = /^\s|\s$/
+
 const MEMO = Symbol.for('react.memo')
 const FORWARD_REF = Symbol.for('react.forward_ref')
-// What React Refresh calls a component it registers, which isn't a name the reader wrote.
-const REFRESH_NAME = /^_c\d*$/
+const BUILT_INS: Record<symbol, string> = {
+  [Symbol.for('react.suspense')]: 'Suspense',
+  [Symbol.for('react.strict_mode')]: 'StrictMode',
+  [Symbol.for('react.profiler')]: 'Profiler',
+  [Symbol.for('react.activity')]: 'Activity',
+}
+// What JSX reads as a component. `_c4` would pass, but it's what React Refresh calls a
+// component it registers, not a name the reader wrote.
+const COMPONENT_NAME = /^(?!_c\d*$)[A-Z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
+
+class UnnamedComponent extends Error {}
 
 /**
  * The variant's `render`, called with its current state and printed as JSX. A React
  * element keeps its type and props, so the tree is the code, with each value as it
  * is now rather than the expression that made it: `count={3}`, not `count={state.count}`.
  *
- * It prints only what would run. A binding isn't in the element, so a component with
- * no name of its own, such as `memo(() => …)` or a context with no `displayName`, has
- * nothing to print, and the panel shows the story file instead (#1569).
+ * A tag has to render, and a binding isn't in the element, so a component with no name
+ * JSX can read, such as `memo(() => …)` or a context with no `displayName`, leaves the
+ * panel on the story file, saying why (#1569). A value is different: a function or a
+ * class instance prints as `…`, for the reader to fill in.
  */
-export function generateSourceCode(variant: Variant): string | undefined {
+export function generateSourceCode(variant: Variant): GeneratedSource {
   const render = variant.slots?.().default as Render | undefined
   if (typeof render !== 'function') {
     return undefined
   }
+  let node: ReactNode
   try {
-    const node = capture(render, { state: clone(_toRaw(variant.state) ?? {}), setState: () => {} })
-    return printNode(node) || undefined
+    node = capture(render, { state: clone(_toRaw(variant.state) ?? {}), setState: () => {} })
   }
   catch {
-    // The preview says what went wrong, or the tree has a component with no name;
-    // either way the panel shows the story file.
+    // The preview says what went wrong; the panel shows the story file.
+    return undefined
+  }
+  try {
+    return printNode(node) || undefined
+  }
+  catch (error) {
+    if (error instanceof UnnamedComponent) {
+      return { unavailable: 'This variant has a component with no name to print. Give it one to see its source here.' }
+    }
+    // The preview rendered this, so nothing else will say.
+    console.error(error)
     return undefined
   }
 }
@@ -70,6 +93,10 @@ function capture(render: Render, api: ReactRenderApi<any>): ReactNode {
 export function printNode(node: ReactNode): string {
   const children = flatten(node)
   if (children.length > 1) {
+    const inline = inlineChildren(children)
+    if (inline !== undefined && inline.length + 5 <= WIDTH) {
+      return `<>${inline}</>`
+    }
     return ['<>', ...children.flatMap(child => indent(printLine(child))), '</>'].join('\n')
   }
   return children.length ? printChild(children[0]!) : ''
@@ -112,25 +139,39 @@ function printChild(child: ReactElement | string): string {
   return typeof child === 'string' ? printText(child) : printElement(child)
 }
 
-/** A child on a line of its own, where JSX would trim the text's edges and join its lines. */
+/** A child on a line of its own, where JSX would trim the text's edges. */
 function printLine(child: ReactElement | string): string {
-  return typeof child === 'string' && /^\s|\s$|\n/.test(child) ? `{${JSON.stringify(child)}}` : printChild(child)
+  return typeof child === 'string' && EDGE_SPACE.test(child) ? `{${JSON.stringify(child)}}` : printChild(child)
+}
+
+/** Children whose text has spaces at its edges, together on one line, where JSX keeps them as written. */
+function inlineChildren(children: (ReactElement | string)[]): string | undefined {
+  if (!children.some(child => typeof child === 'string' && EDGE_SPACE.test(child))) {
+    return undefined
+  }
+  const printed = children.map(printChild).join('')
+  return printed.includes('\n') ? undefined : printed
 }
 
 function printText(text: string): string {
-  return /[{}<>]/.test(text) ? `{${JSON.stringify(text)}}` : text
+  return /[{}<>\n]/.test(text) ? `{${JSON.stringify(text)}}` : text
 }
 
-function printElement(element: ReactElement): string {
+/** `flat` is for a place that holds one line, where a line break between children would become a space. */
+function printElement(element: ReactElement, flat = false): string {
   const name = nameOf(element.type)
-  if (!name || REFRESH_NAME.test(name)) {
-    throw new Error('[poveste] a component with no name has no source to print')
+  if (!name || (typeof element.type !== 'string' && !COMPONENT_NAME.test(name))) {
+    throw new UnnamedComponent()
   }
   const { children, ...props } = (element.props ?? {}) as Record<string, unknown> & { children?: ReactNode }
   const attributes = Object.entries(props).map(([key, value]) => printProp(key, value)).filter((line): line is string => line !== undefined)
   const inner = flatten(children)
 
   const oneLine = `<${[name, ...attributes].join(' ')}`
+  if (flat) {
+    const body = inner.map(child => typeof child === 'string' ? printText(child) : printElement(child, true)).join('')
+    return inner.length ? `${oneLine}>${body}</${name}>` : `${oneLine} />`
+  }
   const open = oneLine.length + 2 > WIDTH && attributes.length > 1
     ? [`<${name}`, ...attributes.map(line => `  ${line}`)]
     : [oneLine]
@@ -143,6 +184,10 @@ function printElement(element: ReactElement): string {
     if (line.length <= WIDTH && !inner[0].includes('\n')) {
       return line
     }
+  }
+  const inline = open.length === 1 ? inlineChildren(inner) : undefined
+  if (inline !== undefined && oneLine.length + inline.length + close.length + 1 <= WIDTH) {
+    return `${oneLine}>${inline}${close}`
   }
   const head = open.length > 1 ? [...open, '>'] : [`${oneLine}>`]
   return [...head, ...inner.flatMap(child => indent(printLine(child))), close].join('\n')
@@ -163,7 +208,7 @@ function printProp(key: string, value: unknown): string | undefined {
     return `${key}={…}`
   }
   if (isValidElement(value)) {
-    return `${key}={${printElement(value).replace(/\n\s*/g, ' ')}}`
+    return `${key}={${printElement(value, true)}}`
   }
   return `${key}={${printValue(value, new Set())}}`
 }
@@ -181,8 +226,10 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   if (typeof value === 'function' || isValidElement(value)) {
     return '…'
   }
-  if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? 'new Date(NaN)' : `new Date(${JSON.stringify(value.toISOString())})`
+  // By tag: a `Date` from another window isn't an instance of this one's.
+  if (Object.prototype.toString.call(value) === '[object Date]') {
+    const date = value as Date
+    return Number.isNaN(date.getTime()) ? 'new Date(NaN)' : `new Date(${JSON.stringify(date.toISOString())})`
   }
   if (typeof value !== 'object' || value === undefined || seen.has(value)) {
     return value === undefined ? 'undefined' : '…'
@@ -201,6 +248,9 @@ function printValue(value: unknown, seen: Set<unknown>): string {
 function nameOf(type: unknown): string | undefined {
   if (typeof type === 'string') {
     return type
+  }
+  if (typeof type === 'symbol') {
+    return BUILT_INS[type]
   }
   if (typeof type === 'function') {
     return (type as { displayName?: string }).displayName || type.name

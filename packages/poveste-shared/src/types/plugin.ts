@@ -39,7 +39,7 @@ export interface SupportPlugin {
  *
  * `generateSourceCode` may return nothing. A framework that cannot recover source
  * from a render tree is a supported shape — two plugins ship as one — and the app
- * falls back to the story file (#1108).
+ * falls back to the story file (#1108). It may say why, for a reader to act on.
  *
  * The components are whatever the app renders them with, so the app names that
  * type and a plugin is held only to providing them: they are built against
@@ -48,7 +48,7 @@ export interface SupportPlugin {
 export interface ClientSupportPlugin<TComponent = unknown> {
   MountStory: TComponent
   RenderStory: TComponent
-  generateSourceCode: (variant: Variant) => Awaitable<string | undefined>
+  generateSourceCode: (variant: Variant) => Awaitable<string | { unavailable: string } | undefined>
 }
 
 /**

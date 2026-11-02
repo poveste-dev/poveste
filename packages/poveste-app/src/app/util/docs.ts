@@ -6,7 +6,7 @@ import { clientSupportPlugins } from 'virtual:$poveste-support-plugins-client'
 export type GenerateSourceCode = ClientSupportPlugin['generateSourceCode']
 
 /** What the variant declares, or what its framework generates from it; `undefined` when neither has anything. */
-export async function getDynamicSourceCode(variant: Variant, generate: GenerateSourceCode | undefined): Promise<string | undefined> {
+export async function getDynamicSourceCode(variant: Variant, generate: GenerateSourceCode | undefined, onUnavailable?: (reason: string) => void): Promise<string | undefined> {
   // A Svelte story's `source` can be a function of the variant's state, so the
   // panel follows the controls; handed on as it was, it reached the highlighter and
   // threw (#1511).
@@ -22,7 +22,12 @@ export async function getDynamicSourceCode(variant: Variant, generate: GenerateS
     const source = sourceSlot()[0].children
     return source ? unindent(source) : undefined
   }
-  return (await generate?.(variant)) || undefined
+  const generated = await generate?.(variant)
+  if (generated && typeof generated === 'object') {
+    onUnavailable?.(generated.unavailable)
+    return undefined
+  }
+  return generated || undefined
 }
 
 /**
