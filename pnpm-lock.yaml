@@ -831,6 +831,9 @@ importers:
       '@poveste/vendors':
         specifier: workspace:^
         version: link:../poveste-vendors
+      '@shikijs/twoslash':
+        specifier: ^4.5.0
+        version: 4.5.0(supports-color@10.2.2)(typescript@6.0.3)
       change-case:
         specifier: ^5.4.4
         version: 5.4.4
@@ -4169,6 +4172,12 @@ packages:
   '@shikijs/transformers@2.5.0':
     resolution: {integrity: sha512-SI494W5X60CaUwgi8u4q4m4s3YAFSxln3tzNjOSYqq54wlVgz0/NbbXEb3mdLbqMBztcmS7bVTaEd2w0qMmfeg==}
 
+  '@shikijs/twoslash@4.5.0':
+    resolution: {integrity: sha512-1AW9pT5tyRwjvKVkGtjq86d3wqpoggKNL0c9LyMDwuLN7PGw4q7m5s1UCskrnYmHmsEovBWroZ12B18r8dVgQA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      typescript: '>=5.5.0'
+
   '@shikijs/types@2.5.0':
     resolution: {integrity: sha512-ygl5yhxki9ZLNuNpPitBWvcy9fsSKKaRuO4BAlMyagszQidxcpLAr0qiW/q43DtSIDxO6hEbtYLiFZNXO/hdGw==}
 
@@ -4622,6 +4631,11 @@ packages:
   '@typescript-eslint/visitor-keys@8.70.0':
     resolution: {integrity: sha512-BoC8PiO4Hkdo0TVJh9Ntxr5MxPDI7/oFsrygN5ADelFSeXG/qgNuucIGA+L5Z6JpPTE/uRfcTWtscjbUaufepQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@typescript/vfs@1.6.5':
+    resolution: {integrity: sha512-gobLHQLmvQGJInFk31NvgMd1uYzRXsd8qgnOssyLD055R2QPnw1ubRbBQ4+T+5qC7IQVuYXdvNDE2G7tMDVHgw==}
+    peerDependencies:
+      typescript: '*'
 
   '@ungap/structured-clone@1.4.0':
     resolution: {integrity: sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ==}
@@ -9463,6 +9477,14 @@ packages:
     resolution: {integrity: sha512-axr3IdNuVIxnaK5XGEUFTu3YmAQ6lllgrvqfEoR16g/HGnYY/6We4oWENtAnzK6/LpJ2ur9PAb80RBt7/U4ugw==}
     engines: {node: '>= 6.0.0'}
 
+  twoslash-protocol@0.3.9:
+    resolution: {integrity: sha512-9/iwp+CXOnjFMPQuPL5PkuRbZnDoNpBvtJCLs9t8kDYkL3YHujbvnHfZA1i5fApDftVEdBw+T/4F+dH5kIzpYQ==}
+
+  twoslash@0.3.9:
+    resolution: {integrity: sha512-rDclk+OtzuTX+tnea7DYLCkqGQ3eP0IyfD+kzUJ7t46X/NzlaxwrhecmEBNuSCuEn3V+n1PhcjUUQQ7gUJzX5Q==}
+    peerDependencies:
+      typescript: ^5.5.0 || ^6.0.0
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -13611,6 +13633,15 @@ snapshots:
       '@shikijs/core': 2.5.0
       '@shikijs/types': 2.5.0
 
+  '@shikijs/twoslash@4.5.0(supports-color@10.2.2)(typescript@6.0.3)':
+    dependencies:
+      '@shikijs/core': 4.5.0
+      '@shikijs/types': 4.5.0
+      twoslash: 0.3.9(supports-color@10.2.2)(typescript@6.0.3)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@shikijs/types@2.5.0':
     dependencies:
       '@shikijs/vscode-textmate': 10.0.2
@@ -14143,6 +14174,13 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.70.0
       eslint-visitor-keys: 5.0.1
+
+  '@typescript/vfs@1.6.5(supports-color@10.2.2)(typescript@6.0.3)':
+    dependencies:
+      debug: 4.4.3(supports-color@10.2.2)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@ungap/structured-clone@1.4.0': {}
 
@@ -20212,6 +20250,16 @@ snapshots:
   tsyringe@4.10.0:
     dependencies:
       tslib: 1.14.1
+
+  twoslash-protocol@0.3.9: {}
+
+  twoslash@0.3.9(supports-color@10.2.2)(typescript@6.0.3):
+    dependencies:
+      '@typescript/vfs': 1.6.5(supports-color@10.2.2)(typescript@6.0.3)
+      twoslash-protocol: 0.3.9
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   type-check@0.4.0:
     dependencies:
