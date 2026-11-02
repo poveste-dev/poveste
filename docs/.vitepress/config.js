@@ -400,6 +400,10 @@ module.exports = {
               text: 'Getting Started',
               link: '/guide/react/getting-started',
             },
+            {
+              text: 'Story tests',
+              link: '/guide/react/testing',
+            },
           ],
         },
         {

@@ -890,6 +890,50 @@ one_dependency_pass react
 install_typescript "$REACT_APP"
 docs_tab_says react "$REACT_APP" "/story/src-button-story-tsx?tab=docs" "Auto-docs is off: it reads component types from" 4800
 
+# The React testing guide, as it prints, in the same install (#1522).
+echo "▸ [react] Running a story test from docs/guide/react/testing.md"
+REACT_GUIDE="$ROOT/docs/guide/react/testing.md"
+node "$ROOT/scripts/release/guide-block.mjs" "$REACT_GUIDE" vitest.config.ts > "$REACT_APP/vitest.config.ts"
+node "$ROOT/scripts/release/guide-block.mjs" "$REACT_GUIDE" src/Badge.story.test.ts > "$REACT_APP/src/Badge.story.test.ts"
+sed 's/Button/Badge/g' "$REACT_APP/src/Button.story.tsx" | sed "s|from './Badge'|from './Button'|; s|import { Badge }|import { Button as Badge }|" > "$REACT_APP/src/Badge.story.tsx"
+(
+  cd "$REACT_APP"
+  npm install --no-audit --no-fund --loglevel=error \
+    "vitest@$(node -p "require('$ROOT/packages/poveste-plugin-react/node_modules/vitest/package.json').version")" \
+    "jsdom@$(node -p "require('$ROOT/packages/poveste-plugin-react/node_modules/jsdom/package.json').version")"
+)
+run_story_tests react jsdom "$REACT_APP" "Badge Badge default"
+
+# The guide's browser config on a cold cache, with a setup file whose imports have
+# to reach pre-bundling too. Opt-in with the dev pass, which has Chromium.
+if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
+  node "$ROOT/scripts/release/guide-block.mjs" "$REACT_GUIDE" vitest.config.ts "In a browser" > "$REACT_APP/vitest.config.ts"
+  cat > "$REACT_APP/src/poveste.setup.tsx" <<'TSX'
+import { defineSetupReact } from '@poveste/plugin-react'
+
+export const setupReact = defineSetupReact(({ addWrapper }) => {
+  addWrapper(({ children }) => <div data-frame>{children}</div>)
+})
+TSX
+  cat > "$REACT_APP/poveste.config.ts" <<'TS'
+import { HstReact } from '@poveste/plugin-react'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstReact()],
+  setupFile: '/src/poveste.setup.tsx',
+})
+TS
+  (
+    cd "$REACT_APP"
+    npm install --no-audit --no-fund --loglevel=error \
+      "@vitest/browser-playwright@$(node -p "require('$ROOT/packages/poveste-plugin-react/node_modules/@vitest/browser-playwright/package.json').version")" \
+      "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
+    rm -rf node_modules/.vite
+  )
+  run_story_tests react browser "$REACT_APP" "Badge Badge default"
+fi
+
 # ── Quasar ───────────────────────────────────────────────────────────────────
 
 QUASAR_APP="$WORK/quasar"

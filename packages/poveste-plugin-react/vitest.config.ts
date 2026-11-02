@@ -1,5 +1,5 @@
 import { defaultClientConditions } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -14,5 +14,9 @@ export default defineConfig({
   resolve: {
     // The renderer's spec mounts in jsdom, which needs React's DOM.
     conditions: defaultClientConditions,
+  },
+  test: {
+    // The story-test book runs under its own config, from `test:story-tests`.
+    exclude: [...configDefaults.exclude, 'fixtures/**', 'src/testing/__tests__/story-tests.spec.ts'],
   },
 })
