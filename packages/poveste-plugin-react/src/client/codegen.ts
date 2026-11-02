@@ -14,12 +14,17 @@ const WIDTH = 80
 
 const MEMO = Symbol.for('react.memo')
 const FORWARD_REF = Symbol.for('react.forward_ref')
-const LAZY = Symbol.for('react.lazy')
+// What React Refresh calls a component it registers, which isn't a name the reader wrote.
+const REFRESH_NAME = /^_c\d*$/
 
 /**
  * The variant's `render`, called with its current state and printed as JSX. A React
  * element keeps its type and props, so the tree is the code, with each value as it
  * is now rather than the expression that made it: `count={3}`, not `count={state.count}`.
+ *
+ * It prints only what would run. A binding isn't in the element, so a component with
+ * no name of its own, such as `memo(() => …)` or a context with no `displayName`, has
+ * nothing to print, and the panel shows the story file instead (#1569).
  */
 export function generateSourceCode(variant: Variant): string | undefined {
   const render = variant.slots?.().default as Render | undefined
@@ -31,7 +36,8 @@ export function generateSourceCode(variant: Variant): string | undefined {
     return printNode(node) || undefined
   }
   catch {
-    // The preview says what went wrong; the panel shows the story file.
+    // The preview says what went wrong, or the tree has a component with no name;
+    // either way the panel shows the story file.
     return undefined
   }
 }
@@ -64,7 +70,7 @@ function capture(render: Render, api: ReactRenderApi<any>): ReactNode {
 export function printNode(node: ReactNode): string {
   const children = flatten(node)
   if (children.length > 1) {
-    return ['<>', ...children.flatMap(child => indent(printChild(child))), '</>'].join('\n')
+    return ['<>', ...children.flatMap(child => indent(printLine(child))), '</>'].join('\n')
   }
   return children.length ? printChild(children[0]!) : ''
 }
@@ -106,12 +112,20 @@ function printChild(child: ReactElement | string): string {
   return typeof child === 'string' ? printText(child) : printElement(child)
 }
 
+/** A child on a line of its own, where JSX would trim the text's edges and join its lines. */
+function printLine(child: ReactElement | string): string {
+  return typeof child === 'string' && /^\s|\s$|\n/.test(child) ? `{${JSON.stringify(child)}}` : printChild(child)
+}
+
 function printText(text: string): string {
   return /[{}<>]/.test(text) ? `{${JSON.stringify(text)}}` : text
 }
 
 function printElement(element: ReactElement): string {
   const name = nameOf(element.type)
+  if (!name || REFRESH_NAME.test(name)) {
+    throw new Error('[poveste] a component with no name has no source to print')
+  }
   const { children, ...props } = (element.props ?? {}) as Record<string, unknown> & { children?: ReactNode }
   const attributes = Object.entries(props).map(([key, value]) => printProp(key, value)).filter((line): line is string => line !== undefined)
   const inner = flatten(children)
@@ -131,7 +145,7 @@ function printElement(element: ReactElement): string {
     }
   }
   const head = open.length > 1 ? [...open, '>'] : [`${oneLine}>`]
-  return [...head, ...inner.flatMap(child => indent(printChild(child))), close].join('\n')
+  return [...head, ...inner.flatMap(child => indent(printLine(child))), close].join('\n')
 }
 
 function printProp(key: string, value: unknown): string | undefined {
@@ -167,6 +181,9 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   if (typeof value === 'function' || isValidElement(value)) {
     return '…'
   }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? 'new Date(NaN)' : `new Date(${JSON.stringify(value.toISOString())})`
+  }
   if (typeof value !== 'object' || value === undefined || seen.has(value)) {
     return value === undefined ? 'undefined' : '…'
   }
@@ -181,12 +198,12 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   return entries.length ? `{ ${entries.join(', ')} }` : '{}'
 }
 
-function nameOf(type: unknown): string {
+function nameOf(type: unknown): string | undefined {
   if (typeof type === 'string') {
     return type
   }
   if (typeof type === 'function') {
-    return (type as { displayName?: string }).displayName || type.name || 'Component'
+    return (type as { displayName?: string }).displayName || type.name
   }
   const wrapped = type as { $$typeof?: symbol, displayName?: string, type?: unknown, render?: { displayName?: string, name?: string } } | null
   if (wrapped?.displayName) {
@@ -196,12 +213,9 @@ function nameOf(type: unknown): string {
     return nameOf(wrapped.type)
   }
   if (wrapped?.$$typeof === FORWARD_REF) {
-    return wrapped.render?.displayName || wrapped.render?.name || 'Component'
+    return wrapped.render?.displayName || wrapped.render?.name
   }
-  if (wrapped?.$$typeof === LAZY) {
-    return 'Lazy'
-  }
-  return 'Component'
+  return undefined
 }
 
 function indent(text: string): string[] {
