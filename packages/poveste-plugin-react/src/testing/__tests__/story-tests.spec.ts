@@ -27,26 +27,38 @@ interface Assertion {
 }
 
 /** Runs one project of the story-test book, and each test's outcome by name. */
-async function run(project: string): Promise<Map<string, Assertion>> {
+async function run(project: string): Promise<{ results: Map<string, Assertion>, printed: string }> {
   const file = join(out, `${project}.json`)
   // Some of the book's stories fail on purpose, so the run exits non-zero. It runs
   // without what this run put in the environment, which the child reads as its own.
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('VITEST') && !INHERITED.includes(key)))
-  await promisify(execFile)(process.execPath, [VITEST, 'run', '--project', project, '--reporter=json', `--outputFile=${file}`], { cwd: BOOK, env })
-    .catch((error: { code?: number }) => {
+  const { stdout, stderr } = await promisify(execFile)(process.execPath, [VITEST, 'run', '--project', project, '--reporter=json', '--reporter=default', `--outputFile.json=${file}`], { cwd: BOOK, env })
+    .catch((error: { code?: number, stdout: string, stderr: string }) => {
       if (typeof error.code !== 'number') {
         throw error
       }
+      return error
     })
   const report = JSON.parse(readFileSync(file, 'utf8')) as { testResults: { assertionResults: Assertion[] }[] }
-  return new Map(report.testResults.flatMap(result => result.assertionResults).map(assertion => [assertion.fullName, assertion]))
+  return {
+    results: new Map(report.testResults.flatMap(result => result.assertionResults).map(assertion => [assertion.fullName, assertion])),
+    printed: stdout + stderr,
+  }
 }
 
 describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (project) => {
   let results: Map<string, Assertion>
+  let printed: string
 
   beforeAll(async () => {
-    results = await run(project)
+    ;({ results, printed } = await run(project))
+  })
+
+  // The hosts run on Vue in every framework, so a book would otherwise be told about
+  // flags it has no way to set, once per story file (#1570).
+  it('prints nothing about Vue\'s feature flags', () => {
+    expect(printed).toContain('Test Files')
+    expect(printed).not.toContain('Feature flags')
   })
 
   it('reports every variant of the book', () => {
@@ -96,6 +108,22 @@ describe('the Vite config a story test runs under', () => {
       ...own,
       include: [...own.include, 'react', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'react-dom', 'react-dom/client', '@poveste/vendors/vue'],
       entries: [...own.entries, 'src/setup.tsx'],
+    })
+  })
+
+  it('defines Vue\'s feature flags, leaving a value the book set', async () => {
+    const config = await resolveConfig({
+      root: BOOK,
+      configFile: false,
+      logLevel: 'silent',
+      define: { __VUE_PROD_DEVTOOLS__: 'true' },
+      plugins: [react(), povesteTesting()] as never[],
+    }, 'serve')
+
+    expect(config.define).toMatchObject({
+      __VUE_OPTIONS_API__: 'true',
+      __VUE_PROD_DEVTOOLS__: 'true',
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
     })
   })
 })
