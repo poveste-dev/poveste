@@ -118,5 +118,5 @@ If you have questions or need help, reach out to the community on [GitHub Discus
 
 A story's **Docs** tab documents the `.svelte` components it imports, as in any Svelte book:
 see [Component docs](../svelte/getting-started.md#component-docs) in the Svelte guide. It
-reads the types `svelte-kit sync` generates, so `$lib` imports resolve as in your editor,
+reads the types `svelte-kit sync` generates, so `$lib` (`#lib` on Kit 3) imports resolve as in your editor,
 with a TypeScript 6 and `svelte2tsx` the plugin installs, whatever the project has.
