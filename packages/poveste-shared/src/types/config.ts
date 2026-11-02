@@ -329,7 +329,7 @@ export interface PovesteConfig {
   }
   /**
    * Maximum number of threads used to collect stories.
-   * By default based on available number of cores.
+   * @default 4
    */
   collectMaxThreads?: number
   /**

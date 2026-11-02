@@ -655,9 +655,11 @@ export default defineConfig({
 
 ## `collectMaxThreads`
 
-`number` - Default: available cpus
+`number` - Default: `4`
 
-Number of maximum threads used to collect stories (both for development and building). Threads count will never go above this limit but might be lower.
+Number of maximum threads used to collect stories (both for development and building). Threads count will never go above this limit but might be lower: a thread starts only when a story finds none free, and `poveste dev` stays at half the available cpus and `poveste build` one below them.
+
+Each thread reads the book's modules from nothing on its first story, so more of them cost memory and CPU, and pay that back only when each story is slow by itself. Raise it for a book like that.
 
 ```ts twoslash
 import { defineConfig } from 'poveste'
