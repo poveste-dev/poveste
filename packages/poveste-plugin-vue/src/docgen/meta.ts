@@ -20,12 +20,14 @@ function isInherited(prop: PropertyMeta, allow: string[]) {
   return declaredOnlyInPackages(prop.getDeclarations().map(declaration => declaration.file), allow)
 }
 
-function toProp(prop: PropertyMeta): DocProp {
+function toProp(prop: PropertyMeta, resolve: (prop: PropertyMeta) => string | undefined): DocProp {
   const defaultTag = prop.tags.find(tag => DEFAULT_TAGS.includes(tag.name))?.text
+  const resolved = resolve(prop)
   return {
     name: prop.name,
     ...prop.description ? { description: prop.description } : {},
     type: prop.type,
+    ...resolved !== undefined && resolved !== prop.type ? { resolved } : {},
     required: prop.required,
     ...prop.default !== undefined ? { default: prop.default } : {},
     ...defaultTag !== undefined ? { defaultTag } : {},
@@ -83,10 +85,10 @@ function toSlot(slot: SlotMeta, slotProps: (slot: SlotMeta) => DocSlot['props'] 
   return { ...toMember(slot), ...props.length ? { props } : {} }
 }
 
-export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => []): ComponentDoc {
+export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => [], resolve: (prop: PropertyMeta) => string | undefined = () => undefined): ComponentDoc {
   const allow = options.allow ?? []
   return {
-    props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(toProp),
+    props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(prop => toProp(prop, resolve)),
     slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(slot => toSlot(slot, slotProps)),
     events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).map(toMember),
   }

@@ -60,3 +60,31 @@ describe('the React extractor', () => {
     ])
   })
 })
+
+// #1527: the hover a named type gets in the table, read by the shared prop reader every JSX
+// and Svelte extractor uses.
+describe('a named prop type, opened one level', () => {
+  const extractor = createExtractor({ root, options: {} })
+  const tone = async (name: string) => (await extractor.extract(story('Tone')))!.props.find(prop => prop.name === name)!
+
+  it('opens an alias to its definition, in the order it is written', async () => {
+    expect(await tone('size')).toMatchObject({ type: 'ButtonSize', resolved: '"sm" | "md" | "lg"' })
+  }, 60_000)
+
+  it('opens an interface to its members', async () => {
+    expect((await tone('item')).resolved).toBe('{ id: string; label?: string }')
+  })
+
+  it('lists an enum by its members', async () => {
+    expect((await tone('level')).resolved).toBe('Level.Low | Level.High')
+  })
+
+  it('opens a named member of a union in place', async () => {
+    expect((await tone('fallback')).resolved).toBe('"sm" | "md" | "lg" | null')
+  })
+
+  it('leaves a type that names nothing, and one from a package, closed', async () => {
+    const slots = (await extractor.extract(story('Tone')))!.slots
+    expect([(await tone('label')).resolved, slots.find(slot => slot.name === 'icon')]).toEqual([undefined, expect.not.objectContaining({ resolved: expect.anything() })])
+  })
+})

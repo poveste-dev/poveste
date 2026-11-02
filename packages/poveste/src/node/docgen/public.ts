@@ -1,5 +1,6 @@
 export { createJsxExtractor } from './jsx/extractor.js'
 export type { JsxDialect } from './jsx/walk.js'
+export { resolveType } from './resolve.js'
 export { ambientFiles, bookTsconfig, declaredOnlyInPackages, DEFAULT_TAGS, documentProps, findTsconfig, HIDDEN_TAGS, loadFromBook, normalizeDefault, readTsconfig } from './typed.js'
 export type { DocgenOptions, PropsReading } from './typed.js'
 export { typescriptProblem, typescriptProblemIn, typescriptVersionIn, typesProblem } from './typescript.js'

@@ -56,13 +56,17 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   // Raised from 437_000 for #1521: the source panel's grammar chosen per story file,
   // 385 B over 0.21's `next` at 436,880.
-  '@poveste/app': { bytes: 437_700, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 437_700 for #1527: type cells highlighted and a named type's hover,
+  // 2,061 B over 0.22's `next` at 437,267.
+  '@poveste/app': { bytes: 439_800, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
   // Raised from 71_900 for #1503: the story tests' inlining and pre-bundling, 1,010 B
   // over the 0.21 pass's pin at 71,193.
-  '@poveste/plugin-vue': { bytes: 72_700, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  // Raised from 72_700 for #1527: a prop's type opened one level, 321 B over 0.22's
+  // `next` at 72,655.
+  '@poveste/plugin-vue': { bytes: 73_100, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   '@poveste/shared': { bytes: 26_100, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },

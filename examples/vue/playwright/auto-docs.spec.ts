@@ -37,6 +37,16 @@ test.describe('the docs of a story\'s component', () => {
     await expect(label.locator('[data-slot="required"]')).toBeVisible()
   })
 
+  // #1527: a named type opens on keyboard focus as well as on hover.
+  test('opens a named type to its definition, on focus', async ({ page }) => {
+    const type = row(page, 'size').locator('[data-resolved]')
+
+    await expect(type).toContainText('ButtonSize', { timeout: 60_000 })
+    await type.focus()
+
+    await expect(page.locator('[data-slot="tooltip"]')).toContainText('"sm" | "md" | "lg"')
+  })
+
   test('shows the code\'s default', async ({ page }) => {
     await expect(row(page, 'size')).toContainText('md', { timeout: 60_000 })
     await expect(row(page, 'level')).toContainText('2')

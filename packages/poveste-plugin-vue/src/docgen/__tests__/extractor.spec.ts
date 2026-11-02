@@ -202,3 +202,31 @@ describe('a book that allows a base library', () => {
     await allowing.dispose()
   }, 60_000)
 })
+
+// #1527: the hover a named type gets in the table.
+describe('a named prop type, opened one level', () => {
+  async function tone(name: string) {
+    const doc = (await extractor.extract(join(FIXTURE, 'Tone.vue')))!
+    return doc.props.find(prop => prop.name === name)!
+  }
+
+  it('opens an alias to its definition', async () => {
+    expect(await tone('size')).toMatchObject({ type: 'ButtonSize', resolved: '"sm" | "md" | "lg"' })
+  })
+
+  it('opens an interface to its members', async () => {
+    expect((await tone('item')).resolved).toBe('{ id: string; label?: string }')
+  })
+
+  it('lists an enum by its members', async () => {
+    expect((await tone('level')).resolved).toBe('Level.Low | Level.High')
+  })
+
+  it('opens a named member of a union in place', async () => {
+    expect((await tone('fallback')).resolved).toBe('"sm" | "md" | "lg" | null')
+  })
+
+  it('leaves a type that names nothing, and one from a package, closed', async () => {
+    expect([(await tone('label')).resolved, (await tone('icon')).resolved]).toEqual([undefined, undefined])
+  })
+})

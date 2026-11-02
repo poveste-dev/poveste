@@ -12,6 +12,8 @@ export interface DocProp {
   name: string
   description?: string
   type: string
+  /** `type` opened one level when it names one, `"sm" | "md" | "lg"` for `ButtonSize`, shown on hover (#1527). */
+  resolved?: string
   required: boolean
   /** The default the code applies, which wins over the tag when both exist. */
   default?: string
