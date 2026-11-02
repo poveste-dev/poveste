@@ -5,6 +5,8 @@ description: 'Install Poveste in a Quasar project, register the plugin, and make
 
 # Getting started with Quasar
 
+<DemoLinks framework="quasar" />
+
 Quasar builds its Vite config asynchronously and hands it over through an entrypoint meant for tooling, so [`@poveste/plugin-quasar`](../plugins/official.md) does the fetching and makes the two adjustments a book needs.
 
 ## Installation

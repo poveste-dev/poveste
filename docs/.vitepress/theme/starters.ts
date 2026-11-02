@@ -60,6 +60,26 @@ function manifest(name: string, extraDev: Record<string, string>, deps: Record<s
 }
 
 /** The starter's files as StackBlitz wants them, with the manifest serialised back in. */
+/**
+ * A JSX starter's first open file is `.tsx`, and with no tsconfig the StackBlitz
+ * editor underlines every tag: "Cannot use JSX unless the '--jsx' flag is provided"
+ * (#1567). Each framework compiles JSX differently, so this is what names how.
+ */
+function jsxTsconfig(jsx: Record<string, string>): string {
+  return `${JSON.stringify({
+    compilerOptions: {
+      target: 'ESNext',
+      ...jsx,
+      module: 'ESNext',
+      moduleResolution: 'bundler',
+      strict: true,
+      noEmit: true,
+      skipLibCheck: true,
+    },
+    include: ['src', '*.ts'],
+  }, null, 2)}\n`
+}
+
 export function projectFiles(starter: Starter): ProjectFiles {
   return {
     ...starter.files,
@@ -374,6 +394,7 @@ export default defineConfig({
   plugins: [solid()],
 })
 `,
+      'tsconfig.json': jsxTsconfig({ jsx: 'preserve', jsxImportSource: 'solid-js' }),
       // Setting `storyMatch` replaces the defaults, which find only Vue and
       // Svelte stories (#1124).
       'poveste.config.ts': `import { HstSolid } from '@poveste/plugin-solid'
@@ -455,6 +476,7 @@ export default defineConfig({
   plugins: [react()],
 })
 `,
+      'tsconfig.json': jsxTsconfig({ jsx: 'react-jsx' }),
       // No `storyMatch`: the plugin adds its own story patterns (#1267).
       'poveste.config.ts': `import { HstReact } from '@poveste/plugin-react'
 import { defineConfig } from 'poveste'

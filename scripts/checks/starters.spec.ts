@@ -147,6 +147,33 @@ describe('the starters', () => {
 
 // Every starter died at Poveste's own floor check in a WebContainer while the
 // resolution stayed green (#1226).
+describe('a starter whose first open file is JSX', () => {
+  // With no tsconfig the StackBlitz editor underlines every tag in that file (#1567).
+  it.each([
+    ['react', { jsx: 'react-jsx' }],
+    ['solid', { jsx: 'preserve', jsxImportSource: 'solid-js' }],
+  ] as const)('%s says how it compiles JSX', (framework, jsx) => {
+    const tsconfig = JSON.parse(starters[framework]().files['tsconfig.json'] as string)
+
+    expect(tsconfig.compilerOptions).toMatchObject(jsx)
+  })
+
+  it('names every such starter above', () => {
+    const jsxStarters = Object.entries(starters).filter(([, starter]) => String(starter().openFile).endsWith('x')).map(([framework]) => framework)
+
+    expect(jsxStarters).toEqual(['solid', 'react'])
+  })
+})
+
+describe('a framework\'s getting-started page', () => {
+  // A reader who lands on the page doesn't pass `guide/getting-started`, where the rest are.
+  it.each(Object.keys(starters))('%s carries its starter\'s button', (framework) => {
+    const page = readFileSync(join(import.meta.dirname, `../../docs/guide/${framework}/getting-started.md`), 'utf8')
+
+    expect(page).toContain(`<DemoLinks framework="${framework}"`)
+  })
+})
+
 describe('webContainerProblems', () => {
   const lockfile = (engines: string) => ({
     packages: {
