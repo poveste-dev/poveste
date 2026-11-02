@@ -63,6 +63,12 @@ describe.each(['jsdom', 'browser'])('a story file as tests, in %s', (project) =>
     expect(printed).not.toContain('Feature flags')
   })
 
+  // The host's own `Suspense`, which a book didn't choose and can't remove.
+  it('prints nothing about `<Suspense>`, and what a story itself prints', () => {
+    expect(printed).not.toContain('experimental feature')
+    expect(printed).toContain('printed by a story')
+  })
+
   it('reports every variant of the book', () => {
     expect(results.size).toBe(10)
   })

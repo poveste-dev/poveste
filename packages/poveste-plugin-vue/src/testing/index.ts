@@ -134,6 +134,10 @@ function toClientVariant(variant: Variant): Variant {
   }
 }
 
+// The host's `Suspense` is what catches an async `setup()`, and Vue announces it once
+// per page with no switch to turn that off, in a book that didn't choose it (#1570).
+const SUSPENSE_NOTICE = '<Suspense> is an experimental feature and its API will likely change.'
+
 /**
  * The mount pass a sandbox runs, for the variant's `initState`, then the render
  * pass for its default slot: what the preview shows.
@@ -149,6 +153,12 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
   let resolved = false
   const el = document.createElement('div')
   document.body.appendChild(el)
+  const { info } = console
+  console.info = (...args: unknown[]) => {
+    if (args[0] !== SUSPENSE_NOTICE) {
+      info(...args)
+    }
+  }
 
   const mountHost = createPreviewHost({
     name: 'StoryTestMount',
@@ -213,6 +223,7 @@ async function renderVariant(story: Story, variant: Variant, timeout: number): P
     mountHost.unmount()
     stateSync.stop()
     el.remove()
+    console.info = info
   }
 
   return found
