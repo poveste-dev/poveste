@@ -9,7 +9,7 @@ export interface FenceAt {
   line?: number
 }
 
-type Highlighter = (code: string, lang: string, at: FenceAt) => string | undefined
+export type Twoslash = (code: string, lang: string, at: FenceAt) => string | undefined
 
 const LANGS = ['ts', 'tsx', 'js', 'jsx']
 const ALIASES: Record<string, string> = { typescript: 'ts', javascript: 'js' }
@@ -23,8 +23,18 @@ const CACHED_BLOCKS = 500
  * (#1464), whatever the book has, and reads that copy's `lib` files too: left to
  * itself, `@typescript/vfs` takes them from whichever `typescript` it finds beside it.
  */
-export function createTwoslash(root: string, highlight: (code: string, lang: string, transformers: unknown[]) => string, warn: (message: string) => void = message => console.warn(message)): Highlighter {
-  let state: { transformer: (at: FenceAt) => unknown } | { off: string } | undefined
+export function createTwoslash(root: string, highlight: (code: string, lang: string, transformers: unknown[]) => string, warn: (message: string) => void = message => console.warn(message)): Twoslash {
+  let state: { transformer: (at: FenceAt, onError: (error: unknown) => void) => unknown } | { off: string } | undefined
+  // What each place was last warned about. A `<docs>` block is rendered once for each
+  // Vite server, and only a change to the block is news (#1571).
+  const warned = new Map<string, string>()
+
+  function warnOnce(at: FenceAt, code: string, message: string) {
+    if (warned.get(where(at)) !== code) {
+      warned.set(where(at), code)
+      warn(pc.yellow(message))
+    }
+  }
 
   function load() {
     try {
@@ -49,13 +59,11 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
         },
       }
       return {
-        transformer: (at: FenceAt) => factory({
+        transformer: (at: FenceAt, onError: (error: unknown) => void) => factory({
           langs: LANGS,
           explicitTrigger: false,
           typesCache,
-          onTwoslashError: (error: unknown) => {
-            warn(pc.yellow(`[poveste] Twoslash could not compile the block at ${where(at)}, so it renders without types: ${firstLine(error)}`))
-          },
+          onTwoslashError: onError,
         }),
       }
     }
@@ -67,7 +75,7 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
   return (code, lang, at) => {
     const name = ALIASES[lang] ?? lang
     if (!LANGS.includes(name)) {
-      warn(pc.yellow(`[poveste] Twoslash reads TypeScript and JavaScript only, so the \`${lang}\` block at ${where(at)} renders without types.`))
+      warnOnce(at, code, `[poveste] Twoslash reads TypeScript and JavaScript only, so the \`${lang}\` block at ${where(at)} renders without types.`)
       return undefined
     }
     // A failed load is tried again, so reinstalling during `poveste dev` needs no restart.
@@ -78,7 +86,19 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
       }
       state = loaded
     }
-    return 'off' in state ? undefined : highlight(code, name, [state.transformer(at)])
+    if ('off' in state) {
+      return undefined
+    }
+    let failed = false
+    const html = highlight(code, name, [state.transformer(at, (error) => {
+      failed = true
+      warnOnce(at, code, `[poveste] Twoslash could not compile the block at ${where(at)}, so it renders without types: ${firstLine(error)}`)
+    })])
+    // So a block that is fixed and then broken the same way is news again.
+    if (!failed) {
+      warned.delete(where(at))
+    }
+    return html
   }
 }
 

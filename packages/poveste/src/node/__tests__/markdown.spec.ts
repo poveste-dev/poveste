@@ -61,6 +61,20 @@ describe('markdown', async () => {
     warn.mockRestore()
   }, 60_000)
 
+  // Each Vite server has its own renderer, and a `<docs>` block goes through both.
+  it('warns once about a `twoslash` block that two renderers of one book render', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const source = '```ts twoslash\nconst n: number = \'one\'\n```\n'
+    const env = { file: path.resolve(__dirname, './markdown/Button.story.vue'), firstLine: 1 }
+
+    const [collection, client] = [await createMarkdownRenderer(ctx), await createMarkdownRenderer(ctx)]
+    collection.render(source, env)
+    client.render(source, env)
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  }, 60_000)
+
   it('puts a fenced block\'s attributes on its code element', async () => {
     const md = await createMarkdownRenderer(ctx)
 

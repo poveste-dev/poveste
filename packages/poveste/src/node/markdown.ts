@@ -2,7 +2,7 @@ import type { ServerMarkdownFile } from '@poveste/shared'
 import type { Highlighter } from 'shiki'
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
-import type { FenceAt } from './twoslash.js'
+import type { FenceAt, Twoslash } from './twoslash.js'
 import { createRequire } from 'node:module'
 import matter from '@11ty/gray-matter'
 import { kebabCase } from 'change-case'
@@ -119,10 +119,15 @@ function firstLineIn(source: string, content: string): number {
   return start <= 0 ? 1 : source.slice(0, start).split('\n').length
 }
 
+// One per book rather than per renderer: each Vite server has its own renderer, and
+// each compiled every block again and warned about it again (#1571).
+const twoslashes = new WeakMap<Context, Twoslash>()
+
 export async function createMarkdownRenderer(ctx: Context) {
   const highlighter = await getHighlighter()
   const toHtml = (code: string, lang: string, transformers?: unknown[]) => highlighter.codeToHtml(code, { theme: 'github-dark', lang: loadFence(highlighter, code, lang), transformers: transformers as never })
-  const twoslash = createTwoslash(ctx.root, toHtml)
+  const twoslash = twoslashes.get(ctx) ?? createTwoslash(ctx.root, toHtml)
+  twoslashes.set(ctx, twoslash)
   /*
    * Unprefixed utilities: the `ptw-` prefix went away with Tailwind v4, and
    * `not-prose` in particular is matched by the typography plugin's own
