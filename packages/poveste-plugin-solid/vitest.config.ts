@@ -1,5 +1,5 @@
 import { defaultClientConditions } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -16,6 +16,8 @@ export default defineConfig({
     conditions: defaultClientConditions,
   },
   test: {
+    // The story-test book runs under its own config, from `test:story-tests`.
+    exclude: [...configDefaults.exclude, 'fixtures/**', 'src/testing/__tests__/story-tests.spec.ts'],
     // Inlined, so `solid-js` and `solid-js/web` resolve under the same
     // conditions: externalised, Node picks the server build for one of them, and
     // two Solid builds share no reactive graph.

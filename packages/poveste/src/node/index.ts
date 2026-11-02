@@ -16,5 +16,7 @@ export {
   resolveConfigFile,
 } from './config.js'
 export * from './plugin.js'
+export { povesteTestingPlugin } from './testing.js'
+export type { PovesteTestingPluginOptions } from './testing.js'
 export { getInjectedImport } from './util/vendors.js'
 export * from '@poveste/shared'

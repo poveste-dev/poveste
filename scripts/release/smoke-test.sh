@@ -330,6 +330,29 @@ pnpm_dev_renders() {
   dev_renders "$name-pnpm" "$app" "$path" "$expected" "$port"
 }
 
+# run_story_tests <name> <label> <app> <test name that must pass>
+#
+# One `vitest run` of a consumer's story tests, as a testing guide prints them. It
+# fails on a failed test, a missing one, or a reload: in browser mode a dependency
+# the first run found late reloaded it, and Vitest asked the reader to edit their
+# config (#1503, #1507).
+run_story_tests() {
+  local name="$1" label="$2" app="$3" expected="$4"
+  local report="$WORK/story-tests-$name-$label.json" log="$WORK/story-tests-$name-$label.log"
+  ( cd "$app" && npx vitest run --reporter=default --reporter=json --outputFile.json="$report" ) > "$log" 2>&1 || true
+  if grep -aq 'unexpectedly reloaded' "$log" || ! node -e '
+    const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))
+    const names = report.testResults.flatMap(file => file.assertionResults).filter(test => test.status === "passed").map(test => test.fullName)
+    if (report.numFailedTests || report.numFailedTestSuites || !names.includes(process.argv[2])) process.exit(1)
+    console.log(`   ${names.join(", ")}`)
+  ' "$report" "$expected" 2>/dev/null; then
+    echo "❌ Smoke test FAILED [$name] — the testing guide's story tests ($label) did not pass without a reload"
+    tail -30 "$log"
+    exit 1
+  fi
+  echo "✅ [$name] story tests pass as the guide prints them ($label)"
+}
+
 # ── Vue ──────────────────────────────────────────────────────────────────────
 
 VUE_APP="$WORK/vue"
@@ -761,6 +784,50 @@ install_and_build solid "$SOLID_APP" \
 types_check solid "$SOLID_APP" '"jsx": "preserve", "jsxImportSource": "solid-js"'
 
 dev_renders solid "$SOLID_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4792
+
+# The Solid testing guide, as it prints, in the same install (#1522).
+echo "▸ [solid] Running a story test from docs/guide/solid/testing.md"
+SOLID_GUIDE="$ROOT/docs/guide/solid/testing.md"
+node "$ROOT/scripts/release/guide-block.mjs" "$SOLID_GUIDE" vitest.config.ts > "$SOLID_APP/vitest.config.ts"
+node "$ROOT/scripts/release/guide-block.mjs" "$SOLID_GUIDE" src/Badge.story.test.ts > "$SOLID_APP/src/Badge.story.test.ts"
+sed 's/Button/Badge/g' "$SOLID_APP/src/Button.story.tsx" | sed "s|from './Badge'|from './Button'|; s|import { Badge }|import { Button as Badge }|" > "$SOLID_APP/src/Badge.story.tsx"
+(
+  cd "$SOLID_APP"
+  npm install --no-audit --no-fund --loglevel=error \
+    "vitest@$(node -p "require('$ROOT/packages/poveste-plugin-solid/node_modules/vitest/package.json').version")" \
+    "jsdom@$(node -p "require('$ROOT/packages/poveste-plugin-solid/node_modules/jsdom/package.json').version")"
+)
+run_story_tests solid jsdom "$SOLID_APP" "Badge Badge default"
+
+# The guide's browser config on a cold cache, with a setup file whose imports have
+# to reach pre-bundling too. Opt-in with the dev pass, which has Chromium.
+if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
+  node "$ROOT/scripts/release/guide-block.mjs" "$SOLID_GUIDE" vitest.config.ts "In a browser" > "$SOLID_APP/vitest.config.ts"
+  cat > "$SOLID_APP/src/poveste.setup.tsx" <<'TSX'
+import { defineSetupSolid } from '@poveste/plugin-solid'
+
+export const setupSolid = defineSetupSolid(({ addWrapper }) => {
+  addWrapper(props => <div data-frame>{props.children}</div>)
+})
+TSX
+  cat > "$SOLID_APP/poveste.config.ts" <<'TS'
+import { HstSolid } from '@poveste/plugin-solid'
+import { defineConfig } from 'poveste'
+
+export default defineConfig({
+  plugins: [HstSolid()],
+  setupFile: '/src/poveste.setup.tsx',
+})
+TS
+  (
+    cd "$SOLID_APP"
+    npm install --no-audit --no-fund --loglevel=error \
+      "@vitest/browser-playwright@$(node -p "require('$ROOT/packages/poveste-plugin-solid/node_modules/@vitest/browser-playwright/package.json').version")" \
+      "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
+    rm -rf node_modules/.vite
+  )
+  run_story_tests solid browser "$SOLID_APP" "Badge Badge default"
+fi
 
 # ── React ────────────────────────────────────────────────────────────────────
 

@@ -366,6 +366,10 @@ module.exports = {
               text: 'Getting Started',
               link: '/guide/solid/getting-started',
             },
+            {
+              text: 'Story tests',
+              link: '/guide/solid/testing',
+            },
           ],
         },
         {
