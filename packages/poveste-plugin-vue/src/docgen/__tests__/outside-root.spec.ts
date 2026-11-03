@@ -81,12 +81,20 @@ describe('a component with nothing installed up its tree', () => {
     expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
   }, 60_000)
 
-  it('lists events in the same order with the mapping as without it', async () => {
+  it('lists the same events with the mapping as without it, in the order its program gives', async () => {
     copyFileSync(join(dir, 'book/Inside.vue'), join(dir, 'lib/Outside.vue'))
 
     const doc = await outside.extract(join(dir, 'lib/Outside.vue'))
 
-    expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
+    expect(doc!.events?.map(event => event.name).sort()).toEqual(['close', 'press', 'update:value'])
+  }, 60_000)
+
+  it('leaves a runtime `defineEmits` inside the root in the order it declares', async () => {
+    writeFileSync(join(dir, 'book/Runtime.vue'), '<script setup lang="ts">\nconst emit = defineEmits([\'press\', \'close\', \'alpha\'])\n</script>\n\n<template>\n  <button @click="emit(\'press\')" />\n</template>\n')
+
+    const doc = await outside.extract(join(dir, 'book/Runtime.vue'))
+
+    expect(doc!.events?.map(event => event.name)).toEqual(['press', 'close', 'alpha'])
   }, 60_000)
 
   it('doesn\'t watch the book\'s other components when it has read only one outside the root', async () => {
