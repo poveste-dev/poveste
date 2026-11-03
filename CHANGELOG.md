@@ -4,6 +4,53 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.22.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.21.1...v0.22.0)
+
+**Svelte, Solid and React story files can run as Vitest tests, auto-docs no longer needs TypeScript in the book, and collecting stories takes less memory.**
+
+It is a `minor`: story tests for three more frameworks, React's Dynamic source and types on hover are new features. Nothing that works today is renamed or removed, and no version floor moved. Most books need no change. These are the things that do behave differently:
+
+- **Auto-docs reads types with a TypeScript 6 that Poveste installs, whatever TypeScript the book has: 7, 6 or none** ([#1464](https://github.com/poveste-dev/poveste/issues/1464), [#1558](https://github.com/poveste-dev/poveste/pull/1558)). A book that installed `typescript@6` only for auto-docs can remove it. A React book still needs `@types/react`, because React ships no types of its own.
+- **`svelte2tsx` is now a dependency of `@poveste/plugin-svelte`, not a peer.** A book that installed it for an earlier release can remove it, and a book on TypeScript 7 has to, because `svelte2tsx` doesn't accept TypeScript 7 as a peer and npm stops the install.
+- **What it costs on disk:** a book already on TypeScript 6 grows by less than 1 MB, measured on the release candidate. A book with no TypeScript gets one copy. A book on TypeScript 7 also carries a TypeScript 6, and a Svelte book on TypeScript 7 under npm carries two, one under `poveste` and one under the plugin. Those books measured 189 MB for Vue and 217 MB for Svelte under npm.
+- **An npm book on TypeScript 7 now sees a peer warning.** The install prints `npm warn ERESOLVE overriding peer dependency` and exits 0. `npm ls` exits 1 and reports `typescript@7` invalid, from the `typescript` peer of `twoslash`. Nothing breaks when the book runs, since Poveste hands `twoslash` its own TypeScript 6. pnpm reports nothing about it.
+- **Story collection starts at most 4 workers by default, and only as stories need them** ([#415](https://github.com/poveste-dev/poveste/issues/415), [#1568](https://github.com/poveste-dev/poveste/pull/1568)). Before, the ceiling came from the core count: 11 in `poveste build` and 6 in `poveste dev` on a 12-core machine.
+  - **What you get:** on the release candidate, against 0.21.1, peak memory in `poveste build` fell from 1720 to 1191 MB on a Vue book of 75 stories and from 1948 to 1139 MB on a Quasar book of 34. Peak memory in a `poveste dev` session on a Vue book of 9 stories fell from 1570 to 1397 MB. Those builds took no longer.
+  - **Who it can slow down:** a book whose stories are each slow to run. A test book with 40 stories that each spend 400 ms of CPU took about 1.4 s longer. Set [`collectMaxThreads`](https://poveste.dev/reference/config#collectmaxthreads) for that, and it now raises the ceiling above 4. It's still held to half the cores in dev and one below them in build.
+- **`poveste dev` reached its `Local:` line about 0.2 s later than 0.21.1,** 0.80 s against 0.62 s on that Vue book of 9 stories, median of 8 runs. The cause isn't found, and the time to the first story didn't move beyond noise.
+- **A book's CSS now reaches the real `:root`, `html` and `body` in the story frame under `poveste dev`, as it already did in a built book** ([#1532](https://github.com/poveste-dev/poveste/issues/1532), [#1547](https://github.com/poveste-dev/poveste/pull/1547)). A story that looked right only in dev because of the old rewriting will now look as it does in the build.
+- **A plugin's `generateSourceCode` may also return `{ unavailable: string }`,** which the Source panel shows as the reason in the Dynamic button's tooltip. A plugin returning a string or nothing behaves as before. `poveste/docgen` also exports two new names, `bundledTypescript` and `resolveType`, and `docgen.typescript` accepts `'poveste'`.
+- **A correction to the 0.21.0 notes:** they said the "Try it live" starters fail on StackBlitz. On 2 Nov all seven booted on published 0.21.1, and no change here fixed it, so the cause isn't known ([#1501](https://github.com/poveste-dev/poveste/issues/1501)).
+
+### 🚀 Enhancements
+
+- **Story tests for Svelte, Solid and React: each variant of a story file runs as a Vitest test** ([#1522](https://github.com/poveste-dev/poveste/issues/1522), [#1549](https://github.com/poveste-dev/poveste/pull/1549), [#1550](https://github.com/poveste-dev/poveste/pull/1550), [#1552](https://github.com/poveste-dev/poveste/pull/1552)).
+  - **What fails a test:** an error in rendering, an `initState` that rejects, anything printed through `console.error` or `console.warn`, and what escapes to the window, such as a Svelte `$effect` that throws.
+  - **How:** each plugin adds `./vitest` (`povesteTesting`) and `./testing` (`testStories`), and `vitest` is a new optional peer of all three. The guides for [Svelte](https://poveste.dev/guide/svelte/testing), [Solid](https://poveste.dev/guide/solid/testing) and [React](https://poveste.dev/guide/react/testing) have the config to copy, in jsdom and in browser mode.
+- **React's Source panel generates a Dynamic view from what a variant's `render` returns** ([#1524](https://github.com/poveste-dev/poveste/issues/1524), [#1554](https://github.com/poveste-dev/poveste/pull/1554), [#1569](https://github.com/poveste-dev/poveste/issues/1569), [#1575](https://github.com/poveste-dev/poveste/pull/1575)). It prints JSX with each value as it is now, and follows the state.
+  - **What it can't print:** a function or a class instance prints as `…`, and so do a `Map`, a `Set` and a `RegExp` for now ([#1577](https://github.com/poveste-dev/poveste/issues/1577)).
+  - **A component needs a name:** one with no name JSX can write, such as `memo(() => …)` or a context with no `displayName`, leaves the whole variant on the story file, and the Dynamic button's tooltip says why. Give it a capitalized name to keep Dynamic.
+  - **Solid isn't covered:** its `render` returns DOM nodes with no component tree, so that half of the issue stays open.
+- **A fence marked `twoslash` in a book's markdown docs shows types on hover** ([#1525](https://github.com/poveste-dev/poveste/issues/1525), [#1557](https://github.com/poveste-dev/poveste/pull/1557), [#1571](https://github.com/poveste-dev/poveste/issues/1571), [#1573](https://github.com/poveste-dev/poveste/pull/1573)). It compiles with Poveste's TypeScript 6, so the book installs nothing more. Each block compiles on its own, with TypeScript's defaults rather than the book's tsconfig.
+- **A named type in the auto-docs table opens on hover and keyboard focus** ([#1527](https://github.com/poveste-dev/poveste/issues/1527), [#1555](https://github.com/poveste-dev/poveste/pull/1555)). `ButtonSize` opens to `"sm" | "md" | "lg"`, one level deep, in every framework with a table, and types are coloured. A type declared only under `node_modules`, such as `ReactNode`, doesn't open.
+
+### 🩹 Fixes
+
+- **A book on a Vite below 8 stops with one sentence, before the CLI loads** ([#1551](https://github.com/poveste-dev/poveste/issues/1551), [#1561](https://github.com/poveste-dev/poveste/pull/1561)). `You are using Vite 7.3.6. poveste requires Vite ^8.0.0. Please upgrade Vite.` It was `ERR_PACKAGE_PATH_NOT_EXPORTED` on Vite 5 and a missing `parseSync` export on Vite 6 and 7. Vite's floor was already 8, and it hasn't moved.
+- **A Vue component beside a tsconfig-less book's root gets its table** ([#1559](https://github.com/poveste-dev/poveste/issues/1559), [#1560](https://github.com/poveste-dev/poveste/pull/1560)). It logged that the component was "not part of the project" and showed nothing. A type it imports from a sibling file is read too.
+- **A Vue component outside a tsconfig-less book's root gets its props when nothing is installed up its tree** ([#1580](https://github.com/poveste-dev/poveste/issues/1580), [#1582](https://github.com/poveste-dev/poveste/pull/1582)). `vue` didn't resolve from where the component sits, so the table came out empty with no message. Auto-docs now reads every file in such a book against the book's own `vue`, including a package inside the root that has a different one. A type imported from a package installed nowhere still reads as `any`, and nothing is logged.
+- **The Docs tab says a library's components get no table** ([#1538](https://github.com/poveste-dev/poveste/issues/1538), [#1548](https://github.com/poveste-dev/poveste/pull/1548)). It told the reader to name a component they had already named, when the component comes from an installed package.
+- **Vue story tests no longer print Vue's `<Suspense>` notice** ([#1570](https://github.com/poveste-dev/poveste/issues/1570), [#1572](https://github.com/poveste-dev/poveste/pull/1572)). The harness wraps every story in `Suspense`, so the notice came from Poveste rather than the story. Vue has no switch for it, so that exact line is filtered while a variant renders.
+
+### 📖 Documentation
+
+- **The React and Solid "Try it live" starters have a `tsconfig.json`, and the Solid and Quasar guides have the button** ([#1567](https://github.com/poveste-dev/poveste/issues/1567), [#1574](https://github.com/poveste-dev/poveste/pull/1574)). Every framework's getting-started page now has one.
+- **The guides' TypeScript examples are type-checked when the docs build, with types on hover** ([#1526](https://github.com/poveste-dev/poveste/issues/1526), [#1556](https://github.com/poveste-dev/poveste/pull/1556)).
+- **The migration guide says auto-docs is on by default and what it costs** ([#1537](https://github.com/poveste-dev/poveste/issues/1537), [#1540](https://github.com/poveste-dev/poveste/issues/1540), [#1553](https://github.com/poveste-dev/poveste/pull/1553)).
+- **Smaller corrections:** the Vue guide says `poveste` installs the TypeScript 6 it reads a book with ([#1565](https://github.com/poveste-dev/poveste/pull/1565)), and the Svelte and SvelteKit guides say a SvelteKit 3 book imports through `#lib` rather than `$lib` ([#1566](https://github.com/poveste-dev/poveste/pull/1566)).
+
 ## v0.21.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.21.0...v0.21.1)
