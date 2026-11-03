@@ -14,6 +14,8 @@ type GeneratedSource = ReturnType<ClientSupportPlugin['generateSourceCode']>
 const WIDTH = 80
 
 const EDGE_SPACE = /^\s|\s$/
+// JSX decodes these in text and in a quoted attribute.
+const ENTITY = /&(?:#\w+|\w+);/
 
 const MEMO = Symbol.for('react.memo')
 const FORWARD_REF = Symbol.for('react.forward_ref')
@@ -26,6 +28,13 @@ const BUILT_INS: Record<symbol, string> = {
 // What JSX reads as a component. `_c4` would pass, but it's what React Refresh calls a
 // component it registers, not a name the reader wrote.
 const COMPONENT_NAME = /^(?!_c\d*$)[A-Z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/
+
+// Thrown to abandon the render that called the variant's `render`.
+const CAPTURED = Symbol('captured')
+// A child JSX can hold but this can't print: a function, a portal, a plain object.
+const OPAQUE = Symbol('opaque')
+
+type Child = ReactElement | string | typeof OPAQUE
 
 class UnnamedComponent extends Error {}
 
@@ -67,19 +76,21 @@ export function generateSourceCode(variant: Variant): GeneratedSource {
 
 /**
  * What `render` returns, called inside a component: `render` is a component body,
- * so it may call hooks (#371), which throw anywhere else. Nothing it returns is
- * rendered.
+ * so it may call hooks (#371), which throw anywhere else. The render is abandoned
+ * once `render` returns, so nothing commits and the story's effects don't run.
  */
 function capture(render: Render, api: ReactRenderApi<any>): ReactNode {
   let node: ReactNode
   let failed: { error: unknown } | undefined
-  function Capture() {
+  function Capture(): null {
     node = render(api)
-    return null
+    throw CAPTURED
   }
   const root = createRoot(document.createElement('div'), {
     onUncaughtError: (error) => {
-      failed = { error }
+      if (error !== CAPTURED) {
+        failed = { error }
+      }
     },
   })
   flushSync(() => root.render(createElement(Capture)))
@@ -99,12 +110,12 @@ export function printNode(node: ReactNode): string {
     }
     return ['<>', ...children.flatMap(child => indent(printLine(child))), '</>'].join('\n')
   }
-  return children.length ? printChild(children[0]!) : ''
+  return children[0] === undefined || children[0] === OPAQUE ? '' : printChild(children[0])
 }
 
 /** Fragments opened, empty values dropped, adjacent text joined: what a reader sees as the children. */
-function flatten(node: ReactNode): (ReactElement | string)[] {
-  const out: (ReactElement | string)[] = []
+function flatten(node: ReactNode): Child[] {
+  const out: Child[] = []
   const visit = (value: ReactNode) => {
     if (value === null || value === undefined || typeof value === 'boolean') {
       return
@@ -129,32 +140,39 @@ function flatten(node: ReactNode): (ReactElement | string)[] {
       else {
         out.push(String(value))
       }
+      return
+    }
+    if (typeof value === 'function' || typeof value === 'object') {
+      out.push(OPAQUE)
     }
   }
   visit(node)
   return out
 }
 
-function printChild(child: ReactElement | string): string {
-  return typeof child === 'string' ? printText(child) : printElement(child)
+function printChild(child: Child, flat = false): string {
+  if (child === OPAQUE) {
+    return '{…}'
+  }
+  return typeof child === 'string' ? printText(child) : printElement(child, flat)
 }
 
 /** A child on a line of its own, where JSX would trim the text's edges. */
-function printLine(child: ReactElement | string): string {
+function printLine(child: Child): string {
   return typeof child === 'string' && EDGE_SPACE.test(child) ? `{${JSON.stringify(child)}}` : printChild(child)
 }
 
 /** Children whose text has spaces at its edges, together on one line, where JSX keeps them as written. */
-function inlineChildren(children: (ReactElement | string)[]): string | undefined {
+function inlineChildren(children: Child[]): string | undefined {
   if (!children.some(child => typeof child === 'string' && EDGE_SPACE.test(child))) {
     return undefined
   }
-  const printed = children.map(printChild).join('')
+  const printed = children.map(child => printChild(child)).join('')
   return printed.includes('\n') ? undefined : printed
 }
 
 function printText(text: string): string {
-  return /[{}<>\n]/.test(text) ? `{${JSON.stringify(text)}}` : text
+  return /[{}<>\n]/.test(text) || ENTITY.test(text) ? `{${JSON.stringify(text)}}` : text
 }
 
 /** `flat` is for a place that holds one line, where a line break between children would become a space. */
@@ -164,12 +182,12 @@ function printElement(element: ReactElement, flat = false): string {
     throw new UnnamedComponent()
   }
   const { children, ...props } = (element.props ?? {}) as Record<string, unknown> & { children?: ReactNode }
-  const attributes = Object.entries(props).map(([key, value]) => printProp(key, value)).filter((line): line is string => line !== undefined)
+  const attributes = [...element.key === null ? [] : [printProp('key', element.key)], ...Object.entries(props).map(([key, value]) => printProp(key, value))].filter((line): line is string => line !== undefined)
   const inner = flatten(children)
 
   const oneLine = `<${[name, ...attributes].join(' ')}`
   if (flat) {
-    const body = inner.map(child => typeof child === 'string' ? printText(child) : printElement(child, true)).join('')
+    const body = inner.map(child => printChild(child, true)).join('')
     return inner.length ? `${oneLine}>${body}</${name}>` : `${oneLine} />`
   }
   const open = oneLine.length + 2 > WIDTH && attributes.length > 1
@@ -201,7 +219,7 @@ function printProp(key: string, value: unknown): string | undefined {
     return key
   }
   if (typeof value === 'string') {
-    return value.includes('"') || value.includes('\n') ? `${key}={${JSON.stringify(value)}}` : `${key}="${value}"`
+    return value.includes('"') || value.includes('\n') || ENTITY.test(value) ? `${key}={${JSON.stringify(value)}}` : `${key}="${value}"`
   }
   // A handler's body is the story's business, not the component's API.
   if (typeof value === 'function') {
@@ -234,12 +252,19 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   if (typeof value !== 'object' || value === undefined || seen.has(value)) {
     return value === undefined ? 'undefined' : '…'
   }
+  if (!Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
+    return '…'
+  }
+  // Only for its own contents: a value that appears twice isn't a cycle.
   seen.add(value)
+  const printed = printContainer(value, seen)
+  seen.delete(value)
+  return printed
+}
+
+function printContainer(value: object, seen: Set<unknown>): string {
   if (Array.isArray(value)) {
     return `[${value.map(item => printValue(item, seen)).join(', ')}]`
-  }
-  if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
-    return '…'
   }
   const entries = Object.entries(value).map(([key, item]) => `${/^[a-z_$][\w$]*$/i.test(key) ? key : JSON.stringify(key)}: ${printValue(item, seen)}`)
   return entries.length ? `{ ${entries.join(', ')} }` : '{}'

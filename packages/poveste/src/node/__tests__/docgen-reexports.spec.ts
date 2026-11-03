@@ -80,6 +80,12 @@ describe('a story that documents a library\'s component', () => {
     expect({ files, unresolved, packaged }).toEqual({ files: [], unresolved: 0, packaged: 1 })
   })
 
+  it('doesn\'t count a framework\'s own component as what a story documents', async () => {
+    const { files, unresolved, packaged } = await storyComponents(file('stories/FrameworkOwn.story.vue'), resolve)
+
+    expect({ files, unresolved, packaged }).toEqual({ files: [], unresolved: 0, packaged: 0 })
+  })
+
   it('counts a capitalised import from a package as packaged, and not a lowercase one', async () => {
     const { files, unresolved, packaged } = await storyComponents(file('stories/LibraryImported.story.vue'), resolve)
 

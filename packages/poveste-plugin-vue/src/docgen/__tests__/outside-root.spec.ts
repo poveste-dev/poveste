@@ -1,5 +1,5 @@
 import type { DocgenExtractor } from '@poveste/shared'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -49,6 +49,7 @@ describe('a book with no tsconfig', () => {
 // Outside the repository, so nothing is installed up the component's tree: inside it,
 // the workspace's `node_modules` answers, and the case can't happen (#1580).
 describe('a component with nothing installed up its tree', () => {
+  const withProp = (name: string) => `<script setup lang="ts">\ndefineProps<{ ${name}: string }>()\n</script>\n\n<template>\n  <button />\n</template>\n`
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'poveste-docgen-outside-')))
   const vue = dirname(createRequire(import.meta.url).resolve('vue/package.json'))
   let outside: DocgenExtractor
@@ -57,7 +58,7 @@ describe('a component with nothing installed up its tree', () => {
     mkdirSync(join(dir, 'book/node_modules'), { recursive: true })
     mkdirSync(join(dir, 'lib'))
     symlinkSync(vue, join(dir, 'book/node_modules/vue'), 'junction')
-    writeFileSync(join(dir, 'lib/Btn.vue'), '<script setup lang="ts">\ndefineProps<{ label: string }>()\n</script>\n\n<template>\n  <button>{{ label }}</button>\n</template>\n')
+    writeFileSync(join(dir, 'lib/Btn.vue'), withProp('label'))
     writeFileSync(join(dir, 'book/Inside.vue'), '<script setup lang="ts">\nconst emit = defineEmits<{ press: [event: MouseEvent], close: [] }>()\nconst value = defineModel<string>(\'value\')\n</script>\n\n<template>\n  <button @click="emit(\'press\', $event)">{{ value }}</button>\n</template>\n')
     outside = await createExtractor({ root: join(dir, 'book'), options: {} })
   })
@@ -80,6 +81,23 @@ describe('a component with nothing installed up its tree', () => {
     expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
   }, 60_000)
 
+  it('lists events in the same order with the mapping as without it', async () => {
+    copyFileSync(join(dir, 'book/Inside.vue'), join(dir, 'lib/Outside.vue'))
+
+    const doc = await outside.extract(join(dir, 'lib/Outside.vue'))
+
+    expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
+  }, 60_000)
+
+  it('doesn\'t watch the book\'s other components when it has read only one outside the root', async () => {
+    const extractor = await createExtractor({ root: join(dir, 'book'), options: {} })
+
+    await extractor.extract(join(dir, 'lib/Btn.vue'))
+
+    expect(extractor.sources?.()).not.toContain(join(dir, 'book/Inside.vue'))
+    extractor.dispose()
+  }, 60_000)
+
   it('reports both among the files to watch', async () => {
     await outside.extract(join(dir, 'lib/Btn.vue'))
     await outside.extract(join(dir, 'book/Inside.vue'))
@@ -89,10 +107,10 @@ describe('a component with nothing installed up its tree', () => {
 
   it('reads such a component again after it changes', async () => {
     const file = join(dir, 'lib/Edited.vue')
-    writeFileSync(file, '<script setup lang="ts">\ndefineProps<{ before: string }>()\n</script>\n\n<template>\n  <button />\n</template>\n')
+    writeFileSync(file, withProp('before'))
     await outside.extract(file)
 
-    writeFileSync(file, '<script setup lang="ts">\ndefineProps<{ after: string }>()\n</script>\n\n<template>\n  <button />\n</template>\n')
+    writeFileSync(file, withProp('after'))
     outside.update?.(file)
     const doc = await outside.extract(file)
 

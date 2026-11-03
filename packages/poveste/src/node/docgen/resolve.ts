@@ -96,7 +96,10 @@ function openObject({ typescript, checker, print }: Reading, type: ts.Type): str
   if (type.getCallSignatures().length || checker.isArrayType(type)) {
     return undefined
   }
-  const members = checker.getPropertiesOfType(type).map((property) => {
+  const hidden = typescript.ModifierFlags.Private | typescript.ModifierFlags.Protected
+  const shown = checker.getPropertiesOfType(type).filter(property =>
+    !/^(?:__@|#)/.test(property.name) && !property.getDeclarations()?.some(declaration => typescript.getCombinedModifierFlags(declaration) & hidden))
+  const members = shown.map((property) => {
     const optional = property.flags & typescript.SymbolFlags.Optional ? '?' : ''
     const printed = print(checker.getTypeOfSymbol(property))
     return `${property.name}${optional}: ${optional ? printed.replace(/ \| undefined$/, '') : printed}`
