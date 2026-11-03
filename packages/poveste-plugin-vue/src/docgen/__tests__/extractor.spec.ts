@@ -226,8 +226,11 @@ describe('a named prop type, opened one level', () => {
     expect((await tone('fallback')).resolved).toBe('"sm" | "md" | "lg" | null')
   })
 
-  it('leaves a type that names nothing, and one from a package, closed', async () => {
-    expect([(await tone('label')).resolved, (await tone('icon')).resolved]).toEqual([undefined, undefined])
+  it.each([
+    ['a type that names nothing', 'label'],
+    ['a type from a package', 'icon'],
+  ])('leaves %s closed', async (_type, name) => {
+    expect((await tone(name)).resolved).toBeUndefined()
   })
 })
 

@@ -76,28 +76,29 @@ describe('a Nuxt below the plugin\'s peer floor', () => {
 })
 
 const POVESTE = { poveste: { version: '0.22.0', peerDependencies: { vite: '^8.0.0' } } }
+const povesteIn = (root: string) => path.join(root, 'node_modules', 'poveste')
 
 // A book still on a histoire-era Vite, installed with `--legacy-peer-deps` (#1551).
 describe('a Vite below Poveste\'s peer floor', () => {
   it('is a problem naming the installed Vite and Poveste\'s range', () => {
     const root = project({ ...POVESTE, vite: { version: '7.3.6' } })
 
-    expect(viteProblem(path.join(root, 'node_modules', 'poveste'))).toBe('You are using Vite 7.3.6. poveste requires Vite ^8.0.0. Please upgrade Vite.')
+    expect(viteProblem(povesteIn(root))).toBe('You are using Vite 7.3.6. poveste requires Vite ^8.0.0. Please upgrade Vite.')
   })
 
   it('is read where Poveste finds Vite, so a copy installed for it wins over the book\'s', () => {
     const root = project({ ...POVESTE, vite: { version: '7.3.6' } })
-    const own = path.join(root, 'node_modules', 'poveste', 'node_modules', 'vite')
+    const own = path.join(povesteIn(root), 'node_modules', 'vite')
     mkdirSync(own, { recursive: true })
     writeFileSync(path.join(own, 'package.json'), JSON.stringify({ name: 'vite', version: '8.1.0' }))
 
-    expect(viteProblem(path.join(root, 'node_modules', 'poveste'))).toBeNull()
+    expect(viteProblem(povesteIn(root))).toBeNull()
   })
 
   it('exits 1 before the CLI is loaded, saying so on stderr', () => {
     const root = project({ ...POVESTE, vite: { version: '5.4.21' } })
     const floor = pathToFileURL(path.join(PACKAGE, 'framework-floor.mjs')).href
-    const script = `import(${JSON.stringify(floor)}).then(m => { m.supportedFrameworks(process.cwd(), ${JSON.stringify(path.join(root, 'node_modules', 'poveste'))}) })`
+    const script = `import(${JSON.stringify(floor)}).then(m => { m.supportedFrameworks(process.cwd(), ${JSON.stringify(povesteIn(root))}) })`
 
     const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: root, encoding: 'utf8' })
 
@@ -105,13 +106,12 @@ describe('a Vite below Poveste\'s peer floor', () => {
     expect(result.stderr).toBe('You are using Vite 5.4.21. poveste requires Vite ^8.0.0. Please upgrade Vite.\n')
   })
 
-  it('is fine at the floor and above it', () => {
-    expect(viteProblem(path.join(project({ ...POVESTE, vite: { version: '8.0.0' } }), 'node_modules', 'poveste'))).toBeNull()
-    expect(viteProblem(path.join(project({ ...POVESTE, vite: { version: '8.3.4' } }), 'node_modules', 'poveste'))).toBeNull()
+  it.each(['8.0.0', '8.3.4'])('is fine on Vite %s', (version) => {
+    expect(viteProblem(povesteIn(project({ ...POVESTE, vite: { version } })))).toBeNull()
   })
 
   it('is fine with no Vite installed, which is the package manager\'s to report', () => {
-    expect(viteProblem(path.join(project(POVESTE), 'node_modules', 'poveste'))).toBeNull()
+    expect(viteProblem(povesteIn(project(POVESTE)))).toBeNull()
   })
 
   it('is fine in this workspace', () => {

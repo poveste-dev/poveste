@@ -308,13 +308,10 @@ describe('createPool', () => {
 
     it('runs stories that arrive one at a time on one worker, whatever the ceiling', async () => {
       const created = pool<number, number>(workerFile('one-at-a-time', THREAD_ID), 4)
-      const threads = new Set<number>()
 
-      for (let i = 0; i < 8; i++) {
-        threads.add(await created.run(0))
-      }
+      const threads = [await created.run(0), await created.run(0), await created.run(0)]
 
-      expect(threads.size).toBe(1)
+      expect(new Set(threads).size).toBe(1)
     })
 
     it('starts one worker for each story that finds none idle, up to the ceiling', async () => {

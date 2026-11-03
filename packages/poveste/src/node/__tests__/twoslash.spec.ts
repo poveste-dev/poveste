@@ -8,35 +8,45 @@ import { createTwoslash } from '../twoslash.js'
 
 const BOOK = join(import.meta.dirname, '../../..')
 
+async function createHighlight(langs: string[]) {
+  const highlighter = await createHighlighter({ themes: ['github-dark'], langs })
+  return (code: string, lang: string, transformers: unknown[]) => highlighter.codeToHtml(code, { theme: 'github-dark', lang, transformers: transformers as never })
+}
+
+const textOf = (html: string | undefined) => html?.replace(/<[^>]+>/g, '')
+
 describe('a `twoslash` fence in a book\'s markdown docs', () => {
   let highlight: (code: string, lang: string, transformers: unknown[]) => string
 
   beforeAll(async () => {
-    const highlighter = await createHighlighter({ themes: ['github-dark'], langs: ['ts', 'js'] })
-    highlight = (code, lang, transformers) => highlighter.codeToHtml(code, { theme: 'github-dark', lang, transformers: transformers as never })
+    highlight = await createHighlight(['ts', 'js'])
   })
 
+  function rendered() {
+    const warn = vi.fn()
+    return { warn, twoslash: createTwoslash(BOOK, highlight, warn) }
+  }
+
   it('shows each name\'s type on hover, focusable without a tab stop of its own', () => {
-    const twoslash = createTwoslash(BOOK, highlight, vi.fn())
+    const { twoslash } = rendered()
 
     const html = twoslash('const size: \'sm\' | \'md\' = \'sm\'', 'ts', {})
 
-    const popup = html?.match(/<code class="twoslash-popup-code">(.*?)<\/code>/)?.[1]?.replace(/<[^>]+>/g, '')
+    const popup = textOf(html?.match(/<code class="twoslash-popup-code">(.*?)<\/code>/)?.[1])
     expect(html).toContain('<span class="twoslash-hover" tabindex="-1">')
     expect(popup).toBe('const size: "sm" | "md"')
   }, 60_000)
 
   it('shows types in a JavaScript block', () => {
-    const twoslash = createTwoslash(BOOK, highlight, vi.fn())
+    const { twoslash } = rendered()
 
     const html = twoslash('const last = [1, 2].at(-1)', 'js', {})
 
-    expect(html?.replace(/<[^>]+>/g, '')).toContain('const last: number | undefined')
+    expect(textOf(html)).toContain('const last: number | undefined')
   }, 60_000)
 
   it('renders a block in another language as plain code, naming where it is', () => {
-    const warn = vi.fn()
-    const twoslash = createTwoslash(BOOK, highlight, warn)
+    const { warn, twoslash } = rendered()
 
     const html = twoslash('<template />', 'vue', { file: 'src/Button.story.md', line: 4 })
 
@@ -45,8 +55,7 @@ describe('a `twoslash` fence in a book\'s markdown docs', () => {
   })
 
   it('renders a block that does not compile as plain code, naming where it is', () => {
-    const warn = vi.fn()
-    const twoslash = createTwoslash(BOOK, highlight, warn)
+    const { warn, twoslash } = rendered()
 
     const html = twoslash('const n: number = \'one\'', 'ts', { file: 'src/Button.story.md', line: 12 })
 
@@ -59,18 +68,16 @@ describe('a `twoslash` fence in a book\'s markdown docs', () => {
     const AT = { file: 'src/Button.story.md', line: 12 }
 
     it('warns once when the same block is rendered again', () => {
-      const warn = vi.fn()
-      const twoslash = createTwoslash(BOOK, highlight, warn)
+      const { warn, twoslash } = rendered()
 
       twoslash(BROKEN, 'ts', AT)
       twoslash(BROKEN, 'ts', AT)
 
       expect(warn).toHaveBeenCalledTimes(1)
-    }, 60_000)
+    })
 
     it('warns once about a block in another language rendered again', () => {
-      const warn = vi.fn()
-      const twoslash = createTwoslash(BOOK, highlight, warn)
+      const { warn, twoslash } = rendered()
 
       twoslash('<template />', 'vue', AT)
       twoslash('<template />', 'vue', AT)
@@ -79,35 +86,32 @@ describe('a `twoslash` fence in a book\'s markdown docs', () => {
     })
 
     it('warns again when the block changes', () => {
-      const warn = vi.fn()
-      const twoslash = createTwoslash(BOOK, highlight, warn)
+      const { warn, twoslash } = rendered()
 
       twoslash(BROKEN, 'ts', AT)
       twoslash('const n: number = \'two\'', 'ts', AT)
 
       expect(warn).toHaveBeenCalledTimes(2)
-    }, 60_000)
+    })
 
     it('warns about the same code in two places', () => {
-      const warn = vi.fn()
-      const twoslash = createTwoslash(BOOK, highlight, warn)
+      const { warn, twoslash } = rendered()
 
       twoslash(BROKEN, 'ts', AT)
       twoslash(BROKEN, 'ts', { file: 'src/Other.story.md', line: 3 })
 
       expect(warn).toHaveBeenCalledTimes(2)
-    }, 60_000)
+    })
 
     it('warns again when a block that was fixed breaks the same way', () => {
-      const warn = vi.fn()
-      const twoslash = createTwoslash(BOOK, highlight, warn)
+      const { warn, twoslash } = rendered()
 
       twoslash(BROKEN, 'ts', AT)
       twoslash('const n: number = 1', 'ts', AT)
       twoslash(BROKEN, 'ts', AT)
 
       expect(warn).toHaveBeenCalledTimes(2)
-    }, 60_000)
+    })
   }, 60_000)
 })
 
@@ -130,8 +134,7 @@ describe('a `twoslash` fence in a book on TypeScript 7', () => {
     resolve._resolveFilename = (request, parent, ...rest) => request === 'typescript' && parent?.filename?.includes('@typescript/vfs')
       ? join(ts, 'index.js')
       : resolveFilename.call(Module, request, parent, ...rest)
-    const highlighter = await createHighlighter({ themes: ['github-dark'], langs: ['ts'] })
-    highlight = (code, lang, transformers) => highlighter.codeToHtml(code, { theme: 'github-dark', lang, transformers: transformers as never })
+    highlight = await createHighlight(['ts'])
   })
   afterAll(() => {
     resolve._resolveFilename = resolveFilename
@@ -143,7 +146,7 @@ describe('a `twoslash` fence in a book on TypeScript 7', () => {
 
     const html = createTwoslash(root, highlight, warn)('const last = [1, 2].at(-1)', 'ts', {})
 
-    expect(html?.replace(/<[^>]+>/g, '')).toContain('Array&#x3C;number>.at(index: number)')
+    expect(textOf(html)).toContain('Array&#x3C;number>.at(index: number)')
     expect(warn).not.toHaveBeenCalled()
   }, 60_000)
 })
@@ -155,9 +158,8 @@ describe('a `twoslash` fence after Twoslash failed to load', () => {
   })
 
   it('loads it on a later fence, once the dependencies are back', async () => {
-    const highlighter = await createHighlighter({ themes: ['github-dark'], langs: ['ts'] })
     const warn = vi.fn()
-    const twoslash = createTwoslash(BOOK, (code, lang, transformers) => highlighter.codeToHtml(code, { theme: 'github-dark', lang, transformers: transformers as never }), warn)
+    const twoslash = createTwoslash(BOOK, await createHighlight(['ts']), warn)
     resolve._resolveFilename = (request, ...rest) => {
       if (request === '@shikijs/twoslash/core') {
         throw new Error('Cannot find module \'@shikijs/twoslash/core\'')

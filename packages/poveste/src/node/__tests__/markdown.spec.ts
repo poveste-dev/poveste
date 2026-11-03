@@ -67,7 +67,9 @@ describe('markdown', async () => {
     const source = '```ts twoslash\nconst n: number = \'one\'\n```\n'
     const env = { file: path.resolve(__dirname, './markdown/Button.story.vue'), firstLine: 1 }
 
-    const [collection, client] = [await createMarkdownRenderer(ctx), await createMarkdownRenderer(ctx)]
+    const collection = await createMarkdownRenderer(ctx)
+    const client = await createMarkdownRenderer(ctx)
+
     collection.render(source, env)
     client.render(source, env)
 

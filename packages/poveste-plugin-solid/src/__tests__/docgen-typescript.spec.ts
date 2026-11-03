@@ -21,7 +21,7 @@ const from = HstSolid().docgen!.typescript!
 
 describe('solid auto-docs in a book', () => {
   // Poveste's TypeScript 6 reads the book, whatever the book has, so neither turns it off (#1464).
-  it.each([['7.0.2'], ['6.0.3'], [undefined]])('stays on in a book whose TypeScript is %s', (version) => {
+  it.each([['on TypeScript 7.0.2', '7.0.2'], ['on TypeScript 6.0.3', '6.0.3'], ['with no TypeScript', undefined]])('stays on in a book %s', (_book, version) => {
     expect(typescriptProblem(book(version), from)).toBeUndefined()
   })
 })
