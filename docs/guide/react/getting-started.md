@@ -228,6 +228,8 @@ The Source panel's **Dynamic** view prints what a variant's `render` returns, as
 
 A function prop prints as `{…}`. A hook's own state, such as a `useState` inside `render`, lives in the preview, so the source shows its starting value. A variant's own `source` string replaces the generated code, and **Static** shows the story file.
 
+Dynamic prints a component by the name it has at runtime, because the variable it's assigned to isn't in the element. If that name can't be written as a tag, the panel opens on **Static** rather than print one that won't render, and the Dynamic button's tooltip says why. That covers `memo(() => …)`, `forwardRef(() => …)`, `lazy(…)` and a context with no `displayName`, a `displayName` like `Styled(Button)`, and a lower-case name like `memo(function card() { … })`. To keep Dynamic, give it a capitalized name: `memo(function Card() { … })`, or set `displayName` on it.
+
 ## Setup and wrappers
 
 Export `setupReact` from your [setup file](../config.md#global-js-and-css) to run code before every story mounts. `addWrapper` puts a component around each one — a theme provider, a router, a context:

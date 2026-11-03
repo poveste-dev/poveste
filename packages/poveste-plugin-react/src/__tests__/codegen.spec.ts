@@ -2,8 +2,9 @@
 import type { Variant } from '@poveste/shared'
 import type { ReactNode, Ref } from 'react'
 import type { ReactRenderApi } from '../types'
+import { runInNewContext } from 'node:vm'
 import { reactive } from '@poveste/vendors/vue'
-import { createElement, forwardRef, Fragment, memo, useState } from 'react'
+import { createContext, createElement, forwardRef, Fragment, lazy, memo, Profiler, StrictMode, Suspense, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { generateSourceCode } from '../client/codegen'
 
@@ -18,6 +19,10 @@ function Badge(props: { tone: string, children?: ReactNode }) {
 }
 function Counter(props: { count: number, label: string, onIncrement: () => void }) {
   return createElement('button', { onClick: props.onIncrement }, `${props.label} ${props.count}`)
+}
+
+function Stamp(_props: { at?: Date, range?: { from: Date }, icon?: ReactNode }) {
+  return null
 }
 
 describe('a React variant\'s Dynamic source', () => {
@@ -90,6 +95,171 @@ describe('a React variant\'s Dynamic source', () => {
     const variant = variantOf(() => createElement('code', null, 'a {b} <c>'))
 
     expect(generateSourceCode(variant)).toBe('<code>{"a {b} <c>"}</code>')
+  })
+
+  it('keeps the spaces between text and elements on one line', () => {
+    const variant = variantOf(() => createElement('p', null, 'text ', createElement('b', null, 'bold'), ' ', 2))
+
+    expect(generateSourceCode(variant)).toBe('<p>text <b>bold</b> 2</p>')
+  })
+
+  it('keeps a space alone between two elements', () => {
+    const variant = variantOf(() => createElement('p', null, createElement('b', null, 'a'), ' ', createElement('i', null, 'b')))
+
+    expect(generateSourceCode(variant)).toBe('<p><b>a</b> <i>b</i></p>')
+  })
+
+  it('keeps the spaces at the edges of text in a root with siblings', () => {
+    const variant = variantOf(() => ['Total: ', createElement('b', { key: 'b' }, 'bold')])
+
+    expect(generateSourceCode(variant)).toBe('<>Total: <b>bold</b></>')
+  })
+
+  it('puts text in an expression when children too long for a line keep its spaces', () => {
+    const text = `${'long '.repeat(20)}`
+    const variant = variantOf(() => createElement('p', null, text, createElement('b', null, 'bold')))
+
+    expect(generateSourceCode(variant)).toBe(`<p>\n  {${JSON.stringify(text)}}\n  <b>bold</b>\n</p>`)
+  })
+
+  it('keeps a line break in text', () => {
+    const variant = variantOf(() => createElement('pre', null, 'one\ntwo'))
+
+    expect(generateSourceCode(variant)).toBe('<pre>\n  {"one\\ntwo"}\n</pre>')
+  })
+
+  it('leaves spaces in text on the same line as its tags, where JSX keeps them', () => {
+    expect(generateSourceCode(variantOf(() => createElement('b', null, ' spaced ')))).toBe('<b> spaced </b>')
+  })
+
+  it('adds no space inside an element passed as a prop', () => {
+    const icon = createElement('p', null, 'text ', createElement('b', null, 'bold'), ' 2')
+
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon })))).toBe('<Stamp icon={<p>text <b>bold</b> 2</p>} />')
+  })
+
+  it('adds no space between the children of an element passed as a prop', () => {
+    const icon = createElement('p', null, createElement('b', null, 'a'), createElement('i', null, 'b'))
+
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon })))).toBe('<Stamp icon={<p><b>a</b><i>b</i></p>} />')
+  })
+
+  it('prints a `Date` prop as code that makes that date', () => {
+    const variant = variantOf(() => createElement(Stamp, { at: new Date('2026-11-02T10:00:00.000Z') }))
+
+    expect(generateSourceCode(variant)).toBe('<Stamp at={new Date("2026-11-02T10:00:00.000Z")} />')
+  })
+
+  it('prints a `Date` from state and one inside an object', () => {
+    const variant = variantOf(({ state }) => createElement(Stamp, { range: { from: state.from } }), { from: new Date('2026-01-01T00:00:00.000Z') })
+
+    expect(generateSourceCode(variant)).toBe('<Stamp range={{ from: new Date("2026-01-01T00:00:00.000Z") }} />')
+  })
+
+  it('prints a `Date` from another window', () => {
+    const variant = variantOf(() => createElement(Stamp, { at: runInNewContext('new Date(0)') }))
+
+    expect(generateSourceCode(variant)).toBe('<Stamp at={new Date("1970-01-01T00:00:00.000Z")} />')
+  })
+
+  it('prints an invalid `Date` as code that makes one', () => {
+    const variant = variantOf(() => createElement(Stamp, { at: new Date('nope') }))
+
+    expect(generateSourceCode(variant)).toBe('<Stamp at={new Date(NaN)} />')
+  })
+
+  it.each([
+    ['Suspense', Suspense],
+    ['StrictMode', StrictMode],
+    ['Profiler', Profiler],
+  ])('prints React\'s `%s` by its name', (name, type) => {
+    expect(generateSourceCode(variantOf(() => createElement(type as never)))).toBe(`<${name} />`)
+  })
+
+  describe('a component with no name to print', () => {
+    const child = () => createElement('b')
+    const named = (displayName: string) => Object.assign(() => child(), { displayName })
+    const unavailable = { unavailable: expect.stringContaining('no name') }
+
+    it.each([
+      ['`memo` of an arrow function', () => memo(() => child())],
+      ['`forwardRef` of an arrow function', () => forwardRef(() => child())],
+      ['`lazy`', () => lazy(async () => ({ default: child }))],
+      ['a context with no `displayName`', () => createContext('light')],
+      ['a `displayName` that isn\'t a tag', () => named('Styled(Button)')],
+      ['a bound function', () => {
+        function Card() {
+          return child()
+        }
+        return Card.bind(null)
+      }],
+      ['a lower-case name', () => {
+        function card() {
+          return child()
+        }
+        return memo(card)
+      }],
+      ['the name of an anonymous default export', () => named('default')],
+      ['a function with the name React Refresh gave it', () => {
+        function _c4() {
+          return child()
+        }
+        return _c4
+      }],
+    ])('says so for %s, and the panel shows the story file', (_, type) => {
+      const component = type() as never
+
+      expect(generateSourceCode(variantOf(() => createElement(component)))).toEqual(unavailable)
+    })
+
+    it('says so when it is further down the tree', () => {
+      const Anonymous = memo(() => child())
+
+      expect(generateSourceCode(variantOf(() => createElement('div', null, createElement(Anonymous))))).toEqual(unavailable)
+    })
+
+    it('says so when it is passed as a prop', () => {
+      const Anonymous = memo(() => child())
+
+      expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon: createElement(Anonymous) })))).toEqual(unavailable)
+    })
+
+    it('logs nothing, since a reader gets the reason in the panel', () => {
+      const error = vi.spyOn(console, 'error')
+      const Anonymous = memo(() => child())
+
+      generateSourceCode(variantOf(() => createElement(Anonymous)))
+
+      expect(error).not.toHaveBeenCalled()
+      error.mockRestore()
+    })
+  })
+
+  it('prints a dotted `displayName` and a custom element as written', () => {
+    const Item = Object.assign(() => createElement('b'), { displayName: 'Menu.Item' })
+
+    expect(generateSourceCode(variantOf(() => createElement(Item)))).toBe('<Menu.Item />')
+    expect(generateSourceCode(variantOf(() => createElement('my-element')))).toBe('<my-element />')
+  })
+
+  it('prints a context\'s `displayName`, which renders as a provider in React 19', () => {
+    const Theme = createContext('light')
+    Theme.displayName = 'Theme'
+
+    expect(generateSourceCode(variantOf(() => createElement(Theme.Provider, { value: 'dark' })))).toBe('<Theme value="dark" />')
+  })
+
+  it('logs a failure in the printer itself, which nothing else would report', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const broken = {
+      get value() {
+        throw new Error('printer bug')
+      },
+    }
+
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: broken as never })))).toBeUndefined()
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ message: 'printer bug' }))
+    error.mockRestore()
   })
 
   it('gives nothing for a render that throws, so the panel shows the story file', () => {
