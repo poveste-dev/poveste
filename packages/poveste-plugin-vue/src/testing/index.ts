@@ -37,6 +37,8 @@ type StoryComponent = Component & { __file?: string, doc?: string }
 export function testStories(component: StoryComponent, options: TestStoriesOptions = {}): void {
   const name = options.name ?? fileName(component.__file) ?? 'stories'
   const timeout = options.timeout ?? 5000
+  // Setup and render each get `timeout`, so Vitest's own limit can't cut either short.
+  const testTimeout = timeout * 2 + 1000
 
   describe(name, async () => {
     await environmentReady()
@@ -57,7 +59,7 @@ export function testStories(component: StoryComponent, options: TestStoriesOptio
             if (found.length) {
               throw failure(`${story.title} › ${variant.title}`, found)
             }
-          })
+          }, testTimeout)
         }
       })
     }

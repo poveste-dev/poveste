@@ -195,6 +195,9 @@ export async function followName(file: string, name: string, resolve: Resolve, d
   return undefined
 }
 
+/** A story that imports `Transition` from one of these uses it. It isn't what the story documents. */
+const FRAMEWORKS = ['vue', 'svelte']
+
 /**
  * The component files a story names: its `component` field when it has one, else every
  * value it imports from the book, followed through re-exports. A capitalised import that
@@ -216,7 +219,7 @@ export async function storyComponents(storyFile: string, resolve: Resolve): Prom
     const component = named || /^[A-Z]/.test(local)
     // A package's own exports, such as `vue` or `@iconify/vue`, are not the book's components.
     if (!named && (!target || fromPackage)) {
-      packaged += fromPackage && component ? 1 : 0
+      packaged += fromPackage && component && !FRAMEWORKS.includes(binding!.source) ? 1 : 0
       continue
     }
     const found = target && await followName(target, member ?? binding!.imported, resolve)

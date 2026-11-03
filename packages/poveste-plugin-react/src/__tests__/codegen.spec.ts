@@ -4,7 +4,8 @@ import type { ReactNode, Ref } from 'react'
 import type { ReactRenderApi } from '../types'
 import { runInNewContext } from 'node:vm'
 import { reactive } from '@poveste/vendors/vue'
-import { createContext, createElement, forwardRef, Fragment, lazy, memo, Profiler, StrictMode, Suspense, useState } from 'react'
+import { createContext, createElement, forwardRef, Fragment, lazy, memo, Profiler, StrictMode, Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { generateSourceCode } from '../client/codegen'
 
@@ -82,7 +83,7 @@ describe('a React variant\'s Dynamic source', () => {
   it('wraps a root with siblings in a fragment', () => {
     const variant = variantOf(() => [createElement(Badge, { key: 'a', tone: 'info' }), createElement(Badge, { key: 'b', tone: 'warn' })])
 
-    expect(generateSourceCode(variant)).toBe('<>\n  <Badge tone="info" />\n  <Badge tone="warn" />\n</>')
+    expect(generateSourceCode(variant)).toBe('<>\n  <Badge key="a" tone="info" />\n  <Badge key="b" tone="warn" />\n</>')
   })
 
   it('prints objects, arrays and elements passed as props', () => {
@@ -112,7 +113,7 @@ describe('a React variant\'s Dynamic source', () => {
   it('keeps the spaces at the edges of text in a root with siblings', () => {
     const variant = variantOf(() => ['Total: ', createElement('b', { key: 'b' }, 'bold')])
 
-    expect(generateSourceCode(variant)).toBe('<>Total: <b>bold</b></>')
+    expect(generateSourceCode(variant)).toBe('<>Total: <b key="b">bold</b></>')
   })
 
   it('puts text in an expression when children too long for a line keep its spaces', () => {
@@ -268,5 +269,54 @@ describe('a React variant\'s Dynamic source', () => {
     })
 
     expect(generateSourceCode(variant)).toBeUndefined()
+  })
+
+  it('marks a child it can\'t print rather than dropping it', () => {
+    const portal = createPortal(createElement('b'), document.body)
+
+    expect(generateSourceCode(variantOf(() => createElement(Badge, { tone: 'a' }, (() => null) as never)))).toBe('<Badge tone="a">\n  {…}\n</Badge>')
+    expect(generateSourceCode(variantOf(() => createElement('div', null, portal)))).toBe('<div>\n  {…}\n</div>')
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon: createElement('i', null, (() => null) as never) })))).toBe('<Stamp icon={<i>{…}</i>} />')
+  })
+
+  it('gives nothing when all a variant renders is what it can\'t print', () => {
+    expect(generateSourceCode(variantOf(() => createPortal(createElement('b'), document.body)))).toBeUndefined()
+  })
+
+  it('prints an element\'s key', () => {
+    expect(generateSourceCode(variantOf(() => createElement(Badge, { key: 'a', tone: 'info' })))).toBe('<Badge key="a" tone="info" />')
+    expect(generateSourceCode(variantOf(() => createElement(Badge, { tone: 'info' })))).toBe('<Badge tone="info" />')
+  })
+
+  it('prints a value that appears twice both times, and a cycle as `…`', () => {
+    const shared = { id: 1 }
+    const cycle: Record<string, unknown> = { id: 2 }
+    cycle['self'] = cycle
+
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: { from: shared, to: shared } as never })))).toBe('<Stamp range={{ from: { id: 1 }, to: { id: 1 } }} />')
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: [shared, shared] as never })))).toBe('<Stamp range={[{ id: 1 }, { id: 1 }]} />')
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: cycle as never })))).toBe('<Stamp range={{ id: 2, self: … }} />')
+  })
+
+  it('keeps a string JSX would decode as an entity, and leaves a plain ampersand alone', () => {
+    expect(generateSourceCode(variantOf(() => createElement('p', { title: '&copy;' })))).toBe('<p title={"&copy;"} />')
+    expect(generateSourceCode(variantOf(() => createElement('p', null, 'a &amp; b')))).toBe('<p>{"a &amp; b"}</p>')
+    expect(generateSourceCode(variantOf(() => createElement('p', { title: 'Tom & Jerry' }, 'Tom & Jerry')))).toBe('<p title="Tom & Jerry">Tom & Jerry</p>')
+  })
+
+  it('runs a story\'s hooks without running its effects or printing anything', () => {
+    const effect = vi.fn()
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const source = generateSourceCode(variantOf(() => {
+      const [count] = useState(3)
+      useEffect(effect)
+      useLayoutEffect(effect)
+      return createElement(Counter, { count, label: 'n', onIncrement: () => {} })
+    }))
+
+    expect(source).toBe('<Counter count={3} label="n" onIncrement={…} />')
+    expect(effect).not.toHaveBeenCalled()
+    expect(error).not.toHaveBeenCalled()
+    error.mockRestore()
   })
 })

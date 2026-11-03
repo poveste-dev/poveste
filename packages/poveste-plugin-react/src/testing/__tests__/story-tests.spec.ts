@@ -62,7 +62,7 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
   })
 
   it('reports every variant of the book', () => {
-    expect(results.size).toBe(10)
+    expect(results.size).toBe(11)
   })
 
   it('passes every variant of a story that renders, its setup file and initState included', () => {
@@ -71,6 +71,11 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
       ['Passing Passing from initState', 'passed'],
       ['Passing Passing from the setup file', 'passed'],
     ])
+  })
+
+  // Vitest's limit in that file is far below the `timeout` the story is given.
+  it('gives a variant the `timeout` it is given, whatever Vitest\'s own limit is', () => {
+    expect(results.get('Patient Patient slow')?.status).toBe('passed')
   })
 
   it.each([

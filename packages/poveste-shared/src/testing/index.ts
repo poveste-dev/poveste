@@ -39,6 +39,8 @@ export interface DescribeStoriesOptions {
  */
 export function describeStories<C>(framework: StoryTestFramework<C>, component: C, options: DescribeStoriesOptions): void {
   const timeout = options.timeout ?? 5000
+  // Setup and render each get `timeout`, so Vitest's own limit can't cut either short.
+  const testTimeout = timeout * 2 + 1000
 
   describe(options.name, async () => {
     const { stories, problems } = await collect(framework, component, options.name)
@@ -58,7 +60,7 @@ export function describeStories<C>(framework: StoryTestFramework<C>, component: 
             if (found.length) {
               throw failure(`${story.title} › ${variant.title}`, found)
             }
-          })
+          }, testTimeout)
         }
       })
     }

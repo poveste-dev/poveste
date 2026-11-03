@@ -1,5 +1,5 @@
 import type { DocgenExtractor } from '@poveste/shared'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
@@ -78,6 +78,25 @@ describe('a component with nothing installed up its tree', () => {
     const doc = await outside.extract(join(dir, 'book/Inside.vue'))
 
     expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
+  }, 60_000)
+
+  it('lists events in the same order with the mapping as without it', async () => {
+    const emits = readFileSync(join(dir, 'book/Inside.vue'), 'utf8')
+    writeFileSync(join(dir, 'lib/Outside.vue'), emits)
+
+    const doc = await outside.extract(join(dir, 'lib/Outside.vue'))
+
+    expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
+  }, 60_000)
+
+  it('watches only what it read from a program it used', async () => {
+    const lone = await createExtractor({ root: join(dir, 'book'), options: {} })
+
+    await lone.extract(join(dir, 'lib/Btn.vue'))
+
+    expect(lone.sources?.()).toContain(join(dir, 'lib/Btn.vue'))
+    expect(lone.sources?.()).not.toContain(join(dir, 'book/Inside.vue'))
+    lone.dispose()
   }, 60_000)
 
   it('reports both among the files to watch', async () => {

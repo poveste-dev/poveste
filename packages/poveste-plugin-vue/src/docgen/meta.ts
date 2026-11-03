@@ -87,9 +87,13 @@ function toSlot(slot: SlotMeta, slotProps: (slot: SlotMeta) => DocSlot['props'] 
 
 export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => [], resolve: (prop: PropertyMeta) => string | undefined = () => undefined): ComponentDoc {
   const allow = options.allow ?? []
+  // vue-component-meta's order follows the program, not the source (#1583): what `defineEmits`
+  // declares in its own order, after the rest, such as `defineModel`'s, by name.
+  const declared = [...eventDocs.keys()]
+  const byDeclaration = (a: { name: string }, b: { name: string }) => declared.indexOf(a.name) - declared.indexOf(b.name) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
   return {
     props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(prop => toProp(prop, resolve)),
     slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(slot => toSlot(slot, slotProps)),
-    events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).map(toMember),
+    events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).sort(byDeclaration).map(toMember),
   }
 }
