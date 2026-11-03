@@ -4,11 +4,12 @@ import { onMounted, ref } from 'vue'
 
 const el = ref(null)
 onMounted(async () => {
-  if (isCollecting() || !el.value) return
+  const container = el.value
+  if (isCollecting() || !container) return
 
   const { default: lottie } = await import('lottie-web')
   const animData = {
-    container: el.value,
+    container,
     animType: 'svg',
     loop: true,
     autoplay: true,
