@@ -329,6 +329,14 @@ pnpm_dev_renders() {
   dev_renders "$name-pnpm" "$app" "$path" "$expected" "$port"
 }
 
+# story_test_versions <name> <app> <package>… — what an unpinned install gave this
+# pass, since `--loglevel=error` hides it and Vitest's own output goes to a file.
+story_test_versions() {
+  local name="$1" app="$2"
+  shift 2
+  ( cd "$app" && for package in "$@"; do echo "▸ [$name] installed $package@$(node -p "require('./node_modules/$package/package.json').version")"; done )
+}
+
 # run_story_tests <name> <label> <app> <test name that must pass>
 #
 # One `vitest run` of a consumer's story tests, as a testing guide prints them. It
@@ -446,6 +454,7 @@ sed 's/title="Button"/title="BaseButton"/' "$VUE_APP/src/Button.story.vue" > "$V
   cd "$VUE_APP"
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
+story_test_versions vue "$VUE_APP" vitest jsdom
 STORY_TESTS="$WORK/story-tests-vue.json"
 ( cd "$VUE_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-vue.log" 2>&1 || true
 if ! node -e '
@@ -489,6 +498,7 @@ TS
       "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
     rm -rf node_modules/.vite
   )
+  story_test_versions vue "$VUE_APP" @vitest/browser-playwright playwright
   STORY_TESTS="$WORK/story-tests-vue-browser.json"
   ( cd "$VUE_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-vue-browser.log" 2>&1 || true
   if grep -aq 'unexpectedly reloaded' "$WORK/story-tests-vue-browser.log" || ! node -e '
@@ -617,6 +627,7 @@ sed 's/MyButton/Badge/g' "$SVELTE_APP/src/MyButton.story.svelte" > "$SVELTE_APP/
   cd "$SVELTE_APP"
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
+story_test_versions svelte "$SVELTE_APP" vitest jsdom
 run_story_tests svelte jsdom "$SVELTE_APP" "Badge Badge default"
 
 # The guide's browser config on a cold cache: the book's setup file is already one
@@ -630,6 +641,7 @@ if [ "${POVESTE_SMOKE_DEV:-}" = "1" ]; then
       "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
     rm -rf node_modules/.vite
   )
+  story_test_versions svelte "$SVELTE_APP" @vitest/browser-playwright playwright
   run_story_tests svelte browser "$SVELTE_APP" "Badge Badge default"
 fi
 
@@ -831,6 +843,7 @@ sed 's/Button/Badge/g' "$SOLID_APP/src/Button.story.tsx" | sed "s|from './Badge'
   cd "$SOLID_APP"
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
+story_test_versions solid "$SOLID_APP" vitest jsdom
 run_story_tests solid jsdom "$SOLID_APP" "Badge Badge default"
 
 # The guide's browser config on a cold cache, with a setup file whose imports have
@@ -860,6 +873,7 @@ TS
       "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
     rm -rf node_modules/.vite
   )
+  story_test_versions solid "$SOLID_APP" @vitest/browser-playwright playwright
   run_story_tests solid browser "$SOLID_APP" "Badge Badge default"
 fi
 
@@ -933,6 +947,7 @@ sed 's/Button/Badge/g' "$REACT_APP/src/Button.story.tsx" | sed "s|from './Badge'
   cd "$REACT_APP"
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
+story_test_versions react "$REACT_APP" vitest jsdom
 run_story_tests react jsdom "$REACT_APP" "Badge Badge default"
 
 # The guide's browser config on a cold cache, with a setup file whose imports have
@@ -962,6 +977,7 @@ TS
       "playwright@$(node -p "require('$ROOT/node_modules/@playwright/test/package.json').version")"
     rm -rf node_modules/.vite
   )
+  story_test_versions react "$REACT_APP" @vitest/browser-playwright playwright
   run_story_tests react browser "$REACT_APP" "Badge Badge default"
 fi
 
@@ -1137,6 +1153,7 @@ TS
   cd "$NUXT_APP"
   npm install --no-audit --no-fund --loglevel=error vitest jsdom @nuxt/test-utils
 )
+story_test_versions nuxt "$NUXT_APP" vitest jsdom @nuxt/test-utils
 STORY_TESTS="$WORK/story-tests-nuxt.json"
 ( cd "$NUXT_APP" && npx vitest run --reporter=default --reporter=json --outputFile.json="$STORY_TESTS" ) > "$WORK/story-tests-nuxt.log" 2>&1 || true
 if ! node -e '
