@@ -58,6 +58,7 @@ describe('a component with nothing installed up its tree', () => {
     mkdirSync(join(dir, 'lib'))
     symlinkSync(vue, join(dir, 'book/node_modules/vue'), 'junction')
     writeFileSync(join(dir, 'lib/Btn.vue'), '<script setup lang="ts">\ndefineProps<{ label: string }>()\n</script>\n\n<template>\n  <button>{{ label }}</button>\n</template>\n')
+    writeFileSync(join(dir, 'book/Inside.vue'), '<script setup lang="ts">\nconst emit = defineEmits<{ press: [event: MouseEvent], close: [] }>()\nconst value = defineModel<string>(\'value\')\n</script>\n\n<template>\n  <button @click="emit(\'press\', $event)">{{ value }}</button>\n</template>\n')
     outside = await createExtractor({ root: join(dir, 'book'), options: {} })
   })
   afterAll(() => {
@@ -69,6 +70,33 @@ describe('a component with nothing installed up its tree', () => {
     const doc = await outside.extract(join(dir, 'lib/Btn.vue'))
 
     expect(doc!.props).toEqual([expect.objectContaining({ name: 'label', type: 'string', required: true })])
+  }, 60_000)
+
+  it('leaves a component inside the root reading as it did, after one outside it', async () => {
+    await outside.extract(join(dir, 'lib/Btn.vue'))
+
+    const doc = await outside.extract(join(dir, 'book/Inside.vue'))
+
+    expect(doc!.events?.map(event => event.name)).toEqual(['update:value', 'press', 'close'])
+  }, 60_000)
+
+  it('reports both among the files to watch', async () => {
+    await outside.extract(join(dir, 'lib/Btn.vue'))
+    await outside.extract(join(dir, 'book/Inside.vue'))
+
+    expect(outside.sources?.()).toEqual(expect.arrayContaining([join(dir, 'lib/Btn.vue'), join(dir, 'book/Inside.vue')]))
+  }, 60_000)
+
+  it('reads such a component again after it changes', async () => {
+    const file = join(dir, 'lib/Edited.vue')
+    writeFileSync(file, '<script setup lang="ts">\ndefineProps<{ before: string }>()\n</script>\n\n<template>\n  <button />\n</template>\n')
+    await outside.extract(file)
+
+    writeFileSync(file, '<script setup lang="ts">\ndefineProps<{ after: string }>()\n</script>\n\n<template>\n  <button />\n</template>\n')
+    outside.update?.(file)
+    const doc = await outside.extract(file)
+
+    expect(doc!.props).toEqual([expect.objectContaining({ name: 'after', type: 'string' })])
   }, 60_000)
 
   it('still starts in a book with no `vue` to find', async () => {

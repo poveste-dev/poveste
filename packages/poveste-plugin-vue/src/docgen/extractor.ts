@@ -21,13 +21,13 @@ const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
  * up its own tree: from there `vue` doesn't resolve, its macros read as nothing, and the
  * table comes out empty with no error to report (#1580).
  */
-function booksVue(root: string): Record<string, string[]> {
+function booksVue(root: string): Record<string, string[]> | undefined {
   try {
     const vue = dirname(createRequire(join(root, 'package.json')).resolve('vue/package.json'))
     return { 'vue': [vue], 'vue/*': [join(vue, '*')] }
   }
   catch {
-    return {}
+    return undefined
   }
 }
 
@@ -49,20 +49,35 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
   // `vue-component-meta`'s own `createChecker` and `createCheckerByJson`, with this copy.
   const fileNames = (commandLine: { vueOptions: unknown }, read: (extensions: ts.FileExtensionInfo[]) => string[]) =>
     read(core.getAllExtensions(commandLine.vueOptions).map((extension: string) => ({ extension: extension.slice(1), isMixedContent: true, scriptKind: typescript.ScriptKind.Deferred })))
-  const checker: VueChecker = tsconfig
+  const checkerByJson = (compilerOptions: { paths?: Record<string, string[]> }): VueChecker =>
+    createCheckerBase(typescript, () => {
+      const json = { compilerOptions, include: ['**/*'], exclude: ['node_modules'] }
+      const commandLine = core.createParsedCommandLineByJson(typescript, typescript.sys, context.root, json)
+      return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonConfigFileContent(json, typescript.sys, context.root, {}, undefined, undefined, extensions).fileNames)]
+    }, checkerOptions, context.root)
+  const main: VueChecker = tsconfig
     ? createCheckerBase(typescript, () => {
         const commandLine = core.createParsedCommandLine(typescript, typescript.sys, tsconfig)
         return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonSourceFileConfigFileContent(typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile), typescript.sys, dirname(tsconfig), {}, tsconfig, undefined, extensions).fileNames)]
       }, checkerOptions, dirname(tsconfig))
-    : createCheckerBase(typescript, () => {
-        const json = { compilerOptions: { paths: booksVue(context.root) }, include: ['**/*'], exclude: ['node_modules'] }
-        const commandLine = core.createParsedCommandLineByJson(typescript, typescript.sys, context.root, json)
-        return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonConfigFileContent(json, typescript.sys, context.root, {}, undefined, undefined, extensions).fileNames)]
-      }, checkerOptions, context.root)
+    : checkerByJson({})
+  // A checker of its own, because `paths` reorders what the book's other components read, such as their events.
+  let mapped: VueChecker | undefined
+  function checkerFor(file: string) {
+    // TypeScript's lookup and not `require`'s, which also answers from `NODE_PATH`.
+    if (tsconfig || typescript.resolveModuleName('vue', file, { moduleResolution: typescript.ModuleResolutionKind.Bundler }, typescript.sys).resolvedModule) {
+      return main
+    }
+    const paths = mapped ? undefined : booksVue(context.root)
+    if (paths) {
+      mapped = checkerByJson({ paths })
+    }
+    return mapped ?? main
+  }
 
   // A script file is offered for its default export, which is a component only when it is
   // `defineComponent`'s: a function, a helper or a plain object throws or reads as Unknown.
-  function scriptComponent(file: string) {
+  function scriptComponent(checker: VueChecker, file: string) {
     try {
       const meta = checker.getComponentMeta(file, 'default')
       return meta.type === TypeMeta.Unknown ? undefined : meta
@@ -74,6 +89,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
 
   return {
     extract(file) {
+      const checker = checkerFor(file)
       if (!checker.getProgram()?.getSourceFile(file)) {
         // vue-component-meta's own message says "not part of the project" and not which one.
         if (tsconfig && file.endsWith('.vue')) {
@@ -84,7 +100,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
           checker.updateFile(file, readFileSync(file, 'utf8'))
         }
       }
-      const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(file)
+      const meta = file.endsWith('.vue') ? checker.getComponentMeta(file) : scriptComponent(checker, file)
       if (!meta) {
         return undefined
       }
@@ -99,15 +115,20 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       if (!SOURCE.test(file)) {
         return
       }
-      if (existsSync(file)) {
-        checker.updateFile(file, readFileSync(file, 'utf8'))
-      }
-      else {
-        checker.deleteFile(file)
+      for (const checker of [main, mapped]) {
+        if (existsSync(file)) {
+          checker?.updateFile(file, readFileSync(file, 'utf8'))
+        }
+        else {
+          checker?.deleteFile(file)
+        }
       }
     },
-    sources: () => checker.getProgram()?.getSourceFiles().map(sourceFile => sourceFile.fileName).filter(file => !file.includes('/node_modules/')) ?? [],
+    sources: () => [...new Set([main, mapped].flatMap(checker => checker?.getProgram()?.getSourceFiles().map(sourceFile => sourceFile.fileName) ?? []))].filter(file => !file.includes('/node_modules/')),
     // The program is released with the checker; this drops what it cached.
-    dispose: () => checker.clearCache(),
+    dispose: () => {
+      main.clearCache()
+      mapped?.clearCache()
+    },
   }
 }
