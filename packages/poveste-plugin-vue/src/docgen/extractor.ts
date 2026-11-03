@@ -17,6 +17,21 @@ type VueChecker = ReturnType<typeof createChecker>
 const SOURCE = /\.(?:vue|[cm]?[jt]sx?)$/
 
 /**
+ * The `vue` the book has, for a component beside its root (#1559) with nothing installed
+ * up its own tree: from there `vue` doesn't resolve, its macros read as nothing, and the
+ * table comes out empty with no error to report (#1580).
+ */
+function booksVue(root: string): Record<string, string[]> {
+  try {
+    const vue = dirname(createRequire(join(root, 'package.json')).resolve('vue/package.json'))
+    return { 'vue': [vue], 'vue/*': [join(vue, '*')] }
+  }
+  catch {
+    return {}
+  }
+}
+
+/**
  * Runs in the docgen worker, reading the book with Poveste's own TypeScript 6
  * whatever the book has (#1464). `vue-component-meta`'s entry requires whichever
  * `typescript` it finds beside it, which in a book on TypeScript 7 is the book's, so
@@ -40,7 +55,7 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
         return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonSourceFileConfigFileContent(typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile), typescript.sys, dirname(tsconfig), {}, tsconfig, undefined, extensions).fileNames)]
       }, checkerOptions, dirname(tsconfig))
     : createCheckerBase(typescript, () => {
-        const json = { include: ['**/*'], exclude: ['node_modules'] }
+        const json = { compilerOptions: { paths: booksVue(context.root) }, include: ['**/*'], exclude: ['node_modules'] }
         const commandLine = core.createParsedCommandLineByJson(typescript, typescript.sys, context.root, json)
         return [commandLine, fileNames(commandLine, extensions => typescript.parseJsonConfigFileContent(json, typescript.sys, context.root, {}, undefined, undefined, extensions).fileNames)]
       }, checkerOptions, context.root)
