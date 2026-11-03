@@ -53,6 +53,62 @@ describe('a `twoslash` fence in a book\'s markdown docs', () => {
     expect(html).not.toContain('twoslash-hover')
     expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringMatching(/block at src\/Button\.story\.md:12, so it renders without types: \[2322\]/))
   }, 60_000)
+
+  describe('warning about a block', () => {
+    const BROKEN = 'const n: number = \'one\''
+    const AT = { file: 'src/Button.story.md', line: 12 }
+
+    it('warns once when the same block is rendered again', () => {
+      const warn = vi.fn()
+      const twoslash = createTwoslash(BOOK, highlight, warn)
+
+      twoslash(BROKEN, 'ts', AT)
+      twoslash(BROKEN, 'ts', AT)
+
+      expect(warn).toHaveBeenCalledTimes(1)
+    }, 60_000)
+
+    it('warns once about a block in another language rendered again', () => {
+      const warn = vi.fn()
+      const twoslash = createTwoslash(BOOK, highlight, warn)
+
+      twoslash('<template />', 'vue', AT)
+      twoslash('<template />', 'vue', AT)
+
+      expect(warn).toHaveBeenCalledTimes(1)
+    })
+
+    it('warns again when the block changes', () => {
+      const warn = vi.fn()
+      const twoslash = createTwoslash(BOOK, highlight, warn)
+
+      twoslash(BROKEN, 'ts', AT)
+      twoslash('const n: number = \'two\'', 'ts', AT)
+
+      expect(warn).toHaveBeenCalledTimes(2)
+    }, 60_000)
+
+    it('warns about the same code in two places', () => {
+      const warn = vi.fn()
+      const twoslash = createTwoslash(BOOK, highlight, warn)
+
+      twoslash(BROKEN, 'ts', AT)
+      twoslash(BROKEN, 'ts', { file: 'src/Other.story.md', line: 3 })
+
+      expect(warn).toHaveBeenCalledTimes(2)
+    }, 60_000)
+
+    it('warns again when a block that was fixed breaks the same way', () => {
+      const warn = vi.fn()
+      const twoslash = createTwoslash(BOOK, highlight, warn)
+
+      twoslash(BROKEN, 'ts', AT)
+      twoslash('const n: number = 1', 'ts', AT)
+      twoslash(BROKEN, 'ts', AT)
+
+      expect(warn).toHaveBeenCalledTimes(2)
+    }, 60_000)
+  }, 60_000)
 })
 
 const resolve = Module as unknown as { _resolveFilename: (request: string, parent?: { filename?: string }, ...rest: unknown[]) => string }
