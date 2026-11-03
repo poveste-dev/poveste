@@ -236,10 +236,13 @@ describe('a React variant\'s Dynamic source', () => {
     })
   })
 
-  it('prints a dotted `displayName` and a custom element as written', () => {
+  it('prints a dotted `displayName` as written', () => {
     const Item = Object.assign(() => createElement('b'), { displayName: 'Menu.Item' })
 
     expect(generateSourceCode(variantOf(() => createElement(Item)))).toBe('<Menu.Item />')
+  })
+
+  it('prints a custom element as written', () => {
     expect(generateSourceCode(variantOf(() => createElement('my-element')))).toBe('<my-element />')
   })
 
@@ -271,51 +274,79 @@ describe('a React variant\'s Dynamic source', () => {
     expect(generateSourceCode(variant)).toBeUndefined()
   })
 
-  it('marks a child it can\'t print rather than dropping it', () => {
-    const portal = createPortal(createElement('b'), document.body)
-
-    expect(generateSourceCode(variantOf(() => createElement(Badge, { tone: 'a' }, (() => null) as never)))).toBe('<Badge tone="a">\n  {…}\n</Badge>')
-    expect(generateSourceCode(variantOf(() => createElement('div', null, portal)))).toBe('<div>\n  {…}\n</div>')
-    expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon: createElement('i', null, (() => null) as never) })))).toBe('<Stamp icon={<i>{…}</i>} />')
+  it.each([
+    ['a function', () => createElement('div', null, (() => null) as never)],
+    ['a portal', () => createElement('div', null, createPortal(createElement('b'), document.body))],
+  ])('prints %s as a child as `{…}`', (_child, render) => {
+    expect(generateSourceCode(variantOf(render))).toBe('<div>\n  {…}\n</div>')
   })
 
-  it('gives nothing when all a variant renders is what it can\'t print', () => {
-    expect(generateSourceCode(variantOf(() => createPortal(createElement('b'), document.body)))).toBeUndefined()
+  it('prints a function as a child as `{…}` inside a prop', () => {
+    const icon = createElement('i', null, (() => null) as never)
+
+    expect(generateSourceCode(variantOf(() => createElement(Stamp, { icon })))).toBe('<Stamp icon={<i>{…}</i>} />')
   })
 
-  it('prints an element\'s key', () => {
-    expect(generateSourceCode(variantOf(() => createElement(Badge, { key: 'a', tone: 'info' })))).toBe('<Badge key="a" tone="info" />')
-    expect(generateSourceCode(variantOf(() => createElement(Badge, { tone: 'info' })))).toBe('<Badge tone="info" />')
+  it('gives nothing when a variant renders only what it can\'t print', () => {
+    const variant = variantOf(() => createPortal(createElement('b'), document.body))
+
+    expect(generateSourceCode(variant)).toBeUndefined()
   })
 
-  it('prints a value that appears twice both times, and a cycle as `…`', () => {
-    const shared = { id: 1 }
+  it('prints an element\'s key before its props', () => {
+    const variant = variantOf(() => createElement(Badge, { key: 'a', tone: 'info' }))
+
+    expect(generateSourceCode(variant)).toBe('<Badge key="a" tone="info" />')
+  })
+
+  it.each([
+    ['an object', (id: object) => ({ from: id, to: id }), '{ from: { id: 1 }, to: { id: 1 } }'],
+    ['an array', (id: object) => [id, id], '[{ id: 1 }, { id: 1 }]'],
+  ])('prints a value used twice in %s both times', (_shape, shape, printed) => {
+    const variant = variantOf(() => createElement(Stamp, { range: shape({ id: 1 }) as never }))
+
+    expect(generateSourceCode(variant)).toBe(`<Stamp range={${printed}} />`)
+  })
+
+  it('prints a cycle as `…`', () => {
     const cycle: Record<string, unknown> = { id: 2 }
     cycle['self'] = cycle
 
-    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: { from: shared, to: shared } as never })))).toBe('<Stamp range={{ from: { id: 1 }, to: { id: 1 } }} />')
-    expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: [shared, shared] as never })))).toBe('<Stamp range={[{ id: 1 }, { id: 1 }]} />')
     expect(generateSourceCode(variantOf(() => createElement(Stamp, { range: cycle as never })))).toBe('<Stamp range={{ id: 2, self: … }} />')
   })
 
-  it('keeps a string JSX would decode as an entity, and leaves a plain ampersand alone', () => {
+  it('quotes a prop JSX would decode as an entity', () => {
     expect(generateSourceCode(variantOf(() => createElement('p', { title: '&copy;' })))).toBe('<p title={"&copy;"} />')
-    expect(generateSourceCode(variantOf(() => createElement('p', null, 'a &amp; b')))).toBe('<p>{"a &amp; b"}</p>')
-    expect(generateSourceCode(variantOf(() => createElement('p', { title: 'Tom & Jerry' }, 'Tom & Jerry')))).toBe('<p title="Tom & Jerry">Tom & Jerry</p>')
   })
 
-  it('runs a story\'s hooks without running its effects or printing anything', () => {
+  it('quotes text JSX would decode as an entity', () => {
+    expect(generateSourceCode(variantOf(() => createElement('p', null, 'a &amp; b')))).toBe('<p>{"a &amp; b"}</p>')
+  })
+
+  it('leaves a plain ampersand as written', () => {
+    const variant = variantOf(() => createElement('p', { title: 'Tom & Jerry' }, 'Tom & Jerry'))
+
+    expect(generateSourceCode(variant)).toBe('<p title="Tom & Jerry">Tom & Jerry</p>')
+  })
+
+  it('reads a variant\'s hooks without running its effects', () => {
     const effect = vi.fn()
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const source = generateSourceCode(variantOf(() => {
-      const [count] = useState(3)
+    const variant = variantOf(() => {
+      const [tone] = useState('info')
       useEffect(effect)
       useLayoutEffect(effect)
-      return createElement(Counter, { count, label: 'n', onIncrement: () => {} })
-    }))
+      return createElement(Badge, { tone })
+    })
 
-    expect(source).toBe('<Counter count={3} label="n" onIncrement={…} />')
+    expect(generateSourceCode(variant)).toBe('<Badge tone="info" />')
     expect(effect).not.toHaveBeenCalled()
+  })
+
+  it('prints no error for the render it abandons', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    generateSourceCode(variantOf(() => createElement(Badge, { tone: 'info' })))
+
     expect(error).not.toHaveBeenCalled()
     error.mockRestore()
   })
