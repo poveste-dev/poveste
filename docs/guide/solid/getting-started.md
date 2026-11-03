@@ -5,6 +5,8 @@ description: 'Install Poveste and the Solid plugin, add the config, and write yo
 
 # Getting started with Solid
 
+<DemoLinks framework="solid" note="Solid: stories and variants render, a story that names its component gets the props, slots and events table, and a variant with initState gets the state editor. Solid has no controls panel yet." />
+
 ## Installation
 
 ```shell
