@@ -21,7 +21,7 @@ const docgen = HstSvelte().docgen!
 
 describe('svelte auto-docs in a book', () => {
   // Its own TypeScript 6 and `svelte2tsx` read the book, whatever the book has (#1464).
-  it.each([['7.0.2'], ['6.0.3'], [undefined]])('stays on in a book whose TypeScript is %s', (version) => {
+  it.each([['on TypeScript 7.0.2', '7.0.2'], ['on TypeScript 6.0.3', '6.0.3'], ['with no TypeScript', undefined]])('stays on in a book %s', (_book, version) => {
     expect(typescriptProblem(book(version), docgen.typescript!)).toBeUndefined()
   })
 

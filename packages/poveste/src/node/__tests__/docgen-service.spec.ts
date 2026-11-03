@@ -3,7 +3,7 @@ import type { DocgenRunner } from '../docgen/service.js'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, onTestFinished, vi } from 'vitest'
 import { createDocgenService } from '../docgen/service.js'
 
 const vue: Plugin = { name: 'vue', docgen: { match: file => file.endsWith('.vue') && !file.endsWith('.story.vue'), module: 'fake' } }
@@ -396,12 +396,8 @@ describe('a JSX story and its `component` field', () => {
       terminate: vi.fn(async () => {}),
     }
     const { docgen } = service({ plugins: [solid], storyOf: () => ({ file, supportPluginId: 'solid' }), componentsOf: () => ({ files: [], packaged: 1 }), createRunner: () => silent })
+    onTestFinished(remove)
 
-    try {
-      expect((await docgen.request('badge')).off).toBeUndefined()
-    }
-    finally {
-      remove()
-    }
+    expect((await docgen.request('badge')).off).toBeUndefined()
   })
 })

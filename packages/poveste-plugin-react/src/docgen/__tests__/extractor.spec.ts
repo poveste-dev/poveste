@@ -84,9 +84,14 @@ describe('a named prop type, opened one level', () => {
     expect((await tone('fallback')).resolved).toBe('"sm" | "md" | "lg" | null')
   })
 
-  it('leaves a type that names nothing, and one from a package, closed', async () => {
-    const slots = (await extractor.extract(story('Tone')))!.slots
-    expect([(await tone('label')).resolved, slots.find(slot => slot.name === 'icon')]).toEqual([undefined, expect.not.objectContaining({ resolved: expect.anything() })])
+  it('leaves a type that names nothing closed', async () => {
+    expect((await tone('label')).resolved).toBeUndefined()
+  })
+
+  it('leaves a type from a package closed', async () => {
+    const { slots } = (await extractor.extract(story('Tone')))!
+
+    expect(slots.find(slot => slot.name === 'icon')).not.toHaveProperty('resolved')
   })
 })
 

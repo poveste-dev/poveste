@@ -145,8 +145,6 @@ describe('the starters', () => {
   })
 })
 
-// Every starter died at Poveste's own floor check in a WebContainer while the
-// resolution stayed green (#1226).
 describe('a starter whose first open file is JSX', () => {
   // With no tsconfig the StackBlitz editor underlines every tag in that file (#1567).
   it.each([
@@ -174,6 +172,8 @@ describe('a framework\'s getting-started page', () => {
   })
 })
 
+// Every starter died at Poveste's own floor check in a WebContainer while the
+// resolution stayed green (#1226).
 describe('webContainerProblems', () => {
   const lockfile = (engines: string) => ({
     packages: {
