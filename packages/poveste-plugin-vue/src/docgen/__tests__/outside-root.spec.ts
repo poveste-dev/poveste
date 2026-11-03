@@ -1,6 +1,9 @@
 import type { DocgenExtractor } from '@poveste/shared'
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { join } from 'pathe'
+import { dirname, join } from 'pathe'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createExtractor } from '../extractor.js'
 
@@ -40,5 +43,38 @@ describe('a book with no tsconfig', () => {
     const doc = await extractor.extract(join(FIXTURE, 'book/Inside.vue'))
 
     expect(doc!.props).toEqual([expect.objectContaining({ name: 'label', type: 'string' })])
+  }, 60_000)
+})
+
+// Outside the repository, so nothing is installed up the component's tree: inside it,
+// the workspace's `node_modules` answers, and the case can't happen (#1580).
+describe('a component with nothing installed up its tree', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'poveste-docgen-outside-')))
+  const vue = dirname(createRequire(import.meta.url).resolve('vue/package.json'))
+  let outside: DocgenExtractor
+
+  beforeAll(async () => {
+    mkdirSync(join(dir, 'book/node_modules'), { recursive: true })
+    mkdirSync(join(dir, 'lib'))
+    symlinkSync(vue, join(dir, 'book/node_modules/vue'), 'junction')
+    writeFileSync(join(dir, 'lib/Btn.vue'), '<script setup lang="ts">\ndefineProps<{ label: string }>()\n</script>\n\n<template>\n  <button>{{ label }}</button>\n</template>\n')
+    outside = await createExtractor({ root: join(dir, 'book'), options: {} })
+  })
+  afterAll(() => {
+    outside.dispose()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('reads its props with the `vue` the book has', async () => {
+    const doc = await outside.extract(join(dir, 'lib/Btn.vue'))
+
+    expect(doc!.props).toEqual([expect.objectContaining({ name: 'label', type: 'string', required: true })])
+  }, 60_000)
+
+  it('still starts in a book with no `vue` to find', async () => {
+    const bare = await createExtractor({ root: join(dir, 'lib'), options: {} })
+
+    expect(await bare.extract(join(dir, 'lib/Btn.vue'))).toBeDefined()
+    bare.dispose()
   }, 60_000)
 })
