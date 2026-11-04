@@ -63,16 +63,17 @@ const PreviewHostRoot = defineComponent({
 })
 
 export function createPreviewHost(options: PreviewHostOptions) {
-  let app: App | null = null
+  let mounted: App | null = null
   let target: HTMLDivElement | null = null
 
   async function mount() {
     const wrappers: Component[] = []
 
-    target = document.createElement('div')
-    options.el.appendChild(target)
+    const container = document.createElement('div')
+    target = container
+    options.el.appendChild(container)
 
-    app = createApp({
+    const app = createApp({
       name: options.name,
 
       render: () => {
@@ -140,14 +141,21 @@ export function createPreviewHost(options: PreviewHostOptions) {
 
     await runSetupHooks(setupApi)
 
+    // A hook that awaited can outlive this mount: `unmount()` has taken the
+    // container away, and the app must not appear after it (#1594).
+    if (target !== container) {
+      return
+    }
+
     options.configureApp?.(app)
 
-    app.mount(target)
+    mounted = app
+    app.mount(container)
   }
 
   function unmount() {
-    app?.unmount()
-    app = null
+    mounted?.unmount()
+    mounted = null
 
     if (target) {
       target.parentNode?.removeChild(target)
@@ -156,7 +164,7 @@ export function createPreviewHost(options: PreviewHostOptions) {
   }
 
   function forceUpdate() {
-    app?._instance?.proxy?.$forceUpdate()
+    mounted?._instance?.proxy?.$forceUpdate()
   }
 
   return {

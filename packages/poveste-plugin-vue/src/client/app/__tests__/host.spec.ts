@@ -23,7 +23,7 @@ const VaporButton = vue.defineVaporComponent({
   },
 })
 
-function host(component: unknown) {
+function host(component: unknown, options: { setupApp?: () => Promise<void> } = {}) {
   const el = document.createElement('div')
   document.body.appendChild(el)
   const story = { id: 'buttons', file: { component } } as unknown as Story
@@ -31,7 +31,7 @@ function host(component: unknown) {
     name: 'Test',
     el,
     getStory: () => story,
-    getVariant: () => null,
+    getVariant: () => options.setupApp ? { setupApp: options.setupApp } as any : null,
     renderContext: {} as any,
   })
   return { el, preview }
@@ -50,6 +50,67 @@ describe('createPreviewHost under Vue 3.6', () => {
     await vue.nextTick()
 
     expect(el.querySelector('button')?.textContent).toBe('Vapor')
+    preview.unmount()
+  })
+})
+
+describe('createPreviewHost when unmounted while a setup hook is pending', () => {
+  function story() {
+    const render = vi.fn(() => vue.h('button', 'Story'))
+    return { render, Story: vue.defineComponent({ render }) }
+  }
+
+  function pendingHook() {
+    let release!: () => void
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    return { pending, release }
+  }
+
+  it('never renders the story once the hook resolves', async () => {
+    const { pending, release } = pendingHook()
+    const { render, Story } = story()
+    const { preview } = host(Story, { setupApp: () => pending })
+
+    const mounting = preview.mount()
+    preview.unmount()
+    release()
+    await mounting
+    await vue.nextTick()
+
+    expect(render).not.toHaveBeenCalled()
+  })
+
+  it('does not warn about unmounting an app that never mounted', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { pending, release } = pendingHook()
+    const { preview } = host(story().Story, { setupApp: () => pending })
+
+    const mounting = preview.mount()
+    preview.unmount()
+    release()
+    await mounting
+
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('renders only the later mount when mounted again before the first hook resolves', async () => {
+    const first = pendingHook()
+    const hooks = [() => first.pending, () => Promise.resolve()]
+    const { render, Story } = story()
+    const { el, preview } = host(Story, { setupApp: () => hooks.shift()!() })
+
+    const mounting = preview.mount()
+    preview.unmount()
+    await preview.mount()
+    first.release()
+    await mounting
+    await vue.nextTick()
+
+    expect(render).toHaveBeenCalledOnce()
+    expect(el.querySelectorAll('button')).toHaveLength(1)
     preview.unmount()
   })
 })
