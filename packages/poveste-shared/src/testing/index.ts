@@ -173,10 +173,10 @@ async function renderVariant(framework: StoryTestFramework<any>, story: Story, v
 function captureConsole(found: unknown[]): () => void {
   const { error, warn } = console
   console.error = (...args: unknown[]) => {
-    found.push(args.length === 1 && args[0] instanceof Error ? args[0] : args.map(printed).join(' '))
+    found.push(args.length === 1 && args[0] instanceof Error ? args[0] : formatted(args))
   }
   console.warn = (...args: unknown[]) => {
-    found.push(args.map(printed).join(' '))
+    found.push(formatted(args))
   }
   return () => {
     console.error = error
@@ -220,6 +220,20 @@ function captureUncaught(found: unknown[]): () => void {
       node!.off('unhandledRejection', onProcess)
     }
   }
+}
+
+/** What a console prints for these, which only Node's `util.format` would give, and not in a browser. */
+function formatted([first, ...rest]: unknown[]): string {
+  const message = typeof first === 'string'
+    ? first.replace(/%[sdifoOc%]/g, (match) => {
+        if (match === '%%' || !rest.length) {
+          return match === '%%' ? '%' : match
+        }
+        const value = printed(rest.shift())
+        return match === '%c' ? '' : value
+      })
+    : printed(first)
+  return [message, ...rest.map(printed)].join(' ')
 }
 
 function printed(value: unknown): string {
