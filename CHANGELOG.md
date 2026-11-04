@@ -4,6 +4,29 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.22.1
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.22.0...v0.22.1)
+
+**The install tip gets you past pnpm's cooldown, a Nuxt book serves its `public/`, and a template ref in a Vue story keeps its element.**
+
+It is a `patch`, and most books need no change. Nothing is removed, and no peer range or version floor moved. Two things behave differently:
+
+- **A Nuxt book now serves and copies its `public/`** ([#1595](https://github.com/poveste-dev/poveste/issues/1595), [#1597](https://github.com/poveste-dev/poveste/pull/1597)). The deployment guide already said it did, but Nuxt turns Vite's `publicDir` off and the plugin copied that setting. A book shares the app's one directory, so a `robots.txt` there now replaces the one the build generates, and the app's file decides what crawlers do on the book too. A custom `dir.public` and a Nuxt layer's `public/` weren't run.
+- **React and Solid story tests lose the repeated title** ([#1604](https://github.com/poveste-dev/poveste/issues/1604), [#1610](https://github.com/poveste-dev/poveste/pull/1610)). `Badge > Badge > Info` is now `Badge > Info`, which renames every React and Solid story test, so a filter or a CI report keyed on the old name needs updating. An explicit `name` still reads `Mine > Badge > Info`. Vue's and Svelte's names don't change.
+
+### 🩹 Fixes
+
+- **A template ref in a Vue story's `<script setup>` keeps its element** ([#1598](https://github.com/poveste-dev/poveste/issues/1598), [#1599](https://github.com/poveste-dev/poveste/pull/1599)). The state sync wrote null over it just after mount, with the element still on the page, so a story that read its ref later got nothing and no error. This covers Vue, Nuxt and Quasar, and `useTemplateRef` under its own name in a Vue book, and Svelte was never affected. A `v-for` over components is still overwritten, and the panel still lists a template ref as `null`. Explicit variants and `defineExpose` weren't run in a book.
+- **A preview unmounted during its setup hooks no longer throws** ([#1594](https://github.com/poveste-dev/poveste/issues/1594), [#1596](https://github.com/poveste-dev/poveste/pull/1596)). Moving on from a story while its hooks were still running gave `Cannot read properties of null (reading 'mount')`. In `poveste dev` on a Nuxt book, the next story could show `This component threw while rendering`. On a built Nuxt book it was seen only in the console.
+- **A Vue component's Docs tab says why its table is empty when `vue` doesn't resolve from it** ([#1585](https://github.com/poveste-dev/poveste/issues/1585), [#1586](https://github.com/poveste-dev/poveste/pull/1586)). In a book with a tsconfig, a component outside the root with nothing installed up its tree showed its name and no reason. It now says `vue` doesn't resolve from that file, and to install `vue` above it or add it to the tsconfig's `paths`.
+- **A failing story test fills in its console message** ([#1603](https://github.com/poveste-dev/poveste/issues/1603), [#1609](https://github.com/poveste-dev/poveste/pull/1609)). A React list without keys printed `%s%s` and named Poveste's `Variant`. It now reads `Each child in a list should have a unique "key" prop.` and names the story and variant, as ``Check the render method of `Failing: leaves out a key` ``. That name also shows in React DevTools and component stacks.
+
+### 📖 Documentation
+
+- **The install tip's fix for an old pnpm install works** ([#1605](https://github.com/poveste-dev/poveste/issues/1605), [#1607](https://github.com/poveste-dev/poveste/pull/1607)). For about a day after a release, pnpm installs the previous version. Two of the three fixes on each getting-started page didn't recover an install already run. The tip, and the `poveste` README, now give one command that does, on pnpm 11 and 12, before or after an install: `pnpm add -D "poveste@^x.y.z" "@poveste/plugin-vue@^x.y.z"`, with each page's own packages. Commit the `pnpm-workspace.yaml` it creates. Avoid `--config.minimum-release-age=0`: it makes later installs fail until the cooldown passes.
+- **The Node warning says how far back npm goes.** On Node 22.21.1 and 20.19.0, `npm i poveste` installs 0.6.1, and its `npm warn deprecated` lines name Poveste and say to install `@latest`. The page said the only warning named a dependency.
+
 ## v0.22.0
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.21.1...v0.22.0)
