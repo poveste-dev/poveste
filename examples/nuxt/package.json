@@ -21,7 +21,7 @@
     "floating-vue": "5.4.0",
     "jsdom": "^30.1.3",
     "lottie-web": "^5.12.2",
-    "nuxt": "^4.6.2",
+    "nuxt": "^4.6.3",
     "pinia": "^4.1.0",
     "poveste": "workspace:*",
     "sass": "^1.105.2",
