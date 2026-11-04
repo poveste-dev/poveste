@@ -135,7 +135,8 @@ export function HstNuxt(options: HstNuxtOptions = {}): Plugin {
             }),
           ],
           css: viteConfig.css,
-          publicDir: viteConfig.publicDir,
+          // Nuxt turns Vite's off and serves `public/` through Nitro, which a book doesn't have (#1595).
+          publicDir: nuxt.options.dir.public,
           optimizeDeps: {
             ...viteConfig.optimizeDeps,
             exclude: [
