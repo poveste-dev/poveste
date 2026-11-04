@@ -29,7 +29,7 @@ pnpm i -D poveste @poveste/plugin-solid                        # Solid, no contr
 pnpm i -D poveste @poveste/plugin-react                        # React 19, no controls yet
 ```
 
-> **Installed an older version than you expected?** For about a day after a release, pnpm installs the previous one with no error, and for a plugin that's new in that release, its empty `0.0.1` placeholder. pnpm 11.5.3 added `(x.y.z is available)` after the version it installed; pnpm 12.14.0 said nothing. That's pnpm's release-age cooldown, not a broken publish. `package.json` keeps the old `^x.y.z`, so waiting doesn't fix it: install again with `npm`, with `--config.minimum-release-age=0` (kebab-case: pnpm 12.4.0 ignores the camelCase spelling, which 12.14.0 accepts), or with exact versions.
+> **Installed an older version than you expected?** For about a day after a release, pnpm installs the previous one with no error, and for a plugin that's new in that release, its empty `0.0.1` placeholder. That's pnpm's release-age cooldown, not a broken publish. Name the new version, which `npm view poveste version` prints: `pnpm add -D "poveste@^x.y.z" "@poveste/plugin-vue@^x.y.z"`, with your plugin. pnpm lists them in a `pnpm-workspace.yaml` it creates, so commit that file. Running the install line again doesn't help, because `package.json` keeps the old `^x.y.z`, and `--config.minimum-release-age=0` makes every later `pnpm i` fail until the cooldown passes.
 
 Then create a `poveste.config.ts` in your project root. For a Vue project it is this:
 
