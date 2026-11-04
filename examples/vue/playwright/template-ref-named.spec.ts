@@ -21,3 +21,15 @@ test('a `useTemplateRef` under its own name still holds its element after the st
 
   await expect(read).toHaveText('held')
 })
+
+test('a `v-for` ref over components still holds them after the state has synced', async ({ page }) => {
+  await page.goto(`/story/${STORY}`)
+  const read = page.getByTestId('preview-iframe').contentFrame().locator('.conformance-template-ref-read-kids')
+  await expect(read).toBeVisible({ timeout: 20_000 })
+  // As above.
+  await page.waitForTimeout(500)
+
+  await read.click()
+
+  await expect(read).toHaveText('held')
+})

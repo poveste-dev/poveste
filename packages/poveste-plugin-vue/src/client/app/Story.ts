@@ -63,10 +63,10 @@ export default defineComponent({
     })
 
     // Vue sets these, so they aren't state: the sync wrote null over a mounted element (#1598).
-    // `refs` doesn't list a `v-for` ref whose binding starts as an array.
+    // `refs` misses a `v-for` ref that starts as an array, of nodes or instances.
     function isTemplateRefTarget(value: unknown) {
       return Array.isArray(value)
-        ? value.length > 0 && value.every(item => typeof item?.nodeType === 'number')
+        ? value.length > 0 && value.every(item => typeof item?.nodeType === 'number' || item?.$)
         : value != null && Object.values(storyComponent.refs).includes(value)
     }
 
