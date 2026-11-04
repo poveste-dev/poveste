@@ -2,7 +2,7 @@ import type { Story } from '@poveste/shared'
 import type { Component, PropType, VNode } from 'vue'
 import type { PreviewRenderContext } from './render-context.js'
 import { omitInheritStoryProps } from '@poveste/shared'
-import { cloneVNode, computed, defineComponent, h, isRef, reactive, useAttrs } from 'vue'
+import { cloneVNode, computed, defineComponent, h, isRef, reactive, unref, useAttrs } from 'vue'
 import { implicitStateContext, storyContext } from './context.js'
 import { useRenderContext } from './render-context.js'
 import { holdsVueApp, isComponentBinding, isWritableBinding, useInstance } from './util.js'
@@ -62,6 +62,14 @@ export default defineComponent({
       },
     })
 
+    // Vue sets these, so they aren't state: the sync wrote null over a mounted element (#1598).
+    // `refs` doesn't list a `v-for` ref whose binding starts as an array.
+    function isTemplateRefTarget(value: unknown) {
+      return Array.isArray(value)
+        ? value.length > 0 && value.every(item => typeof item?.nodeType === 'number')
+        : value != null && Object.values(storyComponent.refs).includes(value)
+    }
+
     function addImplicitState(source: Record<string, any>, key: string) {
       const value = source[key]
 
@@ -73,15 +81,23 @@ export default defineComponent({
         return
       }
 
+      const before = unref(value)
+      // Vue pushes into a `v-for` ref's own array.
+      const initial = Array.isArray(before) ? [...before] : before
+
       Object.defineProperty(implicitState, key, {
         enumerable: true,
         configurable: true,
         get: () => {
-          const currentValue = source[key]
-          return isRef(currentValue) ? currentValue.value : currentValue
+          const currentValue = unref(source[key])
+          return isTemplateRefTarget(currentValue) ? initial : currentValue
         },
         set: (newValue) => {
           const currentValue = source[key]
+
+          if (isTemplateRefTarget(unref(currentValue))) {
+            return
+          }
 
           if (isRef(currentValue)) {
             currentValue.value = newValue
