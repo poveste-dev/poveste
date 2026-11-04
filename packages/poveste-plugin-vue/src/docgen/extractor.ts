@@ -112,6 +112,10 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       // Against the type as the table prints an optional one, without its `undefined`.
       const resolve = (prop: PropertyMeta) => program && resolveType(typescript, program.getTypeChecker(), prop.getTypeObject(), prop.required ? prop.type : prop.type.replace(/ \| undefined$/, ''))
       const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, program, file) : undefined, slot => readSlotProps(typescript, program, slot), resolve)
+      // The tsconfig is the reader's, so it says why rather than mapping `vue` as a book without one does (#1580).
+      if (tsconfig && !doc.props.length && !doc.slots.length && !doc.events.length && !typescript.resolveModuleName('vue', file, core.createParsedCommandLine(typescript, typescript.sys, tsconfig).options, typescript.sys).resolvedModule) {
+        throw new Error(`\`vue\` doesn't resolve from '${file}', so its props can't be read and come out empty. Install \`vue\` above it, or add it to the \`paths\` of ${tsconfig}.`)
+      }
       const generic = file.endsWith('.vue') ? readGeneric(readFileSync(file, 'utf8')) : undefined
       return generic ? { ...doc, generic } : doc
     },

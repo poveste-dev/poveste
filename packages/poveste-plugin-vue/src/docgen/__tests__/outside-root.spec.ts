@@ -132,3 +132,56 @@ describe('a component with nothing installed up its tree', () => {
     bare.dispose()
   }, 60_000)
 })
+
+// Outside the repository for the same reason. The tsconfig is the reader's, so `vue` isn't
+// mapped for them, and the table says why it can't be read (#1585).
+describe('a book with a tsconfig and a component with nothing installed up its tree', () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), 'poveste-docgen-tsconfig-')))
+  const vue = dirname(createRequire(import.meta.url).resolve('vue/package.json'))
+  const options = { target: 'ESNext', module: 'ESNext', moduleResolution: 'bundler', strict: true, skipLibCheck: true }
+
+  function book(name: string, tsconfig: object) {
+    const root = join(dir, name, 'book')
+    mkdirSync(join(root, 'node_modules'), { recursive: true })
+    mkdirSync(join(dir, name, 'lib'))
+    symlinkSync(vue, join(root, 'node_modules/vue'), 'junction')
+    writeFileSync(join(root, 'tsconfig.json'), JSON.stringify({ compilerOptions: options, ...tsconfig }))
+    writeFileSync(join(root, 'only.ts'), 'export {}\n')
+    writeFileSync(join(root, 'Inside.vue'), '<template>\n  <button />\n</template>\n')
+    writeFileSync(join(dir, name, 'lib/Btn.vue'), '<script setup lang="ts">\ndefineProps<{ label: string }>()\n</script>\n\n<template>\n  <button>{{ label }}</button>\n</template>\n')
+    return { root, btn: join(dir, name, 'lib/Btn.vue') }
+  }
+
+  async function read(name: string, tsconfig: object, file: (paths: ReturnType<typeof book>) => string = paths => paths.btn) {
+    const paths = book(name, tsconfig)
+    const extractor = await createExtractor({ root: paths.root, options: {} })
+    try {
+      return await extractor.extract(file(paths))
+    }
+    finally {
+      extractor.dispose()
+    }
+  }
+
+  afterAll(() => rmSync(dir, { recursive: true, force: true }))
+
+  it('says `vue` does not resolve when its `include` reaches the component', async () => {
+    await expect(read('named', { include: ['.', '../lib'] })).rejects.toThrow(/`vue` doesn't resolve from .*Btn\.vue/)
+  }, 60_000)
+
+  it('reads the props once its `paths` maps `vue`', async () => {
+    const doc = await read('mapped', { compilerOptions: { ...options, paths: { vue: ['./node_modules/vue'] } }, include: ['.', '../lib'] })
+
+    expect(doc!.props).toEqual([expect.objectContaining({ name: 'label', type: 'string', required: true })])
+  }, 60_000)
+
+  it('keeps its message when the component is not in the program', async () => {
+    await expect(read('elsewhere', { include: ['only.ts'] })).rejects.toThrow(/is not in the program of/)
+  }, 60_000)
+
+  it('leaves a component with nothing to read alone when `vue` resolves', async () => {
+    const doc = await read('inside', { include: ['.'] }, paths => join(paths.root, 'Inside.vue'))
+
+    expect(doc).toEqual(expect.objectContaining({ props: [], slots: [], events: [] }))
+  }, 60_000)
+})
