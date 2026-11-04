@@ -68,7 +68,10 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // over the 0.21 pass's pin at 71,193.
   // Raised from 72_700 for #1527: a prop's type opened one level, 321 B over 0.22's
   // `next` at 72,655.
-  '@poveste/plugin-vue': { bytes: 73_100, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  // Raised from 73_100 for #1594, #1585 and #1598: a mount that stops after its hooks, the
+  // message for a `vue` that doesn't resolve, and template refs kept out of the state sync,
+  // 770 B together over `next` at 72,806.
+  '@poveste/plugin-vue': { bytes: 73_600, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   // Raised from 26_100 for #1522: the story-test harness every framework but Vue
   // shares, 2,458 B over 0.21's `next` at 24,116.
