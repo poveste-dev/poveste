@@ -75,7 +75,9 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   // Raised from 26_100 for #1522: the story-test harness every framework but Vue
   // shares, 2,458 B over 0.21's `next` at 24,116.
-  '@poveste/shared': { bytes: 27_300, reason: 'types and a small runtime; catches the tests' },
+  // Raised from 27_300 for #1603: a failing story test's format arguments filled in, 178 B
+  // over `next` at 27,160.
+  '@poveste/shared': { bytes: 27_400, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },
   // 0.21's growth here was inferred from Solid's before React's auto-docs (#1161) had a
   // PR; enforce it once that has merged and the number is measured again.

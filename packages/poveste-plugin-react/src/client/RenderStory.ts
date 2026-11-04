@@ -122,6 +122,8 @@ export default _defineComponent({
           const state = useSyncExternalStore(store.subscribe, store.get)
           return renderVariant!({ state, setState })
         }
+        // React names this in its warnings, where the story's `render` has no name of its own.
+        Variant.displayName = `${props.story.title}: ${props.variant.title}`
 
         let node: ReactNode = createElement(Variant)
         for (const wrapper of wrappers) {

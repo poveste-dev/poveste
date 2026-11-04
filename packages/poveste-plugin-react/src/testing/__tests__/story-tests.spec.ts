@@ -62,7 +62,7 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
   })
 
   it('reports every variant of the book', () => {
-    expect(results.size).toBe(11)
+    expect(results.size).toBe(12)
   })
 
   it('passes every variant of a story that renders, its setup file and initState included', () => {
@@ -89,6 +89,19 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
 
     expect(result.status).toBe('failed')
     expect(result.failureMessages.join('\n')).toContain(message)
+  })
+
+  it('fills in a warning\'s format arguments, as a console would', () => {
+    const [message] = results.get('Failing Failing warns with format arguments')!.failureMessages
+
+    expect(message).toContain('this is 50% of {"all":true} and more')
+  })
+
+  it('names the story in React\'s own warning, with its arguments filled in', () => {
+    const [message] = results.get('Failing Failing leaves out a key')!.failureMessages
+
+    expect(message).toContain('Check the render method of `Failing: leaves out a key`')
+    expect(message).not.toContain('%s')
   })
 
   it('still passes the sound variant of a story whose others fail', () => {

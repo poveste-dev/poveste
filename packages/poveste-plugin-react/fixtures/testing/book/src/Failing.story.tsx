@@ -25,6 +25,13 @@ export default defineStory({
         return <p>warned</p>
       },
     },
+    {
+      title: 'warns with format arguments',
+      render: () => {
+        console.warn('%s is %d%% of %o', 'this', 50, { all: true }, 'and more')
+        return <p>warned</p>
+      },
+    },
     // React's own development warning, printed with `console.error`.
     { title: 'leaves out a key', render: () => <ul>{['a', 'b'].map(item => <li>{item}</li>)}</ul> },
     {
