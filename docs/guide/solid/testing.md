@@ -46,7 +46,7 @@ import Badge from './Badge.story'
 testStories(Badge)
 ```
 
-`vitest run` now lists a test for each variant, under the story's title. Both files are in `examples/solid`, at `vitest.config.ts` and `src/Badge.story.test.ts`, and CI runs them.
+`vitest run` now lists a test for each variant, under the story's title, as `Badge > Info`. Both files are in `examples/solid`, at `vitest.config.ts` and `src/Badge.story.test.ts`, and CI runs them.
 
 `povesteTesting()` serves your [setup file](./getting-started.md#setup-and-wrappers) and the modules Poveste's client imports. It has Vitest inline Poveste's own packages, which import those modules, through `test.server.deps.inline`. For browser mode, it adds Solid, and the copy of Vue Poveste runs its hosts on, to `optimizeDeps.include`, and your setup file to `optimizeDeps.entries`, so Vite pre-bundles them, and the libraries the setup file imports, before the first test, without reloading partway through it. It adds no alias, so the tests resolve modules exactly as the rest of your Vite config does.
 
@@ -84,7 +84,7 @@ export default mergeConfig(viteConfig, defineConfig({
 
 `testStories(story, options)` takes:
 
-- `name`: the outer `describe`'s name. The story's `title` by default.
+- `name`: the outer `describe`'s name, with the story's title kept under it, as `Mine > Badge > Info`. Without it, the tests go straight under the story's title.
 - `timeout`: how long a variant's setup or render may take to settle, in milliseconds. An `initState` still pending then fails the test. 5000 by default.
 
 ## What it doesn't do

@@ -40,5 +40,5 @@ export function testStories(story: StoryOptions, options: TestStoriesOptions = {
       const only = variantOptions(options)[whole.variants.indexOf(variant)]
       return { ...whole, variants: [variant], file: { ...whole.file!, component: { ...options, variants: [only!] } } } as Story
     },
-  }, story, { name: options.name ?? story.title ?? 'stories', timeout: options.timeout })
+  }, story, { name: options.name ?? story.title ?? 'stories', flat: !options.name && !!story.title, timeout: options.timeout })
 }

@@ -23,6 +23,8 @@ export interface StoryTestFramework<C = unknown> {
 export interface DescribeStoriesOptions {
   /** The outer `describe`'s name. */
   name: string
+  /** `name` is already the story's title, so its tests go straight under it. */
+  flat?: boolean | undefined
   /**
    * How long a variant's setup or render may take to settle, in milliseconds:
    * one still pending then fails the test.
@@ -53,7 +55,7 @@ export function describeStories<C>(framework: StoryTestFramework<C>, component: 
     }
 
     for (const story of stories) {
-      describe(story.title, () => {
+      const tests = () => {
         for (const variant of story.variants) {
           it(variant.title, async () => {
             const found = await renderVariant(framework, story, variant, timeout)
@@ -62,7 +64,13 @@ export function describeStories<C>(framework: StoryTestFramework<C>, component: 
             }
           }, testTimeout)
         }
-      })
+      }
+      if (options.flat) {
+        tests()
+      }
+      else {
+        describe(story.title, tests)
+      }
     }
   })
 }

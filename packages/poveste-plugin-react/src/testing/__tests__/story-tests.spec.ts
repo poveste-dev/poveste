@@ -62,20 +62,20 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
   })
 
   it('reports every variant of the book', () => {
-    expect(results.size).toBe(12)
+    expect(results.size).toBe(15)
   })
 
   it('passes every variant of a story that renders, its setup file and initState included', () => {
     expect([...results.values()].filter(r => r.fullName.startsWith('Passing ')).map(r => [r.fullName, r.status])).toEqual([
-      ['Passing Passing plain', 'passed'],
-      ['Passing Passing from initState', 'passed'],
-      ['Passing Passing from the setup file', 'passed'],
+      ['Passing plain', 'passed'],
+      ['Passing from initState', 'passed'],
+      ['Passing from the setup file', 'passed'],
     ])
   })
 
   // Vitest's limit in that file is far below the `timeout` the story is given.
   it('gives a variant the `timeout` it is given, whatever Vitest\'s own limit is', () => {
-    expect(results.get('Patient Patient slow')?.status).toBe('passed')
+    expect(results.get('Patient slow')?.status).toBe('passed')
   })
 
   it.each([
@@ -85,31 +85,35 @@ describe.each(['jsdom', 'browser'])('a React story file as tests, in %s', (proje
     ['leaves out a key', 'unique "key" prop'],
     ['rejects in initState', 'initState rejected on purpose'],
   ])('fails a variant that %s, naming what it printed', (variant, message) => {
-    const result = results.get(`Failing Failing ${variant}`)!
+    const result = results.get(`Failing ${variant}`)!
 
     expect(result.status).toBe('failed')
     expect(result.failureMessages.join('\n')).toContain(message)
   })
 
   it('fills in a warning\'s format arguments, as a console would', () => {
-    const [message] = results.get('Failing Failing warns with format arguments')!.failureMessages
+    const [message] = results.get('Failing warns with format arguments')!.failureMessages
 
     expect(message).toContain('this is 50% of {"all":true} and more')
   })
 
   it('names the story in React\'s own warning, with its arguments filled in', () => {
-    const [message] = results.get('Failing Failing leaves out a key')!.failureMessages
+    const [message] = results.get('Failing leaves out a key')!.failureMessages
 
     expect(message).toContain('Check the render method of `Failing: leaves out a key`')
     expect(message).not.toContain('%s')
   })
 
+  it('keeps the story\'s title under a `name` it is given', () => {
+    expect(results.get('Named Passing plain')?.status).toBe('passed')
+  })
+
   it('still passes the sound variant of a story whose others fail', () => {
-    expect(results.get('Failing Failing fine')?.status).toBe('passed')
+    expect(results.get('Failing fine')?.status).toBe('passed')
   })
 
   it('renders in the environment Vitest gives it: a browser has `ResizeObserver`, jsdom does not', () => {
-    expect(results.get('Measures Measures observed')?.status).toBe(project === 'browser' ? 'passed' : 'failed')
+    expect(results.get('Measures observed')?.status).toBe(project === 'browser' ? 'passed' : 'failed')
   })
 })
 

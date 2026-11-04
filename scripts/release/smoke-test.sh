@@ -844,7 +844,7 @@ sed 's/Button/Badge/g' "$SOLID_APP/src/Button.story.tsx" | sed "s|from './Badge'
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
 story_test_versions solid "$SOLID_APP" vitest jsdom
-run_story_tests solid jsdom "$SOLID_APP" "Badge Badge default"
+run_story_tests solid jsdom "$SOLID_APP" "Badge default"
 
 # The guide's browser config on a cold cache, with a setup file whose imports have
 # to reach pre-bundling too. Opt-in with the dev pass, which has Chromium.
@@ -874,7 +874,7 @@ TS
     rm -rf node_modules/.vite
   )
   story_test_versions solid "$SOLID_APP" @vitest/browser-playwright playwright
-  run_story_tests solid browser "$SOLID_APP" "Badge Badge default"
+  run_story_tests solid browser "$SOLID_APP" "Badge default"
 fi
 
 # ── React ────────────────────────────────────────────────────────────────────
@@ -948,7 +948,7 @@ sed 's/Button/Badge/g' "$REACT_APP/src/Button.story.tsx" | sed "s|from './Badge'
   npm install --no-audit --no-fund --loglevel=error vitest jsdom
 )
 story_test_versions react "$REACT_APP" vitest jsdom
-run_story_tests react jsdom "$REACT_APP" "Badge Badge default"
+run_story_tests react jsdom "$REACT_APP" "Badge default"
 
 # The guide's browser config on a cold cache, with a setup file whose imports have
 # to reach pre-bundling too. Opt-in with the dev pass, which has Chromium.
@@ -978,7 +978,7 @@ TS
     rm -rf node_modules/.vite
   )
   story_test_versions react "$REACT_APP" @vitest/browser-playwright playwright
-  run_story_tests react browser "$REACT_APP" "Badge Badge default"
+  run_story_tests react browser "$REACT_APP" "Badge default"
 fi
 
 # ── Quasar ───────────────────────────────────────────────────────────────────
