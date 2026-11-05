@@ -118,6 +118,33 @@ describe('markdown', async () => {
     expect(html).toContain('<span class="line"><span>example.com</span></span>')
   })
 
+  it('turns a story embed into something an HTML parser leaves whole', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('Before\n\n<poveste-story id="button" variant="primary" />\n\nAfter\n', { file: '/md.story.md' })
+
+    expect(html).toContain('<div class="not-prose" data-poveste-story="button" data-poveste-variant="primary"></div>')
+    expect(html).not.toContain('<poveste-story')
+    expect(html).toContain('<p>After</p>')
+  })
+
+  it('takes a story embed with no variant, written with a closing tag', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('<poveste-story id="button"></poveste-story>\n', { file: '/md.story.md' })
+
+    expect(html).toContain('data-poveste-story="button" data-poveste-variant=""></div>')
+    expect(html).not.toContain('</poveste-story>')
+  })
+
+  it('leaves a story embed in a code block as code', async () => {
+    const md = await createMarkdownRenderer(ctx)
+
+    const html = md.render('`<poveste-story id="button" />`\n', { file: '/md.story.md' })
+
+    expect(html).not.toContain('data-poveste-story')
+  })
+
   it('should throw error on missing [md] story file.', async () => {
     const testFile3 = '/markdown/test3.story.md'
     const writer = createWriteStream(__dirname.concat(testFile3))

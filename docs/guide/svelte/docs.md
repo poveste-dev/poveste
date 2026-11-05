@@ -76,6 +76,24 @@ Loaded markdown renders like any other, with a few differences, because it usual
 - Relative images aren't resolved. Use an absolute URL or a file from `public/`.
 - The loaded file's own frontmatter is ignored, including any `src` of its own.
 
+### Embed a story
+
+To show a live story between your paragraphs, name it with a tag, on a line of its own:
+
+```md
+Some text before.
+
+<poveste-story id="my-button" variant="primary" />
+
+Some text after.
+```
+
+`id` is the story's id. `variant` is the variant's id, and without it you get the story's first variant. If no story matches, the page says so where the embed would be.
+
+An embed runs in its own sandbox, as a preview does, so the story's styles stay inside it. It loads when you scroll near it, and each one on a page boots a sandbox of its own. Its frame grows to fit the story up to 400 px, and a taller story scrolls inside it.
+
+This embeds a story that already exists. A component can't be imported into the markdown itself.
+
 ### Links
 
 You can link to other stories using a relative path to the story file:

@@ -3,13 +3,14 @@ import type { PropType, Ref } from 'vue'
 import type { Story } from '../../types'
 import { Icon } from '@iconify/vue'
 import { markdownFiles } from 'virtual:$poveste-markdown-files'
-import { computed, nextTick, ref, toRefs, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, shallowRef, toRefs, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { onlySections, useComponentDocs } from '../../util/component-docs.js'
 import { povesteConfig } from '../../util/config.js'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import DevOnlyToolbarOpenInEditor from '../toolbar/DevOnlyToolbarOpenInEditor.vue'
 import ComponentDocs from './ComponentDocs.vue'
+import StoryEmbed from './StoryEmbed.vue'
 
 export function useStoryDoc(story: Ref<Story>) {
   const renderedDoc = ref('')
@@ -181,6 +182,16 @@ watch(renderedDoc, () => {
   immediate: true,
 })
 
+// Live stories between the paragraphs of a doc that is otherwise an HTML string (#444).
+const embeds = shallowRef<HTMLElement[]>([])
+
+watch(renderedDoc, async () => {
+  await nextTick()
+  embeds.value = [...renderedEl.value?.querySelectorAll<HTMLElement>('[data-poveste-story]') ?? []]
+}, {
+  immediate: true,
+})
+
 // Open in editor
 
 const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standalone && story.value.file?.filePath))
@@ -247,6 +258,16 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       data-testid="story-docs"
       v-html="renderedDoc"
     />
+    <Teleport
+      v-for="(el, index) of embeds"
+      :key="index"
+      :to="el"
+    >
+      <StoryEmbed
+        :story-id="el.dataset.povesteStory!"
+        :variant-id="el.dataset.povesteVariant"
+      />
+    </Teleport>
     <ComponentDocs
       v-if="components?.length"
       :components="components"
