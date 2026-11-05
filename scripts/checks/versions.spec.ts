@@ -319,10 +319,10 @@ describe('checkVersions', () => {
     'packages/poveste/package.json': '{ "engines": { "node": ">=26" }, "peerDependencies": { "vite": "^8" } }',
     'packages/poveste-plugin-vue/package.json': '{ "peerDependencies": { "vue": "^3" } }',
     'packages/poveste-plugin-nuxt/package.json': '{ "peerDependencies": { "nuxt": "^4" } }',
-    'packages/poveste-plugin-svelte/package.json': '{ "peerDependencies": { "svelte": "^5", "@sveltejs/kit": "^2" } }',
+    'packages/poveste-plugin-svelte/package.json': '{ "peerDependencies": { "svelte": "^5", "@sveltejs/kit": "^2", "@sveltejs/vite-plugin-svelte": "^7" } }',
     'packages/poveste-plugin-quasar/package.json': '{ "peerDependencies": { "quasar": "^2", "@quasar/app-vite": "^2" } }',
-    'packages/poveste-plugin-solid/package.json': '{ "peerDependencies": { "solid-js": "^1" } }',
-    'packages/poveste-plugin-react/package.json': '{ "peerDependencies": { "react": "^19" } }',
+    'packages/poveste-plugin-solid/package.json': '{ "peerDependencies": { "solid-js": "^1", "vite-plugin-solid": "^2" } }',
+    'packages/poveste-plugin-react/package.json': '{ "peerDependencies": { "react": "^19", "react-dom": "^19" } }',
   }
 
   it('reports that there is no workflow to cite a job from', async () => {
