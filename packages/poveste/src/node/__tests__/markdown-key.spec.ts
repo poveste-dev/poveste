@@ -19,7 +19,7 @@ function write(file: string, text: string) {
 async function openBook(): Promise<Context> {
   vi.spyOn(process, 'cwd').mockReturnValue(dir)
   const ctx = await createContext({ mode: 'build' })
-  ctx.config.supportMatch = [{ id: 'vue', patterns: ['**/*.vue'], pluginIds: ['vue'] }]
+  ctx.config.supportMatch = [{ id: 'vue', patterns: ['**/*.vue', '**/*.js'], pluginIds: ['vue'] }]
   const stories = await watchStories(ctx)
   cleanups.push(() => stories.close())
   const { stop } = await createMarkdownFilesWatcher(ctx)
@@ -47,7 +47,7 @@ describe('the key a story\'s markdown is listed under', () => {
     write('pages/Tag.story.md', '# Tag')
 
     const ctx = await openBook()
-    const story = ctx.storyFiles.find(file => file.fileName === 'Tag.story.vue')!
+    const story = ctx.storyFiles.find(file => file.path.endsWith('Tag.story.vue'))!
 
     // What `useStoryDoc` in `StoryDocs.vue` asks for.
     const lookup = story.relativePath.replace(/\.(\w*)$/, '.md')
