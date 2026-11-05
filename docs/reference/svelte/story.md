@@ -89,6 +89,7 @@ It receives a payload object with the following properties:
 - `story`: The story object.
 - `variant`: The variant object.
 - `setContext`: Puts a value in the context the story mounts with.
+- `addWrapper`: Adds a component that renders around the story.
 
 ```svelte
 <script>

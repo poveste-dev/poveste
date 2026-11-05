@@ -29,6 +29,8 @@ export async function collectStory(Comp: Component<any>, { file, el, storyData }
     story: undefined,
     variant: undefined,
     setContext: (key, value) => context.set(key, value),
+    // Nothing collecting mounts is shown.
+    addWrapper: () => {},
   }
 
   await callSetupFunctions(generatedSetup, setup, setupApi)

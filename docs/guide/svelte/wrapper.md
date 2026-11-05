@@ -5,15 +5,53 @@ description: 'Use addWrapper to put a provider, a theme or a layout around every
 
 # Wrapper
 
-**Not supported yet.**
+A wrapper renders around the displayed story or variant: a provider, a theme, a layout shell.
 
-The Vue plugin lets a [setup file](./app-setup.md) add components that render around every story with `addWrapper`. The Svelte plugin has no equivalent: there is no `addWrapper`. `Hst.Story` and `Hst.Variant` do take a [`meta` prop](../../reference/svelte/story.md#meta), but with no wrapper to read it there is nothing for a story to opt out of.
+In your [setup file](./app-setup.md), add wrapper components with `addWrapper`:
 
-This is tracked in [#232](https://github.com/poveste-dev/poveste/issues/232).
+```ts
+import { defineSetupSvelte } from '@poveste/plugin-svelte'
+import WrapperGlobal from './poveste/WrapperGlobal.svelte'
 
-## What to do instead
+export const setupSvelte = defineSetupSvelte(({ addWrapper }) => {
+  addWrapper(WrapperGlobal)
+})
+```
 
-For a wrapper you want around one story, wrap the markup yourself:
+Add more than one and they nest, the first one added outermost. Each is rendered with the story's content as its `children`, and with `story` and `variant` as props:
+
+```svelte
+<script lang="ts">
+  import type { Story, Variant } from 'poveste'
+  import type { Snippet } from 'svelte'
+
+  const { story, variant, children }: { story: Story, variant?: Variant, children?: Snippet } = $props()
+
+  const hasWrapper = $derived(story.meta?.wrapper !== false && variant?.meta?.wrapper !== false)
+</script>
+
+<div class:padded={hasWrapper}>
+  {@render children?.()}
+</div>
+```
+
+A wrapper can call Svelte's `setContext`, and the story's components will read it with `getContext`.
+
+## Turning it off for one story
+
+Poveste doesn't have a switch for this, so the wrapper decides, as `hasWrapper` does above. Set a `meta` value of your own on a story or a variant:
+
+```svelte
+<Hst.Story meta={{ wrapper: false }}>
+  <Hst.Variant title="No wrapper">
+    <MyComponent />
+  </Hst.Variant>
+</Hst.Story>
+```
+
+## Around one story
+
+For a wrapper around a single story, wrap the markup yourself:
 
 ```svelte
 <script lang="ts">
@@ -30,7 +68,3 @@ For a wrapper you want around one story, wrap the markup yourself:
   </ThemeProvider>
 </Hst.Story>
 ```
-
-For something every story needs — a CSS import, a global store, a locale — the [setup file](./app-setup.md) still runs, so anything that does not need to render *around* the component belongs there.
-
-What the setup file cannot do is put an element in the tree above each story. That is the gap.

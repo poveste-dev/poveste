@@ -7,6 +7,8 @@ export interface SvelteStorySetupApi {
   variant?: Variant | undefined
   /** Puts a value in the context the story mounts with, for its components' `getContext`. */
   setContext: (key: unknown, value: unknown) => void
+  /** Renders around the story, the first one added outermost. Takes `story`, `variant` and `children`. */
+  addWrapper: (wrapper: Component<any>) => void
 }
 
 export type SvelteStorySetupHandler = (api: SvelteStorySetupApi) => Promise<void> | void

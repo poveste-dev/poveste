@@ -75,6 +75,8 @@ export default _defineComponent({
         story: props.story,
         variant: undefined,
         setContext: (key, value) => context.set(key, value),
+        // Nothing this pass mounts is shown.
+        addWrapper: () => {},
       }
 
       await callSetupFunctions(generatedSetup, setup, setupApi)

@@ -76,9 +76,8 @@ export const SHARED_STORIES: SharedStory[] = [
  * contract, so its titles are part of what a reader opens (#1087). Some of vue's
  * other stories are absent, for different reasons:
  *
- * - Waiting on the plugin. The two `WrapperMetaOn…` stories need `addWrapper`
- *   (#232), and they go in here as it lands. `Story setup` also registers a global
- *   component, and a Svelte setup hook has no app to register one on (#234).
+ * - Waiting on the plugin. `Story setup` registers a global component, and a Svelte
+ *   setup hook has no app to register one on (#234).
  * - `Tailwind` is generated from design-system config rather than being a story
  *   file at all.
  * - `i18n` is framework-specific by design; Nuxt shows it through its own
@@ -155,5 +154,7 @@ export const SHARED_STORY_TITLES: string[] = [
   'Throws',
   'With sass',
   'Wrapper',
+  'WrapperMetaOnStory',
+  'WrapperMetaOnVariant',
   '🐱 Meow',
 ]
