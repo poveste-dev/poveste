@@ -236,7 +236,7 @@ The Source panel's **Dynamic** view prints what a variant's `render` returns, as
 <Counter count={10} label="Clicked" onIncrement={…} />
 ```
 
-A function prop prints as `{…}`. A hook's own state, such as a `useState` inside `render`, lives in the preview, so the source shows its starting value. A variant's own `source` string replaces the generated code, and **Static** shows the story file.
+A function prop prints as `{…}`, and so does a class instance. A `Date`, `Map`, `Set` or regular expression prints as code that makes the same value, including inside an object or an array. A hook's own state, such as a `useState` inside `render`, lives in the preview, so the source shows its starting value. A variant's own `source` string replaces the generated code, and **Static** shows the story file.
 
 Dynamic prints a component by the name it has at runtime, because the variable it's assigned to isn't in the element. If that name can't be written as a tag, the panel opens on **Static** rather than print one that won't render, and the Dynamic button's tooltip says why. That covers `memo(() => …)`, `forwardRef(() => …)`, `lazy(…)` and a context with no `displayName`, a `displayName` like `Styled(Button)`, and a lower-case name like `memo(function card() { … })`. To keep Dynamic, give it a capitalized name: `memo(function Card() { … })`, or set `displayName` on it.
 

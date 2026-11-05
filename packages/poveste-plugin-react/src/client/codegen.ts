@@ -252,7 +252,11 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   if (typeof value !== 'object' || value === undefined || seen.has(value)) {
     return value === undefined ? 'undefined' : '…'
   }
-  if (!Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
+  const native = nativeKind(value)
+  if (native === 'RegExp') {
+    return String(value)
+  }
+  if (!native && !Array.isArray(value) && Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) {
     return '…'
   }
   // Only for its own contents: a value that appears twice isn't a cycle.
@@ -262,9 +266,23 @@ function printValue(value: unknown, seen: Set<unknown>): string {
   return printed
 }
 
+// By tag, as a `Date` is. The name rules out a subclass, which has the tag and a
+// constructor of its own, and an object that only claims the tag.
+function nativeKind(value: object): 'Map' | 'Set' | 'RegExp' | undefined {
+  const kind = Object.prototype.toString.call(value).slice(8, -1)
+  return (kind === 'Map' || kind === 'Set' || kind === 'RegExp') && value.constructor?.name === kind ? kind : undefined
+}
+
 function printContainer(value: object, seen: Set<unknown>): string {
   if (Array.isArray(value)) {
     return `[${value.map(item => printValue(item, seen)).join(', ')}]`
+  }
+  const native = nativeKind(value)
+  if (native) {
+    const items = native === 'Map'
+      ? [...value as Map<unknown, unknown>].map(([key, item]) => `[${printValue(key, seen)}, ${printValue(item, seen)}]`)
+      : [...value as Set<unknown>].map(item => printValue(item, seen))
+    return items.length ? `new ${native}([${items.join(', ')}])` : `new ${native}()`
   }
   const entries = Object.entries(value).map(([key, item]) => `${/^[a-z_$][\w$]*$/i.test(key) ? key : JSON.stringify(key)}: ${printValue(item, seen)}`)
   return entries.length ? `{ ${entries.join(', ')} }` : '{}'
