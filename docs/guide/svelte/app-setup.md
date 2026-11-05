@@ -73,6 +73,7 @@ of it.
 | `story` | the story being rendered |
 | `variant` | the variant, or `undefined` in the story-level mount that fills the controls panel, which calls only the global hook |
 | `setContext` | puts a value in the context the story mounts with, where its components read it with `getContext` |
+| `addWrapper` | adds a component that [renders around the story](./wrapper.md) |
 
 The hook runs **before the story mounts**, as it does in [the Vue page](../vue/app-setup.md), so anything it arranges is in place when your components initialise. Two consequences:
 
@@ -193,9 +194,7 @@ usually surfaces further down as a property read on undefined rather than as a m
 error — so if a component works in your app and not in its story, this is the first thing to
 check.
 
-The same shape covers anything a component needs at construction. It is also what to reach for
-until [`addWrapper`](./wrapper.md) exists (tracked in [#232](https://github.com/poveste-dev/poveste/issues/232)),
-since there is no way to apply it to every story at once.
+To put that wrapper around every story, add it from the setup file with [`addWrapper`](./wrapper.md).
 
 ## SvelteKit
 

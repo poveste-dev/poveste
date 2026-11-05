@@ -2,6 +2,7 @@ import type { Story, Variant } from '@poveste/shared'
 import type {
   PropType as _PropType,
 } from '@poveste/vendors/vue'
+import type { Component } from 'svelte'
 import type { SvelteStorySetupApi, SvelteStorySetupHandler } from '../helpers.js'
 import { components } from '@poveste/controls'
 import {
@@ -26,6 +27,7 @@ import {
 import { renderStoryComponents } from './render-story-components.js'
 import { syncState } from './util.js'
 import Wrap from './Wrap.svelte'
+import WrapperChain from './WrapperChain.svelte'
 
 export default _defineComponent({
   name: 'RenderStory',
@@ -78,10 +80,15 @@ export default _defineComponent({
         [slotNameContext.key, props.slotName],
       ])
 
+      const wrappers: Component<any>[] = []
+
       const setupApi: SvelteStorySetupApi = {
         story: props.story,
         variant: props.variant,
         setContext: (key, value) => context.set(key, value),
+        addWrapper: (wrapper) => {
+          wrappers.push(wrapper)
+        },
       }
 
       await callSetupFunctions(generatedSetup, setup, setupApi, props.variant.setupApp as SvelteStorySetupHandler | null)
@@ -99,14 +106,18 @@ export default _defineComponent({
         components.push(component)
       })
 
-      const mountedApp = await mountSvelteComponent(props.story.file.component, {
-        target: container,
-        props: {
-          Hst: {
-            ...renderStoryComponents(props.story, props.variant),
-            ...getControls(),
-          },
+      const componentProps = {
+        Hst: {
+          ...renderStoryComponents(props.story, props.variant),
+          ...getControls(),
         },
+      }
+
+      const mountedApp = await mountSvelteComponent(wrappers.length ? WrapperChain : props.story.file.component, {
+        target: container,
+        props: wrappers.length
+          ? { wrappers, story: props.story, variant: props.variant, component: props.story.file.component, componentProps }
+          : componentProps,
         context,
       }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
       app = mountedApp.app
