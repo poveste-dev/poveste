@@ -33,7 +33,9 @@ async function open(mode: 'build' | 'dev' = 'dev') {
   cleanups.push(stop)
 }
 
-const html = (relativePath: string) => ctx.markdownFiles.find(file => file.relativePath === relativePath)?.html
+// By its end: chokidar reports a relative path with the platform's separator.
+const markdownFile = (name: string) => ctx.markdownFiles.find(file => file.absolutePath.endsWith(`/${name}`))
+const html = (name: string) => markdownFile(name)?.html
 
 describe('a `.story.md` with `src`', () => {
   let warn: ReturnType<typeof vi.spyOn>
@@ -78,8 +80,7 @@ describe('a `.story.md` with `src`', () => {
 
     await open()
 
-    const tag = ctx.markdownFiles.find(file => file.relativePath === 'pages/Tag.story.md')!
-    expect(html('pages/Page.story.md')).toContain(`href="/story/${tag.storyFile!.id}"`)
+    expect(html('pages/Page.story.md')).toContain(`href="/story/${markdownFile('pages/Tag.story.md')!.storyFile!.id}"`)
   })
 
   it('leaves a link to anything else as written, and warns in dev', async () => {
