@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDefaultConfig, loadConfigFile, mergeConfig, processDefaultConfig, resolveConfigFile } from '../config.js'
+import { getDefaultConfig, loadConfigFile, mergeConfig, processDefaultConfig, resolveConfigFile, topLevelAwaitInCommonJs } from '../config.js'
 
 // `mergeConfig(user, defaults)`: defu-style, the first argument wins.
 describe('mergeConfig', () => {
@@ -232,6 +232,20 @@ describe('loadConfigFile', () => {
     const file = write('poveste.config.ts', `const outDir = await Promise.resolve('dist')\nexport default { outDir }\n`)
 
     await expect(loadConfigFile(file)).rejects.toThrow('uses top-level await, which a config only supports as an ES module: set "type": "module" in its package.json.')
+  })
+
+  // The lockfile pins one Vite, so the spec above only ever meets one of these (#1617).
+  it.each([
+    ['Vite 8.3.5', { code: 'INVALID_TLA_FORMAT', message: 'Module format "cjs" does not support top-level await.' }],
+    ['Vite 8.3.4', { code: 'UNSUPPORTED_FEATURE', message: 'Top-level await is currently not supported with the \'cjs\' output format' }],
+  ])('recognises top-level await from %s', (_vite, error) => {
+    expect(topLevelAwaitInCommonJs({ errors: [error] })).toBe(true)
+  })
+
+  it('leaves another unsupported feature to the bundler\'s own error', () => {
+    const error = { code: 'UNSUPPORTED_FEATURE', message: 'Something else is not supported' }
+
+    expect(topLevelAwaitInCommonJs({ errors: [error] })).toBe(false)
   })
 
   // The fix that error names, and the reason it names no other: `configFileNames`

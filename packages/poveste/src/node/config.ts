@@ -182,11 +182,13 @@ function missingImport(e: any): string | undefined {
 /**
  * Whether the config failed on top-level await. Vite bundles a config to CommonJS
  * when its package is not `"type": "module"`, and CommonJS has no top-level await,
- * which jiti allowed there (#870).
+ * which jiti allowed there (#870). Rolldown's code changed under Vite 8.3.5, and a
+ * book can still be on the older one (#1617).
  */
-function topLevelAwaitInCommonJs(e: any): boolean {
+export function topLevelAwaitInCommonJs(e: any): boolean {
   return (e?.errors as { code?: string, message?: string }[] | undefined)
-    ?.some(error => error?.code === 'UNSUPPORTED_FEATURE' && /Top-level await/.test(String(error.message))) ?? false
+    ?.some(error => error?.code === 'INVALID_TLA_FORMAT'
+      || (error?.code === 'UNSUPPORTED_FEATURE' && /Top-level await/.test(String(error.message)))) ?? false
 }
 
 export async function loadConfigFile(configFile: string): Promise<Partial<PovesteConfig>> {
