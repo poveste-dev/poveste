@@ -12,17 +12,22 @@ import { expect, test } from '@playwright/test'
 // worked on its own. Nothing exercised `poveste dev` (#351).
 const MARKDOWN = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'MarkdownFile.story.md')
 const STORY = '/story/src-markdownfile-story-js'
+const NOTES = join(dirname(MARKDOWN), 'conformance', 'LoadedMarkdown.notes.md')
 
 // Serial: these edit one file on disk and restore it, so they must not interleave.
 test.describe.configure({ mode: 'serial' })
 
 test.describe('editing a markdown file', () => {
   let original: string
+  let originalNotes: string
   let times: { atime: Date, mtime: Date }
+  let notesTimes: { atime: Date, mtime: Date }
 
   test.beforeAll(() => {
     original = readFileSync(MARKDOWN, 'utf8')
+    originalNotes = readFileSync(NOTES, 'utf8')
     times = statSync(MARKDOWN)
+    notesTimes = statSync(NOTES)
   })
 
   // The times as well as the text: the bundle-size check refuses a book older
@@ -30,6 +35,38 @@ test.describe('editing a markdown file', () => {
   test.afterAll(() => {
     writeFileSync(MARKDOWN, original)
     utimesSync(MARKDOWN, times.atime, times.mtime)
+    writeFileSync(NOTES, originalNotes)
+    utimesSync(NOTES, notesTimes.atime, notesTimes.mtime)
+  })
+
+  // Neither of these edits a story file, so nothing but the loaded file's own
+  // watcher can say it changed (#161).
+  test('re-renders a `<docs src>` block when the file it loads changes', async ({ page }) => {
+    await page.goto('/story/conformance-loaded-markdown')
+    await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
+    await expect(page.getByTestId('story-docs')).toContainText('Loaded from another file')
+
+    await expect(async () => {
+      writeFileSync(NOTES, originalNotes.replace('Loaded from', 'EDITED-BLOCK loaded from'))
+      await expect(page.getByTestId('story-docs')).toContainText('EDITED-BLOCK', { timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
+    writeFileSync(NOTES, originalNotes)
+  })
+
+  test('re-renders a `.story.md` with `src` when the file it loads changes', async ({ page }) => {
+    await page.goto(STORY)
+
+    await expect(async () => {
+      writeFileSync(MARKDOWN, `---\nsrc: ./conformance/LoadedMarkdown.notes.md\n---\n`)
+      await expect(page.getByText('Loaded from another file')).toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
+
+    await expect(async () => {
+      writeFileSync(NOTES, originalNotes.replace('Loaded from', 'EDITED-PAGE loaded from'))
+      await expect(page.getByText('EDITED-PAGE')).toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
+    writeFileSync(NOTES, originalNotes)
+    writeFileSync(MARKDOWN, original)
   })
 
   test('re-renders the page without a restart', async ({ page }) => {
