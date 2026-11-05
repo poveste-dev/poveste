@@ -49,6 +49,16 @@ Poveste doesn't have a switch for this, so the wrapper decides, as `hasWrapper` 
 </Hst.Story>
 ```
 
+In TypeScript, declare the value in your setup file:
+
+```ts
+declare module 'poveste' {
+  interface CommonMeta {
+    wrapper?: boolean
+  }
+}
+```
+
 ## Around one story
 
 For a wrapper around a single story, wrap the markup yourself:
