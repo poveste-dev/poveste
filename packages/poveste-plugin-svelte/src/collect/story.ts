@@ -15,30 +15,31 @@ import { collectHst } from './hst.js'
 
 /** Collects a story component, as `run` does from the file and a story test does from its own import. */
 export async function collectStory(Comp: Component<any>, { file, el, storyData }: Pick<ServerRunPayload, 'file' | 'el' | 'storyData'>): Promise<void> {
+  // Keyed by the same symbols the components read, through the map `mount`
+  // takes — a runner is not a component, so it cannot call `set` (#981).
+  const context = new Map<unknown, unknown>([
+    [addStoryContext.key, (data: (typeof storyData)[number]) => {
+      storyData.push(data)
+    }],
+    [storyFileContext.key, file],
+  ])
+
+  const setupApi: SvelteStorySetupApi = {
+    // No story or variant exists while collecting.
+    story: undefined,
+    variant: undefined,
+    setContext: (key, value) => context.set(key, value),
+  }
+
+  await callSetupFunctions(generatedSetup, setup, setupApi)
+
   const mountedApp = await mountSvelteComponent(Comp, {
     target: el,
     props: {
       Hst: collectHst(),
     },
-    // Keyed by the same symbols the components read, through the map `mount`
-    // takes — a runner is not a component, so it cannot call `set` (#981).
-    context: new Map<symbol, unknown>([
-      [addStoryContext.key, (data: (typeof storyData)[number]) => {
-        storyData.push(data)
-      }],
-      [storyFileContext.key, file],
-    ]),
+    context,
   }, 'client')
-  const app = mountedApp.app
-
-  const setupApi: SvelteStorySetupApi = {
-    app,
-    // No story or variant exists while collecting.
-    story: undefined,
-    variant: undefined,
-  }
-
-  await callSetupFunctions(generatedSetup, setup, setupApi)
 
   await tick()
 

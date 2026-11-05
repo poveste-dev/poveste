@@ -46,7 +46,6 @@ export default _defineComponent({
 
   setup(props) {
     const el = _ref<HTMLDivElement>()
-    let app: any
     let target: HTMLDivElement | null = null
     let destroyApp: (() => void) | null = null
 
@@ -63,11 +62,30 @@ export default _defineComponent({
         return
       }
 
-      target = document.createElement('div')
-      el.value.appendChild(target)
+      const container = document.createElement('div')
+      target = container
+      el.value.appendChild(container)
+
+      const context = new Map<unknown, unknown>([
+        [storyContext.key, props.story],
+        [targetVariantIdContext.key, targetVariantId],
+      ])
+
+      const setupApi: SvelteStorySetupApi = {
+        story: props.story,
+        variant: undefined,
+        setContext: (key, value) => context.set(key, value),
+      }
+
+      await callSetupFunctions(generatedSetup, setup, setupApi)
+
+      // A hook that awaited can outlive this mount, and the story must not appear after it.
+      if (target !== container) {
+        return
+      }
 
       const mountedApp = await mountSvelteComponent(props.story.file.component, {
-        target,
+        target: container,
         props: {
           Hst: {
             Story: MountStorySvelte,
@@ -75,21 +93,9 @@ export default _defineComponent({
             ...getControls(),
           },
         },
-        context: new Map<symbol, unknown>([
-          [storyContext.key, props.story],
-          [targetVariantIdContext.key, targetVariantId],
-        ]),
+        context,
       }, 'client', { storyId: props.story.id, variantId: props.targetVariantId ?? undefined })
-      app = mountedApp.app
       destroyApp = mountedApp.destroy
-
-      const setupApi: SvelteStorySetupApi = {
-        app,
-        story: props.story,
-        variant: undefined,
-      }
-
-      await callSetupFunctions(generatedSetup, setup, setupApi)
     }
 
     function unmountStory() {
@@ -99,7 +105,6 @@ export default _defineComponent({
         target.parentNode?.removeChild(target)
         target = null
       }
-      app = null
     }
 
     _watch(() => props.story.id, async () => {

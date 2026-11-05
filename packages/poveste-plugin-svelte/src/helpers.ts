@@ -3,9 +3,10 @@ import type { Awaitable, Story, StoryComponentOptions, StoryMeta, StoryProps, Va
 import type { Component, Snippet } from 'svelte'
 
 export interface SvelteStorySetupApi {
-  app: any
   story?: Story | undefined
   variant?: Variant | undefined
+  /** Puts a value in the context the story mounts with, for its components' `getContext`. */
+  setContext: (key: unknown, value: unknown) => void
 }
 
 export type SvelteStorySetupHandler = (api: SvelteStorySetupApi) => Promise<void> | void

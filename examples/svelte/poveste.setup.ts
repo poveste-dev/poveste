@@ -3,4 +3,6 @@ import './src/poveste.css'
 
 // As the guide writes it. This import alone failed every story's collection, and
 // then loaded the plugin's Node entry in the page (#1301).
-export const setupSvelte = defineSetupSvelte(() => {})
+export const setupSvelte = defineSetupSvelte(({ setContext }) => {
+  setContext('from-setup-file', 'set by the setup file')
+})
