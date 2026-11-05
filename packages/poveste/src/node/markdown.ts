@@ -3,6 +3,7 @@ import type { Highlighter } from 'shiki'
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
 import type { FenceAt, Twoslash } from './twoslash.js'
+import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import matter from '@11ty/gray-matter'
 import { kebabCase } from 'change-case'
@@ -294,6 +295,11 @@ if (import.meta.hot?.data) {
   return plugins
 }
 
+/** `Tag.story.vue` for `Tag.story`, and not `Tag.story-old.vue` or `Tag.story.md.bak`. */
+function isSibling(file: string, stem: string): boolean {
+  return file.startsWith(`${stem}.`) && !file.slice(stem.length + 1).includes('.')
+}
+
 /**
  * The story a standalone `.story.md` gets: no sibling story file, so its story
  * is derived from frontmatter rather than collected from source.
@@ -372,13 +378,14 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     const absolutePath = path.resolve(ctx.root, relativePath)
     const dirFiles = fs.readdirSync(path.dirname(absolutePath))
     const truncatedName = path.basename(absolutePath, '.md')
-    const isRelatedToStory = dirFiles.some(file => !file.endsWith('.md') && file.startsWith(truncatedName))
+    const isRelatedToStory = dirFiles.some(file => !file.endsWith('.md') && isSibling(file, truncatedName))
 
     const source = fs.readFileSync(absolutePath, 'utf8')
     const { data: frontmatter, content } = matter(source)
 
     const file: ServerMarkdownFile = {
-      id: kebabCase(relativePath.toLowerCase()),
+      // The hash because `kebabCase` flattens separators: `a/b.md` and `a-b.md` read the same.
+      id: `${kebabCase(relativePath.toLowerCase())}-${createHash('sha256').update(relativePath).digest('hex').slice(0, 8)}`,
       relativePath,
       absolutePath,
       isRelatedToStory,
@@ -404,7 +411,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     }
     else {
       const searchPath = path.join(path.dirname(relativePath), truncatedName)
-      const storyFile = ctx.storyFiles.find(f => f.relativePath.startsWith(searchPath))
+      const storyFile = ctx.storyFiles.find(f => isSibling(f.relativePath, searchPath))
       if (storyFile) {
         file.storyFile = storyFile
         storyFile.markdownFile = file
@@ -426,6 +433,10 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
           removeStory(file.storyFile.relativePath)
         }
         notifyStoryChange()
+      }
+      else if (file.storyFile) {
+        file.storyFile.markdownFile = undefined
+        notifyStoryChange(file.storyFile)
       }
       ctx.markdownFiles.splice(index, 1)
       notifyMarkdownListChange()
@@ -475,18 +486,14 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     await Promise.all([watcher.close(), loadedWatcher.close()])
   }
 
-  // Normalized here because chokidar reports the platform's separator, and the client
-  // looks a story's docs up by a forward-slash path (#1625).
+  // Chokidar reports the platform's separator, and the client looks a story's docs up by
+  // a forward-slash path (#1625).
+  const normalized = (handle: (file: string) => unknown) => (file: string) => handle(path.normalize(file))
+
   watcher
-    .on('add', (relativePath) => {
-      addFile(path.normalize(relativePath))
-    })
-    .on('change', (relativePath) => {
-      updateFile(path.normalize(relativePath))
-    })
-    .on('unlink', (relativePath) => {
-      removeFile(path.normalize(relativePath))
-    })
+    .on('add', normalized(addFile))
+    .on('change', normalized(updateFile))
+    .on('unlink', normalized(removeFile))
 
   loadedWatcher.on('all', (_event, changed) => {
     const target = path.resolve(changed)
