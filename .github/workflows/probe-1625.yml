@@ -1,0 +1,49 @@
+name: Probe 1625
+
+# Temporary: a real book's docs in a real browser on Windows. Removed before this PR is ready.
+on:
+  pull_request:
+    branches: [next]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    name: Probe 1625 (windows)
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6.1.0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - run: pnpm install
+
+      - run: pnpm run build
+
+      - run: pnpm --filter ./examples/vue run story:build
+
+      - name: What the built book keys, and what it looks up
+        shell: bash
+        run: |
+          grep -rhoE 'reactive\(\{"[^"]{1,80}"' examples/vue/.poveste/dist/assets | head -5 || true
+          grep -rhoE '"filePath":"[^"]*Docs[^"]*"' examples/vue/.poveste/dist/assets | head -5 || true
+
+      - run: pnpm exec playwright install chromium
+
+      - name: Docs in a built book
+        env:
+          POVESTE_E2E_EXAMPLE: vue
+        run: pnpm exec playwright test e2e/docs.spec.ts --reporter=line
+
+      - name: Docs in dev
+        if: ${{ !cancelled() }}
+        env:
+          POVESTE_E2E_EXAMPLE: vue
+        run: pnpm exec playwright test examples/vue/playwright/markdown-hot-reload.spec.ts --reporter=line
