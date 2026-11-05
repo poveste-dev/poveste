@@ -53,6 +53,12 @@ const APP_ONLY_VENDORS = [
   /[\\/]node_modules[\\/]@shikijs[\\/]/,
 ]
 
+// Out of `highlighter`, which the story view imports statically, so that a throw while
+// it evaluates lands in the `import('shiki/wasm')` that `getHighlighter` catches. Shiki
+// 4.6 calls `Response.prototype.bytes()` at module level, and Chrome before 132 and
+// Safari before 18 have no such method. In `highlighter`, that took the view with it (#1632).
+const SHIKI_WASM = /[\\/]node_modules[\\/](?:shiki[\\/]dist[\\/]wasm|@shikijs[\\/]engine-oniguruma[\\/]dist[\\/]wasm-inlined)/
+
 // Left to the bundler wherever they are installed, rather than sent to `vendor`.
 // `@poveste/controls` loads three controls lazily, and in a book installed from
 // npm `vendor` took them in, so every reader downloaded them before anything
@@ -239,6 +245,9 @@ export async function build(ctx: Context) {
             }
 
             if (!LEFT_TO_BUNDLER.some(name => id.includes(name)) && id.includes('node_modules')) {
+              if (SHIKI_WASM.test(id)) {
+                return 'shiki-wasm'
+              }
               if (APP_ONLY_VENDORS.some(test => test.test(id))) {
                 return 'highlighter'
               }
