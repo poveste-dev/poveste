@@ -56,6 +56,26 @@ This is a demo book using Svelte.
 Learn more about Poveste [here](https://poveste.dev/).
 ```
 
+### Load it from another file
+
+To show a file the story doesn't own, such as a component's README, name it in the frontmatter of a sibling or standalone `.story.md`:
+
+```md
+---
+src: ./README.md
+---
+```
+
+The path is relative to the `.story.md`, and in `poveste dev`, editing the loaded file reloads the docs.
+
+A `.story.md` with `src` doesn't show its own text. If the file isn't there, `poveste build` fails and names it, and `poveste dev` shows the same message in the docs.
+
+Loaded markdown renders like any other, with a few differences, because it usually wasn't written for a book:
+
+- A relative link is read from the loaded file. One that reaches a story goes to that story. Anything else, like `./LICENSE`, stays as written, which won't resolve in the book, and `poveste dev` warns about it.
+- Relative images aren't resolved. Use an absolute URL or a file from `public/`.
+- The loaded file's own frontmatter is ignored, including any `src` of its own.
+
 ### Links
 
 You can link to other stories using a relative path to the story file:

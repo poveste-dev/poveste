@@ -200,7 +200,14 @@ export async function createMarkdownRenderer(ctx: Context) {
           const mdFile = ctx.markdownFiles.find(f => f.absolutePath === file)
           const storyId = storyFile?.id ?? mdFile?.storyFile?.id
           if (!storyId) {
-            throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env?.['file']}`))
+            if (!env?.['loaded']) {
+              throw new Error(pc.red(`[md] Cannot find story file: ${pathname} from ${env?.['file']}`))
+            }
+            // A README links to its own LICENSE: it wasn't written for a book (#161).
+            if (ctx.mode === 'dev') {
+              console.warn(pc.yellow(`[md] ${env['file']} links to ${pathname}, which isn't a story, so the link stays as written`))
+            }
+            return defaultRender(tokens, idx, options, env, self)
           }
 
           // Add attributes
@@ -242,15 +249,37 @@ export async function createMarkdownPlugins(ctx: Context) {
     name: 'poveste-vue-docs-block',
     transform(code, id) {
       if (!id.includes('?vue&type=docs')) return
-      if (!id.includes('lang.md')) return
+      // A block with `src` and no `lang` reaches here as `lang.docs` (#161).
+      const loaded = id.includes('&src=true')
+      if (!loaded && !id.includes('lang.md')) return
       const file = id.substring(0, id.indexOf('?vue'))
-      const html = md.render(code, {
+      const content = loaded ? matter(code).content : code
+      const html = md.render(content, {
         file,
-        firstLine: firstLineIn(fs.readFileSync(file, 'utf8'), code),
+        firstLine: firstLineIn(fs.readFileSync(file, 'utf8'), content),
+        loaded,
       })
-      return `export default Comp => {
+      if (!loaded || ctx.mode !== 'dev') {
+        return `export default Comp => {
         Comp.doc = ${JSON.stringify(html)}
       }`
+      }
+      // The story file hasn't changed, so nothing else tells the docs pane (#161).
+      return `export const html = ${JSON.stringify(html)}
+// The collector's runner has a \`hot\` with no \`data\`, and Vite only sees this spelling of \`accept\`.
+const comps = import.meta.hot?.data ? (import.meta.hot.data.comps ??= []) : []
+export default Comp => {
+  Comp.doc = html
+  comps.push(Comp)
+}
+if (import.meta.hot?.data) {
+  import.meta.hot.accept((mod) => {
+    for (const comp of mod ? comps : []) {
+      // Not there in a sandbox, which has no docs pane.
+      window.__pvt_md_hmr?.({ relativePath: comp.__file.slice(${ctx.root.length + 1}).replace(/\\.\\w*$/, '.md'), html: mod.html })
+    }
+  })
+}`
     },
   })
 
@@ -281,10 +310,55 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     ignored: createWatchIgnore(ctx.config.storyIgnored, ['**/*.story.md']),
   })
 
+  // Added to as files name them: a README needn't match anything the book collects.
+  const loadedWatcher = chokidar.watch([], { ignoreInitial: true })
+
   /**
    * Initial scan is complete.
    */
   let watcherIsReady = false
+
+  function loadedPath(file: ServerMarkdownFile): string | undefined {
+    const src = file.frontmatter?.src
+    return typeof src === 'string' && src ? path.resolve(path.dirname(file.absolutePath), src) : undefined
+  }
+
+  /** What a `.story.md` shows: its own body, or the file its frontmatter's `src` names (#161). */
+  function render(file: ServerMarkdownFile): string {
+    const target = loadedPath(file)
+    const content = file.content ?? ''
+
+    if (!target) {
+      return md.render(content, {
+        file: file.absolutePath,
+        firstLine: firstLineIn(fs.readFileSync(file.absolutePath, 'utf8'), content),
+      })
+    }
+
+    loadedWatcher.add(target)
+
+    if (!fs.statSync(target, { throwIfNoEntry: false })?.isFile()) {
+      const message = `[md] ${file.relativePath} has \`src: ${file.frontmatter?.src}\`, and that isn't a file: ${target}`
+      if (ctx.mode !== 'dev') {
+        throw new Error(pc.red(message))
+      }
+      // An editor's save can pass through here, and the page is where it's being read.
+      console.error(pc.red(message))
+      return `<p>${md.utils.escapeHtml(message)}</p>`
+    }
+
+    if (ctx.mode === 'dev' && content.trim()) {
+      console.warn(pc.yellow(`[md] ${file.relativePath} has \`src\`, so its own text isn't shown`))
+    }
+
+    const source = fs.readFileSync(target, 'utf8')
+    const loaded = matter(source).content
+    return md.render(loaded, {
+      file: target,
+      firstLine: firstLineIn(source, loaded),
+      loaded: true,
+    })
+  }
 
   function addFile(relativePath: string) {
     const absolutePath = path.resolve(ctx.root, relativePath)
@@ -295,18 +369,6 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     const source = fs.readFileSync(absolutePath, 'utf8')
     const { data: frontmatter, content } = matter(source)
 
-    let html: string | undefined
-
-    // We don't immediately render markdown during initial scanning in case
-    // markdown references other files in links (otherwise they might not
-    // be scanned yet and will throw 'not found' errors).
-    if (watcherIsReady) {
-      html = md.render(content, {
-        file: absolutePath,
-        firstLine: firstLineIn(source, content),
-      })
-    }
-
     const file: ServerMarkdownFile = {
       id: kebabCase(relativePath.toLowerCase()),
       relativePath,
@@ -314,8 +376,15 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
       isRelatedToStory,
       frontmatter,
       content,
-      html,
     }
+
+    // We don't immediately render markdown during initial scanning in case
+    // markdown references other files in links (otherwise they might not
+    // be scanned yet and will throw 'not found' errors).
+    if (watcherIsReady) {
+      file.html = render(file)
+    }
+
     ctx.markdownFiles.push(file)
 
     if (!isRelatedToStory) {
@@ -385,10 +454,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     if (!file.isRelatedToStory && file.storyFile) {
       file.storyFile.moduleCode = derivedStoryCode(frontmatter)
     }
-    file.html = md.render(content, {
-      file: file.absolutePath,
-      firstLine: firstLineIn(source, content),
-    })
+    file.html = render(file)
 
     notifyMarkdownFileChange(file)
     if (file.storyFile) {
@@ -398,7 +464,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
   }
 
   async function stop() {
-    await watcher.close()
+    await Promise.all([watcher.close(), loadedWatcher.close()])
   }
 
   watcher
@@ -412,6 +478,13 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
       removeFile(relativePath)
     })
 
+  loadedWatcher.on('all', (_event, changed) => {
+    const target = path.resolve(changed)
+    for (const file of ctx.markdownFiles.filter(file => loadedPath(file) === target)) {
+      updateFile(file.relativePath)
+    }
+  })
+
   await new Promise((resolve) => {
     watcher.once('ready', resolve as () => void)
   })
@@ -419,10 +492,7 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
   try {
     // Render markdown after initial scan is complete.
     for (const mdFile of ctx.markdownFiles) {
-      mdFile.html = md.render(mdFile.content ?? '', {
-        file: mdFile.absolutePath,
-        firstLine: firstLineIn(fs.readFileSync(mdFile.absolutePath, 'utf8'), mdFile.content ?? ''),
-      })
+      mdFile.html = render(mdFile)
     }
     watcherIsReady = true
 
