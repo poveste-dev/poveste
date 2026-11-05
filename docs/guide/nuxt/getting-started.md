@@ -52,6 +52,10 @@ On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of
 npm 10, the npm Node 22.22.2 ships with, stops with `Cannot read properties of null (reading 'edgesOut')` when a Nuxt project resolves Vite 8.3.4 or older ([npm/cli#9787](https://github.com/npm/cli/issues/9787)). A fresh install gets a newer Vite and is unaffected; a project whose lockfile or `package.json` holds an older one still fails. Raise it with `npm i -D vite@^8.3.5`, or update npm with `npm install -g npm@11.6.0`, or use pnpm.
 :::
 
+::: warning On pnpm, `Ignored build scripts: esbuild` isn't Poveste failing
+On a project from `nuxi init`, the `pnpm` line above exits 1 with `ERR_PNPM_IGNORED_BUILDS`, naming `esbuild`. Poveste installed anyway, and the book builds. A new Nuxt project reports the same from its first `pnpm install`, before Poveste is added. To stop it, run `pnpm approve-builds esbuild`, which adds `esbuild` to `allowBuilds` in `pnpm-workspace.yaml`, and commit that file.
+:::
+
 ::: info Supported versions
 **Nuxt 4.5 is the supported floor** (`nuxt@^4.5.0`) — that is the first Nuxt whose
 `@nuxt/vite-builder` runs on Vite 8, which Poveste requires. Nuxt 4.0–4.4 are on Vite 7
