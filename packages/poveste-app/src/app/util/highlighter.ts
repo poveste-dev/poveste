@@ -36,10 +36,12 @@ export function getHighlighter(): Promise<HighlighterCore> {
       import('shiki/themes/github-light-high-contrast.mjs'),
       import('shiki/themes/github-dark.mjs'),
     ],
-    engine: createOnigurumaEngine(import('shiki/wasm')),
+    // A function, so a retry starts no import: Shiki keeps a failed load, and returns
+    // it without reading this, so the import's own rejection would go uncaught (#1632).
+    engine: createOnigurumaEngine(() => import('shiki/wasm')),
   }).catch((e) => {
-    // Don't let a cached rejection disable highlighting for the rest of the
-    // session — drop it so the next mount can try again.
+    // Drop it so the next mount can try again. That can't bring back a failed Wasm
+    // load, which Shiki keeps for the life of the page, so the pane stays plain text.
     highlighterPromise = undefined
     throw e
   })

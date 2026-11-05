@@ -25,6 +25,22 @@ test.describe('a browser without `Response.prototype.bytes`', () => {
     expect(errors).toEqual([])
   })
 
+  // Shiki keeps the failed load, so a later story gets the same rejection. Importing the
+  // module again for it left an import nothing was waiting on, which rejected uncaught.
+  test('stays quiet as the reader opens more stories', async ({ page }) => {
+    const errors: Error[] = []
+    page.on('pageerror', error => errors.push(error))
+    await page.goto('/')
+
+    for (const title of ['Button', 'Contrast', 'Events']) {
+      const plainSource = expectPlainSource(page)
+      await openStoryInApp(page, title)
+      await plainSource
+    }
+
+    expect(errors).toEqual([])
+  })
+
   test('opens a story by clicking it from the home page', async ({ page }) => {
     await page.goto('/')
 
