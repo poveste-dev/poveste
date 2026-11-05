@@ -475,15 +475,17 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
     await Promise.all([watcher.close(), loadedWatcher.close()])
   }
 
+  // Normalized here because chokidar reports the platform's separator, and the client
+  // looks a story's docs up by a forward-slash path (#1625).
   watcher
     .on('add', (relativePath) => {
-      addFile(relativePath)
+      addFile(path.normalize(relativePath))
     })
     .on('change', (relativePath) => {
-      updateFile(relativePath)
+      updateFile(path.normalize(relativePath))
     })
     .on('unlink', (relativePath) => {
-      removeFile(relativePath)
+      removeFile(path.normalize(relativePath))
     })
 
   loadedWatcher.on('all', (_event, changed) => {
