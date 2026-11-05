@@ -36,6 +36,7 @@ updates:
     ignore:
       # `examples/sveltekit` is the Kit 2 book and `examples/sveltekit3` the Kit 3 one
       # (#1200, #1205): a major is never right for both, and the adapter follows Kit.
+      # `skipped-majors.yml` says when Kit's next major is out, since no pull request will.
       - dependency-name: '@sveltejs/kit'
         update-types: [version-update:semver-major]
       - dependency-name: '@sveltejs/adapter-auto'
