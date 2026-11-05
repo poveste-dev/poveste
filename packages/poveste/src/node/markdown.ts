@@ -226,6 +226,14 @@ export async function createMarkdownRenderer(ctx: Context) {
     }
   }
 
+  // An HTML parser reads `<poveste-story … />` as an open tag and swallows what follows,
+  // so it never reaches one. A code block's copy is escaped by now (#444).
+  const render = md.render.bind(md)
+  md.render = (src, env) => render(src, env).replace(/<poveste-story\b([^>]*?)\/?>(?:\s*<\/poveste-story>)?/g, (_, attrs: string) => {
+    const attr = (name: string) => attrs.match(new RegExp(`\\b${name}="([^"]*)"`))?.[1] ?? ''
+    return `<div class="not-prose" data-poveste-story="${attr('id')}" data-poveste-variant="${attr('variant')}"></div>`
+  })
+
   return md
 }
 
