@@ -229,7 +229,20 @@ export default defineConfig({
 
 The hook runs before the story mounts, so a wrapper is there for the first render. The first wrapper added is the outermost. A variant can set its own `setupApp`, called after the global hook with the same argument: `{ story, variant, addWrapper }`.
 
+## Source
+
+The Source panel's **Dynamic** view prints what a variant's `render` returns, as JSX, with each value as it is now, and follows the state as the panel or the story changes it:
+
+```
+<Counter count={10} label="Clicked" onIncrement={…} />
+```
+
+A function prop or child prints as `{…}`, and so does a class instance. A `Date`, `Map`, `Set` or regular expression prints as code that makes the same value, including inside an object or an array. A variant's own `source` string replaces the generated code, and **Static** shows the story file.
+
+Solid's JSX compiles to DOM operations and leaves no tree to read, so Poveste compiles the story file a second time, when the panel first asks, with its JSX building plain elements. `render` runs again for that, with no preview behind it, so a side effect in `render` itself runs again too. A signal or a store it creates starts from its first value. A `render` that returns something other than JSX, such as a `solid-js/html` template, has nothing to print, and the panel opens on **Static**.
+
+A component prints by its runtime name, so one with no name that can be written as a tag, such as `const Card = wrap(() => …)`, leaves the panel on **Static**, and the Dynamic button's tooltip says why. Give it a capitalized name, or set `displayName` on it.
+
 ## What is not here yet
 
 - **Controls.** A variant with `initState` gets the state editor; one without says there is nothing to show. Controls built from your components — explicit ones and props detected automatically — come in later releases.
-- **Generated source.** The source panel shows the story file. Solid compiles JSX to DOM operations and keeps no render tree, which is what generating per-variant source reads in Vue.

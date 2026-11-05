@@ -47,8 +47,40 @@ test.describe('a Solid book', () => {
     await expect(preview(page).getByTestId('tagged')).toHaveText('Rendered by solid-js/html')
   })
 
-  test('shows the story file as its source', async ({ page }) => {
+  // Dynamic source prints what `render` returns, with each value as it is now (#1524).
+  test('shows the variant as JSX, and the story file under Static', async ({ page }) => {
     await open(page, 'src-badge-story-tsx', 'info')
+    const source = page.locator('.poveste-story-source-code')
+
+    await expect(source).toContainText('<Badge tone="info">Information</Badge>')
+    // The story file has that text too, so this is what says it's the Dynamic view.
+    await expect(source).not.toContainText('defineStory')
+    await page.getByRole('button', { name: 'Static' }).click()
+    await expect(source).toContainText('defineStory')
+  })
+
+  test('follows an edit in the panel in its Dynamic source', async ({ page }) => {
+    await open(page, 'src-counter-story-tsx', 'ten')
+    const source = page.locator('.poveste-story-source-code')
+    await expect(source).toContainText('<Counter count={10} label="Clicked" onIncrement={…} />')
+
+    await countField(page).fill('42')
+
+    await expect(source).toContainText('<Counter count={42} label="Clicked" onIncrement={…} />')
+  })
+
+  test('follows a click in the story in its Dynamic source', async ({ page }) => {
+    await open(page, 'src-counter-story-tsx', 'ten')
+    const source = page.locator('.poveste-story-source-code')
+    await expect(source).toContainText('<Counter count={10} label="Clicked" onIncrement={…} />')
+
+    await preview(page).getByRole('button').click()
+
+    await expect(source).toContainText('<Counter count={11} label="Clicked" onIncrement={…} />')
+  })
+
+  test('shows the story file for a `render` that returns no JSX', async ({ page }) => {
+    await open(page, 'src-taggedtemplate-story-tsx', 'default')
 
     await expect(page.locator('.poveste-story-source-code')).toContainText('defineStory')
   })

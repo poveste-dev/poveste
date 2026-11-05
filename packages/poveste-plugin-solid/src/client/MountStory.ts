@@ -3,6 +3,7 @@ import type { PropType as _PropType } from '@poveste/vendors/vue'
 import type { StoryOptions } from '../types.js'
 import { applyState, clone, reportStoryError } from '@poveste/shared'
 import { defineComponent as _defineComponent } from '@poveste/vendors/vue'
+import { JSX_COPY_KEY } from '../jsx-copy-key.js'
 import { variantOptions } from '../types.js'
 import { NO_CONTROLS } from './no-controls.js'
 
@@ -53,7 +54,11 @@ export default _defineComponent({
       Object.assign(variant, {
         // A variant with state gets the panel's state editor; one without gets
         // the explanation, which is a custom controls slot to the panel.
-        slots: () => ({ default: rawVariant?.render, controls: initState ? undefined : NO_CONTROLS }),
+        slots: () => ({
+          default: rawVariant?.render,
+          controls: initState ? undefined : NO_CONTROLS,
+          jsx: async () => variantOptions((await (options as any)[Symbol.for(JSX_COPY_KEY)]?.())?.default)[index]?.render,
+        }),
         source: rawVariant?.source ?? options.source,
         responsiveDisabled: rawVariant?.responsiveDisabled ?? options.responsiveDisabled,
         autoPropsDisabled: true,

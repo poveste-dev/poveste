@@ -24,6 +24,10 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
+    "./jsx": {
+      "types": "./dist/jsx.d.ts",
+      "default": "./dist/jsx.js"
+    },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "default": "./dist/testing/index.js"
@@ -35,6 +39,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
+    "jsx.d.ts",
     "testing.d.ts"
   ],
   "engines": {

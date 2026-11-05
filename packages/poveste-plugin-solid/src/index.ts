@@ -1,4 +1,5 @@
 import type { Plugin } from '@poveste/shared'
+import { JSX_COPY_KEY } from './jsx-copy-key.js'
 
 // No Node-only import here, on purpose: a story file imports `defineStory` from
 // this entry, so it is bundled for the browser as well as loaded by the config.
@@ -28,6 +29,8 @@ export const SOLID_COLLECT_CONDITIONS = ['browser', 'module']
 // A variable, not a literal: Vite turns `new URL('<literal>', import.meta.url)` into
 // an asset, and this entry is bundled for the browser too.
 const DOCGEN_EXTRACTOR = './docgen/extractor.js'
+const COMPILE_JSX_COPY = './jsx-copy.js'
+const JSX_COPY_QUERY = '?poveste-jsx-copy'
 
 export function HstSolid(): Plugin {
   return {
@@ -57,6 +60,7 @@ export function HstSolid(): Plugin {
         vite: {
           plugins: [
             reloadOnStoryEdit(),
+            jsxCopy(),
           ],
           // The story's JSX and this plugin's renderer must share one Solid
           // runtime: two copies track reads in two graphs, and a store written
@@ -78,12 +82,28 @@ export function HstSolid(): Plugin {
       id: 'solid',
       moduleName: '@poveste/plugin-solid',
       setupFn: SOLID_SETUP_HOOK_NAMES,
-      importStoryComponent: (file, index) => `import Comp${index} from ${JSON.stringify(file.moduleId)}`,
+      // Loaded only when the Source panel asks, so a reader who never opens it pays nothing.
+      importStoryComponent: (file, index) => `import Comp${index} from ${JSON.stringify(file.moduleId)}
+if (Comp${index}) Comp${index}[Symbol.for(${JSON.stringify(JSX_COPY_KEY)})] = () => import(${JSON.stringify(file.moduleId + JSX_COPY_QUERY)})`,
     },
   }
 }
 
 export * from './types.js'
+
+function jsxCopy() {
+  return {
+    name: 'poveste:solid-jsx-copy',
+    enforce: 'pre' as const,
+    async load(id: string) {
+      if (!id.endsWith(JSX_COPY_QUERY)) {
+        return undefined
+      }
+      const { compileJsxCopy } = await import(/* @vite-ignore */ new URL(COMPILE_JSX_COPY, import.meta.url).href)
+      return compileJsxCopy(id.slice(0, -JSX_COPY_QUERY.length)) as Promise<string>
+    },
+  }
+}
 
 /**
  * Reloads the book when a Solid story file is edited in dev.

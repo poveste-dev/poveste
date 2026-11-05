@@ -13,6 +13,14 @@ describe('the plugin\'s config', () => {
     expect(config.vite.ssr.noExternal).toEqual(['solid-js'])
   })
 
+  it('compiles the JSX copy only for the id the import line asks for', async () => {
+    const config = await HstSolid().defaultConfig!({} as any) as any
+    const copy = config.vite.plugins.find((plugin: { name: string }) => plugin.name === 'poveste:solid-jsx-copy')
+
+    expect(await copy.load('/book/Badge.story.tsx')).toBeUndefined()
+    expect(HstSolid().supportPlugin!.importStoryComponent({ moduleId: '/book/Badge.story.tsx' } as any, 0)).toContain('import("/book/Badge.story.tsx?poveste-jsx-copy")')
+  })
+
   it('claims .story.tsx and .story.jsx for itself', async () => {
     const config = await HstSolid().defaultConfig!({} as any) as any
 
