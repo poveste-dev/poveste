@@ -13,6 +13,9 @@ export default defineConfig({
     conditions: defaultClientConditions,
     alias: {
       '@poveste/shared': fileURLToPath(new URL('../poveste-shared/src/index.ts', import.meta.url)),
+      // What a book's setup file becomes, for the specs that mount a story.
+      'virtual:$poveste-setup': fileURLToPath(new URL('./fixtures/setup-hooks/setup-hook-fixture.ts', import.meta.url)),
+      'virtual:$poveste-generated-global-setup': fileURLToPath(new URL('./fixtures/setup-hooks/empty-module.ts', import.meta.url)),
     },
   },
   test: {

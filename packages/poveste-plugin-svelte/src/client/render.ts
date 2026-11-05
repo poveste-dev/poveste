@@ -68,8 +68,28 @@ export default _defineComponent({
         return
       }
 
-      target = document.createElement('div')
-      el.value.appendChild(target)
+      const container = document.createElement('div')
+      target = container
+      el.value.appendChild(container)
+
+      const context = new Map<unknown, unknown>([
+        [storyContext.key, props.story],
+        [variantContext.key, props.variant],
+        [slotNameContext.key, props.slotName],
+      ])
+
+      const setupApi: SvelteStorySetupApi = {
+        story: props.story,
+        variant: props.variant,
+        setContext: (key, value) => context.set(key, value),
+      }
+
+      await callSetupFunctions(generatedSetup, setup, setupApi, props.variant.setupApp as SvelteStorySetupHandler | null)
+
+      // A hook that awaited can outlive this mount, and the story must not appear after it.
+      if (target !== container) {
+        return
+      }
 
       // Svelte component instances, announced as they register.
       let components: any[] = []
@@ -80,18 +100,14 @@ export default _defineComponent({
       })
 
       const mountedApp = await mountSvelteComponent(props.story.file.component, {
-        target,
+        target: container,
         props: {
           Hst: {
             ...renderStoryComponents(props.story, props.variant),
             ...getControls(),
           },
         },
-        context: new Map<symbol, unknown>([
-          [storyContext.key, props.story],
-          [variantContext.key, props.variant],
-          [slotNameContext.key, props.slotName],
-        ]),
+        context,
       }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
       app = mountedApp.app
       tearDownHandlers.push(() => {
@@ -137,14 +153,6 @@ export default _defineComponent({
         apply(stateApi.captureState())
       }
 
-      const setupApi: SvelteStorySetupApi = {
-        app,
-        story: props.story,
-        variant: props.variant,
-      }
-
-      await callSetupFunctions(generatedSetup, setup, setupApi, props.variant.setupApp as SvelteStorySetupHandler | null)
-
       emit('ready')
     }
 
@@ -158,14 +166,22 @@ export default _defineComponent({
       app = null
     }
 
+    // The mount pass reads `setupApp` off the story, and the hooks run before this one
+    // renders anything, so they wait for it, as Vue's do.
+    async function mountStoryWhenReady() {
+      if (props.variant.configReady && !target) {
+        await mountStory()
+      }
+    }
+
     _watch(() => props.story.id, async () => {
       unmountStory()
-      await mountStory()
+      await mountStoryWhenReady()
     })
 
-    _onMounted(async () => {
-      await mountStory()
-    })
+    _watch(() => props.variant.configReady, mountStoryWhenReady)
+
+    _onMounted(mountStoryWhenReady)
 
     _onUnmounted(() => {
       unmountStory()

@@ -79,8 +79,8 @@ export const SHARED_STORIES: SharedStory[] = [
  * other stories are absent, for different reasons:
  *
  * - Waiting on the plugin. The two `WrapperMetaOn…` stories need `addWrapper`
- *   (#232), and `Story setup` needs setup hooks that run before the story mounts
- *   and an app to register things on (#234). They go in here as they land.
+ *   (#232), and they go in here as it lands. `Story setup` also registers a global
+ *   component, and a Svelte setup hook has no app to register one on (#234).
  * - `Tailwind` is generated from design-system config rather than being a story
  *   file at all.
  * - `i18n` is framework-specific by design; Nuxt shows it through its own

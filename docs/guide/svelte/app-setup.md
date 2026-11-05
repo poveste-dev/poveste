@@ -30,9 +30,10 @@ helper to have better types in your IDE:
 // src/poveste.setup.ts
 import { defineSetupSvelte } from '@poveste/plugin-svelte'
 
-export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
-  // Runs for every mounted story and variant
+export const setupSvelte = defineSetupSvelte(({ story, variant, setContext }) => {
+  // Runs before every story and variant mounts
   document.documentElement.dataset.theme = 'dark'
+  setContext('theme', 'dark')
 })
 ```
 
@@ -69,19 +70,14 @@ of it.
 
 | | |
 | --- | --- |
-| `app` | what Svelte's `mount()` returned — the mounted component instance |
 | `story` | the story being rendered |
 | `variant` | the variant, or `undefined` in the story-level mount that fills the controls panel, which calls only the global hook |
+| `setContext` | puts a value in the context the story mounts with, where its components read it with `getContext` |
 
-Two things follow from `app` being a component instance rather than a Vue-style application
-object, and they are the main differences from [the Vue page](../vue/app-setup.md):
+The hook runs **before the story mounts**, as it does in [the Vue page](../vue/app-setup.md), so anything it arranges is in place when your components initialise. Two consequences:
 
-- **There is no `app.use()`, `app.component()` or `app.provide()`.** Svelte has no
-  application-level plugin API to call.
-- **The hook runs after the component is mounted**, not before it. It cannot supply anything
-  your component needs while initialising — by the time it runs, the component already has.
-  Use it for side effects on the surrounding document, and put anything a component must
-  receive at construction into the story itself.
+- **There is no `app`, and no `app.use()`, `app.component()` or `app.provide()`.** Nothing has mounted yet, and Svelte has no application-level plugin API to call. `setContext` is the part that has a Svelte counterpart.
+- **The story's DOM doesn't exist yet.** A hook can't read what the story renders. To do something with the rendered story, do it from a component in the story, with `onMount`.
 
 ## Local setup
 
@@ -151,12 +147,16 @@ rather than an instance, and call it in the story.
 
 ### Providing context
 
-`setContext` is the closest thing to Vue's `app.provide()`, and the two differ in a way that
-decides where you put it. `app.provide()` is called on the application, so the Vue setup hook
-can supply it. Svelte's context is set by a *parent component* during initialisation, and this
-plugin's hook runs after the component is mounted — so a global hook cannot provide it.
+`setContext` is the closest thing to Vue's `app.provide()`, and the setup hook has it, so one call reaches every story:
 
-Set it from the story instead, in a wrapper component:
+```ts
+export const setupSvelte = defineSetupSvelte(({ setContext }) => {
+  setContext('theme', 'dark')
+})
+```
+
+A variant's `setupApp` takes the same argument, for one story's value. To set context from a parent component instead, which is also how to wrap a story in markup, use a wrapper in the story:
+
 
 ```svelte
 <!-- ThemeProvider.svelte -->

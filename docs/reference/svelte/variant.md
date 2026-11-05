@@ -76,13 +76,13 @@ with a controls slot and no `initState` logs an error saying so. See
 
 ## `setupApp`
 
-A function to configure the Svelte app for this variant, called after the global setup hook with the same argument.
+A function that runs before this variant mounts, called after the global setup hook with the same argument.
 
 It receives a payload object with the following properties:
 
-- `app`: The mounted story component instance.
 - `story`: The story object.
 - `variant`: The variant object.
+- `setContext`: Puts a value in the context the story mounts with.
 
 ```svelte
 <script>

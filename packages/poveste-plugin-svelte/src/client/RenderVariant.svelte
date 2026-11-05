@@ -1,14 +1,13 @@
 <script>
   import { watch as _watch } from '@poveste/vendors/vue'
   import { onDestroy } from 'svelte'
-  import { slotNameContext, storyContext, storyPropsContext, variantContext, variantIndexContext } from '../contexts.js'
+  import { slotNameContext, storyContext, variantContext, variantIndexContext } from '../contexts.js'
   import { shouldWarnAboutMissingInitState } from '../util/init-state-warning.js'
 
   const story = storyContext.get('<Variant>')
   const currentVariant = variantContext.getOptional()
   const slotName = slotNameContext.getOptional()
   const index = variantIndexContext.get('<Variant>')
-  const storyProps = storyPropsContext.getOptional() ?? {}
 
   const variant = story.variants[index.value]
   index.value++
@@ -21,16 +20,6 @@
   export let source = null
   export let initState = null
   export let setupApp = null
-
-  // Written at init, not in a reactive block: `render.ts` reads
-  // `variant.setupApp` as soon as the story component has mounted, so anything
-  // deferred is missed for that render and never runs. Guarded like `source`
-  // below — this is *this* variant's handler, on the shared `currentVariant`.
-  if (shouldRender) {
-    Object.assign(currentVariant, {
-      setupApp: setupApp ?? storyProps.setupApp ?? null,
-    })
-  }
 
   // Same contract as `RenderStory`: poveste owns the state because the story is
   // mounted once per slot, so a component-local variable cannot be shared (#81).

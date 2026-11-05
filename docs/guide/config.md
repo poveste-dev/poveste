@@ -250,7 +250,7 @@ Inside your setup file, you can export a `setupSvelte` function that will be cal
 
 import { defineSetupSvelte } from '@poveste/plugin-svelte'
 
-export const setupSvelte = defineSetupSvelte(({ app, story, variant }) => {
+export const setupSvelte = defineSetupSvelte(({ story, variant, setContext }) => {
   document.documentElement.dataset.theme = 'dark'
 })
 ```
