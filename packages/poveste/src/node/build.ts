@@ -1,6 +1,7 @@
 import type { Awaitable, BuildEndCallback, ChangeViteConfigCallback, PreviewStoryCallback } from '@poveste/shared'
 import type { ResolvedConfig, Rolldown, InlineConfig as ViteInlineConfig, Plugin as VitePlugin } from 'vite'
 import type { Context } from './context.js'
+import type { BuiltinImports } from './node-builtins.js'
 import { performance } from 'node:perf_hooks'
 import fs from 'fs-extra'
 import { lookup as lookupMime } from 'mrmime'
@@ -18,6 +19,7 @@ import { useCollectStories } from './collect/index.js'
 import { extractComponentDocs } from './docgen/build.js'
 import { useModuleLoader } from './load.js'
 import { createMarkdownFilesWatcher } from './markdown.js'
+import { nodeBuiltinsPlugin, nodeBuiltinsWarning } from './node-builtins.js'
 import { BuildPluginApi } from './plugin.js'
 import { startPreview } from './preview.js'
 import { findAllStories } from './stories.js'
@@ -297,6 +299,9 @@ export async function build(ctx: Context) {
     buildPlugins.push(chromeCssScopePlugin({ enabled: isolate }))
     buildPlugins.push(entryCssMergerPlugin({ isolateStyles: isolate, minify: true }))
 
+    const builtinImports: BuiltinImports = new Map()
+    buildPlugins.push(nodeBuiltinsPlugin(builtinImports))
+
     for (const cb of changeViteConfigCallbacks) {
       await cb(buildViteConfig)
     }
@@ -353,6 +358,9 @@ export async function build(ctx: Context) {
     const { empty } = counts
     if (empty.length) {
       console.warn(pc.yellow(`⚠️  ${empty.length} empty story file${empty.length === 1 ? '' : 's'}: ${empty.join(', ')}`))
+    }
+    for (const line of nodeBuiltinsWarning(builtinImports, ctx.root)) {
+      console.warn(pc.yellow(line))
     }
     // Green only when something was built. A tick over nothing is the claim
     // #624 is about, and it is the first command the guide asks for.
