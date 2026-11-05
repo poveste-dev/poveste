@@ -264,8 +264,8 @@ const filePath = computed(() => story.value.file?.docsFilePath ?? (props.standal
       :to="el"
     >
       <StoryEmbed
-        :story-id="el.dataset.povesteStory!"
-        :variant-id="el.dataset.povesteVariant"
+        :story-id="el.dataset['povesteStory']!"
+        :variant-id="el.dataset['povesteVariant']"
       />
     </Teleport>
     <ComponentDocs
