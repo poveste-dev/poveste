@@ -65,8 +65,10 @@ test('highlights in both color schemes from the one shared instance', async ({ p
     [...new Set(nodes.map(node => (node as HTMLElement).style.color))].sort(),
   )
 
+  // The plain textarea shown while Shiki loads carries the same test id, so
+  // visible is not yet highlighted (#1649).
+  await expect.poll(async () => (await tokenColors()).length).toBeGreaterThan(1)
   const light = await tokenColors()
-  expect(light.length).toBeGreaterThan(1)
 
   // Toggle dark mode by its shortcut — the top bar control is an icon with no
   // accessible name to target.
