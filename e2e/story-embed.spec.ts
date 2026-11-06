@@ -64,4 +64,22 @@ test.describe('a story embedded in docs', () => {
 
     await expect(far.locator('iframe').contentFrame().locator('.conformance-docs-text')).toBeVisible()
   })
+
+  // The docs pane scrolls on its own, so a margin that reached only the viewport never
+  // reached an embed below the pane's edge (#1641).
+  test('boots an embed that is still just below the edge of the pane it scrolls in', async ({ page }) => {
+    await openDocs(page, STORY)
+    const far = embed(page, 'conformance-docs')
+    await expect(far.getByTestId('story-embed')).toBeAttached()
+
+    const below = await far.evaluate((node) => {
+      let pane = node.parentElement!
+      while (pane.scrollHeight <= pane.clientHeight) pane = pane.parentElement!
+      pane.scrollTop += node.getBoundingClientRect().top - pane.getBoundingClientRect().bottom - 100
+      return node.getBoundingClientRect().top - pane.getBoundingClientRect().bottom
+    })
+
+    expect(below).toBeCloseTo(100, -1)
+    await expect(far.locator('iframe').contentFrame().locator('.conformance-docs-text')).toBeAttached()
+  })
 })

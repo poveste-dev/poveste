@@ -231,6 +231,9 @@ export default defineConfig({
           name: `${example.name}:dev-shared`,
           testDir: './e2e',
           testMatch: example.dev.shared,
+          // The dev project's hot-reload specs edit the book's files, and the update
+          // reaches every page open on the server, as #1218 found.
+          dependencies: example.dev.specs ? [`${example.name}:dev`] : [],
           use: chrome(`http://localhost:${example.dev.port}`),
         }]
       : [],
