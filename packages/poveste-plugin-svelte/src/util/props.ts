@@ -316,8 +316,60 @@ function literalValue(node: Node | undefined): any {
   return typeof node.value === 'bigint' || node.value instanceof RegExp ? undefined : node.value
 }
 
-/** The props declared, or `undefined` when the source could not be read. */
-export function extractPropDefs(source: string): PropDefinition[] | undefined {
+const TYPE_IMPORTS = /\bimport\s+(type\s+)?\{([^}]*)\}\s*from\s*(['"])(\.{1,2}\/[^'"]*)\3/g
+
+// Local name to imported name, for each relative file the script imports types from.
+function importedTypeNames(source: string): Map<string, Map<string, string>> {
+  const found = new Map<string, Map<string, string>>()
+  for (const [, whole, specifiers, , file] of (source.match(SCRIPT_BLOCK) ?? []).join('\n').matchAll(TYPE_IMPORTS)) {
+    for (const specifier of specifiers!.split(',')) {
+      const [, inline, imported, local] = specifier.trim().match(/^(type\s+)?(\w+)(?:\s+as\s+(\w+))?$/) ?? []
+      if (imported && (whole || inline)) {
+        const names = found.get(file!) ?? new Map<string, string>()
+        found.set(file!, names.set(local ?? imported, imported))
+      }
+    }
+  }
+  return found
+}
+
+/** The relative files a component imports types from, which `extractPropDefs` can read. */
+export function typeImports(source: string): string[] {
+  return [...importedTypeNames(source).keys()]
+}
+
+// One file, parsed and not type-checked, so its own imports, `extends` and utility
+// types stay unread (#501).
+function importedTypes(source: string, imported: Record<string, string>): Map<string, Node> {
+  const found = new Map<string, Node>()
+  for (const [file, names] of importedTypeNames(source)) {
+    if (imported[file] === undefined) {
+      continue
+    }
+    let declared: Map<string, Node>
+    try {
+      declared = declaredTypes(parse(parseable(`<script lang="ts">${imported[file]}</script>`), { modern: true }).instance?.content?.body ?? [])
+    }
+    catch {
+      continue
+    }
+    for (const [name, node] of declared) {
+      found.set(name, node)
+    }
+    for (const [local, name] of names) {
+      if (declared.has(name)) {
+        found.set(local, declared.get(name))
+      }
+    }
+  }
+  return found
+}
+
+/**
+ * The props declared, or `undefined` when the source could not be read. `imported`
+ * holds the source of each file `typeImports` names, by its specifier.
+ */
+export function extractPropDefs(source: string, imported: Record<string, string> = {}): PropDefinition[] | undefined {
   let ast: Node
   try {
     ast = parse(parseable(source), { modern: true })
@@ -328,7 +380,7 @@ export function extractPropDefs(source: string): PropDefinition[] | undefined {
 
   // Types may be declared in the module script; props never are.
   const body = ast.instance?.content?.body ?? []
-  const declared = declaredTypes([...(ast.module?.content?.body ?? []), ...body])
+  const declared = new Map([...importedTypes(source, imported), ...declaredTypes([...(ast.module?.content?.body ?? []), ...body])])
   const runes = runesProps(body, declared)
   return runes.length > 0 ? runes : legacyProps(body)
 }

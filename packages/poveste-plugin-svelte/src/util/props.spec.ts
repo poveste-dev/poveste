@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractPropDefs } from './props'
+import { extractPropDefs, typeImports } from './props'
 
 function component(script: string): string {
   return `<script lang="ts">\n${script}\n</script>\n<div />`
@@ -334,5 +334,50 @@ describe('extractPropDefs, source it has to survive', () => {
   it('ignores exports in the module script, which are not props', () => {
     const source = `<script context="module">export let notAProp = 1</script>\n${component('export let real = 2')}`
     expect(extractPropDefs(source)).toEqual([{ name: 'real', types: ['number'], required: false, default: 2 }])
+  })
+})
+
+// A shared `types.ts` is how a design system writes its props, and it gave no controls at
+// all (#501). One relative import is followed, by parsing it; nothing further.
+describe('extractPropDefs, a type imported from another file', () => {
+  const TYPES = `export interface Props {\n  label: string\n  size?: 'sm' | 'md'\n}\n`
+  const read = (script: string, imported: Record<string, string>) => extractPropDefs(component(script), imported)
+
+  it('reads the props of an imported interface', () => {
+    expect(read(`import type { Props } from './types'\n  let { label, size }: Props = $props()`, { './types': TYPES })).toEqual([
+      { name: 'label', types: ['string'], required: true, default: undefined },
+      { name: 'size', types: ['string'], required: false, default: undefined },
+    ])
+  })
+
+  it('reads it imported inline, and under another name', () => {
+    expect(propNames(`import { type Props as ButtonProps } from './types'\n  let { label }: ButtonProps = $props()`)).toEqual(['label'])
+    expect(read(`import { type Props as ButtonProps, helper } from './types'\n  let { label }: ButtonProps = $props()`, { './types': TYPES })?.[0]?.types).toEqual(['string'])
+  })
+
+  it('reads an imported alias that intersects another type from the same file', () => {
+    const types = `type Base = { disabled: boolean }\nexport type Props = Base & { label: string }\n`
+
+    expect(read(`import type { Props } from '../shared/types'\n  let { disabled, label }: Props = $props()`, { '../shared/types': types })?.map(p => [p.name, p.types]))
+      .toEqual([['disabled', ['boolean']], ['label', ['string']]])
+  })
+
+  it('keeps the component`s own declaration over a name the types file also declares', () => {
+    const script = `import type { Props } from './types'\n  interface Props { own: number }\n  let { own }: Props = $props()`
+
+    expect(read(script, { './types': TYPES })?.map(p => [p.name, p.types])).toEqual([['own', ['number']]])
+  })
+
+  it('still reads defaults from the destructuring when the types file can`t be parsed', () => {
+    expect(read(`import type { Props } from './types'\n  let { label = 'x' }: Props = $props()`, { './types': 'export enum = = =' }))
+      .toEqual([{ name: 'label', types: ['string'], required: false, default: 'x' }])
+  })
+})
+
+describe('typeImports', () => {
+  it('lists the relative files a component imports types from, in both spellings', () => {
+    const source = component(`import type { Props } from './types'\n  import { type Size, helper } from '../shared/size.ts'\n  import { onMount } from 'svelte'\n  import type { Snippet } from 'svelte'\n  import type { Other } from '$lib/types'`)
+
+    expect(typeImports(source)).toEqual(['./types', '../shared/size.ts'])
   })
 })
