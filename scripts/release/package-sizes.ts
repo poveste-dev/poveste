@@ -79,12 +79,16 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // shares, 2,458 B over 0.21's `next` at 24,116.
   // Raised from 27_300 for #1603: a failing story test's format arguments filled in, 178 B
   // over `next` at 27,160.
-  '@poveste/shared': { bytes: 27_400, reason: 'types and a small runtime; catches the tests' },
+  // Raised from 27_400 for #1524: the JSX printer moved here from React's plugin, which
+  // fell by 2,406 B, so React and Solid share it. 30,197 B measured, and no Vue or
+  // Svelte book bundles it.
+  '@poveste/shared': { bytes: 30_300, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },
   // 0.21's growth here was inferred from Solid's before React's auto-docs (#1161) had a
   // PR; enforce it once that has merged and the number is measured again.
   '@poveste/plugin-react': { reason: 'proposed 10,800 B, from an inferred growth: re-measure once React auto-docs has merged' },
-  '@poveste/plugin-solid': { bytes: 10_200, reason: 'room for the JSX extractor glue; catches the tests' },
+  // Raised from 10_200 for #1524: Dynamic source, 11,566 B measured.
+  '@poveste/plugin-solid': { bytes: 11_700, reason: 'room for the JSX extractor glue; catches the tests' },
   '@poveste/plugin-quasar': { bytes: 7_700, reason: 'catches the tests' },
   '@poveste/plugin-tailwind': { bytes: 9_900, reason: '0.20.0 plus 1 kB; catches the tests' },
   '@poveste/plugin-percy': { bytes: 5_900, reason: '0.20.0 plus 1 kB; catches the tests' },

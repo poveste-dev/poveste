@@ -316,6 +316,12 @@
     "unindent",
     "voidElements"
   ],
+  "@poveste/shared/jsx": [
+    "JsxElement",
+    "JsxPrinterOptions",
+    "UnnamedJsxComponent",
+    "createJsxPrinter"
+  ],
   "@poveste/shared/testing": [
     "DescribeStoriesOptions",
     "StoryTestFramework",
