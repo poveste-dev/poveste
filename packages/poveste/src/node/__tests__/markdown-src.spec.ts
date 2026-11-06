@@ -1,7 +1,7 @@
 import type { Context } from '../context.js'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'pathe'
+import { dirname, join, resolve } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createContext } from '../context.js'
 import { createMarkdownFilesWatcher, createMarkdownPlugins } from '../markdown.js'
@@ -11,12 +11,12 @@ let dir: string
 let ctx: Context
 const cleanups: (() => Promise<unknown> | unknown)[] = []
 
-function write(file: string, text: string) {
+function write(file: string, text: string, { sibling = true } = {}) {
   const path = join(dir, file)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, text)
   // A story beside it, as a book's would be: a standalone page needs a plugin to collect it.
-  if (path.endsWith('.story.md')) {
+  if (sibling && path.endsWith('.story.md')) {
     writeFileSync(path.replace(/\.md$/, '.vue'), '')
   }
   return path
@@ -26,7 +26,7 @@ function write(file: string, text: string) {
 async function open(mode: 'build' | 'dev' = 'dev') {
   vi.spyOn(process, 'cwd').mockReturnValue(join(dir, 'book'))
   ctx = await createContext({ mode })
-  ctx.config.supportMatch = [{ id: 'vue', patterns: ['**/*.vue'], pluginIds: ['vue'] }]
+  ctx.config.supportMatch = [{ id: 'vue', patterns: ['**/*.vue', '**/*.js'], pluginIds: ['vue'] }]
   const stories = await watchStories(ctx)
   cleanups.push(() => stories.close())
   const { stop } = await createMarkdownFilesWatcher(ctx)
@@ -36,6 +36,110 @@ async function open(mode: 'build' | 'dev' = 'dev') {
 // By its end: chokidar reports a relative path with the platform's separator.
 const markdownFile = (name: string) => ctx.markdownFiles.find(file => file.absolutePath.endsWith(`/${name}`))
 const html = (name: string) => markdownFile(name)?.html
+
+// Chokidar reports a relative path with the platform's separator, and the client asks for
+// a story's docs by a forward-slash one, so only Windows can tell these apart (#1625).
+describe('the list of a book\'s markdown', () => {
+  const story = (name: string) => ctx.storyFiles.find(file => file.path.endsWith(`/${name}`))
+  // What `useStoryDoc` in `StoryDocs.vue` asks for.
+  const lookup = (relativePath: string) => relativePath.replace(/\.(\w*)$/, '.md')
+  const listed = () => ctx.markdownFiles.map(file => file.relativePath)
+
+  beforeEach(() => {
+    dir = realpathSync(mkdtempSync(join(tmpdir(), 'poveste-md-list-')))
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(async () => {
+    await Promise.all(cleanups.splice(0).map(cleanup => cleanup()))
+    vi.restoreAllMocks()
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('derives the key the way the client does', () => {
+    const client = readFileSync(resolve(__dirname, '../../../../poveste-app/src/app/components/panel/StoryDocs.vue'), 'utf8')
+
+    expect(client).toContain(String.raw`filePath.replace(/\.(\w*)$/, '.md')`)
+  })
+
+  it('lists a sibling `.story.md` in a subfolder under the key the client looks up', async () => {
+    write('book/pages/Tag.story.md', '# Tag')
+
+    await open()
+
+    const lookedUp = lookup(story('Tag.story.vue')!.relativePath)
+    expect(listed()).toContain(lookedUp)
+    expect(story('Tag.story.vue')!.markdownFile?.relativePath).toBe(lookedUp)
+  })
+
+  it('lists a standalone `.story.md` in a subfolder under the key the client looks up', async () => {
+    write('book/pages/Guide.story.md', '# Guide', { sibling: false })
+
+    await open()
+
+    expect(listed()).toContain(lookup(story('Guide.story.js')!.relativePath))
+  })
+
+  it('updates a page in place when it changes, rather than listing it twice', async () => {
+    write('book/pages/Guide.story.md', '# Guide', { sibling: false })
+    await open()
+
+    await expect.poll(() => {
+      write('book/pages/Guide.story.md', '# Edited', { sibling: false })
+      return html('Guide.story.md')
+    }, { timeout: 10_000 }).toContain('Edited')
+    expect(listed()).toEqual(['pages/Guide.story.md'])
+    expect(ctx.storyFiles.filter(file => file.path.endsWith('/Guide.story.js'))).toHaveLength(1)
+  })
+
+  it('takes a deleted page and its story off the list', async () => {
+    write('book/pages/Guide.story.md', '# Guide', { sibling: false })
+    await open()
+
+    unlinkSync(join(dir, 'book/pages/Guide.story.md'))
+
+    await vi.waitFor(() => expect(listed()).toEqual([]), { timeout: 10_000 })
+    expect(story('Guide.story.js')).toBeUndefined()
+  })
+
+  it('stops pointing a story at its sibling `.story.md` once that is deleted', async () => {
+    write('book/pages/Tag.story.md', '# Tag')
+    await open()
+    expect(story('Tag.story.vue')!.markdownFile).toBeDefined()
+
+    unlinkSync(join(dir, 'book/pages/Tag.story.md'))
+
+    await vi.waitFor(() => expect(story('Tag.story.vue')!.markdownFile).toBeUndefined(), { timeout: 10_000 })
+  })
+
+  it('links a `.story.md` only to the story of its own name', async () => {
+    write('book/pages/Tag.story.md', '# Tag')
+    write('book/pages/Tag.story-old.story.vue', '')
+
+    await open()
+
+    expect(story('Tag.story.vue')!.markdownFile).toBeDefined()
+    expect(story('Tag.story-old.story.vue')!.markdownFile).toBeUndefined()
+  })
+
+  it('doesn\'t take a stray file for a standalone page\'s story', async () => {
+    write('book/pages/Guide.story.md', '# Guide', { sibling: false })
+    write('book/pages/Guide.story.md.bak', '# Old')
+
+    await open()
+
+    expect(markdownFile('Guide.story.md')?.isRelatedToStory).toBe(false)
+  })
+
+  it('gives two paths that read alike different ids', async () => {
+    write('book/pages/tag.story.md', '# Nested')
+    write('book/pages-tag.story.md', '# Flat')
+
+    await open()
+
+    expect(new Set(ctx.markdownFiles.map(file => file.id)).size).toBe(2)
+  })
+})
 
 describe('a `.story.md` with `src`', () => {
   let warn: ReturnType<typeof vi.spyOn>
