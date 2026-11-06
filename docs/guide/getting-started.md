@@ -101,13 +101,18 @@ lower bound is declared, and not tested by a job of its own.
 | [Vue](https://vuejs.org) | `^3.5.43` | `Example e2e (vue)` — builds that book and runs Playwright against it |
 | [Nuxt](https://nuxt.com) | `^4.5.0` | `Example e2e (nuxt)` — builds that book and runs Playwright against it |
 | [Svelte](https://svelte.dev) | `^5.46.4` | `Example e2e (svelte)` — builds that book and runs Playwright against it |
+| [@sveltejs/vite-plugin-svelte](https://www.npmjs.com/package/@sveltejs/vite-plugin-svelte) | `^7.3.0` | `Example e2e (svelte)` — builds that book with it |
 | [SvelteKit](https://svelte.dev/docs/kit)* | `^2.53.0 \|\| ^3.0.0` | `Example e2e (sveltekit)` for Kit 2 and `Example e2e (sveltekit3)` for Kit 3 — each builds its book and runs Playwright against it |
 | [Quasar](https://quasar.dev) | `^2.24.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Quasar App Vite](https://github.com/quasarframework/quasar/tree/dev/app-vite) | `^3.8.0` | `Example e2e (quasar)` — builds that book and runs Playwright against it |
 | [Solid](https://www.solidjs.com) | `^1.9.0` | `Example e2e (solid)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
+| [vite-plugin-solid](https://www.npmjs.com/package/vite-plugin-solid) | `^2.11.0` | `Example e2e (solid)` — builds that book with it |
 | [React](https://react.dev) | `^19.0.0` | `Example e2e (react)` — builds that book and runs its own renderer specs; the checks shared by the other frameworks do not run on it |
+| [React DOM](https://www.npmjs.com/package/react-dom) | `^19.0.0` | `Example e2e (react)` — builds that book with it |
 | [Vitest](https://vitest.dev), optional, for [story tests](./vue/testing.md) | `^5.0.0` | `Unit tests and smoke` — runs story tests in the workspace, and the testing guide's own setups in books installed from the tarballs |
 | [@vitejs/plugin-react](https://www.npmjs.com/package/@vitejs/plugin-react), optional | `^6.0.0` | `Example e2e (react)` — builds that book with it |
+
+The Tailwind and Percy plugins declare peers of their own, `tailwindcss` and `puppeteer`, which aren't here because a book only needs them with those plugins.
 
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own
 dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for

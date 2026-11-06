@@ -77,7 +77,7 @@ export default defineConfig({
 ```
 
 ::: info Supported versions
-**`svelte@^5.46.4` is the supported floor**, alongside `@sveltejs/vite-plugin-svelte@^7` —
+**`svelte@^5.46.4` is the supported floor**, alongside `@sveltejs/vite-plugin-svelte@^7.3.0` —
 both declared as peers.
 
 The chain is: Poveste requires Vite 8 → only `@sveltejs/vite-plugin-svelte@7` peers Vite 8
