@@ -40,6 +40,7 @@
     "test:docs-site": "vitest run --project scripts checks/docs-site --tags-filter=\"check && !network\"",
     "test:docs-site:live": "vitest run --project scripts checks/docs-site --tags-filter=\"check && network\"",
     "test:audit": "vitest run --project scripts checks/audit --tags-filter=\"check && network\"",
+    "test:skipped-majors": "vitest run --project scripts checks/skipped-majors --tags-filter=\"check && network\"",
     "test:publishable": "vitest run --project scripts checks/publishable --tags-filter=\"check && network\"",
     "test:published": "vitest run --project scripts checks/published",
     "test:packaging": "vitest run --project scripts checks/publishable --tags-filter=\"check && !network\"",
