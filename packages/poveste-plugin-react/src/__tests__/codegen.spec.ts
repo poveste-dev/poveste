@@ -25,6 +25,12 @@ function Counter(props: { count: number, label: string, onIncrement: () => void 
 function Stamp(_props: { at?: Date, range?: { from: Date }, icon?: ReactNode }) {
   return null
 }
+function Filter(_props: Record<string, unknown>) {
+  return null
+}
+function printed(props: Record<string, unknown>, state: Record<string, unknown> = {}) {
+  return generateSourceCode(variantOf(() => createElement(Filter, props), state))
+}
 
 describe('a React variant\'s Dynamic source', () => {
   it('prints the element its render returns as JSX', () => {
@@ -167,6 +173,58 @@ describe('a React variant\'s Dynamic source', () => {
     const variant = variantOf(() => createElement(Stamp, { at: new Date('nope') }))
 
     expect(generateSourceCode(variant)).toBe('<Stamp at={new Date(NaN)} />')
+  })
+
+  it.each([
+    ['a Map', new Map<unknown, unknown>([['a', 1], [{ id: 1 }, [2]]]), 'new Map([["a", 1], [{ id: 1 }, [2]]])'],
+    ['a Set', new Set(['a', 1]), 'new Set(["a", 1])'],
+    ['a regular expression', /a\/b+/gi, '/a\\/b+/gi'],
+    ['an empty Map', new Map(), 'new Map()'],
+    ['an empty Set', new Set(), 'new Set()'],
+    ['a Set inside a Map', new Map([['tags', new Set(['a'])]]), 'new Map([["tags", new Set(["a"])]])'],
+    ['one in an object and an array', { all: [new Set([1])] }, '{ all: [new Set([1])] }'],
+  ])('prints %s as code that makes the same value', (_title, value, code) => {
+    expect(printed({ value })).toBe(`<Filter value={${code}} />`)
+    // eslint-disable-next-line no-new-func
+    expect(new Function(`return ${code}`)()).toEqual(value)
+  })
+
+  it('prints a `Map` from state', () => {
+    const variant = variantOf(({ state }) => createElement(Filter, { value: state.value }), { value: new Map([['a', 1]]) })
+
+    expect(generateSourceCode(variant)).toBe('<Filter value={new Map([["a", 1]])} />')
+  })
+
+  it.each([
+    ['Map', 'new Map([["a", 1]])', 'new Map([["a", 1]])'],
+    ['Set', 'new Set([1])', 'new Set([1])'],
+    ['regular expression', '/a/g', '/a/g'],
+  ])('prints a %s from another window', (_title, source, code) => {
+    expect(printed({ value: runInNewContext(source) })).toBe(`<Filter value={${code}} />`)
+  })
+
+  it('keeps a Map or Set whose contents it cannot print, with `…` in their place', () => {
+    class Money {}
+
+    expect(printed({ value: new Map([['format', () => {}]]) })).toBe('<Filter value={new Map([["format", …]])} />')
+    expect(printed({ value: new Set([new Money(), 1]) })).toBe('<Filter value={new Set([…, 1])} />')
+  })
+
+  it('prints `…` where a Map holds itself', () => {
+    const value = new Map<string, unknown>()
+    value.set('self', value)
+
+    expect(printed({ value })).toBe('<Filter value={new Map([["self", …]])} />')
+  })
+
+  it('prints `…` for a subclass, which `new Map` would not make', () => {
+    class Registry extends Map {}
+
+    expect(printed({ value: new Registry() })).toBe('<Filter value={…} />')
+  })
+
+  it('prints an object that only claims the tag as the object it is', () => {
+    expect(printed({ value: { [Symbol.toStringTag]: 'Map' } })).toBe('<Filter value={{}} />')
   })
 
   it.each([
