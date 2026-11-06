@@ -77,7 +77,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4567,
     conformance: true,
     reference: true,
-    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/twoslash-docs.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts', '**/auto-docs.spec.ts', '**/setup-file-throws.spec.ts', '**/story-icons.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts'], alone: ['**/stale-story-list.spec.ts'] },
+    dev: { port: 4667, specs: ['**/user-root-css.spec.ts', '**/twoslash-docs.spec.ts', '**/sandbox-direct.spec.ts', '**/markdown-hot-reload.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts', '**/auto-docs.spec.ts', '**/setup-file-throws.spec.ts', '**/story-icons.spec.ts'], devOnly: ['**/markdown-hot-reload.spec.ts', '**/stale-story-list.spec.ts', '**/hmr-socket.spec.ts', '**/generate-story.spec.ts', '**/one-vue.spec.ts', '**/router-copies.spec.ts'], shared: ['**/sandbox-color-scheme.spec.ts', '**/story-embed.spec.ts'], alone: ['**/stale-story-list.spec.ts'] },
   },
   { name: 'nuxt', port: 4568, conformance: true, reference: true, dev: { port: 4668, specs: ['**/plugin-provide.spec.ts', '**/public-dir.spec.ts', '**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts', '**/hmr-socket.spec.ts', '**/dev-log.spec.ts'], alone: ['**/dev-log.spec.ts'], log: true } },
   {
@@ -85,7 +85,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4569,
     conformance: true,
     reference: true,
-    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts', '**/story-hot-reload.spec.ts', '**/auto-docs.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'] },
+    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts', '**/story-hot-reload.spec.ts', '**/auto-docs.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'], shared: ['**/story-embed.spec.ts'] },
   },
   { name: 'sveltekit', port: 4570, conformance: true, reference: true },
   {

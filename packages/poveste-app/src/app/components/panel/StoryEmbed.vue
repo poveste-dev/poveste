@@ -23,12 +23,22 @@ const variant = computed(() => {
 // Each embed boots a sandbox, and a docs page has none otherwise.
 const el = ref<HTMLElement>()
 const seen = ref(false)
+// The docs pane scrolls, not the page, and clips what the viewport's margin would reach.
+const root = computed(() => {
+  for (let node = el.value?.parentElement; node; node = node.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(node).overflowY)) {
+      return node
+    }
+  }
+  return undefined
+})
 const { stop } = useIntersectionObserver(el, ([entry]) => {
   if (entry?.isIntersecting) {
     seen.value = true
     stop()
   }
 }, {
+  root,
   rootMargin: '200px',
 })
 </script>
