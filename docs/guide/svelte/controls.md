@@ -198,25 +198,12 @@ can be seen in the file.
 | `let { label }: Props = $props()`, `Props` declared in the same file | from the type |
 | `let { label = 'x' } = $props()` | from the default |
 | `let { label = $bindable('x') } = $props()` | from the default |
-| `let { label }: Props = $props()`, `Props` **imported** | nothing — see below |
+| `let { label }: Props = $props()`, `Props` imported from a relative file such as `./types` | from the type |
+| `Props` that `extends` another type, or is built with `Pick`, `Omit` and the like | only what's written out — see below |
 
-### An imported type is not followed
+### How far an imported type is read
 
-Props typed by an `interface` or `type` **imported from another file** produce no
-controls, because the reader only resolves types declared in the component it is
-reading:
-
-```svelte
-<script lang="ts">
-  import type { Props } from './types' // not followed
-
-  const { label }: Props = $props()
-</script>
-
-{label}
-```
-
-This is a real limitation rather than something you did wrong. The story's [docs tab](./docs.md#component-docs) does follow the import and lists those props with their descriptions and defaults; building controls from it is tracked in [#160](https://github.com/poveste-dev/poveste/issues/160). Until then, declaring the type in the component, or giving the prop a default, gets the controls back.
+A type imported from a relative file is read from that file, one level deep and without type-checking it: its own imports, `extends` clauses, utility types such as `Pick` or `Omit`, and types from `node_modules` or a `$lib` path aren't followed. The story's [docs tab](./docs.md#component-docs) follows all of them, and building controls from the same reading is tracked in [#160](https://github.com/poveste-dev/poveste/issues/160). Until then, a prop the reader can't type gets its control from a default, so `let { label = 'x' }: Props = $props()` still gives a text field.
 
 ### When you get a JSON editor instead
 

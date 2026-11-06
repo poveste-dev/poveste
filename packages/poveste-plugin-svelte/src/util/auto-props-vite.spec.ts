@@ -63,3 +63,40 @@ describe('auto-props across the stories of a book', () => {
     expect(resolve).toHaveBeenCalledTimes(2)
   })
 })
+
+// The component's props came from a shared types file the reader didn't open (#501).
+describe('auto-props for a component whose props type is imported', () => {
+  function typedBook() {
+    const dir = mkdtempSync(join(tmpdir(), 'poveste-auto-props-'))
+    dirs.push(dir)
+    const button = join(dir, 'Button.svelte')
+    const types = join(dir, 'types.ts')
+    writeFileSync(button, `<script lang="ts">\n  import type { Props } from './types'\n  let { label }: Props = $props()\n</script>\n\n<button>{label}</button>\n`)
+    writeFileSync(types, `export interface Props {\n  label: string\n}\n`)
+    const resolve = vi.fn(async (specifier: string) => ({ id: specifier === './types' ? types : button }))
+    const watched: string[] = []
+    const context = { resolve, addWatchFile: (file: string) => watched.push(file), warn: () => {} }
+    const plugin = svelteAutoProps()
+    const transform = () => plugin.transform.call(context, STORY, join(dir, 'Button.story.svelte'))
+    return { types, watched, transform }
+  }
+
+  it('types the prop from the imported file, and watches it', async () => {
+    const { types, watched, transform } = typedBook()
+
+    const result = await transform()
+
+    expect(result?.code).toContain('"types":["string"]')
+    expect(watched).toContain(types)
+  })
+
+  it('reads the types file again once it changes, though the component did not', async () => {
+    const { types, transform } = typedBook()
+    await transform()
+
+    writeFileSync(types, `export interface Props {\n  label: number\n}\n`)
+    const second = await transform()
+
+    expect(second?.code).toContain('"types":["number"]')
+  })
+})

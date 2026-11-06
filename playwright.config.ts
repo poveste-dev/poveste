@@ -85,7 +85,7 @@ const ALL_EXAMPLES: Example[] = [
     port: 4569,
     conformance: true,
     reference: true,
-    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts', '**/story-hot-reload.spec.ts', '**/auto-docs.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'], shared: ['**/story-embed.spec.ts'] },
+    dev: { port: 4669, specs: ['**/controls-slot-isolation.spec.ts', '**/story-hot-reload.spec.ts', '**/auto-docs.spec.ts', '**/shared-types-controls.spec.ts'], devOnly: ['**/story-hot-reload.spec.ts'], shared: ['**/story-embed.spec.ts'] },
   },
   { name: 'sveltekit', port: 4570, conformance: true, reference: true },
   {
