@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { useIntersectionObserver } from '@vueuse/core'
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useStoryStore } from '../../stores/story'
 import StoryVariantSinglePreviewRemote from '../story/StoryVariantSinglePreviewRemote.vue'
 
@@ -23,24 +22,20 @@ const variant = computed(() => {
 // Each embed boots a sandbox, and a docs page has none otherwise.
 const el = ref<HTMLElement>()
 const seen = ref(false)
-// The docs pane scrolls, not the page, and clips what the viewport's margin would reach.
-const root = computed(() => {
-  for (let node = el.value?.parentElement; node; node = node.parentElement) {
-    if (/auto|scroll/.test(getComputedStyle(node).overflowY)) {
-      return node
+// `scrollMargin` reaches into the docs pane, which scrolls on its own and clips the
+// embed before the viewport does. vueuse doesn't pass it on. A browser without it
+// boots the embed once it's visible.
+let observer: IntersectionObserver | undefined
+onMounted(() => {
+  observer = new IntersectionObserver(([entry]) => {
+    if (entry?.isIntersecting) {
+      seen.value = true
+      observer?.disconnect()
     }
-  }
-  return undefined
+  }, { rootMargin: '200px', scrollMargin: '200px' })
+  observer.observe(el.value!)
 })
-const { stop } = useIntersectionObserver(el, ([entry]) => {
-  if (entry?.isIntersecting) {
-    seen.value = true
-    stop()
-  }
-}, {
-  root,
-  rootMargin: '200px',
-})
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
