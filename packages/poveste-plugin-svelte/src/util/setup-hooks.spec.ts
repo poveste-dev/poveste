@@ -109,3 +109,41 @@ describe('callSetupFunctions', () => {
     expect(SVELTE_SETUP_HOOK_NAMES).toEqual(['setupSvelte3', 'setupSvelte4', 'setupSvelte5', 'setupSvelte'])
   })
 })
+
+// A 0.22.1 hook that used `app` failed collection with a bare TypeError, under each
+// story file's name and nothing else (#1639).
+describe('a setup hook written for 0.22.1', () => {
+  it('can still destructure `app` without using it', async () => {
+    const hook = vi.fn(({ app: _app }: any) => {})
+
+    await callSetupFunctions({}, { setupSvelte: hook }, api)
+
+    expect(hook).toHaveBeenCalledOnce()
+  })
+
+  it('is told what replaced `app` when it uses it', async () => {
+    const run = callSetupFunctions({}, { setupSvelte: ({ app }: any) => void Object.keys(app) }, api)
+
+    await expect(run).rejects.toThrow(/setup file's `setupSvelte` hook.*before the story mounts.*`setContext`.*`onMount`/s)
+  })
+
+  it('names the variant`s `setupApp` when that is what used `app`', async () => {
+    const run = callSetupFunctions({}, {}, api, ({ app }: any) => void app.$set({}))
+
+    await expect(run).rejects.toThrow(/variant's `setupApp`.*`setContext`/s)
+  })
+})
+
+describe('a setup hook that throws', () => {
+  it('is named in the error, which keeps its own as the cause', async () => {
+    const own = new Error('the hook broke')
+
+    const run = callSetupFunctions({}, {
+      setupSvelte5: () => {
+        throw own
+      },
+    }, api)
+
+    await expect(run).rejects.toMatchObject({ message: expect.stringMatching(/^The setup file's `setupSvelte5` hook threw: the hook broke/), cause: own })
+  })
+})

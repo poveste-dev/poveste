@@ -113,19 +113,53 @@ export async function callSetupFunctions(
   // of them, so a file part-way through the migration — exporting `setupSvelte5`
   // and `setupSvelte` at once — had its setup applied twice, silently. That is
   // the failure the Vue pair has always been shaped to prevent (#157).
+  const api = withRemovedApp(setupApi)
+
   const generatedHook = getSetupHook<SvelteStorySetupHandler>(generatedSetup, SVELTE_SETUP_HOOK_NAMES, SVELTE_RETIRED_SETUP_HOOK_NAMES)
   if (generatedHook) {
-    await generatedHook(setupApi)
+    await runSetupHook(generatedHook, api, 'A plugin\'s setup hook')
   }
 
   const setupHook = getSetupHook<SvelteStorySetupHandler>(setup, SVELTE_SETUP_HOOK_NAMES, SVELTE_RETIRED_SETUP_HOOK_NAMES)
   if (setupHook) {
-    await setupHook(setupApi)
+    const name = SVELTE_SETUP_HOOK_NAMES.find(candidate => setup[candidate] === setupHook)
+    await runSetupHook(setupHook, api, `The setup file's \`${name}\` hook`)
   }
 
   if (typeof variantSetupApp === 'function') {
-    await variantSetupApp(setupApi)
+    await runSetupHook(variantSetupApp, api, 'The variant\'s `setupApp`')
   }
+}
+
+// Collection reports a throw under the story file's name, which sends the reader to the wrong file (#1639).
+async function runSetupHook(hook: SvelteStorySetupHandler, api: SvelteStorySetupApi, which: string) {
+  try {
+    await hook(api)
+  }
+  catch (error) {
+    throw new Error(`${which} threw: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
+  }
+}
+
+const REMOVED_APP = 'there is no `app` any more, because setup hooks run before the story mounts. '
+  + 'Pass a value to the story\'s components with `setContext`, and read the story\'s DOM from a component in the story with `onMount`. '
+  + 'See https://poveste.dev/guide/svelte/app-setup#what-the-hook-receives'
+
+// A 0.22.1 hook received the mounted app. Destructuring it must keep working, so only using it throws (#1639).
+function withRemovedApp(setupApi: SvelteStorySetupApi): SvelteStorySetupApi {
+  const fail = (): never => {
+    throw new Error(REMOVED_APP)
+  }
+  const app = new Proxy({}, {
+    get: (_target, key) => typeof key === 'symbol' || key === 'then' ? undefined : fail(),
+    set: fail,
+    has: fail,
+    ownKeys: fail,
+    deleteProperty: fail,
+    defineProperty: fail,
+    getOwnPropertyDescriptor: fail,
+  })
+  return Object.defineProperty({ ...setupApi }, 'app', { value: app, enumerable: false })
 }
 
 /**
