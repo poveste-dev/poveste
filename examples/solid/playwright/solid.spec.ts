@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
-import { openStory, recordSandboxReady, waitForSandboxReady } from '../../../e2e/support'
+import { expectPlainSource, openStory, recordSandboxReady, removeResponseBytes, waitForSandboxReady } from '../../../e2e/support'
 
 /*
  * The Solid book is a fixture rather than a conformance book: the shared suite
@@ -30,6 +30,17 @@ test.describe('a Solid book', () => {
 
     await expect(preview(page).locator('[data-testid="story-frame"] .badge-info')).toHaveText('Information')
     await expect(page.locator('[data-testid="story-error"]')).toHaveCount(0)
+  })
+
+  // The conformance spec for this runs in the books with the shared stories (#1632).
+  test('opens a story on a browser without `Response.prototype.bytes`, with the source in plain text', async ({ page }) => {
+    await removeResponseBytes(page)
+    const plainSource = expectPlainSource(page)
+
+    await open(page, 'src-badge-story-tsx', 'info')
+
+    await expect(preview(page).getByText('Information')).toBeVisible()
+    await plainSource
   })
 
   test('says why a variant without state has no controls, and still shows the panel toolbar', async ({ page }) => {

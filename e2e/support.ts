@@ -152,6 +152,22 @@ export async function toggleLayout(page: Page, setting: 'story-list' | 'story-op
   await page.getByTestId('layout-modal-close').click()
 }
 
+/** What a browser older than Chrome 132 or Safari 18 has (#1632). */
+export function removeResponseBytes(page: Page) {
+  return page.addInitScript(() => {
+    delete (Response.prototype as Partial<Response>).bytes
+  })
+}
+
+/**
+ * The source panel after the highlighter failed to load. Its textarea also shows while
+ * the highlighter is loading, so it says nothing until the failure has been reported.
+ */
+export async function expectPlainSource(page: Page) {
+  await page.waitForEvent('console', message => message.type() === 'error' && message.text().includes('bytes'))
+  await expect(page.locator('textarea[data-testid="story-source-code"]')).toHaveValue(/\S/)
+}
+
 export async function openStory(page: Page, id: string, query = '') {
   await page.goto(`/story/${id}${query}`)
 

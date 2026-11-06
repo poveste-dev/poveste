@@ -191,3 +191,5 @@ The book's PostCSS config, found the way Vite finds it or set in `css.postcss`, 
 - Firefox 146+ (December 2025). Firefox ESR 140 and earlier do not have it.
 
 There is no JavaScript fallback, and the failure is not a graceful one. An unrecognised at-rule is discarded along with its whole block, so on a browser without `@scope` every wrapped rule disappears — chrome and story CSS alike, leaving an unstyled book rather than a slightly-off one. On those browsers `isolateStyles: false` is a requirement, not a preference.
+
+The Source panel's highlighting needs `Response.prototype.bytes`, which Chrome before 132 and Safari before 18 don't have. On those, the panel shows the source as plain text, and the story pages otherwise work.
