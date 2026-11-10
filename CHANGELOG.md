@@ -4,6 +4,56 @@ Poveste's own releases are below, newest first. Each one is also published as a 
 
 Below poveste's own entries sits the [inherited histoire changelog](#inherited-histoire-changelog), kept verbatim as the history poveste forked from. Its version numbers are higher than poveste's — poveste restarted at `0.1.0` — so the file is newest-first within each half rather than across the whole.
 
+## v0.23.0
+
+[compare changes](https://github.com/poveste-dev/poveste/compare/v0.22.1...v0.23.0)
+
+**A story's docs can show a README and embed live stories, Svelte setup hooks run before the story mounts and can wrap it, and Solid gets Dynamic source.**
+
+It is a `minor`, and it has one breaking change, for Svelte setup files, under its own heading below. Nothing else is renamed or removed, and no version floor moved. A book in any other framework needs no change. These other things behave differently:
+
+- **`@poveste/plugin-solid` has a new peer, `vite` `^8.0.0`.** `poveste` already requires the same range, so a Solid book installs nothing new.
+- **A standalone `.story.md` with only a file like `Guide.story.test.ts` beside it now gets its own page** ([#1636](https://github.com/poveste-dev/poveste/pull/1636)). Before, that file counted as its story.
+- **On Chrome 118–131 and Safari 17.4–17.x, the Source panel shows code as plain text, not highlighted** ([#1632](https://github.com/poveste-dev/poveste/issues/1632), [#1634](https://github.com/poveste-dev/poveste/pull/1634)). It's in the fixes below, since a fresh 0.22.1 install on those browsers got no story pages at all.
+
+### 🚨 Breaking Changes
+
+- **A Svelte setup hook now runs before the story mounts, so there is no `app`** ([#234](https://github.com/poveste-dev/poveste/issues/234), [#1624](https://github.com/poveste-dev/poveste/pull/1624), [#1639](https://github.com/poveste-dev/poveste/issues/1639), [#1640](https://github.com/poveste-dev/poveste/pull/1640)). This covers the setup file's `setupSvelte` and a story's or variant's `setupApp`, in Svelte, SvelteKit and SvelteKit 3 books. Before, a hook ran once the story had rendered, so nothing it set up could reach the story. What a setup file has to change:
+  - **A hook that uses `app`** now throws, and `poveste build` fails, with a message saying hooks run before the story mounts, and pointing to `setContext` and `onMount`. Nothing replaces `app`: it was the mounted component instance, with nothing to register on. To hand a value to the story, use the new `setContext`, and read it with `getContext` in any component. Destructuring `app` without using it, as the 0.22.1 guide's example does, still works.
+  - **A hook that reads the story's rendered DOM** now finds nothing, with no error, because the story hasn't rendered yet. Move that into a component in the story, using `onMount`.
+  - **A hook that only touches the document,** such as `document.documentElement.dataset.theme`, needs no change.
+  - **A hook that throws now stops the story mounting,** as it does in Vue, and the error names which hook threw: the setup file's, a variant's `setupApp` or a plugin's.
+  - [What the hook receives](https://poveste.dev/guide/svelte/app-setup#what-the-hook-receives) has the details.
+
+### 🚀 Enhancements
+
+- **A story's docs can load another markdown file, such as a component's README** ([#161](https://github.com/poveste-dev/poveste/issues/161), [#1621](https://github.com/poveste-dev/poveste/pull/1621)). In a Vue story it's `<docs src="./README.md" />`. In any framework, a sibling or standalone `.story.md` takes `src: ./README.md` in its frontmatter. The path is relative to the story file, and in `poveste dev`, editing the README reloads the docs.
+  - **It's written for a README, not a book,** so a relative link that isn't a story, such as `./LICENSE`, stays as written, and `poveste dev` warns. Relative images aren't resolved, and the loaded file's own frontmatter is ignored.
+  - **A missing file** fails `poveste build` and names it. `poveste dev` shows the message in the docs and picks the file up when it comes back.
+  - The guides for [Vue](https://poveste.dev/guide/vue/docs#load-it-from-another-file) and [Svelte](https://poveste.dev/guide/svelte/docs#load-it-from-another-file) have the section.
+- **Markdown docs can embed a live story** ([#444](https://github.com/poveste-dev/poveste/issues/444), [#1623](https://github.com/poveste-dev/poveste/pull/1623), [#1641](https://github.com/poveste-dev/poveste/issues/1641), [#1642](https://github.com/poveste-dev/poveste/pull/1642), [#1643](https://github.com/poveste-dev/poveste/pull/1643)). `<poveste-story id="my-button" variant="primary" />` on a line of its own shows that story between the paragraphs, in its own sandbox. It works in a `.story.md`, a Vue `<docs>` block and a file loaded through `src`. Without `variant` you get the story's first, and an unknown id says so on the page.
+  - **An embed loads when you scroll within 200 px of it,** so a page of docs boots no sandbox it doesn't show. That uses `scrollMargin`, which is Baseline 2025. An older browser boots an embed once it's visible.
+  - **Its frame grows with the story up to 400 px,** and a taller story scrolls inside it.
+  - **An embed starts from the story's own state.** The panel's controls don't drive it.
+  - **It embeds a story that already exists.** Importing a component into the markdown itself is what #444 still asks for. The guides for [Vue](https://poveste.dev/guide/vue/docs#embed-a-story) and [Svelte](https://poveste.dev/guide/svelte/docs#embed-a-story) have the section.
+- **A Svelte setup file can wrap every story with `addWrapper`, as Vue, Solid and React can** ([#232](https://github.com/poveste-dev/poveste/issues/232), [#1626](https://github.com/poveste-dev/poveste/pull/1626)). Wrappers nest with the first added outermost. Each gets `story`, `variant` and `children`, and a wrapper's `setContext` reaches the story. `setupApp` has it too. A story test doesn't run wrappers, as in Vue. The [Svelte wrapper guide](https://poveste.dev/guide/svelte/wrapper) was a "not supported yet" page and now describes it.
+- **Solid's Source panel has a Dynamic view, which follows the state** ([#1524](https://github.com/poveste-dev/poveste/issues/1524), [#1635](https://github.com/poveste-dev/poveste/pull/1635)). It prints `<Counter count={10} label="Clicked" onIncrement={…} />`, then `count={11}` after a click in the story. Solid's JSX leaves no tree to read, so the story file is compiled a second time, only when the Source panel asks. That means `render` and the story file's module-level code run again with no preview behind them, and a signal or store created in `render` prints from its first value. A story that returns DOM, as `solid-js/html` does, opens on Static.
+- **React's Dynamic source prints a `Map`, a `Set` and a regular expression as code** ([#1577](https://github.com/poveste-dev/poveste/issues/1577), [#1631](https://github.com/poveste-dev/poveste/pull/1631)), as in `new Map([["a", 1]])`, `new Set(["a", 1])` and `/a\/b+/gi`, where 0.22 printed `…`. Solid prints them the same way. A subclass of `Map` or `Set` still prints as `…`, because `new Map(...)` would make a different value.
+- **A Svelte component whose props type is imported from a relative file gets controls** ([#501](https://github.com/poveste-dev/poveste/issues/501), [#1644](https://github.com/poveste-dev/poveste/pull/1644)). `import type { Props } from './types'` then `let { label }: Props = $props()` gave no controls at all. The imported file is read, and editing it alone re-reads the props in `poveste dev`. Only one relative import is followed: that file's own imports, `extends`, utility types such as `Pick` and `Omit`, and `$lib` or package imports aren't. A prop typed through one of those still gets its control from a default.
+- **`poveste build` warns when a Node built-in reaches the browser bundle** ([#1491](https://github.com/poveste-dev/poveste/issues/1491), [#1630](https://github.com/poveste-dev/poveste/pull/1630)). It names the built-in and each file that imports it, just above the result, and the build still exits 0. Calling one in the book fails, and before, the only sign was Vite's own line hundreds of lines up the log, or none at all with `logLevel: 'error'`. `poveste dev` doesn't print it.
+
+### 🩹 Fixes
+
+- **On Chrome 118–131 and Safari 17.4–17.x, a built book's story pages render again** ([#1632](https://github.com/poveste-dev/poveste/issues/1632), [#1634](https://github.com/poveste-dev/poveste/pull/1634)). Shiki 4.6.0 calls `Response.prototype.bytes`, which those browsers don't have, as its Wasm module loads, and that took the whole story view down. A fresh install of 0.22.1 resolves Shiki 4.6.0, so it's likely affected. Those browsers now get the Source panel in plain text, the rest of the page works, and the console shows one error per story. Highlighting isn't restored there, and the documented browser floor hasn't moved.
+- **A `.story.md` in a subfolder shows its docs on Windows** ([#1625](https://github.com/poveste-dev/poveste/issues/1625), [#1636](https://github.com/poveste-dev/poveste/pull/1636)). It showed nothing, with no error, in a built book and in `poveste dev`, and a standalone page in a subfolder had the same problem. The same PR fixes three things on every platform: deleting a sibling `.story.md` no longer leaves its story pointing at it, `Tag.story.md` no longer attaches to `Tag.story-old.story.vue`, and `pages/tag.story.md` and `pages-tag.story.md` no longer show each other's docs.
+- **A `v-for` ref over components in a Vue story keeps its instances** ([#1614](https://github.com/poveste-dev/poveste/issues/1614), [#1615](https://github.com/poveste-dev/poveste/pull/1615)). The 0.22.1 notes said this case was still overwritten after mount. It isn't now, whether the ref starts as `ref([])` or `ref(null)`. The panel still lists a template ref, as `null` or `[]`.
+- **A config with top-level await that isn't an ES module gets Poveste's message again on Vite 8.3.5** ([#1617](https://github.com/poveste-dev/poveste/issues/1617), [#1620](https://github.com/poveste-dev/poveste/pull/1620)). Rolldown 1.2.16 reports it under a new code, so the reader got the bundler's advice to use an output format they can't set. The config still fails, as it should. Only the message changes.
+
+### 📖 Documentation
+
+- **The supported versions table lists the three declared peers it left out** ([#1619](https://github.com/poveste-dev/poveste/issues/1619), [#1627](https://github.com/poveste-dev/poveste/pull/1627)): `@sveltejs/vite-plugin-svelte` `^7.3.0`, `vite-plugin-solid` `^2.11.0` and React DOM `^19.0.0`. The Svelte page said `^7` for the first, and now says `^7.3.0`.
+- **The Nuxt guide says a new project's `ERR_PNPM_IGNORED_BUILDS` isn't Poveste failing** ([#1608](https://github.com/poveste-dev/poveste/issues/1608), [#1611](https://github.com/poveste-dev/poveste/pull/1611)). A fresh `nuxi init` exits 1 on `esbuild` before Poveste is added. `pnpm approve-builds esbuild` stops it without a prompt.
+
 ## v0.22.1
 
 [compare changes](https://github.com/poveste-dev/poveste/compare/v0.22.0...v0.22.1)
