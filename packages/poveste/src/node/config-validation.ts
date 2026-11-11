@@ -30,6 +30,8 @@ const RULES: Rule[] = [
   { path: 'autoDocs', kind: ['boolean', 'object'] },
   { path: 'autoDocs.allow', kind: 'string[]' },
   { path: 'autoDocs.exclude', kind: 'string[]' },
+  { path: 'a11y', kind: 'object' },
+  { path: 'a11y.disableRules', kind: 'string[]' },
   { path: 'autoApplyContrastColor', kind: 'boolean' },
   { path: 'defaultBackgroundColor', kind: 'string' },
   { path: 'sandboxDarkClass', kind: 'string' },

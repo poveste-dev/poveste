@@ -219,6 +219,7 @@
     "testStories"
   ],
   "@poveste/shared": [
+    "A11yOptions",
     "AutoDocsOptions",
     "AutoDocsSection",
     "AutoPropComponentDefinition",
@@ -328,6 +329,7 @@
     "describeStories"
   ],
   "poveste": [
+    "A11yOptions",
     "AutoDocsOptions",
     "AutoDocsSection",
     "AutoPropComponentDefinition",

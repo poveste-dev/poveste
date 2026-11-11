@@ -9,6 +9,7 @@
   export let iconColor = null
   export let docsOnly = false
   export let autoDocs
+  export let a11y
   // Read from the source by auto-docs, not here (#1432).
   // svelte-ignore export_let_unused
   export let component
@@ -38,6 +39,7 @@
     iconColor,
     docsOnly,
     ...autoDocs !== undefined ? { autoDocs } : {},
+    ...a11y !== undefined ? { a11y } : {},
     // Collected rather than inherited down: `MountStory` forwards story props
     // only to an implicit variant (#466). Left undefined when unset, or the
     // collector's `??=` merge could never apply `defaultStoryProps`.

@@ -50,6 +50,13 @@ describe('configProblems', () => {
     ])
   })
 
+  // One rule id where a list goes would reach the sandbox read a character at a time.
+  it('wants the accessibility check\'s disabled rules as a list', () => {
+    expect(configProblems({ a11y: { disableRules: 'color-contrast' } }, 'c.ts')).toEqual([
+      'c.ts: `a11y.disableRules` must be string[], received string ("color-contrast")',
+    ])
+  })
+
   it('reports every problem rather than only the first', () => {
     expect(configProblems({ outDir: 1, isolateStyles: 'yes' }, 'c.ts')).toHaveLength(2)
   })
