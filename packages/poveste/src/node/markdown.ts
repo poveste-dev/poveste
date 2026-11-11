@@ -292,7 +292,29 @@ if (import.meta.hot?.data) {
     },
   })
 
+  // A `.story.md` is rendered here, in Node, and is in Vite's graph only as a file some
+  // other plugin watches. Tailwind's does, for the classes in it, and reloads the page when
+  // such a file changes, so every markdown save reloaded a Tailwind book (#1645). Handing
+  // Vite the watchers instead still updates Tailwind's stylesheet, and the docs in place.
+  plugins.push({
+    name: 'poveste-markdown-hmr',
+    hotUpdate: {
+      order: 'pre',
+      handler({ file, modules }) {
+        if (modules.length === 0 || modules.some(mod => mod.id) || !ctx.markdownFiles.some(md => md.absolutePath === file || loadedPath(md) === file)) {
+          return
+        }
+        return [...new Set(modules.flatMap(mod => [...mod.importers]))]
+      },
+    },
+  })
+
   return plugins
+}
+
+function loadedPath(file: ServerMarkdownFile): string | undefined {
+  const src = file.frontmatter?.src
+  return typeof src === 'string' && src ? path.resolve(path.dirname(file.absolutePath), src) : undefined
 }
 
 /** `Tag.story.vue` for `Tag.story`, and not `Tag.story-old.vue` or `Tag.story.md.bak`. */
@@ -331,11 +353,6 @@ export async function createMarkdownFilesWatcher(ctx: Context) {
    * Initial scan is complete.
    */
   let watcherIsReady = false
-
-  function loadedPath(file: ServerMarkdownFile): string | undefined {
-    const src = file.frontmatter?.src
-    return typeof src === 'string' && src ? path.resolve(path.dirname(file.absolutePath), src) : undefined
-  }
 
   /** What a `.story.md` shows: its own body, or the file its frontmatter's `src` names (#161). */
   function render(file: ServerMarkdownFile): string {
