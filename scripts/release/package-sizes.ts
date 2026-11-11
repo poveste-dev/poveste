@@ -68,7 +68,7 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // 120 B over `next` at 442,355.
   // Raised from 442_600 for #160: controls picked from a prop's type, and `autoProps`, 445,701 B measured with them.
   // Raised from 442_600 for #162's accessibility panel: the tab, the sandbox's lazy axe-core
-  // runner and the messaging between them, 10,499 B over `next` at 442,448. axe-core itself
+  // runner and the messaging between them, 10,878 B over `next` at 442,448. axe-core itself
   // is a dependency, not shipped here.
   '@poveste/app': { bytes: 446_000, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
