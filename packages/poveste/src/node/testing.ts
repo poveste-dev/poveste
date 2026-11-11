@@ -1,6 +1,7 @@
 import type { PovesteConfig } from '@poveste/shared'
 import type { Plugin, UserConfig } from 'vite'
-import { relative, resolve, sep } from 'node:path'
+import { existsSync } from 'node:fs'
+import { isAbsolute, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { clientConfig, VIRTUAL_IDS } from '@poveste/shared'
 import { getDefaultConfig, loadConfigFile, mergeConfig, resolveConfigFile } from './config.js'
@@ -35,11 +36,12 @@ const VUE_FEATURE_FLAGS: Record<string, string> = {
 
 // Root-relative, as `poveste dev` reads it: the docs write `/src/poveste.setup.ts`,
 // which `resolve` takes as absolute, so pre-bundling scanned a file outside the
-// book and the setup file's imports were found late, with a reload (#1507).
+// book and the setup file's imports were found late, with a reload (#1507). A path
+// that exists as written is a file a plugin named, such as `HstQuasar()`'s default.
 function setupFileOf(config: Partial<PovesteConfig>): string | undefined {
   const setupFile = config.setupFile
   const file = typeof setupFile === 'string' ? setupFile : setupFile && 'browser' in setupFile ? setupFile.browser : undefined
-  return file?.replace(/^\/+/, '')
+  return file && isAbsolute(file) && existsSync(file) ? file : file?.replace(/^\/+/, '')
 }
 
 export interface PovesteTestingPluginOptions {
@@ -80,6 +82,14 @@ export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plug
       const fromVite = ((user as { poveste?: unknown, histoire?: unknown }).poveste
         ?? (user as { histoire?: unknown }).histoire ?? {}) as Partial<PovesteConfig>
       config = mergeConfig(fromFile, fromVite) as Partial<PovesteConfig>
+      // Then each plugin's `config` hook, as `poveste dev` runs them: `HstQuasar()`
+      // names the setup file that installs Quasar in a book that names none (#1664).
+      for (const plugin of config.plugins ?? []) {
+        const result = await plugin.config?.(config as PovesteConfig, 'dev')
+        if (result) {
+          config = mergeConfig(result, config) as Partial<PovesteConfig>
+        }
+      }
 
       // In browser mode Vite pre-bundles what its scan finds. It never sees the
       // framework's runtime, which compiled stories and the plugin's own bundle
