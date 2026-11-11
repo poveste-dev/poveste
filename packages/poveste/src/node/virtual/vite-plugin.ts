@@ -95,7 +95,9 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
         if (!isServer) {
           VirtualFiles.servedStories.set(ctx, code)
         }
-        return code
+        // Vite would inline a source map of the generated list, four fifths of each copy a page
+        // keeps, and nobody debugs this module through it (#1646).
+        return { code, map: { mappings: '' } }
       }
 
       if (id === VirtualFiles.NOOP_ID) {
