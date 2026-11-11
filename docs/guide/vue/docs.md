@@ -154,7 +154,9 @@ In a Nuxt book, a component a story uses without importing it, because Nuxt regi
 
 If a story's markdown already has hand-written Props, Emits or Slots sections, delete them once auto-docs is on: the table shows beside them, and the two drift apart. Keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
-In `poveste dev`, nothing runs until a reader first opens a story's Docs tab. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it. `poveste build` reads every story's components in one pass, so a build pays for the whole book at once: see [`autoDocs`](../../reference/config.md#autodocs) for the time and memory.
+The Controls panel reads the same types, so a documented prop typed `'sm' | 'md' | 'lg'` gets a select: see [Controls from types](./controls.md#controls-from-types).
+
+In `poveste dev`, nothing runs until a reader first opens a story's Docs tab, or its Controls when its components have automatic controls. The first time can take many seconds while the types are read; after that the table is cached, and an edit to a component refreshes it. `poveste build` reads every story's components in one pass, so a build pays for the whole book at once: see [`autoDocs`](../../reference/config.md#autodocs) for the time and memory.
 
 It reads the types with a TypeScript 6 Poveste installs, so the book needs no TypeScript of its own, and one on TypeScript 7 is read the same way. A book without a `tsconfig.json` is read as if it included every file. A built book carries the tables it read at build time, and leaves out a component whose types couldn't be read.
 

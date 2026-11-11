@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 import { dirname, join } from 'pathe'
-import { bookTsconfig, bundledTypescript, resolveType } from 'poveste/docgen'
+import { bookTsconfig, bundledTypescript, controlFor, resolveType } from 'poveste/docgen'
 import { readEventDocs } from './events.js'
 import { readGeneric } from './generic.js'
 import { toComponentDoc } from './meta.js'
@@ -110,8 +110,13 @@ export async function createExtractor(context: DocgenExtractorContext): Promise<
       }
       const program = checker.getProgram()
       // Against the type as the table prints an optional one, without its `undefined`.
-      const resolve = (prop: PropertyMeta) => program && resolveType(typescript, program.getTypeChecker(), prop.getTypeObject(), prop.required ? prop.type : prop.type.replace(/ \| undefined$/, ''))
-      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, program, file) : undefined, slot => readSlotProps(typescript, program, slot), resolve)
+      const read = (prop: PropertyMeta) => program
+        ? {
+            resolved: resolveType(typescript, program.getTypeChecker(), prop.getTypeObject(), prop.required ? prop.type : prop.type.replace(/ \| undefined$/, '')),
+            control: controlFor(typescript, program.getTypeChecker(), prop.getTypeObject()),
+          }
+        : {}
+      const doc = toComponentDoc(meta, options, meta.events.length ? readEventDocs(typescript, program, file) : undefined, slot => readSlotProps(typescript, program, slot), read)
       // The tsconfig is the reader's, so it says why rather than mapping `vue` as a book without one does (#1580).
       if (tsconfig && !doc.props.length && !doc.slots.length && !doc.events.length && !typescript.resolveModuleName('vue', file, core.createParsedCommandLine(typescript, typescript.sys, tsconfig).options, typescript.sys).resolvedModule) {
         throw new Error(`\`vue\` doesn't resolve from '${file}', so its props can't be read and come out empty. Install \`vue\` above it, or add it to the \`paths\` of ${tsconfig}.`)

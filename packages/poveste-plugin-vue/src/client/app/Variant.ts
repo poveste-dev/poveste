@@ -36,6 +36,11 @@ export default defineComponent({
       default: false,
     },
 
+    autoProps: {
+      type: Object as PropType<Variant['autoProps']>,
+      default: undefined,
+    },
+
     setupApp: {
       type: Function,
       default: undefined,
@@ -99,6 +104,7 @@ export default defineComponent({
         source: props.source,
         responsiveDisabled: props.responsiveDisabled,
         autoPropsDisabled: props.autoPropsDisabled,
+        autoProps: props.autoProps,
         setupApp: props.setupApp,
         meta: props.meta,
         configReady: true,

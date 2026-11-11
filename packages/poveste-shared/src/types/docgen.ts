@@ -21,8 +21,14 @@ export interface DocProp {
   defaultTag?: string
   /** Both defaults exist and say different things: the code's is shown, and this flags it. */
   defaultConflict?: boolean
+  /** The control its type picks in the Controls panel, when it picks one (#160). */
+  control?: DocControl
   tags: DocTag[]
 }
+
+export type DocControl
+  = | { kind: 'text' | 'number' | 'boolean' | 'json' }
+    | { kind: 'select', options: (string | number)[] }
 
 export interface DocSlot {
   name: string

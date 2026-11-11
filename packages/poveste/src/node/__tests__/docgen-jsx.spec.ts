@@ -32,7 +32,7 @@ describe('the JSX extractor', () => {
   })
 
   it('reads props from the type of the component\'s first parameter', async () => {
-    expect(await prop('label')).toEqual({ name: 'label', description: 'Shown when there is nothing to say.', type: 'string', required: true, tags: [] })
+    expect(await prop('label')).toEqual({ name: 'label', description: 'Shown when there is nothing to say.', type: 'string', required: true, control: { kind: 'text' }, tags: [] })
   })
 
   it('prints an optional prop\'s type without the `undefined` strict mode adds', async () => {

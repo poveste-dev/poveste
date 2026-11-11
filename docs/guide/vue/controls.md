@@ -238,9 +238,7 @@ A variant can then override the slot if needed.
 
 ## Automatic controls
 
-Poveste reads the props a component declares and builds a control for each one,
-so a variant that renders a component needs nothing written for it to be
-adjustable:
+Poveste builds a control for each prop a component declares, so a variant that renders a component needs nothing written for it to be adjustable:
 
 ```vue-html
 <Variant title="Naked">
@@ -248,16 +246,39 @@ adjustable:
 </Variant>
 ```
 
-The panel lists `MyButton`'s props, and editing one re-renders it. A prop the
-story binds itself keeps its own value until you touch that control.
+The panel lists `MyButton`'s props, and editing one re-renders it. A prop the story binds itself keeps its own value until you touch that control.
 
-Set [`autoPropsDisabled`](../../reference/vue/story.md#autopropsdisabled) to turn
-this off for a story or a variant.
+Set [`autoPropsDisabled`](../../reference/vue/story.md#autopropsdisabled) to turn this off for a story or a variant, or [`autoProps`](#override-or-hide-a-control) to change or hide one control.
 
-### What it can read
+### Controls from types
 
-Every way Vue lets you declare a prop, and what each produces in a **built**
-book:
+When a component is documented, which is what fills the [Docs tab](./docs.md#props-slots-and-events), each prop's control comes from its TypeScript type:
+
+| type | control |
+| --- | --- |
+| `string`, or a template literal such as `` `${number}px` `` | text field |
+| `number` | number field |
+| `boolean` | checkbox |
+| a union of string or number literals, `'sm' \| 'md' \| 'lg'`, written out, behind an alias, an enum, or `(typeof sizes)[number]` | a select of its values |
+| an array, a tuple, or an object type your code declares | JSON editor |
+| anything else: a function, a `Date`, an element, a mix such as `string \| HTMLElement` | what the component carries at runtime, below |
+
+`defineProps<Props>()` with `Props` imported from another file reads the same as one written inline, and so does an interface that `extends` another.
+
+Types come from the same place as the Docs tab. A component imported from an installed package gets no table in a Vue or Svelte book, so it gets no types either, and a prop the Docs tab doesn't show keeps its runtime control: one declared in a package under `node_modules` that [`autoDocs.allow`](../../reference/config.md#autodocs) doesn't name, or one tagged `@internal`. With `autoDocs: false`, no types are read and every control comes from runtime.
+
+The panel doesn't wait for types. It shows the runtime controls at once and changes a control to the one its type picks when the types arrive:
+
+- In `poveste dev`, they arrive when the docs worker has read them. On a story's first open that is the cost of opening the Docs tab: measured on `examples/vue`, about 1.4 s and 370 MB more for the dev server.
+- In a built book the build read them, and they arrive as a small file per component.
+
+A control you are typing in, or that holds a value you set, keeps its kind until you leave it and remove the value with the button beside it.
+
+Two components of the same name, imported by one story from different folders, get no types in a built book: a build names a component only by its file name, so Poveste can't tell which types are which, and both keep their runtime controls. `poveste dev` knows the full path, and gives each its own.
+
+### From runtime
+
+Without types, what a component carries at runtime picks the control. In a **built** book, every way Vue lets you declare a prop produces:
 
 | declaration | control |
 | --- | --- |
@@ -268,35 +289,38 @@ book:
 | `defineProps<{ label?: string }>()` | from the default or the passed value |
 | `defineProps<Props>()`, interface local or imported | from the default or the passed value |
 
-The type-only rows are worth understanding, because they are the idiom the Vue
-docs lead with. A production build **erases** the runtime types Vue infers from
-`defineProps<T>()` — they exist for development-time validation — so in a built
-book there is no declared type left to read. Poveste falls back on the default,
-or on the value the story passes, which covers the ordinary case. It is only when
-there is neither that you see the JSON editor.
+A production build **erases** the runtime types Vue infers from `defineProps<T>()`, so the type-only rows fall back on the default, or on the value the story passes. That's only what shows before types arrive, or what stays when the component isn't documented.
 
 ### When you get a JSON editor instead
 
-A prop with **no type, no default and nothing passed by the story** gets the JSON
-editor. That is deliberate rather than a gap: with nothing to go on, guessing
-would pick a control the prop cannot hold, and a text field on a prop that wants
-an object invites you to type something the component will reject.
+A prop gets the JSON editor when nothing picks another control: its type is an array or an object, or the component isn't documented and the prop has no runtime type, no default, and no value from the story. With nothing to go on, guessing would pick a control the prop can't hold.
 
-The fix is to give it something to read — a default on the prop, or a value in
-the story:
+The fix is something to read: the component documented, a default on the prop, a value in the story, or an [`autoProps`](#override-or-hide-a-control) override.
 
-A default the reader can see:
+### Override or hide a control
 
-```
-defineProps<{ label?: string }>()                                       // no control
-withDefaults(defineProps<{ label?: string }>(), { label: 'Click me' })  // text field
-```
-
-Or a value in the story:
+`autoProps` on a variant, or on the story for every variant, changes a prop's control by the prop's name:
 
 ```vue-html
-<MyButton label="Click me" />
+<Variant
+  title="Sizes"
+  :auto-props="{
+    size: { control: 'select', options: ['sm', 'md', { label: 'Large', value: 'lg' }] },
+    level: { control: 'slider', min: 1, max: 6 },
+    tone: 'text',
+    onClick: false,
+  }"
+>
+  <MyButton />
+</Variant>
 ```
+
+- `false` hides the prop's control.
+- A control's name picks it: `'text'`, `'textarea'`, `'number'`, `'checkbox'`, `'json'`, `'color'` or `'date'`.
+- A select needs its options, as values or `{ label, value }` pairs: `{ control: 'select', options: [...] }`.
+- A slider needs its range: `{ control: 'slider', min, max, step }`, with `step` optional.
+
+An override wins over the prop's type. A variant's `autoProps` replaces the story's whole, as its other options do.
 
 ## Builtin controls
 

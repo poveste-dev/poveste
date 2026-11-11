@@ -19,7 +19,7 @@ describe('the React extractor', () => {
   })
 
   it('reads a prop from an imported interface, with its description', async () => {
-    expect(await prop('label')).toEqual({ name: 'label', description: 'The field\'s label, read from an imported interface.', type: 'string', required: true, tags: [] })
+    expect(await prop('label')).toEqual({ name: 'label', description: 'The field\'s label, read from an imported interface.', type: 'string', required: true, control: { kind: 'text' }, tags: [] })
   })
 
   it('takes a default from the destructured parameter, and flags one its tag contradicts', async () => {
@@ -56,7 +56,7 @@ describe('the React extractor', () => {
 
   it('reads `FC<P>`\'s props and a destructured default inside it', async () => {
     expect((await doc('Card')).props).toEqual([
-      { name: 'title', description: 'The card\'s heading.', type: 'string', required: true, tags: [] },
+      { name: 'title', description: 'The card\'s heading.', type: 'string', required: true, control: { kind: 'text' }, tags: [] },
       expect.objectContaining({ name: 'raised', default: 'false' }),
     ])
   })

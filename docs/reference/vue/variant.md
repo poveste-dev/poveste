@@ -183,6 +183,18 @@ Disables the automatic detection of props of the components in the story.
 </template>
 ```
 
+## `autoProps`
+
+Overrides or hides the automatic control of a prop, by the prop's name, for this variant. It replaces the story's `autoProps` whole. What each value does is in [Override or hide a control](../../guide/vue/controls.md#override-or-hide-a-control).
+
+```vue
+<template>
+  <Variant :auto-props="{ level: { control: 'slider', min: 1, max: 6 }, tone: 'text' }">
+    <MyButton />
+  </Variant>
+</template>
+```
+
 ## `meta`
 
 Free-form data attached to the variant, for your own code to read. Poveste reads no key of a variant's `meta`. How a TypeScript book declares its keys is under [`meta` on a story](./story.md#meta).

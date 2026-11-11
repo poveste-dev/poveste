@@ -1,6 +1,8 @@
 import type { PropDefinition } from '@poveste/shared'
 import { readFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import process from 'node:process'
+import { relative } from 'pathe'
 import { transformStoryAutoProps } from './auto-props.js'
 import { extractPropDefs, typeImports } from './props.js'
 import { isSvelteStory } from './story-source.js'
@@ -17,9 +19,15 @@ export function svelteAutoProps() {
   // Keyed on every file read, the props type's own file too, since editing either changes the props.
   const parsed = new Map<string, { sources: string, props: PropDefinition[] | undefined }>()
 
+  let root = process.cwd()
+
   return {
     name: 'poveste:svelte-auto-props',
     enforce: 'pre' as const,
+
+    configResolved(config: { root: string }) {
+      root = config.root
+    },
 
     watchChange(_id: string, change: { event: 'create' | 'update' | 'delete' }) {
       if (change.event !== 'update') {
@@ -66,12 +74,10 @@ export function svelteAutoProps() {
           }
           const sources = JSON.stringify([source, imported])
           const cached = parsed.get(file)
-          if (cached?.sources === sources) {
-            return cached.props
-          }
-          const props = extractPropDefs(source, imported)
+          const props = cached?.sources === sources ? cached.props : extractPropDefs(source, imported)
           parsed.set(file, { sources, props })
-          return props
+          // Relative, so a built book carries no path of the machine that built it.
+          return { props, file: relative(root, file) }
         }
         catch (error: any) {
           // Not a failed build, but silence would look like a component that

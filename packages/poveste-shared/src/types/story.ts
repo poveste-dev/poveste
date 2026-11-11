@@ -39,7 +39,27 @@ export interface InheritedProps {
   source?: string
   responsiveDisabled?: boolean
   autoPropsDisabled?: boolean
+  /**
+   * The automatic control of a prop, by name: `false` hides it, a control's name picks it,
+   * and an object picks one with its options. Overrides what the prop's type picks (#160).
+   */
+  autoProps?: AutoPropsOverrides
 }
+
+/** A control the Controls panel can give an automatic prop. */
+export type AutoPropControl = 'text' | 'textarea' | 'number' | 'slider' | 'checkbox' | 'select' | 'json' | 'color' | 'date'
+
+export type AutoPropOption = string | number | boolean | { label: string, value: string | number | boolean }
+
+/** By name only where the control needs nothing more: a select needs its options, a slider its range. */
+export type AutoPropOverride
+  = | false
+    | Exclude<AutoPropControl, 'select' | 'slider'>
+    | { control: 'select', options: AutoPropOption[] }
+    | { control: 'slider', min: number, max: number, step?: number }
+    | { control: Exclude<AutoPropControl, 'select' | 'slider'> }
+
+export type AutoPropsOverrides = Record<string, AutoPropOverride>
 
 export interface VariantProps extends CommonProps, InheritedProps {
   // No additional properties
@@ -102,6 +122,7 @@ export interface Variant {
   source?: string | undefined
   responsiveDisabled?: boolean | undefined
   autoPropsDisabled?: boolean | undefined
+  autoProps?: AutoPropsOverrides | undefined
   configReady?: boolean | undefined
   previewReady?: boolean | undefined
   meta?: VariantMeta | undefined
@@ -118,6 +139,8 @@ export interface AutoPropComponentDefinition {
   name: string
   index: number
   props: PropDefinition[]
+  /** The component's file, relative to the book's root, where the plugin knows it: what its docs are keyed on (#160). */
+  file?: string | undefined
 }
 
 /* SERVER */
