@@ -15,6 +15,7 @@ import HstSelectVue from './components/select/HstSelect.vue'
 import HstSliderVue from './components/slider/HstSlider.vue'
 import HstTextVue from './components/text/HstText.vue'
 import HstTextareaVue from './components/textarea/HstTextarea.vue'
+import { defineControlElements as defineElements } from './elements/index.js'
 
 export const HstButton = HstButtonVue
 export const HstButtonGroup = HstButtonGroupVue
@@ -34,8 +35,8 @@ export const HstCopyIcon = HstCopyIconVue
  * rather than one per package, which is what floating-vue's single theme was.
  *
  * Deliberately absent from `components` below. That list is the controls a story
- * book registers globally and the Svelte bridge mirrors as `Hst.*`; a tooltip is
- * not a control and has no state to bind.
+ * book registers globally, as elements and as `Hst.*` in Svelte; a tooltip is not a
+ * control and has no state to bind.
  */
 export const HstTooltip = HstTooltipVue
 export const HstRadio = HstRadioVue
@@ -54,11 +55,11 @@ export const HstRadio = HstRadioVue
  * row at a time, so a row appearing is the same motion as a row of a longer
  * panel arriving.
  *
- * `name` and `emits` are put back on each wrapper, which carries neither.
- * `@poveste/plugin-svelte`'s Wrap.svelte reads both: it builds its Vue listeners
- * by iterating `controlComponent.emits`, so without this the control renders and
- * edits in a Svelte book and never writes back. `index.spec.ts` pins them against
- * the real components so these copies cannot drift.
+ * `name` and `emits` are put back on each wrapper, which carries neither. A control
+ * element dispatches only the events in `emits`, and `@poveste/plugin-svelte`'s
+ * Wrap.svelte writes back only through them, so without this the control renders
+ * and edits in a Svelte book and never writes back. `index.spec.ts` pins them
+ * against the real components so these copies cannot drift.
  */
 export const HstJson = Object.assign(
   defineAsyncComponent(() => import('./components/json/HstJson.vue')),
@@ -95,6 +96,16 @@ export const components = {
   HstColorSelect,
 }
 
+/**
+ * Registers every entry of `components` as a custom element in this document, so a
+ * framework plugin renders `<poveste-hst-text>` rather than booting a Vue app of its own.
+ */
+export function defineControlElements(registry?: CustomElementRegistry) {
+  defineElements(components, registry)
+}
+
+export { CONTROL_SLOTS_EVENT, controlElementTag, SLOT_CONTENT_ATTR } from './elements/index.js'
+export type { ControlElement, ControlSlotCall } from './elements/index.js'
 export { portalTarget } from './portal-target.js'
 export * from './types.js'
 /**
