@@ -45,7 +45,7 @@ jobs:
           path: head
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.1.0
+        uses: pnpm/action-setup@v6.1.1
         with:
           package_json_file: head/package.json
 
