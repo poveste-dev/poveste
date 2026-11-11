@@ -202,6 +202,10 @@ const config = {
                 link: '/guide/css',
               },
               {
+                text: 'Accessibility checks',
+                link: '/guide/accessibility',
+              },
+              {
                 text: 'Deployment',
                 link: '/guide/deployment',
               },
@@ -515,6 +519,10 @@ const config = {
             {
               text: 'Styles & CSS',
               link: '/guide/css',
+            },
+            {
+              text: 'Accessibility checks',
+              link: '/guide/accessibility',
             },
             {
               text: 'Deployment',
