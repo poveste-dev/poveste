@@ -116,7 +116,19 @@ const size: Size = 'md'
 ```
 ````
 
-It compiles with the TypeScript 6 Poveste installs for auto-docs, so the book needs nothing more, whatever TypeScript it has. Each block compiles on its own, with TypeScript's defaults rather than the book's tsconfig: an import from a package the book installs resolves, but one through a `paths` alias such as `@/`, or of a `.vue` or `.svelte` file, does not. In a book that installs TypeScript 7 with npm, `npm ls typescript` reports `typescript` as invalid, because Twoslash asks for TypeScript 5 or 6 beside it: that is expected, and the blocks still compile with Poveste's copy. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
+It needs one package Poveste leaves out, so that a book marking no block doesn't install it:
+
+```shell
+pnpm i -D @shikijs/twoslash
+# OR
+npm i -D @shikijs/twoslash
+# OR
+yarn add -D @shikijs/twoslash
+```
+
+Without it, a marked block renders as plain code, and the log says what to install.
+
+It compiles with the TypeScript 6 Poveste installs for auto-docs, whatever TypeScript the book has. Each block compiles on its own, with TypeScript's defaults rather than the book's tsconfig: an import from a package the book installs resolves, but one through a `paths` alias such as `@/`, or of a `.vue` or `.svelte` file, does not. With npm and TypeScript 7, installing `@shikijs/twoslash` prints a peer warning and `npm ls typescript` reports `typescript` as invalid, because Twoslash asks for TypeScript 5 or 6 beside it: that is expected, and the blocks still compile with Poveste's copy. A block that does not compile renders as plain code too, and the log names its file and line: it never fails a build. Unmarked blocks are unchanged, and nothing is loaded for a book that marks none.
 
 A block with types wraps its long lines rather than scrolling them, so a type's popup is not cut off at the edge.
 

@@ -176,3 +176,44 @@ describe('a `twoslash` fence after Twoslash failed to load', () => {
     expect(html).toContain('twoslash-hover')
   }, 60_000)
 })
+
+describe('a `twoslash` fence where Poveste itself cannot reach `@shikijs/twoslash`', () => {
+  const resolveFilename = resolve._resolveFilename
+  afterAll(() => {
+    resolve._resolveFilename = resolveFilename
+  })
+
+  function missing(where: (parent: string) => boolean) {
+    resolve._resolveFilename = (request, parent, ...rest) => {
+      if (request === '@shikijs/twoslash/core' && where(parent?.filename ?? '')) {
+        throw Object.assign(new Error('Cannot find module \'@shikijs/twoslash/core\''), { code: 'MODULE_NOT_FOUND' })
+      }
+      return resolveFilename.call(Module, request, parent, ...rest)
+    }
+  }
+
+  // An optional peer sits beside the book, which a strict layout may not show Poveste.
+  it('loads it from the book', async () => {
+    const warn = vi.fn()
+    const twoslash = createTwoslash(BOOK, await createHighlight(['ts']), warn)
+    missing(parent => !parent.startsWith(join(BOOK, 'package.json')))
+
+    const html = twoslash('const a = 1', 'ts', {})
+
+    resolve._resolveFilename = resolveFilename
+    expect(warn).not.toHaveBeenCalled()
+    expect(html).toContain('twoslash-hover')
+  }, 60_000)
+
+  it('names the package to install when the book has none', async () => {
+    const warn = vi.fn()
+    const twoslash = createTwoslash(BOOK, await createHighlight(['ts']), warn)
+    missing(() => true)
+
+    const html = twoslash('const a = 1', 'ts', {})
+
+    resolve._resolveFilename = resolveFilename
+    expect(html).toBeUndefined()
+    expect(warn).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('npm i -D @shikijs/twoslash'))
+  }, 60_000)
+})

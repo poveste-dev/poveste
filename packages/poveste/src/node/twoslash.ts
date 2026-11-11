@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module'
-import { dirname } from 'pathe'
+import { dirname, join } from 'pathe'
 import pc from 'picocolors'
 import { bundledTypescript } from './docgen/typed.js'
 
@@ -39,7 +39,7 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
   function load() {
     try {
       const own = createRequire(import.meta.url)
-      const fromShiki = createRequire(own.resolve('@shikijs/twoslash/core'))
+      const fromShiki = createRequire(resolveTwoslash(own, root))
       // Synchronous, as markdown-it's `highlight` is: Node requires an ES module without top-level await.
       const { createTransformerFactory, rendererRich } = fromShiki('@shikijs/twoslash/core')
       const { createTwoslasher } = fromShiki('twoslash/core')
@@ -68,6 +68,9 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
       }
     }
     catch (error) {
+      if (error instanceof NotInstalled) {
+        return { off: 'Twoslash is off: a `twoslash` fence needs `@shikijs/twoslash`, which the book does not install, so it renders as plain code. Install it with `npm i -D @shikijs/twoslash`, or your package manager\'s equivalent.' }
+      }
       return { off: `Twoslash is off: it could not load, so a \`twoslash\` fence renders as plain code. Reinstall the book's dependencies. ${firstLine(error)}` }
     }
   }
@@ -100,6 +103,24 @@ export function createTwoslash(root: string, highlight: (code: string, lang: str
     }
     return html
   }
+}
+
+class NotInstalled extends Error {}
+
+// An optional peer (#1660): npm hoists it where Poveste finds it, but a strict layout may
+// link it beside the book only.
+function resolveTwoslash(own: NodeJS.Require, root: string): string {
+  for (const from of [own, createRequire(join(root, 'package.json'))]) {
+    try {
+      return from.resolve('@shikijs/twoslash/core')
+    }
+    catch (error) {
+      if ((error as { code?: string }).code !== 'MODULE_NOT_FOUND') {
+        throw error
+      }
+    }
+  }
+  throw new NotInstalled()
 }
 
 function where(at: FenceAt): string {
