@@ -1,16 +1,18 @@
 <script lang="ts" setup>
 import type { HstEvent } from '../../stores/events'
 import type { Story, Variant } from '../../types'
+import type { A11yResult } from '../../util/a11y'
 import { Icon } from '@iconify/vue'
 import { SANDBOX_ERROR } from '@poveste/shared'
 import { useEventListener } from '@vueuse/core'
-import { computed, onBeforeUnmount, ref, toRaw, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, toRaw, watch, watchEffect } from 'vue'
 import { useEventsStore } from '../../stores/events'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
 import { useStoryStore } from '../../stores/story'
 import { useStoryErrorStore } from '../../stores/story-errors'
+import { backgroundBehind, provideA11yRunner } from '../../util/a11y'
 import { usePreviewColorScheme } from '../../util/color-scheme'
-import { EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
+import { A11Y_RESULT, A11Y_RUN, EVENT_SEND, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from '../../util/const'
 import { firstReportedHeight } from '../../util/grid-cell-height'
 import { trackWindow } from '../../util/keyboard'
 import { createRenderTracker } from '../../util/render-tracker'
@@ -143,6 +145,9 @@ useEventListener(window, 'message', (event) => {
     case SANDBOX_COLOR_SCHEME:
       if (typeof event.data.scheme === 'string') sandboxColorScheme.value = event.data.scheme
       break
+    case A11Y_RESULT:
+      settleA11yRun(event.data)
+      break
     case SANDBOX_HEIGHT:
       if (!fromCurrentOccupant(event.data)) break
       // The sandbox reports on its first frames, before the story mounts, and
@@ -169,6 +174,48 @@ function updateVariantState(state: any) {
 function logEvent(event: HstEvent) {
   const eventsStore = useEventsStore()
   eventsStore.addEvent(event)
+}
+
+// The accessibility panel's runs (#162). axe runs in the realm, which loads it
+// only when a run is asked for; this end hands over the rules and the colour
+// painted behind the frame, and waits for the answer.
+const A11Y_TIMEOUT = 30_000
+interface PendingA11yRun { resolve: (result: A11yResult) => void, reject: (error: Error) => void, timer: ReturnType<typeof setTimeout> }
+const a11yRuns = new Map<number, PendingA11yRun>()
+let lastA11yRun = 0
+
+function runA11y(disabledRules: string[]): Promise<A11yResult> {
+  const target = iframe.value?.contentWindow
+  if (!target) {
+    return Promise.reject(new Error('The preview has not loaded.'))
+  }
+  const runId = ++lastA11yRun
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      a11yRuns.delete(runId)
+      reject(new Error('The sandbox did not answer.'))
+    }, A11Y_TIMEOUT)
+    a11yRuns.set(runId, { resolve, reject, timer })
+    target.postMessage({ type: A11Y_RUN, runId, disabledRules: [...disabledRules], background: backgroundBehind(iframe.value) }, window.location.origin)
+  })
+}
+
+function settleA11yRun(data: { runId?: number, storyId?: string, variantId?: string, result?: A11yResult, error?: string }) {
+  const run = typeof data.runId === 'number' ? a11yRuns.get(data.runId) : undefined
+  if (!run || data.runId === undefined) return
+  a11yRuns.delete(data.runId)
+  clearTimeout(run.timer)
+  if (!fromCurrentOccupant(data)) run.reject(new Error('The preview moved on to another variant.'))
+  else if (data.result) run.resolve(data.result)
+  else run.reject(new Error(data.error ?? 'The check failed.'))
+}
+
+function dropA11yRuns() {
+  for (const run of a11yRuns.values()) {
+    clearTimeout(run.timer)
+    run.reject(new Error('The preview moved on to another variant.'))
+  }
+  a11yRuns.clear()
 }
 
 // Realm reuse state (#240) — see the block below `sandboxUrl` for the design.
@@ -220,6 +267,13 @@ let servedVariant = props.variant
 let stopTrackKeyboard: (() => void) | undefined
 let unmounted = false
 
+// Offered only while the realm shows this variant, so the panel never asks one
+// that is booting or has been handed another occupant.
+watchEffect((onCleanup) => {
+  if (!props.variant.previewReady || !isIframeLoaded.value || retargeting.value) return
+  onCleanup(provideA11yRunner(props.story.id, props.variant.id, runA11y))
+})
+
 function reload(url: string) {
   render.begin()
   retargets = 0
@@ -239,6 +293,7 @@ function reload(url: string) {
 
 watch(sandboxUrl, (url) => {
   render.begin()
+  dropA11yRuns()
   // A new occupant has agreed to nothing, so neither has this end. Kept as a
   // new bridge rather than a reset so there is one way to be in that state.
   bridge = createStateBridge(postState)
@@ -271,6 +326,7 @@ watch(sandboxUrl, (url) => {
 onBeforeUnmount(() => {
   unmounted = true
   clearTimeout(retargetTimer)
+  dropA11yRuns()
   stopTrackKeyboard?.()
 })
 

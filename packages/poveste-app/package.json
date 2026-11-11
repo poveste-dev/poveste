@@ -48,6 +48,7 @@
     "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
+    "axe-core": "^4.14.0",
     "fuse.js": "^7.0.0",
     "shiki": "^4.5.0"
   },

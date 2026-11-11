@@ -61,6 +61,11 @@ const APP_ONLY_VENDORS = [
 // Safari before 18 have no such method. In `highlighter`, that took the view with it (#1632).
 const SHIKI_WASM = /[\\/]node_modules[\\/](?:shiki[\\/]dist[\\/]wasm|@shikijs[\\/]engine-oniguruma[\\/]dist[\\/]wasm-inlined)/
 
+// The accessibility panel's engine, which the sandbox loads only when the panel
+// asks (#162). In `vendor` it would be in every realm's static graph, about 38 ms
+// to evaluate per realm, which is what loading it lazily avoids.
+const AXE = /[\\/]node_modules[\\/]axe-core[\\/]/
+
 // Left to the bundler wherever they are installed, rather than sent to `vendor`.
 // `@poveste/controls` loads three controls lazily, and in a book installed from
 // npm `vendor` took them in, so every reader downloaded them before anything
@@ -252,6 +257,9 @@ export async function build(ctx: Context) {
               }
               if (APP_ONLY_VENDORS.some(test => test.test(id))) {
                 return 'highlighter'
+              }
+              if (AXE.test(id)) {
+                return 'axe'
               }
 
               for (const test of ctx.config.build?.excludeFromVendorsChunk ?? []) {
