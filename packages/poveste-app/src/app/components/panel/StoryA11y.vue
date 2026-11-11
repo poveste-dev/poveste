@@ -18,6 +18,20 @@ const rules = computed(() => disabledRules(povesteConfig.a11y, props.story.a11y)
 // A grid can hold dozens of sandboxes, and the check is the reader's to ask for there.
 const automatic = computed(() => props.story.layout?.type !== 'grid')
 
+// As the previews decide it: a single story by `iframe`, a grid by `iframeGrid` or the book's isolation.
+const inPage = computed(() => {
+  const layout = props.story.layout
+  if (layout?.type === 'grid') {
+    return !(layout.iframeGrid ?? povesteConfig.isolateStyles !== false)
+  }
+  return layout?.type === 'single' && layout.iframe === false
+})
+
+const unavailableNote = computed(() => {
+  if (inPage.value) return 'This story renders in the page, not in a sandbox, so there is no document of its own to check.'
+  return automatic.value ? 'No sandbox shows this variant right now.' : 'No sandbox shows this variant right now. Scroll it into view in the grid.'
+})
+
 const { status, result, error, run } = useA11yCheck({
   runner: () => a11yRunnerFor(props.story.id, props.variant.id),
   disabledRules: () => allDisabled(rules.value),
@@ -46,7 +60,7 @@ const offCount = computed(() => allDisabled(rules.value).length)
       v-if="status === 'unavailable'"
       data-slot="note"
     >
-      This variant renders in the page, not in a sandbox, so there is no document of its own to check.
+      {{ unavailableNote }}
     </p>
 
     <template v-else>
