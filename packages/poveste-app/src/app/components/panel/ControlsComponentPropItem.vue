@@ -1,29 +1,29 @@
 <script lang="ts" setup>
 import type { AutoPropComponentDefinition, PropDefinition } from '@poveste/shared'
 import type { Variant } from '../../types'
+import type { PropControl } from '../../util/prop-controls'
 import { Icon } from '@iconify/vue'
-import { HstCheckbox, HstJson, HstNumber, HstText, HstTooltip } from '@poveste/controls'
-import { computed } from 'vue'
+import { HstCheckbox, HstColor, HstDate, HstJson, HstNumber, HstSelect, HstSlider, HstText, HstTextarea, HstTooltip } from '@poveste/controls'
+import { computed, ref, shallowRef, watch } from 'vue'
 
 const props = defineProps<{
   variant: Variant
   component: AutoPropComponentDefinition
   definition: PropDefinition
+  control: PropControl
 }>()
 
-const comp = computed(() => {
-  switch (props.definition.types?.[0]) {
-    case 'string':
-      return HstText
-    case 'number':
-      return HstNumber
-    case 'boolean':
-      return HstCheckbox
-    case 'object':
-    default:
-      return HstJson
-  }
-})
+const COMPONENTS = {
+  text: HstText,
+  textarea: HstTextarea,
+  number: HstNumber,
+  slider: HstSlider,
+  checkbox: HstCheckbox,
+  select: HstSelect,
+  json: HstJson,
+  color: HstColor,
+  date: HstDate,
+}
 
 const model = computed({
   get: () => {
@@ -39,14 +39,35 @@ const model = computed({
   },
 })
 
+const canReset = computed(() => props.variant.state?._hPropState?.[props.component.index] && props.definition.name in props.variant.state._hPropState[props.component.index])
+
+// Types arrive after the runtime controls show, so a control can change kind. Never
+// under the reader: not while it has focus, nor while it holds a value they set (#160).
+const focused = ref(false)
+const shown = shallowRef(props.control)
+function catchUp() {
+  if (!focused.value && !canReset.value) {
+    shown.value = props.control
+  }
+}
+watch([() => props.control, canReset], catchUp)
+
+const extra = computed(() => {
+  const { options, min, max, step } = shown.value
+  return {
+    ...options ? { options } : {},
+    ...min !== undefined ? { min } : {},
+    ...max !== undefined ? { max } : {},
+    ...step !== undefined ? { step } : {},
+  }
+})
+
 function reset() {
   if (props.variant.state._hPropState[props.component.index]) {
     // eslint-disable-next-line vue/no-mutating-props
     delete props.variant.state._hPropState[props.component.index][props.definition.name]
   }
 }
-
-const canReset = computed(() => props.variant.state?._hPropState?.[props.component.index] && props.definition.name in props.variant.state._hPropState[props.component.index])
 </script>
 
 <template>
@@ -54,12 +75,15 @@ const canReset = computed(() => props.variant.state?._hPropState?.[props.compone
        the control's <label> or checkbox, a label forwarded clicks to it, its
        name joined the control's name, and Space on it toggled the checkbox (#827). -->
   <div
-    v-if="comp"
     class="flex items-end hover:bg-primary-100 dark:hover:bg-primary-800"
+    :data-control="shown.kind"
+    @focusin="focused = true"
+    @focusout="focused = false; catchUp()"
   >
     <component
-      :is="comp"
+      :is="COMPONENTS[shown.kind]"
       v-model="model"
+      v-bind="extra"
       :placeholder="model === undefined ? definition?.default : null"
       class="poveste-controls-component-prop-item grow min-w-0"
       :title="`${definition.name}${canReset ? ' *' : ''}`"

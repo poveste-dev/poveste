@@ -1,4 +1,4 @@
-import type { ComponentDoc, DocEvent, DocProp, DocSlot, DocTag } from '@poveste/shared'
+import type { ComponentDoc, DocControl, DocEvent, DocProp, DocSlot, DocTag } from '@poveste/shared'
 import type { DocgenOptions } from 'poveste/docgen'
 import type { ComponentMeta, EventMeta, PropertyMeta, SlotMeta } from 'vue-component-meta'
 import type { EventDoc } from './events.js'
@@ -20,9 +20,15 @@ function isInherited(prop: PropertyMeta, allow: string[]) {
   return declaredOnlyInPackages(prop.getDeclarations().map(declaration => declaration.file), allow)
 }
 
-function toProp(prop: PropertyMeta, resolve: (prop: PropertyMeta) => string | undefined): DocProp {
+/** What the checker reads off a prop's type: the type opened one level, and the control it picks. */
+export interface TypeReading {
+  resolved?: string | undefined
+  control?: DocControl | undefined
+}
+
+function toProp(prop: PropertyMeta, read: (prop: PropertyMeta) => TypeReading): DocProp {
   const defaultTag = prop.tags.find(tag => DEFAULT_TAGS.includes(tag.name))?.text
-  const resolved = resolve(prop)
+  const { resolved, control } = read(prop)
   return {
     name: prop.name,
     ...prop.description ? { description: prop.description } : {},
@@ -35,6 +41,7 @@ function toProp(prop: PropertyMeta, resolve: (prop: PropertyMeta) => string | un
     ...prop.default !== undefined && defaultTag !== undefined && normalizeDefault(prop.default) !== normalizeDefault(defaultTag)
       ? { defaultConflict: true }
       : {},
+    ...control ? { control } : {},
     tags: tagsOf(prop.tags),
   }
 }
@@ -85,10 +92,10 @@ function toSlot(slot: SlotMeta, slotProps: (slot: SlotMeta) => DocSlot['props'] 
   return { ...toMember(slot), ...props.length ? { props } : {} }
 }
 
-export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => [], resolve: (prop: PropertyMeta) => string | undefined = () => undefined): ComponentDoc {
+export function toComponentDoc(meta: ComponentMeta, options: VueDocgenOptions = {}, eventDocs = new Map<string, EventDoc>(), slotProps: (slot: SlotMeta) => DocSlot['props'] & {} = () => [], read: (prop: PropertyMeta) => TypeReading = () => ({})): ComponentDoc {
   const allow = options.allow ?? []
   return {
-    props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(prop => toProp(prop, resolve)),
+    props: meta.props.filter(prop => !prop.global && !isHidden(prop.tags) && !isInherited(prop, allow)).map(prop => toProp(prop, read)),
     slots: meta.slots.filter(slot => !isHidden(slot.tags)).map(slot => toSlot(slot, slotProps)),
     events: meta.events.map(event => withDocs(event, eventDocs.get(event.name))).filter(event => !isHidden(event.tags)).map(toMember),
   }

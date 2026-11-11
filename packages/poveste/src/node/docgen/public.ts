@@ -1,3 +1,4 @@
+export { controlFor } from './control.js'
 export { createJsxExtractor } from './jsx/extractor.js'
 export type { JsxDialect } from './jsx/walk.js'
 export { resolveType } from './resolve.js'
