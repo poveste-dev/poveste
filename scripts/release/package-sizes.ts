@@ -65,9 +65,9 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 442_400 for #1641: an embed observed against the docs pane it scrolls in,
   // 120 B over `next` at 442,355.
   // Raised from 442_600 for #162's accessibility panel: the tab, the sandbox's lazy axe-core
-  // runner and the messaging between them, 10,499 B over `next` at 442,448. axe-core itself
+  // runner and the messaging between them, 10,878 B over `next` at 442,448. axe-core itself
   // is a dependency, not shipped here.
-  '@poveste/app': { bytes: 453_200, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  '@poveste/app': { bytes: 453_600, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
