@@ -174,6 +174,16 @@ Turns off [automatic prop detection](./story.md#autopropsdisabled) for this vari
 </Hst.Variant>
 ```
 
+## `autoProps`
+
+Overrides or hides the automatic control of a prop, by the prop's name, for this variant. It replaces the story's `autoProps` whole. What each value does is in [Override or hide a control](../../guide/svelte/controls.md#override-or-hide-a-control).
+
+```svelte
+<Hst.Variant autoProps={{ level: { control: 'slider', min: 1, max: 6 }, tone: 'text' }}>
+  <Button />
+</Hst.Variant>
+```
+
 ## `meta`
 
 Free-form data attached to the variant, for your own code to read. Poveste reads no key of a variant's `meta`. How a TypeScript book declares its keys is under [`meta` on a story](./story.md#meta). In a Svelte book it needs Poveste 0.19.0 or later: earlier versions dropped a variant's `meta`.

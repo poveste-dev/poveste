@@ -166,9 +166,7 @@ Write the snippet when you want to choose the controls or their labels. Leave it
 
 ## Automatic controls
 
-Poveste reads the props a component declares and builds a control for each one,
-so a variant that renders a component needs nothing written for it to be
-adjustable:
+Poveste builds a control for each prop a component declares, so a variant that renders a component needs nothing written for it to be adjustable:
 
 ```svelte
 <Hst.Variant title="Naked">
@@ -176,18 +174,37 @@ adjustable:
 </Hst.Variant>
 ```
 
-The panel lists `MyButton`'s props, and editing one re-renders it. A prop the
-story binds itself keeps its own value until you touch that control.
+The panel lists `MyButton`'s props, and editing one re-renders it. A prop the story binds itself keeps its own value until you touch that control.
 
-Set [`autoPropsDisabled`](../../reference/svelte/story.md#autopropsdisabled) to
-turn this off for a story or a variant.
+Set [`autoPropsDisabled`](../../reference/svelte/story.md#autopropsdisabled) to turn this off for a story or a variant, or [`autoProps`](#override-or-hide-a-control) to change or hide one control.
 
-Unlike Vue, which reads props off the rendered component, Poveste reads a Svelte
-component's props **out of its source** when the book is built — Svelte has no
-runtime prop metadata to reflect over. That is why the table below is about what
-can be seen in the file.
+### Controls from types
 
-### What it can read
+When a component is documented, which is what fills the [docs tab](./docs.md#component-docs), each prop's control comes from its TypeScript type:
+
+| type | control |
+| --- | --- |
+| `string`, or a template literal such as `` `${number}px` `` | text field |
+| `number` | number field |
+| `boolean` | checkbox |
+| a union of string or number literals, `'sm' \| 'md' \| 'lg'`, written out, behind an alias, an enum, or `(typeof sizes)[number]` | a select of its values |
+| an array, a tuple, or an object type your code declares | JSON editor |
+| anything else: a function, a `Date`, an element, a mix such as `string \| HTMLElement` | what the source reading below picks |
+
+The types are read with the checker, so they follow everything the docs tab follows: a `Props` imported from another file or from `$lib`, one that `extends` another, and one built with `Pick` or `Omit`.
+
+Types come from the same place as the docs tab. A component imported from an installed package gets no table in a Vue or Svelte book, so it gets no types either, and a prop the docs tab doesn't show keeps the control the source reading gives it: one declared in a package under `node_modules` that [`autoDocs.allow`](../../reference/config.md#autodocs) doesn't name, or one tagged `@internal`. With `autoDocs: false`, no types are read.
+
+The panel doesn't wait for types. It shows the controls the source reading picks at once, and changes a control to the one its type picks when the types arrive:
+
+- In `poveste dev`, they arrive when the docs worker has read them. On a story's first open that is the cost of opening the docs tab: measured on `examples/svelte`, about 0.5 s and 160 MB more for the dev server.
+- In a built book the build read them, and they arrive as a small file per component.
+
+A control you are typing in, or that holds a value you set, keeps its kind until you leave it and remove the value with the button beside it.
+
+### From the source
+
+Svelte has no runtime prop metadata to reflect over, so before types arrive, or for a component that isn't documented, Poveste reads a component's props **out of its source** when the book is built:
 
 | declaration | control |
 | --- | --- |
@@ -196,37 +213,42 @@ can be seen in the file.
 | `export let label = 'x'` | from the default |
 | `let { label }: { label: string } = $props()` | from the type |
 | `let { label }: Props = $props()`, `Props` declared in the same file | from the type |
+| `let { label }: Props = $props()`, `Props` imported from a relative file such as `./types` | from the type |
 | `let { label = 'x' } = $props()` | from the default |
 | `let { label = $bindable('x') } = $props()` | from the default |
-| `let { label }: Props = $props()`, `Props` imported from a relative file such as `./types` | from the type |
-| `Props` that `extends` another type, or is built with `Pick`, `Omit` and the like | only what's written out — see below |
 
-### How far an imported type is read
-
-A type imported from a relative file is read from that file, one level deep and without type-checking it: its own imports, `extends` clauses, utility types such as `Pick` or `Omit`, and types from `node_modules` or a `$lib` path aren't followed. The story's [docs tab](./docs.md#component-docs) follows all of them, and building controls from the same reading is tracked in [#160](https://github.com/poveste-dev/poveste/issues/160). Until then, a prop the reader can't type gets its control from a default, so `let { label = 'x' }: Props = $props()` still gives a text field.
+This reading follows one relative import and no further: not the imported file's own imports, an `extends` clause, a utility type such as `Pick`, or a `$lib` path. Those wait for the types.
 
 ### When you get a JSON editor instead
 
-A prop with **no type, no default and nothing passed by the story** gets the JSON
-editor. That is deliberate rather than a gap: with nothing to go on, guessing
-would pick a control the prop cannot hold, and a text field on a prop that wants
-an object invites you to type something the component will reject.
+A prop gets the JSON editor when nothing picks another control: its type is an array or an object, or the component isn't documented and the source gives the prop no type, no default, and the story passes no value. With nothing to go on, guessing would pick a control the prop can't hold.
 
-The fix is to give it something to read — a default on the prop, or a value in
-the story:
+The fix is something to read: the component documented, a default on the prop, a value in the story, or an [`autoProps`](#override-or-hide-a-control) override.
 
-A default the reader can see:
+### Override or hide a control
 
-```
-let { label }: Props = $props()        // no control
-let { label = 'Click me' } = $props()  // text field
-```
-
-Or a value in the story:
+`autoProps` on a variant, or on the story for every variant, changes a prop's control by the prop's name:
 
 ```svelte
-<MyButton label="Click me" />
+<Hst.Variant
+  title="Sizes"
+  autoProps={{
+    size: { control: 'select', options: ['sm', 'md', { label: 'Large', value: 'lg' }] },
+    level: { control: 'slider', min: 1, max: 6 },
+    tone: 'text',
+    onclick: false,
+  }}
+>
+  <MyButton />
+</Hst.Variant>
 ```
+
+- `false` hides the prop's control.
+- A control's name picks it: `'text'`, `'textarea'`, `'number'`, `'checkbox'`, `'json'`, `'color'` or `'date'`.
+- A select needs its options, as values or `{ label, value }` pairs: `{ control: 'select', options: [...] }`.
+- A slider needs its range: `{ control: 'slider', min, max, step }`, with `step` optional.
+
+An override wins over the prop's type. A variant's `autoProps` replaces the story's whole, as its other options do.
 
 ## Builtin controls
 

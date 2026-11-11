@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { Hst } from '@poveste/plugin-svelte'
+  import type { Hst as HstType } from '@poveste/plugin-svelte'
   import OtherBadge from './typed/TypedBadge.svelte'
   import TypedBadge from './TypedBadge.svelte'
 
-  export let Hst: Hst
+  export let Hst: HstType
 </script>
 
 <!-- Two components of one name: neither may be given the other's types (#160). -->

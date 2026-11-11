@@ -215,6 +215,18 @@ Disables the automatic detection of props of the components in the story.
 </template>
 ```
 
+## `autoProps`
+
+Overrides or hides the automatic control of a prop, by the prop's name, for every variant in the story that doesn't set its own. A variant's `autoProps` replaces the story's whole. What each value does is in [Override or hide a control](../../guide/vue/controls.md#override-or-hide-a-control).
+
+```vue
+<template>
+  <Story :auto-props="{ size: { control: 'select', options: ['sm', 'md', 'lg'] }, onClick: false }">
+    <!-- ... -->
+  </Story>
+</template>
+```
+
 ## `autoDocs`
 
 The auto-docs table on this story's **Docs** tab, when the book's [`autoDocs`](../config.md#autodocs) is on. `false` shows none, and the story's components are never read for it, in dev or in a build. A list shows only the sections it names, in the table's own order: `props`, `slots`, `events`. A component with nothing in those sections gets no table. Left out, the story shows the whole table.
