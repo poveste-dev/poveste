@@ -57,6 +57,7 @@
     <Hst.Radio bind:value={state.size} options={sizes} title="Size" />
     <Hst.CheckboxList bind:value={state.pizza} options={toppings} title="Toppings" />
     <Hst.ButtonGroup bind:value={state.align} options={alignments} title="Align" />
+    <Hst.Button onclick={() => (state.label = 'Hello')}>Reset label</Hst.Button>
   {/snippet}
 
   {#snippet children({ state })}
