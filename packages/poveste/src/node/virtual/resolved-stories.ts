@@ -10,6 +10,22 @@ import { storyIcons } from './story-icons.js'
  */
 export const storiesGeneration = new WeakMap<Context, number>()
 
+/**
+ * The list as the dev server last served it, per book. A page keeps every copy of the list it
+ * imports until it reloads, about a megabyte each in the Vue book, so a story save that leaves
+ * the list as it was does not send another (#1646).
+ */
+export const servedStories = new WeakMap<Context, string>()
+
+export function storiesUnchanged(ctx: Context): boolean {
+  try {
+    return resolvedStories(ctx) === servedStories.get(ctx)
+  }
+  catch {
+    return false
+  }
+}
+
 export function resolvedStories(ctx: Context) {
   const resolvedStories = ctx.storyFiles.filter(s => !!s.story)
   const files = resolvedStories.map((file, index) => {

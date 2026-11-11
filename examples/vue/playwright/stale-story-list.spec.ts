@@ -163,3 +163,54 @@ test('a story list update that fails to load is skipped, and the next one lands'
     await rm(TMP, { recursive: true, force: true })
   }
 })
+
+// A page keeps every copy of a module it imports until it reloads, and each story save sent the
+// whole list again, about a megabyte in this book: 20 saves left 21 copies in the heap (#1646). A
+// save that changes no story's metadata now sends none, and the Source panel still follows it.
+test('a story save that changes no metadata sends no new story list', async ({ page }) => {
+  const file = join(TMP, 'SavedOften.story.vue')
+  const generation = async () => (await (await page.request.get(`/${LIST}`)).text()).match(/export let generation = (\d+)/)?.[1]
+  // A cold server does not collect a new file before its first collection ends.
+  test.setTimeout(120_000)
+  await expect.poll(generation, { timeout: 60_000 }).toMatch(/^[1-9]/)
+
+  await mkdir(TMP, { recursive: true })
+  try {
+    await writeFile(file, story('e2e-saved-often', 'Saved often'))
+    await expect.poll(async () => (await (await page.request.get(`/${LIST}`)).text()).includes('e2e-saved-often'), { timeout: 30_000 }).toBe(true)
+    let last: string | undefined
+    await expect.poll(async () => {
+      const now = await generation()
+      const settled = now === last
+      last = now
+      return settled
+    }, { intervals: [1_000], timeout: 30_000 }).toBe(true)
+
+    await page.goto('/story/e2e-saved-often?variantId=only')
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+    await expect(preview.getByText('Saved often')).toBeVisible({ timeout: 30_000 })
+
+    let sent = 0
+    page.on('request', (request) => {
+      const url = new URL(request.url())
+      if (url.pathname.endsWith(LIST) && url.searchParams.has('t')) {
+        sent++
+      }
+    })
+    for (const n of [1, 2, 3]) {
+      await writeFile(file, story('e2e-saved-often', 'Saved often').replace('<span>Saved often</span>', `<span>Saved often ${n}</span>`))
+      await expect(preview.getByText(`Saved often ${n}`)).toBeVisible({ timeout: 30_000 })
+    }
+    const source = page.locator('.poveste-story-source-code')
+    await source.getByRole('button').filter({ hasText: 'Static' }).click()
+    await expect(source).toContainText('Saved often 3', { timeout: 10_000 })
+
+    // The list follows a save by one collection, a few hundred milliseconds. A slow one can only
+    // let a regression through late, never fail the fixed server.
+    await page.waitForTimeout(2_000)
+    expect(sent, 'copies of the story list the saves sent').toBe(0)
+  }
+  finally {
+    await rm(TMP, { recursive: true, force: true })
+  }
+})
