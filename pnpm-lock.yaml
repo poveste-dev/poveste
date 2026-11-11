@@ -947,6 +947,9 @@ importers:
       '@poveste/vendors':
         specifier: workspace:^
         version: link:../poveste-vendors
+      axe-core:
+        specifier: ^4.14.0
+        version: 4.14.0
       fuse.js:
         specifier: ^7.0.0
         version: 7.5.0

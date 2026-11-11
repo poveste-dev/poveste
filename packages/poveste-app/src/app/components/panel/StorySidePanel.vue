@@ -7,6 +7,7 @@ import { useStoryStore } from '../../stores/story'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import BaseSplitPane from '../base/BaseSplitPane.vue'
 import PaneTabs from './PaneTabs.vue'
+import StoryA11y from './StoryA11y.vue'
 import StoryControls from './StoryControls.vue'
 import StoryDocs from './StoryDocs.vue'
 import StoryEvents from './StoryEvents.vue'
@@ -27,6 +28,8 @@ const panelContentComponent = computed(() => {
       return StoryDocs
     case 'events':
       return StoryEvents
+    case 'a11y':
+      return StoryA11y
     default:
       return StoryControls
   }

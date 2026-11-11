@@ -50,6 +50,12 @@ const hasEvents = computed(() => eventsStore.events.length)
         {{ eventsStore.unseen <= 99 ? eventsStore.unseen : "99+" }}
       </BaseTag>
     </BaseTab>
+    <BaseTab
+      :to="{ ...$route, query: { ...$route.query, tab: 'a11y' } }"
+      :matched="$route.query['tab'] === 'a11y'"
+    >
+      Accessibility
+    </BaseTab>
 
     <template #overflow>
       <BaseOverflowTab
@@ -78,6 +84,12 @@ const hasEvents = computed(() => eventsStore.events.length)
         <BaseTag v-if="eventsStore.unseen">
           {{ eventsStore.unseen <= 99 ? eventsStore.unseen : "99+" }}
         </BaseTag>
+      </BaseOverflowTab>
+      <BaseOverflowTab
+        :to="{ ...$route, query: { ...$route.query, tab: 'a11y' } }"
+        :matched="$route.query['tab'] === 'a11y'"
+      >
+        Accessibility
       </BaseOverflowTab>
     </template>
   </BaseOverflowMenu>
