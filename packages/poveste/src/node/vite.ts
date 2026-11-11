@@ -20,6 +20,7 @@ import {
 import { APP_PATH, TEMP_PATH } from './alias.js'
 import { collectionLogger } from './collect/logger.js'
 import { runDevCommand } from './dev-event.js'
+import { devtoolsApiStubPlugin } from './devtools-api-stub.js'
 import { histoireImports } from './histoire-imports.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { optimizeEntries } from './optimize-entries.js'
@@ -148,45 +149,8 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
     return result
   }
 
-  // `@vue/devtools-api` is the registration side of the Vue Devtools browser
-  // extension. pinia and vue-router import it statically, so it is in every
-  // book's graph, and `__VUE_PROD_DEVTOOLS__` — which auto-props needs — keeps
-  // their calls live past tree-shaking. What it would register for a reader of a
-  // published book is Poveste's own stores, so the 200 KB buys them nothing
-  // (#791).
-  //
-  // One rule reaches both copies now. A consumer's stories resolve their own
-  // pinia and Poveste's stores resolve its own, and since #347 both import
-  // `@vue/devtools-api` by name rather than one of them carrying it inside a
-  // prebundled chunk — so the name is the whole of it.
-  //
-  // `apply: 'build'` keeps dev registering. Note that it is not what makes the
-  // real module reach a dev browser: Vite's dep optimiser bakes it into a chunk
-  // before this plugin sees the id, and flipping this to `'serve'` leaves dev
-  // serving it regardless. Measured while rewriting the spec that used to claim
-  // otherwise.
   if (!isServer) {
-    const STUB = '\0poveste:devtools-api'
-
-    plugins.push({
-      name: 'poveste-devtools-api-stub',
-      apply: 'build',
-      enforce: 'pre',
-
-      resolveId(id) {
-        return id === '@vue/devtools-api' ? STUB : undefined
-      },
-
-      load(id) {
-        // Not an empty module: pinia and vue-router *call* this, so the export
-        // has to exist or the book throws where it used to register nothing.
-        // Both spellings, because pinia and vue-router import different ones of
-        // the two the package exports.
-        return id === STUB
-          ? 'export function setupDevtoolsPlugin() {}\nexport { setupDevtoolsPlugin as setupDevToolsPlugin }\n'
-          : undefined
-      },
-    })
+    plugins.push(devtoolsApiStubPlugin())
   }
 
   plugins.push({
