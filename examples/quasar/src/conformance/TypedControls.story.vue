@@ -5,7 +5,7 @@ import TypedBadge from './TypedBadge.vue'
 <template>
   <Story
     id="conformance-typed-controls"
-    title="Controls from types"
+    title="Typed props"
   >
     <Variant
       id="typed"
