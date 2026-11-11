@@ -21,13 +21,15 @@ export function docOf(definition: AutoPropComponentDefinition, entries: Componen
   if (!entries?.length) {
     return undefined
   }
-  if (definition.file) {
-    const file = definition.file.replaceAll('\\', '/')
+  const file = definition.file?.replaceAll('\\', '/')
+  if (file?.includes('/')) {
     return entries.find(entry => entry.file === file || file.endsWith(`/${entry.file}`))?.doc
   }
-  const named = entries.filter(entry => entry.name === definition.name)
-  const sameName = rendered.filter(other => other.name === definition.name && !other.file)
-  return named.length === 1 && sameName.length === 1 ? named[0]!.doc : undefined
+  // A built Vue book sets `__file` to the base name only, which two folders can share.
+  const key = (entry: ComponentDocsEntry) => file ? entry.file.split('/').pop() : entry.name
+  const matching = entries.filter(entry => key(entry) === (file ?? definition.name))
+  const alike = rendered.filter(other => file ? other.file === definition.file : other.name === definition.name && !other.file)
+  return matching.length === 1 && alike.length === 1 ? matching[0]!.doc : undefined
 }
 
 /** The control a prop gets: the story's override, else its type's, else today's runtime one. `undefined` hides it. */

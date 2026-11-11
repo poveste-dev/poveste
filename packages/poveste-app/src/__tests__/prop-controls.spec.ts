@@ -24,6 +24,17 @@ describe('the docs a rendered component\'s controls are read from', () => {
     expect(docOf(def('Button', 'node_modules/lib/Button.vue'), entries, [def('Button', 'node_modules/lib/Button.vue')])).toBeUndefined()
   })
 
+  // A built Vue book sets `__file` to the base name only.
+  it('are the one documented file of its base name, when only that is known', () => {
+    expect(docOf(def('Button', 'Button.vue'), [entry('src/a/Button.vue', 'Button', BUTTON)], [def('Button', 'Button.vue')])).toBe(BUTTON)
+  })
+
+  it('are none when two documented files share its base name', () => {
+    const entries = [entry('src/a/Button.vue', 'Button', OTHER), entry('src/b/Button.vue', 'Button', BUTTON)]
+
+    expect(docOf(def('Button', 'Button.vue'), entries, [def('Button', 'Button.vue')])).toBeUndefined()
+  })
+
   it('are the one documented component of its name, when the file is unknown', () => {
     expect(docOf(def('Button'), [entry('src/Button.vue', 'Button', BUTTON)], [def('Button')])).toBe(BUTTON)
   })
