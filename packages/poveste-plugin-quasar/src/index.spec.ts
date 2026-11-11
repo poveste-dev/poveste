@@ -1,6 +1,6 @@
 import type { PovesteConfig } from 'poveste'
 import { describe, expect, it } from 'vitest'
-import { findQuasarProject, HstQuasar, isPackageAbsent, QUASAR_APP_VITE_REQUIRED, QUASAR_EXITED, quasarViteConfig, resolveTestingConfig, withoutProcessExit } from './index.ts'
+import { findQuasarProject, HstQuasar, isPackageAbsent, QUASAR_APP_VITE_REQUIRED, QUASAR_EXITED, quasarViteConfig, resolveTestingConfig, withoutPortTip, withoutProcessExit } from './index.ts'
 
 describe('resolveTestingConfig', () => {
   it('returns the entrypoint when it is there', async () => {
@@ -140,6 +140,39 @@ describe('withoutProcessExit', () => {
       throw new Error('boom')
     })).rejects.toThrow('boom')
     expect(process.exit).toBe(before)
+  })
+})
+
+// `getTestingConfig` passes Quasar a port of its own, and Quasar answers with a
+// TIP about a `--port` nobody gave poveste (#1662).
+describe('withoutPortTip', () => {
+  const tip = ' App • TIP • 🚀 You are using the --port parameter. It is recommended to use a different devServer port'
+
+  it('drops the --port TIP and lets everything else through', async () => {
+    const realLog = console.log
+    const printed: unknown[][] = []
+    console.log = (...args: unknown[]) => printed.push(args)
+
+    try {
+      await withoutPortTip(async () => {
+        console.log(tip)
+        console.log(' App • Quasar says something else', 1)
+      })
+    }
+    finally {
+      console.log = realLog
+    }
+
+    expect(printed).toEqual([[' App • Quasar says something else', 1]])
+  })
+
+  it('puts the real console.log back even when the call throws', async () => {
+    const before = console.log
+
+    await expect(withoutPortTip(async () => {
+      throw new Error('boom')
+    })).rejects.toThrow('boom')
+    expect(console.log).toBe(before)
   })
 })
 

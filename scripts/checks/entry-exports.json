@@ -59,6 +59,7 @@
     "isPackageAbsent",
     "quasarViteConfig",
     "resolveTestingConfig",
+    "withoutPortTip",
     "withoutProcessExit"
   ],
   "@poveste/plugin-quasar/setup": [
