@@ -150,6 +150,8 @@ Resize the preview to test your design on different screen sizes. Customize the 
 
 Put your own components and logic in the story controls pane! Or use the [builtin controls](https://github.com/poveste-dev/poveste/tree/main/packages/poveste-controls).
 
+In Vue and Svelte, each prop a component declares gets a control of its own, picked from its TypeScript type: a select for `'sm' | 'md' | 'lg'`, a checkbox for a `boolean`. A story can override or hide any of them. See [automatic controls](./vue/controls.md#automatic-controls).
+
 ### :camera: Visual regression testing
 
 Take snapshots of your stories when your book is built on your CI, with [Percy](/examples/visual-regression-testing/percy) & [Lost Pixel](/examples/visual-regression-testing/lost-pixel) support.

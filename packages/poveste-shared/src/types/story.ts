@@ -51,9 +51,10 @@ export type AutoPropControl = 'text' | 'textarea' | 'number' | 'slider' | 'check
 
 export type AutoPropOption = string | number | boolean | { label: string, value: string | number | boolean }
 
+/** By name only where the control needs nothing more: a select needs its options, a slider its range. */
 export type AutoPropOverride
   = | false
-    | AutoPropControl
+    | Exclude<AutoPropControl, 'select' | 'slider'>
     | { control: 'select', options: AutoPropOption[] }
     | { control: 'slider', min: number, max: number, step?: number }
     | { control: Exclude<AutoPropControl, 'select' | 'slider'> }

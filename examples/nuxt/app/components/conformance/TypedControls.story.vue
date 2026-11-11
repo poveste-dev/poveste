@@ -14,6 +14,7 @@ import TypedBadge from './TypedBadge.vue'
       <TypedBadge
         label="Typed"
         size="md"
+        tone="info"
       />
     </Variant>
     <Variant
