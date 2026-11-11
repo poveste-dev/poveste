@@ -25,7 +25,7 @@ export async function storySource(ctx: Context, id: string) {
   const copies = (import.meta.hot.data.copies ??= [])
   copies.forEach(set => set(source))
   copies.push(value => { source = value })
-  if (copies.length > 1) {
+  if (copies.length > 1 && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('poveste:story-source', { detail: ${JSON.stringify(storyId)} }))
   }
   import.meta.hot.accept()
