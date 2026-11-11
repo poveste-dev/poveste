@@ -5,7 +5,7 @@
   export let Hst: HstType
 </script>
 
-<Hst.Story id="conformance-typed-controls" title="Controls from types">
+<Hst.Story id="conformance-typed-controls" title="Typed props">
   <Hst.Variant id="typed" title="Typed">
     <TypedBadge label="Typed" size="md" tone="info" />
   </Hst.Variant>

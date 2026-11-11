@@ -64,7 +64,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // pane, 1,444 B over `next` at 440,850.
   // Raised from 442_400 for #1641: an embed observed against the docs pane it scrolls in,
   // 120 B over `next` at 442,355.
-  '@poveste/app': { bytes: 442_600, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 442_600 for #160: controls picked from a prop's type, and `autoProps`, 445,701 B measured with them.
+  '@poveste/app': { bytes: 446_000, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
@@ -75,7 +76,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 73_100 for #1594, #1585 and #1598: a mount that stops after its hooks, the
   // message for a `vue` that doesn't resolve, and template refs kept out of the state sync,
   // 770 B together over `next` at 72,806.
-  '@poveste/plugin-vue': { bytes: 73_600, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
+  // Raised from 73_600 for #160: controls picked from a prop's type, and `autoProps`, 74,055 B measured with them.
+  '@poveste/plugin-vue': { bytes: 74_100, reason: 'ships `src` too; catches the tests, and `vue-component-meta` bundled instead of depended on' },
   '@poveste/plugin-svelte': { bytes: 44_100, reason: 'room for the `svelte2tsx` host; catches the tests, and `svelte2tsx` bundled instead of depended on' },
   // Raised from 26_100 for #1522: the story-test harness every framework but Vue
   // shares, 2,458 B over 0.21's `next` at 24,116.
@@ -84,7 +86,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 27_400 for #1524: the JSX printer moved here from React's plugin, which
   // fell by 2,406 B, so React and Solid share it. 30,197 B measured, and no Vue or
   // Svelte book bundles it.
-  '@poveste/shared': { bytes: 30_300, reason: 'types and a small runtime; catches the tests' },
+  // Raised from 30_300 for #160: controls picked from a prop's type, and `autoProps`, 30,622 B measured with them.
+  '@poveste/shared': { bytes: 30_700, reason: 'types and a small runtime; catches the tests' },
   '@poveste/plugin-nuxt': { bytes: 11_700, reason: 'catches the tests' },
   // 0.21's growth here was inferred from Solid's before React's auto-docs (#1161) had a
   // PR; enforce it once that has merged and the number is measured again.
