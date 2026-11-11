@@ -32,6 +32,12 @@ export default defineComponent({
       default: undefined,
     },
 
+    // Read at collection; declared so it is not passed on to the variants.
+    a11y: {
+      type: Object as PropType<Story['a11y']>,
+      default: undefined,
+    },
+
     // The components the Docs tab documents, read from the source by auto-docs (#1432).
     component: {
       type: [Object, Function, Array] as PropType<Component | Component[]>,

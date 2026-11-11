@@ -13,6 +13,7 @@ export function collectStory(options: StoryOptions, { file, storyData }: Pick<Se
     iconColor: options.iconColor,
     docsOnly: options.docsOnly ?? false,
     ...options.autoDocs !== undefined ? { autoDocs: options.autoDocs } : {},
+    ...options.a11y !== undefined ? { a11y: options.a11y } : {},
     variants: [],
   }
 

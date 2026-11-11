@@ -9,6 +9,8 @@ export const omitInheritStoryProps = [
   'lastSelectedVariant',
   // The Docs tab belongs to the story, not to a variant (#1398).
   'autoDocs',
+  // Rules the accessibility check skips for the whole story.
+  'a11y',
 ]
 
 /**
