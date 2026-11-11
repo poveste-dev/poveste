@@ -42,6 +42,13 @@ function setupFileOf(config: Partial<PovesteConfig>): string | undefined {
   return file?.replace(/^\/+/, '')
 }
 
+/** The part of Vitest's `configureVitest` context this uses, typed here so the package does not depend on Vitest. */
+interface VitestContext {
+  defineCacheKeyGenerator?: (generator: () => string) => void
+  /** The same, by the name it had before it was stable. */
+  experimental_defineCacheKeyGenerator?: (generator: () => string) => void
+}
+
 export interface PovesteTestingPluginOptions {
   /** The book's poveste config file. Found from the Vite root by default. */
   configFile?: string
@@ -69,8 +76,16 @@ export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plug
   let config: Partial<PovesteConfig> = {}
   const emptySetup = options.setupHookNames.map(name => `export const ${name} = undefined`).join('\n')
 
-  return {
+  const plugin: Plugin & { configureVitest: (context: VitestContext) => void } = {
     name: 'poveste:testing',
+
+    // Vitest keeps transformed modules on disk across runs, keyed on its own config
+    // files, so a setup file named or changed in the poveste config went unseen
+    // while the cached import of the previous one ran (#1663).
+    configureVitest(context) {
+      const define = context.defineCacheKeyGenerator ?? context.experimental_defineCacheKeyGenerator
+      define?.(() => `poveste-setup:${setupFileOf(config) ?? ''}`)
+    },
 
     async config(user) {
       root = resolve(user.root ?? process.cwd())
@@ -108,7 +123,11 @@ export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plug
       if (id === VIRTUAL_IDS.setup) {
         const file = setupFileOf(config)
         if (file) {
-          return this.resolve(resolve(root, file), importer, { skipSelf: true })
+          const resolved = await this.resolve(resolve(root, file), importer, { skipSelf: true })
+          if (!resolved) {
+            this.error(`Cannot find the setup file '${file}' named in the Poveste config: nothing at ${resolve(root, file)}.`)
+          }
+          return resolved
         }
         return EMPTY_SETUP_ID
       }
@@ -137,4 +156,5 @@ export function povesteTestingPlugin(options: PovesteTestingPluginOptions): Plug
       return undefined
     },
   }
+  return plugin
 }

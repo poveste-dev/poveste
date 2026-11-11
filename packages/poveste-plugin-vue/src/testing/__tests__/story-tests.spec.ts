@@ -26,15 +26,22 @@ interface Assertion {
   failureMessages: string[]
 }
 
+interface RunOptions {
+  /** Names the report, for a project run more than once. */
+  name?: string
+  env?: Record<string, string>
+  args?: string[]
+}
+
 /** Runs one project of the story-test book, and each test's outcome by name. */
-async function run(project: string): Promise<{ results: Map<string, Assertion>, printed: string }> {
-  const file = join(out, `${project}.json`)
+async function run(project: string, { name = project, env: extra = {}, args = [] }: RunOptions = {}): Promise<{ results: Map<string, Assertion>, printed: string }> {
+  const file = join(out, `${name}.json`)
   // Some of the book's stories fail on purpose, so the run exits non-zero.
   // Without what this run put in the environment: its `VITEST_*` variables and the
   // `import.meta.env` keys it copies there. The child read them as its own and
   // failed every file in jsdom.
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('VITEST') && !INHERITED.includes(key)))
-  const { stdout, stderr } = await promisify(execFile)(process.execPath, [VITEST, 'run', '--project', project, '--reporter=json', '--reporter=default', `--outputFile.json=${file}`], { cwd: BOOK, env })
+  const env = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('VITEST') && !INHERITED.includes(key))), ...extra }
+  const { stdout, stderr } = await promisify(execFile)(process.execPath, [VITEST, 'run', '--project', project, '--reporter=json', '--reporter=default', `--outputFile.json=${file}`, ...args], { cwd: BOOK, env })
     .catch((error: { code?: number, stdout: string, stderr: string }) => {
       if (typeof error.code !== 'number') {
         throw error
@@ -117,6 +124,28 @@ describe.each(['jsdom', 'browser'])('a story file as tests, in %s', (project) =>
   it('renders in the environment Vitest gives it: a browser has `ResizeObserver`, jsdom does not', () => {
     expect(results.get('Measures.story.vue Measures observed')?.status).toBe(project === 'browser' ? 'passed' : 'failed')
   })
+})
+
+// Each run has its own module cache, which Vitest otherwise keeps for the whole
+// workspace and reuses between runs.
+describe('the setup file the poveste config names', () => {
+  const cacheOf = (name: string) => `--fsModuleCachePath=${join(out, `${name}-cache`)}`
+
+  // Vitest's key for a cached module covers its own config files and not the
+  // poveste config, so the setup file was never read after a run without one (#1663).
+  it('is loaded when it was named after a run without one', async () => {
+    const before = await run('jsdom', { name: 'setup-before', env: { FIXTURE_SETUP_FILE: 'none' }, args: [cacheOf('setup-named')] })
+    const after = await run('jsdom', { name: 'setup-after', args: [cacheOf('setup-named')] })
+
+    expect(before.results.get('Passing.story.vue collects')?.failureMessages.join('\n')).toContain('Failed to resolve component: FromSetup')
+    expect(after.results.get('Passing.story.vue Passing from the setup file')?.status).toBe('passed')
+  }, 120_000)
+
+  it('is named when it cannot be found', async () => {
+    const { printed } = await run('jsdom', { name: 'setup-missing', env: { FIXTURE_SETUP_FILE: '/src/missing.ts' }, args: [cacheOf('setup-missing')] })
+
+    expect(printed).toContain('Cannot find the setup file \'src/missing.ts\' named in the Poveste config')
+  }, 120_000)
 })
 
 // The book lists a CSS-only package and a native Node addon among its dependencies,
