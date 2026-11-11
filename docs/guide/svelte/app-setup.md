@@ -60,6 +60,8 @@ export function setupSvelte() { /* … */ }
 Established names win, so adding `setupSvelte` to a file that already exports `setupSvelte5`
 changes nothing until you delete the old one. Rename when it suits you; keep one.
 
+What did change in 0.23.0 is when the hook runs, whatever its name: see [What the hook receives](#what-the-hook-receives).
+
 The numbers were always historical. `@poveste/plugin-svelte` supports Svelte 5 only, so
 `setupSvelte3` and `setupSvelte4` name majors it cannot run — they are accepted because
 histoire users wrote them, not because they select anything. The `defineSetupSvelte` helper is
@@ -72,13 +74,23 @@ of it.
 | --- | --- |
 | `story` | the story being rendered |
 | `variant` | the variant, or `undefined` in the story-level mount that fills the controls panel, which calls only the global hook |
-| `setContext` | puts a value in the context the story mounts with, where its components read it with `getContext` |
-| `addWrapper` | adds a component that [renders around the story](./wrapper.md) |
+| `setContext` | puts a value in the context the story mounts with, where its components read it with `getContext`. From 0.23.0 |
+| `addWrapper` | adds a component that [renders around the story](./wrapper.md). From 0.23.0 |
 
 The hook runs **before the story mounts**, as it does in [the Vue page](../vue/app-setup.md), so anything it arranges is in place when your components initialise. Two consequences:
 
 - **There is no `app`, and no `app.use()`, `app.component()` or `app.provide()`.** Nothing has mounted yet, and Svelte has no application-level plugin API to call. `setContext` is the part that has a Svelte counterpart.
 - **The story's DOM doesn't exist yet.** A hook can't read what the story renders. To do something with the rendered story, do it from a component in the story, with `onMount`.
+
+::: warning Changed in 0.23.0
+Before 0.23.0 the hook ran once the story had rendered, so nothing it set up could reach the story. From 0.23.0 it runs before the story mounts, in the setup file's hook and in a variant's `setupApp` alike. What that changes for a hook written before:
+
+- **A hook that uses `app`** now throws, and `poveste build` fails with a message pointing to `setContext` and `onMount`. To hand a value to the story, use `setContext`. Destructuring `app` without using it still works.
+- **A hook that reads the story's rendered DOM** now finds nothing, with no error. Move that into a component in the story, using `onMount`.
+- **A hook that only touches the document**, such as setting `document.documentElement.dataset.theme`, needs no change. The story now sees what it set when it mounts.
+
+The [0.23.0 release notes](https://github.com/poveste-dev/poveste/releases/tag/v0.23.0) list this as the release's breaking change.
+:::
 
 ## Local setup
 
@@ -222,5 +234,5 @@ There is nothing special to do. A Svelte i18n library — or a hand-rolled `t()`
 ordinary module, not a framework plugin, so it has none of the sandbox trouble the [Nuxt
 i18n guide](../nuxt/getting-started.md#i18n) describes: nothing gets booted through an app
 entry, so nothing 500s the iframe. Import or initialise it like any other module (in a
-`.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. `examples/svelte`
+`.ts` / `.svelte.ts` file, or in the setup file) and stories pick it up. [`examples/svelte`](https://github.com/poveste-dev/poveste/tree/main/examples/svelte)
 carries a minimal version.
