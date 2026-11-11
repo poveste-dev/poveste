@@ -332,3 +332,5 @@ These are registered alongside the controls and are not controls: they take no v
 | `Hst.CopyIcon` | `content`, the text to copy, or a function that returns it, at once or as a promise; `loading`, which makes a click say "Still loading" instead of copying | a copy-to-clipboard button; the chrome uses it |
 
 `HstTooltip` is exported too, for Poveste's own interface, and is not registered for stories.
+
+Each of these renders inside a custom element named after it, `<poveste-hst-text>` for `Hst.Text`, which takes no box of its own, so the control lays out as if it were not there. A component's children, such as `Hst.Button`'s label or an `Hst.TokenList` row's swatch through `let:token` or a `children` snippet, are rendered by your story and placed where the component renders them.
