@@ -9,6 +9,7 @@
   // null only, so an explicit `responsiveDisabled={false}` still wins (#466).
   export let responsiveDisabled = null
   export let autoPropsDisabled = false
+  export let autoProps = null
   export let setupApp = null
   export let implicit = false
   export let initState = null
@@ -39,6 +40,7 @@
       source,
       responsiveDisabled: responsiveDisabled ?? storyProps.responsiveDisabled ?? false,
       autoPropsDisabled,
+      autoProps: autoProps ?? storyProps.autoProps ?? undefined,
       setupApp: setupApp ?? storyProps.setupApp ?? null,
       configReady: true,
     })

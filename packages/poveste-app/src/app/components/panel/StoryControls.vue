@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue'
 import { computed, ref, watch } from 'vue'
 import BaseEmpty from '../base/BaseEmpty.vue'
 import GenericRenderStory from '../story/GenericRenderStory.vue'
-import ControlsComponentProps from './ControlsComponentProps.vue'
+import ControlsAutoProps from './ControlsAutoProps.vue'
 import ControlsComponentState from './ControlsComponentState.vue'
 import StatePresets from './StatePresets.vue'
 
@@ -81,16 +81,10 @@ const hasInitState = computed(() => Object
     </BaseEmpty>
 
     <!-- Auto props -->
-    <div
+    <ControlsAutoProps
       v-if="variant.state?._hPropDefs?.length"
-    >
-      <ControlsComponentProps
-        v-for="(def, index) of variant.state._hPropDefs"
-        :key="index"
-        :variant="variant"
-        :definition="def"
-        class="flex-none my-2"
-      />
-    </div>
+      :variant="variant"
+      :story="story"
+    />
   </div>
 </template>
