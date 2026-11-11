@@ -237,6 +237,9 @@ async function startServer(ctx: Context, options: CreateServerOptions, onOpen: O
   // Bumped before the list is invalidated, so the copy a client loads next
   // carries the generation it reflects.
   const invalidateStoryList = () => {
+    if (VirtualFiles.storiesUnchanged(ctx)) {
+      return
+    }
     VirtualFiles.storiesGeneration.set(ctx, (VirtualFiles.storiesGeneration.get(ctx) ?? 0) + 1)
     invalidateModule(VirtualFiles.RESOLVED_STORIES_ID)
     invalidateModule(VirtualFiles.RESOLVED_SEARCH_TITLE_DATA_ID)

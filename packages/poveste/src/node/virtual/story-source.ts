@@ -14,7 +14,23 @@ export async function storySource(ctx: Context, id: string) {
     else {
       source = await fs.readFile(resolve(ctx.root, storyFile.relativePath), 'utf-8')
     }
-    return `export default ${JSON.stringify(withPackageImports(source))}`
+    const code = `let source = ${JSON.stringify(withPackageImports(source))}\nexport { source as default }\n`
+    if (ctx.mode !== 'dev') {
+      return code
+    }
+    // A story save that changes no metadata no longer sends a new story list (#1646), so the list
+    // keeps handing out the copy of this module it first loaded. Each new copy brings the earlier
+    // ones up to date, and tells the Source panel.
+    return `${code}if (import.meta.hot?.data) {
+  const copies = (import.meta.hot.data.copies ??= [])
+  copies.forEach(set => set(source))
+  copies.push(value => { source = value })
+  if (copies.length > 1) {
+    window.dispatchEvent(new CustomEvent('poveste:story-source', { detail: ${JSON.stringify(storyId)} }))
+  }
+  import.meta.hot.accept()
+}
+`
   }
   return undefined
 }

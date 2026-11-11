@@ -91,7 +91,11 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
 
     async load(id) {
       if (id === VirtualFiles.RESOLVED_STORIES_ID) {
-        return VirtualFiles.resolvedStories(ctx)
+        const code = VirtualFiles.resolvedStories(ctx)
+        if (!isServer) {
+          VirtualFiles.servedStories.set(ctx, code)
+        }
+        return code
       }
 
       if (id === VirtualFiles.NOOP_ID) {
