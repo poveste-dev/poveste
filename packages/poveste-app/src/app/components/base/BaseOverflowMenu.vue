@@ -3,6 +3,7 @@ import type { SetupContext, VNode } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, h, onBeforeUnmount, reactive, ref } from 'vue'
+import { visibleChildCount } from '../../util/overflow'
 import BaseDropdown from './BaseDropdown.vue'
 
 // Container
@@ -15,7 +16,7 @@ const availableWidth = ref(0)
 
 useResizeObserver(el, ([entry]) => {
   if (!entry) return
-  availableWidth.value = entry.contentRect.width - overflowButtonWidth
+  availableWidth.value = entry.contentRect.width
 })
 
 // Children
@@ -27,17 +28,11 @@ interface ChildState {
 
 const children = ref(new Map<HTMLElement, ChildState>())
 
-const visibleChildrenCount = computed(() => {
-  let width = 0
-  const c = [...children.value.values()].sort((a, b) => a.index - b.index)
-  for (const [i, child] of c.entries()) {
-    width += child.width
-    if (width > availableWidth.value) {
-      return i
-    }
-  }
-  return c.length
-})
+const visibleChildrenCount = computed(() => visibleChildCount(
+  [...children.value.values()].sort((a, b) => a.index - b.index).map(child => child.width),
+  availableWidth.value,
+  overflowButtonWidth,
+))
 
 /**
  * Watches for the size of each child and automatically hide them
