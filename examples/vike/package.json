@@ -10,7 +10,7 @@
     "story:preview": "poveste preview --port 4572"
   },
   "dependencies": {
-    "vike": "0.4.268",
+    "vike": "0.4.270",
     "vue": "^3.5.44"
   },
   "devDependencies": {
