@@ -280,6 +280,24 @@ export default defineConfig({
 
 A story can choose its own table with its `autoDocs` option: `false` for none, or a list of the sections to show, such as `['props', 'events']`. See the [Vue](./vue/story.md#autodocs) and [Svelte](./svelte/story.md#autodocs) story references; a Solid or React story sets the same field in `defineStory`. A story can't turn auto-docs on in a book that has it off. It isn't a way to save memory: a list still reads the whole component, and `false` skips only that story's components, so once another story's docs are opened the checker is held anyway. To avoid that cost, set `autoDocs: false` here.
 
+## `a11y`
+
+`{ disableRules?: string[] }` - Default: `{}`
+
+The [accessibility check](../guide/accessibility.md) on a story's **A11y** tab, which runs axe-core in the variant's sandbox. `disableRules` names axe-core rules to skip in every story, by the ids the tab shows, such as `color-contrast`. They are skipped on top of the four page-level rules a sandbox never runs: `landmark-one-main`, `page-has-heading-one`, `region` and `bypass`, which the guide gives the reasons for. An id axe-core doesn't have is ignored, and the tab names it.
+
+```ts twoslash
+import { defineConfig } from 'poveste'
+// ---cut---
+export default defineConfig({
+  a11y: {
+    disableRules: ['color-contrast'],
+  },
+})
+```
+
+A story skips more with its own `a11y` option: see the [Vue](./vue/story.md#a11y) and [Svelte](./svelte/story.md#a11y) story references; a Solid or React story sets the same field in `defineStory`.
+
 ## `globalStyles`
 
 `string[]` - Default: `[]`

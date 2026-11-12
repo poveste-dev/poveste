@@ -45,3 +45,14 @@ describe('a variant\'s meta', () => {
     expect(collectVariant({ title: 'Primary' })).not.toHaveProperty('meta')
   })
 })
+
+// The accessibility panel reads the rules a story turns off from the collected story.
+describe('a story\'s a11y', () => {
+  it('is collected with the story', () => {
+    expect(collect({ id: 'checked', title: 'Checked', a11y: { disableRules: ['region'] } })).toMatchObject({ a11y: { disableRules: ['region'] } })
+  })
+
+  it('is left off a story that sets none', () => {
+    expect(collect({ id: 'plain', title: 'Plain' })).not.toHaveProperty('a11y')
+  })
+})

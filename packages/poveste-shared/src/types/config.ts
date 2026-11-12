@@ -6,7 +6,7 @@ import type {
 } from 'vite'
 import type { AutoDocsOptions } from './docgen.js'
 import type { Plugin } from './plugin.js'
-import type { ServerTreeFile, StoryProps } from './story.js'
+import type { A11yOptions, ServerTreeFile, StoryProps } from './story.js'
 
 export interface SupportMatchPattern {
   id: string
@@ -108,6 +108,12 @@ export interface PovesteConfig {
    * it runs. Set to false to turn it off. Default: on.
    */
   autoDocs?: boolean | AutoDocsOptions
+  /**
+   * The accessibility panel, which runs axe-core against the variant on show. Its
+   * `disableRules` are skipped for every story, on top of the page-level rules the
+   * sandbox always skips.
+   */
+  a11y?: A11yOptions
   /**
    * CSS files loaded into the main app (not into stories). Wrapped in
    * @layer poveste-user-globals — lower priority than chrome.

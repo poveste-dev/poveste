@@ -39,6 +39,15 @@ describe('collecting a Solid story file', () => {
     expect(plain).not.toHaveProperty('autoDocs')
   })
 
+  // The accessibility panel reads it from the collected story.
+  it('carries the story\'s own `a11y`, and leaves it out when unset', async () => {
+    const [own] = await collect(`export default { a11y: { disableRules: ['region'] }, render: () => null }`)
+    const [plain] = await collect(`export default { render: () => null }`)
+
+    expect(own?.a11y).toEqual({ disableRules: ['region'] })
+    expect(plain).not.toHaveProperty('a11y')
+  })
+
   it('gives a story with only its own render one implicit variant', async () => {
     const [story] = await collect(`export default { render: () => null }`)
 

@@ -38,6 +38,7 @@ export function clientConfig(config: Partial<PovesteConfig>) {
     defaultBackgroundColor: config.defaultBackgroundColor,
     preview: config.preview,
     isolateStyles: config.isolateStyles,
+    a11y: config.a11y,
     // eslint-disable-next-line ts/no-deprecated -- the app still reads it as a fallback
     sandboxDarkClass: config.sandboxDarkClass,
   }

@@ -48,6 +48,12 @@ export interface VariantProps extends CommonProps, InheritedProps {
 /** A section of the auto-docs table on a story's Docs tab. */
 export type AutoDocsSection = 'props' | 'slots' | 'events'
 
+/** The accessibility check, in the book's config and on a story. */
+export interface A11yOptions {
+  /** axe-core rule ids the check skips, such as `'color-contrast'`. */
+  disableRules?: string[]
+}
+
 export interface StoryProps extends CommonProps, InheritedProps {
   group?: string
   layout?: StoryLayout
@@ -58,6 +64,11 @@ export interface StoryProps extends CommonProps, InheritedProps {
    * follows the book's `autoDocs`, which a story cannot turn on (#1398).
    */
   autoDocs?: boolean | AutoDocsSection[]
+  /**
+   * The accessibility check on this story's variants. Its `disableRules` are
+   * skipped on top of the book's own `a11y.disableRules`.
+   */
+  a11y?: A11yOptions
 }
 
 export interface CommonMeta {}
@@ -81,6 +92,7 @@ export interface Story {
   iconColor?: string
   docsOnly?: boolean
   autoDocs?: boolean | AutoDocsSection[] | undefined
+  a11y?: A11yOptions | undefined
   file?: StoryFile
   lastSelectedVariant?: Variant
   /** The story's own slots. Any of the three can be absent: a story may define none. */
@@ -191,6 +203,7 @@ export interface ServerStory {
   iconColor?: string | undefined
   docsOnly?: boolean | undefined
   autoDocs?: boolean | AutoDocsSection[] | undefined
+  a11y?: A11yOptions | undefined
   docsText?: string | undefined
   meta?: StoryMeta | undefined
 }

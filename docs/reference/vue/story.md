@@ -229,6 +229,20 @@ The auto-docs table on this story's **Docs** tab, when the book's [`autoDocs`](.
 
 It belongs to the story, not to a variant: the table lists the components the story imports.
 
+## `a11y`
+
+The [accessibility check](../../guide/accessibility.md) on this story's **A11y** tab. `disableRules` names axe-core rules to skip for this story's variants, on top of the book's own [`a11y.disableRules`](../config.md#a11y).
+
+```vue
+<template>
+  <Story :a11y="{ disableRules: ['color-contrast'] }">
+    <!-- ... -->
+  </Story>
+</template>
+```
+
+It belongs to the story, not to a variant.
+
 ## `component`
 
 The component, or a list of them, that this story's **Docs** tab documents, in place of the components it imports. Use it when the story renders a helper that wraps what it shows:

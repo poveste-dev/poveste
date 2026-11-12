@@ -347,7 +347,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
 <!DOCTYPE html>
 <html lang="${ctx.config.theme?.lang ?? 'en'}">
 <head>
-  <title></title>
+  <title>${ctx.config.theme?.title ?? ''}</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
