@@ -54,7 +54,7 @@ const hasEvents = computed(() => eventsStore.events.length)
       :to="{ ...$route, query: { ...$route.query, tab: 'a11y' } }"
       :matched="$route.query['tab'] === 'a11y'"
     >
-      Accessibility
+      A11y
     </BaseTab>
 
     <template #overflow>
@@ -89,7 +89,7 @@ const hasEvents = computed(() => eventsStore.events.length)
         :to="{ ...$route, query: { ...$route.query, tab: 'a11y' } }"
         :matched="$route.query['tab'] === 'a11y'"
       >
-        Accessibility
+        A11y
       </BaseOverflowTab>
     </template>
   </BaseOverflowMenu>

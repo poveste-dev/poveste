@@ -244,7 +244,7 @@ It belongs to the story, not to a variant: the table lists the components the st
 
 ## `a11y`
 
-The [accessibility check](../../guide/accessibility.md) on this story's **Accessibility** tab. `disableRules` names axe-core rules to skip for this story's variants, on top of the book's own [`a11y.disableRules`](../config.md#a11y).
+The [accessibility check](../../guide/accessibility.md) on this story's **A11y** tab. `disableRules` names axe-core rules to skip for this story's variants, on top of the book's own [`a11y.disableRules`](../config.md#a11y).
 
 ```svelte
 <Hst.Story a11y={{ disableRules: ['color-contrast'] }}>

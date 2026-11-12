@@ -1,11 +1,11 @@
 ---
 title: 'Accessibility checks — run axe-core on a variant'
-description: 'The Accessibility tab checks the variant on show with axe-core, inside the sandbox it renders in, and lists each rule it fails with the elements and a link to the fix.'
+description: 'The A11y tab checks the variant on show with axe-core, inside the sandbox it renders in, and lists each rule it fails with the elements and a link to the fix.'
 ---
 
 # Accessibility checks
 
-A story's **Accessibility** tab, beside Controls, Docs and Events, checks the variant on show with [axe-core](https://github.com/dequelabs/axe-core) and lists what it fails. Each result names the rule, its impact (`critical`, `serious`, `moderate` or `minor`), the elements that fail it, with a selector and their markup, and links to the rule's page, which says how to fix it.
+A story's **A11y** tab, beside Controls, Docs and Events, checks the variant on show with [axe-core](https://github.com/dequelabs/axe-core) and lists what it fails. Each result names the rule, its impact (`critical`, `serious`, `moderate` or `minor`), the elements that fail it, with a selector and their markup, and links to the rule's page, which says how to fix it.
 
 It is part of the book itself, whatever the framework, so there is nothing to install.
 

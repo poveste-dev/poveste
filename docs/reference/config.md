@@ -284,7 +284,7 @@ A story can choose its own table with its `autoDocs` option: `false` for none, o
 
 `{ disableRules?: string[] }` - Default: `{}`
 
-The [accessibility check](../guide/accessibility.md) on a story's **Accessibility** tab, which runs axe-core in the variant's sandbox. `disableRules` names axe-core rules to skip in every story, by the ids the tab shows, such as `color-contrast`. They are skipped on top of the four page-level rules a sandbox never runs: `landmark-one-main`, `page-has-heading-one`, `region` and `bypass`, which the guide gives the reasons for. An id axe-core doesn't have is ignored, and the tab names it.
+The [accessibility check](../guide/accessibility.md) on a story's **A11y** tab, which runs axe-core in the variant's sandbox. `disableRules` names axe-core rules to skip in every story, by the ids the tab shows, such as `color-contrast`. They are skipped on top of the four page-level rules a sandbox never runs: `landmark-one-main`, `page-has-heading-one`, `region` and `bypass`, which the guide gives the reasons for. An id axe-core doesn't have is ignored, and the tab names it.
 
 ```ts twoslash
 import { defineConfig } from 'poveste'
