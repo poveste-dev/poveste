@@ -65,7 +65,7 @@
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vueuse/core": "^15.0.0",
-    "chokidar": "^5.0.0",
+    "chokidar": "^6.0.0",
     "concurrently": "^10.0.6",
     "fs-extra": "^11.4.1",
     "globby": "^16.2.4",
