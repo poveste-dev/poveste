@@ -53,7 +53,8 @@ export function measure(root: string): Sizes {
 export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 141_900 for #160: controls picked from a prop's type, 848 B over `next` at
   // 141,373, so 142,221 B measured; #162 adds 138 B on top of it.
-  'poveste': { bytes: 142_500, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
+  // Raised from 142_500 for #1646: the dev server skips an unchanged story list and the story-source module keeps its copies current, 142,945 B measured on top of #162.
+  'poveste': { bytes: 143_200, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
   // Raised from 435_300 for #1436's table: v-model marks, type parameters and slot-prop
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   // Raised from 437_000 for #1521: the source panel's grammar chosen per story file,
@@ -70,7 +71,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 446_000 for #162's accessibility panel: the tab, the sandbox's lazy axe-core
   // runner and the messaging between them, 457,152 B measured on top of #160. axe-core itself
   // is a dependency, not shipped here.
-  '@poveste/app': { bytes: 457_400, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 457_400 for #1646: the Source panel re-reads a story's static source in dev, 457,349 B measured on top of #162.
+  '@poveste/app': { bytes: 457_600, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
