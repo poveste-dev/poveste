@@ -21,7 +21,10 @@ const SANDBOX_JS_BUDGET = 4 * 1024 * 1024
 const SANDBOX_CSS_BUDGET = 48 * 1024
 
 test('the sandbox boots inside its script budget, without the highlighter', async ({ page }, testInfo) => {
-  // See `sandboxCssBudget` in `playwright.config.ts` (#542).
+  // See `sandboxCssBudget` in `playwright.config.ts` (#542, #1647). When a Quasar
+  // bump trips it, re-measure: the failure prints the total. If the growth is
+  // Quasar's own stylesheet, raise the budget in the same PR as the bump and keep
+  // the 16 KiB margin. If it is not, something of ours reached the realm.
   const own: SandboxCssBudget | undefined = testInfo.project.metadata?.sandboxCssBudget
 
   const scripts: { name: string, bytes: number }[] = []
