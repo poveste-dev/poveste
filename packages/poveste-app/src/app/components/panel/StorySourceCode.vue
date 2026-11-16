@@ -4,6 +4,7 @@ import type { Story, Variant } from '../../types'
 import type { GenerateSourceCode } from '../../util/docs'
 import { Icon } from '@iconify/vue'
 import { HstCopyIcon, HstTooltip } from '@poveste/controls'
+import { useEventListener } from '@vueuse/core'
 import { computed, markRaw, nextTick, onMounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { isDark } from '../../util/dark'
 import { getDynamicSourceCode, getStaticSourceCode, loadGenerateSourceCode, sourceLang } from '../../util/docs'
@@ -79,7 +80,14 @@ watch(() => [props.variant, generateSourceCodeFn.value], async () => {
 // Static file source
 
 const staticSourceCode = ref('')
-watch(() => [props.story, props.story?.file?.source], async () => {
+// Bumped when the story's source module changes under a story list that did not (#1646).
+const staticSourceVersion = ref(0)
+useEventListener(window, 'poveste:story-source', (event: Event) => {
+  if ((event as CustomEvent<string>).detail === props.story?.id) {
+    staticSourceVersion.value++
+  }
+})
+watch(() => [props.story, props.story?.file?.source, staticSourceVersion.value], async () => {
   staticSourceCode.value = ''
   staticSettled.value = false
   try {

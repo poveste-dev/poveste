@@ -91,7 +91,13 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
 
     async load(id) {
       if (id === VirtualFiles.RESOLVED_STORIES_ID) {
-        return VirtualFiles.resolvedStories(ctx)
+        const code = VirtualFiles.resolvedStories(ctx)
+        if (!isServer) {
+          VirtualFiles.servedStories.set(ctx, code)
+        }
+        // Vite would inline a source map of the generated list, four fifths of each copy a page
+        // keeps, and nobody debugs this module through it (#1646).
+        return { code, map: { mappings: '' } }
       }
 
       if (id === VirtualFiles.NOOP_ID) {
