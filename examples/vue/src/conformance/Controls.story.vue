@@ -108,6 +108,9 @@ function initState() {
         :options="alignments"
         title="Align"
       />
+      <HstButton @click="state.label = 'Hello'">
+        Reset label
+      </HstButton>
     </template>
   </Story>
 </template>

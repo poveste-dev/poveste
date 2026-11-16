@@ -4,7 +4,7 @@ import type {
 } from '@poveste/vendors/vue'
 import type { Component } from 'svelte'
 import type { SvelteStorySetupApi, SvelteStorySetupHandler } from '../helpers.js'
-import { components } from '@poveste/controls'
+import { components, defineControlElements } from '@poveste/controls'
 import {
   defineComponent as _defineComponent,
   h as _h,
@@ -211,6 +211,7 @@ export default _defineComponent({
 })
 
 function getControls() {
+  defineControlElements()
   const result: Record<string, any> = {}
   for (const [key, component] of Object.entries(components)) {
     result[key.substring(3)] = wrapComponent(component)

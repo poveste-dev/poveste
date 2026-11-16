@@ -403,6 +403,8 @@ These are registered alongside the controls and are not controls: they take no v
 
 `HstTooltip` is exported too, for Poveste's own interface, and is not registered for stories.
 
+Each of these renders inside a custom element named after it, `<poveste-hst-text>` for `HstText`, which takes no box of its own, so the control lays out as if it were not there. What you put in a component's slots, such as `HstButton`'s label or an `HstTokenList` row's swatch, is rendered by your story and placed where the component renders that slot.
+
 ## Init state
 
 As an alternative to the above, you can pass an `initState` prop to the Story or Variant, which should be a function returning a state object. It's useful to have different states for variants in the same story and to be a bit more explicit at the expense of being more verbose.

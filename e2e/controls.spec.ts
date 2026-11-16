@@ -232,4 +232,18 @@ test.describe('controls', () => {
     await controls.locator('.poveste-wrapper').filter({ hasText: 'Tint' }).locator('input[type="text"]').fill('#ffffff')
     await expect(state).toContainText('"tint": "#ffffff"')
   })
+
+  // The label is the story's own content, rendered by the story's framework and
+  // placed inside a control it does not own. Svelte's bridge never placed it, so
+  // there the button had no name at all (#1114).
+  test('labels a button with its content, and runs its click', async ({ page }) => {
+    const state = page.getByTestId('preview-iframe').contentFrame().locator(STATE)
+    const controls = page.getByTestId('story-controls')
+
+    await controls.locator('.poveste-wrapper').filter({ hasText: 'Label' }).locator('input').fill('Foo')
+    await expect(state).toContainText('"label": "Foo"')
+
+    await controls.getByRole('button', { name: 'Reset label' }).click()
+    await expect(state).toContainText('"label": "Hello"')
+  })
 })

@@ -90,7 +90,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // PR; enforce it once that has merged and the number is measured again.
   '@poveste/plugin-react': { reason: 'proposed 10,800 B, from an inferred growth: re-measure once React auto-docs has merged' },
   // Raised from 10_200 for #1524: Dynamic source, 11,566 B measured.
-  '@poveste/plugin-solid': { bytes: 11_700, reason: 'room for the JSX extractor glue; catches the tests' },
+  // Raised from 11_700 for #1114: the controls wrapper Solid stories will render, 12,736 B measured.
+  '@poveste/plugin-solid': { bytes: 13_000, reason: 'room for the JSX extractor glue; catches the tests' },
   '@poveste/plugin-quasar': { bytes: 7_700, reason: 'catches the tests' },
   '@poveste/plugin-tailwind': { bytes: 9_900, reason: '0.20.0 plus 1 kB; catches the tests' },
   '@poveste/plugin-percy': { bytes: 5_900, reason: '0.20.0 plus 1 kB; catches the tests' },

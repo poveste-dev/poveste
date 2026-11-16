@@ -5,10 +5,11 @@ import HstJsonComponent from './components/json/HstJson.vue'
 import { HstColor, HstDate, HstJson } from './index'
 
 // The lazily loaded controls, and what `defineAsyncComponent`'s wrapper does not
-// carry. `@poveste/plugin-svelte`'s Wrap.svelte reads `name` and `emits` off it
-// to build the Vue listeners, so a wrapper missing them renders a control that
-// edits and never writes back — silently, and in only one of the two plugins
-// (#374). They are hand-copied, so they are pinned against the real component.
+// carry. A control element dispatches only the events in `emits`, and
+// `@poveste/plugin-svelte`'s Wrap.svelte writes back only through them, so a
+// wrapper missing them renders a control that edits and never writes back —
+// silently, and in only one of the two plugins (#374). They are hand-copied, so
+// they are pinned against the real component.
 const LAZY = [
   { name: 'HstJson', wrapper: HstJson, component: HstJsonComponent },
   { name: 'HstDate', wrapper: HstDate, component: HstDateComponent },

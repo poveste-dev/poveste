@@ -1,72 +1,48 @@
 <script>
-  import {
-    createApp as _createApp,
-    h as _h,
-    reactive as _reactive,
-  } from '@poveste/vendors/vue'
-  import { createEventDispatcher, onDestroy, onMount } from 'svelte'
+  import { CONTROL_SLOTS_EVENT, controlElementTag, SLOT_CONTENT_ATTR } from '@poveste/controls'
+  import { createEventDispatcher, onMount } from 'svelte'
 
   export let controlComponent
   export let value
 
   const dispatch = createEventDispatcher()
+  const tag = controlElementTag(controlComponent.name)
 
-  let el
-
-  let app
-
-  const state = _reactive({})
-
-  function updateState(value, attrs) {
-    Object.assign(state, {
-      value,
-      attrs,
-    })
+  // `update:modelValue` is what `bind:value` reads; anything else the control emits
+  // becomes a Svelte event of the same name.
+  const emits = controlComponent.emits ?? []
+  const listeners = {}
+  for (const event of Array.isArray(emits) ? emits : Object.keys(emits)) {
+    listeners[`on${event.charAt(0).toUpperCase()}${event.substring(1)}`] = event === 'update:modelValue'
+      ? (next) => {
+        value = next
+      }
+      : (...args) => dispatch(event, ...args)
   }
 
+  let el
+  let source
+  let calls = []
+
+  $: props = { ...$$restProps, modelValue: value, ...listeners }
+  $: if (el) el.slotSource = source ?? null
+
   onMount(() => {
-    updateState(value, $$restProps)
-
-    app = _createApp({
-      render() {
-        const finalListeners = {}
-        if (controlComponent.emits) {
-          for (const k in controlComponent.emits) {
-            const key = Array.isArray(controlComponent.emits) ? controlComponent.emits[k] : k
-            const finalKey = key === 'input' ? 'update:modelValue' : key
-            finalListeners[`on${finalKey.charAt(0).toUpperCase()}${finalKey.substring(1)}`] = (...args) => {
-              if (key === 'update:modelValue') {
-                value = args[0]
-              }
-              else {
-                dispatch(key, ...args)
-              }
-            }
-          }
-        }
-
-        // `state` is the Vue-reactive mirror kept in sync by the `$:` below.
-        // Reading the plain `value` here would make the render depend on a
-        // variable Vue cannot track — it only saw fresh values because the
-        // `state` mutation was what triggered the re-render in the first place.
-        return _h(controlComponent, {
-          modelValue: state.value,
-          ...state.attrs,
-          ...finalListeners,
-          key: 'component',
-        })
-      },
-    })
-    app.mount(el)
+    const read = () => {
+      calls = el.slotCalls
+    }
+    read()
+    el.addEventListener(CONTROL_SLOTS_EVENT, read)
+    return () => el.removeEventListener(CONTROL_SLOTS_EVENT, read)
   })
-
-  onDestroy(() => {
-    app?.unmount()
-  })
-
-  $: updateState(value, $$restProps)
 </script>
 
-<div bind:this={el}>
-  {controlComponent.name}
-</div>
+<!-- `props` is a property on the element, which Svelte sets before inserting it. -->
+<svelte:element this={tag} bind:this={el} {props} slots={$$slots.default ? ['default'] : []} />
+{#if $$slots.default}
+  <span hidden bind:this={source}>
+    {#each calls as call, index (index)}
+      <span {...{ [SLOT_CONTENT_ATTR]: index }} style="display: contents"><slot {...call.props} /></span>
+    {/each}
+  </span>
+{/if}

@@ -5,6 +5,9 @@
     "toggleDark"
   ],
   "@poveste/controls": [
+    "CONTROL_SLOTS_EVENT",
+    "ControlElement",
+    "ControlSlotCall",
     "HstButton",
     "HstButtonGroup",
     "HstCheckbox",
@@ -30,7 +33,10 @@
     "PopoverPortal",
     "PopoverRoot",
     "PopoverTrigger",
+    "SLOT_CONTENT_ATTR",
     "components",
+    "controlElementTag",
+    "defineControlElements",
     "portalTarget"
   ],
   "@poveste/plugin-nuxt": [

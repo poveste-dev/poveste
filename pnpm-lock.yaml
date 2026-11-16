@@ -1336,6 +1336,9 @@ importers:
 
   packages/poveste-plugin-solid:
     dependencies:
+      '@poveste/controls':
+        specifier: workspace:^
+        version: link:../poveste-controls
       '@poveste/shared':
         specifier: workspace:^
         version: link:../poveste-shared

@@ -86,6 +86,7 @@
     }
   },
   "dependencies": {
+    "@poveste/controls": "workspace:^",
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^"
   },
