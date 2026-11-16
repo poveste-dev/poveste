@@ -72,7 +72,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // runner and the messaging between them, 457,152 B measured on top of #160. axe-core itself
   // is a dependency, not shipped here.
   // Raised from 457_400 for #1646: the Source panel re-reads a story's static source in dev, 457,349 B measured on top of #162.
-  '@poveste/app': { bytes: 457_600, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 457_600 for the panel tabs' More button room (#1684): 457,808 B measured on top of #1646.
+  '@poveste/app': { bytes: 458_000, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
