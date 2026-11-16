@@ -200,6 +200,9 @@ test('a story save that changes no metadata sends no new story list', async ({ p
     for (const n of [1, 2, 3]) {
       await writeFile(file, story('e2e-saved-often', 'Saved often').replace('<span>Saved often</span>', `<span>Saved often ${n}</span>`))
       await expect(preview.getByText(`Saved often ${n}`)).toBeVisible({ timeout: 30_000 })
+      // Vite's watcher reports no change to a file within 50 ms of the last one it reported for it,
+      // and on Linux a save reaches the preview well inside that: the next save would never arrive.
+      await page.waitForTimeout(100)
     }
     const source = page.locator('.poveste-story-source-code')
     await source.getByRole('button').filter({ hasText: 'Static' }).click()
