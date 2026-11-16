@@ -51,7 +51,9 @@ export function measure(root: string): Sizes {
  * A ceiling with no bytes is a note, read but not enforced.
  */
 export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
-  'poveste': { bytes: 141_900, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
+  // Raised from 141_900 for #160: controls picked from a prop's type, 848 B over `next` at
+  // 141,373, so 142,221 B measured; #162 adds 138 B on top of it.
+  'poveste': { bytes: 142_500, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
   // Raised from 435_300 for #1436's table: v-model marks, type parameters and slot-prop
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   // Raised from 437_000 for #1521: the source panel's grammar chosen per story file,
