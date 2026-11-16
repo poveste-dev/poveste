@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 // carries no Vue Devtools code, because a reader cannot use it.
 //
 // The marker is a function only the real `@vue/devtools-api` defines — the stub
-// `vite.ts` swaps in exports `setupDevtoolsPlugin` and nothing else. Reading the
+// `devtools-api-stub.ts` swaps in exports only no-ops. Reading the
 // served JavaScript rather than watching for a known URL: #347 removed the
 // vendored chunk this used to watch for, and a promise about what a book weighs
 // is better kept against what it actually serves.
