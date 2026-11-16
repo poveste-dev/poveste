@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
-    "vue": "^3.5.44",
-    "vuetify": "^4.2.6"
+    "vue": "^3.5.45",
+    "vuetify": "^4.3.3"
   },
   "devDependencies": {
     "@poveste/plugin-vue": "workspace:*",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitejs/plugin-vue": "^6.0.11",
     "poveste": "workspace:*",
     "vite": "catalog:",
     "vite-plugin-vuetify": "2.1.3"

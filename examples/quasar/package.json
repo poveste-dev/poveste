@@ -9,15 +9,15 @@
     "story:preview": "poveste preview --port 4573"
   },
   "dependencies": {
-    "quasar": "^2.35.2",
-    "vue": "^3.5.44"
+    "quasar": "^2.35.4",
+    "vue": "^3.5.45"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.1",
     "@poveste/plugin-quasar": "workspace:*",
     "@poveste/plugin-vue": "workspace:*",
-    "@quasar/app-vite": "^3.10.3",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "@quasar/app-vite": "^3.10.4",
+    "@vitejs/plugin-vue": "^6.0.11",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }

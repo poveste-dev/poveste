@@ -99,25 +99,25 @@
     "@poveste/shared": "workspace:^",
     "@poveste/vendors": "workspace:^",
     "change-case": "^5.4.4",
-    "ignore": "^7.0.10",
+    "ignore": "^7.0.14",
     "launch-editor": "^2.14.2",
     "pathe": "^2.0.3",
     "tinyglobby": "^0.2.17",
-    "vue-component-meta": "^3.3.13"
+    "vue-component-meta": "^3.3.14"
   },
   "devDependencies": {
     "@fontsource/fira-mono": "^5.3.0",
-    "@tailwindcss/oxide": "^4.3.3",
+    "@tailwindcss/oxide": "^4.3.5",
     "@types/node": "catalog:",
-    "@vitejs/plugin-vue": "^6.0.10",
-    "@vitest/browser-playwright": "5.0.5",
-    "concurrently": "^10.0.6",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vitest/browser-playwright": "5.1.0",
+    "concurrently": "^10.0.7",
     "jsdom": "^30.1.3",
     "poveste": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vue": "^3.5.44",
+    "vue": "^3.5.45",
     "vue-vapor-rc": "npm:vue@3.6.0-rc.10"
   }
 }
