@@ -253,6 +253,36 @@ export async function createMarkdownPlugins(ctx: Context) {
   const plugins: VitePlugin[] = []
   const md = await createMarkdownRendererWithPlugins(ctx)
 
+  const isLoadedDocs = (id: string) => id.includes('?vue&type=docs') && id.includes('&src=true')
+  const isFile = (file: string) => Boolean(fs.statSync(file, { throwIfNoEntry: false })?.isFile())
+  /** The story and the `src` as written that each loaded file was asked for by. */
+  const loadedBy = new Map<string, { story: string, src: string }>()
+  let watcher: { add: (file: string) => unknown } | undefined
+
+  // Ahead of Vite's resolver and `@vitejs/plugin-vue`'s loader: a missing file was left
+  // unresolved and the loader threw on it, which dropped the whole story (#1665).
+  plugins.push({
+    name: 'poveste-vue-docs-src',
+    enforce: 'pre',
+    configureServer(server) {
+      watcher = server.watcher
+    },
+    resolveId(source, importer) {
+      // `@vitejs/plugin-vue` watches the file it loads, and Vite resolves that as an import.
+      if (loadedBy.has(source)) return isFile(source) ? undefined : source
+      if (!importer || !source.startsWith('.') || !isLoadedDocs(source)) return
+      const [src = '', query] = source.split('?', 2)
+      const story = importer.replace(/\?.*$/, '')
+      const target = path.resolve(path.dirname(story), src)
+      loadedBy.set(target, { story, src })
+      if (isFile(target)) return
+      return `${target}?${query}`
+    },
+    load(id) {
+      return isLoadedDocs(id) && !isFile(id.substring(0, id.indexOf('?vue'))) ? '' : undefined
+    },
+  })
+
   // @TODO extract
   plugins.push({
     name: 'poveste-vue-docs-block',
@@ -262,12 +292,26 @@ export async function createMarkdownPlugins(ctx: Context) {
       const loaded = id.includes('&src=true')
       if (!loaded && !id.includes('lang.md')) return
       const file = id.substring(0, id.indexOf('?vue'))
-      const content = loaded ? matter(code).content : code
-      const html = md.render(content, {
-        file,
-        firstLine: firstLineIn(fs.readFileSync(file, 'utf8'), content),
-        loaded,
-      })
+      let html: string
+      if (loaded && !isFile(file)) {
+        const { story, src } = loadedBy.get(file) ?? { story: file, src: file }
+        const message = `[md] ${path.relative(ctx.root, story)} has \`<docs src="${src}">\`, and that isn't a file: ${file}`
+        if (ctx.mode !== 'dev') {
+          throw new Error(pc.red(message))
+        }
+        console.error(pc.red(message))
+        // Vite watches a file outside the book only once it exists.
+        watcher?.add(file)
+        html = `<p>${md.utils.escapeHtml(message)}</p>`
+      }
+      else {
+        const content = loaded ? matter(code).content : code
+        html = md.render(content, {
+          file,
+          firstLine: firstLineIn(fs.readFileSync(file, 'utf8'), content),
+          loaded,
+        })
+      }
       if (!loaded || ctx.mode !== 'dev') {
         return `export default Comp => {
         Comp.doc = ${JSON.stringify(html)}

@@ -1,4 +1,4 @@
-import { readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs'
+import { readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { expect, test } from '@playwright/test'
@@ -13,6 +13,8 @@ import { expect, test } from '@playwright/test'
 const MARKDOWN = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'MarkdownFile.story.md')
 const STORY = '/story/src-markdownfile-story-js'
 const NOTES = join(dirname(MARKDOWN), 'conformance', 'LoadedMarkdown.notes.md')
+const MISSING_STORY = join(dirname(MARKDOWN), 'MissingDocsSrc.story.vue')
+const MISSING_NOTES = join(dirname(MARKDOWN), 'MissingDocsSrc.notes.md')
 
 // Serial: these edit one file on disk and restore it, so they must not interleave.
 test.describe.configure({ mode: 'serial' })
@@ -33,6 +35,8 @@ test.describe('editing a markdown file', () => {
   // The times as well as the text: the bundle-size check refuses a book older
   // than its source, and CI runs it after this spec, on a book built before (#1047).
   test.afterAll(() => {
+    rmSync(MISSING_STORY, { force: true })
+    rmSync(MISSING_NOTES, { force: true })
     writeFileSync(MARKDOWN, original)
     utimesSync(MARKDOWN, times.atime, times.mtime)
     writeFileSync(NOTES, originalNotes)
@@ -51,6 +55,23 @@ test.describe('editing a markdown file', () => {
       await expect(page.getByTestId('story-docs')).toContainText('EDITED-BLOCK', { timeout: 2_000 })
     }).toPass({ timeout: 20_000 })
     writeFileSync(NOTES, originalNotes)
+  })
+
+  // The import of the missing file threw, so the story was never collected (#1665).
+  test('keeps a story whose `<docs src>` is missing, and shows the file once it is there', async ({ page }) => {
+    rmSync(MISSING_NOTES, { force: true })
+    writeFileSync(MISSING_STORY, '<template>\n  <Story title="Missing docs src">\n    <p>Missing docs src</p>\n  </Story>\n</template>\n\n<docs src="./MissingDocsSrc.notes.md" />\n')
+
+    await page.goto('/story/src-missingdocssrc-story-vue')
+    await expect(page.locator('[data-testid="story-list-item"]', { hasText: 'Missing docs src' })).toBeVisible({ timeout: 20_000 })
+    await page.getByTestId('story-side-panel').getByRole('link', { name: 'Docs' }).click()
+    await expect(page.getByTestId('story-docs')).toContainText('src/MissingDocsSrc.story.vue has `<docs src="./MissingDocsSrc.notes.md">`, and that isn\'t a file:')
+    await expect(page.getByTestId('story-docs')).toContainText('/src/MissingDocsSrc.notes.md')
+
+    await expect(async () => {
+      writeFileSync(MISSING_NOTES, '# NOTES-APPEARED\n')
+      await expect(page.getByTestId('story-docs')).toContainText('NOTES-APPEARED', { timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
   })
 
   test('re-renders a `.story.md` with `src` when the file it loads changes', async ({ page }) => {

@@ -272,11 +272,18 @@ describe('a Vue `<docs>` block', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  async function transform(code: string, id: string) {
+  type Hook = (...args: string[]) => string | undefined
+
+  async function hooks(mode: 'build' | 'dev' = 'dev') {
     vi.spyOn(process, 'cwd').mockReturnValue(join(dir, 'book'))
-    ctx = await createContext({ mode: 'dev' })
-    const [plugin] = await createMarkdownPlugins(ctx)
-    return (plugin!.transform as (code: string, id: string) => string | undefined)(code, id)
+    ctx = await createContext({ mode })
+    const plugins = await createMarkdownPlugins(ctx)
+    const hook = (name: 'resolveId' | 'load' | 'transform') => (plugins.find(plugin => plugin[name])?.[name] ?? (() => undefined)) as Hook
+    return { resolveId: hook('resolveId'), load: hook('load'), transform: hook('transform') }
+  }
+
+  async function transform(code: string, id: string) {
+    return (await hooks()).transform(code, id)
   }
 
   it.each(['lang.docs', 'lang.md'])('loads a file through `src`, with %s', async (lang) => {
@@ -288,6 +295,29 @@ describe('a Vue `<docs>` block', () => {
     expect(result).toContain('From the README')
     expect(result).toContain('./LICENSE')
     expect(result).not.toContain('Not this')
+  })
+
+  // `@vitejs/plugin-vue` threw on the missing file, which dropped the story in dev (#1665).
+  it('names a missing file on the page in dev, resolved against the story', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const story = write('book/pages/Button.story.vue', '<docs src="../Missing.md" />\n')
+    const { resolveId, load, transform } = await hooks()
+
+    const id = resolveId('../Missing.md?vue&type=docs&index=0&src=true&lang.docs', story)!
+
+    expect(id).toBe(`${join(dir, 'book/Missing.md')}?vue&type=docs&index=0&src=true&lang.docs`)
+    expect(load(id)).toBe('')
+    expect(transform('', id)).toContain(`pages/Button.story.vue has \`&lt;docs src=&quot;../Missing.md&quot;&gt;\`, and that isn't a file: ${join(dir, 'book/Missing.md')}`)
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('src="../Missing.md"'))
+  })
+
+  it('fails a build on a missing file, resolved against the story', async () => {
+    const story = write('book/pages/Button.story.vue', '<docs src="../Missing.md" />\n')
+    const { resolveId, load, transform } = await hooks('build')
+
+    const id = resolveId('../Missing.md?vue&type=docs&index=0&src=true&lang.docs', story)!
+
+    expect(() => transform(load(id)!, id)).toThrow(`pages/Button.story.vue has \`<docs src="../Missing.md">\`, and that isn't a file: ${join(dir, 'book/Missing.md')}`)
   })
 
   it('still reads an inline block', async () => {
