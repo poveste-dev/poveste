@@ -3,6 +3,7 @@ import type ts from 'typescript'
 import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'pathe'
+import { controlFor } from './control.js'
 import { resolveType } from './resolve.js'
 
 /*
@@ -197,6 +198,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
     // Optional members print with the `| undefined` strict mode adds; the table says optional already.
     const printed = required ? print(type) : print(type).replace(/ \| undefined$/, '')
     const resolved = resolveType(typescript, checker, type, printed, location)
+    const control = controlFor(typescript, checker, type)
     const description = typescript.displayPartsToString(symbol.getDocumentationComment(checker)) || undefined
     const member = { name: symbol.name, ...description ? { description } : {}, tags }
 
@@ -226,6 +228,7 @@ export function documentProps(typescript: typeof ts, checker: ts.TypeChecker, pr
       ...code !== undefined && defaultTag !== undefined && code !== normalizeDefault(defaultTag)
         ? { defaultConflict: true }
         : {},
+      ...control ? { control } : {},
     } satisfies DocProp)
   }
   return doc

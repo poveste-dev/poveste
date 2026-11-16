@@ -7,6 +7,7 @@ const copiedFromExistingVariant = [
   'source',
   'responsiveDisabled',
   'autoPropsDisabled',
+  'autoProps',
   'setupApp',
   'configReady',
   'previewReady',

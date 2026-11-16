@@ -1,8 +1,11 @@
 import type { AutoPropComponentDefinition, PropDefinition } from '@poveste/shared'
 import { parse } from 'svelte/compiler'
 
-/** Resolves an import specifier from the story file to that component's props. */
-export type PropsOf = (specifier: string) => Promise<PropDefinition[] | undefined>
+/**
+ * Resolves an import specifier from the story file to that component's props, and the
+ * file they were read from when it is known, which is what its docs are keyed on (#160).
+ */
+export type PropsOf = (specifier: string) => Promise<PropDefinition[] | { props: PropDefinition[] | undefined, file: string } | undefined>
 
 const RUNTIME = '@poveste/plugin-svelte/auto-props'
 const HOLDER = '__pvtAutoProps'
@@ -190,7 +193,7 @@ function walk(node: any, visit: (node: Node, ancestors: Node[]) => boolean | voi
 }
 
 async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropComponentDefinition[][]> {
-  const sources = new Map<string, Promise<PropDefinition[] | undefined>>()
+  const sources = new Map<string, ReturnType<PropsOf>>()
   for (const target of targets) {
     if (!sources.has(target.specifier)) {
       sources.set(target.specifier, propsOf(target.specifier))
@@ -200,9 +203,10 @@ async function describe(targets: Target[], propsOf: PropsOf): Promise<AutoPropCo
   const size = targets.reduce((max, target) => Math.max(max, target.variant + 1), 0)
   const defs: AutoPropComponentDefinition[][] = Array.from({ length: size }, () => [])
   for (const target of targets) {
-    const props = await sources.get(target.specifier)
+    const read = await sources.get(target.specifier)
+    const { props, file } = Array.isArray(read) || !read ? { props: read, file: undefined } : read
     if (props?.length) {
-      defs[target.variant]?.push({ name: target.node['name'], index: target.index, props })
+      defs[target.variant]?.push({ name: target.node['name'], index: target.index, props, ...file ? { file } : {} })
     }
   }
   return defs

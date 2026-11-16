@@ -109,6 +109,8 @@ function visitVNodes(vnodes: any, externalState: Variant['state'], traversalStat
         name: getTagName(vnode),
         index,
         props: propDefs,
+        // Set in dev only; a built book joins its docs by name (#160).
+        ...vnode.type.__file ? { file: vnode.type.__file } : {},
       } as AutoPropComponentDefinition)
     }
 

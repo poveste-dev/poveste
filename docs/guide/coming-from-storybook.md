@@ -33,7 +33,7 @@ import Button from './Button.vue'
 </template>
 ```
 
-That is the whole API for a basic story: `<Story>` and `<Variant>`. State and controls are added with [`initState` and the `Hst*` controls](./vue/controls.md) when a variant needs them (`HstText`, `HstSelect` and the rest are Poveste's built-in controls; the prefix comes from histoire, which Poveste is a fork of), and Poveste builds a control per declared prop on its own — for [Vue](./vue/controls.md) from the rendered component, for [Svelte](./svelte/controls.md#automatic-controls) from the component's source.
+That is the whole API for a basic story: `<Story>` and `<Variant>`. State and controls are added with [`initState` and the `Hst*` controls](./vue/controls.md) when a variant needs them (`HstText`, `HstSelect` and the rest are Poveste's built-in controls; the prefix comes from histoire, which Poveste is a fork of), and Poveste builds a control per declared prop on its own, as Storybook's Controls does from `argTypes`: from the prop's TypeScript type when the component is documented, so a `'sm' | 'md' | 'lg'` prop gets a select, and from what the component carries otherwise ([Vue](./vue/controls.md#automatic-controls), [Svelte](./svelte/controls.md#automatic-controls)). A variant's [`autoProps`](./vue/controls.md#override-or-hide-a-control) overrides or hides one, where Storybook would set `argTypes` by hand.
 
 ## Your Vite config is the build
 

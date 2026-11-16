@@ -32,7 +32,7 @@ describe('svelte auto-docs through svelte2tsx', () => {
   })
 
   it('carries the description, the type and whether it is required', async () => {
-    expect((await button()).prop('label')).toEqual({ name: 'label', description: 'The text on the button.', type: 'string', required: true, tags: [] })
+    expect((await button()).prop('label')).toEqual({ name: 'label', description: 'The text on the button.', type: 'string', required: true, control: { kind: 'text' }, tags: [] })
   })
 
   it('takes the destructuring default, through `$bindable`, and agrees with a tag that says the same', async () => {
