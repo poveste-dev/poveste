@@ -117,6 +117,32 @@ export async function withoutProcessExit<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+const PORT_TIP = 'You are using the --port parameter'
+
+/**
+ * `getTestingConfig` hands Quasar a fixed `port: 8080`, which its config reader
+ * takes for a `--port` on the command line and answers with a TIP about it (#1662).
+ * No option reaches that port, and only `dev: false` skips the branch, which would
+ * resolve the project's production config instead. So that one line is dropped
+ * while the call lasts; everything else Quasar prints still gets through.
+ */
+export async function withoutPortTip<T>(fn: () => Promise<T>): Promise<T> {
+  const realLog = console.log
+  console.log = (...args: unknown[]) => {
+    if (typeof args[0] === 'string' && args[0].includes(PORT_TIP)) {
+      return
+    }
+    realLog(...args)
+  }
+
+  try {
+    return await fn()
+  }
+  finally {
+    console.log = realLog
+  }
+}
+
 /**
  * Quasar's plugins are passed through whole. Nothing needs removing — unusually,
  * since the Nuxt plugin drops six — and removing its Vue plugin in particular
@@ -157,7 +183,7 @@ export function HstQuasar(options: HstQuasarOptions = {}): Plugin {
         throw new Error(QUASAR_PROJECT_REQUIRED)
       }
       const getTestingConfig = await resolveTestingConfig()
-      const viteConfig = await withoutProcessExit(() => getTestingConfig(options.ctx ?? {}))
+      const viteConfig = await withoutProcessExit(() => withoutPortTip(() => getTestingConfig(options.ctx ?? {})))
       return { vite: quasarViteConfig(viteConfig) as never }
     },
 
