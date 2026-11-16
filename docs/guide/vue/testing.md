@@ -134,7 +134,7 @@ export default defineConfig(async () => mergeConfig(await getTestingConfig(), {
 }))
 ```
 
-The stories of `examples/quasar`, which render `<q-btn>` and `<q-banner>`, pass with it in jsdom. The run prints a "Pre-transform error" for `.quasar/dev-spa/client-entry.js`, a file only Quasar's dev server writes; it doesn't fail the tests.
+`povesteTesting()` reads your `poveste.config.ts`, so with `HstQuasar()` listed there and no setup file, the tests install Quasar with its defaults, as `poveste dev` and `poveste build` do. In a project made with `npm init quasar`, a story that renders `<q-btn>` and `<q-banner>` passes with this config in jsdom. A book that names its own setup file installs Quasar there, with `setupQuasar()`: see [your own setup file](../quasar/getting-started.md#your-own-setup-file). The run prints a "Pre-transform error" for `.quasar/dev-spa/client-entry.js`, a file only Quasar's dev server writes; it doesn't fail the tests.
 
 ## Options
 
