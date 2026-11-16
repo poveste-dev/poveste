@@ -33,6 +33,27 @@ async function open(mode: 'build' | 'dev' = 'dev') {
   cleanups.push(stop)
 }
 
+/**
+ * chokidar misses an event that comes straight after `ready`, or within 5 ms of the one before
+ * it, and under load that is any delete a test makes at once (#1677). So a test changes the file,
+ * waits to see the change, and lets that window pass, before it deletes.
+ */
+async function changeAndSee(file: string, seen: () => string | undefined) {
+  for (let attempt = 0; ; attempt++) {
+    writeFileSync(file, `# Seen ${attempt}\n`)
+    try {
+      await vi.waitFor(() => expect(seen()).toContain(`Seen ${attempt}`), { timeout: 1_000 })
+      break
+    }
+    catch (error) {
+      if (attempt === 9) {
+        throw error
+      }
+    }
+  }
+  await new Promise(resolve => setTimeout(resolve, 100))
+}
+
 // By its end: chokidar reports a relative path with the platform's separator.
 const markdownFile = (name: string) => ctx.markdownFiles.find(file => file.absolutePath.endsWith(`/${name}`))
 const html = (name: string) => markdownFile(name)?.html
@@ -93,21 +114,23 @@ describe('the list of a book\'s markdown', () => {
   })
 
   it('takes a deleted page and its story off the list', async () => {
-    write('book/pages/Guide.story.md', '# Guide', { sibling: false })
+    const page = write('book/pages/Guide.story.md', '# Guide', { sibling: false })
     await open()
+    await changeAndSee(page, () => html('Guide.story.md'))
 
-    unlinkSync(join(dir, 'book/pages/Guide.story.md'))
+    unlinkSync(page)
 
     await vi.waitFor(() => expect(listed()).toEqual([]), { timeout: 10_000 })
     expect(story('Guide.story.js')).toBeUndefined()
   })
 
   it('stops pointing a story at its sibling `.story.md` once that is deleted', async () => {
-    write('book/pages/Tag.story.md', '# Tag')
+    const page = write('book/pages/Tag.story.md', '# Tag')
     await open()
     expect(story('Tag.story.vue')!.markdownFile).toBeDefined()
+    await changeAndSee(page, () => html('Tag.story.md'))
 
-    unlinkSync(join(dir, 'book/pages/Tag.story.md'))
+    unlinkSync(page)
 
     await vi.waitFor(() => expect(story('Tag.story.vue')!.markdownFile).toBeUndefined(), { timeout: 10_000 })
   })
@@ -245,10 +268,7 @@ describe('a `.story.md` with `src`', () => {
     await open()
     expect(html('Page.story.md')).toContain('First')
 
-    await expect.poll(() => {
-      writeFileSync(readme, '# Second\n')
-      return html('Page.story.md')
-    }, { timeout: 10_000 }).toContain('Second')
+    await changeAndSee(readme, () => html('Page.story.md'))
 
     unlinkSync(readme)
     await expect.poll(() => html('Page.story.md'), { timeout: 10_000 }).toContain('src: ../shared/README.md')
