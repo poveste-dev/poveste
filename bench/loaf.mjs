@@ -29,14 +29,19 @@ export const LOAF_INIT = `
 
 /**
  * Script time split by where it ran, and the frames over 50ms, for the frames that
- * started in `[from, to)`. Every field is `null` when the browser has no LoAF, so
- * an unsupported run cannot read as a cheap one.
+ * overlap `[from, to)`. Every field is `null` when the browser has no LoAF, so an
+ * unsupported run cannot read as a cheap one.
+ *
+ * Overlap rather than start: `from` is read inside a frame that has already begun,
+ * and Chromium 159 (Playwright 1.65) runs a rAF a sandbox queued during that frame
+ * in that same frame, where 156 ran it in the next, so a start filter dropped the
+ * 150ms the smoke run plants.
  */
 export function summarizeLoaf(loaf, { from = -Infinity, to = Infinity } = {}) {
   if (!loaf?.supported) {
     return { hostScriptMs: null, sandboxScriptMs: null, longestSandboxScriptMs: null, otherScriptMs: null, longFrames: null, worstFrameMs: null }
   }
-  const frames = loaf.frames.filter(frame => frame.startTime >= from && frame.startTime < to)
+  const frames = loaf.frames.filter(frame => frame.startTime + frame.duration > from && frame.startTime < to)
   let host = 0
   let sandbox = 0
   let other = 0
