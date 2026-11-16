@@ -1,4 +1,4 @@
-import type { AutoDocsSection, ServerStory, ServerVariant } from '@poveste/shared'
+import type { A11yOptions, AutoDocsSection, ServerStory, ServerVariant } from '@poveste/shared'
 import type { Component, PropType } from 'vue'
 import { defineComponent, onMounted } from 'vue'
 import { addStoryContext, addVariantContext, serverStoryContext, storyFileContext } from './context.js'
@@ -51,6 +51,11 @@ export default defineComponent({
       default: undefined,
     },
 
+    a11y: {
+      type: Object as PropType<A11yOptions>,
+      default: undefined,
+    },
+
     // Read from the source by auto-docs, not at collection (#1432).
     component: {
       type: [Object, Function, Array] as PropType<Component | Component[]>,
@@ -83,6 +88,7 @@ export default defineComponent({
       iconColor: props.iconColor,
       docsOnly: props.docsOnly,
       ...props.autoDocs !== undefined ? { autoDocs: props.autoDocs } : {},
+      ...props.a11y !== undefined ? { a11y: props.a11y } : {},
       meta: props.meta,
       variants: [],
     }

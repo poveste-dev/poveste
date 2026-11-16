@@ -9,7 +9,7 @@ import { parseQuery } from 'vue-router'
 import GenericMountStory from './components/story/GenericMountStory.vue'
 import GenericRenderStory from './components/story/GenericRenderStory.vue'
 import { lowPriorityColorScheme, previewColorScheme, previewDarkClasses, resolvePreviewDark } from './util/color-scheme.js'
-import { PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
+import { A11Y_RESULT, A11Y_RUN, PREVIEW_SETTINGS_REQUEST, PREVIEW_SETTINGS_SYNC, SANDBOX_COLOR_SCHEME, SANDBOX_HEIGHT, SANDBOX_READY, SANDBOX_RETARGET, STATE_SYNC } from './util/const.js'
 import { isDark } from './util/dark.js'
 import { iconCollections } from './util/icons.generated.js'
 import { mapFile } from './util/mapping'
@@ -151,6 +151,24 @@ watch(() => previewColorScheme(receivedSettings.colorScheme, isDark.value), (val
   immediate: true,
 })
 
+// The accessibility panel's check, run here because axe needs the document the
+// variant renders in. Queued, because axe refuses a run while one is going.
+let a11yQueue: Promise<void> = Promise.resolve()
+function checkA11y(data: { runId?: unknown, disabledRules?: unknown, background?: unknown }) {
+  const reply = { type: A11Y_RESULT, runId: data.runId, storyId: storyId.value, variantId: variantId.value }
+  const disabledRules = Array.isArray(data.disabledRules) ? data.disabledRules.filter(id => typeof id === 'string') : []
+  const background = typeof data.background === 'string' ? data.background : undefined
+  a11yQueue = a11yQueue.then(async () => {
+    try {
+      const { runA11y } = await import('./util/a11y-run.js')
+      window.parent.postMessage({ ...reply, result: await runA11y(disabledRules, background) }, window.location.origin)
+    }
+    catch (error) {
+      window.parent.postMessage({ ...reply, error: error instanceof Error ? error.message : String(error) }, window.location.origin)
+    }
+  })
+}
+
 // Height reporting state, declared here because the retarget handler inside the
 // app resets it.
 let pendingFrame: number | null = null
@@ -202,6 +220,9 @@ const app = createApp({
       }
       else if (event.data?.type === PREVIEW_SETTINGS_SYNC) {
         applyPreviewSettings(event.data.settings)
+      }
+      else if (event.data?.type === A11Y_RUN) {
+        checkA11y(event.data)
       }
       else if (event.data?.type === SANDBOX_RETARGET) {
         // A new occupant: nothing has been agreed with the host about it, and
