@@ -130,7 +130,9 @@ export function createDomEnv() {
     matches: false,
     media: query,
     onchange: null,
+    // eslint-disable-next-line ts/no-deprecated -- `MediaQueryList` still declares it, and older callers use it
     addListener: () => {},
+    // eslint-disable-next-line ts/no-deprecated -- as above
     removeListener: () => {},
     addEventListener: () => {},
     removeEventListener: () => {},

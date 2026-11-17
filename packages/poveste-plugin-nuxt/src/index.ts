@@ -213,6 +213,7 @@ async function useNuxtViteConfig(excludePlugins: (string | RegExp)[], isBuild: b
         ...isBuild ? { watcher: 'builder' as const } : {},
       },
       app: {
+        // eslint-disable-next-line ts/no-deprecated -- moving to `rootAttrs.id` is a plugin change, not part of a lint bump
         rootId: 'nuxt-test',
       },
       pages: false,
