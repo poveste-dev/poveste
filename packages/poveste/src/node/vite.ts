@@ -36,7 +36,7 @@ import {
 import { escapeRegExp } from './util/escape-regexp.js'
 import { applyHeadTransform, defaultDescription } from './util/head.js'
 import { viteCommand, viteMode } from './util/vite-mode.js'
-import { chromePrebundles, collapseVendoredVue, vendorsFromPoveste } from './vendors.js'
+import { chromeCommonjsPrebundles, chromePrebundles, collapseVendoredVue, vendorsFromPoveste } from './vendors.js'
 import { createVirtualFilesPlugin } from './virtual/vite-plugin.js'
 
 const require = createRequire(import.meta.url)
@@ -214,6 +214,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             // file: two module instances, and `RouterView` rendered nothing (#1134).
             ...(Object.keys(collapsedVue).length > 0 ? ['vue'] : []),
             ...isServer || process.env['POVESTE_DEV'] ? [] : chromePrebundles({ root: ctx.root, collapsed: Object.keys(collapsedVue) }),
+            ...isServer || process.env['POVESTE_DEV'] ? [] : chromeCommonjsPrebundles({ root: ctx.root }),
           ],
           exclude: [
             'poveste',

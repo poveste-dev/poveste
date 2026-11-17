@@ -273,6 +273,30 @@ docs_tab_shows() {
   docs_tab_says "$1" "$2" "$3" "$4" "$5" --prop
 }
 
+# a11y_tab_runs <name> <app> <path> <port> — `poveste dev` over the same install, and
+# the Accessibility tab's check finishes. Opt-in with the dev pass. Only an npm install
+# serves axe-core as it is, which has no default export.
+a11y_tab_runs() {
+  local name="$1" app="$2" path="$3" port="$4"
+  [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
+
+  echo "▸ [$name] Running poveste dev and opening the Accessibility tab at $path"
+  local dev_log="$WORK/dev-a11y-$name.log"
+  ( cd "$app" && exec ./node_modules/.bin/poveste dev --port "$port" ) > "$dev_log" 2>&1 &
+  DEV_PID=$!
+
+  if ! node "$ROOT/scripts/release/a11y-runs.mjs" "http://localhost:$port" "$path"; then
+    echo "❌ Smoke test FAILED [$name] — the Accessibility tab's check did not finish"
+    tail -20 "$dev_log"
+    exit 1
+  fi
+
+  kill "$DEV_PID" 2>/dev/null
+  wait "$DEV_PID" 2>/dev/null || true
+  DEV_PID=""
+  echo "✅ [$name] Accessibility tab runs"
+}
+
 # one_dependency_pass <name> — after `dev_renders`, over the log it left.
 #
 # A dependency Vite's scan missed is bundled in a second pass when a story first
@@ -430,6 +454,7 @@ dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
 # This book installs no TypeScript, as a JavaScript Vue project doesn't, and is
 # read with Poveste's TypeScript 6 (#1464).
 docs_tab_shows vue "$VUE_APP" "/story/src-button-story-vue?tab=docs" label 4798
+a11y_tab_runs vue "$VUE_APP" "/story/src-button-story-vue" 4804
 pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0

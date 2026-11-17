@@ -310,3 +310,37 @@ export function chromePrebundles(options: {
     .filter(installedAs => !collapsed.includes(installedAs))
     .map(installedAs => `poveste > @poveste/vendors > ${installedAs}`)
 }
+
+// What the chrome imports that ships no ESM build.
+const CHROME_COMMONJS = ['axe-core/axe.min.js']
+
+/**
+ * The chrome's CommonJS dependencies, as nested pre-bundle specifiers.
+ *
+ * Vite pre-bundles what a project file imports, and serves a dependency imported from
+ * inside `node_modules` as it is, which suits every ESM package the chrome uses. axe-core
+ * is UMD only, and served as it is it has no default export, so the Accessibility tab
+ * failed under `poveste dev` in an npm install. pnpm hid it: there the scan reaches the
+ * chrome's entries, which a hoisted install loses to the scan's filter on `dist`.
+ *
+ * Empty when the chain cannot be resolved from the project, where Vite would only warn
+ * about an include it cannot find.
+ */
+export function chromeCommonjsPrebundles(options: {
+  root: string
+  resolve?: Resolver
+  appFrom?: string
+}): string[] {
+  const resolve = options.resolve ?? nodeResolver
+
+  if (!resolve('poveste/package.json', options.root)) {
+    return []
+  }
+  const app = resolve('@poveste/app/package.json', options.appFrom ?? dirname(POVESTE_FILE))
+  if (!app) {
+    return []
+  }
+  return CHROME_COMMONJS
+    .filter(specifier => resolve(specifier, dirname(app)))
+    .map(specifier => `poveste > @poveste/app > ${specifier}`)
+}
