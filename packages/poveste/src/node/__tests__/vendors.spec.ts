@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
 import { join } from 'pathe'
 import { describe, expect, it, onTestFinished } from 'vitest'
-import { chromePrebundles, collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
+import { chromeCommonjsPrebundles, chromePrebundles, collapseVendoredVue, nodeResolver, satisfiesCaret, vendoredAliases } from '../vendors.js'
 import { tempDir } from './temp-dir.js'
 
 // macOS reports `/var` and hands back `/private/var`, which resolution accepts and a
@@ -379,6 +379,44 @@ describe('pre-bundling the chrome\'s vendored packages', () => {
     const resolve = resolverOver({ '/poveste|@poveste/vendors/vue': join(vendors, 'vue.js') })
 
     expect(chromePrebundles({ root: '/book', resolve, vendorsFrom: '/poveste' })).toEqual([])
+  })
+})
+
+describe('pre-bundling the chrome\'s CommonJS dependencies', () => {
+  function resolverOver(files: Record<string, string>) {
+    return (specifier: string, from: string) => files[`${from}|${specifier}`]
+  }
+
+  // Imported from inside `node_modules`, axe-core's UMD build was served as it is, and
+  // the Accessibility tab failed under `poveste dev` in an npm install.
+  it('reaches axe-core through Poveste and the app', () => {
+    const resolve = resolverOver({
+      '/book|poveste/package.json': '/book/node_modules/poveste/package.json',
+      '/poveste|@poveste/app/package.json': '/book/node_modules/@poveste/app/package.json',
+      '/book/node_modules/@poveste/app|axe-core/axe.min.js': '/book/node_modules/axe-core/axe.min.js',
+    })
+
+    expect(chromeCommonjsPrebundles({ root: '/book', resolve, appFrom: '/poveste' })).toEqual([
+      'poveste > @poveste/app > axe-core/axe.min.js',
+    ])
+  })
+
+  it('names nothing the project cannot reach, so Vite has no include to warn about', () => {
+    const resolve = resolverOver({
+      '/poveste|@poveste/app/package.json': '/book/node_modules/@poveste/app/package.json',
+      '/book/node_modules/@poveste/app|axe-core/axe.min.js': '/book/node_modules/axe-core/axe.min.js',
+    })
+
+    expect(chromeCommonjsPrebundles({ root: '/book', resolve, appFrom: '/poveste' })).toEqual([])
+  })
+
+  it('names nothing when the app has no axe-core to give', () => {
+    const resolve = resolverOver({
+      '/book|poveste/package.json': '/book/node_modules/poveste/package.json',
+      '/poveste|@poveste/app/package.json': '/book/node_modules/@poveste/app/package.json',
+    })
+
+    expect(chromeCommonjsPrebundles({ root: '/book', resolve, appFrom: '/poveste' })).toEqual([])
   })
 })
 
