@@ -63,8 +63,8 @@
     }
   },
   "dependencies": {
-    "@percy/sdk-utils": "^1.32.11",
-    "defu": "^6.1.4",
+    "@percy/sdk-utils": "^1.32.12",
+    "defu": "^6.1.7",
     "pathe": "^2.0.3"
   },
   "devDependencies": {

@@ -195,7 +195,7 @@ export async function measureGridFling({ baseURL, storyId, ms = 400, pxPerMs = 1
 
       const readyAfter = await settle(page, () => window.__bench?.ready ?? 0, 1_500, 30_000)
       const lastReadyAt = await page.evaluate(() => window.__bench.readyAt.at(-1))
-      // Frames that started while the fling ran, including the one it waited out.
+      // Frames that ran during the fling, including the one it waited out.
       const loaf = summarizeLoaf(await page.evaluate(() => window.__loaf), { from: fling.t0, to: fling.t1 + 100 })
       const run = {
         scrollEvents: fling.velocities.length,

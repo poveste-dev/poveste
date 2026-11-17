@@ -59,13 +59,13 @@
     "poveste": "workspace:^"
   },
   "dependencies": {
-    "@nuxt/kit": "^4.6.2",
-    "@rollup/plugin-replace": "^6.0.1",
-    "h3": "^1.13.0",
-    "ofetch": "^1.4.1"
+    "@nuxt/kit": "^4.6.4",
+    "@rollup/plugin-replace": "^6.0.3",
+    "h3": "^1.15.11",
+    "ofetch": "^1.5.1"
   },
   "devDependencies": {
-    "@nuxt/schema": "^4.6.2",
+    "@nuxt/schema": "^4.6.4",
     "@types/node": "catalog:",
     "poveste": "workspace:*",
     "typescript": "catalog:",

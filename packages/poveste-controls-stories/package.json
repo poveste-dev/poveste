@@ -21,12 +21,12 @@
   },
   "dependencies": {
     "@poveste/controls": "workspace:*",
-    "vue": "^3.5.44"
+    "vue": "^3.5.45"
   },
   "devDependencies": {
     "@poveste/plugin-vue": "workspace:*",
     "@types/node": "catalog:",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitejs/plugin-vue": "^6.0.11",
     "poveste": "workspace:*",
     "vite": "catalog:"
   }

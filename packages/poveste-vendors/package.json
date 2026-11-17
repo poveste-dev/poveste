@@ -61,10 +61,10 @@
   },
   "dependencies": {
     "@vue/devtools-api": "^8.2.1",
-    "poveste-iconify-vue": "npm:@iconify/vue@^5.0.1",
-    "poveste-pinia": "npm:pinia@^4.0.3",
-    "poveste-vue": "npm:vue@^3.5.26",
-    "poveste-vue-router": "npm:vue-router@^5.3.1",
+    "poveste-iconify-vue": "npm:@iconify/vue@^5.0.5",
+    "poveste-pinia": "npm:pinia@^4.1.0",
+    "poveste-vue": "npm:vue@^3.5.45",
+    "poveste-vue-router": "npm:vue-router@^5.5.1",
     "poveste-vueuse-core": "npm:@vueuse/core@^15.0.0"
   }
 }
