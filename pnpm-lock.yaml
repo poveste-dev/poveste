@@ -839,8 +839,8 @@ importers:
         specifier: ^5.4.4
         version: 5.4.4
       chokidar:
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^6.0.0
+        version: 6.0.0
       defu:
         specifier: ^6.1.7
         version: 6.1.7
@@ -997,8 +997,8 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0(vue@3.5.45(typescript@6.0.3))
       chokidar:
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^6.0.0
+        version: 6.0.0
       concurrently:
         specifier: ^10.0.7
         version: 10.0.7
@@ -1554,8 +1554,8 @@ importers:
         specifier: ^11.0.4
         version: 11.0.4
       chokidar:
-        specifier: ^5.0.0
-        version: 5.0.0
+        specifier: ^6.0.0
+        version: 6.0.0
       markdown-it:
         specifier: ^15.0.3
         version: 15.0.3
