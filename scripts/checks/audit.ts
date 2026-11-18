@@ -31,6 +31,7 @@ export const ACCEPTED: Record<string, string> = {
   'GHSA-7pqw-9j4j-h8q3': 'the same extract-zip 2.0.1 as GHSA-jmr9-qjv8-65gv, through the same chain (#569)',
   'GHSA-mrhx-c7xc-m3w5': 'zod 3.x has no patched release, the fix is 4.6.6; plugin-screenshot reaches 3.25.76 through capture-website 5, puppeteer 24.43.1 (the last 24.x) and chromium-bidi 14, which declares `zod: ^3.24.1` (#569)',
   'GHSA-c475-qrg2-pj4r': 'basic-ftp 5.3.1 is the last 5.x and the fix landed only in 6.x, which `get-uri` does not accept — it declares `^5.0.2`; plugin-percy reaches it through @percy/sdk-utils, pac-proxy-agent and get-uri, and the parser the advisory names is the FTP branch of a proxy agent (#564)',
+  'GHSA-fc5q-39xc-vjpf': 'picomatch has no patched release: the advisory covers every version (`<= 4.0.7`, widened 17 Nov 2026), and vite 8 itself declares `picomatch: ^4.0.7`, so every consumer installs it whatever poveste ships; poveste reaches it directly (story matching and the watch-ignore filter, on patterns from the consumer\'s own config) and through tinyglobby, unhead > unplugin, @rollup/pluginutils and @vue/language-core (#1719)',
 }
 
 interface Lockfile {
