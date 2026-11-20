@@ -11,6 +11,12 @@ Quasar builds its Vite config asynchronously and hands it over through an entryp
 
 ## Installation
 
+Starting from an empty directory? Create the project with Quasar's own scaffold first. It asks a few questions, and its defaults make a Quasar CLI project on Vite, which is what this plugin needs. It installs the dependencies itself, so `cd` into the folder it creates and carry on below:
+
+```shell
+npm init quasar@latest
+```
+
 Three packages: Poveste itself, the Vue plugin every Vue-family book needs, and the Quasar one that sits on top of it.
 
 ```shell

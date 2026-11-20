@@ -9,6 +9,14 @@ description: 'Install Poveste and the Solid plugin, add the config, and write yo
 
 ## Installation
 
+Starting from an empty directory? Create a project from Vite's Solid template first:
+
+```shell
+npm create vite@latest my-book -- --template solid-ts
+cd my-book
+npm install
+```
+
 ```shell
 pnpm i -D poveste @poveste/plugin-solid
 # OR

@@ -27,6 +27,14 @@ Poveste is a tool to generate stories applications (or "books").
 
 ## Installation
 
+Starting from an empty directory? Svelte's own `sv create` makes a SvelteKit project, which [Getting started with SvelteKit](../sveltekit/getting-started.md) covers. For plain Svelte, create a project from Vite's Svelte template first:
+
+```shell
+npm create vite@latest my-book -- --template svelte-ts
+cd my-book
+npm install
+```
+
 Install the `poveste` and `@poveste/plugin-svelte` packages into your project:
 
 ```shell
