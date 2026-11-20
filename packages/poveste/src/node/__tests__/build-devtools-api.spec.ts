@@ -81,4 +81,14 @@ describe('the devtools API stub in a built book', () => {
     expect(status, output).toBe(0)
     expect(builtCode()).not.toContain('only the real module says this')
   }, 180_000)
+
+  // A call to a stubbed name keeps its arguments alive unless the bundler knows
+  // the call does nothing, and the callbacks are where the devtools code is (#1694).
+  it('lets a registration call fall away with everything only its callback reaches', () => {
+    installPublishedVersion()
+    const { status, output } = buildBook('registration.story.js')
+
+    expect(status, output).toBe(0)
+    expect(builtCode().includes('a tree only the devtools callback reaches'), 'the callback survived the build').toBe(false)
+  }, 180_000)
 })

@@ -57,7 +57,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 143_200 for #162 in an npm install: axe-core pre-bundled for the A11y tab, 143,298 B measured.
   // Raised from 143_500 for #1702: a missing setup file named by its key and path, 143,727 B measured on top of #1704.
   // Raised from 144_000 for #1692: the scan entry that reaches the chrome under npm, 144,370 B measured on top of #1702.
-  'poveste': { bytes: 144_600, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
+  // Raised from 144_600 for #1694: the devtools stub declares a function per name so a built book's `vendor` sheds the devtools callbacks, 144,777 B measured on top of #1692.
+  'poveste': { bytes: 145_000, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
   // Raised from 435_300 for #1436's table: v-model marks, type parameters and slot-prop
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   // Raised from 437_000 for #1521: the source panel's grammar chosen per story file,

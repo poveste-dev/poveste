@@ -18,6 +18,9 @@ const PUBLISHED_NAMES = [
 
 const IDENTIFIER = /^[\p{ID_Start}$_][\p{ID_Continue}$\u200C\u200D]*$/u
 
+// Names a module can export but not declare, as `export function default() {}` cannot be.
+const RESERVED = new Set('arguments await break case catch class const continue debugger default delete do else enum eval export extends false finally for function if implements import in instanceof interface let new null package private protected public return static super switch this throw true try typeof var void while with yield'.split(' '))
+
 /**
  * `@vue/devtools-api` is the registration side of the Vue Devtools browser
  * extension. pinia and vue-router import it statically, so it is in every
@@ -77,9 +80,29 @@ export function devtoolsApiStubPlugin(): VitePlugin {
       }
       // Not an empty module: pinia and vue-router *call* these, so each export
       // has to exist or the book throws where it used to register nothing.
-      return `const noop = () => {}\nexport { ${[...names].map(name => `noop as ${name}`).join(', ')} }\n`
+      return stubModule(names)
     },
   }
+}
+
+/**
+ * An empty function declared under each name, which Rolldown sees does nothing,
+ * so it drops each call and the callback handed to it: pinia's, vue-router's and
+ * vue-i18n's devtools code. One function aliased to every name kept them all,
+ * 16 KB of `examples/vue`'s `vendor` (#1694).
+ */
+function stubModule(names: Set<string>) {
+  const declared = [...names].filter(name => !RESERVED.has(name))
+  const aliased = [...names].filter(name => RESERVED.has(name))
+  let code = declared.map(name => `export function ${name}() {}\n`).join('')
+  if (aliased.length > 0) {
+    let noop = 'noop'
+    while (names.has(noop)) {
+      noop = `_${noop}`
+    }
+    code += `function ${noop}() {}\nexport { ${aliased.map(name => `${noop} as ${name}`).join(', ')} }\n`
+  }
+  return code
 }
 
 type Resolve = (source: string, importer: string) => Promise<{ id: string, external?: boolean | string } | null>
