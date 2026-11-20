@@ -1,5 +1,7 @@
-import type { Plugin } from 'vite'
+import type { Plugin, Rolldown } from 'vite'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'pathe'
 
 /**
  * Every package histoire 0.17 publishes that poveste ships under its own name,
@@ -55,4 +57,42 @@ export function histoireImports(): Plugin {
         ?? await this.resolve(renamed, FROM_POVESTE, { ...options, skipSelf: true })
     },
   }
+}
+
+/**
+ * The same renaming for Vite's dependency scan, which pre-bundles a bare import under the
+ * name it is written with: `@histoire/plugin-vue` was pre-bundled as such, the page asked
+ * for `@poveste/plugin-vue`, and the first story load bundled it again and reloaded (#1746).
+ */
+export function histoireScanImports(): Rolldown.Plugin {
+  return {
+    name: 'poveste:histoire-scan-imports',
+
+    async resolveId(id, importer, options) {
+      const renamed = povesteSpecifier(id)
+      if (!renamed) {
+        return undefined
+      }
+      return await this.resolve(renamed, scanImporter(renamed, importer), { ...options, skipSelf: true })
+    },
+  }
+}
+
+// One bare import the scan cannot resolve drops its whole result, so unlike `histoireImports()`
+// it cannot try the book and then poveste: under strict pnpm a book reaches its plugins but not
+// `@poveste/shared`. A script block's importer is `virtual-module:<file>?id=<n>`.
+function scanImporter(renamed: string, importer: string | undefined): string {
+  if (!importer) {
+    return FROM_POVESTE
+  }
+  const name = renamed.split('/').slice(0, renamed.startsWith('@') ? 2 : 1).join('/')
+  let dir: string | undefined = dirname(importer.replace(/^virtual-module:/, '').replace(/\?.*$/, ''))
+  while (dir) {
+    if (existsSync(join(dir, 'node_modules', name, 'package.json'))) {
+      return importer
+    }
+    const parent = dirname(dir)
+    dir = parent === dir ? undefined : parent
+  }
+  return FROM_POVESTE
 }

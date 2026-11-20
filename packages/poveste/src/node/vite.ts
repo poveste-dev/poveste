@@ -21,7 +21,7 @@ import { APP_PATH, TEMP_PATH } from './alias.js'
 import { collectionLogger } from './collect/logger.js'
 import { runDevCommand } from './dev-event.js'
 import { devtoolsApiStubPlugin } from './devtools-api-stub.js'
-import { histoireImports } from './histoire-imports.js'
+import { histoireImports, histoireScanImports } from './histoire-imports.js'
 import { createMarkdownPlugins } from './markdown.js'
 import { chromeScanEntry, optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
@@ -219,6 +219,9 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
             'poveste',
             '@poveste/vendors',
           ],
+          rolldownOptions: {
+            plugins: [histoireScanImports()],
+          },
         },
         server: {
           fs: {
