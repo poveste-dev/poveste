@@ -141,7 +141,9 @@ function write(value: Color) {
           >
             <!-- HSB, not the `rgb` default: that one puts red on x and green on y,
                  so the area and a hue slider disagree about what they are editing. -->
+            <!-- The gradient arrives as a slot prop, not as a style on the area (#1728). -->
             <ColorAreaRoot
+              v-slot="{ style }"
               :model-value="picked"
               color-space="hsb"
               x-channel="saturation"
@@ -150,7 +152,10 @@ function write(value: Color) {
               data-slot="area"
               @update:color="write"
             >
-              <ColorAreaArea class="poveste-color-area-surface">
+              <ColorAreaArea
+                class="poveste-color-area-surface"
+                :style="style"
+              >
                 <ColorAreaThumb class="poveste-color-thumb" />
               </ColorAreaArea>
             </ColorAreaRoot>
@@ -281,17 +286,21 @@ function write(value: Color) {
 }
 
 .poveste-color-area-surface {
+  position: relative;
   width: 100%;
   height: 100%;
   border-radius: var(--_poveste-radius-sm);
 }
 
 .poveste-color-hue {
+  position: relative;
+  display: block;
   width: 10rem;
   height: .75rem;
 }
 
 .poveste-color-hue-track {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 9999px;
