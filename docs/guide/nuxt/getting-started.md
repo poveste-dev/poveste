@@ -12,6 +12,14 @@ description: 'Install Poveste and the Nuxt plugin, add the config, and write you
 
 ## Installation
 
+Starting from an empty directory? Create the project with Nuxt's own scaffold first:
+
+```shell
+npm create nuxt@latest my-book
+cd my-book
+npm install
+```
+
 Nuxt needs three packages: Poveste, the Vue plugin it builds on, and the Nuxt plugin itself.
 
 ```shell

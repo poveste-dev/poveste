@@ -27,6 +27,16 @@ Poveste is a tool to generate stories applications (or "books").
 
 ## Installation
 
+Starting from an empty directory? Create a Vue project first, with the scaffold Vue recommends, and follow the rest of this page inside it:
+
+```shell
+npm create vue@latest my-book -- --ts
+cd my-book
+npm install
+```
+
+It brings `vue`, `vite`, `@vitejs/plugin-vue` and `"type": "module"`. Starting from `npm init -y` instead, see [The Vite config](#the-vite-config) for what that leaves out.
+
 Install the `poveste` and `@poveste/plugin-vue` packages into your project:
 
 ```shell
@@ -88,12 +98,14 @@ Install @vitejs/plugin-vue to handle .vue files.
 ```
 
 ```shell
-pnpm i -D vite @vitejs/plugin-vue
+pnpm i -D vite @vitejs/plugin-vue vue
 # OR
-npm i -D vite @vitejs/plugin-vue
+npm i -D vite @vitejs/plugin-vue vue
 # OR
-yarn add -D vite @vitejs/plugin-vue
+yarn add -D vite @vitejs/plugin-vue vue
 ```
+
+`vue` is in the line so your project depends on it directly, rather than only through the plugins' peer dependencies.
 
 ```ts twoslash
 // vite.config.ts
@@ -105,6 +117,12 @@ export default defineConfig({
     vue(),
   ],
 })
+```
+
+A project from `npm init -y` also has no `"type": "module"` in its `package.json`, and without it `poveste dev` prints Vite's warning `ESM syntax in a file loaded as CommonJS` for `vite.config.ts`. Set it:
+
+```shell
+npm pkg set type=module
 ```
 
 ## Command Line Interface

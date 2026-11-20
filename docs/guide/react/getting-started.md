@@ -9,6 +9,14 @@ description: 'Install Poveste and the React plugin, add the config, and write yo
 
 ## Installation
 
+Starting from an empty directory? Create a project from Vite's React template first:
+
+```shell
+npm create vite@latest my-book -- --template react-ts
+cd my-book
+npm install
+```
+
 ```shell
 pnpm i -D poveste @poveste/plugin-react
 # OR

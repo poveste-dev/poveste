@@ -12,6 +12,16 @@ description: 'SvelteKit uses the same Svelte plugin, configured through the vite
 
 ## Installation
 
+Starting from an empty directory? Create the project with SvelteKit's own CLI first. It asks which template, type checking and add-ons you want:
+
+```shell
+npx sv create my-book
+cd my-book
+npm install
+```
+
+Its `.npmrc` sets `engine-strict=true`, so read the Node note below before you install.
+
 SvelteKit uses the same package as plain Svelte — there is no separate SvelteKit plugin.
 
 ```shell
@@ -46,6 +56,8 @@ Avoid `--config.minimum-release-age=0`. With a named version or `pnpm up -L` it 
 Run `node -v` before you install. On an older Node, `npm i poveste` still succeeds: npm installs the newest earlier Poveste that accepts your Node, which can be a long way back. On Node 22.21.1 and 20.19.0 that's 0.6.1. Expect a block of `npm warn EBADENGINE` warnings first, about dependencies such as `jsdom`, none of them naming Poveste. The lines that do name it come after: `npm warn deprecated` on six Poveste packages, each saying to install `@latest`, so update Node and do that. These docs otherwise describe a version you do not have, and the difference looks like a bug rather than its cause. With `engine-strict=true` in your `.npmrc`, npm refuses with `EBADENGINE` instead. pnpm installs the current version, and Poveste then refuses to start, naming the Node it needs; Yarn 1 refuses to install.
 
 On Node 24, prefer 24.15 or later. Poveste's DOM dependency, jsdom, and three of its own dependencies declare `^22.22.2 || ^24.15.0 || >=26`. On 24.13.0 npm warns `EBADENGINE` for each of them and installs anyway, and a Vue book built there, but nothing tests Poveste on a Node 24 before 24.15.
+
+A project from `sv create` does not install anyway. Its `.npmrc` sets `engine-strict=true`, so on any Node 24 below 24.15 the install exits with `EBADENGINE` on jsdom. Update Node, or remove that line from `.npmrc`.
 :::
 
 ::: info Supported versions
