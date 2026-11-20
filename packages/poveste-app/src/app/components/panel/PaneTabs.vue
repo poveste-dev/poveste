@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { Story, Variant } from '../../types'
 import { computed, toRefs } from 'vue'
+import { useRoute } from 'vue-router'
 import { useEventsStore } from '../../stores/events'
 import BaseOverflowMenu from '../base/BaseOverflowMenu.vue'
 import BaseOverflowTab from '../base/BaseOverflowTab.vue'
@@ -19,10 +20,20 @@ const { renderedDoc } = useStoryDoc(story)
 
 const eventsStore = useEventsStore()
 const hasEvents = computed(() => eventsStore.events.length)
+
+const TABS = ['', 'docs', 'events', 'a11y']
+const route = useRoute()
+const activeTab = computed(() => {
+  const index = TABS.indexOf(String(route.query['tab'] || ''))
+  return index < 0 ? undefined : index
+})
 </script>
 
 <template>
-  <BaseOverflowMenu class="poveste-pane-tabs h-10 flex-none border-b border-gray-100 dark:border-gray-750">
+  <BaseOverflowMenu
+    :active="activeTab"
+    class="poveste-pane-tabs h-10 flex-none border-b border-gray-100 dark:border-gray-750"
+  >
     <BaseTab
       :to="{ ...$route, query: { ...$route.query, tab: '' } }"
       :matched="!$route.query['tab']"
