@@ -36,11 +36,18 @@ describe('collecting a second story in the same worker', () => {
           throw new Error(`no collection finished in 60 s. What \`poveste dev\` printed:\n${output}`)
         })
 
-      expect(output).toContain('first.story.js')
-      expect(output).toContain('second.story.js')
-      // Installed by a module an inlined CommonJS dependency requires (#1404).
-      expect(output).toContain('third.story.js')
-      expect(output).toContain('fourth.story.js')
+      // Printed by the server itself before the end line, so it is all there now.
+      expect(output).not.toContain('Error while collecting story')
+
+      // A story's line comes from the collection worker, whose stdout reaches the
+      // parent on its own port and can arrive after the end line (#1753).
+      await vi.waitFor(() => {
+        expect(output).toContain('first.story.js')
+        expect(output).toContain('second.story.js')
+        // Installed by a module an inlined CommonJS dependency requires (#1404).
+        expect(output).toContain('third.story.js')
+        expect(output).toContain('fourth.story.js')
+      }, { timeout: 10_000, interval: 50 })
       expect(output).not.toContain('Error while collecting story')
     }
     finally {
