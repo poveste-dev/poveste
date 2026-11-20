@@ -9,7 +9,7 @@
   <Hst.Variant id="typed" title="Typed">
     <TypedBadge label="Typed" size="md" tone="info" />
   </Hst.Variant>
-  <Hst.Variant id="overridden" title="Overridden" autoProps={{ tone: 'text', level: { control: 'slider', min: 1, max: 6 }, secret: false }}>
+  <Hst.Variant id="overridden" title="Overridden" autoProps={{ tone: 'text', level: { control: 'slider', min: 1, max: 6 }, secret: false, outlined: 'checkbox', shape: { control: 'select', options: ['round', 'square'] } }}>
     <TypedBadge label="Overridden" />
   </Hst.Variant>
 </Hst.Story>

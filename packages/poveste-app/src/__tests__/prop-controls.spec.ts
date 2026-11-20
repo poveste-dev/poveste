@@ -1,7 +1,7 @@
 import type { AutoPropComponentDefinition, ComponentDoc, DocProp } from '@poveste/shared'
 import type { ComponentDocsEntry } from '../app/util/component-docs'
 import { describe, expect, it } from 'vitest'
-import { controlOf, docOf } from '../app/util/prop-controls'
+import { controlOf, defaultShown, docOf } from '../app/util/prop-controls'
 
 const docProp = (name: string, control?: DocProp['control']): DocProp => ({ name, type: 'x', required: false, tags: [], ...control ? { control } : {} })
 const doc = (...props: DocProp[]): ComponentDoc => ({ props, slots: [], events: [] })
@@ -89,5 +89,39 @@ describe('the control an automatic prop gets', () => {
 
   it('is none when the story hides the prop', () => {
     expect(controlOf(prop('size', ['string']), BUTTON, { size: false })).toBeUndefined()
+  })
+})
+
+// A checkbox, a select and a slider have no placeholder, so they show the default as
+// their value until the reader sets one; the others keep it as a placeholder (#1698).
+describe('the default a control shows before the reader sets anything', () => {
+  const SHAPE = { kind: 'select', options: [{ label: 'Round', value: 'round' }, { label: 'Square', value: 'square' }] } as const
+
+  it('is a boolean\'s, on a checkbox, whichever source picked it', () => {
+    for (const from of ['story', 'type', 'runtime'] as const) {
+      expect(defaultShown({ kind: 'checkbox', from }, true)).toBe(true)
+    }
+    expect(defaultShown({ kind: 'checkbox', from: 'runtime' }, false)).toBe(false)
+  })
+
+  it('is one of a select\'s options, from the type or the story', () => {
+    expect(defaultShown({ ...SHAPE, from: 'type' }, 'round')).toBe('round')
+    expect(defaultShown({ ...SHAPE, from: 'story' }, 'square')).toBe('square')
+  })
+
+  it('is a number, on a slider', () => {
+    expect(defaultShown({ kind: 'slider', min: 1, max: 6, from: 'story' }, 3)).toBe(3)
+  })
+
+  it('is none that the control cannot hold', () => {
+    expect(defaultShown({ kind: 'checkbox', from: 'type' }, 'true')).toBeUndefined()
+    expect(defaultShown({ ...SHAPE, from: 'type' }, 'oval')).toBeUndefined()
+    // A Vue factory default reaches the panel as its source text.
+    expect(defaultShown({ kind: 'slider', min: 1, max: 6, from: 'story' }, '() => 3')).toBeUndefined()
+  })
+
+  it('is none on a control that shows a placeholder instead', () => {
+    expect(defaultShown({ kind: 'text', from: 'type' }, 'Hello')).toBeUndefined()
+    expect(defaultShown({ kind: 'number', from: 'runtime' }, 3)).toBeUndefined()
   })
 })
