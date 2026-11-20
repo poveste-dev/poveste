@@ -104,8 +104,7 @@ test.describe('accessibility panel', () => {
 
   // The sandbox holds what the framework left of the story, and axe found nothing
   // wrong with it: a broken story read as an accessible one (#1705).
-  test('says it could not check a variant that threw while rendering', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name.startsWith('svelte'), 'a Svelte variant that throws never reports ready, so the side panel stays on Loading and shows no tab to check')
+  test('says it could not check a variant that threw while rendering', async ({ page }) => {
     await openStory(page, 'conformance-throws', `?variantId=throwing&${A11Y_TAB}`)
     await expect(page.getByTestId('story-error')).toBeVisible()
 
