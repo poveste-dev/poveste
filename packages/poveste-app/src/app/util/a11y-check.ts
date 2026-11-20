@@ -1,7 +1,7 @@
 import type { A11yResult, A11yRunner } from './a11y.js'
 import { onScopeDispose, ref, shallowRef, watch } from 'vue'
 
-export type A11yStatus = 'idle' | 'running' | 'done' | 'error' | 'unavailable'
+export type A11yStatus = 'idle' | 'running' | 'done' | 'error' | 'unavailable' | 'failed'
 
 export interface A11yCheckOptions {
   /** The runner for the variant shown, if a sandbox renders it. */
@@ -11,6 +11,11 @@ export interface A11yCheckOptions {
   automatic: () => boolean
   /** What the result depends on. A change re-runs, debounced, while automatic. */
   changes: () => unknown
+  /**
+   * Whether the variant threw while rendering. axe would check whatever the sandbox
+   * holds instead, and report a broken story as clean (#1705).
+   */
+  failed?: () => boolean
   delay?: number
 }
 
@@ -26,8 +31,14 @@ export function useA11yCheck(options: A11yCheckOptions) {
   let generation = 0
   let timer: ReturnType<typeof setTimeout> | undefined
 
+  const failed = () => options.failed?.() ?? false
+
   async function run() {
     clearTimeout(timer)
+    if (failed()) {
+      status.value = 'failed'
+      return
+    }
     const runner = options.runner()
     if (!runner) {
       status.value = 'unavailable'
@@ -49,12 +60,15 @@ export function useA11yCheck(options: A11yCheckOptions) {
     }
   }
 
-  watch(options.runner, (runner) => {
+  watch([options.runner, failed], ([runner]) => {
     generation++
     clearTimeout(timer)
     result.value = undefined
     error.value = undefined
-    if (!runner) {
+    if (failed()) {
+      status.value = 'failed'
+    }
+    else if (!runner) {
       status.value = 'unavailable'
     }
     else if (options.automatic()) {
@@ -66,7 +80,7 @@ export function useA11yCheck(options: A11yCheckOptions) {
   }, { immediate: true })
 
   watch(options.changes, () => {
-    if (!options.automatic() || !options.runner()) return
+    if (!options.automatic() || !options.runner() || failed()) return
     clearTimeout(timer)
     timer = setTimeout(run, options.delay ?? A11Y_DEBOUNCE)
   }, { deep: true })

@@ -2,7 +2,8 @@
 import type { Story, Variant } from '../../types'
 import { computed } from 'vue'
 import { usePreviewSettingsStore } from '../../stores/preview-settings'
-import { a11yRunnerFor, allDisabled, disabledRules, SANDBOX_DISABLED_RULES } from '../../util/a11y'
+import { useStoryErrorStore } from '../../stores/story-errors'
+import { a11yRunnerFor, allDisabled, disabledRules, rulesSkipped, SANDBOX_DISABLED_RULES } from '../../util/a11y'
 import { useA11yCheck } from '../../util/a11y-check'
 import { povesteConfig } from '../../util/config'
 
@@ -12,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const settings = usePreviewSettingsStore().currentSettings
+const errorStore = useStoryErrorStore()
 
 const rules = computed(() => disabledRules(povesteConfig.a11y, props.story.a11y))
 
@@ -37,9 +39,11 @@ const { status, result, error, run } = useA11yCheck({
   disabledRules: () => allDisabled(rules.value),
   automatic: () => automatic.value,
   changes: () => [props.variant.state, settings, rules.value],
+  failed: () => !!errorStore.forVariant(props.story.id, props.variant.id),
 })
 
 const summary = computed(() => {
+  if (status.value === 'failed') return 'Could not check: the variant failed to render'
   if (status.value === 'running' && !result.value) return 'Checking…'
   if (status.value === 'error') return 'The check failed'
   if (!result.value) return 'Checks this variant with axe-core when asked'
@@ -47,7 +51,8 @@ const summary = computed(() => {
   return count === 0 ? 'No violations found' : `${count} violation${count === 1 ? '' : 's'}`
 })
 
-const offCount = computed(() => allDisabled(rules.value).length)
+const skipped = computed(() => rulesSkipped(rules.value, result.value?.unknownRules))
+const offCount = computed(() => allDisabled(skipped.value).length)
 </script>
 
 <template>
@@ -76,6 +81,7 @@ const offCount = computed(() => allDisabled(rules.value).length)
           > · axe-core {{ result.engine }}</span>
         </p>
         <button
+          v-if="status !== 'failed'"
           type="button"
           data-slot="run"
           :disabled="status === 'running'"
@@ -137,25 +143,28 @@ const offCount = computed(() => allDisabled(rules.value).length)
         Not axe-core rules, so nothing was skipped for them: {{ result.unknownRules.join(', ') }}
       </p>
 
-      <details data-slot="rules-off">
+      <details
+        v-if="status !== 'failed'"
+        data-slot="rules-off"
+      >
         <summary>{{ offCount }} rules not run</summary>
         <dl>
           <template
-            v-for="id of rules.sandbox"
+            v-for="id of skipped.sandbox"
             :key="id"
           >
             <dt><code>{{ id }}</code></dt>
             <dd>{{ SANDBOX_DISABLED_RULES[id] }}</dd>
           </template>
           <template
-            v-for="id of rules.book"
+            v-for="id of skipped.book"
             :key="`book-${id}`"
           >
             <dt><code>{{ id }}</code></dt>
             <dd>Turned off for the book, in its config.</dd>
           </template>
           <template
-            v-for="id of rules.story"
+            v-for="id of skipped.story"
             :key="`story-${id}`"
           >
             <dt><code>{{ id }}</code></dt>

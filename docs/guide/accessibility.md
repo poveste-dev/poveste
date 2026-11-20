@@ -24,6 +24,7 @@ axe-core runs inside the variant's sandbox, the document the variant renders in,
 It does not check:
 
 - **A story with `layout: { type: 'single', iframe: false }`.** It renders in the book's own page rather than in a sandbox, so there is no document of its own to check, and the tab says so.
+- **A variant that threw while rendering.** Its sandbox holds whatever the framework left behind rather than the component, so the tab says it could not check the variant instead of reporting on that. It checks again once the variant renders.
 - **The inside of an iframe a component renders.** The check stays in the variant's own document.
 
 A check is a start rather than a verdict. axe-core finds the failures a rule can decide from the page; what it can't decide, such as whether an image's text alternative describes it, or whether the component can be used from the keyboard alone, is still yours to try.
