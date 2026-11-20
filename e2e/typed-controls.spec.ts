@@ -42,6 +42,33 @@ test.describe('controls from types', () => {
   })
 })
 
+// A checkbox and a select have no placeholder, so before anything is set they show the
+// default the preview renders, from the prop's type or from the story's override (#1698).
+test.describe('a control nobody has set', () => {
+  for (const variant of ['typed', 'overridden']) {
+    test(`shows a boolean's true default as checked, and its first click flips the preview (${variant})`, async ({ page }) => {
+      await openStory(page, STORY, `?variantId=${variant}`)
+      const preview = page.getByTestId('preview-iframe').contentFrame().locator('body')
+      const checkbox = control(page, 'outlined').getByRole('checkbox')
+
+      await expect(control(page, 'outlined')).toHaveAttribute('data-control', 'checkbox', { timeout: 20_000 })
+      await expect(preview).toContainText('outlined')
+      await expect(checkbox).toBeChecked()
+
+      await checkbox.click()
+      await expect(checkbox).not.toBeChecked()
+      await expect(preview).toContainText('filled')
+    })
+
+    test(`shows a union's default as its select's value (${variant})`, async ({ page }) => {
+      await openStory(page, STORY, `?variantId=${variant}`)
+
+      await expect(control(page, 'shape')).toHaveAttribute('data-control', 'select', { timeout: 20_000 })
+      await expect(control(page, 'shape').locator('[data-slot="value"]')).toHaveText('round')
+    })
+  }
+})
+
 test.describe('a control whose type arrives while the reader is in it', () => {
   // Built books only, as every spec here: each component's docs load as a chunk of its own,
   // which can be held back until the reader is typing.

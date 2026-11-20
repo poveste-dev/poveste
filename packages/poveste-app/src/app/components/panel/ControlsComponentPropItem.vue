@@ -5,6 +5,7 @@ import type { PropControl } from '../../util/prop-controls'
 import { Icon } from '@iconify/vue'
 import { HstCheckbox, HstColor, HstDate, HstJson, HstNumber, HstSelect, HstSlider, HstText, HstTextarea, HstTooltip } from '@poveste/controls'
 import { computed, ref, shallowRef, watch } from 'vue'
+import { defaultShown } from '../../util/prop-controls'
 
 const props = defineProps<{
   variant: Variant
@@ -52,6 +53,8 @@ function catchUp() {
 }
 watch([() => props.control, canReset], catchUp)
 
+const value = computed(() => model.value === undefined ? defaultShown(shown.value, props.definition.default) : model.value)
+
 const extra = computed(() => {
   const { options, min, max, step } = shown.value
   return {
@@ -82,11 +85,12 @@ function reset() {
   >
     <component
       :is="COMPONENTS[shown.kind]"
-      v-model="model"
+      :model-value="value"
       v-bind="extra"
       :placeholder="model === undefined ? definition?.default : null"
       class="poveste-controls-component-prop-item grow min-w-0"
       :title="`${definition.name}${canReset ? ' *' : ''}`"
+      @update:model-value="model = $event"
     />
     <HstTooltip content="Remove override">
       <button

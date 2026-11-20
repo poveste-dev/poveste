@@ -20,7 +20,7 @@ import TypedBadge from './TypedBadge.vue'
     <Variant
       id="overridden"
       title="Overridden"
-      :auto-props="{ tone: 'text', level: { control: 'slider', min: 1, max: 6 }, secret: false }"
+      :auto-props="{ tone: 'text', level: { control: 'slider', min: 1, max: 6 }, secret: false, outlined: 'checkbox', shape: { control: 'select', options: ['round', 'square'] } }"
     >
       <TypedBadge label="Overridden" />
     </Variant>

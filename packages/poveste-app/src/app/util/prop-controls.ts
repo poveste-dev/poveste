@@ -45,6 +45,23 @@ export function controlOf(prop: PropDefinition, doc: ComponentDoc | undefined, o
   return typed ? fromType(typed) : fromRuntime(prop)
 }
 
+/**
+ * The default a control with no placeholder shows as its value while the reader has set
+ * nothing, which is what the preview renders (#1698). `undefined` for one it cannot hold.
+ */
+export function defaultShown(control: PropControl, value: unknown): unknown {
+  switch (control.kind) {
+    case 'checkbox':
+      return typeof value === 'boolean' ? value : undefined
+    case 'select':
+      return control.options?.some(option => option.value === value) ? value : undefined
+    case 'slider':
+      return typeof value === 'number' ? value : undefined
+    default:
+      return undefined
+  }
+}
+
 function fromOverride(override: Exclude<AutoPropOverride, false>): PropControl {
   if (typeof override === 'string') {
     return { kind: override, from: 'story' }

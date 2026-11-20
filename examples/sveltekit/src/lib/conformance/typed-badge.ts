@@ -7,4 +7,6 @@ export interface TypedBadgeProps {
   tone?: 'info' | 'warn'
   level?: number
   secret?: string
+  outlined?: boolean
+  shape?: 'round' | 'square'
 }
