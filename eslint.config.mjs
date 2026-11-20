@@ -30,6 +30,10 @@ export default antfu({
     'curly': ['error', 'multi-line', 'consistent'],
     'antfu/if-newline': 'off',
     'antfu/no-import-dist': 'off',
+    // antfu 10 turns this on. It wants line breaks in ternaries, objects and arrays by
+    // length and shape, and reported 3,661 sites across 586 files on its first run here.
+    // Adopting it is a reformat of its own, not something to inherit with a version bump.
+    'antfu/reasonable-newline': 'off',
     'node/prefer-global/process': 'off',
     // The published packages accept a Node floor below the one this repo
     // develops on, and the CI job for that is path-filtered to manifests — so
