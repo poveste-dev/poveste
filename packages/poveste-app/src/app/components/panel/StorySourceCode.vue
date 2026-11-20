@@ -272,6 +272,11 @@ watch(sourceHtml, async () => {
 </template>
 
 <style scoped>
+.__poveste-code,
+.__poveste-code-placeholder {
+  tab-size: 2;
+}
+
 .__poveste-code-placeholder {
   color: inherit;
   font-size: inherit;
