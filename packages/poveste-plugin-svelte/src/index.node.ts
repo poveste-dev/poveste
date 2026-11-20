@@ -8,6 +8,7 @@ import { defaultColors } from 'poveste'
 import generateStoryCommand from './commands/generate-story.server.js'
 import { SVELTE_SETUP_HOOK_NAMES } from './setup-hooks.js'
 import { svelteAutoProps } from './util/auto-props-vite.js'
+import { AUTO_PROPS_RUNTIME } from './util/auto-props.js'
 import { svelteKitAssetsDir } from './util/kit-assets.js'
 import { withoutSvelteKitServer } from './util/kit-server.js'
 import { syncSvelteKit } from './util/kit-sync.js'
@@ -57,6 +58,10 @@ export function HstSvelte(): Plugin {
           'vite-plugin-sveltekit-compile',
         ],
         vite: {
+          // The scan reads a story as written, and the import of this runtime is added by
+          // the transform. Left to be discovered, it was bundled in a second pass when the
+          // first story loaded, and the preview reloaded under the reader (#1692).
+          optimizeDeps: { include: [AUTO_PROPS_RUNTIME] },
           plugins: [
             svelteAutoProps(),
             disableStoryComponentHmr(),

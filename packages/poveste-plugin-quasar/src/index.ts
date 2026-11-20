@@ -156,11 +156,13 @@ export async function withoutPortTip<T>(fn: () => Promise<T>): Promise<T> {
  * `<q-btn>` becomes an import of `quasar` only when Quasar's plugin transforms
  * the template. Left to be discovered, it is bundled in a second pass once the
  * first story loads, and the page is reloaded under the reader while it runs.
+ * `@quasar/app-vite` for the same reason: a boot file imports `#q-app`, which the
+ * scan reads as a path into it rather than a dependency (#1692).
  */
 export function quasarViteConfig(viteConfig: QuasarViteConfig) {
   return {
     ssr: { noExternal: [/quasar/] },
-    optimizeDeps: { include: ['quasar'] },
+    optimizeDeps: { include: ['quasar', '@quasar/app-vite'] },
     define: { ...viteConfig.define },
     resolve: {
       alias: viteConfig.resolve?.alias,

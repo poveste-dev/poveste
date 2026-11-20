@@ -1,5 +1,6 @@
 import type { PovesteConfig } from '@poveste/shared'
-import { resolve } from 'pathe'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { isAbsolute, join, relative, resolve } from 'pathe'
 import { globSync } from 'tinyglobby'
 
 // Vite pre-bundles whatever its dependency scanner reaches by crawling
@@ -55,4 +56,37 @@ export function setupFileEntry(setupFile: PovesteConfig['setupFile'], isServer: 
   }
 
   return file ? file.replace(/^\/+/, '') : undefined
+}
+
+const CHROME_ENTRIES = ['bundle-main.js', 'bundle-sandbox.js']
+
+/**
+ * A scan entry of Poveste's own that imports the chrome's entries, written to `tempPath`.
+ *
+ * Vite's scan drops every entry under the build's `outDir`, `dist` unless the project says
+ * otherwise, and npm's hoisted layout puts the chrome at `node_modules/@poveste/app/dist`.
+ * So under npm the scan never read the chrome and none of its dependencies were pre-bundled
+ * (#1692). pnpm hid it: its real path runs through `.pnpm`, which the filter's `**` does not
+ * cross. The filter applies to entries only, and the scanner follows an import wherever it
+ * points, so an entry outside `dist` that imports the chrome's reaches it in every layout.
+ */
+export function chromeScanEntry(appPath: string, tempPath: string): string[] {
+  const imports = CHROME_ENTRIES
+    .filter(entry => existsSync(join(appPath, entry)))
+    .map((entry) => {
+      // Absolute when Windows puts the two on different drives.
+      const specifier = relative(tempPath, join(appPath, entry))
+      return `import ${JSON.stringify(isAbsolute(specifier) || specifier.startsWith('.') ? specifier : `./${specifier}`)}\n`
+    })
+  if (imports.length === 0) {
+    return []
+  }
+
+  const file = join(tempPath, 'chrome-scan-entry.js')
+  const code = imports.join('')
+  if (!existsSync(file) || readFileSync(file, 'utf8') !== code) {
+    mkdirSync(tempPath, { recursive: true })
+    writeFileSync(file, code)
+  }
+  return [file]
 }

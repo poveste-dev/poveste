@@ -23,7 +23,7 @@ import { runDevCommand } from './dev-event.js'
 import { devtoolsApiStubPlugin } from './devtools-api-stub.js'
 import { histoireImports } from './histoire-imports.js'
 import { createMarkdownPlugins } from './markdown.js'
-import { optimizeEntries } from './optimize-entries.js'
+import { chromeScanEntry, optimizeEntries } from './optimize-entries.js'
 import { notifyStoryChange } from './stories.js'
 import { postcssOffChrome } from './style-isolation/consumer-postcss.js'
 import {
@@ -197,8 +197,7 @@ export async function getViteConfigWithPlugins(isServer: boolean, ctx: Context):
         },
         optimizeDeps: {
           entries: [
-            `${APP_PATH}/bundle-main.js`,
-            `${APP_PATH}/bundle-sandbox.js`,
+            ...chromeScanEntry(APP_PATH, TEMP_PATH),
             // Without these the scanner never sees a story or the setup file, and
             // their deps cost a full reload when they turn up later (#282).
             ...optimizeEntries(ctx.config, ctx.root, isServer),

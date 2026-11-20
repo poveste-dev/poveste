@@ -8,6 +8,7 @@
 //
 // Usage: node dev-renders.mjs <origin> <story path> <text the story shows>
 
+import { writeFileSync } from 'node:fs'
 import process from 'node:process'
 import { chromium } from '@playwright/test'
 
@@ -34,6 +35,7 @@ while (true) {
 
 const browser = await chromium.launch()
 const vues = new Set()
+const unbundled = new Set()
 // Printed only on failure: what the browser said, which the server log cannot.
 const said = []
 // Also printed only on failure, timed from the first navigation: what a re-run
@@ -74,6 +76,16 @@ try {
     socket.on('framereceived', note('<-'))
     socket.on('framesent', note('->'))
   })
+  // A third-party module served from `node_modules` as it is, which Vite does only for one
+  // its scan never reached. Poveste's own packages are served that way on purpose, and a
+  // stylesheet or an asset is never pre-bundled (#1692).
+  page.on('request', (request) => {
+    const url = new URL(request.url())
+    const inside = url.pathname.split('/node_modules/').slice(1).at(-1)
+    if (url.origin === new URL(origin).origin && inside && /\.[cm]?[jt]sx?$/.test(inside) && !/^(?:\.|poveste\/|@poveste\/|vite\/)/.test(inside)) {
+      unbundled.add(inside.match(/^(?:@[^/]+\/)?[^/]+/)[0])
+    }
+  })
   // Diagnostic only: which Vue modules were served, across the host and the frame.
   page.on('response', (response) => {
     const { pathname } = new URL(response.url())
@@ -86,6 +98,12 @@ try {
   // A dependency found late reloads the page once; the locator keeps polling.
   await page.frameLocator('[data-testid="preview-iframe"]').getByText(expected).first().waitFor({ timeout: 60_000 })
   console.log(`rendered "${expected}"; Vue served as ${[...vues].join(', ') || '(none matched)'}`)
+  // For `one_dependency_pass`: a dependency found late is bundled after the story renders.
+  if (process.env.POVESTE_SMOKE_UNBUNDLED) {
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1_000)
+    writeFileSync(process.env.POVESTE_SMOKE_UNBUNDLED, [...unbundled].map(name => `${name}\n`).join(''))
+  }
 }
 catch (error) {
   console.error(`the story at ${path} did not render "${expected}" in the preview frame`)

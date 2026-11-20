@@ -320,8 +320,9 @@ const CHROME_COMMONJS = ['axe-core/axe.min.js']
  * Vite pre-bundles what a project file imports, and serves a dependency imported from
  * inside `node_modules` as it is, which suits every ESM package the chrome uses. axe-core
  * is UMD only, and served as it is it has no default export, so the Accessibility tab
- * failed under `poveste dev` in an npm install. pnpm hid it: there the scan reaches the
- * chrome's entries, which a hoisted install loses to the scan's filter on `dist`.
+ * failed under `poveste dev` in an npm install, where the scan did not reach the chrome.
+ * `chromeScanEntry` now reaches it in every layout. This stays because a missed ESM
+ * dependency costs requests and a missed CommonJS one breaks the tab (#1692).
  *
  * Empty when the chain cannot be resolved from the project, where Vite would only warn
  * about an include it cannot find.
