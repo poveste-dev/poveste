@@ -7,9 +7,9 @@ function toDist(file) {
 }
 
 // copy non ts files, such as an html or css, to the dist directory whenever
-// they change.
+// they change. chokidar has taken no globs since v4, so filter in `ignored`.
 chokidar
-  .watch('src/**/!(*.ts|*.vue|tsconfig.json)')
+  .watch('src', { ignored: file => /(?:\.ts|\.vue|(?:^|[\\/])tsconfig\.json)$/.test(file) })
   .on('change', file => fs.copy(file, toDist(file)))
   .on('add', file => fs.copy(file, toDist(file)))
   .on('unlink', file => fs.remove(toDist(file)))
