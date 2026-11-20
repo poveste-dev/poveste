@@ -4,6 +4,7 @@ import type {
 } from '@poveste/vendors/vue'
 import type { Component } from 'svelte'
 import type { SvelteStorySetupApi, SvelteStorySetupHandler } from '../helpers.js'
+import type { MountedSvelteComponent } from '../util/svelte.js'
 import { components, defineControlElements } from '@poveste/controls'
 import {
   defineComponent as _defineComponent,
@@ -113,13 +114,24 @@ export default _defineComponent({
         },
       }
 
-      const mountedApp = await mountSvelteComponent(wrappers.length ? WrapperChain : props.story.file.component, {
-        target: container,
-        props: wrappers.length
-          ? { wrappers, story: props.story, variant: props.variant, component: props.story.file.component, componentProps }
-          : componentProps,
-        context,
-      }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
+      let mountedApp: MountedSvelteComponent
+      try {
+        mountedApp = await mountSvelteComponent(wrappers.length ? WrapperChain : props.story.file.component, {
+          target: container,
+          props: wrappers.length
+            ? { wrappers, story: props.story, variant: props.variant, component: props.story.file.component, componentProps }
+            : componentProps,
+          context,
+        }, 'client', { storyId: props.story.id, variantId: props.variant?.id })
+      }
+      catch (error) {
+        // Reported already. Vue's error handler lets its mount return, so its ready
+        // follows the error; skipping ready here left the panel on Loading (#1736).
+        registerComponentOff()
+        console.error(error)
+        emit('ready')
+        return
+      }
       app = mountedApp.app
       tearDownHandlers.push(() => {
         mountedApp.destroy()

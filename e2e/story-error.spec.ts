@@ -56,6 +56,19 @@ test.describe('a story whose component throws', () => {
     await expect(row.locator('[data-testid="story-error-marker"]')).toBeVisible()
   })
 
+  // A Svelte variant that threw never reported ready, so the panel stayed on
+  // Loading and there was no Controls or Docs to read on the broken variant (#1736).
+  test('still shows the side panel beside the error', async ({ page }) => {
+    await openStory(page, THROWING, '?variantId=throwing')
+    await expect(page.getByTestId('story-error')).toBeVisible()
+
+    const panel = page.getByTestId('story-side-panel')
+    await expect(panel.getByTestId('story-controls')).toBeVisible()
+    await panel.getByRole('link', { name: 'Docs' }).click()
+    await expect(page).toHaveURL(/[?&]tab=docs/)
+    await expect(panel.getByTestId('story-controls')).toHaveCount(0)
+  })
+
   test('leaves a story that renders unmarked', async ({ page }) => {
     await openStory(page, THROWING, '?variantId=healthy')
 
