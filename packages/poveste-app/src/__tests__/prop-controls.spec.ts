@@ -1,6 +1,6 @@
 import type { AutoPropComponentDefinition, ComponentDoc, DocProp } from '@poveste/shared'
 import type { ComponentDocsEntry } from '../app/util/component-docs'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { controlOf, defaultShown, docOf } from '../app/util/prop-controls'
 
 const docProp = (name: string, control?: DocProp['control']): DocProp => ({ name, type: 'x', required: false, tags: [], ...control ? { control } : {} })
@@ -123,5 +123,48 @@ describe('the default a control shows before the reader sets anything', () => {
   it('is none on a control that shows a placeholder instead', () => {
     expect(defaultShown({ kind: 'text', from: 'type' }, 'Hello')).toBeUndefined()
     expect(defaultShown({ kind: 'number', from: 'runtime' }, 3)).toBeUndefined()
+  })
+})
+
+// The controls guide names the shorthands; a slider and a select need more than a name (#1704).
+describe('an override the controls guide does not accept', () => {
+  const prop = (name: string, types?: string[]) => ({ name, ...types ? { types } : {} })
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  afterEach(() => warn.mockClear())
+
+  it('is a bare slider, which keeps the prop\'s own control and says a slider needs its range', () => {
+    expect(controlOf(prop('count', ['number']), undefined, { count: 'slider' } as never)).toEqual({ kind: 'number', from: 'runtime' })
+    expect(warn).toHaveBeenCalledOnce()
+    expect(warn.mock.calls[0]![0]).toContain('autoProps.count')
+    expect(warn.mock.calls[0]![0]).toContain('{ control: \'slider\', min, max }')
+  })
+
+  it('is a slider object with no range', () => {
+    expect(controlOf(prop('level', ['number']), undefined, { level: { control: 'slider', min: 1 } } as never)).toEqual({ kind: 'number', from: 'runtime' })
+    expect(warn).toHaveBeenCalledOnce()
+  })
+
+  it('is a bare select, which says a select needs its options', () => {
+    expect(controlOf(prop('size', ['string']), BUTTON, { size: 'select' } as never)).toMatchObject({ kind: 'select', from: 'type' })
+    expect(warn.mock.calls[0]![0]).toContain('{ control: \'select\', options: [...] }')
+  })
+
+  it('is a name that is not a control', () => {
+    expect(controlOf(prop('tone', ['string']), undefined, { tone: 'range' } as never)).toEqual({ kind: 'text', from: 'runtime' })
+    expect(warn.mock.calls[0]![0]).toContain('\'range\'')
+  })
+
+  it('is reported once, however often the panel asks', () => {
+    const overrides = { gap: 'slider' } as never
+    controlOf(prop('gap', ['number']), undefined, overrides)
+    controlOf(prop('gap', ['number']), undefined, overrides)
+    expect(warn).toHaveBeenCalledOnce()
+  })
+
+  it('is none of the shorthands the guide names', () => {
+    for (const control of ['text', 'textarea', 'number', 'checkbox', 'json', 'color', 'date'] as const) {
+      expect(controlOf(prop('x'), undefined, { x: control })).toEqual({ kind: control, from: 'story' })
+    }
+    expect(warn).not.toHaveBeenCalled()
   })
 })

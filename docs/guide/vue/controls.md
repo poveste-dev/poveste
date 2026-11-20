@@ -322,6 +322,8 @@ The fix is something to read: the component documented, a default on the prop, a
 
 An override wins over the prop's type. A variant's `autoProps` replaces the story's whole, as its other options do.
 
+An override that is none of these — a bare `'slider'` or `'select'`, or a name that is not a control — is ignored with a warning in the browser console, and the prop keeps the control it would have had.
+
 ## Builtin controls
 
 To build a control panel a bit more easily, Poveste provides builtin controls with design that fits the rest of the UI.

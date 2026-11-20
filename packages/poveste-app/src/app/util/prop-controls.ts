@@ -39,7 +39,11 @@ export function controlOf(prop: PropDefinition, doc: ComponentDoc | undefined, o
     return undefined
   }
   if (override !== undefined) {
-    return fromOverride(override)
+    const problem = problemWith(override)
+    if (!problem) {
+      return fromOverride(override)
+    }
+    warnOnce(prop.name, override, problem)
   }
   const typed = doc?.props.find(candidate => candidate.name === prop.name)?.control
   return typed ? fromType(typed) : fromRuntime(prop)
@@ -59,6 +63,32 @@ export function defaultShown(control: PropControl, value: unknown): unknown {
       return typeof value === 'number' ? value : undefined
     default:
       return undefined
+  }
+}
+
+const SHORTHANDS: AutoPropControl[] = ['text', 'textarea', 'number', 'checkbox', 'json', 'color', 'date']
+
+// The type refuses these, but nothing type-checks a story before it runs, and the panel
+// drew a bare slider with no range at the browser's midpoint (#1704).
+function problemWith(override: Exclude<AutoPropOverride, false>): string | undefined {
+  const value: { control?: unknown, min?: unknown, max?: unknown, options?: unknown } = typeof override === 'object' && override ? override : { control: override }
+  if (value.control === 'slider') {
+    return typeof value.min === 'number' && typeof value.max === 'number' ? undefined : 'a slider needs its range, as { control: \'slider\', min, max }'
+  }
+  if (value.control === 'select') {
+    return Array.isArray(value.options) ? undefined : 'a select needs its options, as { control: \'select\', options: [...] }'
+  }
+  return SHORTHANDS.includes(value.control as AutoPropControl) ? undefined : `'${String(value.control)}' names no control; the names are ${SHORTHANDS.map(name => `'${name}'`).join(', ')}`
+}
+
+const warned = new Set<string>()
+
+// The panel asks on every render, so the same mistake is reported once.
+function warnOnce(name: string, override: unknown, problem: string) {
+  const key = `${name}:${JSON.stringify(override)}`
+  if (!warned.has(key)) {
+    warned.add(key)
+    console.warn(`[poveste] autoProps.${name}: ${problem}. The prop keeps the control it would have without the override.`)
   }
 }
 
