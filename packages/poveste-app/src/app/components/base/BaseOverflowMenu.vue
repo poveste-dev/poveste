@@ -3,8 +3,13 @@ import type { SetupContext, VNode } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useResizeObserver } from '@vueuse/core'
 import { computed, h, onBeforeUnmount, reactive, ref } from 'vue'
-import { visibleChildCount } from '../../util/overflow'
+import { visibleChildren } from '../../util/overflow'
 import BaseDropdown from './BaseDropdown.vue'
+
+const props = defineProps<{
+  /** The child that is showing, which stays in the row whatever the width. */
+  active?: number | undefined
+}>()
 
 // Container
 
@@ -28,11 +33,21 @@ interface ChildState {
 
 const children = ref(new Map<HTMLElement, ChildState>())
 
-const visibleChildrenCount = computed(() => visibleChildCount(
+const visibleIndices = computed(() => visibleChildren(
   [...children.value.values()].sort((a, b) => a.index - b.index).map(child => child.width),
   availableWidth.value,
   overflowButtonWidth,
+  props.active,
 ))
+
+const hiddenIndices = computed(() => {
+  const visible = new Set(visibleIndices.value)
+  return [...children.value.values()].map(child => child.index).filter(index => !visible.has(index)).sort((a, b) => a - b)
+})
+
+// Flex `order` rather than hiding in place: a child hidden ahead of the active one would
+// otherwise keep its width in the row and push the active one under the button.
+const childOrder = computed(() => new Map([...visibleIndices.value, ...hiddenIndices.value].map((index, position) => [index, position])))
 
 /**
  * Watches for the size of each child and automatically hide them
@@ -63,9 +78,12 @@ const ChildWrapper = {
       if (element) children.value.delete(element)
     })
 
-    const visible = computed(() => visibleChildrenCount.value > state.index)
+    const visible = computed(() => visibleIndices.value.includes(state.index))
 
-    return () => h('div', { ref: el, style: { visibility: visible.value ? 'visible' : 'hidden' } }, slots['default']?.())
+    return () => h('div', {
+      ref: el,
+      style: { visibility: visible.value ? 'visible' : 'hidden', order: childOrder.value.get(state.index) },
+    }, slots['default']?.())
   },
 }
 
@@ -78,11 +96,11 @@ function ChildrenRender(_props: unknown, { slots }: SetupContext) {
 }
 
 /**
- * Only renders a part of a children list
+ * Only renders the children at the given indices
  */
-function ChildrenSlice(props: { start?: number, end?: number }, { slots }: SetupContext) {
+function ChildrenPick(props: { indices: number[] }, { slots }: SetupContext) {
   const children = slots['default']?.()[0]?.children
-  return Array.isArray(children) ? children.slice(props.start, props.end) as VNode[] : []
+  return Array.isArray(children) ? props.indices.map(index => children[index]).filter(Boolean) as VNode[] : []
 }
 </script>
 
@@ -95,8 +113,13 @@ function ChildrenSlice(props: { start?: number, end?: number }, { slots }: Setup
       <slot />
     </ChildrenRender>
 
+    <!-- Positioned on the dropdown's anchor, not on the button inside it: the anchor
+    otherwise sits in the row after every tab, past the window's edge, and the menu
+    can only open clipped there (#1699). -->
     <BaseDropdown
-      v-if="visibleChildrenCount < children.size"
+      v-if="hiddenIndices.length"
+      align="end"
+      class="absolute top-0 right-0 h-full"
     >
       <!-- A `<button>`, where this was a `role="button"` div with no `tabindex`:
       the popover writes `aria-expanded` onto whatever it is given, and axe
@@ -104,7 +127,7 @@ function ChildrenSlice(props: { start?: number, end?: number }, { slots }: Setup
       reaches the hidden tabs now, which it could not before. -->
       <button
         aria-label="More"
-        class="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 w-8 h-full flex items-center justify-center absolute top-0 right-0"
+        class="cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 w-8 h-full flex items-center justify-center"
       >
         <Icon
           icon="carbon:caret-down"
@@ -114,11 +137,9 @@ function ChildrenSlice(props: { start?: number, end?: number }, { slots }: Setup
 
       <template #popper>
         <div class="flex flex-col items-stretch">
-          <ChildrenSlice
-            :start="visibleChildrenCount"
-          >
+          <ChildrenPick :indices="hiddenIndices">
             <slot name="overflow" />
-          </ChildrenSlice>
+          </ChildrenPick>
         </div>
       </template>
     </BaseDropdown>

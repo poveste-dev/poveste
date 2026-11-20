@@ -80,7 +80,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // Raised from 458_000 for #1705 and #1700: the A11y tab's could-not-check state for a variant that threw, and the unknown rule ids left out of its rules not run, 458,623 B measured on top of #1696 and #1697.
   // Raised from 458_900 for #1698: an unset checkbox, select or slider shows the prop's default, 459,027 B measured on top of #1705 and #1700.
   // Raised from 459_300 for #1704: an `autoProps` override the guide does not describe is refused with a warning, 459,962 B measured on top of #1698.
-  '@poveste/app': { bytes: 460_200, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
+  // Raised from 460_200 for #1699: the active tab kept in the row and the More menu anchored inside the window, 461,114 B measured on top of #1728.
+  '@poveste/app': { bytes: 461_400, reason: 'ships `src` beside `dist` on purpose, so a test file escaping the `files` exclusion lands here' },
   '@poveste/controls': { bytes: 241_200, reason: 'the lazy controls carry CodeMirror; catches a second copy, and the tests' },
   // Raised from 63_900 for #942's story tests: the `testing` entry and its Vite plugin,
   // 9,654 B over 0.21's `next` at 61,469, counted twice because `src` ships beside `dist`.
