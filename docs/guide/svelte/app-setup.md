@@ -41,8 +41,8 @@ export const setupSvelte = defineSetupSvelte(({ story, variant, setContext }) =>
 Importing global CSS or JS files at the top of the setup file — outside the hook — is the
 most common use, and it does not need the hook at all. The file is a module like any other.
 Import a stylesheet of your own, by its path from the setup file: `import './app.css'` for a
-`src/app.css`. A file that does not exist fails the build, and the error names a story, not
-the setup file.
+`src/app.css`. A file that does not exist fails the build, and the error names the setup file
+and the import it could not load.
 :::
 
 ## If you already export a numbered name
