@@ -65,3 +65,17 @@ test('a sandboxed story\'s realm gets no chrome token from the controls', async 
 
   expect(root).toBe('')
 })
+
+// The ring is the controls' own token, so it has to reach a realm that has none of
+// the chrome's CSS (#1697).
+test('a builtin select in a sandboxed story draws a focus ring', async ({ page }, testInfo) => {
+  skipSvelte(testInfo)
+  await page.goto(STORY)
+
+  const trigger = preview(page).locator('.__poveste-render-story [data-slot="trigger"]').first()
+  await expect(trigger).toBeVisible()
+  await trigger.focus()
+
+  await expect(trigger).toHaveCSS('outline-style', 'solid')
+  await expect(trigger).toHaveCSS('outline-width', '2px')
+})

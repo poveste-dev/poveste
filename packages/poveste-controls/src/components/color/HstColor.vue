@@ -230,6 +230,8 @@ function write(value: Color) {
   width: 100%;
   height: 100%;
   border-radius: var(--_poveste-radius-sm);
+  /* Reka's swatch only publishes the colour as this property; it paints nothing. */
+  background: var(--reka-color-swatch-color);
 }
 
 .poveste-color-field-root {
