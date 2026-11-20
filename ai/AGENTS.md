@@ -66,9 +66,9 @@ Fourteen directories, three kinds, not interchangeable:
 
 `sveltekit3` is a conformance book and not a second copy of `sveltekit`: SvelteKit 3 refuses a `svelte.config.js`, needs TypeScript 6 and resolves `#lib` where Kit 2 has `$lib`, so one book cannot be both (#1200, #1205). It also keeps the spec it had as a fixture, which runs in `poveste dev` and against the built book.
 
-`solid` is a fixture for now, and its narrow thing is the renderer: its own specs prove a Solid story renders inside its wrapper and that state moves both ways without the component running again. It cannot carry the conformance set yet, because the contract asserts controls and Solid has none. It is promoted to a conformance book once #1114's Solid wrapper gives it explicit controls and #1110 gives it auto-props.
+`solid` is a fixture for now, and its narrow thing is the renderer: its own specs prove a Solid story renders inside its wrapper and that state moves both ways without the component running again. It cannot carry the conformance set yet, because the contract asserts controls and auto-props and Solid has neither: #1114 shipped the builtin controls as custom elements, but a Solid story still has no controls slot to render them in. It is promoted to a conformance book once #1618 gives it both, and that issue lists what else promotion needs.
 
-`react` is a fixture for the same reason. Its own specs prove a React story renders inside its wrapper, that state moves both ways, and that a hook in `render` keeps its state when the panel changes the story (#371). It is promoted on the same two issues.
+`react` is a fixture for the same reason. Its own specs prove a React story renders inside its wrapper, that state moves both ways, and that a hook in `render` keeps its state when the panel changes the story (#371). It is promoted on the same issue.
 
 The middle row is the distinction to keep: a book can carry the conformance contract without being a mirror of the reference book. `SHARED_STORIES` is the contract; `SHARED_STORY_TITLES` is the reference books' demo content and about twice its size. Requiring both of every new framework would price onboarding at the whole demo book rather than the contract.
 
