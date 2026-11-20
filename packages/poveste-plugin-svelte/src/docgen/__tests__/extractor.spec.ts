@@ -148,6 +148,19 @@ describe('a component whose props are a union over a discriminant', () => {
   })
 })
 
+// A Kit 3 scaffold maps `#lib/*` through `package.json` `imports`, which adds no
+// extension, so `#lib/kinds` does not resolve there or in the editor. The message
+// said only that the props type did not resolve (#1723).
+describe('a props type imported through a subpath import', () => {
+  it('names the import that did not resolve, and the spelling with its extension', () => {
+    expect(() => extractor.extract(file('Subpath.svelte'))).toThrow('its props type did not resolve, because \'#lib/kinds\' did not resolve: write \'#lib/kinds.ts\', as a subpath import adds no extension')
+  })
+
+  it('reads the props when the import names its extension', async () => {
+    expect((await extractor.extract(file('SubpathExtension.svelte')))!.props).toMatchObject([{ name: 'kind', type: '"plain" | "loud"' }])
+  })
+})
+
 // #1464: a book on TypeScript 7, whose `require('typescript')` gives only its version,
 // is read with the plugin's own TypeScript 6. A copy of the fixture, because Node caches
 // where a directory's `typescript` resolved, and the cases above resolved it first.

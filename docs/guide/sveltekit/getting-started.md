@@ -130,3 +130,5 @@ A story's **Docs** tab documents the `.svelte` components it imports, as in any 
 see [Component docs](../svelte/getting-started.md#component-docs) in the Svelte guide. It
 reads the types `svelte-kit sync` generates, so `$lib` (`#lib` on Kit 3) imports resolve as in your editor,
 with a TypeScript 6 and `svelte2tsx` the plugin installs, whatever the project has.
+
+On Kit 3, `#lib/*` is a `package.json` subpath import, which adds no file extension: `import type { Props } from '#lib/types'` resolves neither in your editor nor in the Docs tab, and `'#lib/types.ts'` does. When a props type does not resolve, the component shows its runtime props instead, and the warning Poveste prints names the import that failed.

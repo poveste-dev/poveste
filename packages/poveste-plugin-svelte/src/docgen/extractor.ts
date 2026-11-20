@@ -3,7 +3,7 @@ import type { DocgenOptions } from 'poveste/docgen'
 import type ts from 'typescript'
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { basename, dirname, isAbsolute, join, resolve } from 'pathe'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'pathe'
 import { ambientFiles, documentProps, loadFromBook, readTsconfig } from 'poveste/docgen'
 import { readScript } from './defaults.js'
 
@@ -131,6 +131,40 @@ export function createExtractor(context: DocgenExtractorContext): DocgenExtracto
     return typescript.resolveModuleName(specifier, containingFile, compilerOptions, moduleHost, cache)
   }
 
+  // An unresolved import types what it brings in as `any`, which is all the checker
+  // then reports. The first one on the component or a book file it reaches is named,
+  // and, for a subpath import with no extension, the spelling that does resolve (#1723).
+  function unresolvedImport(program: ts.Program, file: string): string {
+    const queue = [file + VIRTUAL]
+    const seen = new Set<string>()
+    for (const name of queue) {
+      const source = program.getSourceFile(name)
+      if (!source || seen.has(name)) {
+        continue
+      }
+      seen.add(name)
+      for (const statement of source.statements) {
+        const specifier = (typescript.isImportDeclaration(statement) || typescript.isExportDeclaration(statement)) && statement.moduleSpecifier
+        if (!specifier || !typescript.isStringLiteral(specifier)) {
+          continue
+        }
+        const target = resolveOne(specifier.text, name).resolvedModule
+        if (target) {
+          if (!target.isExternalLibraryImport) {
+            queue.push(target.resolvedFileName)
+          }
+          continue
+        }
+        const from = realOf(name) === file ? '' : ` imported by ${relative(root, realOf(name))}`
+        const spelled = specifier.text.startsWith('#') && !extname(specifier.text)
+          ? ['.ts', '.js', '.svelte'].map(extension => specifier.text + extension).find(candidate => resolveOne(candidate, name).resolvedModule)
+          : undefined
+        return `, because '${specifier.text}'${from} did not resolve${spelled ? `: write '${spelled}', as a subpath import adds no extension` : ''}`
+      }
+    }
+    return ''
+  }
+
   const service = typescript.createLanguageService({
     getProjectVersion: () => String(projectVersion),
     getCompilationSettings: () => compilerOptions,
@@ -168,7 +202,7 @@ export function createExtractor(context: DocgenExtractorContext): DocgenExtracto
       const checker = program.getTypeChecker()
       const props = checker.getTypeAtLocation(alias.name)
       if (props.flags & typescript.TypeFlags.Any) {
-        throw new Error('its props type did not resolve')
+        throw new Error(`its props type did not resolve${unresolvedImport(program, file)}`)
       }
       const script = readScript(parse, readFileSync(file, 'utf8'))
       return documentProps(typescript, checker, props, {
