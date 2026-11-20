@@ -66,12 +66,48 @@ const SHIKI_WASM = /[\\/]node_modules[\\/](?:shiki[\\/]dist[\\/]wasm|@shikijs[\\
 // to evaluate per realm, which is what loading it lazily avoids.
 const AXE = /[\\/]node_modules[\\/]axe-core[\\/]/
 
-// Left to the bundler wherever they are installed, rather than sent to `vendor`.
-// `@poveste/controls` loads three controls lazily, and in a book installed from
-// npm `vendor` took them in, so every reader downloaded them before anything
-// rendered. The workspace book never showed it: linked source has no
-// `node_modules` in its path (#1343).
-const LEFT_TO_BUNDLER = ['@poveste/app', '@poveste/controls']
+// Poveste's own packages, left to the bundler wherever they are installed rather
+// than sent to `vendor`. Installed from npm, `vendor` took the framework clients
+// `loadClientPlugin` loads on demand, `@poveste/shared`, the lazy controls (#1343)
+// and the book's setup file with them, so every realm loaded them up front. The
+// workspace book never showed it: linked source has no `node_modules` in its path
+// (#1695). The aliased copies (`poveste-vue`, `poveste-pinia`) are third-party
+// code and stay in `vendor`, as does a dependency npm nests inside one of ours.
+export const OWN_PACKAGES = /[\\/]node_modules[\\/](?:poveste|@poveste[\\/][^\\/]+)[\\/](?!(?:.*[\\/])?node_modules[\\/])/
+
+/** The chunk `manualChunks` puts a module in, or `undefined` to leave it to the bundler. */
+export function chunkFor(id: string, excludeFromVendorsChunk: (string | RegExp)[] = []): string | undefined {
+  // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
+  // virtual modules, so the node_modules routing below never sees them
+  // and their placement is left to the bundler — which parked
+  // `__vitePreload` inside the 10 MB `highlighter` chunk. Every chunk
+  // importing the helper then statically imported the whole highlighter,
+  // and the sandbox was back to evaluating it once per grid cell (#197),
+  // undoing exactly what `APP_ONLY_VENDORS` is for. Pin them somewhere
+  // harmless instead of leaving the choice to chunking heuristics.
+  if (id.replace(/^\0/, '').startsWith('vite/')) {
+    return 'app-runtime'
+  }
+
+  if (!id.includes('node_modules') || OWN_PACKAGES.test(id)) {
+    return undefined
+  }
+  if (SHIKI_WASM.test(id)) {
+    return 'shiki-wasm'
+  }
+  if (APP_ONLY_VENDORS.some(test => test.test(id))) {
+    return 'highlighter'
+  }
+  if (AXE.test(id)) {
+    return 'axe'
+  }
+  for (const test of excludeFromVendorsChunk) {
+    if (typeof test === 'string' ? id.includes(test) : test.test(id)) {
+      return undefined
+    }
+  }
+  return 'vendor'
+}
 
 const PREFETCHED_MODULES = [
   'StoryView',
@@ -239,42 +275,7 @@ export async function build(ctx: Context) {
         // Force chunk strategy
         rolldownOptions.output = {
           manualChunks(id) {
-            // Vite's runtime helpers (`\0vite/preload-helper.js` and friends) are
-            // virtual modules, so the node_modules routing below never sees them
-            // and their placement is left to the bundler — which parked
-            // `__vitePreload` inside the 10 MB `highlighter` chunk. Every chunk
-            // importing the helper then statically imported the whole highlighter,
-            // and the sandbox was back to evaluating it once per grid cell (#197),
-            // undoing exactly what `APP_ONLY_VENDORS` is for. Pin them somewhere
-            // harmless instead of leaving the choice to chunking heuristics.
-            if (id.replace(/^\0/, '').startsWith('vite/')) {
-              return 'app-runtime'
-            }
-
-            if (!LEFT_TO_BUNDLER.some(name => id.includes(name)) && id.includes('node_modules')) {
-              if (SHIKI_WASM.test(id)) {
-                return 'shiki-wasm'
-              }
-              if (APP_ONLY_VENDORS.some(test => test.test(id))) {
-                return 'highlighter'
-              }
-              if (AXE.test(id)) {
-                return 'axe'
-              }
-
-              for (const test of ctx.config.build?.excludeFromVendorsChunk ?? []) {
-                if ((
-                  typeof test === 'string' && id.includes(test)
-                ) || (
-                  test instanceof RegExp && test.test(id)
-                )) {
-                  // Excluded from vendor chunk
-                  return
-                }
-              }
-              return 'vendor'
-            }
-            return undefined
+            return chunkFor(id, ctx.config.build?.excludeFromVendorsChunk)
           },
         }
 

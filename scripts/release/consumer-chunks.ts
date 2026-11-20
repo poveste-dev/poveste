@@ -4,7 +4,8 @@
 // `scripts/checks/bundle-size.ts` measures `examples/vue`, where every
 // `@poveste/*` package is linked source, and `manualChunks` routes linked source
 // differently from an install. So the lazy controls sat in a consumer's `vendor`
-// for releases while every ceiling there was green (#1343).
+// for releases while every ceiling there was green (#1343), and the rest of
+// Poveste's own code with them (#1695).
 
 import type { Chunk } from '../checks/bundle-size.ts'
 import { pathToFileURL } from 'node:url'
@@ -15,15 +16,20 @@ export const LAZY_CONTROLS = ['HstJson', 'HstDate', 'HstColor']
 
 /**
  * The smoke test's Vue book is one story with one button, so its `vendor` is
- * nearly all the chrome's. Measured at 715 KB with the controls lazy. The window:
- * above 715, and below 775, where the smallest lazy control (`HstColor`, 60 KB)
- * lands if it is bundled eagerly again. Set at the midpoint, the way
- * `bundle-size.ts` sets its own.
+ * nearly all the chrome's third-party code. Measured at 459 KB once Poveste's own
+ * packages were left out of it (#1695). The window: above 459, and below 633,
+ * where a second Vue runtime lands (174 KB, measured with the collapse off and
+ * the book's `vue` a patch behind the chrome's). Poveste's own code going back
+ * into `vendor` lands at 688. Set at the midpoint, the way `bundle-size.ts` sets
+ * its own, so it tolerates 87 KB of drift and catches both.
+ *
+ * Lowered from 745, which measured a `vendor` still holding Poveste's own code.
+ * The lazy controls are held by their chunk names above, not by this number.
  *
  * Unlike that book, this one installs the newest release each range allows, so a
  * dependency's release moves it too. Re-measure both walls before raising it.
  */
-export const VENDOR_MAX_KB = 745
+export const VENDOR_MAX_KB = 546
 
 const scripts = (chunks: Chunk[]) => chunks.filter(chunk => chunk.name.endsWith('.js'))
 
