@@ -759,6 +759,7 @@ install_and_build histoire-vue "$HISTOIRE_VUE_APP" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
 
 dev_renders histoire-vue "$HISTOIRE_VUE_APP" "/story/src-components-mybutton-story-vue" "Provided by the histoire setup" 4801
+one_dependency_pass histoire-vue
 
 # The same for a histoire Svelte book: `@histoire/plugin-svelte` in the setup file.
 HISTOIRE_SVELTE_APP="$WORK/histoire-svelte"
@@ -814,6 +815,7 @@ install_and_build histoire-svelte "$HISTOIRE_SVELTE_APP" \
   "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
 
 dev_renders histoire-svelte "$HISTOIRE_SVELTE_APP" "/story/src-greeting-story-svelte?variantId=src-greeting-story-svelte-0" "Ran the histoire setup" 4802
+one_dependency_pass histoire-svelte
 
 # ── Solid ────────────────────────────────────────────────────────────────────
 
