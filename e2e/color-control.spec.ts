@@ -1,3 +1,4 @@
+import type { FrameLocator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { openStory } from './support.js'
 
@@ -6,6 +7,38 @@ import { openStory } from './support.js'
 // slider and the hex field are all ours to prove (#63).
 const STORY = 'conformance-color'
 const STATE = '.conformance-color-state'
+
+// What a reader sees rather than what the model holds: the keyboard tests below pass
+// on a picker that paints nothing. The area's gradient arrives as a slot prop and
+// the hue track is a span, so both drew nothing until bound and given a box (#1728).
+async function pickerPaint(root: Page | FrameLocator) {
+  const picker = root.locator('.poveste-color-picker')
+  await expect(picker).toBeVisible()
+  return picker.evaluate((element) => {
+    const rect = (selector: string) => element.querySelector(selector)!.getBoundingClientRect()
+    const area = rect('.poveste-color-area-surface')
+    const thumb = rect('.poveste-color-area-surface .poveste-color-thumb')
+    const track = rect('.poveste-color-hue-track')
+    const hueThumb = rect('.poveste-color-hue-track .poveste-color-thumb')
+    const centre = (r: DOMRect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 })
+    const inside = (point: { x: number, y: number }, r: DOMRect) =>
+      point.x >= r.left && point.x <= r.right && point.y >= r.top && point.y <= r.bottom
+    return {
+      areaBackground: getComputedStyle(element.querySelector('.poveste-color-area-surface')!).backgroundImage,
+      track: { width: track.width, height: track.height },
+      thumbOnArea: inside(centre(thumb), area),
+      thumbOnTrack: inside(centre(hueThumb), track),
+    }
+  })
+}
+
+function expectPainted(paint: Awaited<ReturnType<typeof pickerPaint>>) {
+  expect(paint.areaBackground, 'the area paints its saturation and brightness gradient').toContain('gradient')
+  expect(paint.track.width, 'the hue track has a box').toBeGreaterThan(0)
+  expect(paint.track.height, 'the hue track has a box').toBeGreaterThan(0)
+  expect(paint.thumbOnArea, 'the area thumb sits on the area').toBe(true)
+  expect(paint.thumbOnTrack, 'the hue thumb sits on the track').toBe(true)
+}
 
 test.describe('colour control', () => {
   test.beforeEach(async ({ page }) => {
@@ -103,6 +136,27 @@ test.describe('colour control', () => {
     const swatch = page.getByTestId('preview-iframe').contentFrame().locator('.poveste-color [data-slot="preview"]')
 
     await expect(swatch).toHaveCSS('background-color', 'rgb(51, 102, 255)')
+  })
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test(`paints the area gradient and the hue strip in the chrome, ${scheme}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme })
+      await expect(page.locator('html')).toHaveClass(scheme === 'dark' ? /ptw-dark/ : /^(?!.*ptw-dark)/)
+      const tint = page.getByTestId('story-controls').locator('.poveste-wrapper').filter({ hasText: 'Tint' })
+
+      await tint.getByLabel('Open the colour picker').click()
+
+      expectPainted(await pickerPaint(page))
+    })
+  }
+
+  test('paints the area gradient and the hue strip in a sandbox', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('svelte'), 'a built-in control in the default slot does not collect under Svelte')
+    const preview = page.getByTestId('preview-iframe').contentFrame()
+
+    await preview.getByLabel('Open the colour picker').click()
+
+    expectPainted(await pickerPaint(preview))
   })
 
   test('opens the picker into the app root, not the body', async ({ page }) => {
