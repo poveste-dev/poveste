@@ -1,8 +1,8 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'pathe'
+import { dirname, join, relative, resolve } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { optimizeEntries, setupFileEntry } from '../optimize-entries.js'
+import { chromeScanEntry, optimizeEntries, setupFileEntry } from '../optimize-entries.js'
 
 const STORIES = ['**/*.story.vue', '**/*.story.svelte']
 const IGNORED = ['**/node_modules/**', '**/dist/**']
@@ -96,5 +96,66 @@ describe('optimizeEntries', () => {
     const entries = optimizeEntries({ storyMatch: STORIES, storyIgnored: IGNORED, setupFile: '/src/setup.ts' }, root, false)
 
     expect(names(entries)).toEqual(['src/setup.ts'])
+  })
+})
+
+describe('chromeScanEntry', () => {
+  let root: string
+  let app: string
+  let temp: string
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'poveste-chrome-entry-'))
+    // Where npm's hoisted layout puts the chrome.
+    app = join(root, 'node_modules/@poveste/app/dist')
+    temp = join(root, 'node_modules/.poveste')
+  })
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true })
+  })
+
+  function writeApp(...entries: string[]): void {
+    mkdirSync(app, { recursive: true })
+    for (const entry of entries) {
+      writeFileSync(join(app, entry), '')
+    }
+  }
+
+  const imported = (file: string) => [...readFileSync(file, 'utf8').matchAll(/import "([^"]+)"/g)]
+    .map(([, specifier]) => resolve(dirname(file), specifier!))
+
+  // Vite's scan drops entries under `dist`, which is where the chrome's own sit.
+  it('imports the chrome\'s entries from a file outside dist', () => {
+    writeApp('bundle-main.js', 'bundle-sandbox.js')
+
+    const [entry] = chromeScanEntry(app, temp)
+
+    expect(relative(root, entry!)).toBe('node_modules/.poveste/chrome-scan-entry.js')
+    expect(imported(entry!)).toEqual([join(app, 'bundle-main.js'), join(app, 'bundle-sandbox.js')])
+  })
+
+  it('imports only the entries that exist', () => {
+    writeApp('bundle-main.js')
+
+    const [entry] = chromeScanEntry(app, temp)
+
+    expect(imported(entry!)).toEqual([join(app, 'bundle-main.js')])
+  })
+
+  it('has nothing to add, and writes nothing, when the chrome has no entries', () => {
+    expect(chromeScanEntry(app, temp)).toEqual([])
+    expect(existsSync(temp)).toBe(false)
+  })
+
+  // The directory is watched, so a rewrite on every start would be a change to react to.
+  it('leaves an unchanged entry alone', () => {
+    writeApp('bundle-main.js', 'bundle-sandbox.js')
+    const [entry] = chromeScanEntry(app, temp)
+    const written = statSync(entry!).mtimeMs
+
+    chromeScanEntry(app, temp)
+
+    expect(statSync(entry!).mtimeMs).toBe(written)
   })
 })

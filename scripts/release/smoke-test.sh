@@ -229,7 +229,7 @@ dev_renders() {
   ( cd "$app" && exec ./node_modules/.bin/poveste dev --port "$port" ) > "$dev_log" 2>&1 &
   DEV_PID=$!
 
-  if ! node "$ROOT/scripts/release/dev-renders.mjs" "http://localhost:$port" "$path" "$expected"; then
+  if ! POVESTE_SMOKE_UNBUNDLED="$WORK/unbundled-$name.txt" node "$ROOT/scripts/release/dev-renders.mjs" "http://localhost:$port" "$path" "$expected"; then
     echo "❌ Smoke test FAILED [$name] — poveste dev did not render the story"
     tail -20 "$dev_log"
     # When collection ended and the optimizer reloaded, beside the browser's timeline (#1218).
@@ -297,19 +297,26 @@ a11y_tab_runs() {
   echo "✅ [$name] Accessibility tab runs"
 }
 
-# one_dependency_pass <name> — after `dev_renders`, over the log it left.
+# one_dependency_pass <name> [passes-only] — after `dev_renders`, over what it left.
 #
 # A dependency Vite's scan missed is bundled in a second pass when a story first
-# asks for it, and the page is reloaded while that runs. Only an installed book
+# asks for it, and the page is often reloaded while that runs. Only an installed book
 # shows it: in the workspace the plugins are linked source, which the scan reads.
+# A dependency imported only from inside `node_modules` is not even that: it is served
+# unbundled, which is how a hoisted install hid the chrome's from the scan (#1692).
 one_dependency_pass() {
-  local name="$1"
+  local name="$1" scope="${2:-}"
   [ "${POVESTE_SMOKE_DEV:-}" = "1" ] || return 0
 
   local dev_log="$WORK/dev-$name.log"
-  if grep -aq 'optimized dependencies changed' "$dev_log"; then
-    echo "❌ Smoke test FAILED [$name] — poveste dev bundled dependencies a second time and reloaded the page"
+  if grep -aqE 'optimized dependencies changed|dependenc(y|ies) optimized:' "$dev_log"; then
+    echo "❌ Smoke test FAILED [$name] — poveste dev bundled dependencies a second time"
     grep -aE 'optimized|reloading' "$dev_log"
+    exit 1
+  fi
+  if [ "$scope" != "passes-only" ] && [ -s "$WORK/unbundled-$name.txt" ]; then
+    echo "❌ Smoke test FAILED [$name] — poveste dev served these dependencies unbundled, so the scan never reached what imports them:"
+    sed 's/^/  /' "$WORK/unbundled-$name.txt"
     exit 1
   fi
   echo "✅ [$name] one dependency pass"
@@ -451,6 +458,7 @@ if ! node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON "$ROOT/scripts/release/
 fi
 
 dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4790
+one_dependency_pass vue
 # This book installs no TypeScript, as a JavaScript Vue project doesn't, and is
 # read with Poveste's TypeScript 6 (#1464).
 docs_tab_shows vue "$VUE_APP" "/story/src-button-story-vue?tab=docs" label 4798
@@ -458,6 +466,7 @@ a11y_tab_runs vue "$VUE_APP" "/story/src-button-story-vue" 4804
 pnpm_dev_renders vue "$VUE_APP" "/story/src-button-story-vue" "Click me" 4793 \
   "$(plugin_tgz poveste-plugin-vue)" \
   "vue@$(peer_range poveste-plugin-vue vue)" vite@^8.0.0 @vitejs/plugin-vue@^6.0.0
+one_dependency_pass vue-pnpm
 
 # The Vue testing guide, as it prints, in the same install. In the workspace Vitest
 # inlines the linked packages; installed, it handed them to Node, which can't load
@@ -628,10 +637,12 @@ install_and_build svelte "$SVELTE_APP" \
 
 # A Svelte book imports no `vue` of its own, which is the shape #1134 broke.
 dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantId=src-mybutton-story-svelte-1" "Hello Poveste" 4791
+one_dependency_pass svelte
 pnpm_dev_renders svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?variantId=src-mybutton-story-svelte-1" "Hello Poveste" 4794 \
   "$(plugin_tgz poveste-plugin-svelte)" \
   "svelte@$(peer_range poveste-plugin-svelte svelte)" vite@^8.0.0 \
   "@sveltejs/vite-plugin-svelte@$(peer_range poveste-plugin-svelte @sveltejs/vite-plugin-svelte)"
+one_dependency_pass svelte-pnpm
 # Neither TypeScript nor `svelte2tsx` in the book: the plugin carries both (#1464).
 docs_tab_shows svelte "$SVELTE_APP" "/story/src-mybutton-story-svelte?tab=docs" label 4799
 # A book on TypeScript 7, which `svelte2tsx` peers out, installs with no ERESOLVE and
@@ -857,6 +868,7 @@ install_and_build solid "$SOLID_APP" \
 types_check solid "$SOLID_APP" '"jsx": "preserve", "jsxImportSource": "solid-js"'
 
 dev_renders solid "$SOLID_APP" "/story/src-button-story-tsx?variantId=src-button-story-tsx-0" "Click me" 4792
+one_dependency_pass solid
 
 # The Solid testing guide, as it prints, in the same install (#1522).
 echo "▸ [solid] Running a story test from docs/guide/solid/testing.md"
@@ -1148,7 +1160,9 @@ install_and_build nuxt "$NUXT_APP" \
 
 # The Nuxt example has a dev project, but over the workspace; this is the tarballs (#1289).
 dev_renders nuxt "$NUXT_APP" "/story/app-button-story-vue" "Click me" 4797
-one_dependency_pass nuxt
+# Nuxt's client config excludes its own runtime from pre-bundling (`vue`, every `@vue/*`,
+# `vue-router`, `nuxt`, `@unhead/vue` and more), so a Nuxt book serves that unbundled by design.
+one_dependency_pass nuxt passes-only
 
 # The testing guide's Nuxt section, in the same install. Its story calls a Nuxt
 # composable, which only resolves inside the app `@nuxt/test-utils` boots.

@@ -7,7 +7,8 @@ import { parse } from 'svelte/compiler'
  */
 export type PropsOf = (specifier: string) => Promise<PropDefinition[] | { props: PropDefinition[] | undefined, file: string } | undefined>
 
-const RUNTIME = '@poveste/plugin-svelte/auto-props'
+/** What a story transformed for auto-props imports. */
+export const AUTO_PROPS_RUNTIME = '@poveste/plugin-svelte/auto-props'
 const HOLDER = '__pvtAutoProps'
 const TABLE = '__pvtAutoPropDefs'
 const HST = 'Hst'
@@ -40,7 +41,7 @@ interface Target { node: Node, variant: number, index: number, specifier: string
  */
 export async function transformStoryAutoProps(code: string, propsOf: PropsOf): Promise<string | undefined> {
   // Applied twice, the second preamble redeclares the first.
-  if (code.includes(RUNTIME)) {
+  if (code.includes(AUTO_PROPS_RUNTIME)) {
     return undefined
   }
 
@@ -250,7 +251,7 @@ function preamble(defs: AutoPropComponentDefinition[][]): string {
     return `{...${TABLE}[${slot}],index:${def.index}}`
   }))
 
-  return `import { autoProps as __pvtCreateAutoProps } from '${RUNTIME}';`
+  return `import { autoProps as __pvtCreateAutoProps } from '${AUTO_PROPS_RUNTIME}';`
     + `const ${TABLE} = [${table.join(',')}];`
     + `const ${HOLDER} = __pvtCreateAutoProps([${entries.map(perVariant => `[${perVariant.join(',')}]`).join(',')}]);`
 }

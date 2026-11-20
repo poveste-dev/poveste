@@ -59,7 +59,13 @@ describe('quasarViteConfig', () => {
     // The scan misses it, since only Quasar's own transform turns `<q-btn>` into
     // an import. Found late, it costs a second bundling pass and a forced reload
     // of the first story page, which a StackBlitz preview did not survive (#1269).
-    expect(quasarViteConfig(extracted).optimizeDeps).toEqual({ include: ['quasar'] })
+    expect(quasarViteConfig(extracted).optimizeDeps?.include).toContain('quasar')
+  })
+
+  it('pre-bundles what a boot file\'s `#q-app` names in the first pass', () => {
+    // Quasar aliases `#q-app` to `@quasar/app-vite`, and the scan follows the alias
+    // into the package as source, so the import was found only when the page asked (#1692).
+    expect(quasarViteConfig(extracted).optimizeDeps?.include).toContain('@quasar/app-vite')
   })
 
   it('passes every plugin through, including Quasar\'s own Vue one', () => {
@@ -78,7 +84,7 @@ describe('quasarViteConfig', () => {
   it('survives a config that declares none of them', () => {
     expect(quasarViteConfig({})).toEqual({
       ssr: { noExternal: [/quasar/] },
-      optimizeDeps: { include: ['quasar'] },
+      optimizeDeps: { include: ['quasar', '@quasar/app-vite'] },
       define: {},
       resolve: { alias: undefined, extensions: undefined, dedupe: undefined },
       plugins: undefined,
