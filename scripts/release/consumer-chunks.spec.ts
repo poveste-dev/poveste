@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { consumerChunkProblems, VENDOR_MAX_KB } from './consumer-chunks.ts'
 
 const lazy: Chunk[] = [
-  { name: 'vendor-B4e_t30I.js', kb: 715 },
+  { name: 'vendor-B4e_t30I.js', kb: 459 },
   { name: 'HstJson-D83KEa9o.es-C2Z07zlT.js', kb: 438 },
   { name: 'HstDate-Ct5Jp_ZD.es-D-DfhmhX.js', kb: 122 },
   { name: 'HstColor-DHgxKTkm.es-nA_XCBhX.js', kb: 60 },

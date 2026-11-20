@@ -69,7 +69,7 @@ describe('measurements', () => {
   it('reports every ceiling', () => {
     expect(measurements(chunks, LIMITS)).toEqual(expect.arrayContaining([
       'highlighter-abc.js 1344 KB / 3000 KB',
-      'vendor-def.js 1413 KB / 1487 KB',
+      'vendor-def.js 1413 KB / 1470 KB',
       'whole book 2957 KB / 5968 KB',
     ]))
   })
@@ -87,8 +87,8 @@ describe('measurements', () => {
     ]
 
     expect(measurements(split, LIMITS.slice(1, 2))).toEqual([
-      'vendor-a.js 1400 KB / 1487 KB',
-      'vendor-b.js 1300 KB / 1487 KB',
+      'vendor-a.js 1400 KB / 1470 KB',
+      'vendor-b.js 1300 KB / 1470 KB',
     ])
   })
 
