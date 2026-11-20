@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import type { A11yResult, A11yRunner } from '../app/util/a11y.js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { effectScope, nextTick, reactive, shallowRef } from 'vue'
+import { effectScope, nextTick, reactive, ref, shallowRef } from 'vue'
 import { useA11yCheck } from '../app/util/a11y-check.js'
 import { runA11y } from '../app/util/a11y-run.js'
-import { a11yRunnerFor, allDisabled, backgroundBehind, disabledRules, isTransparent, provideA11yRunner } from '../app/util/a11y.js'
+import { a11yRunnerFor, allDisabled, backgroundBehind, disabledRules, isTransparent, provideA11yRunner, rulesSkipped } from '../app/util/a11y.js'
 
 const RESULT: A11yResult = { engine: '4', violations: [], passes: 1, unknownRules: [] }
 
@@ -110,6 +110,24 @@ describe('allDisabled', () => {
   })
 })
 
+// #1700: the guide says an unknown id is ignored, and the tab names it on its own line.
+describe('rulesSkipped', () => {
+  it('leaves out the ids axe does not have, and keeps the ones it skipped', () => {
+    const rules = disabledRules({ disableRules: ['image-alt', 'not-a-rule'] }, { disableRules: ['button-nam', 'list'] })
+
+    const skipped = rulesSkipped(rules, ['not-a-rule', 'button-nam'])
+
+    expect(skipped).toEqual({ sandbox: rules.sandbox, book: ['image-alt'], story: ['list'] })
+    expect(allDisabled(skipped)).toHaveLength(rules.sandbox.length + 2)
+  })
+
+  it('is every configured rule before a run has said which axe has', () => {
+    const rules = disabledRules({ disableRules: ['image-alt', 'not-a-rule'] }, undefined)
+
+    expect(rulesSkipped(rules, undefined)).toEqual(rules)
+  })
+})
+
 describe('backgroundBehind', () => {
   it('is the nearest ancestor that paints', () => {
     document.body.innerHTML = '<div style="background-color: rgb(1, 2, 3)"><div style="background-color: rgba(0, 0, 0, 0)"><iframe></iframe></div></div>'
@@ -153,18 +171,20 @@ describe('useA11yCheck', () => {
     vi.useRealTimers()
   })
 
-  function setup(automatic: boolean) {
+  function setup(automatic: boolean, threw = false) {
     const runner = vi.fn<A11yRunner>(async () => RESULT)
     const current = shallowRef<A11yRunner | undefined>(runner)
     const state = reactive({ text: 'a' })
+    const failed = ref(threw)
     const scope = effectScope()
     const check = scope.run(() => useA11yCheck({
       runner: () => current.value,
       disabledRules: () => ['region'],
       automatic: () => automatic,
       changes: () => state,
+      failed: () => failed.value,
     }))!
-    return { runner, current, state, scope, check }
+    return { runner, current, state, failed, scope, check }
   }
 
   it('runs as soon as a variant has a runner, with the rules off', async () => {
@@ -245,6 +265,60 @@ describe('useA11yCheck', () => {
 
     expect(check.status.value).toBe('error')
     expect(check.error.value).toBe('The sandbox did not answer.')
+    scope.stop()
+  })
+
+  // #1705: axe would check whatever the sandbox holds and call a broken story clean.
+  it('does not check a variant that threw while rendering, and says it could not', async () => {
+    const { runner, check, scope } = setup(true, true)
+    await vi.runAllTimersAsync()
+    await check.run()
+
+    expect(runner).not.toHaveBeenCalled()
+    expect(check.status.value).toBe('failed')
+    expect(check.result.value).toBeUndefined()
+    scope.stop()
+  })
+
+  it('drops the result of a run when the variant throws after it', async () => {
+    const { failed, check, scope } = setup(true)
+    await vi.runAllTimersAsync()
+    expect(check.status.value).toBe('done')
+
+    failed.value = true
+    await nextTick()
+
+    expect(check.status.value).toBe('failed')
+    expect(check.result.value).toBeUndefined()
+    scope.stop()
+  })
+
+  it('drops a run in flight when the variant throws', async () => {
+    const { current, failed, check, scope } = setup(false)
+    let answer!: (result: A11yResult) => void
+    current.value = () => new Promise(resolve => answer = resolve)
+    await nextTick()
+
+    const running = check.run()
+    failed.value = true
+    await nextTick()
+    answer(RESULT)
+    await running
+
+    expect(check.status.value).toBe('failed')
+    expect(check.result.value).toBeUndefined()
+    scope.stop()
+  })
+
+  it('checks again once the variant renders', async () => {
+    const { runner, failed, check, scope } = setup(true, true)
+    await vi.runAllTimersAsync()
+
+    failed.value = false
+    await vi.runAllTimersAsync()
+
+    expect(runner).toHaveBeenCalledTimes(1)
+    expect(check.status.value).toBe('done')
     scope.stop()
   })
 

@@ -102,6 +102,23 @@ test.describe('accessibility panel', () => {
     expect(requests).not.toEqual([])
   })
 
+  // The sandbox holds what the framework left of the story, and axe found nothing
+  // wrong with it: a broken story read as an accessible one (#1705).
+  test('says it could not check a variant that threw while rendering', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('svelte'), 'a Svelte variant that throws never reports ready, so the side panel stays on Loading and shows no tab to check')
+    await openStory(page, 'conformance-throws', `?variantId=throwing&${A11Y_TAB}`)
+    await expect(page.getByTestId('story-error')).toBeVisible()
+
+    const panel = page.getByTestId('story-a11y')
+    await expect(panel).toHaveAttribute('data-status', 'failed', { timeout: RUN_TIMEOUT })
+    await expect(page.getByTestId('a11y-summary')).toHaveText('Could not check: the variant failed to render')
+    await expect(panel.getByTestId('a11y-violation')).toHaveCount(0)
+    await expect(panel.getByRole('button')).toHaveCount(0)
+
+    await openStory(page, 'conformance-throws', `?variantId=healthy&${A11Y_TAB}`)
+    expect(await violations(page)).toEqual([])
+  })
+
   test('the panel passes axe itself, with a violation showing', async ({ page }) => {
     await openStory(page, STORY, `?variantId=default&${A11Y_TAB}`)
     expect(await violations(page)).toEqual([])

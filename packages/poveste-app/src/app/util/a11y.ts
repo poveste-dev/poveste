@@ -66,6 +66,17 @@ export function disabledRules(book: A11yOptions | undefined, story: A11yOptions 
   }
 }
 
+/**
+ * The rules a run skipped: the configured ones less those axe does not have, which
+ * the panel names on their own line. Before a run says which those are, every one.
+ */
+export function rulesSkipped(rules: DisabledRules, unknownRules: string[] | undefined): DisabledRules {
+  if (!unknownRules?.length) return rules
+  const unknown = new Set(unknownRules)
+  const known = (ids: string[]) => ids.filter(id => !unknown.has(id))
+  return { sandbox: known(rules.sandbox), book: known(rules.book), story: known(rules.story) }
+}
+
 export function allDisabled(rules: DisabledRules): string[] {
   return [...new Set([...rules.sandbox, ...rules.book, ...rules.story])]
 }
