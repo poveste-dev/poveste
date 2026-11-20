@@ -48,6 +48,17 @@ describe('a setup file that fails to load', () => {
     expect(output).not.toContain('Error while collecting story')
   }, 120_000)
 
+  // A setup file that is not there at all fails the same way, once, and says
+  // which key named it rather than the virtual id that imports it (#1702).
+  it('is reported once, naming the config key, when the file does not exist', async () => {
+    const output = await collectionOutput({ FIXTURE_SETUP_FILE: './nope.js' })
+
+    expect(output.match(/Error while loading the setup file \S*nope\.js/g)).toHaveLength(1)
+    expect(output).toContain('`setupFile`')
+    expect(output).not.toContain('virtual:$poveste-setup')
+    expect(output).not.toContain('Error while collecting story')
+  }, 120_000)
+
   it('leaves a story that throws on its own to be reported as that story', async () => {
     const output = await collectionOutput({ FIXTURE_SETUP_FILE: './setup-that-loads.js' })
 

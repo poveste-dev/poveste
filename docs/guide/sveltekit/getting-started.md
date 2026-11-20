@@ -78,16 +78,11 @@ export default defineConfig({
     plugins: [
       HstSvelte(),
     ],
-    setupFile: '/src/poveste.setup.ts',
   },
 })
 ```
 
-`setupFile` points at a file of your own that runs before every story — where you import
-global CSS, register stores, or install anything your components expect to be there already.
-Create it, or drop the key until you have something to put in it. The path is relative to
-your project root, which is what the leading slash means. See [Global JS and
-CSS](../config.md#global-js-and-css) for what goes inside.
+To run a file of your own before every story — where you import global CSS, register stores, or install anything your components expect to be there already — create it first, say `src/poveste.setup.ts`, then add `setupFile: '/src/poveste.setup.ts'` next to `plugins`. The path is relative to your project root, which is what the leading slash means. A `setupFile` naming a file that does not exist stops the build with an error naming the key and the path. See [Global JS and CSS](../config.md#global-js-and-css) for what goes inside.
 
 Importing `@poveste/plugin-svelte` is already enough to type the `poveste` key — poveste
 augments Vite's config type, and importing any poveste package pulls that augmentation into

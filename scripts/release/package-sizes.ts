@@ -55,7 +55,8 @@ export const CEILINGS: Record<string, { bytes?: number, reason: string }> = {
   // 141,373, so 142,221 B measured; #162 adds 138 B on top of it.
   // Raised from 142_500 for #1646: the dev server skips an unchanged story list and the story-source module keeps its copies current, 142,945 B measured on top of #162.
   // Raised from 143_200 for #162 in an npm install: axe-core pre-bundled for the A11y tab, 143,298 B measured.
-  'poveste': { bytes: 143_500, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
+  // Raised from 143_500 for #1702: a missing setup file named by its key and path, 143,727 B measured on top of #1704.
+  'poveste': { bytes: 144_000, reason: 'room for the JSX walker and shared docgen 0.21 adds; catches its tests shipping, or a dependency of their size bundled' },
   // Raised from 435_300 for #1436's table: v-model marks, type parameters and slot-prop
   // rows, 1,688 B together over 0.21's `next` at 435,001 (#1473, #1474, #1475).
   // Raised from 437_000 for #1521: the source panel's grammar chosen per story file,

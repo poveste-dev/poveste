@@ -1,6 +1,6 @@
 import type { Plugin as VitePlugin } from 'vite'
 import type { Context } from '../context.js'
-import { resolve } from 'pathe'
+import { join, resolve } from 'pathe'
 import { generateDocSearchData, generateTitleSearchData, getSearchDataJS } from '../search.js'
 import * as VirtualFiles from './index.js'
 import { ID_SEPARATOR } from './util.js'
@@ -17,19 +17,27 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
         const setupFileConfig = ctx.config.setupFile
         if (setupFileConfig) {
           let file: string | undefined
+          let key = 'setupFile'
           if (typeof setupFileConfig === 'string') {
             file = setupFileConfig
           }
           else if (isServer && 'server' in setupFileConfig) {
             file = setupFileConfig.server
+            key = 'setupFile.server'
           }
           else if (!isServer && 'browser' in setupFileConfig) {
             file = setupFileConfig.browser
+            key = 'setupFile.browser'
           }
           if (file) {
-            return this.resolve(resolve(ctx.root, file), importer, {
+            const absolute = resolve(ctx.root, file)
+            const resolved = await this.resolve(absolute, importer, {
               skipSelf: true,
             })
+            if (!resolved) {
+              throw missingSetupFile(key, file, rootRelative(ctx.root, file) ?? absolute)
+            }
+            return resolved
           }
         }
         return VirtualFiles.NOOP_ID
@@ -167,4 +175,17 @@ export function createVirtualFilesPlugin(ctx: Context, isServer: boolean) {
       return undefined
     },
   } as VitePlugin
+}
+
+// Vite reads a leading `/` from the project root when no such file exists.
+function rootRelative(root: string, file: string) {
+  return file.startsWith('/') && !file.startsWith(root) ? join(root, file) : undefined
+}
+
+// Unresolved, the build failed on the virtual id instead (#1702). No stack: it
+// points into Vite's resolver. `setupFile` makes collection report it once.
+function missingSetupFile(key: string, file: string, absolute: string) {
+  const error = new Error(`\`${key}\` in the poveste config names ${file}, which does not exist (looked for ${absolute}). Create it, or remove the \`${key}\` key.`)
+  error.stack = `Error: ${error.message}`
+  return Object.assign(error, { setupFile: absolute })
 }
