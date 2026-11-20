@@ -1,0 +1,7 @@
+{
+  "name": "docgen-fixture",
+  "private": true,
+  "imports": {
+    "#lib/*": "./lib/*"
+  }
+}
