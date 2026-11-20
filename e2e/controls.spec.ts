@@ -1,3 +1,4 @@
+import type { Locator, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import { openStory } from './support.js'
 
@@ -109,6 +110,23 @@ test.describe('controls', () => {
     await page.keyboard.press('Enter')
 
     await expect(state).toContainText('"game": "the-last-of-us"')
+  })
+
+  // The trigger's rule says `outline: none`, and until #1697 nothing put a ring
+  // back: tabbing onto it changed no pixel, so a keyboard user could not see
+  // where focus was. Compared as pixels as well as read as a style, because a
+  // ring drawn outside the box and then clipped would pass the style alone.
+  test('draws a focus ring on the select trigger', async ({ page }) => {
+    const trigger = page.getByTestId('story-controls').locator('.poveste-select [data-slot="trigger"]')
+
+    await trigger.scrollIntoViewIfNeeded()
+    await page.mouse.move(0, 0)
+    const unfocused = await aroundOf(page, trigger)
+
+    await trigger.focus()
+    await expect(trigger).toHaveCSS('outline-style', 'solid')
+
+    expect((await aroundOf(page, trigger)).equals(unfocused), 'the focused trigger renders exactly as the unfocused one').toBe(false)
   })
 
   // A control renders in two realms, and the popper's target differs between
@@ -247,3 +265,12 @@ test.describe('controls', () => {
     await expect(state).toContainText('"label": "Hello"')
   })
 })
+
+/** The element and a few pixels round it, where an outline with an offset is drawn. */
+async function aroundOf(page: Page, element: Locator) {
+  const box = await element.boundingBox()
+  if (!box) {
+    throw new Error('the element has no box')
+  }
+  return page.screenshot({ clip: { x: box.x - 6, y: box.y - 6, width: box.width + 12, height: box.height + 12 } })
+}

@@ -82,6 +82,29 @@ test.describe('colour control', () => {
     await expect(preview.locator('.poveste-color-picker')).toBeVisible()
   })
 
+  // Reka's swatch publishes the colour as `--reka-color-swatch-color` and paints
+  // nothing itself, so a swatch whose CSS never reads it is an empty box beside a
+  // correct hex — and every test above still passes, because none of them looks (#1696).
+  test('paints the swatch with the current colour, and follows a new one', async ({ page }) => {
+    const tint = page.getByTestId('story-controls').locator('.poveste-wrapper').filter({ hasText: 'Tint' })
+    const swatch = tint.locator('[data-slot="preview"]')
+
+    await expect(swatch).toHaveCSS('background-color', 'rgb(51, 102, 255)')
+
+    await tint.locator('input').fill('#ff0000')
+    await tint.locator('input').press('Enter')
+
+    await expect(swatch).toHaveCSS('background-color', 'rgb(255, 0, 0)')
+  })
+
+  test('paints the swatch in a sandbox too', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('svelte'), 'a built-in control in the default slot does not collect under Svelte')
+
+    const swatch = page.getByTestId('preview-iframe').contentFrame().locator('.poveste-color [data-slot="preview"]')
+
+    await expect(swatch).toHaveCSS('background-color', 'rgb(51, 102, 255)')
+  })
+
   test('opens the picker into the app root, not the body', async ({ page }) => {
     const tint = page.getByTestId('story-controls').locator('.poveste-wrapper').filter({ hasText: 'Tint' })
 

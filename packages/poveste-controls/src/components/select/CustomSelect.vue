@@ -152,6 +152,11 @@ function selectValue(value: unknown) {
   &:hover {
     border-color: var(--_poveste-primary-500);
   }
+
+  &:focus-visible {
+    outline: 2px solid var(--_poveste-primary-500);
+    outline-offset: 2px;
+  }
 }
 
 .poveste-select-label {
