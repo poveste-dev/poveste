@@ -154,6 +154,8 @@ Running several books at once is fine: give each `poveste dev` a distinct `--por
 
 The props, slots and events table on a story's **Docs** tab is read from your components' types with a TypeScript 6 Poveste installs, so the book needs none of its own, whatever version it has. See [Props, slots and events](./docs.md#props-slots-and-events).
 
+On TypeScript 7 with npm, installing prints two `ERESOLVE overriding peer dependency` warnings, and `npm ls --all` and `npm ls typescript` exit 1, reporting `typescript` as invalid. They come from `vue-component-meta`, which reads the types: its `@volar/typescript` dependency asks for a TypeScript below 7 as an optional peer, and no release of it allows 7 yet. That is expected. The table is still read with Poveste's TypeScript 6, and plain `npm ls` exits 0.
+
 To enable the global components types in your project, create an `env.d.ts` file at the root of your project if it doesn't already exist.
 
 ```ts
