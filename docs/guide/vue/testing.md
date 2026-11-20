@@ -50,6 +50,10 @@ testStories(BaseButton)
 
 `povesteTesting()` serves your [setup file](./app-setup.md) and the modules Poveste's client imports, and compiles a story's `<docs>` block to nothing. It has Vitest inline Poveste's own packages, which import those modules, through `test.server.deps.inline`. For browser mode, it adds `vue` to `optimizeDeps.include` and your setup file to `optimizeDeps.entries`, so Vite pre-bundles them, and the libraries the setup file imports, before the first test, without reloading partway through it. It adds no alias, so the tests resolve modules exactly as the rest of your Vite config does.
 
+::: tip A props type changed and the tests still see the old one?
+After you edit a file that a component imports its props type from, the story tests can replay a stale compile, failing with `Missing required prop` for a prop that is now optional, for example. Vitest 5 caches each compiled module on disk, and the cache key doesn't cover the type files a component imports. Run `vitest --clearCache`, which deletes the cache and runs nothing, then run the tests again. Or run them with `--fsModuleCache=false`.
+:::
+
 ## In a browser
 
 jsdom has no `ResizeObserver`, and its `<canvas>` has no 2D context, so a story that uses either fails there and passes in a browser. Vitest's browser mode runs the same tests in Chromium:
