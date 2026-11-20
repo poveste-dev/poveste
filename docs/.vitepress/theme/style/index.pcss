@@ -112,6 +112,16 @@ button {
   }
 }
 
+/* `@shikijs/vitepress-twoslash` 3.5 took `vp-code` off the hover popup, and VitePress 1
+   colours tokens only under `.vp-code`, so the types in a hover lost their highlighting. */
+html:not(.dark) .twoslash-floating span {
+  color: var(--shiki-light, inherit);
+}
+
+.dark .twoslash-floating span {
+  color: var(--shiki-dark, inherit);
+}
+
 table {
   .dark & {
     tr, td, th {
