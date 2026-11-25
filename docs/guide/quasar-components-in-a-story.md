@@ -1,6 +1,6 @@
 ---
 title: 'Quasar components in a histoire-style story — why they go missing, and the fix'
-description: 'No released version of histoire supports Quasar. Poveste, a fork of histoire, does. Why an app extension or boot file does nothing inside a story, and the setup line that fixes it.'
+description: 'Poveste, a fork of histoire, supports Quasar through @poveste/plugin-quasar. Why an app extension or boot file does nothing inside a story, and the setup line that fixes it.'
 ---
 
 # Using Quasar components in a story
@@ -41,7 +41,7 @@ Two limits worth knowing before you start:
 
 ## Where this comes from
 
-No released version of histoire supports Quasar. Poveste is a fork of histoire that does, through `@poveste/plugin-quasar`. Your `<Story>` and `<Variant>` files and your config carry over from histoire unchanged, see [Migrating from histoire](./migration-from-histoire.md).
+Poveste is a fork of histoire, and has supported Quasar through `@poveste/plugin-quasar` since 0.8.2 (28 August 2026). Histoire added its own `@histoire/plugin-quasar` in `1.0.0-beta.2` on 22 November 2026; moving a book that uses it to Poveste has not been tested. Your `<Story>` and `<Variant>` files and your config carry over from histoire unchanged, see [Migrating from histoire](./migration-from-histoire.md).
 
 If you want to check that it's supported and not just claimed: [`examples/quasar`](https://github.com/poveste-dev/poveste/tree/main/examples/quasar) is a real Quasar project that runs the same conformance suite as the Vue, Nuxt, Svelte and SvelteKit books, in CI on every commit. One of its stories renders `NO BOOT FILE RAN` when the setup above is missing, and a test fails on that text, so this exact failure breaks CI instead of going unnoticed.
 

@@ -7,9 +7,11 @@ description: 'Poveste is a drop-in fork of histoire, so your stories and configu
 
 **poveste** is a **drop-in fork** of [histoire](https://github.com/histoire-dev/histoire),
 released every one to two weeks and tested on books installed from npm. This guide was written
-against histoire 0.x and `1.0.0-beta.1`, and checked on 27 October 2026. Poveste keeps the same
-`<Story>` / `<Variant>` API, the same `.story.*` file convention, and the same
-configuration format — so for Vue and Nuxt, migrating is a matter of swapping dependencies.
+against histoire 0.x and `1.0.0-beta.1`, checked on 27 October 2026, and checked again against
+`1.0.0-beta.2` on 23 November 2026 with a Vue 3 book and a Svelte 5 book; Quasar and React books
+on `1.0.0-beta.2` were not tested. Poveste keeps the same `<Story>` / `<Variant>` API, the
+same `.story.*` file convention, and the same configuration format — so for Vue and Nuxt,
+migrating is a matter of swapping dependencies.
 
 **Svelte projects need one code change too.** Svelte 5 removed the API histoire relied on to
 read a story's state, so story state moves onto `initState` — see
@@ -27,10 +29,11 @@ only if you deploy or ignore that path (see step 5).
 :::
 
 ::: warning Check your versions first
-Poveste's floors are higher than histoire's — it requires Vite 8, and with it Nuxt 4.5+
-and Svelte 5+, and it requires Vue `^3.5.43`. A histoire 0.x book is usually on Vite 5 or
-6, and a `1.0.0-beta.1` book on Vite 7. If your project is below any of them, that
-upgrade comes first and is the real work; the dependency swap below is the easy part. See
+Poveste's floors are higher than histoire's — it requires Node 22.22.2, Vite 8 (and with
+it Nuxt 4.5+ and Svelte 5+), and Vue `^3.5.43`. A histoire 0.x book is usually on Vite 5
+or 6, a `1.0.0-beta.1` book on Vite 7, and a `1.0.0-beta.2` book on Vite 7 or 8, on Node
+22.12 or later. If your project is below any of them, that upgrade comes first and is the
+real work; the dependency swap below is the easy part. See
 [supported versions](./getting-started.md#supported-versions).
 :::
 
@@ -45,13 +48,13 @@ app's document, where `<html>` does not carry it. See [root selectors](./css.md#
 Everything histoire gave you keeps working, and a few things are new:
 
 - **Five frameworks, each with its own example book and CI job.** Vue 3, Nuxt 4, Svelte 5, SvelteKit and Quasar are each built and end-to-end tested on every commit.
-- **Quasar.** No released version of histoire supports Quasar. Poveste does, including the app boot files a story otherwise skips. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
+- **Quasar.** Poveste has published `@poveste/plugin-quasar` since 0.8.2 (28 August 2026), and it handles the app boot files a story otherwise skips. Histoire added `@histoire/plugin-quasar` in `1.0.0-beta.2` on 22 November 2026. This guide has not been tested on a histoire Quasar book. See [Using Quasar components in a story](./quasar-components-in-a-story.md).
 - **Automatic controls for Svelte 5.** Poveste reads a Svelte component's declared props out of its source when the book is built, so a variant gets a control per prop without writing one. See [Automatic controls](./svelte/controls.md#automatic-controls).
 - **Auto-docs, on by default.** A story's Docs tab shows a props, slots and events table read from the component's types ([Vue](./vue/docs.md#props-slots-and-events), [Svelte](./svelte/docs.md#component-docs), and in Solid and React from the component a story names). It reads the types with a TypeScript 6 Poveste installs, so a histoire book needs no TypeScript of its own for it; only a React book needs `@types/react`, and without it auto-docs turns itself off and says so once in the log. It holds a type checker while it reads, up to about 1 GB on a large library, which `poveste dev` pays once a Docs tab is opened and `poveste build` pays for the whole book; [`autoDocs`](../reference/config.md#autodocs) has the detail, and `autoDocs: false` turns it off. Once it's on, delete the Props, Emits and Slots sections your `.story.md` files write by hand, which would show beside the table and drift from it; keep the prose a table can't carry, such as usage, accessibility notes and examples.
 
 You don't have to move. If histoire does what you need, it's fine to stay. For Vue and Nuxt the move is a dependency swap, and for Svelte it's one change per story that uses controls, so it costs about the same later as it does now.
 
-For reference, as of 27 October 2026 histoire's npm `latest` is `1.0.0-beta.1`, published 7 January 2026. Its `main` branch is in active development towards a breaking 1.0, and no npm release includes that work yet.
+For reference, as of 23 November 2026 histoire's npm `latest` is `1.0.0-beta.2`, published 22 November 2026. It is histoire's 1.0 rewrite, and it adds story APIs Poveste does not have; see [what `1.0.0-beta.2` adds](#what-beta-2-adds).
 
 ## 1. Swap the dependencies
 
@@ -88,7 +91,10 @@ and `@poveste/plugin-nuxt`.
 
 `poveste` peers `vite: ^8.0.0`, which is why the install above upgrades Vite and the Vite
 plugin your framework uses in the same command. A histoire 0.x book is usually on Vite 5
-or 6 — reka-ui's peered Vite 5 — and a `1.0.0-beta.1` book on Vite 7, which it peers.
+or 6 — reka-ui's peered Vite 5 — a `1.0.0-beta.1` book on Vite 7, which it peers, and a
+`1.0.0-beta.2` book on Vite 7 or 8, both of which it peers. A book already on Vite 8 can keep
+it; the command still names `vite@8` and the framework plugin so that the new lockfile is
+built around them.
 
 What changes for the book coming from Vite 5, 6 or 7:
 
@@ -137,6 +143,16 @@ the same names, and so do the other `@histoire/*` packages histoire 0.17 publish
 have no Poveste equivalent and still fail: `@histoire/plugin-vue2`, since Poveste has no
 Vue 2 support, and `@histoire/vendors/floating-vue` and `@histoire/vendors/scroll`. The
 config file is the exception, as above.
+
+### What `1.0.0-beta.2` adds that Poveste does not have {#what-beta-2-adds}
+
+Histoire `1.0.0-beta.2` (22 November 2026) adds story APIs Poveste has no equivalent for. A story that uses one fails to collect: `poveste build` stops with an error naming the import, and `poveste dev` leaves the story out of the sidebar and prints the error only in the terminal. Remove them from your stories before migrating:
+
+- `onTest`, `isTesting`, `onDarkChange`, `useHostChannel`, `getControlsHost`, `useHistoireGlobals` and `useHistoireGlobalsStore` from `histoire/client`.
+- `mockNetwork` and `mockNetworkDefaults` from `histoire/network`.
+- Any import from the twelve packages histoire first published with `1.0.0-beta.2`, none of which Poveste maps: `@histoire/cli`, `@histoire/dev-proxy`, `@histoire/devframe`, `@histoire/plugin-a11y`, `@histoire/plugin-designs`, `@histoire/plugin-kit`, `@histoire/plugin-quasar`, `@histoire/plugin-react`, `@histoire/plugin-vue-devtools`, `@histoire/protocol`, `@histoire/sdk` and `@histoire/vue`.
+
+`logEvent`, `isCollecting`, `toggleDark` and `isDark` from `histoire/client` carry over. A Vue story's `matrix` prop is accepted and ignored: its variants render, with no matrix view.
 
 ## 3. Update npm scripts (optional)
 
@@ -201,10 +217,12 @@ export default defineConfig({
 The one code change in the whole migration, and it applies to Svelte only. If your Svelte
 stories have no controls, there is nothing to do here.
 
-Histoire read your story's state out of the component itself, using Svelte 4's
+Histoire 0.x read your story's state out of the component itself, using Svelte 4's
 `$capture_state` / `$inject_state`. **Svelte 5 removed both and offers no replacement** —
 component internals are private now. That is upstream, not a poveste decision, and it leaves no
 way to read a `let` out of your story.
+
+A `1.0.0-beta.2` book on Svelte 5 needs the same change: its stories keep their state in `let`, as histoire's Svelte docs still show.
 
 It matters because Poveste mounts your story **once per slot** — once to fill the controls
 panel, once to render the story. A component-local variable therefore exists twice, and a
@@ -290,8 +308,10 @@ error naming the story and linking back here. Full details in
 ## What you do NOT need to change
 
 - **Story files** — the `.story.vue` / `.story.svelte` convention is unchanged.
-- **The `<Story>` and `<Variant>` API** — identical for Vue and Nuxt, including all props and
-  slots. Svelte gains an `initState` prop and moves slots to snippets (see above).
+- **The `<Story>` and `<Variant>` API** — identical for Vue and Nuxt to histoire 0.x,
+  including all props and slots; for `1.0.0-beta.2`'s additions, see
+  [above](#what-beta-2-adds). Svelte gains an `initState` prop and moves slots to
+  snippets (see above).
 - **Plugin options** — same shapes.
 - **Controls** (`Hst*` components) — unchanged.
 
@@ -304,6 +324,7 @@ error naming the story and linking back here. Full details in
 | `histoire` key in Vite config | ✅ still works (deprecated) |
 | `HistoireConfig` type | ✅ still exported (deprecated alias) |
 | `<Story>` / `<Variant>` API (Vue, Nuxt) | ✅ identical |
+| `1.0.0-beta.2` story APIs (`onTest`, `histoire/network`, …) | ❌ no equivalent; the story fails to collect ([list](#what-beta-2-adds)) |
 | `<Story>` / `<Variant>` API (Svelte) | ⚠️ state moves to `initState` ([why](#svelte-story-state-moves-to-initstate)) |
 | `--histoire-contrast-color` CSS var | ✅ still set (alongside `--poveste-contrast-color`) |
 | `.histoire-generic-render-story` / `.histoire-wrapper` render classes | ✅ still emitted (for visual-regression selectors) |
@@ -334,7 +355,7 @@ there is no CJS entry point left to warn about. Poveste requires Vite 8, so the 
 no code path to come from.
 
 This is worth stating plainly: **migrating is not what fixes it.** Any tool on Vite 7 or
-newer is equally past it, [histoire's own `1.0.0-beta.1`](https://www.npmjs.com/package/histoire)
+newer is equally past it, [histoire's own `1.0.0-beta.1` and `1.0.0-beta.2`](https://www.npmjs.com/package/histoire)
 included. If this warning is your only reason to switch, upgrading histoire is the smaller
 change.
 
