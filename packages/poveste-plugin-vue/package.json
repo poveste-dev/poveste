@@ -110,7 +110,7 @@
     "@tailwindcss/oxide": "^4.3.5",
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "^6.0.11",
-    "@vitest/browser-playwright": "5.1.0",
+    "@vitest/browser-playwright": "5.1.1",
     "concurrently": "^10.0.7",
     "jsdom": "^31.0.1",
     "poveste": "workspace:*",
